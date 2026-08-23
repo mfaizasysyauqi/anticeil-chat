@@ -114,7 +114,7 @@ export const useConnectorsStore = create<ConnectorsState>()(
   persist(
     (set, get) => ({
       connectors: DEFAULT_CONNECTORS,
-      activeConnectorIds: ['gmail', 'calendar', 'google_drive'],
+      activeConnectorIds: [],
       toolExecutionHistory: [],
 
       toggleActiveConnector: (id) => {

@@ -138,6 +138,17 @@ export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
   ],
   groq: [
     {
+      id: 'compound-beta',
+      name: 'Compound (Groq)',
+      providerId: 'groq',
+      contextWindow: 128000,
+      description: 'Ultra-fast compound reasoning and LPU inference on Groq',
+      inputCostPer1M: 0.59,
+      outputCostPer1M: 0.79,
+      supportsStreaming: true,
+      isPopular: true,
+    },
+    {
       id: 'llama-3.3-70b-versatile',
       name: 'Llama 3.3 70B (Groq)',
       providerId: 'groq',
@@ -310,8 +321,8 @@ export const PROVIDER_DEFINITIONS: ProviderDefinition[] = [
   },
 ];
 
-export const DEFAULT_PROVIDER_ID: LLMProviderId = 'openai';
-export const DEFAULT_MODEL_ID = 'gpt-4o-mini';
+export const DEFAULT_PROVIDER_ID: LLMProviderId = 'groq';
+export const DEFAULT_MODEL_ID = 'compound-beta';
 
 export function getModelById(modelId: string): LLMModel | undefined {
   for (const models of Object.values(PROVIDER_MODELS)) {
