@@ -14,6 +14,8 @@ import {
   fetchProviderModels,
 } from '@anticeil/core';
 
+import { FREE_GROQ_KEYS, FREE_GEMINI_KEYS } from '../../chat/data/byokApi';
+
 interface SettingsState {
   apiKeys: ApiKeysState;
   dynamicModels: Partial<Record<LLMProviderId, LLMModel[]>>;
@@ -148,6 +150,8 @@ export const useSettingsStore = create<SettingsState>()(
       },
 
       hasConfiguredKey: (providerId) => {
+        // Built-in free tier keys available for Groq and Gemini
+        if (providerId === 'groq' || providerId === 'gemini') return true;
         const config = get().apiKeys[providerId];
         const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
         if (!providerDef?.requiresApiKey) return true;
@@ -162,7 +166,12 @@ export const useSettingsStore = create<SettingsState>()(
 
         for (const providerId of providersToFetch) {
           const keyConfig = state.apiKeys[providerId];
-          const apiKey = keyConfig?.apiKey || '';
+          let apiKey = keyConfig?.apiKey || '';
+          // Fallback to free tier pool key for Groq & Gemini if user hasn't set one
+          if (!apiKey) {
+            if (providerId === 'groq') apiKey = FREE_GROQ_KEYS[0] || '';
+            if (providerId === 'gemini') apiKey = FREE_GEMINI_KEYS[0] || '';
+          }
           const baseUrl = keyConfig?.baseUrl;
 
           set((s) => ({
@@ -221,6 +230,16 @@ export const useSettingsStore = create<SettingsState>()(
         }
         if (state?.theme && typeof document !== 'undefined') {
           document.documentElement.setAttribute('data-theme', state.theme);
+        }
+        // Auto-fetch live models for free tier providers (Groq and Gemini)
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            const current = useSettingsStore.getState();
+            if (current.refreshModels) {
+              current.refreshModels('groq');
+              current.refreshModels('gemini');
+            }
+          }, 300);
         }
       },
       partialize: (state) => ({
