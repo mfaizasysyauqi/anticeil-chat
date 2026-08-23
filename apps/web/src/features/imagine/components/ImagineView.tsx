@@ -1045,13 +1045,11 @@ export function ImagineView() {
           </span>
         </div>
 
-        {/* ── Audio Studio Gallery Grid ── */}
+        {/* ── Audio Studio Gallery Waterfall / Masonry Grid ── */}
         {mediaMode === 'audio' && (
           <div
+            className="waterfall-gallery-grid"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-              gap: '16px',
               marginBottom: '40px',
             }}
           >
@@ -1063,6 +1061,8 @@ export function ImagineView() {
                 <div
                   key={item.id}
                   style={{
+                    breakInside: 'avoid',
+                    marginBottom: '16px',
                     background: 'var(--bg-surface)',
                     border: isPlaying ? '1px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
                     borderRadius: '14px',
