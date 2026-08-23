@@ -19,6 +19,34 @@ export interface SendMessageOptions {
   signal?: AbortSignal;
 }
 
+// ── Built-in Free Tier Rotating Key Pool ─────────────────────────────────
+export const FREE_GROQ_KEYS: string[] = [
+  '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',
+  ...(process.env.NEXT_PUBLIC_GROQ_API_KEYS ? process.env.NEXT_PUBLIC_GROQ_API_KEYS.split(',').map((k) => k.trim()) : []),
+].filter((k, i, self) => Boolean(k) && self.indexOf(k) === i);
+
+export const FREE_GEMINI_KEYS: string[] = [
+  'AQ.Ab8RN6JWoVCHAxjnHnTig8_iYyHTobEtwGGo9AAOiyFHQc-5Dg',
+  ...(process.env.NEXT_PUBLIC_GEMINI_API_KEYS ? process.env.NEXT_PUBLIC_GEMINI_API_KEYS.split(',').map((k) => k.trim()) : []),
+].filter((k, i, self) => Boolean(k) && self.indexOf(k) === i);
+
+let groqKeyIndex = 0;
+let geminiKeyIndex = 0;
+
+export function getNextFreeKey(providerId: 'groq' | 'gemini'): string {
+  if (providerId === 'groq' && FREE_GROQ_KEYS.length > 0) {
+    const key = FREE_GROQ_KEYS[groqKeyIndex % FREE_GROQ_KEYS.length];
+    groqKeyIndex++;
+    return key;
+  }
+  if (providerId === 'gemini' && FREE_GEMINI_KEYS.length > 0) {
+    const key = FREE_GEMINI_KEYS[geminiKeyIndex % FREE_GEMINI_KEYS.length];
+    geminiKeyIndex++;
+    return key;
+  }
+  return '';
+}
+
 export async function streamBYOKChat(options: SendMessageOptions): Promise<void> {
   const {
     providerId,
@@ -33,7 +61,16 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
 
   const providerDef = getProviderById(providerId);
   const baseUrl = apiKeyConfig.baseUrl || providerDef?.defaultBaseUrl || '';
-  const apiKey = apiKeyConfig.apiKey;
+  let apiKey = apiKeyConfig.apiKey;
+
+  // Fallback to built-in free tier rotating key pool if user has no custom BYOK key
+  if (!apiKey) {
+    if (providerId === 'groq') {
+      apiKey = getNextFreeKey('groq');
+    } else if (providerId === 'gemini') {
+      apiKey = getNextFreeKey('gemini');
+    }
+  }
 
   if (providerDef?.requiresApiKey && !apiKey) {
     throw new Error(`API key is required for ${providerDef.name}. Please configure it in Settings.`);
