@@ -29,6 +29,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useStorageStore } from '../../storage/store/useStorageStore';
 import { getTranslation } from '@anticeil/core';
 
 type MediaMode = 'image' | 'video' | 'audio';
@@ -419,13 +420,21 @@ export function ImagineView() {
     };
   }, []);
 
+  const addUsage = useStorageStore((s) => s.addUsage);
+  const canFit = useStorageStore((s) => s.canFit);
+
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    setIsGenerating(true);
-
     if (mediaMode === 'image') {
+      const estimatedBytes = 1.2 * 1024 * 1024;
+      if (!canFit(estimatedBytes)) {
+        alert(language === 'id' ? 'Kapasitas penyimpanan 1 GB Anda tidak mencukupi untuk render media baru.' : 'Not enough storage space in your 1 GB quota.');
+        return;
+      }
+
+      setIsGenerating(true);
       const encodedPrompt = encodeURIComponent(`${prompt}, ${selectedStyle} style, highly detailed, masterwork`);
       const width = selectedRatio === '16:9' ? 1280 : selectedRatio === '9:16' ? 720 : 1024;
       const height = selectedRatio === '16:9' ? 720 : selectedRatio === '9:16' ? 1280 : 1024;
@@ -445,10 +454,18 @@ export function ImagineView() {
           },
           ...prev,
         ]);
+        addUsage(estimatedBytes, 'images');
         setIsGenerating(false);
         setPrompt('');
       }, 1200);
     } else if (mediaMode === 'video') {
+      const estimatedBytes = 3.5 * 1024 * 1024;
+      if (!canFit(estimatedBytes)) {
+        alert(language === 'id' ? 'Kapasitas penyimpanan 1 GB Anda tidak mencukupi untuk render media baru.' : 'Not enough storage space in your 1 GB quota.');
+        return;
+      }
+
+      setIsGenerating(true);
       const encodedPrompt = encodeURIComponent(`${prompt}, cinematic lighting, 4k ultra realism`);
       const directUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1280&height=720&model=flux-realism&seed=${Math.floor(Math.random() * 100000)}`;
 
@@ -465,11 +482,19 @@ export function ImagineView() {
           },
           ...prev,
         ]);
+        addUsage(estimatedBytes, 'images');
         setIsGenerating(false);
         setPrompt('');
       }, 1400);
     } else {
       // Audio Generation
+      const estimatedBytes = 650 * 1024;
+      if (!canFit(estimatedBytes)) {
+        alert(language === 'id' ? 'Kapasitas penyimpanan 1 GB Anda tidak mencukupi untuk sintesis audio baru.' : 'Not enough storage space in your 1 GB quota.');
+        return;
+      }
+
+      setIsGenerating(true);
       setTimeout(() => {
         const newAudio: AudioItem = {
           id: String(Date.now()),
@@ -483,6 +508,7 @@ export function ImagineView() {
         };
 
         setGeneratedAudios((prev) => [newAudio, ...prev]);
+        addUsage(estimatedBytes, 'audio');
         setIsGenerating(false);
         setPrompt('');
 

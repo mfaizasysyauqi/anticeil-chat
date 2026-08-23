@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// In-memory verification token store with 15-minute TTL (for production, persist to Redis / KV / DB)
+// In-memory verification token store with 15-minute TTL
 interface TelegramSession {
   token: string;
   phone?: string;
@@ -11,13 +11,19 @@ interface TelegramSession {
 
 const globalSessions = globalThis as unknown as {
   _telegramVerificationSessions?: Map<string, TelegramSession>;
+  _telegramRepliedUpdates?: Set<number>;
 };
 
 if (!globalSessions._telegramVerificationSessions) {
   globalSessions._telegramVerificationSessions = new Map<string, TelegramSession>();
 }
 
+if (!globalSessions._telegramRepliedUpdates) {
+  globalSessions._telegramRepliedUpdates = new Set<number>();
+}
+
 const sessions = globalSessions._telegramVerificationSessions;
+const repliedUpdates = globalSessions._telegramRepliedUpdates;
 
 // Clean up expired sessions (older than 15 minutes)
 function cleanExpiredSessions() {
@@ -30,6 +36,79 @@ function cleanExpiredSessions() {
 }
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'AnticeilBot';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
+
+// Helper: send Telegram Bot message
+async function sendTelegramReply(chatId: number | string, text: string) {
+  if (!BOT_TOKEN) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'Markdown',
+      }),
+    });
+  } catch (err) {
+    console.warn('Failed to send Telegram reply:', err);
+  }
+}
+
+// Helper: check Telegram getUpdates to automatically detect /start and reply
+async function checkTelegramUpdates(targetToken?: string) {
+  if (!BOT_TOKEN) return false;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=-10&limit=10`, {
+      cache: 'no-store',
+    });
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.result)) return false;
+
+    let foundMatch = false;
+
+    for (const update of data.result) {
+      const updateId = update.update_id;
+      const msg = update.message;
+      if (!msg || !msg.text) continue;
+
+      const text = msg.text.trim();
+      const chatId = msg.chat?.id;
+
+      // Handle /start or /start tg_xxxx
+      if (text.startsWith('/start')) {
+        const parts = text.split(' ');
+        const incomingToken = parts[1]?.trim();
+
+        // If specific token matches or if user sent /start while polling targetToken
+        if (targetToken && (incomingToken === targetToken || !incomingToken)) {
+          if (sessions.has(targetToken)) {
+            const session = sessions.get(targetToken)!;
+            session.verified = true;
+            session.telegramUserId = String(chatId);
+            sessions.set(targetToken, session);
+            foundMatch = true;
+          }
+        }
+
+        // Send reply to user if not already replied in this session
+        if (chatId && !repliedUpdates.has(updateId)) {
+          repliedUpdates.add(updateId);
+          await sendTelegramReply(
+            chatId,
+            `🎉 *Selamat Datang di Anticeil!* 🚀\n\nNomor akun Anda telah *berhasil diverifikasi* secara instan.\n\nSilakan kembali ke browser Anda untuk menyelesaikan pembuatan akun. ✨`
+          );
+        }
+      }
+    }
+
+    return foundMatch;
+  } catch (err) {
+    console.warn('Error checking Telegram getUpdates:', err);
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,6 +144,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, verified: false, error: 'Session expired or not found' });
       }
 
+      // Check Telegram getUpdates live
+      await checkTelegramUpdates(token);
+
       const session = sessions.get(token)!;
       return NextResponse.json({
         success: true,
@@ -73,7 +155,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. Confirm verification (Webhook / Telegram Bot callback or instant client handshake)
+    // 3. Confirm verification
     if (action === 'confirm') {
       if (!token || !sessions.has(token)) {
         return NextResponse.json({ success: false, error: 'Invalid or expired session token' }, { status: 400 });
@@ -104,6 +186,9 @@ export async function GET(req: NextRequest) {
   if (!token || !sessions.has(token)) {
     return NextResponse.json({ success: false, verified: false });
   }
+
+  // Check Telegram getUpdates live
+  await checkTelegramUpdates(token);
 
   const session = sessions.get(token)!;
   return NextResponse.json({

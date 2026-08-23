@@ -31,6 +31,8 @@ import {
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useChatStore } from '../../chat/store/useChatStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
+import { useStorageStore, formatStorageBytes } from '../../storage/store/useStorageStore';
+import { StorageMeter } from '../../storage/components/StorageMeter';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -875,6 +877,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
              * ───────────────────────────────────────────────────────────── */}
             {activeTab === 'backup' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Storage Quota Widget */}
+                <StorageMeterPanel language={language} />
+
+                {/* Data Backup Card */}
                 <div
                   style={{
                     padding: '16px',
@@ -1224,3 +1230,150 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     </>
   );
 }
+
+// ── Storage Meter Panel (reusable inside Settings backup tab) ──────────────
+function StorageMeterPanel({ language }: { language: string }) {
+  const usedBytes = useStorageStore((s) => s.usedBytes);
+  const limitBytes = useStorageStore((s) => s.limitBytes);
+  const breakdown = useStorageStore((s) => s.breakdown);
+  const fileCount = useStorageStore((s) => s.fileCount);
+  const lastSyncedAt = useStorageStore((s) => s.lastSyncedAt);
+  const syncFromSupabase = useStorageStore((s) => s.syncFromSupabase);
+  const session = useAuthStore((s) => s.session);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const percentage = Math.min(100, Math.round((usedBytes / limitBytes) * 100));
+  const isNearLimit = percentage >= 85;
+  const barColor = percentage >= 98 ? '#EF4444' : isNearLimit ? '#F59E0B' : 'var(--brand-primary)';
+
+  const breakdownItems = [
+    { label: language === 'id' ? 'Dokumen & PDF' : 'Docs & PDFs', bytes: breakdown.docs, color: '#0073EA' },
+    { label: language === 'id' ? 'Gambar & Video' : 'Images & Video', bytes: breakdown.images, color: '#8B5CF6' },
+    { label: language === 'id' ? 'Audio' : 'Audio', bytes: breakdown.audio, color: '#10B981' },
+    { label: language === 'id' ? 'Lainnya' : 'Other', bytes: breakdown.other, color: '#6B7280' },
+  ].filter((item) => item.bytes > 0);
+
+  const syncedLabel = lastSyncedAt
+    ? (language === 'id' ? 'Terakhir disinkron: ' : 'Last synced: ') +
+      new Date(lastSyncedAt).toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+    : language === 'id' ? 'Belum pernah disinkron' : 'Never synced';
+
+  const handleSync = async () => {
+    if (!session?.access_token) return;
+    setIsSyncing(true);
+    // Force a fresh sync by calling with a bypass (reset lastSyncedAt first)
+    useStorageStore.setState({ lastSyncedAt: null });
+    await syncFromSupabase(session.access_token);
+    setIsSyncing(false);
+  };
+
+  return (
+    <div
+      style={{
+        padding: '16px',
+        background: 'var(--bg-main)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-md, 10px)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+        <div>
+          <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px 0' }}>
+            {language === 'id' ? 'Kapasitas Penyimpanan Ruang Kerja' : 'Workspace Storage Quota'}
+          </h3>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+            {language === 'id'
+              ? `${fileCount} berkas tersimpan — Paket Gratis 1 GB`
+              : `${fileCount} files stored — Free Plan 1 GB`}
+          </p>
+        </div>
+        <span style={{ fontSize: '13px', fontWeight: 700, color: barColor, whiteSpace: 'nowrap' }}>
+          {percentage}%
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '8px',
+            borderRadius: '999px',
+            background: 'var(--border-subtle)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: `${percentage}%`,
+              height: '100%',
+              background: barColor,
+              borderRadius: '999px',
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+          <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'terpakai' : 'used'}</span>
+          <span>{formatStorageBytes(Math.max(0, limitBytes - usedBytes))} {language === 'id' ? 'tersisa dari' : 'free of'} {formatStorageBytes(limitBytes)}</span>
+        </div>
+      </div>
+
+      {/* Category Breakdown */}
+      {breakdownItems.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {breakdownItems.map((item) => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', flex: 1 }}>{item.label}</span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                {formatStorageBytes(item.bytes)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sync Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+          {syncedLabel}
+        </span>
+        {session?.access_token && (
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={isSyncing}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '5px 12px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-strong)',
+              borderRadius: 'var(--radius-sm, 6px)',
+              color: 'var(--text-secondary)',
+              fontSize: '11.5px',
+              fontWeight: 600,
+              cursor: isSyncing ? 'not-allowed' : 'pointer',
+              opacity: isSyncing ? 0.7 : 1,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <span style={{ display: 'inline-block', animation: isSyncing ? 'spin 1s linear infinite' : 'none' }}>
+              🔄
+            </span>
+            <span>{isSyncing
+              ? (language === 'id' ? 'Menyinkron...' : 'Syncing...')
+              : (language === 'id' ? 'Sinkron Sekarang' : 'Sync Now')
+            }</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+

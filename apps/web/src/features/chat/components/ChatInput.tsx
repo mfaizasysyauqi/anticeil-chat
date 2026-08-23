@@ -36,6 +36,7 @@ import { ModelSelectorModal } from './ModelSelectorModal';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
 import { ConnectorBrandIcon } from '../../connectors/components/ConnectorLogos';
+import { useStorageStore } from '../../storage/store/useStorageStore';
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: FileAttachment[]) => void;
@@ -170,6 +171,9 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
     };
   }, [isPlusMenuOpen]);
 
+  const addUsage = useStorageStore((s) => s.addUsage);
+  const canFit = useStorageStore((s) => s.canFit);
+
   // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -180,6 +184,10 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
     const currentTotalBytes = attachments.reduce((acc, a) => acc + (a.size || 0), 0);
 
     for (let i = 0; i < files.length; i++) {
+      if (!canFit(files[i].size)) {
+        alert(language === 'id' ? 'Sisa kuota penyimpanan 1 GB Anda tidak mencukupi untuk berkas ini.' : 'Not enough storage space in your 1 GB quota.');
+        continue;
+      }
       try {
         const parsed = await parseUploadedFile(files[i], currentTotalBytes);
         newAttachments.push(parsed);
@@ -205,6 +213,11 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
+    }
+
+    if (attachments.length > 0) {
+      const totalBytes = attachments.reduce((acc, a) => acc + (a.size || 0), 0);
+      addUsage(totalBytes, 'docs');
     }
 
     onSend(text.trim(), attachments);

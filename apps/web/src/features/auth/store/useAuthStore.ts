@@ -37,6 +37,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       });
 
+      // Sync real storage usage from Supabase on initial load
+      if (session?.access_token) {
+        import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+          useStorageStore.getState().syncFromSupabase(session.access_token);
+        });
+      }
+
       // Subscribe to live auth state changes
       supabase.auth.onAuthStateChange((_event, newSession) => {
         set({
@@ -44,6 +51,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           user: newSession?.user || null,
           isLoading: false,
         });
+
+        // Re-sync storage whenever user logs in
+        if (_event === 'SIGNED_IN' && newSession?.access_token) {
+          import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+            useStorageStore.getState().syncFromSupabase(newSession.access_token);
+          });
+        }
       });
     } catch (err: unknown) {
       console.error('Auth initialization error:', err);

@@ -44,6 +44,7 @@ import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { ConnectorsModal } from '../../features/connectors/components/ConnectorsModal';
+import { StorageMeter } from '../../features/storage/components/StorageMeter';
 import { getTranslation, ChatSession } from '@anticeil/core';
 
 interface SidebarProps {
@@ -1752,6 +1753,11 @@ export function Sidebar({
               )}
             </div>
           )}
+
+          {/* Storage Quota Progress Bar (Sleek Compact View) */}
+          <div style={{ marginBottom: '8px' }}>
+            <StorageMeter compact onManageClick={() => setSettingsOpen(true)} />
+          </div>
 
           {/* Profile Trigger Button (Avatar + Name) */}
           <button
