@@ -30,6 +30,7 @@ import {
 } from '@anticeil/core';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useChatStore } from '../../chat/store/useChatStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -53,12 +54,59 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const sessions = useChatStore((s) => s.sessions);
   const messages = useChatStore((s) => s.messages);
+  const user = useAuthStore((s) => s.user);
+  const session = useAuthStore((s) => s.session);
+  const signOut = useAuthStore((s) => s.signOut);
   const t = getTranslation(language);
 
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
   const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
   const [statusNotice, setStatusNotice] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDeleteAccount = async () => {
+    const confirmation = prompt(
+      language === 'id'
+        ? '⚠️ PERINGATAN: Seluruh data akun, profil, dan file Anda akan dihapus permanen.\n\nKetik HAPUS untuk melanjutkan:'
+        : '⚠️ WARNING: All your account data, profile, and files will be permanently deleted.\n\nType DELETE to proceed:'
+    );
+
+    if (confirmation !== (language === 'id' ? 'HAPUS' : 'DELETE')) {
+      if (confirmation !== null) {
+        alert(language === 'id' ? 'Konfirmasi tidak sesuai. Penghapusan dibatalkan.' : 'Confirmation mismatch. Deletion cancelled.');
+      }
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ userId: user?.id }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        await signOut();
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          window.location.href = '/register?deleted=true';
+        }
+      } else {
+        alert(data.error || 'Failed to delete account');
+      }
+    } catch (err: any) {
+      console.error('Error deleting account:', err);
+      alert('Error deleting account: ' + err.message);
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -958,6 +1006,59 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <span>{t.settings.clearAllStoredKeys}</span>
                   </button>
                 </div>
+
+                {/* Danger Zone: Permanent Account Deletion */}
+                {user && (
+                  <div
+                    style={{
+                      padding: '16px',
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1.5px solid rgba(239, 68, 68, 0.35)',
+                      borderRadius: 'var(--radius-md, 10px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '12px',
+                    }}
+                  >
+                    <div>
+                      <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--accent-danger)', margin: '0 0 2px 0' }}>
+                        {language === 'id' ? 'Hapus Akun Permanen' : 'Permanently Delete Account'}
+                      </h3>
+                      <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, maxWidth: '460px', lineHeight: 1.4 }}>
+                        {language === 'id'
+                          ? 'Menghapus akun Anda, profil, seluruh riwayat percakapan, dan file storage secara permanen dari server. Anda dapat mendaftar kembali kapan saja.'
+                          : 'Permanently wipe your account, profile, all chat history, and uploaded storage files from the server. You can register again at any time.'}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleDeleteAccount}
+                      disabled={isDeletingAccount}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 16px',
+                        background: 'var(--accent-danger)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-sm, 6px)',
+                        color: '#FFFFFF',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        cursor: isDeletingAccount ? 'not-allowed' : 'pointer',
+                        opacity: isDeletingAccount ? 0.6 : 1,
+                        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <Trash2 size={14} />
+                      <span>{isDeletingAccount ? (language === 'id' ? 'Menghapus...' : 'Deleting...') : (language === 'id' ? 'Hapus Akun Saya' : 'Delete My Account')}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
