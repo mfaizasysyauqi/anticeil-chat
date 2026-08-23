@@ -1410,13 +1410,11 @@ export function ImagineView() {
           </div>
         )}
 
-        {/* ── Image Gallery Grid ── */}
+        {/* ── Image Gallery Waterfall / Masonry Grid ── */}
         {mediaMode === 'image' && (
           <div
+            className="waterfall-gallery-grid"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '16px',
               marginBottom: '40px',
             }}
           >
@@ -1424,6 +1422,8 @@ export function ImagineView() {
               <div
                 key={img.id}
                 style={{
+                  breakInside: 'avoid',
+                  marginBottom: '16px',
                   background: 'var(--bg-surface)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-lg, 12px)',

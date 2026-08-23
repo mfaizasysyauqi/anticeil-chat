@@ -244,6 +244,18 @@ code, pre, kbd {
   }
 }
 
+/* Waterfall / Masonry Gallery Grid */
+.waterfall-gallery-grid {
+  column-count: 2;
+  column-gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .waterfall-gallery-grid {
+    column-count: 1;
+  }
+}
+
 /* Desktop Sidebar Base (>= 1024px) */
 .app-sidebar-drawer,
 .sidebar-responsive {
