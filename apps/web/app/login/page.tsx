@@ -316,8 +316,10 @@ function LoginForm() {
               <CheckCircle2 size={16} color="#0284C7" style={{ flexShrink: 0 }} />
               <span>Akun Berhasil Dibuat!</span>
             </div>
-            <p style={{ fontSize: '12px', color: '#334155', lineHeight: 1.45, margin: 0 }}>
-              {ta.emailVerificationSent}
+            <p style={{ fontSize: '12.5px', color: '#334155', lineHeight: 1.5, margin: 0 }}>
+              {language === 'id'
+                ? 'Tautan verifikasi telah dikirim ke email Anda. Harap periksa Kotak Masuk (Inbox) atau folder SPAM / Promosi email Anda.'
+                : 'A verification link has been sent to your email. Please check your Inbox or SPAM / Promotions folder.'}
             </p>
 
             {/* Direct Mail Client Link (Gmail / Outlook / Yahoo) */}
@@ -428,20 +430,36 @@ function LoginForm() {
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: '10px',
               padding: '12px 14px',
               background: 'rgba(226, 68, 92, 0.08)',
               border: '1px solid rgba(226, 68, 92, 0.3)',
               borderRadius: '10px',
               color: '#D11C38',
-              fontSize: '13px',
-              lineHeight: 1.4,
+              fontSize: '12.5px',
+              lineHeight: 1.5,
               fontWeight: 500,
             }}
           >
-            <AlertCircle size={17} style={{ flexShrink: 0, color: '#E2445C' }} />
-            <span>{localError || authError}</span>
+            <AlertCircle size={17} style={{ flexShrink: 0, color: '#E2445C', marginTop: '2px' }} />
+            <span>
+              {(() => {
+                const err = localError || authError || '';
+                const lower = err.toLowerCase();
+                if (lower.includes('email not confirmed')) {
+                  return language === 'id'
+                    ? 'Email belum diverifikasi. Silakan klik tautan verifikasi di Kotak Masuk atau folder SPAM / Promosi email Anda.'
+                    : 'Email not confirmed yet. Please check the confirmation link in your Inbox or SPAM / Promotions folder.';
+                }
+                if (lower.includes('invalid login credentials')) {
+                  return language === 'id'
+                    ? 'Email atau kata sandi tidak cocok. Silakan coba lagi.'
+                    : 'Invalid email or password. Please try again.';
+                }
+                return err;
+              })()}
+            </span>
           </div>
         )}
 
