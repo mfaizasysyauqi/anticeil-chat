@@ -77,7 +77,7 @@ function getInitialTheme(): 'dark' | 'light' {
       }
     } catch {}
   }
-  return 'dark';
+  return 'light';
 }
 
 export const useSettingsStore = create<SettingsState>()(
