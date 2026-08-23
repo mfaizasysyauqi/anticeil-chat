@@ -164,6 +164,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!turnstileToken) {
+      setLocalError(language === 'id' ? 'Selesaikan verifikasi Turnstile terlebih dahulu.' : 'Please complete the Turnstile verification.');
+      return;
+    }
+
     const { error } = await signUpWithPassword(email.trim(), password);
     if (!error) {
       setSuccessMessage(ta.registerSuccess);
@@ -425,16 +430,9 @@ export default function RegisterPage() {
 
           {/* Phone Number Input + Telegram Verification */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#181B34' }}>
-                {ta.phoneLabel}
-              </label>
-              {isTelegramVerified && (
-                <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#00A86B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Check size={13} /> {ta.telegramVerified}
-                </span>
-              )}
-            </div>
+            <label style={{ fontSize: '13px', fontWeight: 700, color: '#181B34' }}>
+              {ta.phoneLabel}
+            </label>
             <div
               style={{
                 display: 'flex',
@@ -555,17 +553,17 @@ export default function RegisterPage() {
             ) : (
               <div
                 style={{
-                  marginTop: '2px',
+                  marginTop: '4px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  fontSize: '12px',
+                  fontSize: '12.5px',
                   color: '#08834F',
                   fontWeight: 600,
                 }}
               >
-                <CheckCircle2 size={14} color="#00C875" />
-                <span>Nomor HP siap digunakan (100% Free Anti-Sybil Proof)</span>
+                <CheckCircle2 size={15} color="#00C875" />
+                <span>{ta.telegramVerified.replace(/^✓\s*/, '')}</span>
               </div>
             )}
           </div>
