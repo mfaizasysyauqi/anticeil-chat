@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useMemo } from 'react';
 import {
   Eye,
@@ -18,8 +17,14 @@ import {
   Copy,
   Check,
   Zap,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
+  FileText,
+  FileCode,
 } from 'lucide-react';
-import { useBuildStore, ViewportMode, ViewMode } from '../store/useBuildStore';
+import { useBuildStore, ViewportMode, ViewMode, Artifact } from '../store/useBuildStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
 import { LiveBrowserRunner } from './LiveBrowserRunner';
@@ -27,6 +32,8 @@ import { DocumentViewer, DocumentType } from './DocumentViewer';
 
 export function BuildPreviewPanel() {
   const isOpen = useBuildStore((s) => s.isOpen);
+  const artifacts = useBuildStore((s) => s.artifacts);
+  const currentIndex = useBuildStore((s) => s.currentIndex);
   const activeArtifact = useBuildStore((s) => s.activeArtifact);
   const viewMode = useBuildStore((s) => s.viewMode);
   const viewport = useBuildStore((s) => s.viewport);
@@ -39,12 +46,17 @@ export function BuildPreviewPanel() {
   const toggleFullscreen = useBuildStore((s) => s.toggleFullscreen);
   const triggerReload = useBuildStore((s) => s.triggerReload);
   const openArtifact = useBuildStore((s) => s.openArtifact);
+  const goToPreviousArtifact = useBuildStore((s) => s.goToPreviousArtifact);
+  const goToNextArtifact = useBuildStore((s) => s.goToNextArtifact);
+  const goToArtifactIndex = useBuildStore((s) => s.goToArtifactIndex);
+  const resetToHub = useBuildStore((s) => s.resetToHub);
 
   const language = useSettingsStore((s) => s.language);
   const t = getTranslation(language);
   const tb = t.buildMode;
 
   const [copied, setCopied] = useState(false);
+  const [showArtifactList, setShowArtifactList] = useState(false);
 
   // Compile sandboxed HTML bundle
   const iframeSrcDoc = useMemo(() => {
@@ -750,6 +762,224 @@ export function BuildPreviewPanel() {
         </div>
       </div>
 
+      {/* 1.5 Artifact Navigation & Info Bar (When artifact is active) */}
+      {activeArtifact && (
+        <div
+          style={{
+            padding: '7px 12px',
+            borderBottom: '1px solid var(--border-subtle)',
+            backgroundColor: 'var(--bg-surface)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            flexWrap: 'wrap',
+            zIndex: 15,
+            position: 'relative',
+          }}
+        >
+          {/* Left: Back to Hub + Active File Title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+            <button
+              type="button"
+              onClick={resetToHub}
+              className="clickable-pill"
+              title={language === 'id' ? 'Kembali ke Katalog Menu Contoh' : 'Back to Example Demos Hub'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-subtle)',
+                color: 'var(--text-primary)',
+                fontSize: '11.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              <ArrowLeft size={12} color="var(--brand-primary)" />
+              <span>{language === 'id' ? 'Menu Contoh' : 'Demos Hub'}</span>
+            </button>
+
+            <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-subtle)', flexShrink: 0 }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+              {['pdf', 'xlsx', 'docx', 'pptx'].includes(activeArtifact.language) ? (
+                <FileText size={14} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+              ) : (
+                <FileCode size={14} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+              )}
+              <span
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {activeArtifact.title || 'Interactive Preview'}
+              </span>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  padding: '1px 5px',
+                  borderRadius: '4px',
+                  backgroundColor: 'rgba(0, 115, 234, 0.1)',
+                  color: 'var(--brand-primary)',
+                  flexShrink: 0,
+                }}
+              >
+                {activeArtifact.language}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Carousel Navigation (< 1 of 4 >) + Quick Switcher */}
+          {artifacts.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, position: 'relative' }}>
+              <button
+                type="button"
+                onClick={goToPreviousArtifact}
+                disabled={currentIndex <= 0}
+                title={language === 'id' ? 'Artifact Sebelumnya' : 'Previous Preview'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '5px',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: currentIndex <= 0 ? 'transparent' : 'var(--bg-subtle)',
+                  color: currentIndex <= 0 ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: currentIndex <= 0 ? 'not-allowed' : 'pointer',
+                  opacity: currentIndex <= 0 ? 0.35 : 1,
+                  padding: 0,
+                }}
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {/* Artifact Index Dropdown Trigger */}
+              <button
+                type="button"
+                onClick={() => setShowArtifactList(!showArtifactList)}
+                title={language === 'id' ? 'Lihat Semua Dokumen & Kode' : 'View All Previews'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 8px',
+                  borderRadius: '5px',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: 'var(--bg-subtle)',
+                  color: 'var(--text-primary)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <Layers size={11} color="var(--brand-primary)" />
+                <span>{currentIndex + 1} / {artifacts.length}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={goToNextArtifact}
+                disabled={currentIndex >= artifacts.length - 1}
+                title={language === 'id' ? 'Artifact Selanjutnya' : 'Next Preview'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '5px',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: currentIndex >= artifacts.length - 1 ? 'transparent' : 'var(--bg-subtle)',
+                  color: currentIndex >= artifacts.length - 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: currentIndex >= artifacts.length - 1 ? 'not-allowed' : 'pointer',
+                  opacity: currentIndex >= artifacts.length - 1 ? 0.35 : 1,
+                  padding: 0,
+                }}
+              >
+                <ChevronRight size={14} />
+              </button>
+
+              {/* Dropdown Menu of all artifacts */}
+              {showArtifactList && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '30px',
+                    right: 0,
+                    width: '240px',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    boxShadow: 'var(--shadow-lg)',
+                    zIndex: 100,
+                    padding: '4px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                  }}
+                >
+                  <div style={{ padding: '4px 8px', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    {language === 'id' ? 'Riwayat Preview Sesi' : 'Session Previews'}
+                  </div>
+                  {artifacts.map((art, idx) => {
+                    const isCur = idx === currentIndex;
+                    return (
+                      <button
+                        key={art.id || idx}
+                        type="button"
+                        onClick={() => {
+                          goToArtifactIndex(idx);
+                          setShowArtifactList(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          padding: '6px 8px',
+                          borderRadius: '5px',
+                          border: 'none',
+                          backgroundColor: isCur ? 'rgba(0, 115, 234, 0.1)' : 'transparent',
+                          color: isCur ? 'var(--brand-primary)' : 'var(--text-primary)',
+                          fontSize: '11.5px',
+                          fontWeight: isCur ? 700 : 500,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          width: '100%',
+                        }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {idx + 1}. {art.title}
+                        </span>
+                        <span style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--text-muted)', flexShrink: 0 }}>
+                          {art.language}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 2. Main Content Canvas */}
       <div
         style={{
@@ -872,12 +1102,14 @@ export function BuildPreviewPanel() {
           <div
             style={{
               padding: '32px 24px',
-              maxWidth: '460px',
+              maxWidth: '480px',
+              width: '100%',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               gap: '14px',
+              overflowY: 'auto',
             }}
           >
             <div
@@ -904,6 +1136,40 @@ export function BuildPreviewPanel() {
                 {tb.emptyDesc}
               </p>
             </div>
+
+            {/* Riwayat Preview Sesi Jika Ada */}
+            {artifacts.length > 0 && (
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  {language === 'id' ? '⚡ Riwayat Preview Sesi Ini' : '⚡ Session Previews'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {artifacts.map((art, idx) => (
+                    <button
+                      key={art.id || idx}
+                      type="button"
+                      onClick={() => goToArtifactIndex(idx)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        fontSize: '11.5px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{ color: 'var(--brand-primary)' }}>#{idx + 1}</span>
+                      <span>{art.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', width: '100%', marginTop: '4px' }}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left' }}>
@@ -1009,7 +1275,7 @@ export function BuildPreviewPanel() {
                 <span style={{ fontSize: '11px', color: 'var(--brand-primary)' }}>Preview →</span>
               </button>
 
-              {/* 5. Playable App */}
+              {/* 5. Playable App Game */}
               <button
                 type="button"
                 onClick={() => handleSampleStarter('game')}
