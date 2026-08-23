@@ -29,7 +29,7 @@ function cleanExpiredSessions() {
   }
 }
 
-const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'AnticeilAuthBot';
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'AnticeilBot';
 
 export async function POST(req: NextRequest) {
   try {
