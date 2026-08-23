@@ -48,6 +48,7 @@ export default function RegisterPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const user = useAuthStore((s) => s.user);
+  const session = useAuthStore((s) => s.session);
   const isLoading = useAuthStore((s) => s.isLoading);
   const authError = useAuthStore((s) => s.error);
   const signUpWithPassword = useAuthStore((s) => s.signUpWithPassword);
@@ -64,12 +65,12 @@ export default function RegisterPage() {
     }
   }, [initializeAuth]);
 
-  // If already logged in, redirect to /chat
+  // If already logged in with valid session, redirect to /chat
   useEffect(() => {
-    if (user) {
+    if (user && session) {
       router.push('/chat');
     }
-  }, [user, router]);
+  }, [user, session, router]);
 
   // Polling Telegram verification status
   useEffect(() => {
@@ -171,10 +172,7 @@ export default function RegisterPage() {
 
     const { error } = await signUpWithPassword(email.trim(), password);
     if (!error) {
-      setSuccessMessage(ta.registerSuccess);
-      setTimeout(() => {
-        router.push(`/login?registered=true&email=${encodeURIComponent(email.trim())}`);
-      }, 1500);
+      router.push(`/login?registered=true&email=${encodeURIComponent(email.trim())}`);
     }
   };
 
