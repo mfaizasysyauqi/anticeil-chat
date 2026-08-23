@@ -63,23 +63,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
   const [statusNotice, setStatusNotice] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDeleteAccount = async () => {
-    const confirmation = prompt(
-      language === 'id'
-        ? '⚠️ PERINGATAN: Seluruh data akun, profil, dan file Anda akan dihapus permanen.\n\nKetik HAPUS untuk melanjutkan:'
-        : '⚠️ WARNING: All your account data, profile, and files will be permanently deleted.\n\nType DELETE to proceed:'
-    );
+  const confirmWord = language === 'id' ? 'HAPUS' : 'DELETE';
 
-    if (confirmation !== (language === 'id' ? 'HAPUS' : 'DELETE')) {
-      if (confirmation !== null) {
-        alert(language === 'id' ? 'Konfirmasi tidak sesuai. Penghapusan dibatalkan.' : 'Confirmation mismatch. Deletion cancelled.');
-      }
-      return;
-    }
-
+  const executeDeleteAccount = async () => {
     setIsDeletingAccount(true);
+    setDeleteError('');
     try {
       const res = await fetch('/api/auth/delete-account', {
         method: 'POST',
@@ -89,7 +82,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         },
         body: JSON.stringify({ userId: user?.id }),
       });
-
       const data = await res.json();
       if (data.success) {
         await signOut();
@@ -98,11 +90,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           window.location.href = '/register?deleted=true';
         }
       } else {
-        alert(data.error || 'Failed to delete account');
+        setDeleteError(data.error || 'Failed to delete account');
       }
     } catch (err: any) {
-      console.error('Error deleting account:', err);
-      alert('Error deleting account: ' + err.message);
+      setDeleteError(err.message || 'Unexpected error');
     } finally {
       setIsDeletingAccount(false);
     }
@@ -1035,8 +1026,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                     <button
                       type="button"
-                      onClick={handleDeleteAccount}
-                      disabled={isDeletingAccount}
+                      onClick={() => { setShowDeleteConfirm(true); setDeleteConfirmText(''); setDeleteError(''); }}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1048,14 +1038,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         color: '#FFFFFF',
                         fontSize: '12.5px',
                         fontWeight: 700,
-                        cursor: isDeletingAccount ? 'not-allowed' : 'pointer',
-                        opacity: isDeletingAccount ? 0.6 : 1,
+                        cursor: 'pointer',
                         boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
                         transition: 'all 0.15s ease',
                       }}
                     >
                       <Trash2 size={14} />
-                      <span>{isDeletingAccount ? (language === 'id' ? 'Menghapus...' : 'Deleting...') : (language === 'id' ? 'Hapus Akun Saya' : 'Delete My Account')}</span>
+                      <span>{language === 'id' ? 'Hapus Akun Saya' : 'Delete My Account'}</span>
                     </button>
                   </div>
                 )}
@@ -1096,5 +1085,142 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  const deleteConfirmModal = showDeleteConfirm ? (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100001,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(6px)',
+        animation: 'fadeIn 0.15s ease-out',
+      }}
+      onClick={() => setShowDeleteConfirm(false)}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          background: 'var(--bg-surface)',
+          border: '1.5px solid rgba(239,68,68,0.35)',
+          borderRadius: 'var(--radius-xl, 16px)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.4)',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Header */}
+        <div style={{ padding: '20px 22px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Trash2 size={18} color="var(--accent-danger)" />
+            </div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              {language === 'id' ? 'Hapus Akun Permanen' : 'Permanently Delete Account'}
+            </h3>
+          </div>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+            {language === 'id'
+              ? 'Tindakan ini tidak dapat dibatalkan. Seluruh data akun, profil, riwayat obrolan, dan file yang diunggah akan dihapus permanen dari server.'
+              : 'This action cannot be undone. Your account, profile, all chat history, and uploaded files will be permanently deleted from the server.'}
+          </p>
+        </div>
+
+        {/* Input */}
+        <div style={{ padding: '18px 22px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            {language === 'id'
+              ? <>Untuk mengonfirmasi, ketik <code style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--accent-danger)', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>HAPUS</code> di bawah ini:</>  
+              : <>To confirm, type <code style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--accent-danger)', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>DELETE</code> below:</>}
+          </label>
+          <input
+            type="text"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder={confirmWord}
+            autoFocus
+            onKeyDown={(e) => { if (e.key === 'Enter' && deleteConfirmText === confirmWord) executeDeleteAccount(); }}
+            style={{
+              width: '100%',
+              padding: '9px 14px',
+              borderRadius: 'var(--radius-md, 8px)',
+              border: deleteConfirmText === confirmWord
+                ? '1.5px solid var(--accent-danger)'
+                : '1.5px solid var(--border-strong)',
+              background: 'var(--bg-main)',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border 0.15s ease',
+            }}
+          />
+          {deleteError && (
+            <p style={{ fontSize: '11.5px', color: 'var(--accent-danger)', margin: 0 }}>
+              {deleteError}
+            </p>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              style={{
+                padding: '8px 18px',
+                borderRadius: 'var(--radius-md, 8px)',
+                border: '1px solid var(--border-strong)',
+                background: 'var(--bg-subtle)',
+                color: 'var(--text-secondary)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {language === 'id' ? 'Batal' : 'Cancel'}
+            </button>
+            <button
+              type="button"
+              onClick={executeDeleteAccount}
+              disabled={deleteConfirmText !== confirmWord || isDeletingAccount}
+              style={{
+                padding: '8px 18px',
+                borderRadius: 'var(--radius-md, 8px)',
+                border: 'none',
+                background: deleteConfirmText === confirmWord ? 'var(--accent-danger)' : 'rgba(239,68,68,0.3)',
+                color: '#FFFFFF',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: deleteConfirmText === confirmWord && !isDeletingAccount ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.15s ease',
+                boxShadow: deleteConfirmText === confirmWord ? '0 2px 8px rgba(239,68,68,0.3)' : 'none',
+              }}
+            >
+              {isDeletingAccount ? (
+                <span>{language === 'id' ? 'Menghapus...' : 'Deleting...'}</span>
+              ) : (
+                <><Trash2 size={14} /><span>{language === 'id' ? 'Ya, Hapus Akun' : 'Yes, Delete Account'}</span></>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      {showDeleteConfirm && createPortal(deleteConfirmModal, document.body)}
+    </>
+  );
 }
