@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import {
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} from '@aws-sdk/client-s3';
+import { r2, R2_BUCKET } from '../../../../src/lib/r2';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +28,6 @@ export async function POST(req: NextRequest) {
       userId = user?.id || null;
     }
 
-    // If userId not found from token, try reading request body
     if (!userId) {
       try {
         const body = await req.json();
@@ -35,35 +39,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized: User not found' }, { status: 401 });
     }
 
-    // 2. Cascade delete files from Supabase Storage buckets if service key exists
+    // 2. Delete all user files from Cloudflare R2
+    try {
+      let continuationToken: string | undefined;
+
+      do {
+        const listRes = await r2.send(
+          new ListObjectsV2Command({
+            Bucket: R2_BUCKET,
+            Prefix: `${userId}/`,
+            ContinuationToken: continuationToken,
+            MaxKeys: 1000,
+          })
+        );
+
+        const objects = listRes.Contents ?? [];
+        if (objects.length > 0) {
+          await r2.send(
+            new DeleteObjectsCommand({
+              Bucket: R2_BUCKET,
+              Delete: {
+                Objects: objects.map((o) => ({ Key: o.Key! })),
+                Quiet: true,
+              },
+            })
+          );
+        }
+
+        continuationToken = listRes.NextContinuationToken;
+      } while (continuationToken);
+    } catch (r2Err) {
+      console.warn('[R2] Storage cleanup warning during account deletion:', r2Err);
+    }
+
+    // 3. Delete from Supabase Auth + profiles
     if (supabaseServiceKey) {
       const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-      
-      try {
-        // Delete user files in common buckets
-        const buckets = ['avatars', 'attachments', 'pdf_files', 'workspace'];
-        for (const b of buckets) {
-          const { data: files } = await adminClient.storage.from(b).list(userId);
-          if (files && files.length > 0) {
-            await adminClient.storage.from(b).remove(files.map((f) => `${userId}/${f.name}`));
-          }
-        }
-      } catch (storageErr) {
-        console.warn('Storage cleanup warning during account deletion:', storageErr);
-      }
 
-      // Delete from public profiles table
       try {
         await adminClient.from('profiles').delete().eq('id', userId);
       } catch {}
 
-      // Delete from auth.users (permanently deletes account from Supabase Auth)
       const { error: deleteErr } = await adminClient.auth.admin.deleteUser(userId);
       if (deleteErr) {
         console.error('Error deleting auth user via admin:', deleteErr);
       }
     } else {
-      // Without service key, delete profile data via user client
       try {
         await client.from('profiles').delete().eq('id', userId);
       } catch {}

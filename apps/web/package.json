@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@anticeil/core": "workspace:*",
+    "@aws-sdk/client-s3": "^3.1116.0",
+    "@aws-sdk/s3-request-presigner": "^3.1115.0",
     "@gsap/react": "^2.1.2",
     "@lobehub/icons": "^5.16.0",
     "@marsidev/react-turnstile": "^1.6.0",
