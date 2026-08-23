@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Send, Square } from 'lucide-react-native';
-import { getThemeColors, getTranslation, THEME } from '@chatbyok/core';
+import { getThemeColors, getTranslation, THEME } from '@anticeil/core';
 import { useAppStore } from '../../../../core/store/useAppStore';
 import { useChatStore } from '../../store/useChatStore';
 

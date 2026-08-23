@@ -75,12 +75,12 @@ export default function PrivacyPage() {
               {isId ? 'Privasi 100% Sisi Klien' : '100% Client-Side Privacy'}
             </span>
             <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#181B34', margin: '12px 0 6px 0', letterSpacing: '-0.02em' }}>
-              {isId ? 'Kebijakan Privasi ChatByok' : 'ChatByok Privacy Policy'}
+              {isId ? 'Kebijakan Privasi Anticeil' : 'Anticeil Privacy Policy'}
             </h1>
             <p style={{ fontSize: '14px', color: '#5F6377', lineHeight: 1.6, margin: 0 }}>
               {isId
-                ? 'Kami menghargai privasi Anda sepenuhnya. ChatByok dibangun dari awal dengan arsitektur Zero-Knowledge & Local-First.'
-                : 'We prioritize your privacy above all else. ChatByok is engineered with a Zero-Knowledge & Local-First architecture.'}
+                ? 'Kami menghargai privasi Anda sepenuhnya. Anticeil dibangun dari awal dengan arsitektur Zero-Knowledge & Local-First.'
+                : 'We prioritize your privacy above all else. Anticeil is engineered with a Zero-Knowledge & Local-First architecture.'}
             </p>
           </div>
 
@@ -148,8 +148,8 @@ export default function PrivacyPage() {
             </h2>
             <p style={{ fontSize: '13.5px', color: '#5F6377', lineHeight: 1.7, margin: 0 }}>
               {isId
-                ? 'Anda dapat menghapus seluruh data Anda kapan saja melalui menu Pengaturan > Hapus Semua Kunci & Riwayat di aplikasi, atau mengirimkan email ke support@chatbyok.com.'
-                : 'You can erase all your data at any time via Settings > Clear Storage in the app, or by emailing support@chatbyok.com.'}
+                ? 'Anda dapat menghapus seluruh data Anda kapan saja melalui menu Pengaturan > Hapus Semua Kunci & Riwayat di aplikasi, atau mengirimkan email ke support@anticeil.com.'
+                : 'You can erase all your data at any time via Settings > Clear Storage in the app, or by emailing support@anticeil.com.'}
             </p>
           </section>
         </div>

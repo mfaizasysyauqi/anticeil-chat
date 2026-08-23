@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ConnectorId } from '@chatbyok/core';
+import { ConnectorId } from '@anticeil/core';
 
 interface LogoProps {
   size?: number;

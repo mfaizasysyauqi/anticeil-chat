@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../src/features/auth/store/useAuthStore';
 import { useSettingsStore } from '../../src/features/settings/store/useSettingsStore';
-import { getTranslation } from '@chatbyok/core';
+import { getTranslation } from '@anticeil/core';
 
 function LoginForm() {
   const router = useRouter();
@@ -225,7 +225,7 @@ function LoginForm() {
                   color: '#181B34',
                 }}
               >
-                chatbyok
+                anticeil
               </span>
               <span
                 style={{

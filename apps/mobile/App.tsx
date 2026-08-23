@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getThemeColors } from '@chatbyok/core';
+import { getThemeColors } from '@anticeil/core';
 import { useAppStore } from './src/core/store/useAppStore';
 import { Header } from './src/core/components/Header';
 import { BottomTabBar } from './src/core/components/BottomTabBar';

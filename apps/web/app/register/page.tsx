@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../src/features/auth/store/useAuthStore';
 import { useSettingsStore } from '../../src/features/settings/store/useSettingsStore';
-import { getTranslation } from '@chatbyok/core';
+import { getTranslation } from '@anticeil/core';
 import { TurnstileWidget } from '../../src/shared/components/TurnstileWidget';
 
 export default function RegisterPage() {
@@ -253,7 +253,7 @@ export default function RegisterPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
               <span style={{ fontWeight: 800, fontSize: '17.5px', letterSpacing: '-0.03em', color: '#181B34' }}>
-                chatbyok
+                anticeil
               </span>
               <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#0073EA', background: 'rgba(0, 115, 234, 0.08)', padding: '1px 5px', borderRadius: '4px', border: '1px solid rgba(0, 115, 234, 0.2)' }}>
                 .os

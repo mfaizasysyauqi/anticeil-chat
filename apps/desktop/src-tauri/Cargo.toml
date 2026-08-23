@@ -1,8 +1,8 @@
 [package]
-name = "chatbyok-desktop"
+name = "anticeil-desktop"
 version = "0.1.0"
-description = "ChatByok Native Desktop AI Assistant"
-authors = ["ChatByok Team"]
+description = "Anticeil Native Desktop AI Assistant"
+authors = ["Anticeil Team"]
 edition = "2021"
 
 [build-dependencies]

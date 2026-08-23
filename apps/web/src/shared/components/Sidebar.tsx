@@ -44,7 +44,7 @@ import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { ConnectorsModal } from '../../features/connectors/components/ConnectorsModal';
-import { getTranslation, ChatSession } from '@chatbyok/core';
+import { getTranslation, ChatSession } from '@anticeil/core';
 
 interface SidebarProps {
   isOpenMobile?: boolean;
@@ -464,7 +464,7 @@ export function Sidebar({
           {/* Logo Dot */}
           <Link
             href="/"
-            title="ChatByok Home"
+            title="Anticeil Home"
             style={{
               width: '32px',
               height: '32px',
@@ -653,16 +653,16 @@ export function Sidebar({
               }}
             >
               {isImagine
-                ? 'ChatByok Imagine'
+                ? 'Anticeil Imagine'
                 : isAutomations
                   ? language === 'id'
-                    ? 'ChatByok Otomatisasi'
-                    : 'ChatByok Automations'
+                    ? 'Anticeil Otomatisasi'
+                    : 'Anticeil Automations'
                   : isPdfTools
                     ? language === 'id'
-                      ? 'ChatByok Studio Dokumen'
-                      : 'ChatByok PDF Studio'
-                    : 'ChatByok'}
+                      ? 'Anticeil Studio Dokumen'
+                      : 'Anticeil PDF Studio'
+                    : 'Anticeil'}
             </span>
           </div>
 

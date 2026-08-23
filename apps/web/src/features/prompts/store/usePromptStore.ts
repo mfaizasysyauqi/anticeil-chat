@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Persona, DEFAULT_PERSONAS } from '@chatbyok/core';
+import { Persona, DEFAULT_PERSONAS } from '@anticeil/core';
 
 interface PromptState {
   personas: Persona[];
@@ -44,7 +44,7 @@ export const usePromptStore = create<PromptState>()(
       getPersonaById: (id) => get().personas.find((p) => p.id === id),
     }),
     {
-      name: 'chatbyok_prompts_storage',
+      name: 'anticeil_prompts_storage',
       storage: createJSONStorage(() => localStorage),
     }
   )

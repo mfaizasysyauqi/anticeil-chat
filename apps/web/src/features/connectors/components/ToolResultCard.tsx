@@ -19,7 +19,7 @@ import {
   FileCode,
   FileSpreadsheet,
 } from 'lucide-react';
-import { ToolCallResult, GmailMessage, CalendarEvent, DriveFile, getTranslation } from '@chatbyok/core';
+import { ToolCallResult, GmailMessage, CalendarEvent, DriveFile, getTranslation } from '@anticeil/core';
 import { ConnectorBrandIcon } from './ConnectorLogos';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useBuildStore, ViewportMode, ViewMode } from '../store/useBuildStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
-import { getTranslation } from '@chatbyok/core';
+import { getTranslation } from '@anticeil/core';
 import { LiveBrowserRunner } from './LiveBrowserRunner';
 import { DocumentViewer, DocumentType } from './DocumentViewer';
 
@@ -107,7 +107,7 @@ export function BuildPreviewPanel() {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ChatByok Build Preview</title>
+  <title>Anticeil Build Preview</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -163,7 +163,7 @@ export function BuildPreviewPanel() {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ChatByok Build Preview</title>
+  <title>Anticeil Build Preview</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -194,7 +194,7 @@ export function BuildPreviewPanel() {
     const a = document.createElement('a');
     const ext = activeArtifact.language === 'tsx' || activeArtifact.language === 'jsx' ? 'tsx' : 'html';
     a.href = url;
-    a.download = `chatbyok_build_${Date.now()}.${ext}`;
+    a.download = `anticeil_build_${Date.now()}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -448,7 +448,7 @@ export function BuildPreviewPanel() {
     } else if (type === 'docx') {
       openArtifact('DOCX_DOC', 'docx', 'Project Scope of Work & Deliverables.docx');
     } else if (type === 'pptx') {
-      openArtifact('PPTX_DOC', 'pptx', 'ChatByok Enterprise Pitch Deck.pptx');
+      openArtifact('PPTX_DOC', 'pptx', 'Anticeil Enterprise Pitch Deck.pptx');
     }
   };
 

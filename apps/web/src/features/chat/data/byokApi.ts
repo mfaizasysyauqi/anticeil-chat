@@ -6,7 +6,7 @@ import {
   getProviderById,
   parseSSELine,
   BASE_LANGUAGE_INSTRUCTION,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 
 export interface SendMessageOptions {
   providerId: LLMProviderId;

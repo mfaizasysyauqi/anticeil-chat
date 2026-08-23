@@ -274,9 +274,9 @@ const TRANSLATIONS = {
       tradBadge: 'Rigid Flat Fee',
       tradDesc: 'Pay $20 every single month regardless of whether you chat once or a thousand times. 95%+ profit markup goes to SaaS middlemen.',
       tradAnnual: '$240.00 / year',
-      byokPlan: 'ChatByok Free ($0 Platform Fee)',
+      byokPlan: 'Anticeil Free ($0 Platform Fee)',
       byokBadge: '100% Raw API Pricing',
-      byokDesc: 'ChatByok charges $0. You pay only the raw token cost directly to OpenAI, Anthropic, DeepSeek (~$0.55/1M), or Groq (Free). 0% intermediary markup.',
+      byokDesc: 'Anticeil charges $0. You pay only the raw token cost directly to OpenAI, Anthropic, DeepSeek (~$0.55/1M), or Groq (Free). 0% intermediary markup.',
       savingsPlan: 'Money Saved in Your Pocket',
       savingsBadge: 'Saved Monthly',
       savingsDesc: 'You keep this money every single month•unlocking significant budget for computing and productivity!',
@@ -286,7 +286,7 @@ const TRANSLATIONS = {
       title: 'Frequently Asked Questions',
       subtitle: 'Everything you need to know about BYOK architecture, security, local offline runtimes, and cost savings.',
       supportCardTitle: 'Need customized setup?',
-      supportCardDesc: 'ChatByok is 100% open-source and client-side. Explore our settings guide or test directly with your own keys.',
+      supportCardDesc: 'Anticeil is 100% open-source and client-side. Explore our settings guide or test directly with your own keys.',
       supportCardCta: 'Open App Settings',
       items: [
         {
@@ -299,7 +299,7 @@ const TRANSLATIONS = {
           id: '02',
           tag: '100% Client-Side Vault',
           q: 'Where are my API keys stored and processed?',
-          a: 'Your API keys are encrypted with AES-256-GCM and stored solely in your local browser storage • — or synced to your private profile if signed in. ChatByok has zero intermediary proxy servers•every request streams directly from your client to the AI provider endpoint.',
+          a: 'Your API keys are encrypted with AES-256-GCM and stored solely in your local browser storage • — or synced to your private profile if signed in. Anticeil has zero intermediary proxy servers•every request streams directly from your client to the AI provider endpoint.',
         },
         {
           id: '03',
@@ -317,7 +317,7 @@ const TRANSLATIONS = {
           id: '05',
           tag: 'Local Offline Ollama',
           q: 'Can I connect local offline models running via Ollama?',
-          a: 'Absolutely! ChatByok includes native zero-config support for local Ollama runtimes on localhost:11434. You can chat completely offline with Llama 3.3, DeepSeek-R1 8B, and Qwen 2.5 with zero internet required.',
+          a: 'Absolutely! Anticeil includes native zero-config support for local Ollama runtimes on localhost:11434. You can chat completely offline with Llama 3.3, DeepSeek-R1 8B, and Qwen 2.5 with zero internet required.',
         },
         {
           id: '06',
@@ -409,10 +409,10 @@ const TRANSLATIONS = {
     ctaBanner: {
       title: 'Take Back Control of Your AI Work OS',
       subtitle: 'No credit card required. Connect your own API keys in under 30 seconds and start chatting at maximum provider throughput.',
-      button: 'Open ChatByok Work OS',
+      button: 'Open Anticeil Work OS',
     },
     footer: {
-      tagline: 'ChatByok • Zero-Proxy Privacy-First AI Assistant Work OS',
+      tagline: 'Anticeil • Zero-Proxy Privacy-First AI Assistant Work OS',
     },
   },
   id: {
@@ -442,7 +442,7 @@ const TRANSLATIONS = {
         unlimited: 'BYOK Tanpa Batas',
         privacy: '100% Privat di Klien',
       },
-      boardTitle: 'Papan Orkestrasi ChatByok Work OS',
+      boardTitle: 'Papan Orkestrasi Anticeil Work OS',
       copyPrompt: 'Salin Prompt',
       copied: 'Tersalin!',
     },
@@ -602,9 +602,9 @@ const TRANSLATIONS = {
       tradBadge: 'Tagihan Kaku Bulanan',
       tradDesc: 'Bayar $20 tiap bulan meski hanya chat beberapa kali. Margin markup 95%+ dinikmati oleh perantara penyedia SaaS.',
       tradAnnual: '$240.00 / tahun',
-      byokPlan: 'ChatByok Free ($0 Biaya Platform)',
+      byokPlan: 'Anticeil Free ($0 Biaya Platform)',
       byokBadge: '100% Harga Grosir API Provider',
-      byokDesc: 'ChatByok tidak memungut biaya apapun ($0). Yang tertera adalah biaya token murni yang Anda bayar langsung ke OpenAI, Anthropic, DeepSeek (~$0.55/1M), atau Groq (Gratis). 0% markup.',
+      byokDesc: 'Anticeil tidak memungut biaya apapun ($0). Yang tertera adalah biaya token murni yang Anda bayar langsung ke OpenAI, Anthropic, DeepSeek (~$0.55/1M), atau Groq (Gratis). 0% markup.',
       savingsPlan: 'Uang yang Anda Hemat',
       savingsBadge: 'Hemat Tiap Bulan',
       savingsDesc: 'Uang ini tetap utuh di saku Anda setiap bulan untuk kebutuhan produktif dan riset lainnya!',
@@ -614,7 +614,7 @@ const TRANSLATIONS = {
       title: 'Pertanyaan yang Sering Diajukan',
       subtitle: 'Semua yang perlu Anda ketahui mengenai arsitektur BYOK, keamanan data, runtime lokal offline, dan efisiensi biaya.',
       supportCardTitle: 'Butuh bantuan penyiapan kunci?',
-      supportCardDesc: 'ChatByok 100% open-source dan berbasis klien. Buka panduan konfigurasi kunci atau langsung uji coba.',
+      supportCardDesc: 'Anticeil 100% open-source dan berbasis klien. Buka panduan konfigurasi kunci atau langsung uji coba.',
       supportCardCta: 'Buka Pengaturan API',
       items: [
         {
@@ -627,7 +627,7 @@ const TRANSLATIONS = {
           id: '02',
           tag: 'Vault Klien AES-256',
           q: 'Di mana kunci API saya disimpan dan diproses?',
-          a: 'Kunci API Anda disimpan secara terenkripsi AES-256-GCM hanya di localStorage browser Anda, atau disinkronkan ke akun pribadi Anda jika Anda login. ChatByok tidak memiliki server proxy perantara•setiap permintaan mengalir langsung dari perangkat Anda.',
+          a: 'Kunci API Anda disimpan secara terenkripsi AES-256-GCM hanya di localStorage browser Anda, atau disinkronkan ke akun pribadi Anda jika Anda login. Anticeil tidak memiliki server proxy perantara•setiap permintaan mengalir langsung dari perangkat Anda.',
         },
         {
           id: '03',
@@ -645,7 +645,7 @@ const TRANSLATIONS = {
           id: '05',
           tag: 'Runtime Lokal Ollama',
           q: 'Bisakah saya menghubungkan model lokal offline lewat Ollama?',
-          a: 'Tentu saja! ChatByok mendukung runtime lokal Ollama pada localhost:11434 secara instan tanpa konfigurasi rumit. Anda bisa mengobrol offline penuh dengan Llama 3.3, DeepSeek-R1 8B, dan Qwen 2.5 tanpa internet.',
+          a: 'Tentu saja! Anticeil mendukung runtime lokal Ollama pada localhost:11434 secara instan tanpa konfigurasi rumit. Anda bisa mengobrol offline penuh dengan Llama 3.3, DeepSeek-R1 8B, dan Qwen 2.5 tanpa internet.',
         },
         {
           id: '06',
@@ -737,10 +737,10 @@ const TRANSLATIONS = {
     ctaBanner: {
       title: 'Kendalikan Penuh Work OS AI Anda',
       subtitle: 'Tanpa perlu kartu kredit. Sambungkan kunci API Anda dalam waktu kurang dari 30 detik dan nikmati kecepatan streaming maksimal.',
-      button: 'Buka Workspace ChatByok',
+      button: 'Buka Workspace Anticeil',
     },
     footer: {
-      tagline: 'ChatByok • Sistem Operasi Kerja AI Privat Berkecepatan Tinggi Tanpa Proxy Perantara',
+      tagline: 'Anticeil • Sistem Operasi Kerja AI Privat Berkecepatan Tinggi Tanpa Proxy Perantara',
     },
   },
 };
@@ -1109,21 +1109,21 @@ export default function MondayWarmBeigeLandingPage() {
     const fullTargetText =
       customAssistantResponse ||
       (lang === 'id'
-        ? `### Ringkasan Arsitektur & Keunggulan ChatByok Work OS
+        ? `### Ringkasan Arsitektur & Keunggulan Anticeil Work OS
 
-**ChatByok** adalah *AI Work OS & Direct Gateway* yang menghubungkan Anda langsung ke provider AI terdepan (**OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Groq LPU, dan Ollama**) tanpa server perantara.
+**Anticeil** adalah *AI Work OS & Direct Gateway* yang menghubungkan Anda langsung ke provider AI terdepan (**OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Groq LPU, dan Ollama**) tanpa server perantara.
 
-| Aspek | SaaS Konvensional ($20/bln) | ChatByok (Direct BYOK) | Keuntungan Pengguna |
+| Aspek | SaaS Konvensional ($20/bln) | Anticeil (Direct BYOK) | Keuntungan Pengguna |
 | :--- | :--- | :--- | :--- |
 | **Jalur Data & Privasi** | Melalui server perantara; riwayat chat disimpan di cloud pihak ketiga. | **Direct Peer-to-Provider**; kunci terenkripsi AES-256 lokal di browser. | Privasi data 100% aman & patuh standar korporat. |
 | **Struktur Biaya** | Biaya tetap mahal ($20/bln/model) dengan markup 95%+. | **Bayar token murni grosir** ke OpenAI, Claude, DeepSeek, Groq. | Hemat hingga 98%; bayar hanya apa yang dipakai. |
 | **Pilihan Model** | Terkunci pada satu ekosistem vendor tertutup. | **Universal All-in-One Gateway** + model lokal offline (Ollama). | Bebas ganti model terbaik kapan saja tanpa batas. |
 | **Latensi & Kecepatan** | Latensi proxy ganda memperlambat streaming. | **Zero-Proxy Direct Streaming** hingga 500 token/detik via Groq LPU. | Respon super instan tanpa antrean server. |`
-        : `### Architecture Summary & Advantages of ChatByok Work OS
+        : `### Architecture Summary & Advantages of Anticeil Work OS
 
-**ChatByok** is the *AI Work OS & Direct Gateway* connecting you directly to premier AI providers (**OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Groq LPU, and Ollama**) with zero server proxy.
+**Anticeil** is the *AI Work OS & Direct Gateway* connecting you directly to premier AI providers (**OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Groq LPU, and Ollama**) with zero server proxy.
 
-| Aspect | Traditional SaaS ($20/mo) | ChatByok (Direct BYOK) | User Advantage |
+| Aspect | Traditional SaaS ($20/mo) | Anticeil (Direct BYOK) | User Advantage |
 | :--- | :--- | :--- | :--- |
 | **Data Path & Privacy** | Routed through proxy servers; chat history stored in third-party clouds. | **Direct Peer-to-Provider**; AES-256 encrypted locally in browser. | 100% client data privacy & corporate compliance. |
 | **Cost Structure** | Expensive rigid fee ($20/mo/model) with 95%+ markups. | **Pay raw wholesale token prices** to OpenAI, Claude, DeepSeek, Groq. | Save up to 98%; strictly pay for what you use. |
@@ -1291,7 +1291,7 @@ export default function MondayWarmBeigeLandingPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
               <span style={{ fontWeight: 800, fontSize: '17.5px', letterSpacing: '-0.03em', color: '#181B34' }}>
-                chatbyok
+                anticeil
               </span>
               <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#0073EA', background: 'rgba(0, 115, 234, 0.08)', padding: '1px 5px', borderRadius: '4px', border: '1px solid rgba(0, 115, 234, 0.2)' }}>
                 .os
@@ -1493,7 +1493,7 @@ export default function MondayWarmBeigeLandingPage() {
               }}
             />
 
-            {/* Right-Side Editorial Slide-Over Drawer (Harmonized with ChatByok Midnight Theme) */}
+            {/* Right-Side Editorial Slide-Over Drawer (Harmonized with Anticeil Midnight Theme) */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -1506,7 +1506,7 @@ export default function MondayWarmBeigeLandingPage() {
                 right: 0,
                 width: '100%',
                 maxWidth: '460px',
-                background: '#181B34', // ChatByok Midnight Navy
+                background: '#181B34', // Anticeil Midnight Navy
                 color: '#FFFFFF',
                 zIndex: 9999,
                 display: 'flex',
@@ -1571,7 +1571,7 @@ export default function MondayWarmBeigeLandingPage() {
                 </button>
               </div>
 
-              {/* 2. Main Navigation Links (Numbered Big Editorial Typography in ChatByok Palette) */}
+              {/* 2. Main Navigation Links (Numbered Big Editorial Typography in Anticeil Palette) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', margin: 'auto 0' }}>
                 {[
                   { num: '01', label: 'WORKSPACES', href: '#board', color: '#0073EA' },
@@ -2132,7 +2132,7 @@ export default function MondayWarmBeigeLandingPage() {
         </div>
       </section>
 
-      {/* • 4. The Iconic ChatByok Interactive Work OS Chatbot Studio (Double-Bezel Hardware Architecture) • */}
+      {/* • 4. The Iconic Anticeil Interactive Work OS Chatbot Studio (Double-Bezel Hardware Architecture) • */}
       <section
         id="board"
         style={{
@@ -2190,8 +2190,8 @@ export default function MondayWarmBeigeLandingPage() {
                   }}
                 >
                   {customUserMessage || (lang === 'id'
-                    ? 'Jelaskan apa itu ChatByok dan mengapa arsitektur Direct BYOK lebih unggul dari SaaS AI biasa?'
-                    : 'Explain what ChatByok is and why the Direct BYOK architecture is superior to traditional AI SaaS?')}
+                    ? 'Jelaskan apa itu Anticeil dan mengapa arsitektur Direct BYOK lebih unggul dari SaaS AI biasa?'
+                    : 'Explain what Anticeil is and why the Direct BYOK architecture is superior to traditional AI SaaS?')}
                 </div>
               </div>
 
@@ -2302,8 +2302,8 @@ export default function MondayWarmBeigeLandingPage() {
                           </div>
                           <span style={{ color: '#4B5563' }}>
                             {lang === 'id'
-                              ? 'Menganalisis arsitektur Work OS ChatByok: direct peer-to-provider, zero-proxy server, dan enkripsi lokal AES-256.'
-                              : 'Analyzing ChatByok Work OS architecture: direct peer-to-provider, zero-proxy server, and local AES-256 encryption.'}
+                              ? 'Menganalisis arsitektur Work OS Anticeil: direct peer-to-provider, zero-proxy server, dan enkripsi lokal AES-256.'
+                              : 'Analyzing Anticeil Work OS architecture: direct peer-to-provider, zero-proxy server, and local AES-256 encryption.'}
                           </span>
                         </div>
 
@@ -2350,8 +2350,8 @@ export default function MondayWarmBeigeLandingPage() {
                           </div>
                           <span style={{ color: '#047857', fontWeight: 600 }}>
                             {lang === 'id'
-                              ? 'ChatByok adalah Work OS AI universal yang memberikan kebebasan penuh, privasi total, dan efisiensi biaya maksimal.'
-                              : 'ChatByok is the universal AI Work OS providing complete freedom, total privacy, and maximum cost efficiency.'}
+                              ? 'Anticeil adalah Work OS AI universal yang memberikan kebebasan penuh, privasi total, dan efisiensi biaya maksimal.'
+                              : 'Anticeil is the universal AI Work OS providing complete freedom, total privacy, and maximum cost efficiency.'}
                           </span>
                         </div>
                       </div>
@@ -2913,8 +2913,8 @@ export default function MondayWarmBeigeLandingPage() {
             }}
           >
             {lang === 'id'
-              ? 'Unduh ChatByok untuk Semua Perangkat Anda'
-              : 'Download ChatByok for All Your Devices'}
+              ? 'Unduh Anticeil untuk Semua Perangkat Anda'
+              : 'Download Anticeil for All Your Devices'}
           </h2>
 
           <p
@@ -2926,8 +2926,8 @@ export default function MondayWarmBeigeLandingPage() {
             }}
           >
             {lang === 'id'
-              ? 'Gunakan ChatByok dengan performa native tanpa beban memori di Desktop Windows (Tauri), atau di smartphone Anda dengan Android APK (Expo).'
-              : 'Experience ChatByok with lightweight native performance on Windows Desktop (Tauri), or on your mobile device with Android APK (Expo).'}
+              ? 'Gunakan Anticeil dengan performa native tanpa beban memori di Desktop Windows (Tauri), atau di smartphone Anda dengan Android APK (Expo).'
+              : 'Experience Anticeil with lightweight native performance on Windows Desktop (Tauri), or on your mobile device with Android APK (Expo).'}
           </p>
         </div>
 
@@ -3560,7 +3560,7 @@ export default function MondayWarmBeigeLandingPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
                   <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.02em', color: '#FFFFFF' }}>
-                    chatbyok
+                    anticeil
                   </span>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#0073EA' }}>.os</span>
                 </div>
@@ -3650,10 +3650,10 @@ export default function MondayWarmBeigeLandingPage() {
               </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
                 <a
-                  href="mailto:• support@chatbyok.com"
+                  href="mailto:• support@anticeil.com"
                   style={{ color: '#00C875', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <span>support@chatbyok.com</span>
+                  <span>support@anticeil.com</span>
                 </a>
                 <span style={{ color: '#808396', fontSize: '12.5px' }}>
                   Response time: &lt; 24 hours (Mon–Sat)
@@ -3680,7 +3680,7 @@ export default function MondayWarmBeigeLandingPage() {
               color: '#808396',
             }}
           >
-            <span>© 2026 ChatByok Work OS • Decentralized BYOK AI Workspace</span>
+            <span>© 2026 Anticeil Work OS • Decentralized BYOK AI Workspace</span>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#00C875', fontWeight: 600 }}>

@@ -31,7 +31,7 @@ import {
   parseUploadedFile,
   formatBytes,
   getModelById,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 import { ModelSelectorModal } from './ModelSelectorModal';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';

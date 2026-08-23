@@ -14,7 +14,7 @@ import {
   Trash2,
   Cpu,
 } from 'lucide-react';
-import { Persona, getTranslation } from '@chatbyok/core';
+import { Persona, getTranslation } from '@anticeil/core';
 import { usePromptStore } from '../store/usePromptStore';
 import { useChatStore } from '../../chat/store/useChatStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';

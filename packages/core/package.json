@@ -1,5 +1,5 @@
 {
-  "name": "@chatbyok/core",
+  "name": "@anticeil/core",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -11,10 +11,13 @@
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rimraf dist"
   },
   "devDependencies": {
-    "@chatbyok/typescript-config": "workspace:*",
-    "typescript": "^5.8.2"
+    "@anticeil/typescript-config": "workspace:*",
+    "typescript": "^5.4.5"
   }
 }

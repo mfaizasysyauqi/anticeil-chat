@@ -13,7 +13,7 @@ import {
   getThemeColors,
   getTranslation,
   THEME,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 import { useAppStore } from '../../../core/store/useAppStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useDeviceLayout } from '../../../core/hooks/useDeviceLayout';

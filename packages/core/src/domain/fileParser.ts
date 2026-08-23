@@ -77,7 +77,7 @@ export async function parseUploadedFile(file: File, currentStorageUsage = 0): Pr
       isImage: false,
     };
   } catch (err) {
-    console.warn(`[ChatByok] Client extraction fallback for ${name}:`, err);
+    console.warn(`[Anticeil] Client extraction fallback for ${name}:`, err);
     const fallbackText = await readFileAsText(file).catch(() => '');
     return {
       id,

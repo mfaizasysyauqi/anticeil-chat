@@ -33,7 +33,8 @@ import {
   DEFAULT_MODEL_ID,
   parseSSELine,
   getProviderById,
-} from '@chatbyok/core';
+  ProviderDefinition,
+} from '@anticeil/core';
 
 type Tab = 'chat' | 'prompts' | 'settings';
 
@@ -42,7 +43,7 @@ export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [apiKeys, setApiKeys] = useState<Record<string, { apiKey: string; baseUrl?: string }>>(() => {
     try {
-      const saved = localStorage.getItem('chatbyok_desktop_keys');
+      const saved = localStorage.getItem('anticeil_desktop_keys');
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -67,7 +68,7 @@ export default function App() {
       [providerId]: { apiKey: apiKey.trim(), baseUrl: baseUrl?.trim() },
     };
     setApiKeys(updated);
-    localStorage.setItem('chatbyok_desktop_keys', JSON.stringify(updated));
+    localStorage.setItem('anticeil_desktop_keys', JSON.stringify(updated));
   };
 
   const handleSendMessage = async () => {
@@ -222,7 +223,7 @@ export default function App() {
             >
               <Bot size={18} />
             </div>
-            <span style={{ fontWeight: 800, fontSize: '15px' }}>ChatByok Desktop</span>
+            <span style={{ fontWeight: 800, fontSize: '15px' }}>Anticeil Desktop</span>
           </div>
 
           {/* Navigation */}
@@ -361,7 +362,7 @@ export default function App() {
               {messages.length === 0 ? (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                   <Bot size={40} color="var(--brand-primary)" style={{ marginBottom: '12px' }} />
-                  <h3 style={{ fontSize: '16px', fontWeight: 700 }}>ChatByok Desktop</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700 }}>Anticeil Desktop</h3>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '400px', marginTop: '4px' }}>
                     Direct connection to OpenAI, Claude, Gemini, DeepSeek, Groq, & local Ollama.
                   </p>
@@ -453,7 +454,7 @@ export default function App() {
           <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Expert Personas</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
-              {DEFAULT_PERSONAS.map((p) => (
+              {DEFAULT_PERSONAS.map((p: Persona) => (
                 <div
                   key={p.id}
                   style={{
@@ -490,7 +491,7 @@ export default function App() {
           <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>API Key Management</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '600px' }}>
-              {PROVIDER_DEFINITIONS.map((provider) => (
+              {PROVIDER_DEFINITIONS.map((provider: ProviderDefinition) => (
                 <div
                   key={provider.id}
                   style={{

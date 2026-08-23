@@ -27,7 +27,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { ChatMessage, formatCostUsd, FileAttachment, formatBytes, getTranslation } from '@chatbyok/core';
+import { ChatMessage, formatCostUsd, FileAttachment, formatBytes, getTranslation } from '@anticeil/core';
 import { ThinkingTimeline } from './ThinkingTimeline';
 import { MarkdownRenderer } from '../../../shared/components/MarkdownRenderer';
 import { ToolResultCard } from '../../connectors/components/ToolResultCard';

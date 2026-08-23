@@ -21,7 +21,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
-import { getTranslation } from '@chatbyok/core';
+import { getTranslation } from '@anticeil/core';
 import { useRouter } from 'next/navigation';
 
 type PdfToolType = 'merge' | 'split' | 'compress' | 'watermark' | 'rotate' | 'ocr';
@@ -50,7 +50,7 @@ export function PdfToolsView() {
 
   // Tool specific configurations
   const [splitRange, setSplitRange] = useState('1-3');
-  const [watermarkText, setWatermarkText] = useState('CONFIDENTIAL - CHATBYOK');
+  const [watermarkText, setWatermarkText] = useState('CONFIDENTIAL - ANTICEIL');
   const [rotateAngle, setRotateAngle] = useState<'90' | '180' | '270'>('90');
   const [extractedText, setExtractedText] = useState<string>('');
 

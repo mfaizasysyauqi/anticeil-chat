@@ -4,7 +4,7 @@ import { Bot, Shield } from 'lucide-react-native';
 import { MessageBubble } from './components/MessageBubble';
 import { ChatInputBar } from './components/ChatInputBar';
 import { SessionDrawer } from './components/SessionDrawer';
-import { getThemeColors, getTranslation, THEME } from '@chatbyok/core';
+import { getThemeColors, getTranslation, THEME } from '@anticeil/core';
 import { useAppStore } from '../../../core/store/useAppStore';
 import { useChatStore } from '../store/useChatStore';
 import { useDeviceLayout } from '../../../core/hooks/useDeviceLayout';

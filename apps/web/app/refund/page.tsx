@@ -80,7 +80,7 @@ export default function RefundPage() {
             <p style={{ fontSize: '14px', color: '#5F6377', lineHeight: 1.6, margin: 0 }}>
               {isId
                 ? 'Kami berkomitmen memberikan pengalaman terbaik bagi pengguna. Jika Anda tidak puas dengan layanan cloud kami, kami memberikan jaminan pengembalian dana 100% dalam 14 hari pertama.'
-                : 'We want you to be completely satisfied with ChatByok. If you are not happy with our cloud services, we offer a 100% refund within the first 14 days.'}
+                : 'We want you to be completely satisfied with Anticeil. If you are not happy with our cloud services, we offer a 100% refund within the first 14 days.'}
             </p>
           </div>
 
@@ -94,7 +94,7 @@ export default function RefundPage() {
             <p style={{ fontSize: '13.5px', color: '#5F6377', lineHeight: 1.7, margin: 0 }}>
               {isId
                 ? 'Jika dalam 14 hari sejak pembayaran paket langganan Pro atau Team pertama kali Anda merasa layanan ini tidak sesuai kebutuhan, Anda berhak mengajukan pengembalian dana penuh tanpa pertanyaan rumit.'
-                : 'If within 14 days of your initial subscription purchase you find that ChatByok Pro or Team does not meet your requirements, you are eligible for a full refund.'}
+                : 'If within 14 days of your initial subscription purchase you find that Anticeil Pro or Team does not meet your requirements, you are eligible for a full refund.'}
             </p>
           </section>
 
@@ -117,8 +117,8 @@ export default function RefundPage() {
             </h2>
             <p style={{ fontSize: '13.5px', color: '#5F6377', lineHeight: 1.7, margin: 0 }}>
               {isId
-                ? 'Cukup kirimkan email ke support@chatbyok.com dengan menyertakan alamat email akun Anda dan ID transaksi/bukti pembayaran. Tim kami akan memproses pengembalian dana dalam 1–3 hari kerja.'
-                : 'Simply email support@chatbyok.com with your account email address and receipt ID. Our team will process your refund within 1–3 business days.'}
+                ? 'Cukup kirimkan email ke support@anticeil.com dengan menyertakan alamat email akun Anda dan ID transaksi/bukti pembayaran. Tim kami akan memproses pengembalian dana dalam 1–3 hari kerja.'
+                : 'Simply email support@anticeil.com with your account email address and receipt ID. Our team will process your refund within 1–3 business days.'}
             </p>
           </section>
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MessageSquare, Sparkles, KeyRound } from 'lucide-react-native';
-import { getThemeColors, getTranslation, THEME } from '@chatbyok/core';
+import { getThemeColors, getTranslation, THEME } from '@anticeil/core';
 import { useAppStore, ActiveTab } from '../store/useAppStore';
 
 export function BottomTabBar() {

@@ -75,12 +75,12 @@ export default function TermsPage() {
               {isId ? 'Terakhir Diperbarui: 23 Agustus 2026' : 'Last Updated: August 23, 2026'}
             </span>
             <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#181B34', margin: '12px 0 6px 0', letterSpacing: '-0.02em' }}>
-              {isId ? 'Syarat & Ketentuan Layanan ChatByok' : 'ChatByok Terms of Service'}
+              {isId ? 'Syarat & Ketentuan Layanan Anticeil' : 'Anticeil Terms of Service'}
             </h1>
             <p style={{ fontSize: '14px', color: '#5F6377', lineHeight: 1.6, margin: 0 }}>
               {isId
-                ? 'Harap baca ketentuan layanan ini dengan saksama sebelum menggunakan platform dan ekosistem ChatByok.'
-                : 'Please read these terms of service carefully before accessing or using the ChatByok platform and services.'}
+                ? 'Harap baca ketentuan layanan ini dengan saksama sebelum menggunakan platform dan ekosistem Anticeil.'
+                : 'Please read these terms of service carefully before accessing or using the Anticeil platform and services.'}
             </p>
           </div>
 
@@ -93,8 +93,8 @@ export default function TermsPage() {
             </h2>
             <p style={{ fontSize: '13.5px', color: '#5F6377', lineHeight: 1.7, margin: 0 }}>
               {isId
-                ? 'ChatByok adalah antarmuka klien dan sistem operasi kerja AI yang beroperasi dengan model Bring Your Own Key (BYOK). Anda bertanggung jawab penuh atas kunci API resmi (OpenAI, Anthropic, Google Gemini, Groq, dll.) yang Anda masukkan ke dalam aplikasi. ChatByok tidak memungut biaya margin atas konsumsi token API pihak ketiga Anda.'
-                : 'ChatByok is a client-side interface and AI work operating system operating under the Bring Your Own Key (BYOK) paradigm. You are solely responsible for official developer API keys (OpenAI, Anthropic, Google Gemini, Groq, etc.) configured in your client. ChatByok charges zero intermediary token margin on your third-party API usage.'}
+                ? 'Anticeil adalah antarmuka klien dan sistem operasi kerja AI yang beroperasi dengan model Bring Your Own Key (BYOK). Anda bertanggung jawab penuh atas kunci API resmi (OpenAI, Anthropic, Google Gemini, Groq, dll.) yang Anda masukkan ke dalam aplikasi. Anticeil tidak memungut biaya margin atas konsumsi token API pihak ketiga Anda.'
+                : 'Anticeil is a client-side interface and AI work operating system operating under the Bring Your Own Key (BYOK) paradigm. You are solely responsible for official developer API keys (OpenAI, Anthropic, Google Gemini, Groq, etc.) configured in your client. Anticeil charges zero intermediary token margin on your third-party API usage.'}
             </p>
           </section>
 
@@ -117,8 +117,8 @@ export default function TermsPage() {
             </h2>
             <p style={{ fontSize: '13.5px', color: '#5F6377', lineHeight: 1.7, margin: 0 }}>
               {isId
-                ? 'Anda setuju untuk tidak menyalahgunakan platform ChatByok untuk aktivitas ilegal, mendistribusikan malware, melakukan serangan penolakan layanan (DDoS), atau melanggar hak kekayaan intelektual pihak lain.'
-                : 'You agree not to misuse the ChatByok platform for unlawful activities, distributing malicious software, conducting denial of service attacks, or infringing on any intellectual property rights.'}
+                ? 'Anda setuju untuk tidak menyalahgunakan platform Anticeil untuk aktivitas ilegal, mendistribusikan malware, melakukan serangan penolakan layanan (DDoS), atau melanggar hak kekayaan intelektual pihak lain.'
+                : 'You agree not to misuse the Anticeil platform for unlawful activities, distributing malicious software, conducting denial of service attacks, or infringing on any intellectual property rights.'}
             </p>
           </section>
 
@@ -129,8 +129,8 @@ export default function TermsPage() {
             </h2>
             <p style={{ fontSize: '13.5px', color: '#5F6377', lineHeight: 1.7, margin: 0 }}>
               {isId
-                ? 'Jika Anda memiliki pertanyaan mengenai Syarat & Ketentuan ini, silakan hubungi tim kami di support@chatbyok.com.'
-                : 'If you have any questions regarding these Terms, please contact our support team at support@chatbyok.com.'}
+                ? 'Jika Anda memiliki pertanyaan mengenai Syarat & Ketentuan ini, silakan hubungi tim kami di support@anticeil.com.'
+                : 'If you have any questions regarding these Terms, please contact our support team at support@anticeil.com.'}
             </p>
           </section>
         </div>

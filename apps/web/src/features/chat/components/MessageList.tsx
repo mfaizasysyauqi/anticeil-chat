@@ -13,7 +13,7 @@ import {
 import { MessageBubble } from './MessageBubble';
 import { useChatStore } from '../store/useChatStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
-import { getTranslation, getModelById, getProviderById } from '@chatbyok/core';
+import { getTranslation, getModelById, getProviderById } from '@anticeil/core';
 
 interface MessageListProps {
   onSelectStarter: (prompt: string) => void;

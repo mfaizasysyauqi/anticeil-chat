@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Copy, Check, Play, Zap } from 'lucide-react';
 import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
-import { getTranslation } from '@chatbyok/core';
+import { getTranslation } from '@anticeil/core';
 
 interface MarkdownRendererProps {
   content: string;

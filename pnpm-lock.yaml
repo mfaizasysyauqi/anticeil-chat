@@ -23,7 +23,7 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@chatbyok/core':
+      '@anticeil/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@tauri-apps/api':
@@ -45,7 +45,7 @@ importers:
         specifier: ^5.0.3
         version: 5.0.15(@types/react@19.2.18)(immer@11.1.18)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
     devDependencies:
-      '@chatbyok/typescript-config':
+      '@anticeil/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@tauri-apps/cli':
@@ -69,12 +69,12 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@anticeil/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@babel/runtime':
         specifier: ^7.26.0
         version: 7.29.7
-      '@chatbyok/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@expo/metro-runtime':
         specifier: ~6.1.2
         version: 6.1.2(expo@54.0.37)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0)
@@ -112,7 +112,7 @@ importers:
         specifier: ^5.0.3
         version: 5.0.15(@types/react@19.2.18)(immer@11.1.18)(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
     devDependencies:
-      '@chatbyok/typescript-config':
+      '@anticeil/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@expo/ngrok':
@@ -127,7 +127,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@chatbyok/core':
+      '@anticeil/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@gsap/react':
@@ -182,7 +182,7 @@ importers:
         specifier: ^5.0.3
         version: 5.0.15(@types/react@19.2.18)(immer@11.1.18)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
     devDependencies:
-      '@chatbyok/typescript-config':
+      '@anticeil/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@types/node':
@@ -200,11 +200,11 @@ importers:
 
   packages/core:
     devDependencies:
-      '@chatbyok/typescript-config':
+      '@anticeil/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       typescript:
-        specifier: ^5.8.2
+        specifier: ^5.4.5
         version: 5.9.3
 
   packages/typescript-config: {}

@@ -27,7 +27,7 @@ import {
   PROVIDER_DEFINITIONS,
   LLMProviderId,
   getTranslation,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useChatStore } from '../../chat/store/useChatStore';
 
@@ -94,7 +94,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `chatbyok_backup_${Date.now()}.json`;
+    a.download = `anticeil_backup_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -201,7 +201,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0 0' }}>
                 {activeTab === 'keys' && (language === 'id' ? 'Masukkan kunci API resmi Anda — tersimpan aman di browser lokal.' : 'Enter your official API keys — stored safely in local browser memory.')}
                 {activeTab === 'appearance' && (language === 'id' ? 'Sesuaikan tema visual dan preferensi bahasa antarmuka.' : 'Customize visual theme and interface language preference.')}
-                {activeTab === 'plan' && (language === 'id' ? 'Paket ChatByok — 100% BYOK gratis tanpa kuota dan biaya langganan.' : 'ChatByok plan — 100% BYOK, free forever with no quotas or subscription fees.')}
+                {activeTab === 'plan' && (language === 'id' ? 'Paket Anticeil — 100% BYOK gratis tanpa kuota dan biaya langganan.' : 'Anticeil plan — 100% BYOK, free forever with no quotas or subscription fees.')}
                 {activeTab === 'backup' && (language === 'id' ? 'Ekspor, impor, atau hapus konfigurasi dan riwayat lokal Anda.' : 'Export, import, or wipe your local configuration and chat history.')}
               </p>
             </div>

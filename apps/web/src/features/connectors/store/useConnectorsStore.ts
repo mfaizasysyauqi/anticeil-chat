@@ -9,7 +9,7 @@ import {
   GmailConnectorClient,
   CalendarConnectorClient,
   GoogleDriveConnectorClient,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 
 export interface ConnectorsState {
   connectors: Record<ConnectorId, ConnectorConfig>;
@@ -43,7 +43,7 @@ const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
     isSandboxMode: true,
     scopes: ['https://mail.google.com/'],
     account: {
-      email: 'demo.user@chatbyok.ai',
+      email: 'demo.user@anticeil.com',
       name: 'Workspace Account',
     },
     lastSyncedAt: Date.now(),
@@ -58,7 +58,7 @@ const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
     isSandboxMode: true,
     scopes: ['https://www.googleapis.com/auth/calendar'],
     account: {
-      email: 'demo.user@chatbyok.ai',
+      email: 'demo.user@anticeil.com',
       name: 'Workspace Account',
     },
     lastSyncedAt: Date.now(),
@@ -73,7 +73,7 @@ const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
     isSandboxMode: true,
     scopes: ['https://www.googleapis.com/auth/drive'],
     account: {
-      email: 'demo.user@chatbyok.ai',
+      email: 'demo.user@anticeil.com',
       name: 'Workspace Account',
     },
     lastSyncedAt: Date.now(),
@@ -169,7 +169,7 @@ export const useConnectorsStore = create<ConnectorsState>()(
               isSandboxMode: isSandbox,
               status: isSandbox || state.connectors[id].accessToken ? 'connected' : 'disconnected',
               account: isSandbox
-                ? { email: 'demo.sandbox@chatbyok.ai', name: 'Sandbox Demo User' }
+                ? { email: 'demo.sandbox@anticeil.com', name: 'Sandbox Demo User' }
                 : state.connectors[id].account,
             },
           },
@@ -226,7 +226,7 @@ export const useConnectorsStore = create<ConnectorsState>()(
       },
     }),
     {
-      name: 'chatbyok_connectors_store',
+      name: 'anticeil_connectors_store',
     }
   )
 );

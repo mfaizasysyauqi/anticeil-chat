@@ -51,7 +51,7 @@ export function DocumentViewer({ type, title, data }: DocumentViewerProps) {
   const slides = [
     {
       num: 1,
-      title: 'ChatByok: The Private-First AI OS',
+      title: 'Anticeil: The Private-First AI OS',
       subtitle: 'Client-Side BYOK Platform with Live Autonomous Browser Agents',
       bullets: [
         'Zero-telemetry architecture: API keys stay in localStorage',
@@ -298,7 +298,7 @@ export function DocumentViewer({ type, title, data }: DocumentViewerProps) {
               1. Executive Summary
             </h2>
             <p style={{ fontSize: '12.5px', color: '#334155', margin: 0, textAlign: 'justify' }}>
-              ChatByok operates on a 100% decentralized, zero-telemetry paradigm. All LLM API communications originate directly from the end-user’s browser runtime to provider endpoints (OpenAI, Anthropic Claude, Google Gemini, Groq, and local Ollama instances) without routing through intermediary reverse proxies.
+              Anticeil operates on a 100% decentralized, zero-telemetry paradigm. All LLM API communications originate directly from the end-user’s browser runtime to provider endpoints (OpenAI, Anthropic Claude, Google Gemini, Groq, and local Ollama instances) without routing through intermediary reverse proxies.
             </p>
 
             <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginTop: '20px', marginBottom: '8px' }}>
@@ -470,7 +470,7 @@ export function DocumentViewer({ type, title, data }: DocumentViewerProps) {
               1. Project Objectives
             </h2>
             <p style={{ fontSize: '13px', color: '#334155', margin: 0, textAlign: 'justify' }}>
-              This document outlines the milestones and release criteria for integrating multimodal visual generation and browser-based agent task automation into the ChatByok suite.
+              This document outlines the milestones and release criteria for integrating multimodal visual generation and browser-based agent task automation into the Anticeil suite.
             </p>
 
             <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#1E293B', marginTop: '20px', marginBottom: '8px' }}>
@@ -544,7 +544,7 @@ export function DocumentViewer({ type, title, data }: DocumentViewerProps) {
 
             {/* Slide Footer */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <span style={{ fontSize: '11px', color: '#64748B' }}>ChatByok Next-Gen AI Workspace</span>
+              <span style={{ fontSize: '11px', color: '#64748B' }}>Anticeil Next-Gen AI Workspace</span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {slides.map((_, sIdx) => (
                   <div

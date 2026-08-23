@@ -1,5 +1,5 @@
 {
-  "name": "chatbyok",
+  "name": "anticeil",
   "private": true,
   "scripts": {
     "build": "turbo run build",

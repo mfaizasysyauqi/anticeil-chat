@@ -19,7 +19,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { useConnectorsStore } from '../store/useConnectorsStore';
-import { ConnectorId, getTranslation } from '@chatbyok/core';
+import { ConnectorId, getTranslation } from '@anticeil/core';
 import { ConnectorBrandIcon } from './ConnectorLogos';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 

@@ -8,7 +8,7 @@ import {
   Modal,
 } from 'react-native';
 import { MessageSquare, Trash2, X, Plus, Bot } from 'lucide-react-native';
-import { getThemeColors, getModelById, THEME } from '@chatbyok/core';
+import { getThemeColors, getModelById, THEME } from '@anticeil/core';
 import { useAppStore } from '../../../../core/store/useAppStore';
 import { useChatStore } from '../../store/useChatStore';
 

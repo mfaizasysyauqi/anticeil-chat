@@ -1,4 +1,4 @@
-# 🤖 ChatByok
+# 🤖 Anticeil
 
 > **Bring Your Own Key (BYOK) Cross-Platform AI Assistant** built with **Next.js 15+ (Web)**, **Expo React Native (Mobile)**, and **Tauri 2.0 (Desktop)** powered by **Feature-First Clean Architecture**.
 
@@ -7,7 +7,7 @@
 ## 🏛️ Monorepo Architecture
 
 ```text
-chatbyok/
+anticeil/
 ├── packages/
 │   ├── core/                        # Pure TypeScript: Domain Models, Token Estimator, Theme Tokens, i18n
 │   └── typescript-config/           # Centralized tsconfigs for Next.js, React Library, and Base

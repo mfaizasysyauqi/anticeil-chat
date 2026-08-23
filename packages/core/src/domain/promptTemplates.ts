@@ -3,7 +3,7 @@ import { Persona } from '../types';
 export const BASE_LANGUAGE_INSTRUCTION =
   'Always respond in the EXACT same language as the user input (e.g., if the user writes in Indonesian, reply in Indonesian; if English, reply in English; if another language, reply in that language), unless specifically asked to translate.';
 
-export const BASE_SYSTEM_PROMPT = `You are ChatByok, an intelligent, direct, and helpful AI assistant. Give clear, concise, and structured answers. ${BASE_LANGUAGE_INSTRUCTION}`;
+export const BASE_SYSTEM_PROMPT = `You are Anticeil, an intelligent, direct, and helpful AI assistant. Give clear, concise, and structured answers. ${BASE_LANGUAGE_INSTRUCTION}`;
 
 export const DEFAULT_PERSONAS: Persona[] = [
   {

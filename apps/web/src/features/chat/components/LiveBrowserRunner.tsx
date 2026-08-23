@@ -28,7 +28,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
-import { getTranslation } from '@chatbyok/core';
+import { getTranslation } from '@anticeil/core';
 
 interface StepLog {
   id: string;

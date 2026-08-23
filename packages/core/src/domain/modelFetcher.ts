@@ -97,7 +97,7 @@ export async function fetchProviderModels(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`[ChatByok] Failed to fetch live models for ${providerId}: HTTP ${response.status}`);
+      console.warn(`[Anticeil] Failed to fetch live models for ${providerId}: HTTP ${response.status}`);
       return fallbackModels;
     }
 
@@ -109,7 +109,7 @@ export async function fetchProviderModels(
     }
     return fallbackModels;
   } catch (err: unknown) {
-    console.warn(`[ChatByok] Network error fetching models for ${providerId}:`, err);
+    console.warn(`[Anticeil] Network error fetching models for ${providerId}:`, err);
     return fallbackModels;
   }
 }

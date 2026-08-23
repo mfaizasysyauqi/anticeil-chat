@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ChatByok",
-    "slug": "chatbyok",
+    "name": "Anticeil",
+    "slug": "anticeil",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,7 +21,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.chatbyok.app"
+      "package": "com.anticeil.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"

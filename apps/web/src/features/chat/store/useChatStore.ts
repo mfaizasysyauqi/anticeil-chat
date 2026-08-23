@@ -19,7 +19,7 @@ import {
   parseToolCallsFromLLM,
   executeConnectorTool,
   ToolCallResult,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 import { streamBYOKChat } from '../data/byokApi';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
@@ -436,7 +436,7 @@ export const useChatStore = create<ChatState>()(
               webSearchReasoning += `No live search results found. Synthesizing from base knowledge\n`;
             }
           } catch (err) {
-            console.warn('[ChatByok] Web search failed:', err);
+            console.warn('[Anticeil] Web search failed:', err);
           }
         }
 
@@ -852,7 +852,7 @@ export const useChatStore = create<ChatState>()(
       },
     }),
     {
-      name: 'chatbyok_chat_storage',
+      name: 'anticeil_chat_storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         sessions: state.sessions,

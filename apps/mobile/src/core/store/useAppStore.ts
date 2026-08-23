@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandAsyncStorage } from '../storage/storageAdapter';
-import { Language } from '@chatbyok/core';
+import { Language } from '@anticeil/core';
 
 export type ActiveTab = 'chat' | 'prompts' | 'settings';
 
@@ -31,7 +31,7 @@ export const useAppStore = create<AppState>()(
       setDrawerOpen: (isDrawerOpen) => set({ isDrawerOpen }),
     }),
     {
-      name: 'chatbyok_mobile_app_store',
+      name: 'anticeil_mobile_app_store',
       storage: createJSONStorage(() => zustandAsyncStorage),
       partialize: (state) => ({
         theme: state.theme,

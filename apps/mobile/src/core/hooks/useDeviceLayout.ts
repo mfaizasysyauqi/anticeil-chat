@@ -1,5 +1,5 @@
 import { useWindowDimensions } from 'react-native';
-import { THEME } from '@chatbyok/core';
+import { THEME } from '@anticeil/core';
 
 export interface DeviceLayout {
   width: number;

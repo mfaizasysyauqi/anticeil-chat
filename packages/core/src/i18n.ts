@@ -3,7 +3,7 @@ export type Language = 'en' | 'id';
 export const TRANSLATIONS = {
   en: {
     app: {
-      name: 'ChatByok',
+      name: 'Anticeil',
       tagline: 'Bring Your Own Key AI Assistant',
       description: 'Zero-proxy, 100% private cross-platform chatbot with your own API keys.',
     },
@@ -257,7 +257,7 @@ export const TRANSLATIONS = {
       tabletView: 'Tablet (768px)',
       mobileView: 'Mobile (375px)',
       emptyTitle: 'Create & Run with Canvas',
-      emptyDesc: 'In Canvas, ChatByok builds websites, apps, games, and executes autonomous browser agents live.',
+      emptyDesc: 'In Canvas, Anticeil builds websites, apps, games, and executes autonomous browser agents live.',
       samplePrompt: 'Try asking the AI to build an app, or launch the live Agent Browser!',
       errorTitle: 'Runtime Execution Error',
     },
@@ -317,7 +317,7 @@ export const TRANSLATIONS = {
   },
   id: {
     app: {
-      name: 'ChatByok',
+      name: 'Anticeil',
       tagline: 'Asisten AI Bring Your Own Key',
       description: 'Chatbot lintas platform 100% privat langsung menggunakan kunci API Anda sendiri.',
     },
@@ -571,7 +571,7 @@ export const TRANSLATIONS = {
       tabletView: 'Tablet (768px)',
       mobileView: 'Ponsel (375px)',
       emptyTitle: 'Buat Aplikasi & Jalankan dengan Canvas',
-      emptyDesc: 'Di Canvas, ChatByok mengompilasi situs web, game, aplikasi, serta mengeksekusi agent browser secara live.',
+      emptyDesc: 'Di Canvas, Anticeil mengompilasi situs web, game, aplikasi, serta mengeksekusi agent browser secara live.',
       samplePrompt: 'Coba minta AI membuat aplikasi, atau luncurkan Agent Browser live!',
       errorTitle: 'Kesalahan Eksekusi Runtime',
     },

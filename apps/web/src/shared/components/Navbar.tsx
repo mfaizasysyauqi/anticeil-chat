@@ -18,7 +18,7 @@ import { useSettingsStore } from '../../features/settings/store/useSettingsStore
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
-import { getTranslation } from '@chatbyok/core';
+import { getTranslation } from '@anticeil/core';
 
 interface NavbarProps {
   onOpenModelSelector?: () => void;
@@ -178,7 +178,7 @@ export function Navbar({
               ? t.nav.pdfTools
               : pathname === '/settings'
               ? t.nav.settings
-              : activeSession?.title || 'ChatByok'}
+              : activeSession?.title || 'Anticeil'}
           </span>
           {activeSession?.isPinned && pathname === '/chat' && (
             <Pin size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />

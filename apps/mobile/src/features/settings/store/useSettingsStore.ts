@@ -10,7 +10,7 @@ import {
   PROVIDER_DEFINITIONS,
   PROVIDER_MODELS,
   fetchProviderModels,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 
 interface SettingsState {
   apiKeys: ApiKeysState;
@@ -99,7 +99,7 @@ export const useSettingsStore = create<SettingsState>()(
               }));
             }
           } catch (err) {
-            console.warn(`[ChatByok Mobile] Failed refreshing models for ${providerId}:`, err);
+            console.warn(`[Anticeil Mobile] Failed refreshing models for ${providerId}:`, err);
           } finally {
             set((s) => ({
               isLoadingModels: { ...s.isLoadingModels, [providerId]: false },
@@ -118,7 +118,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: 'chatbyok_mobile_settings_storage',
+      name: 'anticeil_mobile_settings_storage',
       storage: createJSONStorage(() => zustandAsyncStorage),
       partialize: (state) => ({
         apiKeys: state.apiKeys,

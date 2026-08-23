@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Menu, Plus, Bot } from 'lucide-react-native';
-import { getThemeColors, getModelById, THEME } from '@chatbyok/core';
+import { getThemeColors, getModelById, THEME } from '@anticeil/core';
 import { useAppStore } from '../store/useAppStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useDeviceLayout } from '../hooks/useDeviceLayout';
@@ -42,7 +42,7 @@ export function Header() {
       <View style={styles.titleContainer}>
         <View style={styles.brandRow}>
           <Bot size={16} color={colors.brand.primary} />
-          <Text style={[styles.title, { color: colors.textPrimary }]}>ChatByok</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Anticeil</Text>
         </View>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
           {activeModel?.name || 'AI Assistant'}

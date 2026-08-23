@@ -24,7 +24,7 @@ import {
   LLMProviderId,
   LLMModel,
   getTranslation,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useChatStore } from '../store/useChatStore';
 

@@ -12,7 +12,7 @@ import {
   PROVIDER_DEFINITIONS,
   PROVIDER_MODELS,
   fetchProviderModels,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 
 interface SettingsState {
   apiKeys: ApiKeysState;
@@ -51,9 +51,9 @@ const initialApiKeys: ApiKeysState = {
 function getInitialLanguage(): Language {
   if (typeof window !== 'undefined') {
     try {
-      const direct = localStorage.getItem('chatbyok_lang');
+      const direct = localStorage.getItem('anticeil_lang');
       if (direct === 'en' || direct === 'id') return direct;
-      const raw = localStorage.getItem('chatbyok_settings_storage');
+      const raw = localStorage.getItem('anticeil_settings_storage');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.state?.language === 'en' || parsed?.state?.language === 'id') {
@@ -68,7 +68,7 @@ function getInitialLanguage(): Language {
 function getInitialTheme(): 'dark' | 'light' {
   if (typeof window !== 'undefined') {
     try {
-      const raw = localStorage.getItem('chatbyok_settings_storage');
+      const raw = localStorage.getItem('anticeil_settings_storage');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.state?.theme === 'dark' || parsed?.state?.theme === 'light') {
@@ -140,7 +140,7 @@ export const useSettingsStore = create<SettingsState>()(
       setLanguage: (language) => {
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('chatbyok_lang', language);
+            localStorage.setItem('anticeil_lang', language);
             document.documentElement.setAttribute('lang', language);
           } catch {}
         }
@@ -177,7 +177,7 @@ export const useSettingsStore = create<SettingsState>()(
               }));
             }
           } catch (err) {
-            console.warn(`[ChatByok] Failed refreshing models for ${providerId}:`, err);
+            console.warn(`[Anticeil] Failed refreshing models for ${providerId}:`, err);
           } finally {
             set((s) => ({
               isLoadingModels: { ...s.isLoadingModels, [providerId]: false },
@@ -210,13 +210,13 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: 'chatbyok_settings_storage',
+      name: 'anticeil_settings_storage',
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state?.language && typeof document !== 'undefined') {
           document.documentElement.setAttribute('lang', state.language);
           try {
-            localStorage.setItem('chatbyok_lang', state.language);
+            localStorage.setItem('anticeil_lang', state.language);
           } catch {}
         }
         if (state?.theme && typeof document !== 'undefined') {
@@ -238,7 +238,7 @@ export const useSettingsStore = create<SettingsState>()(
 // Cross-tab / cross-page synchronized updates
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
-    if (event.key === 'chatbyok_settings_storage' && event.newValue) {
+    if (event.key === 'anticeil_settings_storage' && event.newValue) {
       try {
         const parsed = JSON.parse(event.newValue);
         if (parsed?.state) {
@@ -260,7 +260,7 @@ if (typeof window !== 'undefined') {
           }));
         }
       } catch {}
-    } else if (event.key === 'chatbyok_lang' && event.newValue) {
+    } else if (event.key === 'anticeil_lang' && event.newValue) {
       const newLang = event.newValue as Language;
       if (newLang === 'en' || newLang === 'id') {
         document.documentElement.setAttribute('lang', newLang);

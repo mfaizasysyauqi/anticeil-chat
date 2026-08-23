@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Bot, User, Sparkles } from 'lucide-react-native';
-import { ChatMessage, getThemeColors, THEME } from '@chatbyok/core';
+import { ChatMessage, getThemeColors, THEME } from '@anticeil/core';
 import { useAppStore } from '../../../../core/store/useAppStore';
 
 interface MessageBubbleProps {

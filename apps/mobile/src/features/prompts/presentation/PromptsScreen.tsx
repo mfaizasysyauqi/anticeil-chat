@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Sparkles, ArrowRight, Bot } from 'lucide-react-native';
-import { getThemeColors, getTranslation, THEME, Persona } from '@chatbyok/core';
+import { getThemeColors, getTranslation, THEME, Persona } from '@anticeil/core';
 import { useAppStore } from '../../../core/store/useAppStore';
 import { usePromptStore } from '../store/usePromptStore';
 import { useChatStore } from '../../chat/store/useChatStore';

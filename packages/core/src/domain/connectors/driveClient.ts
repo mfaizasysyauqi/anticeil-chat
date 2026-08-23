@@ -29,7 +29,7 @@ const INITIAL_SANDBOX_FILES: DriveFile[] = [
     webViewLink: 'https://drive.google.com/file/d/drive-file-003/view',
     modifiedTime: new Date(Date.now() - 3600000 * 48).toISOString(),
     starred: false,
-    content: `ChatByok Monorepo Architecture Overview\n- packages/core: Pure TypeScript domain models, token estimator, connectors\n- apps/web: Next.js 15+ App Router, Grok-inspired UI, Zustand storage\n- apps/mobile: Expo React Native Feature-First Clean Architecture\n- apps/desktop: Tauri 2.0 Native Shell`,
+    content: `Anticeil Monorepo Architecture Overview\n- packages/core: Pure TypeScript domain models, token estimator, connectors\n- apps/web: Next.js 15+ App Router, Grok-inspired UI, Zustand storage\n- apps/mobile: Expo React Native Feature-First Clean Architecture\n- apps/desktop: Tauri 2.0 Native Shell`,
   },
 ];
 

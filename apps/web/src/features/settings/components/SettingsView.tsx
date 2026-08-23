@@ -20,7 +20,7 @@ import {
   PROVIDER_DEFINITIONS,
   LLMProviderId,
   getTranslation,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useChatStore } from '../../chat/store/useChatStore';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
@@ -72,7 +72,7 @@ export function SettingsView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `chatbyok_backup_${Date.now()}.json`;
+    a.download = `anticeil_backup_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

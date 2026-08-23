@@ -12,7 +12,7 @@ import {
   calculateCostUsd,
   parseSSELine,
   getProviderById,
-} from '@chatbyok/core';
+} from '@anticeil/core';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 
 interface ChatState {
@@ -279,7 +279,7 @@ export const useChatStore = create<ChatState>()(
       },
     }),
     {
-      name: 'chatbyok_mobile_chat_storage',
+      name: 'anticeil_mobile_chat_storage',
       storage: createJSONStorage(() => zustandAsyncStorage),
       partialize: (state) => ({
         sessions: state.sessions,
