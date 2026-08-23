@@ -1697,30 +1697,7 @@ export function Sidebar({
                 </div>
               </div>
 
-              {/* 1. Tambah Akun / Add Account */}
-              <Link
-                href="/login"
-                onClick={() => setIsProfileMenuOpen(false)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '8px 10px',
-                  borderRadius: 'var(--radius-md, 6px)',
-                  textDecoration: 'none',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  transition: 'background 0.15s ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <Plus size={15} color="var(--brand-primary)" />
-                <span>{language === 'id' ? 'Tambah Akun' : 'Add Account'}</span>
-              </Link>
-
-              <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
+              {/* Logout / Login Action */}
 
               {/* 2. Logout */}
               {user ? (
