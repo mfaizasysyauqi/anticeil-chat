@@ -233,18 +233,19 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
   return (
     <div
       style={{
-        padding: 'var(--space-sm) var(--space-md) var(--space-xl) var(--space-md)',
+        padding: 'var(--space-sm) var(--page-pad-x) var(--space-xl) var(--page-pad-x)',
         background: 'transparent',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         width: '100%',
+        boxSizing: 'border-box',
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '760px',
+          maxWidth: '860px',
           background: 'var(--bg-input)',
           border: `1px solid ${
             isListening

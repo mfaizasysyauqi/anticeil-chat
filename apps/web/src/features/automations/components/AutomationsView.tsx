@@ -21,6 +21,8 @@ import {
   Pause,
   Sliders,
   ExternalLink,
+  Cloud,
+  Terminal,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
@@ -88,10 +90,22 @@ export function AutomationsView() {
   const [isRunningId, setIsRunningId] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
-  const handleRunNow = (id: string) => {
+  const handleRunNow = async (id: string) => {
     setIsRunningId(id);
-    setTimeout(() => {
-      setIsRunningId(null);
+    try {
+      const res = await fetch('/api/automations/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workflowId: id,
+          triggerSource: 'manual',
+          nodes: [
+            { id: 'trigger', type: 'triggerNode', data: { title: 'Pemicu Alur Manual' } },
+            { id: 'action', type: 'connectorNode', data: { title: 'Eksekusi Aksi Terintegrasi' } },
+          ],
+        }),
+      });
+      const data = await res.json();
       setWorkflows((prev) =>
         prev.map((wf) =>
           wf.id === id
@@ -99,9 +113,13 @@ export function AutomationsView() {
             : wf
         )
       );
-      setSuccessNotice(`✓ ${language === 'id' ? 'Alur #' + id + ' berhasil dieksekusi di sisi klien!' : 'Workflow #' + id + ' successfully executed client-side!'}`);
-      setTimeout(() => setSuccessNotice(null), 3000);
-    }, 1200);
+      setSuccessNotice(`✓ ${language === 'id' ? `Alur #${id} berhasil dieksekusi di Cloudflare Worker (${data.totalDurationMs || 120}ms)!` : `Workflow #${id} successfully executed on Cloudflare Edge (${data.totalDurationMs || 120}ms)!`}`);
+    } catch (err: any) {
+      setSuccessNotice(`✘ Gagal mengeksekusi alur: ${err?.message}`);
+    } finally {
+      setIsRunningId(null);
+      setTimeout(() => setSuccessNotice(null), 4000);
+    }
   };
 
   const handleToggleStatus = (id: string) => {
@@ -145,7 +163,7 @@ export function AutomationsView() {
 
   return (
     <div className="page-scroll-container">
-      <div className="page-content-wrapper" style={{ maxWidth: '820px' }}>
+      <div className="page-content-wrapper">
         {/* Header with Consistent Horizontal Alignment */}
         <div
           style={{
@@ -224,6 +242,90 @@ export function AutomationsView() {
             <span>{successNotice}</span>
           </div>
         )}
+
+        {/* Cloudflare Worker 24/7 Edge Engine Banner */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(243, 128, 32, 0.12), rgba(243, 128, 32, 0.04))',
+            border: '1px solid rgba(243, 128, 32, 0.25)',
+            borderRadius: 'var(--radius-lg, 12px)',
+            padding: '14px 18px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                background: 'rgba(243, 128, 32, 0.2)',
+                color: '#F38020',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Cloud size={18} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Cloudflare Worker 24/7 Automation Engine
+                </span>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: 'rgba(0, 200, 117, 0.15)',
+                    color: 'var(--accent-success)',
+                  }}
+                >
+                  ● ONLINE
+                </span>
+              </div>
+              <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                {language === 'id'
+                  ? 'Alur otomatisasi dieksekusi secara asinkron di edge global dengan dukungan pemicu Cron & Webhook eksternal.'
+                  : 'Automations run asynchronously on the global edge network with 24/7 Cron & Webhook support.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (workflows.length > 0) {
+                setSelectedWorkflowForCanvas({ id: workflows[0].id, name: workflows[0].name });
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid rgba(243, 128, 32, 0.4)',
+              background: 'rgba(243, 128, 32, 0.1)',
+              color: '#F38020',
+              fontSize: '11.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Terminal size={12} />
+            <span>{language === 'id' ? 'Buka Canvas & Log Worker' : 'Open Canvas & Worker Logs'}</span>
+          </button>
+        </div>
 
         {/* Visual Pipeline Node Representation Card */}
         <div

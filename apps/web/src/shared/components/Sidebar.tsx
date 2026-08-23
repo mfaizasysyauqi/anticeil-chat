@@ -455,36 +455,47 @@ export function Sidebar({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 0',
+          padding: '0 0 12px 0',
           flexShrink: 0,
         }}
       >
         {/* Top: Brand Logo + Primary Feature Shortcuts */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-          {/* Logo Dot */}
-          <Link
-      href="/"
-      title="Anticeil Home"
-      style={{
-        width: '34px',
-        height: '34px',
-        borderRadius: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textDecoration: 'none',
-        transition: 'transform 0.15s ease',
-      }}
-    >
-      <img
-        src="/anticeil-logo.png"
-        alt="Anticeil Logo"
-        style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '6px' }}
-      />
-    </Link>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+          {/* Logo container matching exact 48px header height for 1:1 symmetry */}
+          <div
+            style={{
+              height: '48px',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Link
+              href="/"
+              title="Anticeil Home"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textDecoration: 'none',
+                transition: 'transform 0.15s ease',
+              }}
+            >
+              <img
+                src="/anticeil-logo.png"
+                alt="Anticeil Logo"
+                style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
+              />
+            </Link>
+          </div>
 
           {/* Quick App Icons */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
             {/* Chat */}
             <Link
               href="/chat"
@@ -627,7 +638,7 @@ export function Sidebar({
         {/* Workspace Title Header */}
         <div
           style={{
-            height: '52px',
+            height: '48px',
             boxSizing: 'border-box',
             padding: '0 12px',
             display: 'flex',

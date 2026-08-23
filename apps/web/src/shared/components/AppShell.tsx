@@ -42,16 +42,29 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
           isDesktopCollapsed={isDesktopSidebarCollapsed}
-          onToggleDesktopCollapse={() => setIsDesktopSidebarCollapsed((prev) => !prev)}
+          onToggleDesktopCollapse={() => {
+            setIsDesktopSidebarCollapsed((prev) => !prev);
+            setIsMobileSidebarOpen(false);
+          }}
           onOpenModelSelector={() => setIsModelSelectorOpen(true)}
         />
       )}
 
       <div className="main-content">
         <Navbar
-          onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+          onToggleMobileSidebar={() => {
+            if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+              setIsDesktopSidebarCollapsed((prev) => !prev);
+              setIsMobileSidebarOpen(false);
+            } else {
+              setIsMobileSidebarOpen((prev) => !prev);
+            }
+          }}
           isDesktopSidebarCollapsed={isDesktopSidebarCollapsed}
-          onToggleDesktopSidebar={() => setIsDesktopSidebarCollapsed((prev) => !prev)}
+          onToggleDesktopSidebar={() => {
+            setIsDesktopSidebarCollapsed((prev) => !prev);
+            setIsMobileSidebarOpen(false);
+          }}
         />
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {children}

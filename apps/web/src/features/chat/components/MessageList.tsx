@@ -77,10 +77,11 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
       <div className="page-scroll-container" style={{ justifyContent: 'center' }}>
         <div
           style={{
-            maxWidth: '760px',
+            maxWidth: '860px',
             width: '100%',
             margin: '0 auto',
-            padding: 'var(--space-2xl) var(--space-md)',
+            padding: 'var(--space-2xl) var(--page-pad-x)',
+            boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
             gap: 'var(--space-xl)',
@@ -247,12 +248,13 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
       ref={scrollRef}
       className="page-scroll-container"
       style={{
-        padding: '0 var(--space-md)',
+        padding: '0 var(--page-pad-x)',
+        boxSizing: 'border-box',
       }}
     >
       <div
         style={{
-          maxWidth: '760px',
+          maxWidth: '860px',
           width: '100%',
           margin: '0 auto',
           padding: 'var(--space-xl) 0',

@@ -18,6 +18,7 @@ import { useSettingsStore } from '../../features/settings/store/useSettingsStore
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
+import { useAutomationStore } from '../../features/automations/store/useAutomationStore';
 import { getTranslation } from '@anticeil/core';
 
 interface NavbarProps {
@@ -43,6 +44,8 @@ export function Navbar({
 
   const isBuildOpen = useBuildStore((s) => s.isOpen);
   const toggleBuild = useBuildStore((s) => s.toggle);
+
+  const activeWorkflowTitle = useAutomationStore((s) => s.activeWorkflowTitle);
 
   const activeSessionId = useChatStore((s) => s.activeSessionId);
   const sessions = useChatStore((s) => s.sessions);
@@ -98,13 +101,13 @@ export function Navbar({
     <header
       className="navbar-container"
       style={{
-        height: '52px',
+        height: '48px',
         borderBottom: '1px solid var(--border-subtle)',
         background: 'var(--bg-main)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 var(--space-md)',
+        padding: '0 var(--studio-header-pad-x, 16px)',
         zIndex: 50,
       }}
     >
@@ -173,7 +176,7 @@ export function Navbar({
             {pathname === '/imagine'
               ? t.nav.imagine
               : pathname === '/automations'
-              ? t.nav.automations
+              ? (activeWorkflowTitle ? `${t.nav.automations} / ${activeWorkflowTitle}` : t.nav.automations)
               : pathname === '/pdf-tools'
               ? t.nav.pdfTools
               : pathname === '/settings'

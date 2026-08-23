@@ -3519,32 +3519,15 @@ export default function MondayWarmBeigeLandingPage() {
           >
             {/* Col 1: Brand & Identity */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: '#0073EA',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 8px)',
-                    gap: '3px',
-                    padding: '6px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FFFFFF' }} />
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FDAB3D' }} />
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00C875' }} />
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#E2445C' }} />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-                  <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.02em', color: '#FFFFFF' }}>
-                    anticeil
-                  </span>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#0073EA' }}>.os</span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                <img
+                  src="/anticeil-logo.png"
+                  alt="Anticeil Logo"
+                  style={{ width: '30px', height: '30px', objectFit: 'contain', borderRadius: '6px' }}
+                />
+                <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.03em', color: '#FFFFFF' }}>
+                  Anticeil
+                </span>
               </div>
               <p style={{ fontSize: '13px', color: '#808396', margin: 0, lineHeight: 1.6, maxWidth: '280px' }}>
                 {t.footer.tagline}

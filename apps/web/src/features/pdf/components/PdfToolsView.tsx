@@ -92,7 +92,6 @@ export function PdfToolsView() {
       label: tp.ocr,
       icon: <Sparkles size={16} />,
       desc: language === 'id' ? 'Ekstrak teks murni & kirim langsung ke obrolan AI.' : 'Extract raw text and send directly into AI chat.',
-      badge: 'AI Synced',
     },
   ];
 
@@ -276,7 +275,7 @@ export function PdfToolsView() {
 
   return (
     <div className="page-scroll-container">
-      <div className="page-content-wrapper" style={{ maxWidth: '920px' }}>
+      <div className="page-content-wrapper">
         {/* Header */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -335,25 +334,9 @@ export function PdfToolsView() {
                   position: 'relative',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '13px' }}>
-                    {tool.icon}
-                    <span>{tool.label}</span>
-                  </div>
-                  {tool.badge && (
-                    <span
-                      style={{
-                        fontSize: '9.5px',
-                        fontWeight: 800,
-                        padding: '1px 5px',
-                        borderRadius: '9999px',
-                        background: 'rgba(162, 93, 220, 0.15)',
-                        color: '#A25DDC',
-                      }}
-                    >
-                      {tool.badge}
-                    </span>
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '13px' }}>
+                  {tool.icon}
+                  <span>{tool.label}</span>
                 </div>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
                   {tool.desc}

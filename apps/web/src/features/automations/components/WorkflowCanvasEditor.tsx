@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
-  Background,
   Controls,
   MiniMap,
   useNodesState,
@@ -13,7 +12,6 @@ import {
   Edge,
   Node,
   Panel,
-  BackgroundVariant,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -38,9 +36,25 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Cloud,
+  Terminal,
+  Copy,
+  Check,
+  Radio,
+  ExternalLink,
+  ShieldCheck,
+  Globe,
+  Code2,
+  Database,
+  Timer,
+  ArrowRightLeft,
+  Sheet,
+  HardDrive,
 } from 'lucide-react';
 import { nodeTypes } from './nodes';
+import { NodeInspectorPanel } from './NodeInspectorPanel';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useAutomationStore } from '../store/useAutomationStore';
 
 interface WorkflowCanvasEditorProps {
   workflowId: string;
@@ -55,6 +69,7 @@ const initialNodes: Node[] = [
     id: 'node-trigger-1',
     type: 'triggerNode',
     position: { x: 50, y: 150 },
+    measured: { width: 240, height: 110 },
     data: {
       title: 'Pemicu Jadwal Cron',
       triggerType: 'cron',
@@ -65,6 +80,7 @@ const initialNodes: Node[] = [
     id: 'node-connector-cal',
     type: 'connectorNode',
     position: { x: 360, y: 80 },
+    measured: { width: 240, height: 110 },
     data: {
       title: 'Ambil Agenda Google Calendar',
       connectorType: 'calendar',
@@ -75,6 +91,7 @@ const initialNodes: Node[] = [
     id: 'node-ai-agent',
     type: 'aiAgentNode',
     position: { x: 680, y: 130 },
+    measured: { width: 260, height: 140 },
     data: {
       title: 'AI Executive Briefing Synthesizer',
       provider: 'anthropic',
@@ -86,6 +103,7 @@ const initialNodes: Node[] = [
     id: 'node-connector-tg',
     type: 'connectorNode',
     position: { x: 1020, y: 140 },
+    measured: { width: 240, height: 110 },
     data: {
       title: 'Kirim Notifikasi Telegram',
       connectorType: 'telegram',
@@ -118,6 +136,16 @@ const initialEdges: Edge[] = [
   },
 ];
 
+interface ExecutionTrace {
+  nodeId: string;
+  nodeTitle: string;
+  nodeType: string;
+  status: 'success' | 'failed';
+  durationMs: number;
+  output: any;
+  timestamp: string;
+}
+
 export function WorkflowCanvasEditor({
   workflowId,
   workflowTitle,
@@ -128,7 +156,15 @@ export function WorkflowCanvasEditor({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isSimulatingRun, setIsSimulatingRun] = useState(false);
+  const [isRunningWorker, setIsRunningWorker] = useState(false);
   const [executionToast, setExecutionToast] = useState<string | null>(null);
+
+  // Cloudflare Worker Live Execution Trace Modal & Webhook Drawer
+  const [showTraceModal, setShowTraceModal] = useState(false);
+  const [showWebhookModal, setShowWebhookModal] = useState(false);
+  const [executionTraces, setExecutionTraces] = useState<ExecutionTrace[]>([]);
+  const [totalExecutionTime, setTotalExecutionTime] = useState<number | null>(null);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
 
   // Responsive UI states
   const [isMobile, setIsMobile] = useState(false);
@@ -136,6 +172,17 @@ export function WorkflowCanvasEditor({
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(true);
 
   const language = useSettingsStore((s) => s.language);
+  const theme = useSettingsStore((s) => s.theme);
+  const isDark = theme === 'dark';
+  const setActiveWorkflow = useAutomationStore((s) => s.setActiveWorkflow);
+
+  // Sync active workflow title to top App Bar Navbar
+  useEffect(() => {
+    setActiveWorkflow(workflowId, workflowTitle);
+    return () => {
+      setActiveWorkflow(null, null);
+    };
+  }, [workflowId, workflowTitle, setActiveWorkflow]);
 
   // Detect screen size on client
   useEffect(() => {
@@ -171,104 +218,12 @@ export function WorkflowCanvasEditor({
     setSelectedNode(node);
   };
 
-  const handleAddNode = (type: 'trigger' | 'ai' | 'gmail' | 'calendar' | 'drive' | 'telegram' | 'logic') => {
-    const id = `node_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
-    let newNode: Node;
-
-    const posX = isMobile ? 80 : 150 + Math.random() * 150;
-    const posY = isMobile ? 120 : 100 + Math.random() * 150;
-
-    switch (type) {
-      case 'trigger':
-        newNode = {
-          id,
-          type: 'triggerNode',
-          position: { x: posX, y: posY },
-          data: {
-            title: 'Pemicu Otomatisasi',
-            triggerType: 'manual',
-            schedule: 'Eksekusi instan saat dipicu',
-          },
-        };
-        break;
-      case 'ai':
-        newNode = {
-          id,
-          type: 'aiAgentNode',
-          position: { x: posX, y: posY },
-          data: {
-            title: 'AI Synthesizer BYOK',
-            provider: 'deepseek',
-            model: 'deepseek-r1',
-            promptSnippet: 'Analisis input data dan buat respons...',
-          },
-        };
-        break;
-      case 'gmail':
-        newNode = {
-          id,
-          type: 'connectorNode',
-          position: { x: posX, y: posY },
-          data: {
-            title: 'Konektor Gmail',
-            connectorType: 'gmail',
-            actionType: 'Create Draft Response',
-          },
-        };
-        break;
-      case 'calendar':
-        newNode = {
-          id,
-          type: 'connectorNode',
-          position: { x: posX, y: posY },
-          data: {
-            title: 'Google Calendar Event',
-            connectorType: 'calendar',
-            actionType: 'Fetch Today Events',
-          },
-        };
-        break;
-      case 'drive':
-        newNode = {
-          id,
-          type: 'connectorNode',
-          position: { x: posX, y: posY },
-          data: {
-            title: 'Google Drive Document',
-            connectorType: 'drive',
-            actionType: 'OCR / Index Document',
-          },
-        };
-        break;
-      case 'telegram':
-        newNode = {
-          id,
-          type: 'connectorNode',
-          position: { x: posX, y: posY },
-          data: {
-            title: 'Kirim Pesan Telegram',
-            connectorType: 'telegram',
-            actionType: 'Send Instant Alert',
-          },
-        };
-        break;
-      case 'logic':
-        newNode = {
-          id,
-          type: 'logicNode',
-          position: { x: posX, y: posY },
-          data: {
-            title: 'Pemeriksaan Kondisi',
-            condition: 'output.priority === "HIGH"',
-          },
-        };
-        break;
-    }
-
-    setNodes((nds) => [...nds, newNode]);
-    if (isMobile) {
-      setIsPaletteOpen(false);
-    }
+  const handleUpdateNodeData = (key: string, value: any) => {
+    if (!selectedNode) return;
+    setNodes((nds) =>
+      nds.map((n) => (n.id === selectedNode.id ? { ...n, data: { ...n.data, [key]: value } } : n))
+    );
+    setSelectedNode((prev) => (prev ? { ...prev, data: { ...prev.data, [key]: value } } : null));
   };
 
   const handleDeleteSelected = () => {
@@ -278,25 +233,133 @@ export function WorkflowCanvasEditor({
     setSelectedNode(null);
   };
 
-  const handleRunSimulation = async () => {
-    setIsSimulatingRun(true);
-    setExecutionToast('⚡ Memulai eksekusi alur di sisi klien (Direct BYOK)...');
+  const handleAddNode = (type: string) => {
+    const id = `node_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+    let newNode: Node;
 
-    // Illuminate each node sequentially to simulate live pipeline execution
-    for (let i = 0; i < nodes.length; i++) {
-      const currentNodeId = nodes[i].id;
-      setNodes((nds) =>
-        nds.map((n) => (n.id === currentNodeId ? { ...n, data: { ...n.data, isRunning: true } } : n))
-      );
-      await new Promise((r) => setTimeout(r, 600));
-      setNodes((nds) =>
-        nds.map((n) => (n.id === currentNodeId ? { ...n, data: { ...n.data, isRunning: false } } : n))
-      );
+    const offsetIdx = Math.max(0, nodes.length - 4);
+    const posX = isMobile ? 60 : 200 + (offsetIdx % 3) * 320;
+    const posY = isMobile ? 120 + offsetIdx * 130 : 280 + Math.floor(offsetIdx / 3) * 160;
+
+    const nodeMap: Record<string, () => Node> = {
+      trigger: () => ({
+        id, type: 'triggerNode', position: { x: posX, y: posY }, measured: { width: 240, height: 110 },
+        data: { title: 'Pemicu Otomatisasi', triggerType: 'manual', schedule: 'Eksekusi instan saat dipicu' },
+      }),
+      ai: () => ({
+        id, type: 'aiAgentNode', position: { x: posX, y: posY }, measured: { width: 260, height: 140 },
+        data: { title: 'AI Processing Agent', provider: 'anthropic', model: 'claude-3-7-sonnet', promptSnippet: 'Analisis dan lakukan pemrosesan data kontekstual...' },
+      }),
+      gmail: () => ({
+        id, type: 'connectorNode', position: { x: posX, y: posY }, measured: { width: 240, height: 110 },
+        data: { title: 'Konektor Gmail', connectorType: 'gmail', actionType: 'Create Draft Reply' },
+      }),
+      calendar: () => ({
+        id, type: 'connectorNode', position: { x: posX, y: posY }, measured: { width: 240, height: 110 },
+        data: { title: 'Konektor Google Calendar', connectorType: 'calendar', actionType: 'List Today Events' },
+      }),
+      drive: () => ({
+        id, type: 'connectorNode', position: { x: posX, y: posY }, measured: { width: 240, height: 110 },
+        data: { title: 'Konektor Google Drive', connectorType: 'drive', actionType: 'Search Files' },
+      }),
+      telegram: () => ({
+        id, type: 'connectorNode', position: { x: posX, y: posY }, measured: { width: 240, height: 110 },
+        data: { title: 'Konektor Telegram Bot', connectorType: 'telegram', actionType: 'Send Message Alert' },
+      }),
+      logic: () => ({
+        id, type: 'logicNode', position: { x: posX, y: posY }, measured: { width: 240, height: 110 },
+        data: { title: 'Pemeriksaan Kondisi', condition: 'output.priority === "HIGH"' },
+      }),
+      http: () => ({
+        id, type: 'httpNode', position: { x: posX, y: posY }, measured: { width: 260, height: 120 },
+        data: { title: 'HTTP Request', method: 'GET', url: 'https://api.example.com/data' },
+      }),
+      code: () => ({
+        id, type: 'codeNode', position: { x: posX, y: posY }, measured: { width: 260, height: 130 },
+        data: { title: 'Custom Code', language: 'javascript', codeSnippet: 'return items.map(i => i.data);' },
+      }),
+      database: () => ({
+        id, type: 'databaseNode', position: { x: posX, y: posY }, measured: { width: 260, height: 120 },
+        data: { title: 'Database Query', dbType: 'postgres', operation: 'select', table: 'users' },
+      }),
+      email: () => ({
+        id, type: 'emailNode', position: { x: posX, y: posY }, measured: { width: 260, height: 120 },
+        data: { title: 'Send Email', service: 'gmail', to: 'user@example.com', subject: 'Notifikasi Otomatis' },
+      }),
+      delay: () => ({
+        id, type: 'delayNode', position: { x: posX, y: posY }, measured: { width: 220, height: 100 },
+        data: { title: 'Delay / Wait', delayType: 'fixed', duration: '5', unit: 'minutes' },
+      }),
+      transform: () => ({
+        id, type: 'transformNode', position: { x: posX, y: posY }, measured: { width: 260, height: 120 },
+        data: { title: 'Data Transform', operation: 'map', expression: 'items.map(i => ({ ...i, processed: true }))' },
+      }),
+      spreadsheet: () => ({
+        id, type: 'spreadsheetNode', position: { x: posX, y: posY }, measured: { width: 260, height: 120 },
+        data: { title: 'Google Sheets', service: 'google-sheets', operation: 'read', sheetName: 'Sheet1' },
+      }),
+      storage: () => ({
+        id, type: 'storageNode', position: { x: posX, y: posY }, measured: { width: 260, height: 120 },
+        data: { title: 'Cloud Storage', provider: 'r2', operation: 'upload', bucket: 'assets' },
+      }),
+    };
+
+    const factory = nodeMap[type];
+    if (!factory) return;
+    newNode = factory();
+
+    setNodes((nds) => [...nds, newNode]);
+    setIsPaletteOpen(false);
+  };
+
+  // Real Cloudflare Worker Edge Execution Runner
+  const handleRunCloudflareWorker = async () => {
+    setIsRunningWorker(true);
+    setShowTraceModal(true);
+    setExecutionTraces([]);
+    setTotalExecutionTime(null);
+    setExecutionToast('⚡ Mengirim payload DAG alur ke Cloudflare Worker Edge...');
+
+    try {
+      const res = await fetch('/api/automations/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workflowId,
+          workflowName: workflowTitle,
+          triggerSource: 'manual',
+          nodes,
+          edges,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setExecutionTraces(data.traces || []);
+        setTotalExecutionTime(data.totalDurationMs || 320);
+
+        // Sequentially highlight nodes in canvas with green illumination
+        for (const trace of data.traces || []) {
+          setNodes((nds) =>
+            nds.map((n) => (n.id === trace.nodeId ? { ...n, data: { ...n.data, isRunning: true } } : n))
+          );
+          await new Promise((r) => setTimeout(r, 400));
+          setNodes((nds) =>
+            nds.map((n) => (n.id === trace.nodeId ? { ...n, data: { ...n.data, isRunning: false } } : n))
+          );
+        }
+
+        setExecutionToast(`✓ Alur berhasil dieksekusi di Cloudflare Worker (${data.totalDurationMs}ms)!`);
+      } else {
+        setExecutionToast(`✘ Eksekusi gagal: ${data.error}`);
+      }
+    } catch (err: any) {
+      setExecutionToast(`✘ Network Error: ${err?.message}`);
+    } finally {
+      setIsRunningWorker(false);
+      setTimeout(() => setExecutionToast(null), 4000);
     }
-
-    setIsSimulatingRun(false);
-    setExecutionToast('✓ Alur kerja berhasil dieksekusi 100% di browser tanpa server perantara!');
-    setTimeout(() => setExecutionToast(null), 4000);
   };
 
   const handleSave = () => {
@@ -307,6 +370,16 @@ export function WorkflowCanvasEditor({
     setTimeout(() => setExecutionToast(null), 2500);
   };
 
+  const webhookUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/api/automations/webhook/${workflowId}`
+    : `https://anticeil.com/api/automations/webhook/${workflowId}`;
+
+  const handleCopyWebhook = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setCopiedWebhook(true);
+    setTimeout(() => setCopiedWebhook(false), 2000);
+  };
+
   return (
     <div
       style={{
@@ -314,7 +387,7 @@ export function WorkflowCanvasEditor({
         height: 'calc(100vh - 60px)',
         display: 'flex',
         flexDirection: 'column',
-        background: '#FAF9F5',
+        background: isDark ? '#0B0F19' : '#FAF9F5',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -322,79 +395,92 @@ export function WorkflowCanvasEditor({
       {/* Top Studio Responsive Navbar */}
       <div
         style={{
-          minHeight: '52px',
-          background: '#FFFFFF',
-          borderBottom: '1px solid #E6E1D7',
-          padding: isMobile ? '8px 12px' : '0 20px',
+          height: isMobile ? '46px' : '50px',
+          background: isDark ? '#141824' : '#FFFFFF',
+          borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E6E1D7',
+          padding: isMobile ? '0 var(--studio-header-pad-x-mobile, 12px)' : '0 var(--studio-header-pad-x, 16px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '8px',
+          gap: isMobile ? '6px' : '10px',
           zIndex: 20,
+          boxSizing: 'border-box',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
         }}
       >
-        {/* Left Back + Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px', minWidth: 0 }}>
+        {/* Left: Back Button + Worker Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '10px', minWidth: 0, flexShrink: 0 }}>
           <button
             type="button"
             onClick={onBack}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
-              padding: isMobile ? '6px 10px' : '6px 12px',
+              gap: '4px',
+              padding: isMobile ? '5px 8px' : '6px 12px',
               borderRadius: '8px',
-              border: '1px solid #E2DED5',
-              background: '#FFFFFF',
-              color: '#475569',
-              fontSize: '12.5px',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2DED5',
+              background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+              color: isDark ? '#E2E8F0' : '#475569',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+            title={language === 'id' ? 'Kembali' : 'Back'}
+          >
+            <ArrowLeft size={14} />
+            {!isMobile && <span>{language === 'id' ? 'Kembali' : 'Back'}</span>}
+          </button>
+
+          <span
+            style={{
+              fontSize: isMobile ? '10px' : '11px',
+              fontWeight: 700,
+              color: '#F38020',
+              background: isDark ? 'rgba(243, 128, 32, 0.18)' : 'rgba(243, 128, 32, 0.08)',
+              padding: isMobile ? '3px 7px' : '3px 10px',
+              borderRadius: '9999px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              whiteSpace: 'nowrap',
               flexShrink: 0,
             }}
           >
-            <ArrowLeft size={14} />
-            {!isMobile && <span>Kembali</span>}
-          </button>
-
-          <div style={{ height: '18px', width: '1px', background: '#E2DED5' }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-            <span style={{ fontSize: '16px', flexShrink: 0 }}>⚡</span>
-            <span
-              style={{
-                fontSize: isMobile ? '13px' : '14px',
-                fontWeight: 700,
-                color: '#1E293B',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: isMobile ? '130px' : '280px',
-              }}
-            >
-              {workflowTitle || 'Visual Studio'}
-            </span>
-            {!isMobile && (
-              <span
-                style={{
-                  fontSize: '10.5px',
-                  fontWeight: 700,
-                  color: '#0073EA',
-                  background: 'rgba(0, 115, 234, 0.08)',
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                }}
-              >
-                React Flow
-              </span>
-            )}
-          </div>
+            <Cloud size={11} /> {isMobile ? 'Worker' : '24/7 Cloudflare Worker'}
+          </span>
         </div>
 
-        {/* Right Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {/* MiniMap Toggle on Mobile */}
+        {/* Right Action Controls (Ultra Compact on Mobile) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '6px', flexShrink: 0, marginLeft: 'auto' }}>
+          {/* Webhook & Cron Settings Button */}
+          <button
+            type="button"
+            onClick={() => setShowWebhookModal(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: isMobile ? '5px 8px' : '6px 10px',
+              borderRadius: '8px',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2DED5',
+              background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+              color: isDark ? '#CBD5E1' : '#475569',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+            title="Webhook & Cron Settings"
+          >
+            <Radio size={13} color="#F38020" />
+            {!isMobile && <span>Webhook</span>}
+          </button>
+
+          {/* MiniMap Toggle Button */}
           <button
             type="button"
             onClick={() => setIsMiniMapOpen(!isMiniMapOpen)}
@@ -402,14 +488,19 @@ export function WorkflowCanvasEditor({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              padding: '6px 10px',
+              padding: isMobile ? '5px 8px' : '6px 10px',
               borderRadius: '8px',
-              border: '1px solid #E2DED5',
-              background: isMiniMapOpen ? '#F1F5F9' : '#FFFFFF',
-              color: isMiniMapOpen ? '#0073EA' : '#64748B',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2DED5',
+              background: isMiniMapOpen
+                ? isDark ? 'rgba(0, 115, 234, 0.25)' : '#F1F5F9'
+                : isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+              color: isMiniMapOpen
+                ? isDark ? '#38BDF8' : '#0073EA'
+                : isDark ? '#94A3B8' : '#64748B',
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
             }}
             title="Toggle MiniMap"
           >
@@ -417,66 +508,65 @@ export function WorkflowCanvasEditor({
             {!isMobile && <span>Map</span>}
           </button>
 
+          {/* Cloudflare Worker Real Run Button */}
           <button
             type="button"
-            onClick={handleRunSimulation}
-            disabled={isSimulatingRun}
+            onClick={handleRunCloudflareWorker}
+            disabled={isRunningWorker}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
-              padding: isMobile ? '6px 10px' : '7px 14px',
+              gap: '4px',
+              padding: isMobile ? '5px 9px' : '6px 14px',
               borderRadius: '8px',
               border: 'none',
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              background: 'linear-gradient(135deg, #F38020 0%, #E55A00 100%)',
               color: '#FFFFFF',
-              fontSize: isMobile ? '12px' : '13px',
+              fontSize: '12px',
               fontWeight: 700,
-              cursor: isSimulatingRun ? 'not-allowed' : 'pointer',
-              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
-              flexShrink: 0,
+              cursor: isRunningWorker ? 'not-allowed' : 'pointer',
+              boxShadow: '0 2px 8px rgba(243, 128, 32, 0.3)',
+              opacity: isRunningWorker ? 0.7 : 1,
+              whiteSpace: 'nowrap',
             }}
+            title="Uji Eksekusi Alur Worker"
           >
-            {isSimulatingRun ? (
-              <>
-                <Loader2 size={13} className="animate-spin" />
-                <span>{!isMobile ? 'Mengeksekusi...' : 'Jalan'}</span>
-              </>
+            {isRunningWorker ? (
+              <Loader2 size={13} className="animate-spin" />
             ) : (
-              <>
-                <Play size={13} />
-                <span>{!isMobile ? 'Uji Eksekusi' : 'Uji'}</span>
-              </>
+              <Zap size={13} />
             )}
+            <span>{isMobile ? 'Uji' : (language === 'id' ? 'Uji Worker' : 'Run Worker')}</span>
           </button>
 
+          {/* Save Button */}
           <button
             type="button"
             onClick={handleSave}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
-              padding: isMobile ? '6px 10px' : '7px 14px',
+              gap: '4px',
+              padding: isMobile ? '5px 10px' : '6px 14px',
               borderRadius: '8px',
               border: 'none',
-              background: '#0073EA',
+              background: 'var(--brand-primary, #0073EA)',
               color: '#FFFFFF',
-              fontSize: isMobile ? '12px' : '13px',
+              fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0, 115, 234, 0.25)',
-              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >
             <Save size={13} />
-            <span>{!isMobile ? 'Simpan Alur' : 'Simpan'}</span>
+            <span>{language === 'id' ? 'Simpan' : 'Save'}</span>
           </button>
         </div>
       </div>
 
-      {/* Main Canvas Area */}
-      <div style={{ flex: 1, width: '100%', position: 'relative' }}>
+      {/* Canvas React Flow Area */}
+      <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -486,367 +576,511 @@ export function WorkflowCanvasEditor({
           onNodeClick={handleNodeClick}
           nodeTypes={nodeTypes}
           fitView
-          attributionPosition="bottom-left"
+          fitViewOptions={{ padding: 0.2 }}
+          minZoom={0.2}
+          maxZoom={2}
+          style={{
+            background: isDark ? '#0B0F19' : '#FAF9F5',
+            width: '100%',
+            height: '100%',
+          }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} color="#D5CFBE" />
-          <Controls position="bottom-right" style={{ marginBottom: isMobile ? '50px' : '10px' }} />
+          <Controls
+            style={{
+              borderRadius: '8px',
+              overflow: 'hidden',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #CBD5E1',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            }}
+          />
 
-          {/* Interactive Responsive MiniMap */}
           {isMiniMapOpen && (
             <MiniMap
-              position="bottom-left"
-              pannable
-              zoomable
-              maskColor="rgba(235, 230, 220, 0.6)"
-              maskStrokeColor="#0073EA"
-              maskStrokeWidth={2}
               nodeColor={(n) => {
-                if (n.type === 'triggerNode') return '#D97706';
+                const colorMap: Record<string, string> = {
+                  triggerNode: '#D97706',
+                  logicNode: '#0891B2',
+                  httpNode: '#3B82F6',
+                  codeNode: '#10B981',
+                  databaseNode: '#336791',
+                  emailNode: '#EA4335',
+                  delayNode: '#A855F7',
+                  transformNode: '#0EA5E9',
+                  spreadsheetNode: '#34A853',
+                  storageNode: '#F59E0B',
+                };
+                if (n.type && colorMap[n.type]) return colorMap[n.type];
                 if (n.type === 'aiAgentNode') {
-                  const provider = (n.data as any)?.provider;
-                  if (provider === 'anthropic') return '#7C3AED';
-                  if (provider === 'deepseek') return '#2563EB';
-                  if (provider === 'groq') return '#EA580C';
-                  if (provider === 'openai') return '#10A37F';
-                  return '#7C3AED';
+                  const prov = (n.data?.provider as string) || '';
+                  if (prov.includes('anthropic')) return '#7C3AED';
+                  if (prov.includes('deepseek')) return '#2563EB';
+                  if (prov.includes('groq')) return '#EA580C';
+                  return '#16A34A';
                 }
                 if (n.type === 'connectorNode') {
-                  const connType = (n.data as any)?.connectorType;
-                  if (connType === 'gmail') return '#EA4335';
-                  if (connType === 'calendar') return '#1A73E8';
-                  if (connType === 'drive') return '#0F9D58';
-                  if (connType === 'telegram') return '#0088CC';
-                  if (connType === 'tavily') return '#7C3AED';
-                  return '#1A73E8';
+                  const ctype = (n.data?.connectorType as string) || '';
+                  if (ctype === 'gmail') return '#EA4335';
+                  if (ctype === 'calendar') return '#1A73E8';
+                  if (ctype === 'drive') return '#0F9D58';
+                  if (ctype === 'telegram') return '#0088CC';
                 }
-                if (n.type === 'logicNode') return '#6366F1';
                 return '#0073EA';
               }}
-              nodeStrokeColor="#FFFFFF"
-              nodeStrokeWidth={2}
-              nodeBorderRadius={4}
               style={{
-                width: isMobile ? '140px' : '180px',
-                height: isMobile ? '90px' : '120px',
-                background: '#FFFFFF',
-                borderRadius: '12px',
-                border: '1.5px solid #E6E1D7',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-                cursor: 'grab',
-                marginBottom: isMobile ? '50px' : '10px',
+                borderRadius: 10,
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #CBD5E1',
+                background: isDark ? '#141824' : '#FFFFFF',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                width: 190,
+                height: 125,
               }}
+              zoomable
+              pannable
             />
           )}
 
-          {/* Top-Left Collapsible Node Palette Panel */}
-          <Panel position="top-left">
-            {!isPaletteOpen ? (
-              <button
-                type="button"
-                onClick={() => setIsPaletteOpen(true)}
+          {/* Left Node Palette Panel */}
+          <Panel position="top-left" style={{ margin: '14px' }}>
+            <div
+              style={{
+                background: isDark ? 'rgba(20, 24, 36, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2DED5',
+                borderRadius: '12px',
+                padding: '12px',
+                boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                width: isPaletteOpen ? (isMobile ? '200px' : '230px') : 'auto',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  background: '#FFFFFF',
-                  border: '1.5px solid #E6E1D7',
-                  color: '#1E293B',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.08)',
+                  justifyContent: 'space-between',
                   cursor: 'pointer',
+                  paddingBottom: isPaletteOpen ? '6px' : 0,
+                  borderBottom: isPaletteOpen ? (isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #F1F5F9') : 'none',
                 }}
+                onClick={() => setIsPaletteOpen(!isPaletteOpen)}
               >
-                <Plus size={14} color="#0073EA" />
-                <span>Tambah Node</span>
-              </button>
-            ) : (
-              <div
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: '12px',
-                  border: '1.5px solid #E6E1D7',
-                  padding: '12px',
-                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '7px',
-                  width: isMobile ? '190px' : '210px',
-                  maxHeight: 'calc(100vh - 160px)',
-                  overflowY: 'auto',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    + Tambah Node
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Plus size={14} color="#0073EA" />
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: isDark ? '#FFFFFF' : '#1E293B' }}>
+                    {language === 'id' ? 'Tambah Blok Node' : 'Add Node'}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsPaletteOpen(false)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#94A3B8',
-                      cursor: 'pointer',
-                      padding: '2px',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <X size={14} />
-                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddNode('trigger')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '7px 10px',
-                    borderRadius: '8px',
-                    background: '#FEF3C7',
-                    border: '1px solid #FDE68A',
-                    color: '#92400E',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Clock size={14} color="#D97706" />
-                  <span>Pemicu / Trigger</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddNode('ai')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '7px 10px',
-                    borderRadius: '8px',
-                    background: '#EFF6FF',
-                    border: '1px solid #BFDBFE',
-                    color: '#1E40AF',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Sparkles size={14} color="#0073EA" />
-                  <span>AI Agent (BYOK)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddNode('gmail')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '7px 10px',
-                    borderRadius: '8px',
-                    background: '#FEF2F2',
-                    border: '1px solid #FECACA',
-                    color: '#991B1B',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Mail size={14} color="#EA4335" />
-                  <span>Gmail Action</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddNode('calendar')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '7px 10px',
-                    borderRadius: '8px',
-                    background: '#EFF6FF',
-                    border: '1px solid #BFDBFE',
-                    color: '#1A73E8',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Calendar size={14} color="#1A73E8" />
-                  <span>Google Calendar</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddNode('drive')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '7px 10px',
-                    borderRadius: '8px',
-                    background: '#F0FDF4',
-                    border: '1px solid #BBF7D0',
-                    color: '#0F9D58',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <FolderOpen size={14} color="#0F9D58" />
-                  <span>Google Drive</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddNode('telegram')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '7px 10px',
-                    borderRadius: '8px',
-                    background: '#F0F9FF',
-                    border: '1px solid #BAE6FD',
-                    color: '#0088CC',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Send size={14} color="#0088CC" />
-                  <span>Telegram Alert</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddNode('logic')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '7px 10px',
-                    borderRadius: '8px',
-                    background: '#EEF2FF',
-                    border: '1px solid #C7D2FE',
-                    color: '#3730A3',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <GitBranch size={14} color="#6366F1" />
-                  <span>Logika IF / ELSE</span>
-                </button>
+                {isPaletteOpen ? <ChevronUp size={14} color={isDark ? '#94A3B8' : '#64748B'} /> : <ChevronDown size={14} color={isDark ? '#94A3B8' : '#64748B'} />}
               </div>
-            )}
+
+              {isPaletteOpen && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: isMobile ? '55vh' : '65vh', overflowY: 'auto', paddingRight: '4px' }}>
+                  {/* KATEGORI: Pemicu & Alur */}
+                  <div>
+                    <div style={{ fontSize: '9.5px', fontWeight: 800, color: isDark ? '#64748B' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>Pemicu & Alur</div>
+                    {[
+                      { type: 'trigger', icon: <Clock size={13} />, label: 'Pemicu Cron / Webhook', bg: isDark ? 'rgba(217,119,6,0.15)' : '#FEF3C7', color: '#D97706' },
+                      { type: 'logic', icon: <GitBranch size={13} />, label: 'Logika & Kondisi', bg: isDark ? 'rgba(8,145,178,0.15)' : '#CFFAFE', color: '#0891B2' },
+                      { type: 'delay', icon: <Timer size={13} />, label: 'Delay / Wait', bg: isDark ? 'rgba(168,85,247,0.15)' : '#FAF5FF', color: '#A855F7' },
+                    ].map((n) => (
+                      <button key={n.type} type="button" onClick={() => handleAddNode(n.type)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', border: 'none', background: n.bg, color: n.color, fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const, width: '100%', marginBottom: '4px' }}>
+                        {n.icon} {n.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* KATEGORI: AI & Kode */}
+                  <div>
+                    <div style={{ fontSize: '9.5px', fontWeight: 800, color: isDark ? '#64748B' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>AI & Kode</div>
+                    {[
+                      { type: 'ai', icon: <Sparkles size={13} />, label: 'AI Reasoning Agent', bg: isDark ? 'rgba(124,58,237,0.15)' : '#F3E8FF', color: '#7C3AED' },
+                      { type: 'code', icon: <Code2 size={13} />, label: 'Custom Code (JS/PY)', bg: isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5', color: '#10B981' },
+                      { type: 'transform', icon: <ArrowRightLeft size={13} />, label: 'Data Transform', bg: isDark ? 'rgba(14,165,233,0.15)' : '#F0F9FF', color: '#0EA5E9' },
+                    ].map((n) => (
+                      <button key={n.type} type="button" onClick={() => handleAddNode(n.type)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', border: 'none', background: n.bg, color: n.color, fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const, width: '100%', marginBottom: '4px' }}>
+                        {n.icon} {n.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* KATEGORI: Integrasi */}
+                  <div>
+                    <div style={{ fontSize: '9.5px', fontWeight: 800, color: isDark ? '#64748B' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>Integrasi</div>
+                    {[
+                      { type: 'http', icon: <Globe size={13} />, label: 'HTTP Request', bg: isDark ? 'rgba(59,130,246,0.15)' : '#DBEAFE', color: '#3B82F6' },
+                      { type: 'calendar', icon: <Calendar size={13} />, label: 'Google Calendar', bg: isDark ? 'rgba(26,115,232,0.15)' : '#E8F0FE', color: '#1A73E8' },
+                      { type: 'gmail', icon: <Mail size={13} />, label: 'Gmail VIP Draft', bg: isDark ? 'rgba(234,67,53,0.15)' : '#FCE8E6', color: '#EA4335' },
+                      { type: 'email', icon: <Mail size={13} />, label: 'Email (SendGrid/Resend)', bg: isDark ? 'rgba(234,67,53,0.1)' : '#FEF2F2', color: '#DC2626' },
+                      { type: 'telegram', icon: <Send size={13} />, label: 'Telegram Bot Alert', bg: isDark ? 'rgba(0,136,204,0.15)' : '#E0F2FE', color: '#0088CC' },
+                    ].map((n) => (
+                      <button key={n.type} type="button" onClick={() => handleAddNode(n.type)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', border: 'none', background: n.bg, color: n.color, fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const, width: '100%', marginBottom: '4px' }}>
+                        {n.icon} {n.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* KATEGORI: Data & Penyimpanan */}
+                  <div>
+                    <div style={{ fontSize: '9.5px', fontWeight: 800, color: isDark ? '#64748B' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>Data & Penyimpanan</div>
+                    {[
+                      { type: 'database', icon: <Database size={13} />, label: 'Database (PG/Mongo)', bg: isDark ? 'rgba(51,103,145,0.15)' : '#F0F9FF', color: '#336791' },
+                      { type: 'spreadsheet', icon: <Sheet size={13} />, label: 'Spreadsheet / Sheets', bg: isDark ? 'rgba(52,168,83,0.15)' : '#F0FDF4', color: '#34A853' },
+                      { type: 'storage', icon: <HardDrive size={13} />, label: 'Cloud Storage (S3/R2)', bg: isDark ? 'rgba(255,153,0,0.15)' : '#FFFBEB', color: '#F59E0B' },
+                    ].map((n) => (
+                      <button key={n.type} type="button" onClick={() => handleAddNode(n.type)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', border: 'none', background: n.bg, color: n.color, fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const, width: '100%', marginBottom: '4px' }}>
+                        {n.icon} {n.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </Panel>
 
-          {/* Node Inspector Panel (Right) when a node is selected */}
+          {/* Right Node Inspector Panel */}
           {selectedNode && (
-            <Panel position={isMobile ? 'bottom-center' : 'top-right'}>
-              <div
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: '12px',
-                  border: '1.5px solid #E6E1D7',
-                  padding: '14px',
-                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)',
-                  width: isMobile ? 'calc(100vw - 32px)' : '280px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px',
-                  marginBottom: isMobile ? '20px' : '0',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Sliders size={14} color="#0073EA" />
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>
-                      Konfigurasi Node
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button
-                      type="button"
-                      onClick={handleDeleteSelected}
-                      style={{
-                        background: '#FEE2E2',
-                        border: 'none',
-                        color: '#DC2626',
-                        padding: '4px 6px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                      }}
-                    >
-                      <Trash2 size={11} /> Hapus
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedNode(null)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#94A3B8',
-                        cursor: 'pointer',
-                        padding: '2px',
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>
-                    Judul Node
-                  </label>
-                  <input
-                    type="text"
-                    value={String(selectedNode.data?.title || '')}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNodes((nds) =>
-                        nds.map((n) => (n.id === selectedNode.id ? { ...n, data: { ...n.data, title: val } } : n))
-                      );
-                      setSelectedNode((prev) => (prev ? { ...prev, data: { ...prev.data, title: val } } : null));
-                    }}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
-                      fontSize: '12px',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-
-                <div style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.4 }}>
-                  Tipe: <strong>{selectedNode.type}</strong>
-                </div>
-              </div>
+            <Panel position="top-right" style={{ margin: '14px' }}>
+              <NodeInspectorPanel
+                node={selectedNode}
+                isDark={isDark}
+                isMobile={isMobile}
+                language={language}
+                onUpdateNodeData={handleUpdateNodeData}
+                onDeleteNode={handleDeleteSelected}
+                onClose={() => setSelectedNode(null)}
+              />
             </Panel>
           )}
         </ReactFlow>
+
+        {/* ── Cloudflare Worker Execution Trace Console Modal ── */}
+        {showTraceModal && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '680px',
+                maxHeight: '85vh',
+                background: isDark ? '#111827' : '#FFFFFF',
+                borderRadius: '16px',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Modal Header */}
+              <div
+                style={{
+                  padding: '16px 20px',
+                  background: isDark ? '#1F2937' : '#F8FAFC',
+                  borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Terminal size={18} color="#F38020" />
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: isDark ? '#F9FAFB' : '#0F172A' }}>
+                    Cloudflare Worker Execution Trace
+                  </h3>
+                  {totalExecutionTime && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        color: '#10B981',
+                      }}
+                    >
+                      ✓ {totalExecutionTime}ms
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowTraceModal(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: isDark ? '#9CA3AF' : '#64748B',
+                    cursor: 'pointer',
+                    padding: '4px',
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body: Steps Logs */}
+              <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: isDark ? '#9CA3AF' : '#64748B' }}>
+                    Worker: <strong>anticeil-automation-worker (Edge)</strong>
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#10B981', fontWeight: 700 }}>
+                    ● 24/7 Global CDN Active
+                  </span>
+                </div>
+
+                {isRunningWorker && (
+                  <div style={{ padding: '30px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                    <Loader2 size={28} color="#F38020" className="animate-spin" />
+                    <span style={{ fontSize: '13px', color: isDark ? '#D1D5DB' : '#475569', fontWeight: 600 }}>
+                      Mengeksekusi alur DAG di Cloudflare Edge...
+                    </span>
+                  </div>
+                )}
+
+                {!isRunningWorker && executionTraces.length === 0 && (
+                  <div style={{ padding: '20px', textAlign: 'center', color: isDark ? '#9CA3AF' : '#64748B', fontSize: '13px' }}>
+                    Belum ada log eksekusi. Klik tombol &ldquo;Uji Cloudflare Worker&rdquo; untuk memulai.
+                  </div>
+                )}
+
+                {executionTraces.map((trace, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: isDark ? '#1F2937' : '#F1F5F9',
+                      border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #CBD5E1',
+                      borderRadius: '10px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            background: '#10B981',
+                            color: '#FFFFFF',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: isDark ? '#F9FAFB' : '#0F172A' }}>
+                          {trace.nodeTitle}
+                        </span>
+                        <span style={{ fontSize: '10.5px', color: isDark ? '#9CA3AF' : '#64748B' }}>
+                          ({trace.nodeType})
+                        </span>
+                      </div>
+
+                      <span style={{ fontSize: '11px', color: '#10B981', fontWeight: 600 }}>
+                        {trace.durationMs}ms
+                      </span>
+                    </div>
+
+                    {/* Step Output Payload View */}
+                    <div
+                      style={{
+                        background: isDark ? '#111827' : '#FFFFFF',
+                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                        borderRadius: '6px',
+                        padding: '8px 10px',
+                        fontSize: '11.5px',
+                        fontFamily: 'monospace',
+                        color: isDark ? '#A5F3FC' : '#0369A1',
+                        maxHeight: '100px',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {JSON.stringify(trace.output, null, 2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Modal Footer */}
+              <div
+                style={{
+                  padding: '12px 20px',
+                  background: isDark ? '#1F2937' : '#F8FAFC',
+                  borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowTraceModal(false)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    background: 'var(--brand-primary)',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Tutup Konsol
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Inbound Webhook & 24/7 Cron Modal ── */}
+        {showWebhookModal && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '600px',
+                background: isDark ? '#111827' : '#FFFFFF',
+                borderRadius: '16px',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Cloud size={18} color="#F38020" />
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: isDark ? '#F9FAFB' : '#0F172A' }}>
+                    Integrasi Webhook & Cron 24/7 Cloudflare
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWebhookModal(false)}
+                  style={{ background: 'transparent', border: 'none', color: isDark ? '#9CA3AF' : '#64748B', cursor: 'pointer' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Webhook Endpoint Box */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: isDark ? '#E5E7EB' : '#374151' }}>
+                  Endpoint Inbound Webhook (Trigger Eksternal):
+                </label>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: isDark ? '#1F2937' : '#F1F5F9',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #CBD5E1',
+                  }}
+                >
+                  <code style={{ fontSize: '11.5px', color: '#F38020', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {webhookUrl}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyWebhook}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: copiedWebhook ? '#10B981' : 'var(--brand-primary)',
+                      color: '#FFFFFF',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {copiedWebhook ? <Check size={12} /> : <Copy size={12} />}
+                    <span>{copiedWebhook ? 'Tersalin!' : 'Salin URL'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Cron Triggers Info */}
+              <div
+                style={{
+                  background: isDark ? 'rgba(243, 128, 32, 0.1)' : '#FFF7ED',
+                  border: '1px solid rgba(243, 128, 32, 0.25)',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#C2410C' }}>
+                  ⚡ Eksekusi Otomatis 24/7 Terpasang
+                </span>
+                <p style={{ fontSize: '11.5px', color: isDark ? '#FED7AA' : '#9A3412', margin: 0, lineHeight: 1.4 }}>
+                  Alur ini dapat berjalan di jaringan Cloudflare Edge 24/7 meskipun browser/laptop Anda ditutup. Anda bisa mengatur jadwal via <code>wrangler.toml</code> atau memicu kapan saja via Webhook HTTP POST.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowWebhookModal(false)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    background: 'var(--brand-primary)',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Selesai
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Live Execution Toast Notification */}
         {executionToast && (
@@ -871,7 +1105,7 @@ export function WorkflowCanvasEditor({
               textAlign: 'center',
             }}
           >
-            <Zap size={14} color="#38BDF8" style={{ flexShrink: 0 }} />
+            <Zap size={14} color="#F38020" style={{ flexShrink: 0 }} />
             <span>{executionToast}</span>
           </div>
         )}
