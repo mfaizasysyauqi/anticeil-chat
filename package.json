@@ -1,0 +1,30 @@
+{
+  "name": "chatbyok",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:desktop": "pnpm --filter desktop tauri:dev",
+    "dev:desktop:ui": "pnpm --filter desktop dev",
+    "dev:mobile": "pnpm --filter mobile start",
+    "dev:mobile:tunnel": "pnpm --filter mobile start:tunnel",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.5.2",
+    "turbo": "^2.4.4",
+    "typescript": "^5.8.2"
+  },
+  "packageManager": "pnpm@10.27.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.0.10"
+    }
+  }
+}

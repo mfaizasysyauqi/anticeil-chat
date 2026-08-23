@@ -1,0 +1,39 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbo -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "check-types": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@chatbyok/core": "workspace:*",
+    "@gsap/react": "^2.1.2",
+    "@lobehub/icons": "^5.16.0",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.49.1",
+    "@xyflow/react": "^12.11.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^13.1.1",
+    "gsap": "^3.12.7",
+    "lucide-react": "^0.475.0",
+    "next": "^15.2.1",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@chatbyok/typescript-config": "workspace:*",
+    "@types/node": "^22.13.8",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.8.2"
+  }
+}

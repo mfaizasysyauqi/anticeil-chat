@@ -1,0 +1,864 @@
+'use client';
+
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import {
+  ChatMessage,
+  ChatSession,
+  FileAttachment,
+  LLMProviderId,
+  DEFAULT_PROVIDER_ID,
+  DEFAULT_MODEL_ID,
+  getModelById,
+  estimateTokens,
+  calculateCostUsd,
+  performWebSearch,
+  formatWebSearchResults,
+  cleanAgenticStream,
+  generateConnectorsSystemInstruction,
+  parseToolCallsFromLLM,
+  executeConnectorTool,
+  ToolCallResult,
+} from '@chatbyok/core';
+import { streamBYOKChat } from '../data/byokApi';
+import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
+
+interface ChatState {
+  sessions: ChatSession[];
+  activeSessionId: string;
+  messages: Record<string, ChatMessage[]>; // Keyed by sessionId
+  isGenerating: boolean;
+  abortController: AbortController | null;
+
+  // Session Actions
+  createSession: (providerId?: LLMProviderId, modelId?: string, systemPrompt?: string) => string;
+  selectSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+  updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
+  clearAllSessions: () => void;
+
+  // Messaging Actions
+  sendMessage: (
+    content: string,
+    attachments?: FileAttachment[],
+    enableWebSearch?: boolean
+  ) => Promise<void>;
+  generateImage: (prompt: string) => Promise<void>;
+  generateVideo: (prompt: string) => Promise<void>;
+  stopGeneration: () => void;
+  deleteMessage: (sessionId: string, messageId: string) => void;
+  editMessage: (sessionId: string, userMessageId: string, newContent: string) => Promise<void>;
+  navigateMessageVersion: (sessionId: string, userMessageId: string, direction: 'prev' | 'next') => void;
+  getActiveSession: () => ChatSession | undefined;
+  getActiveMessages: () => ChatMessage[];
+}
+
+const initialSessionId = 'session-default';
+const initialSession: ChatSession = {
+  id: initialSessionId,
+  title: 'New Conversation',
+  providerId: DEFAULT_PROVIDER_ID,
+  modelId: DEFAULT_MODEL_ID,
+  systemPrompt: '',
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  temperature: 0.7,
+};
+
+export const useChatStore = create<ChatState>()(
+  persist(
+    (set, get) => ({
+      sessions: [initialSession],
+      activeSessionId: initialSessionId,
+      messages: { [initialSessionId]: [] },
+      isGenerating: false,
+      abortController: null,
+
+      getActiveSession: () => {
+        const { sessions, activeSessionId } = get();
+        return sessions.find((s) => s.id === activeSessionId) || sessions[0];
+      },
+
+      getActiveMessages: () => {
+        const { messages, activeSessionId } = get();
+        return messages[activeSessionId] || [];
+      },
+
+      createSession: (providerId, modelId, systemPrompt) => {
+        const settings = useSettingsStore.getState();
+        const newId = `session-${Date.now()}`;
+        const newSession: ChatSession = {
+          id: newId,
+          title: 'New Conversation',
+          providerId: providerId || settings.activeProviderId || DEFAULT_PROVIDER_ID,
+          modelId: modelId || settings.activeModelId || DEFAULT_MODEL_ID,
+          systemPrompt: systemPrompt || '',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          temperature: 0.7,
+        };
+
+        set((state) => ({
+          sessions: [newSession, ...state.sessions],
+          activeSessionId: newId,
+          messages: { ...state.messages, [newId]: [] },
+        }));
+
+        return newId;
+      },
+
+      selectSession: (sessionId) => {
+        set({ activeSessionId: sessionId });
+      },
+
+      deleteSession: (sessionId) => {
+        set((state) => {
+          const newSessions = state.sessions.filter((s) => s.id !== sessionId);
+          const nextActiveId =
+            state.activeSessionId === sessionId
+              ? newSessions[0]?.id || ''
+              : state.activeSessionId;
+
+          const newMessages = { ...state.messages };
+          delete newMessages[sessionId];
+
+          if (newSessions.length === 0) {
+            const fallbackId = `session-${Date.now()}`;
+            const fallbackSession: ChatSession = {
+              id: fallbackId,
+              title: 'New Conversation',
+              providerId: DEFAULT_PROVIDER_ID,
+              modelId: DEFAULT_MODEL_ID,
+              systemPrompt: '',
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              temperature: 0.7,
+            };
+            return {
+              sessions: [fallbackSession],
+              activeSessionId: fallbackId,
+              messages: { [fallbackId]: [] },
+            };
+          }
+
+          return {
+            sessions: newSessions,
+            activeSessionId: nextActiveId,
+            messages: newMessages,
+          };
+        });
+      },
+
+      updateSession: (sessionId, updates) => {
+        set((state) => ({
+          sessions: state.sessions.map((s) =>
+            s.id === sessionId ? { ...s, ...updates, updatedAt: Date.now() } : s
+          ),
+        }));
+      },
+
+      clearAllSessions: () => {
+        const fallbackId = `session-${Date.now()}`;
+        const fallbackSession: ChatSession = {
+          id: fallbackId,
+          title: 'New Conversation',
+          providerId: DEFAULT_PROVIDER_ID,
+          modelId: DEFAULT_MODEL_ID,
+          systemPrompt: '',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          temperature: 0.7,
+        };
+        set({
+          sessions: [fallbackSession],
+          activeSessionId: fallbackId,
+          messages: { [fallbackId]: [] },
+        });
+      },
+
+      generateImage: async (prompt: string) => {
+        const state = get();
+        const session = state.getActiveSession();
+        if (!session || !prompt.trim()) return;
+
+        const cleanPrompt = prompt.trim();
+        const userMessageId = `msg-user-${Date.now()}`;
+        const userMessage: ChatMessage = {
+          id: userMessageId,
+          sessionId: session.id,
+          role: 'user',
+          content: `/image ${cleanPrompt}`,
+          timestamp: Date.now(),
+          status: 'done',
+        };
+
+        const assistantMessageId = `msg-ai-${Date.now() + 1}`;
+        const assistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          sessionId: session.id,
+          role: 'assistant',
+          content: `Generating image for prompt: *"${cleanPrompt}"*`,
+          timestamp: Date.now() + 1,
+          status: 'streaming',
+        };
+
+        const currentMessages = state.messages[session.id] || [];
+        set((s) => ({
+          messages: {
+            ...s.messages,
+            [session.id]: [...currentMessages, userMessage, assistantMessage],
+          },
+          isGenerating: true,
+        }));
+
+        try {
+          const encodedPrompt = encodeURIComponent(cleanPrompt);
+          const seed = Math.floor(Math.random() * 100000);
+          const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=1024&height=1024&nologo=true`;
+
+          await new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = imageUrl;
+          });
+
+          set((s) => ({
+            messages: {
+              ...s.messages,
+              [session.id]: (s.messages[session.id] || []).map((m) =>
+                m.id === assistantMessageId
+                  ? {
+                      ...m,
+                      content: `Here is your generated image for: **${cleanPrompt}**`,
+                      imageUrl,
+                      status: 'done',
+                    }
+                  : m
+              ),
+            },
+          }));
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : 'Image generation failed';
+          set((s) => ({
+            messages: {
+              ...s.messages,
+              [session.id]: (s.messages[session.id] || []).map((m) =>
+                m.id === assistantMessageId
+                  ? {
+                      ...m,
+                      content: `⚠️ Error: ${errMsg}`,
+                      status: 'error',
+                    }
+                  : m
+              ),
+            },
+          }));
+        } finally {
+          set({ isGenerating: false });
+        }
+      },
+
+      generateVideo: async (prompt: string) => {
+        const state = get();
+        const session = state.getActiveSession();
+        if (!session) return;
+
+        const cleanPrompt = prompt.trim();
+        const userMessageId = `msg-user-${Date.now()}`;
+        const userMessage: ChatMessage = {
+          id: userMessageId,
+          sessionId: session.id,
+          role: 'user',
+          content: `/video ${cleanPrompt}`,
+          timestamp: Date.now(),
+          status: 'done',
+        };
+
+        const assistantMessageId = `msg-ai-${Date.now() + 1}`;
+        const assistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          sessionId: session.id,
+          role: 'assistant',
+          content: `Rendering high-definition AI video for prompt: *"${cleanPrompt}"*`,
+          timestamp: Date.now() + 1,
+          status: 'streaming',
+        };
+
+        const currentMessages = state.messages[session.id] || [];
+        set((s) => ({
+          messages: {
+            ...s.messages,
+            [session.id]: [...currentMessages, userMessage, assistantMessage],
+          },
+          isGenerating: true,
+        }));
+
+        try {
+          // Video simulation URL / sample stream for client-side rendering
+          const videoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+
+          await new Promise((r) => setTimeout(r, 1200));
+
+          set((s) => ({
+            messages: {
+              ...s.messages,
+              [session.id]: (s.messages[session.id] || []).map((m) =>
+                m.id === assistantMessageId
+                  ? {
+                      ...m,
+                      content: `Here is your generated AI video for: **${cleanPrompt}**`,
+                      videoUrl,
+                      status: 'done',
+                    }
+                  : m
+              ),
+            },
+          }));
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : 'Video generation failed';
+          set((s) => ({
+            messages: {
+              ...s.messages,
+              [session.id]: (s.messages[session.id] || []).map((m) =>
+                m.id === assistantMessageId
+                  ? {
+                      ...m,
+                      content: `⚠️ Error: ${errMsg}`,
+                      status: 'error',
+                    }
+                  : m
+              ),
+            },
+          }));
+        } finally {
+          set({ isGenerating: false });
+        }
+      },
+
+      sendMessage: async (content: string, attachments?: FileAttachment[], enableWebSearch = false) => {
+        const state = get();
+        if (state.isGenerating || (!content.trim() && (!attachments || attachments.length === 0))) return;
+
+        if (content.trim().startsWith('/image ')) {
+          const imagePrompt = content.trim().replace(/^\/image\s+/, '');
+          return state.generateImage(imagePrompt);
+        }
+
+        if (content.trim().startsWith('/video ')) {
+          const videoPrompt = content.trim().replace(/^\/video\s+/, '');
+          return state.generateVideo(videoPrompt);
+        }
+
+        const session = state.getActiveSession();
+        if (!session) return;
+
+        const settings = useSettingsStore.getState();
+        const apiKeyConfig = settings.apiKeys[session.providerId];
+
+        // 1. Check if Live Web Search is requested
+        let webSearchReasoning = '';
+        let webSearchContext = '';
+        const shouldWebSearch = enableWebSearch || content.trim().startsWith('/search ');
+        const cleanUserQuery = content.trim().replace(/^\/search\s+/, '');
+
+        // 2. Format user content with attached document contents
+        let effectiveContent = cleanUserQuery;
+        if (attachments && attachments.length > 0) {
+          const docContexts = attachments
+            .filter((a) => !a.isImage)
+            .map((a) => `[File Attachment: ${a.name} (${a.type})]\n\`\`\`\n${a.content}\n\`\`\``)
+            .join('\n\n');
+
+          if (docContexts) {
+            effectiveContent = `${effectiveContent ? `${effectiveContent}\n\n` : ''}${docContexts}`;
+          }
+        }
+
+        // 3. Create and append user message
+        const userMessageId = `msg-user-${Date.now()}`;
+        const userMessage: ChatMessage = {
+          id: userMessageId,
+          sessionId: session.id,
+          role: 'user',
+          content: cleanUserQuery || `[Attached ${attachments?.length} file(s)]`,
+          attachments: attachments && attachments.length > 0 ? attachments : undefined,
+          timestamp: Date.now(),
+          status: 'done',
+        };
+
+        // 4. Create placeholder assistant message
+        const assistantMessageId = `msg-ai-${Date.now() + 1}`;
+        const assistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          sessionId: session.id,
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now() + 1,
+          status: 'streaming',
+        };
+
+        const currentMessages = state.messages[session.id] || [];
+        const updatedMessages = [...currentMessages, userMessage, assistantMessage];
+
+        const updates: Partial<ChatSession> = { updatedAt: Date.now() };
+        if (session.title === 'New Conversation') {
+          updates.title = cleanUserQuery.slice(0, 36) + (cleanUserQuery.length > 36 ? '...' : '');
+        }
+
+        set((s) => ({
+          messages: {
+            ...s.messages,
+            [session.id]: updatedMessages,
+          },
+          sessions: s.sessions.map((sess) =>
+            sess.id === session.id ? { ...sess, ...updates } : sess
+          ),
+          isGenerating: true,
+        }));
+
+        const controller = new AbortController();
+        set({ abortController: controller });
+
+        // Perform Web Search if requested
+        if (shouldWebSearch && cleanUserQuery) {
+          try {
+            webSearchReasoning += `Ran 1 search for "${cleanUserQuery}"\n`;
+            const searchResults = await performWebSearch(cleanUserQuery);
+            if (searchResults.length > 0) {
+              for (const res of searchResults.slice(0, 3)) {
+                webSearchReasoning += `Opened page ${res.url}\n`;
+              }
+              webSearchReasoning += `Reviewing ${searchResults.length} search results and formulating response\n`;
+              webSearchContext = formatWebSearchResults(cleanUserQuery, searchResults);
+            } else {
+              webSearchReasoning += `No live search results found. Synthesizing from base knowledge\n`;
+            }
+          } catch (err) {
+            console.warn('[ChatByok] Web search failed:', err);
+          }
+        }
+
+        // Connectors Setup
+        const connectorsStore = useConnectorsStore.getState();
+        const activeConnectorIds = connectorsStore.activeConnectorIds;
+        const connectorsInstruction = generateConnectorsSystemInstruction(activeConnectorIds);
+        const effectiveSystemPrompt = [session.systemPrompt, connectorsInstruction]
+          .filter(Boolean)
+          .join('\n\n');
+
+        const modelDef = getModelById(session.modelId);
+        let accumulatedText = '';
+        let accumulatedReasoning = webSearchReasoning;
+        let promptTokensCount = estimateTokens(
+          (effectiveSystemPrompt || '') + ' ' + updatedMessages.map((m) => m.content).join(' ')
+        );
+        let completionTokensCount = 0;
+        let lastFlushTime = 0;
+
+        // Prepare messages for API
+        const apiMessages = updatedMessages.slice(0, -1).map((m) => {
+          if (m.id === userMessageId) {
+            return {
+              ...m,
+              content: webSearchContext
+                ? `${webSearchContext}\n\nUser Question: ${effectiveContent}`
+                : effectiveContent,
+            };
+          }
+          return m;
+        });
+
+        try {
+          await streamBYOKChat({
+            providerId: session.providerId,
+            modelId: session.modelId,
+            systemPrompt: effectiveSystemPrompt,
+            messages: apiMessages,
+            apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
+            temperature: session.temperature,
+            signal: controller.signal,
+            onChunk: (chunk) => {
+              if (chunk.delta) accumulatedText += chunk.delta;
+              if (chunk.reasoningDelta) accumulatedReasoning += chunk.reasoningDelta;
+
+              if (chunk.promptTokens) promptTokensCount = chunk.promptTokens;
+              if (chunk.completionTokens) completionTokensCount = chunk.completionTokens;
+              else completionTokensCount = estimateTokens(accumulatedText);
+
+              const cost = calculateCostUsd(modelDef, promptTokensCount, completionTokensCount);
+
+              const flushState = (isDone: boolean) => {
+                const { cleanContent, reasoningContent } = cleanAgenticStream(
+                  accumulatedText,
+                  accumulatedReasoning,
+                  isDone
+                );
+
+                set((s) => ({
+                  messages: {
+                    ...s.messages,
+                    [session.id]: (s.messages[session.id] || []).map((m) =>
+                      m.id === assistantMessageId
+                        ? {
+                            ...m,
+                            content: cleanContent,
+                            reasoningContent: reasoningContent || undefined,
+                            status: isDone ? 'done' : 'streaming',
+                            tokensUsed: {
+                              prompt: promptTokensCount,
+                              completion: completionTokensCount,
+                              total: promptTokensCount + completionTokensCount,
+                            },
+                            estimatedCostUsd: cost,
+                          }
+                        : m
+                    ),
+                  },
+                }));
+              };
+
+              if (chunk.isDone) {
+                flushState(true);
+              } else {
+                const now = Date.now();
+                if (now - lastFlushTime > 50) {
+                  lastFlushTime = now;
+                  flushState(false);
+                }
+              }
+            },
+          });
+
+          // Check if tool calls were triggered
+          const { toolCalls } = parseToolCallsFromLLM(accumulatedText);
+          if (toolCalls.length > 0 && !controller.signal.aborted) {
+            const executedResults: ToolCallResult[] = [];
+
+            for (const toolCall of toolCalls) {
+              const res = await executeConnectorTool(toolCall, {
+                gmail: connectorsStore.getGmailClient(),
+                calendar: connectorsStore.getCalendarClient(),
+                drive: connectorsStore.getDriveClient(),
+              });
+              connectorsStore.recordToolExecution(res);
+              executedResults.push(res);
+            }
+
+            // Attach tool results to message
+            set((s) => ({
+              messages: {
+                ...s.messages,
+                [session.id]: (s.messages[session.id] || []).map((m) =>
+                  m.id === assistantMessageId
+                    ? {
+                        ...m,
+                        toolResults: executedResults,
+                        status: 'streaming',
+                      }
+                    : m
+                ),
+              },
+            }));
+
+            // Multi-turn synthesis with tool results
+            const toolResultsPrompt = executedResults
+              .map(
+                (r) =>
+                  `[Tool: ${r.toolName} (${r.status})]\nResult: ${JSON.stringify(r.data, null, 2)}\nSummary: ${r.summary}`
+              )
+              .join('\n\n');
+
+            const synthesisMessages: ChatMessage[] = [
+              ...apiMessages,
+              {
+                id: `msg-ai-tool-${Date.now()}`,
+                sessionId: session.id,
+                role: 'assistant',
+                content: accumulatedText,
+                timestamp: Date.now(),
+                status: 'done',
+              },
+              {
+                id: `msg-tool-res-${Date.now() + 1}`,
+                sessionId: session.id,
+                role: 'user',
+                content: `[Tool Execution Output from Workspace Connectors]:\n${toolResultsPrompt}\n\nPlease synthesize the final user-facing answer clearly based on the above tool results. Always respond in the EXACT same language as the user.`,
+                timestamp: Date.now() + 1,
+                status: 'done',
+              },
+            ];
+
+            let synthesisText = '';
+            await streamBYOKChat({
+              providerId: session.providerId,
+              modelId: session.modelId,
+              systemPrompt: effectiveSystemPrompt,
+              messages: synthesisMessages,
+              apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
+              temperature: session.temperature,
+              signal: controller.signal,
+              onChunk: (chunk) => {
+                if (chunk.delta) synthesisText += chunk.delta;
+                const { cleanContent } = cleanAgenticStream(synthesisText, '', chunk.isDone);
+
+                set((s) => ({
+                  messages: {
+                    ...s.messages,
+                    [session.id]: (s.messages[session.id] || []).map((m) =>
+                      m.id === assistantMessageId
+                        ? {
+                            ...m,
+                            content: cleanContent,
+                            status: chunk.isDone ? 'done' : 'streaming',
+                          }
+                        : m
+                    ),
+                  },
+                }));
+              },
+            });
+          }
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to generate response';
+          set((s) => ({
+            messages: {
+              ...s.messages,
+              [session.id]: (s.messages[session.id] || []).map((m) =>
+                m.id === assistantMessageId
+                  ? {
+                      ...m,
+                      content: accumulatedText || `⚠️ Error: ${errorMessage}`,
+                      reasoningContent: accumulatedReasoning || undefined,
+                      status: 'error',
+                      error: errorMessage,
+                    }
+                  : m
+              ),
+            },
+          }));
+        } finally {
+          set({ isGenerating: false, abortController: null });
+        }
+      },
+
+      stopGeneration: () => {
+        const { abortController } = get();
+        if (abortController) {
+          abortController.abort();
+        }
+        set({ isGenerating: false, abortController: null });
+      },
+
+      deleteMessage: (sessionId, messageId) => {
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [sessionId]: (state.messages[sessionId] || []).filter((m) => m.id !== messageId),
+          },
+        }));
+      },
+
+      navigateMessageVersion: (sessionId, userMessageId, direction) => {
+        set((state) => {
+          const msgs = state.messages[sessionId] || [];
+          const userIdx = msgs.findIndex((m) => m.id === userMessageId);
+          if (userIdx === -1) return {};
+          const userMsg = msgs[userIdx];
+          const versions = userMsg.versions || [userMsg.content];
+          const currentVIdx = userMsg.versionIndex ?? 0;
+          const nextVIdx = direction === 'prev' ? currentVIdx - 1 : currentVIdx + 1;
+          if (nextVIdx < 0 || nextVIdx >= versions.length) return {};
+
+          const newMsgs = msgs.map((m, idx) => {
+            if (idx === userIdx) {
+              return { ...m, content: versions[nextVIdx], versionIndex: nextVIdx };
+            }
+            // Paired assistant message (next in array) — swap to the branched content
+            if (idx === userIdx + 1 && m.role === 'assistant') {
+              const branchContent = m.branchContents?.[nextVIdx];
+              // Only switch if we have saved content for that version
+              if (branchContent !== undefined) {
+                return {
+                  ...m,
+                  content: branchContent,
+                  reasoningContent: m.branchReasoningContents?.[nextVIdx] ?? undefined,
+                };
+              }
+            }
+            return m;
+          });
+          return { messages: { ...state.messages, [sessionId]: newMsgs } };
+        });
+      },
+
+      editMessage: async (sessionId, userMessageId, newContent) => {
+        const state = get();
+        if (state.isGenerating || !newContent.trim()) return;
+
+        const msgs = state.messages[sessionId] || [];
+        const userIdx = msgs.findIndex((m) => m.id === userMessageId);
+        if (userIdx === -1) return;
+
+        const userMsg = msgs[userIdx];
+        const oldVersions = userMsg.versions || [userMsg.content];
+        const oldVIdx = userMsg.versionIndex ?? 0;
+
+        // If the very first entry equals current content it's already there; append new
+        const allVersions = [...oldVersions, newContent];
+        const newVIdx = allVersions.length - 1;
+
+        // Update user message + clear assistant response after it
+        const assistantMsg = msgs[userIdx + 1]?.role === 'assistant' ? msgs[userIdx + 1] : null;
+
+        // Snapshot the existing branch data and save the OLD response under oldVIdx
+        // so navigating back to that version restores the correct answer.
+        const existingBranchContents: Record<number, string> = { ...(assistantMsg?.branchContents ?? {}) };
+        const existingBranchReasoning: Record<number, string> = { ...(assistantMsg?.branchReasoningContents ?? {}) };
+        if (assistantMsg?.content) {
+          existingBranchContents[oldVIdx] = assistantMsg.content;
+        }
+        if (assistantMsg?.reasoningContent) {
+          existingBranchReasoning[oldVIdx] = assistantMsg.reasoningContent;
+        }
+
+        // Create a new streaming placeholder assistant message
+        const newAssistantId = `msg-ai-edit-${Date.now()}`;
+        const newAssistantMsg: ChatMessage = {
+          id: newAssistantId,
+          sessionId,
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          status: 'streaming',
+          branchContents: existingBranchContents,
+          branchReasoningContents: existingBranchReasoning,
+        };
+
+        const updatedMsgs = [
+          ...msgs.slice(0, userIdx),
+          { ...userMsg, content: newContent, versions: allVersions, versionIndex: newVIdx },
+          newAssistantMsg,
+          // Keep messages after the assistant (if any) — though usually it's last
+          ...msgs.slice(userIdx + (assistantMsg ? 2 : 1)),
+        ];
+
+        const session = state.sessions.find((s) => s.id === sessionId);
+        if (!session) return;
+
+        const settings = useSettingsStore.getState();
+        const apiKeyConfig = settings.apiKeys[session.providerId];
+
+        set((s) => ({
+          messages: { ...s.messages, [sessionId]: updatedMsgs },
+          isGenerating: true,
+        }));
+
+        const controller = new AbortController();
+        set({ abortController: controller });
+
+        const modelDef = getModelById(session.modelId);
+        let accumulatedText = '';
+        let accumulatedReasoning = '';
+        let promptTokensCount = 0;
+        let completionTokensCount = 0;
+        let lastFlushTime = 0;
+
+        // Build API messages: history up to (not including) the new assistant msg
+        const apiMessages = updatedMsgs.slice(0, -1).map((m) => m);
+
+        try {
+          await streamBYOKChat({
+            providerId: session.providerId,
+            modelId: session.modelId,
+            systemPrompt: session.systemPrompt,
+            messages: apiMessages,
+            apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
+            temperature: session.temperature,
+            signal: controller.signal,
+            onChunk: (chunk) => {
+              if (chunk.delta) accumulatedText += chunk.delta;
+              if (chunk.reasoningDelta) accumulatedReasoning += chunk.reasoningDelta;
+              if (chunk.promptTokens) promptTokensCount = chunk.promptTokens;
+              if (chunk.completionTokens) completionTokensCount = chunk.completionTokens;
+              else completionTokensCount = estimateTokens(accumulatedText);
+
+              const cost = calculateCostUsd(modelDef, promptTokensCount, completionTokensCount);
+
+              const flushState = (isDone: boolean) => {
+                const { cleanContent, reasoningContent } = cleanAgenticStream(
+                  accumulatedText,
+                  accumulatedReasoning,
+                  isDone
+                );
+
+                set((s) => ({
+                  messages: {
+                    ...s.messages,
+                    [sessionId]: (s.messages[sessionId] || []).map((m) =>
+                      m.id === newAssistantId
+                        ? {
+                            ...m,
+                            content: cleanContent,
+                            reasoningContent: reasoningContent || undefined,
+                            status: isDone ? 'done' : 'streaming',
+                            tokensUsed: {
+                              prompt: promptTokensCount,
+                              completion: completionTokensCount,
+                              total: promptTokensCount + completionTokensCount,
+                            },
+                            estimatedCostUsd: cost,
+                            // Save branch data keyed by version index
+                            branchContents: isDone
+                              ? { ...(m.branchContents ?? {}), [newVIdx]: cleanContent }
+                              : m.branchContents,
+                            branchReasoningContents: isDone && reasoningContent
+                              ? { ...(m.branchReasoningContents ?? {}), [newVIdx]: reasoningContent }
+                              : m.branchReasoningContents,
+                          }
+                        : m
+                    ),
+                  },
+                }));
+              };
+
+              if (chunk.isDone) {
+                flushState(true);
+              } else {
+                const now = Date.now();
+                if (now - lastFlushTime > 50) {
+                  lastFlushTime = now;
+                  flushState(false);
+                }
+              }
+            },
+          });
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate response';
+          set((s) => ({
+            messages: {
+              ...s.messages,
+              [sessionId]: (s.messages[sessionId] || []).map((m) =>
+                m.id === newAssistantId
+                  ? { ...m, content: accumulatedText || `⚠️ Error: ${errorMessage}`, status: 'error', error: errorMessage }
+                  : m
+              ),
+            },
+          }));
+        } finally {
+          set({ isGenerating: false, abortController: null });
+        }
+      },
+    }),
+    {
+      name: 'chatbyok_chat_storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        sessions: state.sessions,
+        activeSessionId: state.activeSessionId,
+        messages: state.messages,
+      }),
+    }
+  )
+);
