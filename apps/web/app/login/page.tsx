@@ -37,7 +37,7 @@ function LoginForm() {
   const [isJustRegistered, setIsJustRegistered] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
-  const [resendStatusMsg, setResendStatusMsg] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<{ text: string; isError: boolean } | null>(null);
 
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -98,7 +98,7 @@ function LoginForm() {
   const handleResendEmail = async () => {
     if (!email.trim() || resendCooldown > 0 || isResending) return;
     setIsResending(true);
-    setResendStatusMsg(null);
+    setResendStatus(null);
 
     try {
       const res = await fetch('/api/auth/resend-verification', {
@@ -109,13 +109,13 @@ function LoginForm() {
       const data = await res.json();
       if (data.success) {
         setResendCooldown(60);
-        setResendStatusMsg(ta.resendSuccess);
+        setResendStatus({ text: ta.resendSuccess, isError: false });
       } else {
-        setResendStatusMsg(data.error || 'Gagal mengirim ulang email.');
+        setResendStatus({ text: data.error || 'Gagal mengirim ulang email.', isError: true });
       }
     } catch (err) {
       console.error('Failed to resend verification email:', err);
-      setResendStatusMsg('Terjadi kesalahan jaringan. Coba lagi.');
+      setResendStatus({ text: 'Terjadi kesalahan jaringan. Coba lagi.', isError: true });
     } finally {
       setIsResending(false);
     }
@@ -399,14 +399,14 @@ function LoginForm() {
         )}
 
         {/* Resend Status Toast / Message */}
-        {resendStatusMsg && (
+        {resendStatus && (
           <div
             style={{
               padding: '10px 12px',
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
+              background: resendStatus.isError ? '#FEF2F2' : '#F0FDF4',
+              border: resendStatus.isError ? '1px solid #FECACA' : '1px solid #BBF7D0',
               borderRadius: '8px',
-              color: '#166534',
+              color: resendStatus.isError ? '#991B1B' : '#166534',
               fontSize: '12px',
               fontWeight: 600,
               display: 'flex',
@@ -414,8 +414,12 @@ function LoginForm() {
               gap: '6px',
             }}
           >
-            <CheckCircle2 size={14} color="#22C55E" />
-            <span>{resendStatusMsg}</span>
+            {resendStatus.isError ? (
+              <AlertCircle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
+            ) : (
+              <CheckCircle2 size={14} color="#22C55E" style={{ flexShrink: 0 }} />
+            )}
+            <span>{resendStatus.text}</span>
           </div>
         )}
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../../../src/shared/utils/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 
 // Rate limiting in-memory map: email -> lastSentTimestamp
 const globalRateLimit = globalThis as unknown as {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const { email } = await req.json();
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return NextResponse.json({ success: false, error: 'Valid email address is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Alamat email tidak valid' }, { status: 400 });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -30,37 +30,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: `Please wait ${remainingSeconds}s before requesting another verification email.`,
+          error: `Mohon tunggu ${remainingSeconds} detik sebelum meminta email verifikasi lagi.`,
           remainingSeconds,
         },
         { status: 429 }
       );
     }
 
-    // Call Supabase resend verification email
-    const supabase = createClient();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://orshttowaxmjegclecag.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_b0VAst9djH6nA3YB0uH0gA_hvNLQK58';
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: normalizedEmail,
       options: {
-        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+        emailRedirectTo: `${origin}/auth/callback`,
       },
     });
 
     if (error) {
-      console.warn('Supabase resend email warning:', error.message);
-      // Even if Supabase warns or rate limits, update our local timer to protect the endpoint
+      console.warn('Supabase resend email error:', error.message);
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 
     rateLimitMap.set(normalizedEmail, now);
 
     return NextResponse.json({
       success: true,
-      message: 'Verification email resent successfully',
+      message: 'Email verifikasi berhasil dikirim ulang.',
       cooldownSeconds: 60,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Resend verification error:', error);
-    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error?.message || 'Gagal mengirim ulang email' }, { status: 500 });
   }
 }
