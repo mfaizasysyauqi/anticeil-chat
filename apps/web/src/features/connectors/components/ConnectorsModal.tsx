@@ -91,17 +91,12 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="modal-responsive-container"
         style={{
-          width: '100%',
-          maxWidth: '820px',
-          maxHeight: '90vh',
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-strong)',
           borderRadius: 'var(--radius-xl)',
           boxShadow: 'var(--shadow-xl)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
         }}
       >
         {/* Header */}
@@ -110,7 +105,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '18px 24px',
+            padding: '16px 20px',
             borderBottom: '1px solid var(--border-subtle)',
             backgroundColor: 'var(--bg-subtle)',
           }}
@@ -172,30 +167,12 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
           </button>
         </div>
 
-        {/* Modal Body - 2 Columns (Sidebar + Main Panel) */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            flex: 1,
-            minHeight: '440px',
-            overflow: 'hidden',
-          }}
-        >
+        {/* Modal Body - Responsive Layout (Sidebar + Main Panel) */}
+        <div className="modal-responsive-body">
           {/* Left Sidebar: Connector List */}
-          <div
-            style={{
-              width: '260px',
-              borderRight: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-main)',
-              padding: '12px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              overflowY: 'auto',
-            }}
-          >
+          <div className="modal-responsive-sidebar">
             <div
+              className="modal-responsive-sidebar-title"
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
@@ -217,6 +194,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                 <button
                   key={conn.id}
                   onClick={() => setSelectedConnectorId(conn.id)}
+                  className="modal-responsive-sidebar-item"
                   style={{
                     width: '100%',
                     display: 'flex',
@@ -303,14 +281,10 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
 
           {/* Right Main Panel: Detail & Configuration */}
           <div
+            className="modal-responsive-content"
             style={{
-              flex: 1,
-              padding: '24px',
               backgroundColor: 'var(--bg-surface)',
-              display: 'flex',
-              flexDirection: 'column',
               justifyContent: 'space-between',
-              overflowY: 'auto',
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -320,7 +294,8 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'space-between',
-                  gap: '16px',
+                  gap: '12px',
+                  flexWrap: 'wrap',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>

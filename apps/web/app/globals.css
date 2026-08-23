@@ -256,6 +256,89 @@ code, pre, kbd {
   }
 }
 
+/* ── Modal Dialog Responsive Layouts (Mobile & Tablet) ── */
+.modal-responsive-container {
+  width: 100%;
+  max-width: 820px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-responsive-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 420px;
+  overflow: hidden;
+}
+
+.modal-responsive-sidebar {
+  width: 240px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-main);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.modal-responsive-sidebar-item {
+  width: 100%;
+}
+
+.modal-responsive-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .modal-responsive-container {
+    max-height: 92vh;
+    border-radius: var(--radius-lg, 12px) !important;
+  }
+
+  .modal-responsive-body {
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  .modal-responsive-sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    flex-wrap: nowrap !important;
+    padding: 8px 12px !important;
+    gap: 6px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-responsive-sidebar-title {
+    display: none !important;
+  }
+
+  .modal-responsive-sidebar-item {
+    width: auto !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .modal-responsive-content {
+    padding: 14px 14px 20px 14px !important;
+  }
+}
+
 /* Desktop Sidebar Base (>= 1024px) */
 .app-sidebar-drawer,
 .sidebar-responsive {

@@ -155,17 +155,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="modal-responsive-container"
         style={{
-          width: '100%',
-          maxWidth: '840px',
-          maxHeight: '88vh',
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-strong)',
           borderRadius: 'var(--radius-xl, 16px)',
           boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.3))',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
         }}
       >
         {/* Modal Header */}
@@ -228,21 +223,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Modal Body: Two-Column Navigation & Content Layout */}
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div className="modal-responsive-body">
           {/* Left Column: Categories List */}
-          <div
-            style={{
-              width: '210px',
-              borderRight: '1px solid var(--border-subtle)',
-              background: 'var(--bg-main)',
-              padding: '12px 8px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ padding: '4px 8px 6px 8px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div className="modal-responsive-sidebar">
+            <div className="modal-responsive-sidebar-title" style={{ padding: '4px 8px 6px 8px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {language === 'id' ? 'Kategori Pengaturan' : 'Settings Categories'}
             </div>
 
@@ -254,7 +238,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className="clickable-pill"
+                  className="modal-responsive-sidebar-item clickable-pill"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -267,7 +251,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     fontWeight: isActive ? 600 : 500,
                     fontSize: '12.5px',
                     cursor: 'pointer',
-                    width: '100%',
                     textAlign: 'left',
                     boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
                     transition: 'all 0.15s ease',
@@ -282,10 +265,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Right Column: Tab Content */}
           <div
+            className="modal-responsive-content"
             style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '18px 22px',
               background: 'var(--bg-surface)',
             }}
           >

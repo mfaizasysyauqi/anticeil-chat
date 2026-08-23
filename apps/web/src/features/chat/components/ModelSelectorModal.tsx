@@ -102,17 +102,12 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="modal-responsive-container"
         style={{
-          width: '100%',
-          maxWidth: '780px',
-          maxHeight: '85vh',
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-strong)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-lg)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
         }}
       >
         {/* Header */}
@@ -123,11 +118,13 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sliders size={16} color="var(--brand-primary)" />
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               {t.models.title}
             </h3>
           </div>
@@ -205,21 +202,10 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
           </div>
         </div>
 
-        {/* Body: Two Column Provider & Models */}
-        <div style={{ display: 'flex', flex: 1, minHeight: '380px', overflow: 'hidden' }}>
+        {/* Body: Responsive Layout (Provider & Models) */}
+        <div className="modal-responsive-body">
           {/* Provider Tabs */}
-          <div
-            style={{
-              width: '200px',
-              borderRight: '1px solid var(--border-subtle)',
-              background: 'var(--bg-subtle)',
-              padding: '10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              overflowY: 'auto',
-            }}
-          >
+          <div className="modal-responsive-sidebar">
             {PROVIDER_DEFINITIONS.map((provider) => {
               const isSelected = provider.id === selectedProviderId;
               const providerHasKey = hasConfiguredKey(provider.id);
@@ -228,10 +214,12 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
                 <button
                   key={provider.id}
                   onClick={() => setSelectedProviderId(provider.id)}
+                  className="modal-responsive-sidebar-item"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    gap: '8px',
                     padding: '8px 12px',
                     borderRadius: 'var(--radius-md)',
                     background: isSelected ? 'var(--bg-surface)' : 'transparent',
@@ -256,12 +244,8 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
 
           {/* Model Cards List */}
           <div
+            className="modal-responsive-content"
             style={{
-              flex: 1,
-              padding: '16px',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
               gap: '10px',
             }}
           >
