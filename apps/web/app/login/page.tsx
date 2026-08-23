@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Send,
   Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuthStore } from '../../src/features/auth/store/useAuthStore';
 import { useSettingsStore } from '../../src/features/settings/store/useSettingsStore';
@@ -318,6 +319,44 @@ function LoginForm() {
             <p style={{ fontSize: '12px', color: '#334155', lineHeight: 1.45, margin: 0 }}>
               {ta.emailVerificationSent}
             </p>
+
+            {/* Direct Mail Client Link (Gmail / Outlook / Yahoo) */}
+            <a
+              href={
+                email.toLowerCase().includes('@outlook') || email.toLowerCase().includes('@hotmail')
+                  ? 'https://outlook.live.com/mail'
+                  : email.toLowerCase().includes('@yahoo')
+                  ? 'https://mail.yahoo.com'
+                  : 'https://mail.google.com'
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '7px',
+                padding: '8px 14px',
+                background: '#0284C7',
+                color: '#FFFFFF',
+                borderRadius: '8px',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                marginTop: '4px',
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <ExternalLink size={13} />
+              <span>
+                {email.toLowerCase().includes('@outlook') || email.toLowerCase().includes('@hotmail')
+                  ? 'Buka Outlook Mail'
+                  : email.toLowerCase().includes('@yahoo')
+                  ? 'Buka Yahoo Mail'
+                  : 'Buka Gmail'}
+              </span>
+            </a>
 
             {/* Resend Action with 60s cooldown */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #E0F2FE' }}>
