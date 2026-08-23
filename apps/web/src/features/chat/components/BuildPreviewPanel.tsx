@@ -58,6 +58,16 @@ export function BuildPreviewPanel() {
   const [copied, setCopied] = useState(false);
   const [showArtifactList, setShowArtifactList] = useState(false);
 
+  const isDocument = Boolean(
+    activeArtifact && ['pdf', 'xlsx', 'docx', 'pptx', 'csv'].includes(activeArtifact.language.toLowerCase())
+  );
+
+  React.useEffect(() => {
+    if (isDocument && viewMode === 'code') {
+      setViewMode('preview');
+    }
+  }, [isDocument, viewMode, setViewMode]);
+
   // Compile sandboxed HTML bundle
   const iframeSrcDoc = useMemo(() => {
     if (!activeArtifact?.code) return '';
@@ -553,27 +563,30 @@ export function BuildPreviewPanel() {
               <Eye size={13} />
               <span>{tb.previewTab}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('code')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: 'none',
-                backgroundColor: viewMode === 'code' ? 'var(--bg-surface)' : 'transparent',
-                color: viewMode === 'code' ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontSize: '11.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: viewMode === 'code' ? 'var(--shadow-sm)' : 'none',
-              }}
-            >
-              <Code2 size={13} />
-              <span>{tb.codeTab}</span>
-            </button>
+            {/* Code Tab is ONLY visible for executable web/code artifacts, NOT for binary documents */}
+            {!isDocument && (
+              <button
+                type="button"
+                onClick={() => setViewMode('code')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  backgroundColor: viewMode === 'code' ? 'var(--bg-surface)' : 'transparent',
+                  color: viewMode === 'code' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: viewMode === 'code' ? 'var(--shadow-sm)' : 'none',
+                }}
+              >
+                <Code2 size={13} />
+                <span>{tb.codeTab}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setViewMode('browser')}
