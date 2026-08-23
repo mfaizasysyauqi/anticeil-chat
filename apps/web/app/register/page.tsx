@@ -232,33 +232,14 @@ export default function RegisterPage() {
               color: '#181B34',
             }}
           >
-            <div
-              style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #0073EA 0%, #784BD1 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(0, 115, 234, 0.3)',
-              }}
-            >
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 6px)', gap: '3px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#E2445C' }} />
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00C875' }} />
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FDAB3D' }} />
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FFFFFF' }} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-              <span style={{ fontWeight: 800, fontSize: '17.5px', letterSpacing: '-0.03em', color: '#181B34' }}>
-                anticeil
-              </span>
-              <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#0073EA', background: 'rgba(0, 115, 234, 0.08)', padding: '1px 5px', borderRadius: '4px', border: '1px solid rgba(0, 115, 234, 0.2)' }}>
-                .os
-              </span>
-            </div>
+            <img
+      src="/anticeil-logo.png"
+      alt="Anticeil Logo"
+      style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px' }}
+    />
+    <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.03em', color: '#181B34' }}>
+      Anticeil
+    </span>
           </Link>
 
           {/* Right: Action Hub */}

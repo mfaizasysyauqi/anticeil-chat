@@ -194,52 +194,14 @@ function LoginForm() {
               textDecoration: 'none',
             }}
           >
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #0073EA 0%, #784BD1 50%, #FF5A5F 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 3px 10px rgba(0, 115, 234, 0.35)',
-              }}
-            >
-              <div
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '3px',
-                  background: '#FFFFFF',
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <span
-                style={{
-                  fontFamily: "'Space Grotesk', -apple-system, sans-serif",
-                  fontWeight: 800,
-                  fontSize: '18px',
-                  letterSpacing: '-0.03em',
-                  color: '#181B34',
-                }}
-              >
-                anticeil
-              </span>
-              <span
-                style={{
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: '#0073EA',
-                  background: 'rgba(0, 115, 234, 0.1)',
-                  padding: '2px 5px',
-                  borderRadius: '5px',
-                }}
-              >
-                .os
-              </span>
-            </div>
+            <img
+      src="/anticeil-logo.png"
+      alt="Anticeil Logo"
+      style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px' }}
+    />
+    <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.03em', color: '#181B34' }}>
+      Anticeil
+    </span>
           </Link>
 
           {/* Right: Action Hub */}

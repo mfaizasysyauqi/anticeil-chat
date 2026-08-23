@@ -463,28 +463,25 @@ export function Sidebar({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
           {/* Logo Dot */}
           <Link
-            href="/"
-            title="Anticeil Home"
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: '#0073EA',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 7px)',
-              gap: '3px',
-              padding: '6px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0, 115, 234, 0.3)',
-              textDecoration: 'none',
-            }}
-          >
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#FFFFFF' }} />
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#FDAB3D' }} />
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#00C875' }} />
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#E2445C' }} />
-          </Link>
+      href="/"
+      title="Anticeil Home"
+      style={{
+        width: '34px',
+        height: '34px',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textDecoration: 'none',
+        transition: 'transform 0.15s ease',
+      }}
+    >
+      <img
+        src="/anticeil-logo.png"
+        alt="Anticeil Logo"
+        style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '6px' }}
+      />
+    </Link>
 
           {/* Quick App Icons */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
