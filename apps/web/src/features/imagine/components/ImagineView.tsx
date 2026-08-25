@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useStorageStore } from '../../storage/store/useStorageStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 import { getTranslation } from '@anticeil/core';
 
 type MediaMode = 'image' | 'video' | 'audio';
@@ -119,7 +120,17 @@ function createWavBlob(durationSec: number = 6, baseFreq: number = 440, style: s
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 export function ImagineView() {
+  const session = useAuthStore((s) => s.session);
   const language = useSettingsStore((s) => s.language);
   const t = getTranslation(language);
   const ti = t.imagine;
@@ -422,8 +433,9 @@ export function ImagineView() {
 
   const addUsage = useStorageStore((s) => s.addUsage);
   const canFit = useStorageStore((s) => s.canFit);
+  const syncFromSupabase = useStorageStore((s) => s.syncFromSupabase);
 
-  const handleGenerate = (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
@@ -441,23 +453,54 @@ export function ImagineView() {
       const modelParam = selectedModel === 'dalle3' ? 'flux' : selectedModel === 'imagen3' ? 'flux-realism' : selectedModel;
       const directUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=${modelParam}&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
 
-      setTimeout(() => {
-        setGeneratedImages((prev) => [
-          {
-            id: String(Date.now()),
-            url: directUrl,
-            prompt: prompt.trim(),
-            style: selectedStyle,
-            ratio: selectedRatio,
-            model: currentModelInfo.name,
-            createdAt: 'Just now',
+      let finalUrl = directUrl;
+
+      // Save to Cloudflare R2 via save-media API
+      try {
+        const res = await fetch('/api/imagine/save-media', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
-          ...prev,
-        ]);
-        addUsage(estimatedBytes, 'images');
-        setIsGenerating(false);
-        setPrompt('');
-      }, 1200);
+          body: JSON.stringify({
+            type: 'image',
+            prompt: prompt.trim(),
+            mediaUrl: directUrl,
+            metadata: {
+              style: selectedStyle,
+              ratio: selectedRatio,
+              model: currentModelInfo.name,
+            },
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) finalUrl = data.url;
+        }
+      } catch (err) {
+        console.warn('[Imagine] Failed to upload image to R2, using direct url:', err);
+      }
+
+      setGeneratedImages((prev) => [
+        {
+          id: String(Date.now()),
+          url: finalUrl,
+          prompt: prompt.trim(),
+          style: selectedStyle,
+          ratio: selectedRatio,
+          model: currentModelInfo.name,
+          createdAt: 'Just now',
+        },
+        ...prev,
+      ]);
+
+      addUsage(estimatedBytes, 'images');
+      if (session?.access_token) {
+        syncFromSupabase(session.access_token, true);
+      }
+      setIsGenerating(false);
+      setPrompt('');
     } else if (mediaMode === 'video') {
       const estimatedBytes = 3.5 * 1024 * 1024;
       if (!canFit(estimatedBytes)) {
@@ -469,23 +512,54 @@ export function ImagineView() {
       const encodedPrompt = encodeURIComponent(`${prompt}, cinematic lighting, 4k ultra realism`);
       const directUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1280&height=720&model=flux-realism&seed=${Math.floor(Math.random() * 100000)}`;
 
-      setTimeout(() => {
-        setGeneratedVideos((prev) => [
-          {
-            id: String(Date.now()),
-            url: directUrl,
-            prompt: prompt.trim(),
-            model: currentModelInfo.name,
-            ratio: selectedRatio,
-            duration: '0:06',
-            createdAt: 'Just now',
+      let finalUrl = directUrl;
+
+      // Save video thumbnail/asset to Cloudflare R2 via save-media API
+      try {
+        const res = await fetch('/api/imagine/save-media', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
-          ...prev,
-        ]);
-        addUsage(estimatedBytes, 'images');
-        setIsGenerating(false);
-        setPrompt('');
-      }, 1400);
+          body: JSON.stringify({
+            type: 'video',
+            prompt: prompt.trim(),
+            mediaUrl: directUrl,
+            metadata: {
+              ratio: selectedRatio,
+              model: currentModelInfo.name,
+              duration: '0:06',
+            },
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) finalUrl = data.url;
+        }
+      } catch (err) {
+        console.warn('[Imagine] Failed to upload video asset to R2, using direct url:', err);
+      }
+
+      setGeneratedVideos((prev) => [
+        {
+          id: String(Date.now()),
+          url: finalUrl,
+          prompt: prompt.trim(),
+          model: currentModelInfo.name,
+          ratio: selectedRatio,
+          duration: '0:06',
+          createdAt: 'Just now',
+        },
+        ...prev,
+      ]);
+
+      addUsage(estimatedBytes, 'images');
+      if (session?.access_token) {
+        syncFromSupabase(session.access_token, true);
+      }
+      setIsGenerating(false);
+      setPrompt('');
     } else {
       // Audio Generation
       const estimatedBytes = 650 * 1024;
@@ -495,26 +569,63 @@ export function ImagineView() {
       }
 
       setIsGenerating(true);
-      setTimeout(() => {
-        const newAudio: AudioItem = {
-          id: String(Date.now()),
-          title: prompt.trim().slice(0, 45) + (prompt.length > 45 ? '...' : ''),
-          prompt: prompt.trim(),
-          model: currentModelInfo.name,
-          voice: voicePresets.find((v) => v.id === selectedVoice)?.label || 'Neural Voice',
-          category: selectedVoice.includes('synth') ? 'music' : 'speech',
-          durationSec: Math.max(5, Math.min(25, Math.ceil(prompt.trim().split(' ').length * 0.45))),
-          createdAt: 'Just now',
-        };
+      const durationSec = Math.max(5, Math.min(25, Math.ceil(prompt.trim().split(' ').length * 0.45)));
+      const voiceLabel = voicePresets.find((v) => v.id === selectedVoice)?.label || 'Neural Voice';
+      const category = selectedVoice.includes('synth') ? 'music' : 'speech';
 
-        setGeneratedAudios((prev) => [newAudio, ...prev]);
-        addUsage(estimatedBytes, 'audio');
-        setIsGenerating(false);
-        setPrompt('');
+      const wavBlob = createWavBlob(durationSec, 440, selectedVoice);
+      let finalAudioUrl = '';
 
-        // Trigger real audio playback immediately
-        handleTogglePlayAudio(newAudio);
-      }, 900);
+      // Upload binary WAV to Cloudflare R2
+      try {
+        const base64Wav = await blobToBase64(wavBlob);
+        const res = await fetch('/api/imagine/save-media', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({
+            type: 'audio',
+            prompt: prompt.trim(),
+            base64Data: base64Wav,
+            metadata: {
+              voice: voiceLabel,
+              category,
+              model: currentModelInfo.name,
+              durationSec,
+            },
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) finalAudioUrl = data.url;
+        }
+      } catch (err) {
+        console.warn('[Imagine] Failed to upload audio to R2:', err);
+      }
+
+      const newAudio: AudioItem = {
+        id: String(Date.now()),
+        title: prompt.trim().slice(0, 45) + (prompt.length > 45 ? '...' : ''),
+        prompt: prompt.trim(),
+        model: currentModelInfo.name,
+        voice: voiceLabel,
+        category,
+        durationSec,
+        createdAt: 'Just now',
+      };
+
+      setGeneratedAudios((prev) => [newAudio, ...prev]);
+      addUsage(estimatedBytes, 'audio');
+      if (session?.access_token) {
+        syncFromSupabase(session.access_token, true);
+      }
+      setIsGenerating(false);
+      setPrompt('');
+
+      // Trigger real audio playback immediately
+      handleTogglePlayAudio(newAudio);
     }
   };
 
