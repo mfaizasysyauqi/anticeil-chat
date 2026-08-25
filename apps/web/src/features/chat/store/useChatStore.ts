@@ -36,6 +36,7 @@ interface ChatState {
   selectSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
   updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
+  moveSessionToProject: (sessionId: string, projectId: string | null) => void;
   clearAllSessions: () => void;
 
   // Messaging Actions
@@ -154,6 +155,16 @@ export const useChatStore = create<ChatState>()(
         set((state) => ({
           sessions: state.sessions.map((s) =>
             s.id === sessionId ? { ...s, ...updates, updatedAt: Date.now() } : s
+          ),
+        }));
+      },
+
+      moveSessionToProject: (sessionId, projectId) => {
+        set((state) => ({
+          sessions: state.sessions.map((s) =>
+            s.id === sessionId
+              ? { ...s, projectId: projectId ?? undefined, updatedAt: Date.now() }
+              : s
           ),
         }));
       },

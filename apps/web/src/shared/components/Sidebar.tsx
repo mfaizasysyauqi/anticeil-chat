@@ -24,6 +24,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Folder,
+  FolderOpen,
   KeyRound,
   Sun,
   Moon,
@@ -40,6 +41,8 @@ import {
   Plug,
   FileText,
   Upload,
+  FolderInput,
+  FolderMinus,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -96,6 +99,8 @@ export function Sidebar({
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  // Track which project folders are expanded (showing their chats)
+  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
 
   const isImagine = pathname === '/imagine';
   const isAutomations = pathname === '/automations';
@@ -132,8 +137,6 @@ export function Sidebar({
 
   // Workspace store (persisted folders / collections / categories)
   const projects = useWorkspaceStore((s) => s.projects);
-  const activeProjectId = useWorkspaceStore((s) => s.activeProjectId);
-  const setActiveProject = useWorkspaceStore((s) => s.setActiveProject);
   const createProject = useWorkspaceStore((s) => s.createProject);
   const renameProject = useWorkspaceStore((s) => s.renameProject);
   const deleteProject = useWorkspaceStore((s) => s.deleteProject);
@@ -208,6 +211,8 @@ export function Sidebar({
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitleText, setEditTitleText] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  // "Move to folder" submenu
+  const [folderSubmenuSessionId, setFolderSubmenuSessionId] = useState<string | null>(null);
 
   // Profile Popover State
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -220,6 +225,11 @@ export function Sidebar({
   const deleteSession = useChatStore((s) => s.deleteSession);
   const createSession = useChatStore((s) => s.createSession);
   const updateSession = useChatStore((s) => s.updateSession);
+  const moveSessionToProject = useChatStore((s) => s.moveSessionToProject);
+
+  // Workspace store — need assignSessionToProject / removeSessionFromProject too
+  const assignSessionToProject = useWorkspaceStore((s) => s.assignSessionToProject);
+  const removeSessionFromProject = useWorkspaceStore((s) => s.removeSessionFromProject);
 
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
@@ -235,6 +245,7 @@ export function Sidebar({
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuSessionId(null);
+        setFolderSubmenuSessionId(null);
       }
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
         setIsProfileMenuOpen(false);
@@ -289,11 +300,27 @@ export function Sidebar({
     }
   };
 
-  // Filter sessions by search query & active project
+  const handleMoveToProject = (session: ChatSession, targetProjectId: string | null) => {
+    // Remove from old project if any
+    if (session.projectId) {
+      removeSessionFromProject(session.projectId, session.id);
+    }
+    // Assign to new project
+    if (targetProjectId) {
+      assignSessionToProject(targetProjectId, session.id);
+    }
+    // Update the session's own projectId field
+    moveSessionToProject(session.id, targetProjectId);
+    setMenuSessionId(null);
+    setFolderSubmenuSessionId(null);
+  };
+
+  // Filter sessions by search query.
+  // Sessions assigned to a project only appear under that folder, not in the general list.
   const filteredSessions = sessions.filter((s) => {
     const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesProject = activeProjectId ? s.projectId === activeProjectId : true;
-    return matchesSearch && matchesProject;
+    const notInAnyFolder = !s.projectId;
+    return matchesSearch && notInAnyFolder;
   });
 
   const now = new Date();
@@ -443,7 +470,7 @@ export function Sidebar({
               display: 'flex',
               flexDirection: 'column',
               gap: '2px',
-              minWidth: '130px',
+              minWidth: '160px',
             }}
           >
             <button
@@ -488,10 +515,137 @@ export function Sidebar({
               <span>{t.sidebar.rename}</span>
             </button>
 
+            {/* Move to folder — shows sub-list of projects */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFolderSubmenuSessionId(
+                    folderSubmenuSessionId === session.id ? null : session.id
+                  );
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 8px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: folderSubmenuSessionId === session.id ? 'var(--bg-subtle)' : 'transparent',
+                  color: 'var(--text-primary)',
+                  fontSize: '11.5px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FolderInput size={12} />
+                  <span>{t.sidebar.moveToFolder}</span>
+                </span>
+                <ChevronRight size={10} color="var(--text-muted)" />
+              </button>
+
+              {folderSubmenuSessionId === session.id && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 'calc(100% + 4px)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    boxShadow: 'var(--shadow-lg)',
+                    padding: '4px',
+                    zIndex: 101,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    minWidth: '140px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  {projects.length === 0 && (
+                    <div style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {language === 'id' ? 'Belum ada folder' : 'No folders yet'}
+                    </div>
+                  )}
+                  {projects.map((proj) => (
+                    <button
+                      key={proj.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveToProject(session, proj.id);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '5px 8px',
+                        borderRadius: '4px',
+                        border: 'none',
+                        background: session.projectId === proj.id ? 'var(--bg-subtle)' : 'transparent',
+                        color: session.projectId === proj.id ? 'var(--brand-primary)' : 'var(--text-primary)',
+                        fontSize: '11.5px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        width: '100%',
+                      }}
+                    >
+                      <Folder size={11} />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {proj.name}
+                      </span>
+                      {session.projectId === proj.id && <Check size={10} style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                    </button>
+                  ))}
+                  {/* Option to remove from current folder */}
+                  {session.projectId && (
+                    <>
+                      <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '2px 4px' }} />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveToProject(session, null);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '5px 8px',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: 'transparent',
+                          color: 'var(--accent-danger)',
+                          fontSize: '11.5px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          width: '100%',
+                        }}
+                      >
+                        <FolderMinus size={11} />
+                        <span>{t.sidebar.removeFromFolder}</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '2px 4px' }} />
+
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                if (session.projectId) {
+                  removeSessionFromProject(session.projectId, session.id);
+                }
                 deleteSession(session.id);
                 setMenuSessionId(null);
               }}
@@ -1655,46 +1809,87 @@ export function Sidebar({
 
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                    {projects.map((proj) => (
-                      <div
-                        key={proj.id}
-                        className="clickable-pill"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '7px',
-                          padding: '4px 8px',
-                          borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeProjectId === proj.id ? 'var(--bg-subtle)' : 'transparent',
-                          color: activeProjectId === proj.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-                          fontSize: '12px',
-                          fontWeight: activeProjectId === proj.id ? 600 : 400,
-                          cursor: 'pointer',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <div
-                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
-                          onClick={() => setActiveProject(activeProjectId === proj.id ? null : proj.id)}
-                        >
-                          <Folder size={12} color={activeProjectId === proj.id ? 'var(--brand-primary)' : 'var(--text-muted)'} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{proj.name}</span>
-                          {proj.files.length > 0 && (
-                            <span style={{ fontSize: '10px', background: 'var(--brand-primary)', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
-                              {proj.files.length}
+                    {projects.map((proj) => {
+                      const isFolderOpen = expandedFolderIds.has(proj.id);
+                      const folderSessions = sessions.filter(
+                        (s) => s.projectId === proj.id &&
+                          s.title.toLowerCase().includes(searchQuery.toLowerCase())
+                      );
+
+                      return (
+                        <div key={proj.id} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                          {/* Folder row */}
+                          <div
+                            className="clickable-pill"
+                            onClick={() => {
+                              setExpandedFolderIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(proj.id)) next.delete(proj.id);
+                                else next.add(proj.id);
+                                return next;
+                              });
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '7px',
+                              padding: '4px 8px',
+                              borderRadius: 'var(--radius-sm, 6px)',
+                              background: isFolderOpen ? 'var(--bg-subtle)' : 'transparent',
+                              color: isFolderOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
+                              fontSize: '12px',
+                              fontWeight: isFolderOpen ? 600 : 400,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {isFolderOpen
+                              ? <FolderOpen size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                              : <Folder size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                            }
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                              {proj.name}
                             </span>
+                            {folderSessions.length > 0 && (
+                              <span style={{
+                                fontSize: '10px',
+                                background: 'var(--brand-primary)',
+                                color: '#fff',
+                                borderRadius: '999px',
+                                padding: '0 5px',
+                                lineHeight: '16px',
+                                flexShrink: 0,
+                              }}>
+                                {folderSessions.length}
+                              </span>
+                            )}
+                            <span style={{ marginLeft: 'auto', flexShrink: 0, color: 'var(--text-muted)' }}>
+                              {isFolderOpen
+                                ? <ChevronDown size={10} />
+                                : <ChevronRight size={10} />
+                              }
+                            </span>
+                          </div>
+
+                          {/* Inline chat list inside folder */}
+                          {isFolderOpen && (
+                            <div style={{ paddingLeft: '14px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                              {folderSessions.length === 0 ? (
+                                <div style={{
+                                  padding: '6px 8px',
+                                  fontSize: '11px',
+                                  color: 'var(--text-muted)',
+                                  fontStyle: 'italic',
+                                }}>
+                                  {t.sidebar.noFolderChats}
+                                </div>
+                              ) : (
+                                folderSessions.map((s) => renderSessionItem(s))
+                              )}
+                            </div>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          title={language === 'id' ? 'Unggah berkas' : 'Upload files'}
-                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'project', id: proj.id }); }}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
-                        >
-                          <Upload size={11} />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {isAddingProject ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px' }}>

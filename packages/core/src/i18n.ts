@@ -100,6 +100,9 @@ export const TRANSLATIONS = {
       newFolderPlaceholder: 'New folder...',
       noChatsFound: 'No chats found',
       upgradePlanBadge: '100% BYOK Active',
+      moveToFolder: 'Move to folder',
+      removeFromFolder: 'Remove from folder',
+      noFolderChats: 'No chats in this folder yet',
     },
     models: {
       title: 'Select AI Model & Capabilities',
@@ -419,6 +422,9 @@ export const TRANSLATIONS = {
       newFolderPlaceholder: 'Folder baru...',
       noChatsFound: 'Tidak ada percakapan',
       upgradePlanBadge: '100% BYOK Aktif',
+      moveToFolder: 'Pindahkan ke folder',
+      removeFromFolder: 'Keluarkan dari folder',
+      noFolderChats: 'Belum ada percakapan di folder ini',
     },
     models: {
       title: 'Pilih Model AI & Kapabilitas',

@@ -111,10 +111,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
     (set, get) => ({
       // ── Initial Data ────────────────────────────────────────────────────────
-      projects: [
-        { id: 'proj_personal', name: 'Personal', createdAt: Date.now() - 86400000, files: [], sessionIds: [] },
-        { id: 'proj_work', name: 'Work', createdAt: Date.now() - 43200000, files: [], sessionIds: [] },
-      ],
+      projects: [],
       imageCollections: [
         { id: 'ic_cyberpunk', name: 'Cyberpunk', createdAt: Date.now(), files: [] },
         { id: 'ic_wallpapers', name: 'Wallpapers', createdAt: Date.now(), files: [] },
@@ -291,6 +288,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         );
       },
     }),
-    { name: 'anticeil-workspace-v1' }
+    { name: 'anticeil-workspace-v2' }
   )
 );
