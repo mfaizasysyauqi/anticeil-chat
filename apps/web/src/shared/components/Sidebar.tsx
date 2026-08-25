@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -345,6 +346,8 @@ export function Sidebar({
   const menuRef = useRef<HTMLDivElement>(null);
   // "Move to folder" submenu
   const [folderSubmenuSessionId, setFolderSubmenuSessionId] = useState<string | null>(null);
+  const [submenuPosition, setSubmenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const submenuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Profile Popover State
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -652,12 +655,24 @@ export function Sidebar({
             {/* Move to folder — shows sub-list of projects */}
             <div style={{ position: 'relative' }}>
               <button
+                ref={submenuButtonRef}
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setFolderSubmenuSessionId(
-                    folderSubmenuSessionId === session.id ? null : session.id
-                  );
+                  if (folderSubmenuSessionId === session.id) {
+                    setFolderSubmenuSessionId(null);
+                    setSubmenuPosition(null);
+                  } else {
+                    setFolderSubmenuSessionId(session.id);
+                    // Calculate position for fixed positioning
+                    const rect = submenuButtonRef.current?.getBoundingClientRect();
+                    if (rect) {
+                      setSubmenuPosition({
+                        top: rect.top,
+                        left: rect.right + 4,
+                      });
+                    }
+                  }
                 }}
                 style={{
                   display: 'flex',
@@ -681,13 +696,14 @@ export function Sidebar({
                 </span>
                 <ChevronRight size={10} color="var(--text-muted)" />
               </button>
+            </div>
 
-              {folderSubmenuSessionId === session.id && (
+              {folderSubmenuSessionId === session.id && submenuPosition && typeof window !== 'undefined' && createPortal(
                 <div
                   style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 'calc(100% + 4px)',
+                    position: 'fixed',
+                    top: `${submenuPosition.top}px`,
+                    left: `${submenuPosition.left}px`,
                     background: 'var(--bg-surface)',
                     border: '1px solid var(--border-strong)',
                     borderRadius: 'var(--radius-md, 8px)',
@@ -767,7 +783,8 @@ export function Sidebar({
                       </button>
                     </>
                   )}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
