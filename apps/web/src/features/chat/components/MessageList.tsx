@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Code,
@@ -25,11 +25,18 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
   const language = useSettingsStore((s) => s.language);
   const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
   const t = getTranslation(language);
+  
+  // Fix hydration mismatch - don't render messages until mounted
+  const [isMounted, setIsMounted] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeModel = getModelById(activeSession?.modelId || '');
   const activeProvider = activeSession?.providerId ? getProviderById(activeSession.providerId) : undefined;
   const isKeyConfigured = activeSession ? hasConfiguredKey(activeSession.providerId) : true;
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -72,7 +79,8 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
     },
   ];
 
-  if (messages.length === 0) {
+  // Always render empty state during SSR to prevent hydration mismatch
+  if (!isMounted || messages.length === 0) {
     return (
       <div className="page-scroll-container" style={{ justifyContent: 'center' }}>
         <div
@@ -87,17 +95,20 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
             gap: 'var(--space-xl)',
           }}
         >
-          {/* Minimalist Editorial Hero Greeting */}
-          <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
+          {/* Only show starter cards when mounted and no messages */}
+          {isMounted && messages.length === 0 && (
+            <>
+              {/* Minimalist Editorial Hero Greeting */}
+              <div style={{ textAlign: 'center' }}>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
                 fontSize: 'var(--font-xs)',
                 fontWeight: 600,
                 color: 'var(--text-secondary)',
@@ -238,6 +249,8 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
               );
             })}
           </div>
+            </>
+          )}
         </div>
       </div>
     );

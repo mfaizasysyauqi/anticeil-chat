@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   Search,
   MessageSquare,
@@ -54,6 +55,7 @@ import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
+import { createClient } from '../utils/supabase/client';
 
 interface SidebarProps {
   isOpenMobile?: boolean;
@@ -93,7 +95,7 @@ interface FolderMenuProps {
   proj: { id: string; name: string };
   language: string;
   t: { sidebar: { rename: string }; common: { delete: string } };
-  accessToken: string | null;
+  accessToken?: string | null;
   renameFolder: (id: string, name: string, token: string) => Promise<void>;
   deleteFolder: (id: string, token: string) => Promise<void>;
   onDeleted: () => void;
@@ -101,13 +103,19 @@ interface FolderMenuProps {
 
 function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder, onDeleted }: FolderMenuProps) {
   const [open, setOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [renameText, setRenameText] = React.useState(proj.name);
-  const menuRef = React.useRef<HTMLDivElement>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
         setOpen(false);
         setIsRenaming(false);
       }
@@ -116,24 +124,57 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const getToken = async () => {
+    if (accessToken) return accessToken;
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token || useAuthStore.getState().session?.access_token || null;
+    } catch {
+      return useAuthStore.getState().session?.access_token || null;
+    }
+  };
+
   const handleRename = async () => {
     const name = renameText.trim();
-    if (!name || !accessToken) return;
-    await renameFolder(proj.id, name, accessToken);
+    if (!name) return;
+    const token = await getToken();
+    if (!token) return;
+    await renameFolder(proj.id, name, token);
     setIsRenaming(false);
     setOpen(false);
   };
 
   const handleDelete = async () => {
-    if (!accessToken) return;
-    await deleteFolder(proj.id, accessToken);
+    const token = await getToken();
+    if (!token) return;
+    await deleteFolder(proj.id, token);
     onDeleted();
     setOpen(false);
   };
 
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const menuWidth = 140;
+      const menuHeight = 80;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      setMenuPosition({ top, left });
+      setOpen(true);
+    }
+  };
+
   if (isRenaming) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} ref={menuRef}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
         <input
           type="text"
           value={renameText}
@@ -168,10 +209,11 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
   }
 
   return (
-    <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+    <div style={{ position: 'relative', flexShrink: 0 }}>
       <button
+        ref={buttonRef}
         type="button"
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        onClick={toggleMenu}
         className="session-options-btn"
         style={{
           background: 'transparent', border: 'none', color: 'var(--text-muted)',
@@ -181,14 +223,28 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
         <MoreHorizontal size={12} />
       </button>
 
-      {open && (
-        <div style={{
-          position: 'absolute', top: '100%', right: 0,
-          background: 'var(--bg-surface)', border: '1px solid var(--border-strong)',
-          borderRadius: 'var(--radius-md, 8px)', boxShadow: 'var(--shadow-lg)',
-          padding: '4px', zIndex: 999999999, display: 'flex', flexDirection: 'column',
-          gap: '2px', minWidth: '120px',
-        }}>
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={portalRef}
+          data-foldermenu-portal="true"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            background: 'var(--bg-surface)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
+            padding: '4px',
+            zIndex: 999999999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '130px',
+          }}
+        >
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setRenameText(proj.name); setIsRenaming(true); setOpen(false); }}
@@ -197,6 +253,8 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
               borderRadius: '4px', border: 'none', background: 'transparent',
               color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <Edit2 size={11} />
             <span>{t.sidebar.rename}</span>
@@ -209,11 +267,14 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
               borderRadius: '4px', border: 'none', background: 'transparent',
               color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <Trash2 size={11} />
             <span>{language === 'id' ? 'Hapus folder' : 'Delete folder'}</span>
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -235,6 +296,7 @@ export function Sidebar({
   const [newProjectName, setNewProjectName] = useState('');
   // Track which project folders are expanded (showing their chats)
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
+  const [isMounted, setIsMounted] = useState(false);
 
   const isImagine = pathname === '/imagine';
   const isAutomations = pathname === '/automations';
@@ -348,7 +410,6 @@ export function Sidebar({
   // "Move to folder" submenu
   const [folderSubmenuSessionId, setFolderSubmenuSessionId] = useState<string | null>(null);
   const [submenuPosition, setSubmenuPosition] = useState<{ top: number; left: number } | null>(null);
-  const submenuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Profile Popover State
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -370,22 +431,56 @@ export function Sidebar({
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const initializeAuth = useAuthStore((s) => s.initializeAuth);
   const t = getTranslation(language);
+
+  // Helper to reliably get accessToken from active session or store
+  const getAccessToken = async (): Promise<string | null> => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token || useAuthStore.getState().session?.access_token || null;
+    } catch {
+      return useAuthStore.getState().session?.access_token || null;
+    }
+  };
+
+  // Fix hydration mismatch & initialize auth on mount
+  useEffect(() => {
+    setIsMounted(true);
+    initializeAuth();
+  }, [initializeAuth]);
 
   // Close dropdown & profile popover on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      
+      const submenuElement = document.querySelector('[data-submenu-portal="true"]');
+      const folderMenuElement = document.querySelector('[data-foldermenu-portal="true"]');
+      const isInsideSubmenu = submenuElement && submenuElement.contains(target);
+      const isInsideFolderMenu = folderMenuElement && folderMenuElement.contains(target);
+      const isInsideMenu = menuRef.current && menuRef.current.contains(target);
+      
+      // Close session menu and submenu only if click is outside main menu and portals
+      if (!isInsideMenu && !isInsideSubmenu && !isInsideFolderMenu) {
         setMenuSessionId(null);
         setFolderSubmenuSessionId(null);
+        setSubmenuPosition(null);
       }
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+      
+      // Check if click is outside profile menu
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
         setIsProfileMenuOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Add listener only if we have active menus
+    if (menuSessionId || folderSubmenuSessionId || isProfileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [menuSessionId, folderSubmenuSessionId, isProfileMenuOpen]);
 
   const handleSelectSession = (sessionId: string) => {
     selectSession(sessionId);
@@ -426,17 +521,18 @@ export function Sidebar({
   const handleAddProject = async () => {
     const name = newProjectName.trim();
     if (!name || projects.some((p) => p.name === name)) return;
-    const token = useAuthStore.getState().session?.access_token;
-    if (!token) return;
-    await createProject(name, token);
-    setNewProjectName('');
-    setIsAddingProject(false);
+    try {
+      const token = await getAccessToken();
+      if (!token) return;
+      await createProject(name, token);
+      setNewProjectName('');
+      setIsAddingProject(false);
+    } catch (err) {
+      console.error('[Sidebar] Failed to add project folder:', err);
+    }
   };
 
   const handleMoveToProject = async (session: ChatSession, targetProjectId: string | null) => {
-    const token = useAuthStore.getState().session?.access_token;
-    if (!token) return;
-
     const oldProjectId = session.projectId;
     
     // Optimistic update - update UI immediately
@@ -447,31 +543,48 @@ export function Sidebar({
     setFolderSubmenuSessionId(null);
     setSubmenuPosition(null);
 
+    // Auto-expand target project folder so user sees the moved chat immediately
+    if (targetProjectId) {
+      setExpandedFolderIds((prev) => new Set(prev).add(targetProjectId));
+    }
+
     try {
-      // Remove from old project
-      if (oldProjectId) {
-        await removeSessionFromProject(oldProjectId, session.id, token);
+      const token = await getAccessToken();
+      if (token) {
+        // Remove from old project
+        if (oldProjectId) {
+          await removeSessionFromProject(oldProjectId, session.id, token);
+        }
+        // Assign to new project
+        if (targetProjectId) {
+          await assignSessionToProject(targetProjectId, session.id, token);
+        }
+        
+        // Refresh projects in background (no await - don't block UI)
+        fetchProjects(token);
       }
-      // Assign to new project
-      if (targetProjectId) {
-        await assignSessionToProject(targetProjectId, session.id, token);
-      }
-      
-      // Refresh projects in background (no await - don't block UI)
-      fetchProjects(token);
     } catch (error) {
-      console.error('Failed to move session:', error);
+      console.error('[Sidebar] Failed to move session:', error);
       // Revert on error
       moveSessionToProject(session.id, oldProjectId ?? null);
     }
   };
 
+  // User-isolated sessions: only show sessions that belong to the active user (or legacy/guest if unauthenticated)
+  const userSessions = useMemo(() => {
+    const currentUserId = user?.id;
+    if (!currentUserId) {
+      return sessions.filter((s) => !s.userId || s.userId === 'guest');
+    }
+    return sessions.filter((s) => s.userId === currentUserId || !s.userId);
+  }, [sessions, user?.id]);
+
   // Filter sessions by search query.
-  // Sessions assigned to a project only appear under that folder, not in the general list.
-  const filteredSessions = sessions.filter((s) => {
+  // Sessions assigned to a project only appear under that folder (if folder exists in user's projects), not in the general list.
+  const filteredSessions = userSessions.filter((s) => {
     const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const notInAnyFolder = !s.projectId;
-    return matchesSearch && notInAnyFolder;
+    const isInExistingProject = s.projectId && projects.some((p) => p.id === s.projectId);
+    return matchesSearch && !isInExistingProject;
   });
 
   const now = new Date();
@@ -669,9 +782,24 @@ export function Sidebar({
             </button>
 
             {/* Move to folder — shows sub-list of projects */}
-            <div style={{ position: 'relative' }}>
+            <div
+              style={{ position: 'relative' }}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const submenuWidth = 180;
+                const submenuHeight = Math.min(projects.length * 32 + 30, 300);
+                
+                let left = rect.right + 4;
+                if (left + submenuWidth > window.innerWidth) {
+                  left = Math.max(10, rect.left - submenuWidth - 4);
+                }
+                
+                let top = Math.max(10, Math.min(rect.top, window.innerHeight - submenuHeight - 10));
+                setFolderSubmenuSessionId(session.id);
+                setSubmenuPosition({ top, left });
+              }}
+            >
               <button
-                ref={submenuButtonRef}
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -679,15 +807,18 @@ export function Sidebar({
                     setFolderSubmenuSessionId(null);
                     setSubmenuPosition(null);
                   } else {
-                    setFolderSubmenuSessionId(session.id);
-                    // Calculate position for fixed positioning
-                    const rect = submenuButtonRef.current?.getBoundingClientRect();
-                    if (rect) {
-                      setSubmenuPosition({
-                        top: rect.top,
-                        left: rect.right + 4,
-                      });
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const submenuWidth = 180;
+                    const submenuHeight = Math.min(projects.length * 32 + 30, 300);
+                    
+                    let left = rect.right + 4;
+                    if (left + submenuWidth > window.innerWidth) {
+                      left = Math.max(10, rect.left - submenuWidth - 4);
                     }
+                    
+                    let top = Math.max(10, Math.min(rect.top, window.innerHeight - submenuHeight - 10));
+                    setFolderSubmenuSessionId(session.id);
+                    setSubmenuPosition({ top, left });
                   }
                 }}
                 style={{
@@ -713,62 +844,71 @@ export function Sidebar({
                 <ChevronRight size={10} color="var(--text-muted)" />
               </button>
 
-              {folderSubmenuSessionId === session.id && submenuPosition && typeof window !== 'undefined' && createPortal(
+              {/* Submenu for Projects - Portal with smart positioning */}
+              {isMounted && folderSubmenuSessionId === session.id && submenuPosition && createPortal(
                 <div
+                  data-submenu-portal="true"
+                  onClick={(e) => e.stopPropagation()}
                   style={{
                     position: 'fixed',
                     top: `${submenuPosition.top}px`,
                     left: `${submenuPosition.left}px`,
+                    width: '180px',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
                     background: 'var(--bg-surface)',
                     border: '1px solid var(--border-strong)',
                     borderRadius: 'var(--radius-md, 8px)',
                     boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
                     padding: '4px',
-                    zIndex: 2147483647,
+                    zIndex: 999999999,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
-                    minWidth: '140px',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
                   }}
                 >
                   {projects.length === 0 && (
-                    <div style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
                       {language === 'id' ? 'Belum ada folder' : 'No folders yet'}
                     </div>
                   )}
-                  {projects.map((proj) => (
-                    <button
-                      key={proj.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMoveToProject(session, proj.id);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '5px 8px',
-                        borderRadius: '4px',
-                        border: 'none',
-                        background: session.projectId === proj.id ? 'var(--bg-subtle)' : 'transparent',
-                        color: session.projectId === proj.id ? 'var(--brand-primary)' : 'var(--text-primary)',
-                        fontSize: '11.5px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        width: '100%',
-                      }}
-                    >
-                      <Folder size={11} />
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {proj.name}
-                      </span>
-                      {session.projectId === proj.id && <Check size={10} style={{ marginLeft: 'auto', flexShrink: 0 }} />}
-                    </button>
-                  ))}
-                  {/* Option to remove from current folder */}
+                  {projects.map((proj) => {
+                    const isCurrent = session.projectId === proj.id;
+                    return (
+                      <button
+                        key={proj.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('[Sidebar] Moving to project:', proj.id, proj.name);
+                          handleMoveToProject(session, proj.id);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '5px 8px',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: isCurrent ? 'var(--bg-subtle)' : 'transparent',
+                          color: isCurrent ? 'var(--brand-primary)' : 'var(--text-primary)',
+                          fontSize: '11.5px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          width: '100%',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isCurrent ? 'var(--bg-subtle)' : 'transparent')}
+                      >
+                        <Folder size={11} />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                          {proj.name}
+                        </span>
+                        {isCurrent && <Check size={11} color="var(--brand-primary)" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                      </button>
+                    );
+                  })}
+                  {/* Option to remove from current folder inside submenu */}
                   {session.projectId && (
                     <>
                       <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '2px 4px' }} />
@@ -776,6 +916,7 @@ export function Sidebar({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
+                          console.log('[Sidebar] Removing from project via submenu');
                           handleMoveToProject(session, null);
                         }}
                         style={{
@@ -792,6 +933,8 @@ export function Sidebar({
                           textAlign: 'left',
                           width: '100%',
                         }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                       >
                         <FolderMinus size={11} />
                         <span>{t.sidebar.removeFromFolder}</span>
@@ -803,18 +946,58 @@ export function Sidebar({
               )}
             </div>
 
+            {/* Direct "Keluarkan dari folder" option in main dropdown when session is in a project */}
+            {session.projectId && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('[Sidebar] Removing from project via main menu');
+                  handleMoveToProject(session, null);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 8px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  fontSize: '11.5px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={(e) => {
+                  setFolderSubmenuSessionId(null);
+                  setSubmenuPosition(null);
+                  e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                }}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <FolderMinus size={12} color="var(--text-secondary)" />
+                <span>{t.sidebar.removeFromFolder}</span>
+              </button>
+            )}
+
             <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '2px 4px' }} />
 
             <button
               type="button"
               onClick={async (e) => {
                 e.stopPropagation();
-                const token = useAuthStore.getState().session?.access_token;
-                if (session.projectId && token) {
-                  await removeSessionFromProject(session.projectId, session.id, token);
+                try {
+                  const token = await getAccessToken();
+                  if (session.projectId && token) {
+                    await removeSessionFromProject(session.projectId, session.id, token);
+                  }
+                } catch (err) {
+                  console.error('[Sidebar] Failed to remove session from project on delete:', err);
                 }
                 deleteSession(session.id);
                 setMenuSessionId(null);
+                setFolderSubmenuSessionId(null);
+                setSubmenuPosition(null);
               }}
               style={{
                 display: 'flex',
@@ -829,6 +1012,12 @@ export function Sidebar({
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
+              onMouseEnter={(e) => {
+                setFolderSubmenuSessionId(null);
+                setSubmenuPosition(null);
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+              }}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               <Trash2 size={12} />
               <span>{t.common.delete}</span>
@@ -844,6 +1033,23 @@ export function Sidebar({
     (user?.email ? user.email.split('@')[0] : 'M Faiz asy syauqi');
 
   const displayEmail = user?.email || 'm.faizasysyauqi@gmail.com';
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!isMounted) {
+    return (
+      <aside
+        className={`app-sidebar-drawer ${isOpenMobile ? 'drawer-open' : ''} ${isDesktopCollapsed ? 'collapsed' : ''}`}
+        style={{
+          height: '100%',
+          display: 'flex',
+          background: 'var(--bg-sidebar)',
+          flexShrink: 0,
+          zIndex: 1000,
+          overflow: 'visible',
+        }}
+      />
+    );
+  }
 
   return (
     <aside
@@ -1985,7 +2191,7 @@ export function Sidebar({
 
                     {projects.map((proj) => {
                       const isFolderOpen = expandedFolderIds.has(proj.id);
-                      const folderSessions = sessions.filter(
+                      const folderSessions = userSessions.filter(
                         (s) => s.projectId === proj.id &&
                           s.title.toLowerCase().includes(searchQuery.toLowerCase())
                       );

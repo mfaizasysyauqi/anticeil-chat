@@ -76,13 +76,23 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
     throw new Error(`API key is required for ${providerDef.name}. Please configure it in Settings.`);
   }
 
-  // Format messages into common structure
-  const formattedMessages = messages
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
+  // Format messages into common structure and filter empty content
+  const rawFormatted = messages
+    .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.content && m.content.trim())
     .map((m) => ({
-      role: m.role,
-      content: m.content,
+      role: m.role as 'user' | 'assistant',
+      content: m.content.trim(),
     }));
+
+  // Merge consecutive same-role messages to guarantee strict role alternation (required by Gemini & Anthropic)
+  const formattedMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  for (const m of rawFormatted) {
+    if (formattedMessages.length > 0 && formattedMessages[formattedMessages.length - 1].role === m.role) {
+      formattedMessages[formattedMessages.length - 1].content += `\n\n${m.content}`;
+    } else {
+      formattedMessages.push({ role: m.role, content: m.content });
+    }
+  }
 
   const effectiveSystemPrompt = systemPrompt
     ? `${systemPrompt}\n\n${BASE_LANGUAGE_INSTRUCTION}`

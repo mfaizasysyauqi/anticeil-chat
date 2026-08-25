@@ -34,6 +34,7 @@ export async function GET(
 
     const { session } = data;
     const providerToken = session.provider_token ?? '';
+    const providerRefreshToken = session.provider_refresh_token ?? '';
     const userEmail = session.user?.email ?? '';
     const userName =
       session.user?.user_metadata?.full_name ||
@@ -57,6 +58,9 @@ export async function GET(
     const successUrl = new URL(`${origin}/chat`);
     successUrl.searchParams.set('connector_connected', connectorId);
     successUrl.searchParams.set('connector_token', providerToken);
+    if (providerRefreshToken) {
+      successUrl.searchParams.set('connector_refresh_token', providerRefreshToken);
+    }
     successUrl.searchParams.set('connector_email', userEmail);
     successUrl.searchParams.set('connector_name', userName);
     return NextResponse.redirect(successUrl.toString());

@@ -23,7 +23,13 @@ export interface ConnectorsState {
   toggleActiveConnector: (id: ConnectorId) => void;
   enableAllConnectors: (enabled: boolean) => void;
   updateConnector: (id: ConnectorId, updates: Partial<ConnectorConfig>) => void;
-  setAccessToken: (id: ConnectorId, token: string, accountEmail?: string, accountName?: string) => void;
+  setAccessToken: (
+    id: ConnectorId,
+    token: string,
+    accountEmail?: string,
+    accountName?: string,
+    refreshToken?: string
+  ) => void;
   disconnectConnector: (id: ConnectorId) => void;
   disconnectAllGoogle: () => void;
   setLastOAuthError: (error: string | null) => void;
@@ -65,7 +71,7 @@ const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
   google_drive: {
     id: 'google_drive',
     name: 'Google Drive',
-    description: 'Search files, read Google Docs & Sheets, create notes, and update files.',
+    description: 'Create, search, read, update, and manage documents, sheets, and files.',
     icon: '📁',
     status: 'disconnected',
     isEnabled: false,
@@ -74,28 +80,28 @@ const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
   },
   notion: {
     id: 'notion',
-    name: 'Notion Workspace',
-    description: 'Search pages, query databases, and create rich markdown notes.',
+    name: 'Notion',
+    description: 'Search, read pages, create documents, and query databases in your Notion workspace.',
     icon: '📝',
     status: 'disconnected',
     isEnabled: false,
     isSandboxMode: false,
-    scopes: ['notion:read_content', 'notion:insert_content'],
+    scopes: ['notion:all'],
   },
   github: {
     id: 'github',
-    name: 'GitHub Repositories',
-    description: 'Search issues, read pull requests, inspect commits, and manage repos.',
+    name: 'GitHub',
+    description: 'List repositories, search issues, create pull requests, and manage codebase tasks.',
     icon: '🐙',
     status: 'disconnected',
     isEnabled: false,
     isSandboxMode: false,
-    scopes: ['repo', 'read:user'],
+    scopes: ['repo', 'read:user', 'user:email'],
   },
   custom_webhook: {
     id: 'custom_webhook',
-    name: 'Custom API / MCP',
-    description: 'Connect any proprietary REST endpoint or MCP server.',
+    name: 'Custom Webhook',
+    description: 'Trigger custom REST API actions and automated pipelines.',
     icon: '⚡',
     status: 'disconnected',
     isEnabled: false,
@@ -139,13 +145,14 @@ export const useConnectorsStore = create<ConnectorsState>()(
         }));
       },
 
-      setAccessToken: (id, token, accountEmail, accountName) => {
+      setAccessToken: (id, token, accountEmail, accountName, refreshToken) => {
         set((state) => ({
           connectors: {
             ...state.connectors,
             [id]: {
               ...state.connectors[id],
               accessToken: token,
+              refreshToken: refreshToken ?? state.connectors[id].refreshToken,
               status: token ? 'connected' : 'disconnected',
               isEnabled: !!token,
               isSandboxMode: false,
@@ -174,6 +181,7 @@ export const useConnectorsStore = create<ConnectorsState>()(
             [id]: {
               ...state.connectors[id],
               accessToken: undefined,
+              refreshToken: undefined,
               status: 'disconnected',
               isEnabled: false,
               isSandboxMode: false,
@@ -193,6 +201,7 @@ export const useConnectorsStore = create<ConnectorsState>()(
               updatedConnectors[gid] = {
                 ...updatedConnectors[gid],
                 accessToken: undefined,
+                refreshToken: undefined,
                 status: 'disconnected',
                 isEnabled: false,
                 isSandboxMode: false,
@@ -207,7 +216,9 @@ export const useConnectorsStore = create<ConnectorsState>()(
         });
       },
 
-      setLastOAuthError: (error) => set({ lastOAuthError: error }),
+      setLastOAuthError: (error) => {
+        set({ lastOAuthError: error });
+      },
 
       /**
        * Called once from the /chat page on mount to pick up OAuth callback
@@ -222,6 +233,7 @@ export const useConnectorsStore = create<ConnectorsState>()(
       handleOAuthCallback: (searchParams) => {
         const connected = searchParams.get('connector_connected');
         const token = searchParams.get('connector_token');
+        const refreshToken = searchParams.get('connector_refresh_token') ?? undefined;
         const errorProvider = searchParams.get('connector_error');
         const reason = searchParams.get('reason');
 
@@ -249,13 +261,13 @@ export const useConnectorsStore = create<ConnectorsState>()(
 
         if (connected === 'google') {
           // A single Google OAuth token covers Gmail + Calendar + Drive
-          setAccessToken('gmail', token, email, name);
-          setAccessToken('calendar', token, email, name);
-          setAccessToken('google_drive', token, email, name);
+          setAccessToken('gmail', token, email, name, refreshToken);
+          setAccessToken('calendar', token, email, name, refreshToken);
+          setAccessToken('google_drive', token, email, name, refreshToken);
         } else if (connected === 'github') {
-          setAccessToken('github', token, email, name);
+          setAccessToken('github', token, email, name, refreshToken);
         } else if (connected === 'notion') {
-          setAccessToken('notion', token, email, name);
+          setAccessToken('notion', token, email, name, refreshToken);
         }
       },
 
@@ -298,6 +310,17 @@ export const useConnectorsStore = create<ConnectorsState>()(
     }),
     {
       name: 'anticeil_connectors_store',
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // Auto-activate any connector that has a stored access token
+        const connectedIds = (Object.keys(state.connectors) as ConnectorId[]).filter(
+          (id) => !!state.connectors[id].accessToken
+        );
+        if (connectedIds.length > 0) {
+          const merged = Array.from(new Set([...state.activeConnectorIds, ...connectedIds]));
+          state.activeConnectorIds = merged;
+        }
+      },
     }
   )
 );

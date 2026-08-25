@@ -1,4 +1,5 @@
 import { GmailMessage, GmailDraft } from './types';
+import { connectorFetch } from './proxyFetch';
 
 // Mock Initial Gmail Database for Demo Sandbox
 const INITIAL_SANDBOX_MESSAGES: GmailMessage[] = [
@@ -92,6 +93,10 @@ export class GmailConnectorClient {
       };
     }
 
+    if (!this.accessToken) {
+      throw new Error('Gmail belum dihubungkan. Silakan buka menu Konektor lalu klik "Hubungkan dengan Akun Google".');
+    }
+
     // Live Google Gmail REST API
     try {
       let qParam = query;
@@ -103,12 +108,27 @@ export class GmailConnectorClient {
       if (qParam) url.searchParams.set('q', qParam);
       url.searchParams.set('maxResults', String(Math.min(maxResults, 20)));
 
-      const res = await fetch(url.toString(), {
+      const res = await connectorFetch(url.toString(), {
         headers: { Authorization: `Bearer ${this.accessToken}` },
       });
 
       if (!res.ok) {
-        throw new Error(`Gmail API error: ${res.status} ${res.statusText}`);
+        let errDetail = '';
+        try {
+          const errJson = await res.json();
+          errDetail = errJson.error?.message || JSON.stringify(errJson);
+        } catch {
+          errDetail = await res.text();
+        }
+        if (res.status === 401) {
+          throw new Error(`Token akses Google Anda telah kedaluwarsa (${errDetail || 'Unauthorized'}). Silakan klik menu Konektor dan tekan "Hubungkan Ulang" akun Google Anda.`);
+        }
+        if (res.status === 403 && (errDetail.includes('has not been used in project') || errDetail.includes('is disabled'))) {
+          const linkMatch = errDetail.match(/https:\/\/[^\s\)]+/);
+          const enableUrl = linkMatch ? linkMatch[0] : 'https://console.cloud.google.com/apis/library/gmail.googleapis.com';
+          throw new Error(`Gmail API belum diaktifkan di Google Cloud Console project Anda. Silakan buka tautan ini untuk mengaktifkannya (1x klik): [Aktifkan Gmail API](${enableUrl}) lalu coba lagi dalam 1 menit.`);
+        }
+        throw new Error(`Gmail API error: ${res.status} (${errDetail || res.statusText})`);
       }
 
       const listData = await res.json();
@@ -119,7 +139,7 @@ export class GmailConnectorClient {
       // Fetch message summaries
       const fetched: GmailMessage[] = [];
       for (const msgRef of listData.messages.slice(0, maxResults)) {
-        const detailRes = await fetch(
+        const detailRes = await connectorFetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgRef.id}?format=full`,
           { headers: { Authorization: `Bearer ${this.accessToken}` } }
         );
@@ -163,7 +183,7 @@ export class GmailConnectorClient {
       return found;
     }
 
-    const res = await fetch(
+    const res = await connectorFetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`,
       { headers: { Authorization: `Bearer ${this.accessToken}` } }
     );
@@ -238,7 +258,7 @@ export class GmailConnectorClient {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 
-    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    const res = await connectorFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
@@ -299,7 +319,7 @@ export class GmailConnectorClient {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 
-    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
+    const res = await connectorFetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
@@ -333,7 +353,7 @@ export class GmailConnectorClient {
       return { success: true, message: `Email ${messageId} deleted.` };
     }
 
-    const res = await fetch(
+    const res = await connectorFetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/trash`,
       {
         method: 'POST',
@@ -373,7 +393,7 @@ export class GmailConnectorClient {
     if (markAsRead) removeLabelIds.push('UNREAD');
     if (star) addLabelIds.push('STARRED');
 
-    const res = await fetch(
+    const res = await connectorFetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/modify`,
       {
         method: 'POST',

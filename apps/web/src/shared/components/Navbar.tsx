@@ -60,7 +60,15 @@ export function Navbar({
   const removeSessionFromProject = useProjectStore((s) => s.removeSession);
   const fetchProjects = useProjectStore((s) => s.fetchFolders);
 
-  const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
+  const userSessions = React.useMemo(() => {
+    const currentUserId = user?.id;
+    if (!currentUserId) {
+      return sessions.filter((s) => !s.userId || s.userId === 'guest');
+    }
+    return sessions.filter((s) => s.userId === currentUserId || !s.userId);
+  }, [sessions, user?.id]);
+
+  const activeSession = userSessions.find((s) => s.id === activeSessionId) || userSessions[0];
   const t = getTranslation(language);
 
   useEffect(() => {
@@ -91,6 +99,8 @@ export function Navbar({
   const handleAssignProject = async (projectId: string) => {
     if (!activeSession) return;
     
+    console.log('[Navbar] Assigning to project:', { sessionId: activeSession.id, projectId, currentProjectId: activeSession.projectId });
+    
     try {
       // Get access token from Supabase session
       const { createBrowserClient } = await import('@supabase/ssr');
@@ -99,25 +109,34 @@ export function Navbar({
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        console.error('[Navbar] No Supabase session found');
+        return;
+      }
       
       const accessToken = session.access_token;
       
       // Optimistic update first
       moveSessionToProject(activeSession.id, projectId);
+      console.log('[Navbar] Optimistic update done');
       
       // Remove from old project if any
       if (activeSession.projectId) {
+        console.log('[Navbar] Removing from old project:', activeSession.projectId);
         await removeSessionFromProject(activeSession.projectId, activeSession.id, accessToken);
       }
       
       // Assign to new project
+      console.log('[Navbar] Assigning to new project');
       await assignSessionToProject(projectId, activeSession.id, accessToken);
       
       // Refresh in background (no await)
+      console.log('[Navbar] Refreshing projects in background');
       fetchProjects(accessToken);
+      
+      console.log('[Navbar] Assignment complete');
     } catch (error) {
-      console.error('Failed to assign project:', error);
+      console.error('[Navbar] Failed to assign project:', error);
       // Revert on error
       moveSessionToProject(activeSession.id, activeSession.projectId ?? null);
     }
@@ -129,6 +148,8 @@ export function Navbar({
   const handleRemoveFromProject = async () => {
     if (!activeSession || !activeSession.projectId) return;
     
+    console.log('[Navbar] Removing from project:', { sessionId: activeSession.id, projectId: activeSession.projectId });
+    
     try {
       const { createBrowserClient } = await import('@supabase/ssr');
       const supabase = createBrowserClient(
@@ -136,21 +157,27 @@ export function Navbar({
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        console.error('[Navbar] No Supabase session found');
+        return;
+      }
       
       const accessToken = session.access_token;
       const oldProjectId = activeSession.projectId;
       
       // Optimistic update
       moveSessionToProject(activeSession.id, null);
+      console.log('[Navbar] Optimistic update done - removed from project');
       
       // API call
       await removeSessionFromProject(oldProjectId, activeSession.id, accessToken);
+      console.log('[Navbar] API call complete');
       
       // Refresh in background
       fetchProjects(accessToken);
+      console.log('[Navbar] Refreshing projects in background');
     } catch (error) {
-      console.error('Failed to remove from project:', error);
+      console.error('[Navbar] Failed to remove from project:', error);
       // Revert on error
       moveSessionToProject(activeSession.id, activeSession.projectId);
     }
@@ -423,7 +450,7 @@ export function Navbar({
                       </div>
                     ) : (
                       projects.map((proj) => {
-                        const isCurrent = proj.sessionIds.includes(activeSession?.id ?? '');
+                        const isCurrent = activeSession?.projectId === proj.id;
                         return (
                           <button
                             key={proj.id}
@@ -457,7 +484,7 @@ export function Navbar({
               </div>
 
               {/* 3. Keluarkan dari Proyek (Only show if session is in a project) */}
-              {activeSession && projects.some(p => p.sessionIds.includes(activeSession.id)) && (
+              {activeSession?.projectId && (
                 <button
                   type="button"
                   onClick={handleRemoveFromProject}

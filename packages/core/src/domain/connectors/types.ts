@@ -23,6 +23,7 @@ export interface ConnectorConfig {
   isEnabled: boolean;
   isSandboxMode: boolean; // 1-Click Interactive Demo Sandbox
   accessToken?: string;
+  refreshToken?: string;
   clientId?: string;
   scopes: string[];
   account?: ConnectorAccount;

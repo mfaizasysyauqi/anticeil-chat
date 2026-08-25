@@ -23,6 +23,7 @@ import {
 import { streamBYOKChat } from '../data/byokApi';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 
 interface ChatState {
   sessions: ChatSession[];
@@ -88,9 +89,11 @@ export const useChatStore = create<ChatState>()(
 
       createSession: (providerId, modelId, systemPrompt) => {
         const settings = useSettingsStore.getState();
+        const currentUserId = useAuthStore.getState().user?.id;
         const newId = `session-${Date.now()}`;
         const newSession: ChatSession = {
           id: newId,
+          userId: currentUserId,
           title: 'New Conversation',
           providerId: providerId || settings.activeProviderId || DEFAULT_PROVIDER_ID,
           modelId: modelId || settings.activeModelId || DEFAULT_MODEL_ID,
@@ -373,6 +376,8 @@ export const useChatStore = create<ChatState>()(
         let webSearchContext = '';
         const shouldWebSearch = enableWebSearch || content.trim().startsWith('/search ');
         const cleanUserQuery = content.trim().replace(/^\/search\s+/, '');
+        // Read connector state early — web search is skipped when connectors are active
+        const hasActiveConnectors = useConnectorsStore.getState().activeConnectorIds.length > 0;
 
         // 2. Format user content with attached document contents
         let effectiveContent = cleanUserQuery;
@@ -432,8 +437,8 @@ export const useChatStore = create<ChatState>()(
         const controller = new AbortController();
         set({ abortController: controller });
 
-        // Perform Web Search if requested
-        if (shouldWebSearch && cleanUserQuery) {
+        // Perform Web Search if requested — skipped when connectors are active
+        if (shouldWebSearch && cleanUserQuery && !hasActiveConnectors) {
           try {
             webSearchReasoning += `Ran 1 search for "${cleanUserQuery}"\n`;
             const searchResults = await performWebSearch(cleanUserQuery);
@@ -455,9 +460,16 @@ export const useChatStore = create<ChatState>()(
         const connectorsStore = useConnectorsStore.getState();
         const activeConnectorIds = connectorsStore.activeConnectorIds;
         const connectorsInstruction = generateConnectorsSystemInstruction(activeConnectorIds);
-        const effectiveSystemPrompt = [session.systemPrompt, connectorsInstruction]
+        // Connector instruction goes FIRST so the model sees it before any session system prompt
+        const effectiveSystemPrompt = [connectorsInstruction, session.systemPrompt]
           .filter(Boolean)
           .join('\n\n');
+
+        // Debug: verify connector injection
+        console.debug(
+          '[Anticeil Connectors] activeConnectorIds:', activeConnectorIds,
+          '| systemInstruction chars:', connectorsInstruction.length
+        );
 
         const modelDef = getModelById(session.modelId);
         let accumulatedText = '';
@@ -468,8 +480,12 @@ export const useChatStore = create<ChatState>()(
         let completionTokensCount = 0;
         let lastFlushTime = 0;
 
-        // Prepare messages for API
-        const apiMessages = updatedMessages.slice(0, -1).map((m) => {
+        // Prepare messages for API with sliding context window (max 10 recent messages)
+        // to prevent exceeding provider TPM / rate limits (e.g. Groq 8000 TPM limit)
+        const rawHistory = updatedMessages.slice(0, -1);
+        const windowedHistory = rawHistory.length > 10 ? rawHistory.slice(-10) : rawHistory;
+
+        const apiMessages = windowedHistory.map((m) => {
           if (m.id === userMessageId) {
             return {
               ...m,
@@ -542,9 +558,34 @@ export const useChatStore = create<ChatState>()(
             },
           });
 
-          // Check if tool calls were triggered
-          const { toolCalls } = parseToolCallsFromLLM(accumulatedText);
+          // Check if tool calls were triggered in main text OR in reasoning/thinking stream
+          let { toolCalls } = parseToolCallsFromLLM(accumulatedText);
+          if (toolCalls.length === 0 && accumulatedReasoning) {
+            const fromReasoning = parseToolCallsFromLLM(accumulatedReasoning);
+            if (fromReasoning.toolCalls.length > 0) {
+              toolCalls = fromReasoning.toolCalls;
+            }
+          }
+
           if (toolCalls.length > 0 && !controller.signal.aborted) {
+            // Update assistant status while executing tool
+            const toolSummaryNames = toolCalls.map((t) => t.name).join(', ');
+            set((s) => ({
+              messages: {
+                ...s.messages,
+                [session.id]: (s.messages[session.id] || []).map((m) =>
+                  m.id === assistantMessageId
+                    ? {
+                        ...m,
+                        content: `⚡ Mengambil data dari ${toolSummaryNames}...`,
+                        reasoningContent: `Menghubungkan ke ${toolSummaryNames} untuk mengambil data terbaru...`,
+                        status: 'streaming',
+                      }
+                    : m
+                ),
+              },
+            }));
+
             const executedResults: ToolCallResult[] = [];
 
             for (const toolCall of toolCalls) {
@@ -584,12 +625,14 @@ export const useChatStore = create<ChatState>()(
               .join('\n\n');
 
             const synthesisMessages: ChatMessage[] = [
-              ...apiMessages,
+              ...apiMessages.slice(-2),
               {
                 id: `msg-ai-tool-${Date.now()}`,
                 sessionId: session.id,
                 role: 'assistant',
-                content: accumulatedText,
+                content: toolCalls
+                  .map((tc) => `\`\`\`tool_call\n${JSON.stringify({ name: tc.name, arguments: tc.arguments }, null, 2)}\n\`\`\``)
+                  .join('\n'),
                 timestamp: Date.now(),
                 status: 'done',
               },
@@ -597,41 +640,104 @@ export const useChatStore = create<ChatState>()(
                 id: `msg-tool-res-${Date.now() + 1}`,
                 sessionId: session.id,
                 role: 'user',
-                content: `[Tool Execution Output from Workspace Connectors]:\n${toolResultsPrompt}\n\nPlease synthesize the final user-facing answer clearly based on the above tool results. Always respond in the EXACT same language as the user.`,
+                content: `[Tool Execution Output from Workspace Connectors]:\n${toolResultsPrompt}\n\nBerdasarkan data yang didapat dari eksekusi tool di atas, berikan jawaban akhir yang sangat rapi, informatif, dan lengkap kepada pengguna dalam Bahasa Indonesia. Cantumkan judul, link, dan detail penting dari data tersebut. Jangan meminta pengguna mencari manual.`,
                 timestamp: Date.now() + 1,
                 status: 'done',
               },
             ];
 
             let synthesisText = '';
-            await streamBYOKChat({
-              providerId: session.providerId,
-              modelId: session.modelId,
-              systemPrompt: effectiveSystemPrompt,
-              messages: synthesisMessages,
-              apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
-              temperature: session.temperature,
-              signal: controller.signal,
-              onChunk: (chunk) => {
-                if (chunk.delta) synthesisText += chunk.delta;
-                const { cleanContent } = cleanAgenticStream(synthesisText, '', chunk.isDone);
+            let synthesisReasoning = '';
+            try {
+              await streamBYOKChat({
+                providerId: session.providerId,
+                modelId: session.modelId,
+                systemPrompt: effectiveSystemPrompt,
+                messages: synthesisMessages,
+                apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
+                temperature: session.temperature,
+                signal: controller.signal,
+                onChunk: (chunk) => {
+                  if (chunk.delta) synthesisText += chunk.delta;
+                  if (chunk.reasoningDelta) synthesisReasoning += chunk.reasoningDelta;
+                  const { cleanContent } = cleanAgenticStream(synthesisText, synthesisReasoning, chunk.isDone);
 
-                set((s) => ({
-                  messages: {
-                    ...s.messages,
-                    [session.id]: (s.messages[session.id] || []).map((m) =>
-                      m.id === assistantMessageId
-                        ? {
-                            ...m,
-                            content: cleanContent,
-                            status: chunk.isDone ? 'done' : 'streaming',
-                          }
-                        : m
-                    ),
-                  },
-                }));
-              },
-            });
+                  if (cleanContent) {
+                    set((s) => ({
+                      messages: {
+                        ...s.messages,
+                        [session.id]: (s.messages[session.id] || []).map((m) =>
+                          m.id === assistantMessageId
+                            ? {
+                                ...m,
+                                content: cleanContent,
+                                status: chunk.isDone ? 'done' : 'streaming',
+                              }
+                            : m
+                        ),
+                      },
+                    }));
+                  }
+                },
+              });
+            } catch (synthErr) {
+              console.warn('[Anticeil] Synthesis LLM stream failed, generating rich fallback from tool data:', synthErr);
+            }
+
+            // If synthesis LLM returned empty or was cut off, generate a rich markdown response directly from tool results
+            if (!synthesisText.trim()) {
+              const fallbackParts: string[] = [];
+              for (const res of executedResults) {
+                if (res.toolName === 'notion_search' && res.data?.results) {
+                  const pages = res.data.results as Array<{ title?: string; url?: string; lastEditedTime?: string }>;
+                  if (pages.length === 0) {
+                    fallbackParts.push('Tidak ditemukan halaman atau catatan di workspace Notion Anda.');
+                  } else {
+                    fallbackParts.push(
+                      `Berikut adalah catatan dan halaman yang ditemukan di workspace **Notion** Anda (${pages.length} item):\n\n` +
+                        pages
+                          .map((p, idx) => {
+                            const title = p.title || 'Untitled';
+                            const url = p.url || '#';
+                            const date = p.lastEditedTime ? new Date(p.lastEditedTime).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                            return `${idx + 1}. **[${title}](${url})**${date ? ` *(diedit ${date})*` : ''}`;
+                          })
+                          .join('\n')
+                    );
+                  }
+                } else if (res.toolName === 'github_list_repos' && res.data?.repos) {
+                  const repos = res.data.repos as Array<{ fullName: string; htmlUrl: string; description?: string }>;
+                  fallbackParts.push(
+                    `Berikut repository GitHub Anda (${repos.length} repo):\n\n` +
+                      repos.map((r, i) => `${i + 1}. **[${r.fullName}](${r.htmlUrl})**${r.description ? ` — ${r.description}` : ''}`).join('\n')
+                  );
+                } else if (res.toolName === 'gmail_list_emails' && res.data?.messages) {
+                  const emails = res.data.messages as Array<{ subject?: string; from?: string; snippet?: string }>;
+                  fallbackParts.push(
+                    `Berikut email terbaru Anda (${emails.length} email):\n\n` +
+                      emails.map((e, i) => `${i + 1}. **${e.subject || 'No Subject'}** *(dari ${e.from || 'Unknown'})*\n   ${e.snippet || ''}`).join('\n\n')
+                  );
+                } else {
+                  fallbackParts.push(`✅ **${res.summary}**`);
+                }
+              }
+
+              const finalFallback = fallbackParts.join('\n\n');
+              set((s) => ({
+                messages: {
+                  ...s.messages,
+                  [session.id]: (s.messages[session.id] || []).map((m) =>
+                    m.id === assistantMessageId
+                      ? {
+                          ...m,
+                          content: finalFallback,
+                          status: 'done',
+                        }
+                      : m
+                  ),
+                },
+              }));
+            }
           }
         } catch (err: unknown) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to generate response';

@@ -1,4 +1,5 @@
 import { CalendarEvent } from './types';
+import { connectorFetch } from './proxyFetch';
 
 // Helper for dates relative to now
 const now = new Date();
@@ -146,6 +147,10 @@ export class CalendarConnectorClient {
     }
 
     // Google Calendar REST API
+    if (!this.accessToken) {
+      throw new Error('Google Calendar belum dihubungkan. Silakan buka menu Konektor lalu klik "Hubungkan dengan Akun Google".');
+    }
+
     try {
       const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
       url.searchParams.set('singleEvents', 'true');
@@ -158,11 +163,28 @@ export class CalendarConnectorClient {
       if (timeMax) url.searchParams.set('timeMax', timeMax);
       if (query) url.searchParams.set('q', query);
 
-      const res = await fetch(url.toString(), {
+      const res = await connectorFetch(url.toString(), {
         headers: { Authorization: `Bearer ${this.accessToken}` },
       });
 
-      if (!res.ok) throw new Error(`Calendar API error: ${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        let errDetail = '';
+        try {
+          const errJson = await res.json();
+          errDetail = errJson.error?.message || JSON.stringify(errJson);
+        } catch {
+          errDetail = await res.text();
+        }
+        if (res.status === 401) {
+          throw new Error(`Token akses Google Calendar Anda telah kedaluwarsa (${errDetail || 'Unauthorized'}). Silakan klik menu Konektor dan tekan "Hubungkan Ulang" akun Google Anda.`);
+        }
+        if (res.status === 403 && (errDetail.includes('has not been used in project') || errDetail.includes('is disabled'))) {
+          const linkMatch = errDetail.match(/https:\/\/[^\s\)]+/);
+          const enableUrl = linkMatch ? linkMatch[0] : 'https://console.cloud.google.com/apis/library/calendar-json.googleapis.com';
+          throw new Error(`Google Calendar API belum diaktifkan di Google Cloud Console project Anda. Silakan buka tautan ini untuk mengaktifkannya (1x klik): [Aktifkan Google Calendar API](${enableUrl}) lalu coba lagi dalam 1 menit.`);
+        }
+        throw new Error(`Calendar API error: ${res.status} (${errDetail || res.statusText})`);
+      }
       const data = await res.json();
 
       const events: CalendarEvent[] = (data.items || []).map((item: any) => ({
@@ -194,7 +216,7 @@ export class CalendarConnectorClient {
       return found;
     }
 
-    const res = await fetch(
+    const res = await connectorFetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
       { headers: { Authorization: `Bearer ${this.accessToken}` } }
     );
@@ -272,7 +294,7 @@ export class CalendarConnectorClient {
       },
     };
 
-    const res = await fetch(
+    const res = await connectorFetch(
       'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1',
       {
         method: 'POST',
@@ -355,7 +377,7 @@ export class CalendarConnectorClient {
       attendees: attendees ? attendees.map((email) => ({ email })) : existing.attendees,
     };
 
-    const res = await fetch(
+    const res = await connectorFetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
       {
         method: 'PUT',
@@ -402,7 +424,7 @@ export class CalendarConnectorClient {
       return { success: true, message: `Event ${eventId} deleted.` };
     }
 
-    const res = await fetch(
+    const res = await connectorFetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
       {
         method: 'DELETE',

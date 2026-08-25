@@ -4,16 +4,24 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface StorageBreakdown {
-  docs: number;   // in bytes
-  images: number; // in bytes
-  audio: number;  // in bytes
-  other: number;  // in bytes
+  docs: number;     // in bytes (PDFs, docs in R2 & text)
+  images: number;   // in bytes (Images, videos in R2 & generation prompts)
+  audio: number;    // in bytes (Audio in R2)
+  database: number; // in bytes (Supabase database rows, prompts, automations, folders)
+  other: number;    // in bytes
+}
+
+export interface StorageSources {
+  r2Bytes: number;
+  databaseBytes: number;
+  isR2Available?: boolean;
 }
 
 interface StorageState {
   usedBytes: number;
   limitBytes: number;
   breakdown: StorageBreakdown;
+  sources: StorageSources;
   fileCount: number;
   lastSyncedAt: number | null; // epoch ms
 
@@ -44,7 +52,8 @@ export const useStorageStore = create<StorageState>()(
     (set, get) => ({
       usedBytes: 0,
       limitBytes: DEFAULT_STORAGE_LIMIT_BYTES,
-      breakdown: { docs: 0, images: 0, audio: 0, other: 0 },
+      breakdown: { docs: 0, images: 0, audio: 0, database: 0, other: 0 },
+      sources: { r2Bytes: 0, databaseBytes: 0, isR2Available: true },
       fileCount: 0,
       lastSyncedAt: null,
 
@@ -54,22 +63,24 @@ export const useStorageStore = create<StorageState>()(
       },
 
       addUsage: (bytes: number, category: keyof StorageBreakdown = 'other') => {
-        const { usedBytes, limitBytes, breakdown, fileCount } = get();
+        const { usedBytes, limitBytes, breakdown, fileCount, sources } = get();
         if (usedBytes + bytes > limitBytes) return false;
         set({
           usedBytes: usedBytes + bytes,
           fileCount: fileCount + 1,
           breakdown: { ...breakdown, [category]: (breakdown[category] || 0) + bytes },
+          sources: { ...sources, r2Bytes: sources.r2Bytes + bytes },
         });
         return true;
       },
 
       removeUsage: (bytes: number, category: keyof StorageBreakdown = 'other') => {
-        const { usedBytes, breakdown, fileCount } = get();
+        const { usedBytes, breakdown, fileCount, sources } = get();
         set({
           usedBytes: Math.max(0, usedBytes - bytes),
           fileCount: Math.max(0, fileCount - 1),
           breakdown: { ...breakdown, [category]: Math.max(0, (breakdown[category] || 0) - bytes) },
+          sources: { ...sources, r2Bytes: Math.max(0, sources.r2Bytes - bytes) },
         });
       },
 
@@ -77,7 +88,8 @@ export const useStorageStore = create<StorageState>()(
         set({
           usedBytes: 0,
           fileCount: 0,
-          breakdown: { docs: 0, images: 0, audio: 0, other: 0 },
+          breakdown: { docs: 0, images: 0, audio: 0, database: 0, other: 0 },
+          sources: { r2Bytes: 0, databaseBytes: 0, isR2Available: true },
           lastSyncedAt: null,
         });
       },
@@ -100,7 +112,8 @@ export const useStorageStore = create<StorageState>()(
 
           set({
             usedBytes: data.totalBytes,
-            breakdown: data.breakdown ?? { docs: 0, images: 0, audio: 0, other: 0 },
+            breakdown: data.breakdown ?? { docs: 0, images: 0, audio: 0, database: 0, other: 0 },
+            sources: data.sources ?? { r2Bytes: 0, databaseBytes: 0, isR2Available: true },
             fileCount: data.fileCount ?? 0,
             lastSyncedAt: now,
           });

@@ -1,4 +1,5 @@
 import { DriveFile } from './types';
+import { connectorFetch } from './proxyFetch';
 
 const INITIAL_SANDBOX_FILES: DriveFile[] = [
   {
@@ -82,9 +83,13 @@ export class GoogleDriveConnectorClient {
     }
 
     // Live Google Drive REST API
+    if (!this.accessToken) {
+      throw new Error('Google Drive belum dihubungkan. Silakan buka menu Konektor lalu klik "Hubungkan dengan Akun Google".');
+    }
+
     try {
       const url = new URL('https://www.googleapis.com/drive/v3/files');
-      url.searchParams.set('pageSize', String(Math.min(maxResults, 20)));
+      url.searchParams.set('pageSize', String(Math.min(maxResults, 50)));
       url.searchParams.set('fields', 'files(id, name, mimeType, size, webViewLink, modifiedTime, starred, trashed)');
 
       let qClause = 'trashed = false';
@@ -92,11 +97,28 @@ export class GoogleDriveConnectorClient {
       if (mimeType) qClause += ` and mimeType contains '${mimeType}'`;
       url.searchParams.set('q', qClause);
 
-      const res = await fetch(url.toString(), {
+      const res = await connectorFetch(url.toString(), {
         headers: { Authorization: `Bearer ${this.accessToken}` },
       });
 
-      if (!res.ok) throw new Error(`Google Drive API error: ${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        let errDetail = '';
+        try {
+          const errJson = await res.json();
+          errDetail = errJson.error?.message || JSON.stringify(errJson);
+        } catch {
+          errDetail = await res.text();
+        }
+        if (res.status === 401) {
+          throw new Error(`Token akses Google Drive Anda telah kedaluwarsa (${errDetail || 'Unauthorized'}). Silakan klik menu Konektor dan tekan "Hubungkan Ulang" akun Google Anda.`);
+        }
+        if (res.status === 403 && (errDetail.includes('has not been used in project') || errDetail.includes('is disabled'))) {
+          const linkMatch = errDetail.match(/https:\/\/[^\s\)]+/);
+          const enableUrl = linkMatch ? linkMatch[0] : 'https://console.cloud.google.com/apis/library/drive.googleapis.com';
+          throw new Error(`Google Drive API belum diaktifkan di Google Cloud Console project Anda. Silakan buka tautan ini untuk mengaktifkannya (1x klik): [Aktifkan Google Drive API](${enableUrl}) lalu coba lagi dalam 1 menit.`);
+        }
+        throw new Error(`Google Drive API error: ${res.status} (${errDetail || res.statusText})`);
+      }
       const data = await res.json();
 
       const files: DriveFile[] = (data.files || []).map((f: any) => ({
@@ -127,7 +149,7 @@ export class GoogleDriveConnectorClient {
     }
 
     // 1. Get metadata
-    const metaRes = await fetch(
+    const metaRes = await connectorFetch(
       `https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType,size,webViewLink,modifiedTime`,
       { headers: { Authorization: `Bearer ${this.accessToken}` } }
     );
@@ -137,19 +159,19 @@ export class GoogleDriveConnectorClient {
     // 2. Fetch content (or export if Google Doc / Sheet)
     let content = '';
     if (meta.mimeType?.includes('google-apps.document')) {
-      const exportRes = await fetch(
+      const exportRes = await connectorFetch(
         `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`,
         { headers: { Authorization: `Bearer ${this.accessToken}` } }
       );
       if (exportRes.ok) content = await exportRes.text();
     } else if (meta.mimeType?.includes('google-apps.spreadsheet')) {
-      const exportRes = await fetch(
+      const exportRes = await connectorFetch(
         `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/csv`,
         { headers: { Authorization: `Bearer ${this.accessToken}` } }
       );
       if (exportRes.ok) content = await exportRes.text();
     } else {
-      const rawRes = await fetch(
+      const rawRes = await connectorFetch(
         `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
         { headers: { Authorization: `Bearer ${this.accessToken}` } }
       );
@@ -204,7 +226,7 @@ export class GoogleDriveConnectorClient {
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', new Blob([content], { type: mimeType }));
 
-    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    const res = await connectorFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method: 'POST',
       headers: { Authorization: `Bearer ${this.accessToken}` },
       body: form,
@@ -257,7 +279,7 @@ export class GoogleDriveConnectorClient {
     }
 
     if (content !== undefined) {
-      const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      const res = await connectorFetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
@@ -269,7 +291,7 @@ export class GoogleDriveConnectorClient {
     }
 
     if (name) {
-      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+      await connectorFetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
@@ -303,7 +325,7 @@ export class GoogleDriveConnectorClient {
       return { success: true, message: `File ${fileId} deleted.` };
     }
 
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/trash`, {
+    const res = await connectorFetch(`https://www.googleapis.com/drive/v3/files/${fileId}/trash`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${this.accessToken}` },
     });

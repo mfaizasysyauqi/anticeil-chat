@@ -1256,6 +1256,7 @@ function StorageMeterPanel({ language }: { language: string }) {
   const usedBytes = useStorageStore((s) => s.usedBytes);
   const limitBytes = useStorageStore((s) => s.limitBytes);
   const breakdown = useStorageStore((s) => s.breakdown);
+  const sources = useStorageStore((s) => s.sources);
   const fileCount = useStorageStore((s) => s.fileCount);
   const lastSyncedAt = useStorageStore((s) => s.lastSyncedAt);
   const syncFromSupabase = useStorageStore((s) => s.syncFromSupabase);
@@ -1270,6 +1271,7 @@ function StorageMeterPanel({ language }: { language: string }) {
     { label: language === 'id' ? 'Dokumen & PDF' : 'Docs & PDFs', bytes: breakdown.docs, color: '#0073EA' },
     { label: language === 'id' ? 'Gambar & Video' : 'Images & Video', bytes: breakdown.images, color: '#8B5CF6' },
     { label: language === 'id' ? 'Audio' : 'Audio', bytes: breakdown.audio, color: '#10B981' },
+    { label: language === 'id' ? 'Basis Data & Sesi' : 'Database & Sessions', bytes: breakdown.database, color: '#3ECF8E' },
     { label: language === 'id' ? 'Lainnya' : 'Other', bytes: breakdown.other, color: '#6B7280' },
   ].filter((item) => item.bytes > 0);
 
@@ -1306,8 +1308,8 @@ function StorageMeterPanel({ language }: { language: string }) {
           </h3>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
             {language === 'id'
-              ? `${fileCount} berkas tersimpan — Paket Gratis 1 GB`
-              : `${fileCount} files stored — Free Plan 1 GB`}
+              ? `${fileCount} item/berkas tersimpan — Paket Gratis 1 GB`
+              : `${fileCount} items/files stored — Free Plan 1 GB`}
           </p>
         </div>
         <span style={{ fontSize: '13px', fontWeight: 700, color: barColor, whiteSpace: 'nowrap' }}>
@@ -1342,9 +1344,66 @@ function StorageMeterPanel({ language }: { language: string }) {
         </div>
       </div>
 
+      {/* Infrastructure Sources: Cloudflare R2 & Supabase Database */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+        <div style={{
+          padding: '10px 12px',
+          borderRadius: '8px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '3px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Cloudflare R2
+            </span>
+            <span style={{
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              backgroundColor: sources?.isR2Available === false ? '#EF4444' : '#F38020',
+            }} />
+          </div>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            {formatStorageBytes(sources?.r2Bytes ?? 0)}
+          </span>
+          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+            {language === 'id' ? 'Berkas & Media Storage' : 'Object & Media Storage'}
+          </span>
+        </div>
+
+        <div style={{
+          padding: '10px 12px',
+          borderRadius: '8px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '3px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Supabase Database
+            </span>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#3ECF8E' }} />
+          </div>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            {formatStorageBytes(sources?.databaseBytes ?? breakdown.database ?? 0)}
+          </span>
+          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+            {language === 'id' ? 'Tabel & Dokumen Teks' : 'Tables & Document Records'}
+          </span>
+        </div>
+      </div>
+
       {/* Category Breakdown */}
       {breakdownItems.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {language === 'id' ? 'Rincian Kategori' : 'Category Breakdown'}
+          </span>
           {breakdownItems.map((item) => (
             <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />

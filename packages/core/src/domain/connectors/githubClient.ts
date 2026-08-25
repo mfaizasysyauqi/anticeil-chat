@@ -1,3 +1,5 @@
+import { connectorFetch } from './proxyFetch';
+
 export interface GitHubIssue {
   id: number;
   number: number;
@@ -85,7 +87,7 @@ export class GitHubConnectorClient {
     url.searchParams.set('per_page', String(Math.min(maxResults, 100)));
     url.searchParams.set('visibility', visibility);
 
-    const res = await fetch(url.toString(), { headers: this.headers });
+    const res = await connectorFetch(url.toString(), { headers: this.headers });
     if (!res.ok) throw new Error(`GitHub list repos failed: ${res.status} ${res.statusText}`);
 
     const data = await res.json();
@@ -123,7 +125,7 @@ export class GitHubConnectorClient {
     url.searchParams.set('per_page', String(Math.min(maxResults, 100)));
     if (labels) url.searchParams.set('labels', labels);
 
-    const res = await fetch(url.toString(), { headers: this.headers });
+    const res = await connectorFetch(url.toString(), { headers: this.headers });
     if (!res.ok) throw new Error(`GitHub list issues failed: ${res.status} ${res.statusText}`);
 
     const data = await res.json();
@@ -160,7 +162,7 @@ export class GitHubConnectorClient {
   }): Promise<{ success: boolean; issue: GitHubIssue; message: string }> {
     const { owner, repo, title, body, labels, assignees } = params;
 
-    const res = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/issues`, {
+    const res = await connectorFetch(`${this.baseUrl}/repos/${owner}/${repo}/issues`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ title, body, labels, assignees }),
@@ -203,7 +205,7 @@ export class GitHubConnectorClient {
   }): Promise<{ success: boolean; issue: GitHubIssue; message: string }> {
     const { owner, repo, issueNumber, ...updates } = params;
 
-    const res = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/issues/${issueNumber}`, {
+    const res = await connectorFetch(`${this.baseUrl}/repos/${owner}/${repo}/issues/${issueNumber}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(updates),
@@ -244,7 +246,7 @@ export class GitHubConnectorClient {
     url.searchParams.set('state', state);
     url.searchParams.set('per_page', String(Math.min(maxResults, 100)));
 
-    const res = await fetch(url.toString(), { headers: this.headers });
+    const res = await connectorFetch(url.toString(), { headers: this.headers });
     if (!res.ok) throw new Error(`GitHub list PRs failed: ${res.status} ${res.statusText}`);
 
     const data = await res.json();
@@ -280,7 +282,7 @@ export class GitHubConnectorClient {
     prNumber: number;
   }): Promise<GitHubPullRequest> {
     const { owner, repo, prNumber } = params;
-    const res = await fetch(`${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`, {
+    const res = await connectorFetch(`${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`, {
       headers: this.headers,
     });
     if (!res.ok) throw new Error(`Failed to get PR #${prNumber}: ${res.statusText}`);
@@ -317,7 +319,7 @@ export class GitHubConnectorClient {
     url.searchParams.set('per_page', String(Math.min(maxResults, 100)));
     if (branch) url.searchParams.set('sha', branch);
 
-    const res = await fetch(url.toString(), { headers: this.headers });
+    const res = await connectorFetch(url.toString(), { headers: this.headers });
     if (!res.ok) throw new Error(`GitHub list commits failed: ${res.status} ${res.statusText}`);
 
     const data = await res.json();

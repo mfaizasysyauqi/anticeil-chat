@@ -37,13 +37,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       });
 
-      // Sync real storage usage from Supabase on initial load
+      // Sync real storage and project folders from Supabase for this authenticated user
       if (session?.access_token) {
         import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
           useStorageStore.getState().syncFromSupabase(session.access_token);
         });
         import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
           useProjectStore.getState().fetchFolders(session.access_token);
+        });
+      } else {
+        import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+          useProjectStore.getState().reset();
         });
       }
 
@@ -55,7 +59,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
 
-        // Re-sync storage whenever user logs in
+        // Re-sync storage & projects whenever user logs in
         if (_event === 'SIGNED_IN' && newSession?.access_token) {
           import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
             useStorageStore.getState().syncFromSupabase(newSession.access_token);
@@ -65,10 +69,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           });
         }
 
-        // Clear project folders on sign-out
-        if (_event === 'SIGNED_OUT') {
+        // Clear project folders and storage on sign-out
+        if (_event === 'SIGNED_OUT' || !newSession) {
           import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
             useProjectStore.getState().reset();
+          });
+          import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+            useStorageStore.getState().resetStorage();
           });
         }
       });
@@ -98,6 +105,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+
+      if (data.session?.access_token) {
+        import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+          useStorageStore.getState().syncFromSupabase(data.session.access_token);
+        });
+        import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+          useProjectStore.getState().fetchFolders(data.session.access_token);
+        });
+      }
 
       return { error: null };
     } catch (err: unknown) {
@@ -131,6 +147,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
           error: null,
         });
+
+        const token = data.session.access_token;
+        if (token) {
+          import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+            useProjectStore.getState().fetchFolders(token);
+          });
+        }
       } else {
         set({
           session: null,
@@ -153,6 +176,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const supabase = createClient();
       await supabase.auth.signOut();
       set({ user: null, session: null, error: null });
+      import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+        useProjectStore.getState().reset();
+      });
+      import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+        useStorageStore.getState().resetStorage();
+      });
     } catch (err: unknown) {
       console.error('Sign out error:', err);
     }

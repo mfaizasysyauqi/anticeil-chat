@@ -1,3 +1,5 @@
+import { connectorFetch } from './proxyFetch';
+
 export interface NotionPage {
   id: string;
   title: string;
@@ -75,7 +77,7 @@ export class NotionConnectorClient {
     if (query) body.query = query;
     if (filter) body.filter = { value: filter, property: 'object' };
 
-    const res = await fetch(`${this.baseUrl}/search`, {
+    const res = await connectorFetch(`${this.baseUrl}/search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -105,7 +107,7 @@ export class NotionConnectorClient {
    */
   async getPageContent(pageId: string): Promise<{ page: NotionPage; content: string }> {
     // Get page metadata
-    const pageRes = await fetch(`${this.baseUrl}/pages/${pageId}`, {
+    const pageRes = await connectorFetch(`${this.baseUrl}/pages/${pageId}`, {
       headers: this.headers,
     });
     if (!pageRes.ok) throw new Error(`Failed to get Notion page: ${pageRes.statusText}`);
@@ -121,7 +123,7 @@ export class NotionConnectorClient {
     };
 
     // Get blocks (page body)
-    const blocksRes = await fetch(`${this.baseUrl}/blocks/${pageId}/children?page_size=100`, {
+    const blocksRes = await connectorFetch(`${this.baseUrl}/blocks/${pageId}/children?page_size=100`, {
       headers: this.headers,
     });
     if (!blocksRes.ok) throw new Error(`Failed to get page blocks: ${blocksRes.statusText}`);
@@ -203,7 +205,7 @@ export class NotionConnectorClient {
         };
       });
 
-    const res = await fetch(`${this.baseUrl}/pages`, {
+    const res = await connectorFetch(`${this.baseUrl}/pages`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ parent, properties, children }),
@@ -238,7 +240,7 @@ export class NotionConnectorClient {
     const { pageId, title, appendContent } = params;
 
     if (title) {
-      const res = await fetch(`${this.baseUrl}/pages/${pageId}`, {
+      const res = await connectorFetch(`${this.baseUrl}/pages/${pageId}`, {
         method: 'PATCH',
         headers: this.headers,
         body: JSON.stringify({
@@ -260,7 +262,7 @@ export class NotionConnectorClient {
           paragraph: { rich_text: [{ type: 'text', text: { content: line } }] },
         }));
 
-      const res = await fetch(`${this.baseUrl}/blocks/${pageId}/children`, {
+      const res = await connectorFetch(`${this.baseUrl}/blocks/${pageId}/children`, {
         method: 'PATCH',
         headers: this.headers,
         body: JSON.stringify({ children: blocks }),
@@ -276,7 +278,7 @@ export class NotionConnectorClient {
    * Archive (soft-delete) a page (Delete)
    */
   async archivePage(pageId: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${this.baseUrl}/pages/${pageId}`, {
+    const res = await connectorFetch(`${this.baseUrl}/pages/${pageId}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify({ archived: true }),
@@ -299,7 +301,7 @@ export class NotionConnectorClient {
     const body: Record<string, unknown> = { page_size: Math.min(maxResults, 100) };
     if (filter) body.filter = filter;
 
-    const res = await fetch(`${this.baseUrl}/databases/${databaseId}/query`, {
+    const res = await connectorFetch(`${this.baseUrl}/databases/${databaseId}/query`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),

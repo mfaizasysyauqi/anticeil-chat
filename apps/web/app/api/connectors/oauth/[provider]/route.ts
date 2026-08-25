@@ -5,6 +5,9 @@ import type { Provider } from '@supabase/supabase-js';
 // OAuth scopes per provider
 const PROVIDER_SCOPES: Record<string, string[]> = {
   google: [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/gmail.send',
     'https://mail.google.com/',
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/drive',

@@ -4,6 +4,10 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Anticeil — Bring Your Own Key AI Assistant',
   description: 'Zero-proxy, 100% private cross-platform chatbot with your own API keys for OpenAI, Claude, Gemini, DeepSeek, Groq, & Ollama.',
+  icons: {
+    icon: '/anticeil-logo.png',
+    apple: '/anticeil-logo.png',
+  },
 };
 
 export default function RootLayout({

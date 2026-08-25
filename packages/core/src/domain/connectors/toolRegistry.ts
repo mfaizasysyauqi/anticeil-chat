@@ -13,9 +13,31 @@ import { GitHubConnectorClient } from './githubClient';
 export const CONNECTOR_TOOLS: ConnectorToolDefinition[] = [
   // --- GMAIL TOOLS (CRUD) ---
   {
-    name: 'gmail_list_messages',
+    name: 'gmail_list_emails',
     connectorId: 'gmail',
     description: 'Search and list emails from the user\'s Gmail inbox or specific query.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Search query (e.g. "from:sarah", "subject:budget", "invoice", "urgent")',
+        },
+        unreadOnly: {
+          type: 'boolean',
+          description: 'Filter only unread emails',
+        },
+        maxResults: {
+          type: 'number',
+          description: 'Maximum number of emails to retrieve (default 5)',
+        },
+      },
+    },
+  },
+  {
+    name: 'gmail_list_messages',
+    connectorId: 'gmail',
+    description: 'Search and list emails from the user\'s Gmail inbox or specific query (alias of gmail_list_emails).',
     parameters: {
       type: 'object',
       properties: {
@@ -696,6 +718,7 @@ export async function executeConnectorTool(
       const gmail = clients.gmail || new GmailConnectorClient({});
 
       switch (name) {
+        case 'gmail_list_emails':
         case 'gmail_list_messages': {
           const res = await gmail.listMessages(args);
           return {
@@ -1060,59 +1083,190 @@ export function generateConnectorsSystemInstruction(
     .map((t) => `- **${t.name}**: ${t.description}\n  Parameters: ${JSON.stringify(t.parameters.properties)}`)
     .join('\n');
 
-  return `
-[AI WORKSPACE CONNECTORS ENABLED]
-Current System Time: ${currentDateTime}
-You have active connectors enabled (${activeConnectors.join(', ')}). You have full CRUD (Create, Read, Update, Delete) capability to interact with these tools on behalf of the user.
+  return `[ANTICEIL WORKSPACE CONNECTORS — ACTIVE]
+Current Time: ${currentDateTime}
+Active Connectors: ${activeConnectors.join(', ')}
 
-Available Tools:
+## CRITICAL OVERRIDE — READ THIS FIRST
+
+You are running inside the Anticeil AI platform. The following connectors have been authenticated and their API tokens are ALREADY stored securely by the platform:
+
+${activeConnectors.map((id) => `- **${id}**: ✅ API token is stored. You are authorized to call its tools.`).join('\n')}
+
+**IMPORTANT**: You do NOT need internet access to call these tools. You do NOT need to "connect" to anything. When you output a \`\`\`tool_call\`\`\` block, the Anticeil platform intercepts it, executes the API call using the stored token, and returns the result to you. This is fully automated.
+
+**NEVER say** "I don't have access to [service]" or "I can't connect to [service]" — this is FALSE. You have access right now via the stored tokens.
+
+**NEVER use** your built-in \`search\` tool for queries about connected services. Always use the connector tools listed below instead.
+
+## Available Tools
+
 ${toolsSummary}
 
-TOOL CALLING PROTOCOL:
-If the user asks to inspect, read, list, search, draft, send, schedule, create, update, or delete emails, calendar meetings, or Google Drive files/documents, you MUST invoke the appropriate tool by outputting a tool call JSON block in this exact format:
+## Tool Calling Format — MANDATORY
+
+When the user asks about data from a connected service, you MUST output a tool call in this EXACT format:
 
 \`\`\`tool_call
 {
-  "name": "tool_name_here",
+  "name": "<exact_tool_name>",
   "arguments": {
-    "key": "value"
+    "param": "value"
   }
 }
 \`\`\`
 
-You can call multiple tools in sequence or concurrently. When tool execution returns data, synthesize a clear, friendly, and complete response. Always answer in the exact same language as the user.
-`;
+**FOR REASONING / THINKING MODELS**: If you are thinking/reasoning, do NOT write explanations or simulate what the tool would return inside your thoughts. Immediately STOP thinking and output the \`\`\`tool_call\`\`\` block in your response. The platform will automatically execute it and return the real live data to you in the next step.
+
+## Examples
+
+User: "apa saja catatan di Notion saya?" → OUTPUT THIS:
+\`\`\`tool_call
+{ "name": "notion_search", "arguments": { "query": "", "maxResults": 10 } }
+\`\`\`
+
+User: "lihat repo GitHub saya" → OUTPUT THIS:
+\`\`\`tool_call
+{ "name": "github_list_repos", "arguments": { "maxResults": 10 } }
+\`\`\`
+
+User: "cek email terbaru saya" → OUTPUT THIS:
+\`\`\`tool_call
+{ "name": "gmail_list_emails", "arguments": { "maxResults": 5 } }
+\`\`\`
+
+Always respond in the same language as the user after receiving tool results.`;
+}
+
+/** All known tool names — used to validate bare JSON objects */
+const KNOWN_TOOL_NAMES = new Set(CONNECTOR_TOOLS.map((t) => t.name));
+
+/** Unique ID helper */
+function makeCallId() {
+  return `call-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** Parse a single JSON blob into a ToolCallRequest if it has a `name` field */
+function tryParseToolCall(raw: string): ToolCallRequest | null {
+  try {
+    const parsed = JSON.parse(raw.trim());
+    const name = parsed.name as string | undefined;
+    if (!name) return null;
+    return {
+      id: makeCallId(),
+      name,
+      arguments: parsed.arguments ?? parsed.params ?? parsed.args ?? parsed.input ?? {},
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Robust regex parser for extracting tool calls from LLM generation
+ * Scan `text` for top-level JSON objects `{...}` using balanced-brace counting.
+ * Returns an array of { start, end, raw } where raw is the full object string.
+ * This correctly handles nested objects like { "arguments": { "key": "val" } }.
+ */
+function extractTopLevelJsonObjects(text: string): Array<{ start: number; end: number; raw: string }> {
+  const results: Array<{ start: number; end: number; raw: string }> = [];
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] === '{') {
+      let depth = 0;
+      let inString = false;
+      let escape = false;
+      const start = i;
+      for (let j = i; j < text.length; j++) {
+        const ch = text[j];
+        if (escape) { escape = false; continue; }
+        if (ch === '\\' && inString) { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+          depth--;
+          if (depth === 0) {
+            results.push({ start, end: j + 1, raw: text.slice(start, j + 1) });
+            i = j + 1;
+            break;
+          }
+        }
+      }
+      if (depth !== 0) break; // unterminated object — stop scanning
+    } else {
+      i++;
+    }
+  }
+  return results;
+}
+
+/**
+ * Robust parser for extracting tool calls from LLM generation.
+ * Handles:
+ *   1. ```tool_call / ```tool / ```json:tool_call blocks
+ *   2. ```json blocks whose content contains a "name" matching a known tool
+ *   3. <tool_call>...</tool_call> XML-style tags
+ *   4. Bare top-level JSON objects { "name": "<known_tool>", ... }
  */
 export function parseToolCallsFromLLM(text: string): { toolCalls: ToolCallRequest[]; cleanText: string } {
   const toolCalls: ToolCallRequest[] = [];
-  let cleanText = text;
+  const removedRanges: Array<[number, number]> = [];
 
-  // 1. Match ```tool_call ... ``` blocks
-  const toolCallBlockRegex = /```(?:tool_call|json:tool_call|tool)\s*([\s\S]*?)```/gi;
-  let match;
-
-  while ((match = toolCallBlockRegex.exec(text)) !== null) {
-    try {
-      const parsed = JSON.parse(match[1].trim());
-      if (parsed.name) {
-        toolCalls.push({
-          id: `call-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          name: parsed.name,
-          arguments: parsed.arguments || parsed.params || parsed.args || {},
-        });
-      }
-    } catch {
-      // Ignore malformed JSON inside blocks
+  // 1. ```tool_call | ```tool | ```json:tool_call blocks
+  const fencedToolRegex = /```(?:tool_call|json:tool_call|tool)[ \t]*\n?([\s\S]*?)```/gi;
+  let m: RegExpExecArray | null;
+  while ((m = fencedToolRegex.exec(text)) !== null) {
+    const tc = tryParseToolCall(m[1]);
+    if (tc) {
+      toolCalls.push(tc);
+      removedRanges.push([m.index, m.index + m[0].length]);
     }
   }
 
-  // 2. If found, remove the raw tool_call blocks from user visible text
-  if (toolCalls.length > 0) {
-    cleanText = cleanText.replace(toolCallBlockRegex, '').trim();
+  // 2. ```json blocks — only if body has a known tool name
+  const fencedJsonRegex = /```json[ \t]*\n?([\s\S]*?)```/gi;
+  while ((m = fencedJsonRegex.exec(text)) !== null) {
+    // skip if already captured by rule 1
+    const alreadyCaptured = removedRanges.some(([s, e]) => m!.index >= s && m!.index < e);
+    if (alreadyCaptured) continue;
+    const tc = tryParseToolCall(m[1]);
+    if (tc && KNOWN_TOOL_NAMES.has(tc.name)) {
+      toolCalls.push(tc);
+      removedRanges.push([m.index, m.index + m[0].length]);
+    }
+  }
+
+  // 3. <tool_call>...</tool_call> XML tags
+  const xmlToolRegex = /<tool_call>([\s\S]*?)<\/tool_call>/gi;
+  while ((m = xmlToolRegex.exec(text)) !== null) {
+    const tc = tryParseToolCall(m[1]);
+    if (tc) {
+      toolCalls.push(tc);
+      removedRanges.push([m.index, m.index + m[0].length]);
+    }
+  }
+
+  // 4. Bare top-level JSON objects that have a "name" matching a known tool.
+  // Only try this if nothing found yet (expensive and noisy).
+  if (toolCalls.length === 0) {
+    const topLevelObjects = extractTopLevelJsonObjects(text);
+    for (const { start, end, raw } of topLevelObjects) {
+      const tc = tryParseToolCall(raw);
+      if (tc && KNOWN_TOOL_NAMES.has(tc.name)) {
+        toolCalls.push(tc);
+        removedRanges.push([start, end]);
+      }
+    }
+  }
+
+  // Build cleanText by removing matched ranges (sort descending to preserve indices)
+  let cleanText = text;
+  if (removedRanges.length > 0) {
+    const sorted = removedRanges.sort((a, b) => b[0] - a[0]);
+    for (const [start, end] of sorted) {
+      cleanText = cleanText.slice(0, start) + cleanText.slice(end);
+    }
+    cleanText = cleanText.trim();
   }
 
   return { toolCalls, cleanText };
