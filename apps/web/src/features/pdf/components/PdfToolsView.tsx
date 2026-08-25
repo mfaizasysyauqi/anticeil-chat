@@ -1361,9 +1361,9 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
-            gap: '8px',
-            marginBottom: '20px',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+            gap: '12px',
+            marginBottom: '24px',
           }}
         >
           {filteredTools.map((tool) => {
@@ -1383,48 +1383,84 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '6px',
-                  padding: '12px',
-                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
                   border: `1.5px solid ${active ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
-                  background: active ? 'rgba(0, 115, 234, 0.08)' : 'var(--bg-surface)',
+                  background: active ? 'rgba(0, 115, 234, 0.06)' : 'var(--bg-surface)',
                   color: active ? 'var(--brand-primary)' : 'var(--text-primary)',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  transition: 'all 0.15s ease',
+                  transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
+                  boxShadow: active ? '0 0 0 1px var(--brand-primary)' : 'none',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '12.5px' }}>
+                {/* Header row: Dedicated Icon on left, Subtle Badge on right */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '10px' }}>
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: active ? 'rgba(0, 115, 234, 0.14)' : 'var(--bg-main)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: active ? 'var(--brand-primary)' : 'var(--text-primary)',
+                      flexShrink: 0,
+                    }}
+                  >
                     {tool.icon}
-                    <span>{tool.label}</span>
                   </div>
                   {tool.badge && (
                     <span
                       style={{
-                        fontSize: '9px',
-                        fontWeight: 800,
+                        fontSize: '9.5px',
+                        fontWeight: 700,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
                         background:
                           tool.badge === 'POPULAR'
-                            ? '#f59e0b'
+                            ? 'rgba(245, 158, 11, 0.15)'
+                            : tool.badge === 'OFFICE'
+                            ? 'rgba(37, 99, 235, 0.15)'
+                            : 'rgba(162, 93, 220, 0.15)',
+                        color:
+                          tool.badge === 'POPULAR'
+                            ? '#d97706'
                             : tool.badge === 'OFFICE'
                             ? '#2563eb'
-                            : '#A25DDC',
-                        color: '#fff',
-                        padding: '1px 5px',
-                        borderRadius: '4px',
+                            : '#9333ea',
+                        padding: '2.5px 8px',
+                        borderRadius: '6px',
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.2,
                       }}
                     >
                       {tool.badge}
                     </span>
                   )}
                 </div>
+
+                {/* Title */}
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    color: active ? 'var(--brand-primary)' : 'var(--text-primary)',
+                    marginBottom: '4px',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {tool.label}
+                </div>
+
+                {/* Description */}
                 <span
                   style={{
-                    fontSize: '11px',
+                    fontSize: '11.5px',
                     color: 'var(--text-muted)',
-                    lineHeight: 1.3,
+                    lineHeight: 1.35,
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
