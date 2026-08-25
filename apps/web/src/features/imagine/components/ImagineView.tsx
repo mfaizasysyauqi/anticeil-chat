@@ -27,10 +27,14 @@ import {
   Headphones,
   Sliders,
   Radio,
+  Pin,
+  Folder,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useStorageStore } from '../../storage/store/useStorageStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
+import { useImagineStore } from '../store/useImagineStore';
+import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
 import { getTranslation } from '@anticeil/core';
 
 type MediaMode = 'image' | 'video' | 'audio';
@@ -289,149 +293,10 @@ export function ImagineView() {
   const activeModels = mediaMode === 'image' ? imageModels : mediaMode === 'video' ? videoModels : audioModels;
   const currentModelInfo = activeModels.find((m) => m.id === selectedModel) || activeModels[0];
 
-  const [generatedImages, setGeneratedImages] = useState<ImageItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('anticeil-imagine-images');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
-    return [
-      {
-        id: '1',
-        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
-        prompt: 'Neon futuristic cyberpunk metropolis glowing in rain with volumetric lights 8K',
-        style: 'Cyberpunk',
-        ratio: '16:9',
-        model: 'FLUX.1 Schnell',
-        createdAt: 'Just now',
-      },
-      {
-        id: '2',
-        url: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=800&q=80',
-        prompt: 'Minimalist 3D glassmorphic geometric crystal orb floating on warm beige background',
-        style: '3D Render',
-        ratio: '1:1',
-        model: 'FLUX.1 Dev',
-        createdAt: '2 mins ago',
-      },
-    ];
-  });
-
-  const [generatedVideos, setGeneratedVideos] = useState<VideoItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('anticeil-imagine-videos');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
-    return [
-      {
-        id: 'v1',
-        url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-        prompt: 'Cinematic drone shot flying through mystical emerald pine forest with morning mist',
-        model: 'Luma Ray 2',
-        ratio: '16:9',
-        duration: '0:06',
-        createdAt: 'Just now',
-      },
-    ];
-  });
-
-  const [generatedAudios, setGeneratedAudios] = useState<AudioItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('anticeil-imagine-audios');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
-    return [
-      {
-        id: 'a1',
-        title: 'Selamat Datang di Anticeil AI Suite',
-        prompt: 'Selamat datang di Anticeil! Platform asisten AI all-in-one cerdas dengan model penalaran canggih dan privasi lokal tanpa kompromi.',
-        model: 'Microsoft Edge / Azure Speech',
-        voice: 'Gadis (Wanita Indonesia)',
-        category: 'speech',
-        durationSec: 8,
-        createdAt: 'Just now',
-      },
-      {
-        id: 'a2',
-        title: 'Lofi Chill Study Beat & Warm Piano',
-        prompt: 'Harmonik melodi piano akustik santai dengan ritme santai untuk fokus bekerja dan belajar.',
-        model: 'Suno v4 / Web Audio',
-        voice: 'Lofi Piano & Vinyl',
-        category: 'music',
-        durationSec: 10,
-        createdAt: '5 mins ago',
-      },
-    ];
-  });
-
-  // Persist to localStorage whenever state changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil-imagine-images', JSON.stringify(generatedImages));
-    } catch {}
-  }, [generatedImages]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil-imagine-videos', JSON.stringify(generatedVideos));
-    } catch {}
-  }, [generatedVideos]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil-imagine-audios', JSON.stringify(generatedAudios));
-    } catch {}
-  }, [generatedAudios]);
-
-  // Load from Supabase history on login
-  useEffect(() => {
-    if (!session?.access_token) return;
-    fetch('/api/imagine/history', {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) return;
-        if (Array.isArray(data.images) && data.images.length > 0) {
-          setGeneratedImages((prev) => {
-            const existingIds = new Set(prev.map((i) => i.id));
-            const newItems = data.images.filter((i: ImageItem) => !existingIds.has(i.id));
-            return [...newItems, ...prev];
-          });
-        }
-        if (Array.isArray(data.videos) && data.videos.length > 0) {
-          setGeneratedVideos((prev) => {
-            const existingIds = new Set(prev.map((i) => i.id));
-            const newItems = data.videos.filter((i: VideoItem) => !existingIds.has(i.id));
-            return [...newItems, ...prev];
-          });
-        }
-        if (Array.isArray(data.audios) && data.audios.length > 0) {
-          setGeneratedAudios((prev) => {
-            const existingIds = new Set(prev.map((i) => i.id));
-            const newItems = data.audios.filter((i: AudioItem) => !existingIds.has(i.id));
-            return [...newItems, ...prev];
-          });
-        }
-      })
-      .catch(() => {});
-  }, [session?.access_token]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+
 
   const styles = ['Photorealistic', 'Anime / Manga', 'Cyberpunk', '3D Render', 'Cinematic', 'Oil Painting', 'Pixel Art'];
   const ratios = ['1:1', '16:9', '9:16', '4:3', '3:2'];
@@ -521,6 +386,38 @@ export function ImagineView() {
   const canFit = useStorageStore((s) => s.canFit);
   const syncFromSupabase = useStorageStore((s) => s.syncFromSupabase);
 
+  // Imagine store — persisted media, pin, folder
+  const addImagineItem = useImagineStore((s) => s.addItem);
+  const toggleImaginePin = useImagineStore((s) => s.togglePin);
+  const moveImagineToCollection = useImagineStore((s) => s.moveToCollection);
+  const hydrateFromApi = useImagineStore((s) => s.hydrateFromApi);
+  const imagineItems = useImagineStore((s) => s.items);
+  const imageCollections = useWorkspaceStore((s) => s.imageCollections);
+  const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
+
+  const filterAndSort = <T extends { isPinned?: boolean; collectionId?: string | null }>(items: T[]) => {
+    return items
+      .filter((item) => (activeImageCollectionId ? item.collectionId === activeImageCollectionId : true))
+      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+  };
+
+  const generatedImages = filterAndSort(
+    imagineItems.filter((i) => i.type === 'image') as Array<ImageItem & { isPinned: boolean; collectionId: string | null }>
+  );
+  const generatedVideos = filterAndSort(
+    imagineItems.filter((i) => i.type === 'video') as Array<VideoItem & { isPinned: boolean; collectionId: string | null }>
+  );
+  const generatedAudios = filterAndSort(
+    imagineItems.filter((i) => i.type === 'audio') as Array<AudioItem & { isPinned: boolean; collectionId: string | null }>
+  );
+
+  // Load history from Supabase once on mount
+  useEffect(() => {
+    if (session?.access_token) {
+      hydrateFromApi(session.access_token);
+    }
+  }, [session?.access_token]);
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
@@ -568,18 +465,18 @@ export function ImagineView() {
         console.warn('[Imagine] Failed to upload image to R2, using direct url:', err);
       }
 
-      setGeneratedImages((prev) => [
-        {
-          id: String(Date.now()),
-          url: finalUrl,
-          prompt: prompt.trim(),
-          style: selectedStyle,
-          ratio: selectedRatio,
-          model: currentModelInfo.name,
-          createdAt: 'Just now',
-        },
-        ...prev,
-      ]);
+      const nowIso = new Date().toISOString();
+      addImagineItem({
+        id: String(Date.now()),
+        type: 'image',
+        url: finalUrl,
+        prompt: prompt.trim(),
+        style: selectedStyle,
+        ratio: selectedRatio,
+        model: currentModelInfo.name,
+        createdAt: nowIso,
+        createdAtLabel: 'Just now',
+      });
 
       addUsage(estimatedBytes, 'images');
       if (session?.access_token) {
@@ -627,18 +524,18 @@ export function ImagineView() {
         console.warn('[Imagine] Failed to upload video asset to R2, using direct url:', err);
       }
 
-      setGeneratedVideos((prev) => [
-        {
-          id: String(Date.now()),
-          url: finalUrl,
-          prompt: prompt.trim(),
-          model: currentModelInfo.name,
-          ratio: selectedRatio,
-          duration: '0:06',
-          createdAt: 'Just now',
-        },
-        ...prev,
-      ]);
+      const nowIso = new Date().toISOString();
+      addImagineItem({
+        id: String(Date.now()),
+        type: 'video',
+        url: finalUrl,
+        prompt: prompt.trim(),
+        model: currentModelInfo.name,
+        ratio: selectedRatio,
+        duration: '0:06',
+        createdAt: nowIso,
+        createdAtLabel: 'Just now',
+      });
 
       addUsage(estimatedBytes, 'images');
       if (session?.access_token) {
@@ -691,6 +588,7 @@ export function ImagineView() {
         console.warn('[Imagine] Failed to upload audio to R2:', err);
       }
 
+      const nowIso = new Date().toISOString();
       const newAudio: AudioItem = {
         id: String(Date.now()),
         title: prompt.trim().slice(0, 45) + (prompt.length > 45 ? '...' : ''),
@@ -702,7 +600,19 @@ export function ImagineView() {
         createdAt: 'Just now',
       };
 
-      setGeneratedAudios((prev) => [newAudio, ...prev]);
+      addImagineItem({
+        id: newAudio.id,
+        type: 'audio',
+        url: finalAudioUrl,
+        prompt: prompt.trim(),
+        title: newAudio.title,
+        model: currentModelInfo.name,
+        voice: voiceLabel,
+        category,
+        durationSec,
+        createdAt: nowIso,
+        createdAtLabel: 'Just now',
+      });
       addUsage(estimatedBytes, 'audio');
       if (session?.access_token) {
         syncFromSupabase(session.access_token, true);
@@ -1450,7 +1360,44 @@ export function ImagineView() {
                   >
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.createdAt}</span>
 
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {/* Pin button */}
+                      <button
+                        type="button"
+                        title={item.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan di atas' : 'Pin to top')}
+                        onClick={() => toggleImaginePin(item.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '3px',
+                          padding: '4px 7px',
+                          background: item.isPinned ? 'rgba(162,93,220,0.15)' : 'var(--bg-subtle)',
+                          border: `1px solid ${item.isPinned ? '#A25DDC' : 'var(--border-subtle)'}`,
+                          borderRadius: '6px',
+                          color: item.isPinned ? '#A25DDC' : 'var(--text-muted)',
+                          fontSize: '11px', cursor: 'pointer',
+                        }}
+                      >
+                        <Pin size={11} fill={item.isPinned ? '#A25DDC' : 'none'} />
+                      </button>
+
+                      {/* Move to folder */}
+                      {imageCollections.length > 0 && (
+                        <select
+                          value={item.collectionId || ''}
+                          title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
+                          onChange={(e) => moveImagineToCollection(item.id, e.target.value || null)}
+                          style={{
+                            background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
+                            borderRadius: '6px', fontSize: '11px', color: 'var(--text-muted)',
+                            cursor: 'pointer', padding: '3px 6px', outline: 'none',
+                          }}
+                        >
+                          <option value="">📁 {language === 'id' ? 'Semua' : 'None'}</option>
+                          {imageCollections.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => handleCopyPrompt(item.id, item.prompt)}
@@ -1605,27 +1552,66 @@ export function ImagineView() {
                     }}
                   >
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{vid.model}</span>
-                    <a
-                      href={vid.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download={`imagine-video-${vid.id}.jpg`}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 8px',
-                        background: 'var(--bg-subtle)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '4px',
-                        color: 'var(--text-secondary)',
-                        fontSize: '11px',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <Download size={12} />
-                      <span>{ti.download}</span>
-                    </a>
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {/* Pin button */}
+                      <button
+                        type="button"
+                        title={vid.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan di atas' : 'Pin to top')}
+                        onClick={() => toggleImaginePin(vid.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '3px',
+                          padding: '4px 7px',
+                          background: vid.isPinned ? 'rgba(162,93,220,0.15)' : 'var(--bg-subtle)',
+                          border: `1px solid ${vid.isPinned ? '#A25DDC' : 'var(--border-subtle)'}`,
+                          borderRadius: '4px',
+                          color: vid.isPinned ? '#A25DDC' : 'var(--text-muted)',
+                          fontSize: '11px', cursor: 'pointer',
+                        }}
+                      >
+                        <Pin size={11} fill={vid.isPinned ? '#A25DDC' : 'none'} />
+                      </button>
+
+                      {/* Move to folder */}
+                      {imageCollections.length > 0 && (
+                        <select
+                          value={vid.collectionId || ''}
+                          title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
+                          onChange={(e) => moveImagineToCollection(vid.id, e.target.value || null)}
+                          style={{
+                            background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
+                            borderRadius: '4px', fontSize: '11px', color: 'var(--text-muted)',
+                            cursor: 'pointer', padding: '3px 5px', outline: 'none',
+                          }}
+                        >
+                          <option value="">📁 {language === 'id' ? 'Semua' : 'None'}</option>
+                          {imageCollections.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      )}
+
+                      <a
+                        href={vid.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={`imagine-video-${vid.id}.jpg`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '4px 8px',
+                          background: 'var(--bg-subtle)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: '4px',
+                          color: 'var(--text-secondary)',
+                          fontSize: '11px',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <Download size={12} />
+                        <span>{ti.download}</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1759,22 +1745,54 @@ export function ImagineView() {
                       {img.createdAt}
                     </span>
 
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {/* Pin button */}
+                      <button
+                        type="button"
+                        title={img.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan di atas' : 'Pin to top')}
+                        onClick={() => toggleImaginePin(img.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '3px',
+                          padding: '4px 7px',
+                          background: img.isPinned ? 'rgba(162,93,220,0.15)' : 'var(--bg-subtle)',
+                          border: `1px solid ${img.isPinned ? '#A25DDC' : 'var(--border-subtle)'}`,
+                          borderRadius: '4px',
+                          color: img.isPinned ? '#A25DDC' : 'var(--text-muted)',
+                          fontSize: '11px', cursor: 'pointer',
+                        }}
+                      >
+                        <Pin size={11} fill={img.isPinned ? '#A25DDC' : 'none'} />
+                      </button>
+
+                      {/* Move to folder */}
+                      {imageCollections.length > 0 && (
+                        <select
+                          value={img.collectionId || ''}
+                          title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
+                          onChange={(e) => moveImagineToCollection(img.id, e.target.value || null)}
+                          style={{
+                            background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
+                            borderRadius: '4px', fontSize: '11px', color: 'var(--text-muted)',
+                            cursor: 'pointer', padding: '3px 5px', outline: 'none',
+                          }}
+                        >
+                          <option value="">📁 {language === 'id' ? 'Semua' : 'None'}</option>
+                          {imageCollections.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => handleCopyPrompt(img.id, img.prompt)}
                         title={ti.copyPrompt}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '4px',
+                          display: 'flex', alignItems: 'center', gap: '4px',
+                          padding: '4px 8px', background: 'var(--bg-subtle)',
+                          border: '1px solid var(--border-subtle)', borderRadius: '4px',
                           color: copiedId === img.id ? 'var(--accent-success)' : 'var(--text-secondary)',
-                          fontSize: '11px',
-                          cursor: 'pointer',
+                          fontSize: '11px', cursor: 'pointer',
                         }}
                       >
                         {copiedId === img.id ? <Check size={12} /> : <Copy size={12} />}
@@ -1782,22 +1800,13 @@ export function ImagineView() {
                       </button>
 
                       <a
-                        href={img.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download={`imagine-${img.id}.jpg`}
-                        title={ti.download}
+                        href={img.url} target="_blank" rel="noopener noreferrer"
+                        download={`imagine-${img.id}.jpg`} title={ti.download}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '4px',
-                          color: 'var(--text-secondary)',
-                          fontSize: '11px',
-                          textDecoration: 'none',
+                          display: 'flex', alignItems: 'center', gap: '4px',
+                          padding: '4px 8px', background: 'var(--bg-subtle)',
+                          border: '1px solid var(--border-subtle)', borderRadius: '4px',
+                          color: 'var(--text-secondary)', fontSize: '11px', textDecoration: 'none',
                         }}
                       >
                         <Download size={12} />

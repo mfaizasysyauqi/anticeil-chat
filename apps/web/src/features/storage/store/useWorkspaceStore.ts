@@ -112,11 +112,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     (set, get) => ({
       // ── Initial Data ────────────────────────────────────────────────────────
       projects: [],
-      imageCollections: [
-        { id: 'ic_cyberpunk', name: 'Cyberpunk', createdAt: Date.now(), files: [] },
-        { id: 'ic_wallpapers', name: 'Wallpapers', createdAt: Date.now(), files: [] },
-        { id: 'ic_mockups', name: 'Mockups & 3D', createdAt: Date.now(), files: [] },
-      ],
+      imageCollections: [],
       workflowCategories: [
         { id: 'wc_productivity', name: 'Productivity', createdAt: Date.now(), files: [] },
         { id: 'wc_marketing', name: 'Marketing', createdAt: Date.now(), files: [] },

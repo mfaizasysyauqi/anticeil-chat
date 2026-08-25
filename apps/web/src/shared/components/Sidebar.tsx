@@ -45,6 +45,8 @@ import {
   Upload,
   FolderInput,
   FolderMinus,
+  Film,
+  Music,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -54,6 +56,7 @@ import { StorageMeter } from '../../features/storage/components/StorageMeter';
 import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
+import { useImagineStore } from '../../features/imagine/store/useImagineStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { createClient } from '../utils/supabase/client';
 
@@ -71,6 +74,8 @@ interface ImagineHistoryItem {
   style: string;
   time: string;
   collectionId?: string;
+  isPinned?: boolean;
+  type?: 'image' | 'video' | 'audio';
 }
 
 interface AutomationWorkflowItem {
@@ -305,12 +310,20 @@ export function Sidebar({
   // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
   const [newImagineCollectionName, setNewImagineCollectionName] = useState('');
-  const [imagineHistory] = useState<ImagineHistoryItem[]>([
-    { id: 'img_1', prompt: 'Neon futuristic cyberpunk metropolis glowing in rain 8K', style: 'Cyberpunk', time: 'Just now', collectionId: 'ic_cyberpunk' },
-    { id: 'img_2', prompt: 'Minimalist 3D glassmorphic geometric crystal orb', style: '3D Render', time: '2h ago', collectionId: 'ic_mockups' },
-    { id: 'img_3', prompt: 'Anime style floating garden sunset cinematic', style: 'Anime', time: 'Yesterday', collectionId: 'ic_wallpapers' },
-    { id: 'img_4', prompt: 'Vintage oil painting foggy mountain cabin landscape', style: 'Oil Painting', time: '2 days ago', collectionId: 'ic_wallpapers' },
-  ]);
+
+  // Real imagine history from store
+  const imagineItems = useImagineStore((s) => s.items);
+  const toggleImaginePin = useImagineStore((s) => s.togglePin);
+  const moveImagineToCollection = useImagineStore((s) => s.moveToCollection);
+  const imagineHistory: ImagineHistoryItem[] = imagineItems.map((item) => ({
+    id: item.id,
+    prompt: item.prompt,
+    style: item.style || item.type || 'Media',
+    time: item.createdAtLabel,
+    collectionId: item.collectionId ?? undefined,
+    isPinned: item.isPinned,
+    type: item.type,
+  }));
 
   // Automations Mode UI States
   const [isAddingAutomationCategory, setIsAddingAutomationCategory] = useState(false);
@@ -1687,46 +1700,105 @@ export function Sidebar({
 
                 {isHistoryExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {imagineHistory
-                      .filter((item) => {
-                        const matchSearch = item.prompt.toLowerCase().includes(searchQuery.toLowerCase()) || item.style.toLowerCase().includes(searchQuery.toLowerCase());
-                        const matchCol = activeImageCollectionId ? item.collectionId === activeImageCollectionId : true;
-                        return matchSearch && matchCol;
-                      })
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="clickable-pill"
-                          onClick={() => {
-                            if (pathname !== '/imagine') router.push('/imagine');
-                            if (onCloseMobile) onCloseMobile();
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 8px',
-                            borderRadius: 'var(--radius-sm, 6px)',
-                            background: 'transparent',
-                            color: 'var(--text-secondary)',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <ImageIcon size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500 }}>
-                              {item.prompt}
+                    {imagineHistory.length === 0 ? (
+                      <div style={{ padding: '8px 10px', fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        {language === 'id' ? 'Belum ada media dibuat' : 'No media generated yet'}
+                      </div>
+                    ) : (
+                      imagineHistory
+                        .filter((item) => {
+                          const matchSearch = item.prompt.toLowerCase().includes(searchQuery.toLowerCase()) || item.style.toLowerCase().includes(searchQuery.toLowerCase());
+                          const matchCol = activeImageCollectionId ? item.collectionId === activeImageCollectionId : true;
+                          return matchSearch && matchCol;
+                        })
+                        .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+                        .map((item) => (
+                          <div
+                            key={item.id}
+                            className="clickable-pill"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '5px 8px',
+                              borderRadius: 'var(--radius-sm, 6px)',
+                              background: item.isPinned ? 'rgba(162, 93, 220, 0.08)' : 'transparent',
+                              color: 'var(--text-secondary)',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              position: 'relative',
+                            }}
+                          >
+                            {/* Type icon */}
+                            <div
+                              onClick={() => { if (pathname !== '/imagine') router.push('/imagine'); if (onCloseMobile) onCloseMobile(); }}
+                              style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
+                            >
+                              {item.type === 'video' ? (
+                                <Film size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
+                              ) : item.type === 'audio' ? (
+                                <Music size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
+                              ) : (
+                                <ImageIcon size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
+                              )}
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  {item.isPinned && <Pin size={9} color="#A25DDC" style={{ flexShrink: 0 }} />}
+                                  <span>{item.prompt}</span>
+                                </div>
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <span>{item.style}</span>
+                                  <span>•</span>
+                                  <span>{item.time}</span>
+                                  {item.collectionId && (
+                                    <span style={{ background: 'rgba(162,93,220,0.15)', color: '#A25DDC', padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
+                                      {imageCollections.find((c) => c.id === item.collectionId)?.name || '📁'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '6px' }}>
-                              <span>{item.style}</span>
-                              <span>•</span>
-                              <span>{item.time}</span>
-                            </div>
+
+                            {/* Pin button */}
+                            <button
+                              type="button"
+                              title={item.isPinned ? 'Lepas sematkan' : 'Sematkan'}
+                              onClick={(e) => { e.stopPropagation(); toggleImaginePin(item.id); }}
+                              style={{ background: 'transparent', border: 'none', color: item.isPinned ? '#A25DDC' : 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                            >
+                              <Pin size={10} fill={item.isPinned ? '#A25DDC' : 'none'} />
+                            </button>
+
+                            {/* Move to folder */}
+                            {imageCollections.length > 0 && (
+                              <select
+                                value={item.collectionId || ''}
+                                title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
+                                onChange={(e) => { e.stopPropagation(); moveImagineToCollection(item.id, e.target.value || null); }}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  background: 'var(--bg-subtle)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: '4px',
+                                  fontSize: '10px',
+                                  color: 'var(--text-muted)',
+                                  cursor: 'pointer',
+                                  padding: '1px 3px',
+                                  flexShrink: 0,
+                                  maxWidth: '70px',
+                                  outline: 'none',
+                                }}
+                              >
+                                <option value="">📁</option>
+                                {imageCollections.map((c) => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                              </select>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        ))
+                    )}
                   </div>
                 )}
               </div>
