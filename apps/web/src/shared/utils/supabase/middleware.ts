@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Routes that require an authenticated session
@@ -12,23 +12,25 @@ const PROTECTED_ROUTES = [
 ];
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  // Start with a response that passes the request through unchanged
+  let supabaseResponse = NextResponse.next({ request });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://orshttowaxmjegclecag.supabase.co';
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_b0VAst9djH6nA3YB0uH0gA_hvNLQK58';
+  // ⚠️  Never fall back to a placeholder key — if the env var is missing, fail
+  //     loudly rather than silently accepting every token as unauthenticated.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>) {
+      // IMPORTANT: mirror every cookie the Supabase client writes onto both
+      // the mutated request AND the response so the refreshed token travels
+      // all the way to the browser and the next server request.
+      setAll(cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }>) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        supabaseResponse = NextResponse.next({
-          request,
-        });
+        supabaseResponse = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options)
         );
@@ -36,6 +38,9 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // IMPORTANT: do NOT run any logic between createServerClient and getUser().
+  // A stale getSession() can return cached data; getUser() validates against
+  // the Supabase Auth server and is the only reliable check.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -48,10 +53,17 @@ export async function updateSession(request: NextRequest) {
   if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
-    // Preserve the original destination so we can redirect back after login
     loginUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(loginUrl);
+    // Return a redirect — but STILL use supabaseResponse as the base so any
+    // refreshed-token cookies are forwarded (they update the redirect response).
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
   }
 
+  // Always return supabaseResponse (not a plain NextResponse.next()) so the
+  // potentially-refreshed access token cookie reaches the browser.
   return supabaseResponse;
 }

@@ -48,12 +48,20 @@ function LoginForm() {
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const ta = getTranslation(language).auth;
 
+  // Prevent language flicker: don't render translated text until the store
+  // has hydrated from localStorage (avoids EN→ID flash on first paint)
+  const [hydrated, setHydrated] = React.useState(false);
+  useEffect(() => { setHydrated(true); }, []);
+
   useEffect(() => {
+    // Only initialize auth once on first mount, not on every re-render
     initializeAuth();
+    // Lock the login page to light theme without touching the persisted setting
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', 'light');
     }
-  }, [initializeAuth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // empty deps — run once
 
   // Read URL query parameters
   useEffect(() => {
@@ -86,12 +94,13 @@ function LoginForm() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // If already logged in, redirect to /chat or the originally requested page
+  // If already logged in, redirect away. Wait for isLoading=false to avoid
+  // premature redirects before the auth session is confirmed.
   useEffect(() => {
-    if (user && !isLoading) {
+    if (!isLoading && user) {
       const next = searchParams?.get('next');
       const dest = next && next.startsWith('/') ? next : '/chat';
-      window.location.href = dest;
+      window.location.replace(dest);
     }
   }, [user, isLoading, searchParams]);
 
@@ -135,11 +144,16 @@ function LoginForm() {
     if (!error) {
       const next = searchParams?.get('next');
       const dest = next && next.startsWith('/') ? next : '/chat';
-      // Use hard navigation to ensure the server-side middleware
-      // picks up the new auth cookie set by @supabase/ssr
-      window.location.href = dest;
+      // Full navigation so the server middleware can read the new auth cookie
+      window.location.replace(dest);
     }
   };
+
+  // Show minimal skeleton until Zustand store hydrates from localStorage.
+  // This prevents the language/theme flash on first paint.
+  if (!hydrated) {
+    return <div style={{ minHeight: '100vh', background: '#FAF9F5' }} />;
+  }
 
   return (
     <div
