@@ -285,6 +285,398 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
   );
 }
 
+// ─── ImagineFolderMenu ────────────────────────────────────────────────────────
+interface ImagineFolderMenuProps {
+  col: { id: string; name: string };
+  language: string;
+  renameCollection: (id: string, name: string) => void;
+  deleteCollection: (id: string) => void;
+  onOpenUpload: () => void;
+}
+
+function ImagineFolderMenu({ col, language, renameCollection, deleteCollection, onOpenUpload }: ImagineFolderMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const [isRenaming, setIsRenaming] = React.useState(false);
+  const [renameText, setRenameText] = React.useState(col.name);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
+        setOpen(false);
+        setIsRenaming(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const handleRename = () => {
+    const name = renameText.trim();
+    if (!name) return;
+    renameCollection(col.id, name);
+    setIsRenaming(false);
+    setOpen(false);
+  };
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const menuWidth = 140;
+      const menuHeight = 110;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      setMenuPosition({ top, left });
+      setOpen(true);
+    }
+  };
+
+  if (isRenaming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+        <input
+          type="text"
+          value={renameText}
+          onChange={(e) => setRenameText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.stopPropagation(); handleRename(); }
+            if (e.key === 'Escape') { setIsRenaming(false); setOpen(false); }
+          }}
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '80px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: '4px',
+            padding: '2px 5px',
+            fontSize: '11px',
+            color: 'var(--text-primary)',
+            outline: 'none',
+          }}
+        />
+        <button type="button" onClick={(e) => { e.stopPropagation(); handleRename(); }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
+          <Check size={11} />
+        </button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); setIsRenaming(false); setOpen(false); }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
+          <X size={11} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="session-options-btn"
+        style={{
+          background: 'transparent', border: 'none', color: 'var(--text-muted)',
+          cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center',
+        }}
+      >
+        <MoreHorizontal size={12} />
+      </button>
+
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={portalRef}
+          data-foldermenu-portal="true"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            background: 'var(--bg-surface)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
+            padding: '4px',
+            zIndex: 999999999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '140px',
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setRenameText(col.name); setIsRenaming(true); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Edit2 size={11} />
+            <span>{language === 'id' ? 'Ubah nama' : 'Rename'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenUpload(); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Upload size={11} />
+            <span>{language === 'id' ? 'Unggah media' : 'Upload media'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); deleteCollection(col.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Trash2 size={11} />
+            <span>{language === 'id' ? 'Hapus folder' : 'Delete folder'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// ─── ImagineItemMenu ──────────────────────────────────────────────────────────
+interface ImagineItemMenuProps {
+  item: ImagineHistoryItem;
+  language: string;
+  collections: Array<{ id: string; name: string }>;
+  togglePin: (id: string) => void;
+  moveToCollection: (id: string, collectionId: string | null) => void;
+  removeItem: (id: string) => void;
+}
+
+function ImagineItemMenu({ item, language, collections, togglePin, moveToCollection, removeItem }: ImagineItemMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [folderSubmenuOpen, setFolderSubmenuOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
+        setOpen(false);
+        setFolderSubmenuOpen(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+      setFolderSubmenuOpen(false);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const menuWidth = 150;
+      const menuHeight = 120;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      setMenuPosition({ top, left });
+      setOpen(true);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="session-options-btn"
+        style={{
+          background: 'transparent', border: 'none', color: 'var(--text-muted)',
+          cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center',
+        }}
+      >
+        <MoreHorizontal size={12} />
+      </button>
+
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={portalRef}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            background: 'var(--bg-surface)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
+            padding: '4px',
+            zIndex: 999999999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '150px',
+          }}
+        >
+          {/* Pin / Unpin */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); togglePin(item.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: item.isPinned ? '#A25DDC' : 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Pin size={11} fill={item.isPinned ? '#A25DDC' : 'none'} />
+            <span>{item.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan' : 'Pin')}</span>
+          </button>
+
+          {/* Move to folder */}
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setFolderSubmenuOpen(!folderSubmenuOpen); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                padding: '5px 8px', borderRadius: '4px', border: 'none', background: 'transparent',
+                color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FolderInput size={11} />
+                <span>{language === 'id' ? 'Pindah ke folder' : 'Move to folder'}</span>
+              </div>
+              <ChevronRight size={10} color="var(--text-muted)" />
+            </button>
+
+            {folderSubmenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: '100%',
+                  marginRight: '4px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  boxShadow: 'var(--shadow-xl)',
+                  padding: '4px',
+                  minWidth: '140px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  zIndex: 1000000000,
+                }}
+              >
+                {item.collectionId && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); moveToCollection(item.id, null); setOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                      borderRadius: '4px', border: 'none', background: 'transparent',
+                      color: 'var(--accent-warning, #eab308)', fontSize: '11px', cursor: 'pointer', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <FolderMinus size={11} />
+                    <span>{language === 'id' ? 'Keluarkan dari folder' : 'Remove from folder'}</span>
+                  </button>
+                )}
+
+                {collections.length === 0 ? (
+                  <div style={{ padding: '6px 8px', fontSize: '10.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    {language === 'id' ? 'Belum ada folder' : 'No folders'}
+                  </div>
+                ) : (
+                  collections.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); moveToCollection(item.id, c.id); setOpen(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                        borderRadius: '4px', border: 'none',
+                        background: item.collectionId === c.id ? 'rgba(162, 93, 220, 0.15)' : 'transparent',
+                        color: item.collectionId === c.id ? '#A25DDC' : 'var(--text-primary)',
+                        fontSize: '11px', cursor: 'pointer', textAlign: 'left', fontWeight: item.collectionId === c.id ? 600 : 400,
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = item.collectionId === c.id ? 'rgba(162, 93, 220, 0.15)' : 'transparent')}
+                    >
+                      <Folder size={11} />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); removeItem(item.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Trash2 size={11} />
+            <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export function Sidebar({
   isOpenMobile = false,
   onCloseMobile,
@@ -358,9 +750,12 @@ export function Sidebar({
   const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
   const setActiveImageCollection = useWorkspaceStore((s) => s.setActiveImageCollection);
   const createImageCollection = useWorkspaceStore((s) => s.createImageCollection);
+  const renameImageCollection = useWorkspaceStore((s) => s.renameImageCollection);
   const deleteImageCollection = useWorkspaceStore((s) => s.deleteImageCollection);
   const addFileToImageCollection = useWorkspaceStore((s) => s.addFileToImageCollection);
   const removeFileFromImageCollection = useWorkspaceStore((s) => s.removeFileFromImageCollection);
+
+  const removeImagineItem = useImagineStore((s) => s.removeItem);
 
   const workflowCategories = useWorkspaceStore((s) => s.workflowCategories);
   const activeWorkflowCategoryId = useWorkspaceStore((s) => s.activeWorkflowCategoryId);
@@ -1575,6 +1970,7 @@ export function Sidebar({
                           fontWeight: activeImageCollectionId === col.id ? 600 : 400,
                           cursor: 'pointer',
                           justifyContent: 'space-between',
+                          position: 'relative',
                         }}
                       >
                         <div
@@ -1582,34 +1978,25 @@ export function Sidebar({
                           onClick={() => setActiveImageCollection(activeImageCollectionId === col.id ? null : col.id)}
                         >
                           <Folder size={12} color={activeImageCollectionId === col.id ? '#A25DDC' : 'var(--text-muted)'} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{col.name}</span>
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{col.name}</span>
                           {col.files.length > 0 && (
                             <span style={{ fontSize: '10px', background: '#A25DDC', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
                               {col.files.length}
                             </span>
                           )}
+                          <span style={{ flexShrink: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                            <ChevronRight size={10} />
+                          </span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-                          <button
-                            type="button"
-                            title={language === 'id' ? 'Unggah media' : 'Upload media'}
-                            onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'imageCollection', id: col.id }); }}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                          >
-                            <Upload size={11} />
-                          </button>
-                          <button
-                            type="button"
-                            title={language === 'id' ? 'Hapus koleksi' : 'Delete collection'}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteImageCollection(col.id);
-                            }}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
+
+                        {/* Three-dot menu for Media Collection */}
+                        <ImagineFolderMenu
+                          col={col}
+                          language={language}
+                          renameCollection={renameImageCollection}
+                          deleteCollection={deleteImageCollection}
+                          onOpenUpload={() => setDrawerState({ type: 'imageCollection', id: col.id })}
+                        />
                       </div>
                     ))}
 
@@ -1745,7 +2132,7 @@ export function Sidebar({
                               position: 'relative',
                             }}
                           >
-                            {/* Type icon */}
+                            {/* Type icon & Title */}
                             <div
                               onClick={() => { if (pathname !== '/imagine') router.push('/imagine'); if (onCloseMobile) onCloseMobile(); }}
                               style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
@@ -1775,42 +2162,15 @@ export function Sidebar({
                               </div>
                             </div>
 
-                            {/* Pin button */}
-                            <button
-                              type="button"
-                              title={item.isPinned ? 'Lepas sematkan' : 'Sematkan'}
-                              onClick={(e) => { e.stopPropagation(); toggleImaginePin(item.id); }}
-                              style={{ background: 'transparent', border: 'none', color: item.isPinned ? '#A25DDC' : 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
-                            >
-                              <Pin size={10} fill={item.isPinned ? '#A25DDC' : 'none'} />
-                            </button>
-
-                            {/* Move to folder */}
-                            {imageCollections.length > 0 && (
-                              <select
-                                value={item.collectionId || ''}
-                                title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
-                                onChange={(e) => { e.stopPropagation(); moveImagineToCollection(item.id, e.target.value || null); }}
-                                onClick={(e) => e.stopPropagation()}
-                                style={{
-                                  background: 'var(--bg-subtle)',
-                                  border: '1px solid var(--border-subtle)',
-                                  borderRadius: '4px',
-                                  fontSize: '10px',
-                                  color: 'var(--text-muted)',
-                                  cursor: 'pointer',
-                                  padding: '1px 3px',
-                                  flexShrink: 0,
-                                  maxWidth: '70px',
-                                  outline: 'none',
-                                }}
-                              >
-                                <option value="">📁</option>
-                                {imageCollections.map((c) => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                              </select>
-                            )}
+                            {/* Three-dot menu for Media item (Same clean style as Chat) */}
+                            <ImagineItemMenu
+                              item={item}
+                              language={language}
+                              collections={imageCollections.filter((c) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id))}
+                              togglePin={toggleImaginePin}
+                              moveToCollection={moveImagineToCollection}
+                              removeItem={removeImagineItem}
+                            />
                           </div>
                         ))
                     )}
