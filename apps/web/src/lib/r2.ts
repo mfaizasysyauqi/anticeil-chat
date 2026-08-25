@@ -65,7 +65,7 @@ export async function uploadToWorkerR2(key: string, buffer: Buffer, contentType:
         'Content-Type': contentType,
         'X-Storage-Key': key,
       },
-      body: buffer,
+      body: new Uint8Array(buffer),
     });
     if (res.ok) {
       return await res.json();
