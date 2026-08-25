@@ -537,6 +537,7 @@ export function Sidebar({
           cursor: 'pointer',
           position: 'relative',
           transition: 'all 0.15s ease',
+          zIndex: menuSessionId === session.id ? 99999998 : 1,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0, flex: 1 }}>
