@@ -19,6 +19,7 @@ import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useAutomationStore } from '../../features/automations/store/useAutomationStore';
+import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { getTranslation } from '@anticeil/core';
 
 interface NavbarProps {
@@ -53,6 +54,10 @@ export function Navbar({
   const deleteSession = useChatStore((s) => s.deleteSession);
   const createSession = useChatStore((s) => s.createSession);
 
+  const projects = useProjectStore((s) => s.folders);
+  const assignSession = useProjectStore((s) => s.assignSession);
+  const removeSession = useProjectStore((s) => s.removeSession);
+
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const t = getTranslation(language);
 
@@ -81,11 +86,26 @@ export function Navbar({
     setIsMenuOpen(false);
   };
 
-  const handleAssignProject = (projectName: string) => {
-    if (activeSession) {
-      const nextProj = activeSession.projectId === projectName ? undefined : projectName;
-      updateSession(activeSession.id, { projectId: nextProj });
+  const handleAssignProject = async (projectId: string) => {
+    if (!activeSession || !user) return;
+    
+    const accessToken = user.id; // Simplified - in production use actual access token
+    
+    // Check if already assigned to this project
+    const currentProject = projects.find(p => p.sessionIds.includes(activeSession.id));
+    
+    if (currentProject?.id === projectId) {
+      // Remove from project if clicking the same one
+      await removeSession(projectId, activeSession.id, accessToken);
+    } else {
+      // Remove from old project if any
+      if (currentProject) {
+        await removeSession(currentProject.id, activeSession.id, accessToken);
+      }
+      // Assign to new project
+      await assignSession(projectId, activeSession.id, accessToken);
     }
+    
     setIsProjectSubmenuOpen(false);
     setIsMenuOpen(false);
   };
@@ -255,7 +275,7 @@ export function Navbar({
                 borderRadius: 'var(--radius-lg, 12px)',
                 boxShadow: 'var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.2))',
                 padding: '5px',
-                zIndex: 100,
+                zIndex: 9999,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
@@ -333,47 +353,55 @@ export function Navbar({
                       position: 'absolute',
                       top: 0,
                       right: 'calc(100% + 4px)',
-                      width: '160px',
+                      width: '180px',
+                      maxHeight: '300px',
+                      overflowY: 'auto',
                       background: 'var(--bg-surface)',
                       border: '1px solid var(--border-strong)',
                       borderRadius: 'var(--radius-md, 8px)',
                       boxShadow: 'var(--shadow-lg)',
                       padding: '4px',
-                      zIndex: 110,
+                      zIndex: 10000,
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '2px',
                     }}
                   >
-                    {['Personal', 'Work'].map((proj) => {
-                      const isCurrent = activeSession?.projectId === proj;
-                      return (
-                        <button
-                          key={proj}
-                          type="button"
-                          onClick={() => handleAssignProject(proj)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            borderRadius: '4px',
-                            border: 'none',
-                            background: isCurrent ? 'var(--bg-subtle)' : 'transparent',
-                            color: 'var(--text-primary)',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            width: '100%',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isCurrent ? 'var(--bg-subtle)' : 'transparent')}
-                        >
-                          <span>{proj}</span>
-                          {isCurrent && <Check size={12} color="var(--brand-primary)" />}
-                        </button>
-                      );
-                    })}
+                    {projects.length === 0 ? (
+                      <div style={{ padding: '8px', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                        {language === 'id' ? 'Belum ada proyek' : 'No projects yet'}
+                      </div>
+                    ) : (
+                      projects.map((proj) => {
+                        const isCurrent = proj.sessionIds.includes(activeSession?.id ?? '');
+                        return (
+                          <button
+                            key={proj.id}
+                            type="button"
+                            onClick={() => handleAssignProject(proj.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 8px',
+                              borderRadius: '4px',
+                              border: 'none',
+                              background: isCurrent ? 'var(--bg-subtle)' : 'transparent',
+                              color: 'var(--text-primary)',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              width: '100%',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isCurrent ? 'var(--bg-subtle)' : 'transparent')}
+                          >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{proj.name}</span>
+                            {isCurrent && <Check size={12} color="var(--brand-primary)" style={{ flexShrink: 0, marginLeft: '4px' }} />}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 )}
               </div>
