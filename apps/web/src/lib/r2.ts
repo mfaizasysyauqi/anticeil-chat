@@ -16,7 +16,15 @@ if (!accountId || !accessKeyId || !secretAccessKey) {
 const requestHandler =
   process.env.NODE_ENV !== 'production'
     ? new NodeHttpHandler({
-        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false,
+          // Add connection timeout and keep-alive settings
+          keepAlive: true,
+          keepAliveMsecs: 30000,
+          timeout: 60000,
+        }),
+        connectionTimeout: 5000,
+        requestTimeout: 30000,
       })
     : undefined;
 

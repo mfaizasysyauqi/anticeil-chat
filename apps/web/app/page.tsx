@@ -860,6 +860,12 @@ export default function MondayWarmBeigeLandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Hydration guard to prevent language flicker
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   // Active Chatbot Studio & Workflow State
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('groq');
   const [boardViewTab, setBoardViewTab] = useState<'table' | 'kanban' | 'radar'>('table');
@@ -1203,6 +1209,21 @@ export default function MondayWarmBeigeLandingPage() {
     { name: '100% Client Privacy', badge: 'Device Only', color: '#00C875', iconKey: 'shield' },
     { name: 'Open Standards', badge: 'Zero Lock-in', color: '#0073EA', iconKey: 'key' },
   ];
+
+  // Prevent language flicker during SSR
+  if (!hydrated) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#FAF9F5',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{ color: '#181B34', fontSize: '14px' }}>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -31,28 +31,47 @@ export async function GET(req: NextRequest) {
     const breakdown = { docs: 0, images: 0, audio: 0, other: 0 };
     let continuationToken: string | undefined;
 
-    do {
-      const res = await r2.send(
-        new ListObjectsV2Command({
-          Bucket: R2_BUCKET,
-          Prefix: `${userId}/`,
-          ContinuationToken: continuationToken,
-          MaxKeys: 1000,
-        })
-      );
+    // Retry logic for R2 network issues
+    let retries = 3;
+    let lastError: any;
 
-      for (const obj of res.Contents ?? []) {
-        const size = obj.Size ?? 0;
-        totalBytes += size;
-        fileCount++;
-        const category = categorize(obj.Key ?? '');
-        breakdown[category] += size;
+    while (retries > 0) {
+      try {
+        do {
+          const res = await r2.send(
+            new ListObjectsV2Command({
+              Bucket: R2_BUCKET,
+              Prefix: `${userId}/`,
+              ContinuationToken: continuationToken,
+              MaxKeys: 1000,
+            })
+          );
+
+          for (const obj of res.Contents ?? []) {
+            const size = obj.Size ?? 0;
+            totalBytes += size;
+            fileCount++;
+            const category = categorize(obj.Key ?? '');
+            breakdown[category] += size;
+          }
+
+          continuationToken = res.NextContinuationToken;
+        } while (continuationToken);
+
+        // Success - exit retry loop
+        return NextResponse.json({ totalBytes, breakdown, fileCount });
+      } catch (err: any) {
+        lastError = err;
+        retries--;
+        if (retries > 0) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, (3 - retries) * 1000));
+        }
       }
+    }
 
-      continuationToken = res.NextContinuationToken;
-    } while (continuationToken);
-
-    return NextResponse.json({ totalBytes, breakdown, fileCount });
+    // All retries failed
+    throw lastError;
   } catch (err: any) {
     // Return empty usage on network/R2 SSL issues rather than crashing the page with 500
     console.warn('[R2] storage usage warning (falling back to 0 bytes):', err?.message || err);

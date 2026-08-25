@@ -50,7 +50,7 @@ function LoginForm() {
 
   // Prevent language flicker: don't render translated text until the store
   // has hydrated from localStorage (avoids EN→ID flash on first paint)
-  const [hydrated, setHydrated] = React.useState(false);
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
 
   useEffect(() => {
