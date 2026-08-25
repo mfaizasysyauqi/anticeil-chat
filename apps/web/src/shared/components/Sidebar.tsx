@@ -591,18 +591,20 @@ export function Sidebar({
             ref={menuRef}
             style={{
               position: 'absolute',
-              top: '100%',
+              top: 'calc(100% + 2px)',
               right: '8px',
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-strong)',
               borderRadius: 'var(--radius-md, 8px)',
-              boxShadow: 'var(--shadow-lg)',
+              boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
               padding: '4px',
-              zIndex: 99999,
+              zIndex: 9999999,
               display: 'flex',
               flexDirection: 'column',
               gap: '2px',
               minWidth: '160px',
+              maxHeight: 'calc(100vh - 100px)',
+              overflowY: 'auto',
             }}
           >
             <button
@@ -691,7 +693,7 @@ export function Sidebar({
                     borderRadius: 'var(--radius-md, 8px)',
                     boxShadow: 'var(--shadow-lg)',
                     padding: '4px',
-                    zIndex: 100000,
+                    zIndex: 9999999,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
