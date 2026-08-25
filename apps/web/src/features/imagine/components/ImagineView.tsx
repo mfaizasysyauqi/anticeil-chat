@@ -29,7 +29,10 @@ import {
   Radio,
   Pin,
   Folder,
+  ChevronDown,
+  ArrowUp,
 } from 'lucide-react';
+import { ImagineModelSelectorModal, IMAGINE_PROVIDERS } from './ImagineModelSelectorModal';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useStorageStore } from '../../storage/store/useStorageStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
@@ -148,6 +151,8 @@ export function ImagineView() {
   const [audioSpeed, setAudioSpeed] = useState(1.0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showKeyGuide, setShowKeyGuide] = useState(false);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Audio Playback State
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
@@ -292,6 +297,12 @@ export function ImagineView() {
 
   const activeModels = mediaMode === 'image' ? imageModels : mediaMode === 'video' ? videoModels : audioModels;
   const currentModelInfo = activeModels.find((m) => m.id === selectedModel) || activeModels[0];
+
+  // Resolve display name from ImagineModelSelectorModal providers for richer label
+  const modalModelInfo = IMAGINE_PROVIDERS
+    .flatMap((p) => p.models)
+    .find((m) => m.id === selectedModel);
+  const modelDisplayName = modalModelInfo?.name || currentModelInfo?.name || selectedModel;
 
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -705,357 +716,248 @@ export function ImagineView() {
           })}
         </div>
 
-        {/* ── Prompt Card ── */}
+        {/* ── Prompt Card (Chat-style elegant floating input) ── */}
+        <ImagineModelSelectorModal
+          isOpen={isModelSelectorOpen}
+          onClose={() => setIsModelSelectorOpen(false)}
+          mediaMode={mediaMode}
+          selectedModelId={selectedModel}
+          onSelectModel={(id) => setSelectedModel(id)}
+        />
+
         <form
           onSubmit={handleGenerate}
           style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: '14px',
+            background: 'var(--bg-input)',
+            border: `1px solid ${isFocused ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
+            borderRadius: 'var(--radius-xl)',
             marginBottom: '28px',
-            boxShadow: 'var(--shadow-sm)',
+            boxShadow: isFocused ? 'var(--shadow-lg)' : 'var(--shadow-md)',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
+            padding: '10px 14px',
+            transition: 'all 0.2s ease',
           }}
         >
           {/* Textarea */}
-          <div style={{ padding: '16px 18px 12px 18px' }}>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={
-                mediaMode === 'image'
-                  ? ti.promptPlaceholder
-                  : mediaMode === 'video'
-                  ? (language === 'id'
-                      ? 'Jelaskan video yang ingin Anda buat secara detail (contoh: Drone terbang di atas hutan hujan tropis, 4K sinematik)...'
-                      : 'Describe the video you want to generate in detail (e.g. Drone flying over tropical rainforest, 4K cinematic)...')
-                  : (language === 'id'
-                      ? 'Ketik narasi atau musik yang ingin disuarakan (contoh: Selamat datang di Anticeil AI, asisten produktivitas cerdas masa depan)...'
-                      : 'Type the narration or music prompt you want to voice (e.g. Welcome to Anticeil AI, your privacy-first intelligent assistant)...')
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                if (prompt.trim() && !isGenerating) handleGenerate(e as unknown as React.FormEvent);
               }
-              rows={3}
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: 'none',
-                padding: 0,
-                color: 'var(--text-primary)',
-                fontSize: '14px',
-                outline: 'none',
-                resize: 'none',
-                lineHeight: 1.6,
-                fontFamily: 'inherit',
-              }}
-            />
-          </div>
+            }}
+            placeholder={
+              mediaMode === 'image'
+                ? ti.promptPlaceholder
+                : mediaMode === 'video'
+                ? (language === 'id'
+                    ? 'Jelaskan video yang ingin Anda buat secara detail (contoh: Drone terbang di atas hutan hujan tropis, 4K sinematik)...'
+                    : 'Describe the video you want to generate in detail (e.g. Drone flying over tropical rainforest, 4K cinematic)...')
+                : (language === 'id'
+                    ? 'Ketik narasi atau musik yang ingin disuarakan (contoh: Selamat datang di Anticeil AI, asisten produktivitas cerdas masa depan)...'
+                    : 'Type the narration or music prompt you want to voice (e.g. Welcome to Anticeil AI, your privacy-first intelligent assistant)...')
+            }
+            rows={3}
+            style={{
+              width: '100%',
+              background: 'transparent',
+              border: 'none',
+              padding: '2px',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              outline: 'none',
+              resize: 'none',
+              lineHeight: 1.6,
+              fontFamily: 'inherit',
+              maxHeight: '200px',
+            }}
+          />
 
-          {/* Controls Row */}
+          {/* Bottom Toolbar — Chat-style */}
           <div
             style={{
-              padding: '10px 18px',
-              borderTop: '1px solid var(--border-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '12px',
-              flexWrap: 'wrap',
-              background: 'var(--bg-main)',
+              marginTop: '8px',
+              paddingTop: '6px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              {/* Model Select */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={13} color="#A25DDC" />
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Model:
+            {/* Left: Model selector button + context pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+
+              {/* Model Selector Trigger — matches ChatInput style */}
+              <button
+                type="button"
+                onClick={() => setIsModelSelectorOpen(true)}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  padding: '5px 8px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  maxWidth: '260px',
+                  transition: 'color 0.15s ease, background 0.15s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              >
+                <Sparkles size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)', fontWeight: 500, fontSize: '13px' }}>
+                  {modelDisplayName}
                 </span>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '6px',
-                    color: 'var(--text-primary)',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    padding: '4px 8px',
-                    outline: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {activeModels.map((m) => (
-                    <option key={m.id} value={m.id} style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <ChevronDown size={13} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+              </button>
 
-              {/* Audio Voice Presets Selector */}
-              {mediaMode === 'audio' && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Mic size={13} color="var(--brand-primary)" />
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                      {language === 'id' ? 'Suara / Instrumen:' : 'Voice / Tone:'}
-                    </span>
-                    <select
-                      value={selectedVoice}
-                      onChange={(e) => setSelectedVoice(e.target.value)}
-                      style={{
-                        background: 'var(--bg-subtle)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '6px',
-                        color: 'var(--text-primary)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        padding: '4px 8px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {voicePresets.map((v) => (
-                        <option key={v.id} value={v.id} style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
-                          {v.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Audio Speed */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Sliders size={13} color="var(--text-muted)" />
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                      Speed:
-                    </span>
-                    <select
-                      value={audioSpeed}
-                      onChange={(e) => setAudioSpeed(Number(e.target.value))}
-                      style={{
-                        background: 'var(--bg-subtle)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '6px',
-                        color: 'var(--text-primary)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        padding: '4px 8px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <option value={0.8}>0.8x</option>
-                      <option value={1.0}>1.0x (Normal)</option>
-                      <option value={1.25}>1.25x (Cepat)</option>
-                      <option value={1.5}>1.5x (Fast)</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {/* Style Select (Image only) */}
+              {/* Style pill (Image only) */}
               {mediaMode === 'image' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Palette size={13} color="var(--text-muted)" />
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                    {ti.style}:
-                  </span>
+                <div style={{ position: 'relative' }}>
                   <select
                     value={selectedStyle}
                     onChange={(e) => setSelectedStyle(e.target.value)}
                     style={{
+                      appearance: 'none',
                       background: 'var(--bg-subtle)',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: '6px',
-                      color: 'var(--text-primary)',
+                      borderRadius: '20px',
+                      color: 'var(--text-secondary)',
                       fontSize: '12px',
                       fontWeight: 500,
-                      padding: '4px 8px',
+                      padding: '4px 24px 4px 10px',
                       outline: 'none',
                       cursor: 'pointer',
                     }}
                   >
                     {styles.map((s) => (
-                      <option key={s} value={s} style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
-                        {s}
-                      </option>
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                  <Palette size={11} color="var(--text-muted)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                 </div>
               )}
 
-              {/* Ratio Selector (Image and Video) */}
+              {/* Ratio pills (Image & Video) */}
               {(mediaMode === 'image' || mediaMode === 'video') && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Ratio size={13} color="var(--text-muted)" />
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                    {ti.aspectRatio}:
-                  </span>
-                  <div style={{ display: 'flex', gap: '3px', background: 'var(--bg-subtle)', padding: '2px', borderRadius: '6px' }}>
-                    {ratios.map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setSelectedRatio(r)}
-                        style={{
-                          border: 'none',
-                          background: selectedRatio === r ? 'var(--brand-primary)' : 'transparent',
-                          color: selectedRatio === r ? '#FFFFFF' : 'var(--text-muted)',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
+                <div style={{ display: 'flex', gap: '3px', background: 'var(--bg-subtle)', padding: '3px', borderRadius: '20px', border: '1px solid var(--border-subtle)' }}>
+                  {ratios.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setSelectedRatio(r)}
+                      style={{
+                        border: 'none',
+                        background: selectedRatio === r ? 'var(--text-primary)' : 'transparent',
+                        color: selectedRatio === r ? 'var(--bg-main)' : 'var(--text-muted)',
+                        padding: '2px 8px',
+                        borderRadius: '14px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {r}
+                    </button>
+                  ))}
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Bottom Action Row with Model Key Info on Left and Generate Button on Right */}
-          <div
-            style={{
-              padding: '12px 18px',
-              borderTop: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              flexWrap: 'wrap',
-              background: 'var(--bg-surface)',
-            }}
-          >
-            {/* Dynamic Model Key Requirement Status */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {currentModelInfo.keyType === 'free' ? (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(0, 200, 117, 0.1)',
-                    border: '1px solid rgba(0, 200, 117, 0.25)',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    color: 'var(--accent-success)',
-                    fontSize: '11.5px',
-                    fontWeight: 600,
-                  }}
-                >
-                  <CheckCircle2 size={13} />
-                  <span>{currentModelInfo.keyRequirement}</span>
-                  <span style={{ fontSize: '10.5px', opacity: 0.8, marginLeft: '2px' }}>
-                    ({currentModelInfo.provider})
-                  </span>
-                </div>
-              ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(253, 171, 61, 0.1)',
-                    border: '1px solid rgba(253, 171, 61, 0.25)',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    color: '#FDAB3D',
-                    fontSize: '11.5px',
-                    fontWeight: 600,
-                  }}
-                >
-                  <KeyRound size={13} />
-                  <span>{currentModelInfo.keyRequirement}</span>
-                  <Link
-                    href="/settings"
+              {/* Audio voice pill */}
+              {mediaMode === 'audio' && (
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={selectedVoice}
+                    onChange={(e) => setSelectedVoice(e.target.value)}
                     style={{
-                      marginLeft: '6px',
-                      color: 'var(--brand-primary)',
-                      textDecoration: 'none',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      background: 'rgba(0, 115, 234, 0.12)',
-                      padding: '2px 7px',
-                      borderRadius: '4px',
+                      appearance: 'none',
+                      background: 'var(--bg-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '20px',
+                      color: 'var(--text-secondary)',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      padding: '4px 24px 4px 10px',
+                      outline: 'none',
+                      cursor: 'pointer',
                     }}
                   >
-                    {language === 'id' ? 'Atur di Pengaturan' : 'Setup in Settings'} <ExternalLink size={10} />
-                  </Link>
+                    {voicePresets.map((v) => (
+                      <option key={v.id} value={v.id}>{v.label}</option>
+                    ))}
+                  </select>
+                  <Mic size={11} color="var(--text-muted)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                 </div>
               )}
-
-              <button
-                type="button"
-                onClick={() => setShowKeyGuide(!showKeyGuide)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 6px',
-                  textDecoration: 'underline',
-                }}
-              >
-                <Info size={12} />
-                <span>{showKeyGuide ? (language === 'id' ? 'Tutup Panduan' : 'Hide Guide') : (language === 'id' ? 'Info Semua Model & Key' : 'All Models & Keys Info')}</span>
-              </button>
             </div>
 
-            {/* Action Button Container - Always Anchored to Right (Thumb-Zone Friendly) */}
-            <div style={{ marginLeft: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Right: Mic + Send button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              {/* Mic button for speech-to-text */}
               <button
-                type="submit"
-                disabled={isGenerating || !prompt.trim()}
+                type="button"
+                title={language === 'id' ? 'Suara ke Teks' : 'Voice input'}
                 className="clickable-pill"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '9px 20px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, var(--brand-primary), var(--accent-reasoning))',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  background: 'transparent',
                   border: 'none',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontWeight: 700,
+                  borderRadius: '50%',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Mic size={16} />
+              </button>
+
+              {/* Circular gradient send button */}
+              <button
+                type="submit"
+                disabled={isGenerating || !prompt.trim()}
+                title={language === 'id' ? 'Hasilkan' : 'Generate'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  background:
+                    isGenerating || !prompt.trim()
+                      ? 'var(--bg-subtle)'
+                      : 'linear-gradient(135deg, var(--brand-primary), var(--accent-reasoning))',
+                  border: 'none',
+                  borderRadius: '50%',
+                  color: isGenerating || !prompt.trim() ? 'var(--text-muted)' : '#FFFFFF',
                   cursor: isGenerating || !prompt.trim() ? 'not-allowed' : 'pointer',
-                  opacity: isGenerating || !prompt.trim() ? 0.6 : 1,
-                  boxShadow: '0 2px 10px rgba(0, 115, 234, 0.3)',
                   transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap',
+                  boxShadow:
+                    isGenerating || !prompt.trim()
+                      ? 'none'
+                      : '0 2px 10px rgba(0, 115, 234, 0.35)',
+                  flexShrink: 0,
                 }}
               >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    <span>{ti.generating}</span>
-                  </>
-                ) : (
-                  <>
-                    <Wand2 size={14} />
-                    <span>
-                      {mediaMode === 'image'
-                        ? ti.generate
-                        : mediaMode === 'video'
-                        ? (language === 'id' ? 'Hasilkan Video AI' : 'Generate AI Video')
-                        : (language === 'id' ? 'Sintesis Audio & Suara' : 'Synthesize Audio')}
-                    </span>
-                  </>
-                )}
+                {isGenerating
+                  ? <RefreshCw size={14} className="animate-spin" />
+                  : <ArrowUp size={16} strokeWidth={2.5} />}
               </button>
             </div>
           </div>
