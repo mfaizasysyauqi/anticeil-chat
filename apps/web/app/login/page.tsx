@@ -173,11 +173,12 @@ function LoginForm() {
         return;
       }
 
-      // Cookie is now set by the server — do a full navigation so the
+      // Cookie is now set by the server — full navigation so the
       // middleware picks it up and grants access to the protected route.
       const next = searchParams?.get('next');
       const dest = next && next.startsWith('/') ? next : '/chat';
       window.location.replace(dest);
+
     } catch {
       setLocalError(language === 'id' ? 'Terjadi kesalahan jaringan.' : 'Network error, please try again.');
     } finally {

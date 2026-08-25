@@ -1,60 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-/**
- * POST /api/auth/signin
- *
- * Performs email+password sign-in on the **server** side so that
- * @supabase/ssr can write the session into HTTP cookies that the
- * middleware (and every subsequent server request) can read.
- *
- * The browser client (createBrowserClient) stores the session in
- * localStorage — which the server-side middleware cannot access —
- * causing a perpetual redirect loop to /login.  By doing the sign-in
- * here we guarantee the Set-Cookie header travels back to the browser.
- */
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => ({}));
-  const { email, password } = body as { email?: string; password?: string };
+  try {
+    const body = await req.json().catch(() => ({}));
+    const { email, password } = body as { email?: string; password?: string };
 
-  if (!email || !password) {
-    return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
-  }
-
-  // Build the response object first — createServerClient needs to mutate it
-  // via setAll() to attach the Set-Cookie header.
-  const response = NextResponse.json({ ok: true });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return req.cookies.getAll();
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }>) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
-  );
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // We need to collect cookies set by Supabase and forward them to the browser.
+    // Create a mutable headers object to accumulate Set-Cookie entries.
+    const cookiesToForward: Array<{ name: string; value: string; options: Record<string, unknown> }> = [];
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 401 });
-  }
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return req.cookies.getAll();
+          },
+          setAll(cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }>) {
+            cookiesToForward.push(...cookiesToSet);
+          },
+        },
+      }
+    );
 
-  // Return the user + session so the client can hydrate its Zustand state,
-  // with the auth cookies already baked into the response headers.
-  return NextResponse.json(
-    { ok: true, user: data.user, session: data.session },
-    {
-      status: 200,
-      headers: response.headers, // carries the Set-Cookie header(s)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      console.error('[signin] Supabase error:', error.status, error.message);
+      return NextResponse.json({ error: error.message }, { status: 401 });
     }
-  );
+
+    // Build the success response and attach all Set-Cookie headers
+    const response = NextResponse.json(
+      { ok: true, user: data.user, session: data.session },
+      { status: 200 }
+    );
+
+    for (const { name, value, options } of cookiesToForward) {
+      // NextResponse.cookies.set accepts ResponseCookies options
+      response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2]);
+    }
+
+    return response;
+
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[signin] Unexpected error:', msg);
+    return NextResponse.json(
+      { error: `Server error: ${msg}` },
+      { status: 500 }
+    );
+  }
 }
