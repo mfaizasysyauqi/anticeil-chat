@@ -132,6 +132,7 @@ export default {
           { headers: corsHeaders }
         );
       }
+      try {
         const userId = url.searchParams.get('userId') || '';
         let list = await env.STORAGE_BUCKET.list({ prefix: userId ? `${userId}/` : undefined });
         if (userId && list.objects.length === 0) {
