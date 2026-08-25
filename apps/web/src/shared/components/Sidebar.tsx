@@ -696,7 +696,6 @@ export function Sidebar({
                 </span>
                 <ChevronRight size={10} color="var(--text-muted)" />
               </button>
-            </div>
 
               {folderSubmenuSessionId === session.id && submenuPosition && typeof window !== 'undefined' && createPortal(
                 <div
