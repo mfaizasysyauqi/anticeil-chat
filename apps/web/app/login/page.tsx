@@ -39,10 +39,10 @@ function LoginForm() {
 
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);
-  const authError = useAuthStore((s) => s.error);
-  const signInWithPassword = useAuthStore((s) => s.signInWithPassword);
   const initializeAuth = useAuthStore((s) => s.initializeAuth);
   const clearError = useAuthStore((s) => s.clearError);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
@@ -140,12 +140,48 @@ function LoginForm() {
       return;
     }
 
-    const { error } = await signInWithPassword(email.trim(), password);
-    if (!error) {
+    setIsSubmitting(true);
+    try {
+      // Use the server-side sign-in route so @supabase/ssr can write
+      // the session into an HTTP cookie that the middleware can read.
+      const res = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg: string = data.error ?? '';
+        const lower = msg.toLowerCase();
+        if (lower.includes('email not confirmed')) {
+          setLocalError(
+            language === 'id'
+              ? 'Email belum diverifikasi. Periksa Kotak Masuk atau folder SPAM kamu.'
+              : 'Email not confirmed. Check your Inbox or SPAM folder.'
+          );
+        } else if (lower.includes('invalid login credentials') || lower.includes('invalid credentials')) {
+          setLocalError(
+            language === 'id'
+              ? 'Email atau kata sandi tidak cocok.'
+              : 'Invalid email or password.'
+          );
+        } else {
+          setLocalError(msg || (language === 'id' ? 'Login gagal, coba lagi.' : 'Login failed, please try again.'));
+        }
+        return;
+      }
+
+      // Cookie is now set by the server — do a full navigation so the
+      // middleware picks it up and grants access to the protected route.
       const next = searchParams?.get('next');
       const dest = next && next.startsWith('/') ? next : '/chat';
-      // Full navigation so the server middleware can read the new auth cookie
       window.location.replace(dest);
+    } catch {
+      setLocalError(language === 'id' ? 'Terjadi kesalahan jaringan.' : 'Network error, please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -444,7 +480,7 @@ function LoginForm() {
         )}
 
         {/* Error Alert */}
-        {(localError || authError) && (
+        {localError && (
           <div
             style={{
               display: 'flex',
@@ -461,23 +497,7 @@ function LoginForm() {
             }}
           >
             <AlertCircle size={17} style={{ flexShrink: 0, color: '#E2445C', marginTop: '2px' }} />
-            <span>
-              {(() => {
-                const err = localError || authError || '';
-                const lower = err.toLowerCase();
-                if (lower.includes('email not confirmed')) {
-                  return language === 'id'
-                    ? 'Email belum diverifikasi. Silakan klik tautan verifikasi di Kotak Masuk atau folder SPAM / Promosi email Anda.'
-                    : 'Email not confirmed yet. Please check the confirmation link in your Inbox or SPAM / Promotions folder.';
-                }
-                if (lower.includes('invalid login credentials')) {
-                  return language === 'id'
-                    ? 'Email atau kata sandi tidak cocok. Silakan coba lagi.'
-                    : 'Invalid email or password. Please try again.';
-                }
-                return err;
-              })()}
-            </span>
+            <span>{localError}</span>
           </div>
         )}
 
@@ -583,7 +603,7 @@ function LoginForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             style={{
               marginTop: '4px',
               display: 'flex',
@@ -597,13 +617,13 @@ function LoginForm() {
               padding: '13px',
               fontSize: '15px',
               fontWeight: 700,
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              opacity: isLoading ? 0.7 : 1,
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              opacity: isSubmitting ? 0.7 : 1,
               boxShadow: '0 4px 18px rgba(0, 115, 234, 0.4)',
               transition: 'all 0.15s ease',
             }}
           >
-            <span>{isLoading ? ta.signingIn : ta.signInButton}</span>
+            <span>{isSubmitting ? ta.signingIn : ta.signInButton}</span>
             <ArrowRight size={16} />
           </button>
         </form>
