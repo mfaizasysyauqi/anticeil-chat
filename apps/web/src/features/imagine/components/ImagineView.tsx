@@ -289,61 +289,147 @@ export function ImagineView() {
   const activeModels = mediaMode === 'image' ? imageModels : mediaMode === 'video' ? videoModels : audioModels;
   const currentModelInfo = activeModels.find((m) => m.id === selectedModel) || activeModels[0];
 
-  const [generatedImages, setGeneratedImages] = useState<ImageItem[]>([
-    {
-      id: '1',
-      url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
-      prompt: 'Neon futuristic cyberpunk metropolis glowing in rain with volumetric lights 8K',
-      style: 'Cyberpunk',
-      ratio: '16:9',
-      model: 'FLUX.1 Schnell',
-      createdAt: 'Just now',
-    },
-    {
-      id: '2',
-      url: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=800&q=80',
-      prompt: 'Minimalist 3D glassmorphic geometric crystal orb floating on warm beige background',
-      style: '3D Render',
-      ratio: '1:1',
-      model: 'FLUX.1 Dev',
-      createdAt: '2 mins ago',
-    },
-  ]);
+  const [generatedImages, setGeneratedImages] = useState<ImageItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('anticeil-imagine-images');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return [
+      {
+        id: '1',
+        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+        prompt: 'Neon futuristic cyberpunk metropolis glowing in rain with volumetric lights 8K',
+        style: 'Cyberpunk',
+        ratio: '16:9',
+        model: 'FLUX.1 Schnell',
+        createdAt: 'Just now',
+      },
+      {
+        id: '2',
+        url: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=800&q=80',
+        prompt: 'Minimalist 3D glassmorphic geometric crystal orb floating on warm beige background',
+        style: '3D Render',
+        ratio: '1:1',
+        model: 'FLUX.1 Dev',
+        createdAt: '2 mins ago',
+      },
+    ];
+  });
 
-  const [generatedVideos, setGeneratedVideos] = useState<VideoItem[]>([
-    {
-      id: 'v1',
-      url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-      prompt: 'Cinematic drone shot flying through mystical emerald pine forest with morning mist',
-      model: 'Luma Ray 2',
-      ratio: '16:9',
-      duration: '0:06',
-      createdAt: 'Just now',
-    },
-  ]);
+  const [generatedVideos, setGeneratedVideos] = useState<VideoItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('anticeil-imagine-videos');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return [
+      {
+        id: 'v1',
+        url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+        prompt: 'Cinematic drone shot flying through mystical emerald pine forest with morning mist',
+        model: 'Luma Ray 2',
+        ratio: '16:9',
+        duration: '0:06',
+        createdAt: 'Just now',
+      },
+    ];
+  });
 
-  const [generatedAudios, setGeneratedAudios] = useState<AudioItem[]>([
-    {
-      id: 'a1',
-      title: 'Selamat Datang di Anticeil AI Suite',
-      prompt: 'Selamat datang di Anticeil! Platform asisten AI all-in-one cerdas dengan model penalaran canggih dan privasi lokal tanpa kompromi.',
-      model: 'Microsoft Edge / Azure Speech',
-      voice: 'Gadis (Wanita Indonesia)',
-      category: 'speech',
-      durationSec: 8,
-      createdAt: 'Just now',
-    },
-    {
-      id: 'a2',
-      title: 'Lofi Chill Study Beat & Warm Piano',
-      prompt: 'Harmonik melodi piano akustik santai dengan ritme santai untuk fokus bekerja dan belajar.',
-      model: 'Suno v4 / Web Audio',
-      voice: 'Lofi Piano & Vinyl',
-      category: 'music',
-      durationSec: 10,
-      createdAt: '5 mins ago',
-    },
-  ]);
+  const [generatedAudios, setGeneratedAudios] = useState<AudioItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('anticeil-imagine-audios');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return [
+      {
+        id: 'a1',
+        title: 'Selamat Datang di Anticeil AI Suite',
+        prompt: 'Selamat datang di Anticeil! Platform asisten AI all-in-one cerdas dengan model penalaran canggih dan privasi lokal tanpa kompromi.',
+        model: 'Microsoft Edge / Azure Speech',
+        voice: 'Gadis (Wanita Indonesia)',
+        category: 'speech',
+        durationSec: 8,
+        createdAt: 'Just now',
+      },
+      {
+        id: 'a2',
+        title: 'Lofi Chill Study Beat & Warm Piano',
+        prompt: 'Harmonik melodi piano akustik santai dengan ritme santai untuk fokus bekerja dan belajar.',
+        model: 'Suno v4 / Web Audio',
+        voice: 'Lofi Piano & Vinyl',
+        category: 'music',
+        durationSec: 10,
+        createdAt: '5 mins ago',
+      },
+    ];
+  });
+
+  // Persist to localStorage whenever state changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('anticeil-imagine-images', JSON.stringify(generatedImages));
+    } catch {}
+  }, [generatedImages]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('anticeil-imagine-videos', JSON.stringify(generatedVideos));
+    } catch {}
+  }, [generatedVideos]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('anticeil-imagine-audios', JSON.stringify(generatedAudios));
+    } catch {}
+  }, [generatedAudios]);
+
+  // Load from Supabase history on login
+  useEffect(() => {
+    if (!session?.access_token) return;
+    fetch('/api/imagine/history', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (Array.isArray(data.images) && data.images.length > 0) {
+          setGeneratedImages((prev) => {
+            const existingIds = new Set(prev.map((i) => i.id));
+            const newItems = data.images.filter((i: ImageItem) => !existingIds.has(i.id));
+            return [...newItems, ...prev];
+          });
+        }
+        if (Array.isArray(data.videos) && data.videos.length > 0) {
+          setGeneratedVideos((prev) => {
+            const existingIds = new Set(prev.map((i) => i.id));
+            const newItems = data.videos.filter((i: VideoItem) => !existingIds.has(i.id));
+            return [...newItems, ...prev];
+          });
+        }
+        if (Array.isArray(data.audios) && data.audios.length > 0) {
+          setGeneratedAudios((prev) => {
+            const existingIds = new Set(prev.map((i) => i.id));
+            const newItems = data.audios.filter((i: AudioItem) => !existingIds.has(i.id));
+            return [...newItems, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+  }, [session?.access_token]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
