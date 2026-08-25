@@ -51,6 +51,7 @@ import { ConnectorsModal } from '../../features/connectors/components/Connectors
 import { StorageMeter } from '../../features/storage/components/StorageMeter';
 import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
+import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 
 interface SidebarProps {
@@ -83,6 +84,138 @@ interface PdfHistoryItem {
   action: string;
   time: string;
   categoryId?: string;
+}
+
+// ─── FolderMenu ───────────────────────────────────────────────────────────────
+// Small self-contained component for the folder three-dot menu (rename / delete)
+interface FolderMenuProps {
+  proj: { id: string; name: string };
+  language: string;
+  t: { sidebar: { rename: string }; common: { delete: string } };
+  accessToken: string | null;
+  renameFolder: (id: string, name: string, token: string) => Promise<void>;
+  deleteFolder: (id: string, token: string) => Promise<void>;
+  onDeleted: () => void;
+}
+
+function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder, onDeleted }: FolderMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [isRenaming, setIsRenaming] = React.useState(false);
+  const [renameText, setRenameText] = React.useState(proj.name);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setIsRenaming(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const handleRename = async () => {
+    const name = renameText.trim();
+    if (!name || !accessToken) return;
+    await renameFolder(proj.id, name, accessToken);
+    setIsRenaming(false);
+    setOpen(false);
+  };
+
+  const handleDelete = async () => {
+    if (!accessToken) return;
+    await deleteFolder(proj.id, accessToken);
+    onDeleted();
+    setOpen(false);
+  };
+
+  if (isRenaming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} ref={menuRef}>
+        <input
+          type="text"
+          value={renameText}
+          onChange={(e) => setRenameText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.stopPropagation(); handleRename(); }
+            if (e.key === 'Escape') { setIsRenaming(false); setOpen(false); }
+          }}
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '80px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: '4px',
+            padding: '2px 5px',
+            fontSize: '11px',
+            color: 'var(--text-primary)',
+            outline: 'none',
+          }}
+        />
+        <button type="button" onClick={(e) => { e.stopPropagation(); handleRename(); }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
+          <Check size={11} />
+        </button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); setIsRenaming(false); setOpen(false); }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
+          <X size={11} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="session-options-btn"
+        style={{
+          background: 'transparent', border: 'none', color: 'var(--text-muted)',
+          cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center',
+        }}
+      >
+        <MoreHorizontal size={12} />
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: '100%', right: 0,
+          background: 'var(--bg-surface)', border: '1px solid var(--border-strong)',
+          borderRadius: 'var(--radius-md, 8px)', boxShadow: 'var(--shadow-lg)',
+          padding: '4px', zIndex: 200, display: 'flex', flexDirection: 'column',
+          gap: '2px', minWidth: '120px',
+        }}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setRenameText(proj.name); setIsRenaming(true); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            <Edit2 size={11} />
+            <span>{t.sidebar.rename}</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            <Trash2 size={11} />
+            <span>{language === 'id' ? 'Hapus folder' : 'Delete folder'}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Sidebar({
@@ -135,14 +268,16 @@ export function Sidebar({
     { id: 'pdf_3', name: 'Paper_Arsitektur_AI_OCR.pdf', action: 'AI OCR', time: 'Kemarin', categoryId: 'dc_research' },
   ]);
 
-  // Workspace store (persisted folders / collections / categories)
-  const projects = useWorkspaceStore((s) => s.projects);
-  const createProject = useWorkspaceStore((s) => s.createProject);
-  const renameProject = useWorkspaceStore((s) => s.renameProject);
-  const deleteProject = useWorkspaceStore((s) => s.deleteProject);
-  const addFileToProject = useWorkspaceStore((s) => s.addFileToProject);
-  const removeFileFromProject = useWorkspaceStore((s) => s.removeFileFromProject);
+  // ── Project store (DB-backed via Supabase) ──────────────────────────────────
+  const projects = useProjectStore((s) => s.folders);
+  const projectsLoading = useProjectStore((s) => s.isLoading);
+  const createProject = useProjectStore((s) => s.createFolder);
+  const renameProject = useProjectStore((s) => s.renameFolder);
+  const deleteProject = useProjectStore((s) => s.deleteFolder);
+  const assignSessionToProject = useProjectStore((s) => s.assignSession);
+  const removeSessionFromProject = useProjectStore((s) => s.removeSession);
 
+  // ── Workspace store (image/workflow/document collections — still localStorage) ──
   const imageCollections = useWorkspaceStore((s) => s.imageCollections);
   const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
   const setActiveImageCollection = useWorkspaceStore((s) => s.setActiveImageCollection);
@@ -172,7 +307,6 @@ export function Sidebar({
 
   const getDrawerFolder = () => {
     if (!drawerState) return null;
-    if (drawerState.type === 'project') return projects.find((p) => p.id === drawerState.id) ?? null;
     if (drawerState.type === 'imageCollection') return imageCollections.find((c) => c.id === drawerState.id) ?? null;
     if (drawerState.type === 'workflowCategory') return workflowCategories.find((c) => c.id === drawerState.id) ?? null;
     if (drawerState.type === 'documentCategory') return documentCategories.find((c) => c.id === drawerState.id) ?? null;
@@ -183,7 +317,6 @@ export function Sidebar({
 
   const handleDrawerFileAdded = (file: any) => {
     if (!drawerState) return;
-    if (drawerState.type === 'project') addFileToProject(drawerState.id, file);
     if (drawerState.type === 'imageCollection') addFileToImageCollection(drawerState.id, file);
     if (drawerState.type === 'workflowCategory') addFileToWorkflowCategory(drawerState.id, file);
     if (drawerState.type === 'documentCategory') addFileToDocumentCategory(drawerState.id, file);
@@ -191,7 +324,6 @@ export function Sidebar({
 
   const handleDrawerFileRemoved = (fileId: string) => {
     if (!drawerState) return;
-    if (drawerState.type === 'project') removeFileFromProject(drawerState.id, fileId);
     if (drawerState.type === 'imageCollection') removeFileFromImageCollection(drawerState.id, fileId);
     if (drawerState.type === 'workflowCategory') removeFileFromWorkflowCategory(drawerState.id, fileId);
     if (drawerState.type === 'documentCategory') removeFileFromDocumentCategory(drawerState.id, fileId);
@@ -226,10 +358,6 @@ export function Sidebar({
   const createSession = useChatStore((s) => s.createSession);
   const updateSession = useChatStore((s) => s.updateSession);
   const moveSessionToProject = useChatStore((s) => s.moveSessionToProject);
-
-  // Workspace store — need assignSessionToProject / removeSessionFromProject too
-  const assignSessionToProject = useWorkspaceStore((s) => s.assignSessionToProject);
-  const removeSessionFromProject = useWorkspaceStore((s) => s.removeSessionFromProject);
 
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
@@ -291,25 +419,29 @@ export function Sidebar({
     setMenuSessionId(null);
   };
 
-  const handleAddProject = () => {
+  const handleAddProject = async () => {
     const name = newProjectName.trim();
-    if (name && !projects.some((p) => p.name === name)) {
-      createProject(name);
-      setNewProjectName('');
-      setIsAddingProject(false);
-    }
+    if (!name || projects.some((p) => p.name === name)) return;
+    const token = useAuthStore.getState().session?.access_token;
+    if (!token) return;
+    await createProject(name, token);
+    setNewProjectName('');
+    setIsAddingProject(false);
   };
 
-  const handleMoveToProject = (session: ChatSession, targetProjectId: string | null) => {
-    // Remove from old project if any
+  const handleMoveToProject = async (session: ChatSession, targetProjectId: string | null) => {
+    const token = useAuthStore.getState().session?.access_token;
+    if (!token) return;
+
+    // Remove from old project
     if (session.projectId) {
-      removeSessionFromProject(session.projectId, session.id);
+      await removeSessionFromProject(session.projectId, session.id, token);
     }
     // Assign to new project
     if (targetProjectId) {
-      assignSessionToProject(targetProjectId, session.id);
+      await assignSessionToProject(targetProjectId, session.id, token);
     }
-    // Update the session's own projectId field
+    // Update session's own projectId field
     moveSessionToProject(session.id, targetProjectId);
     setMenuSessionId(null);
     setFolderSubmenuSessionId(null);
@@ -641,10 +773,11 @@ export function Sidebar({
 
             <button
               type="button"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                if (session.projectId) {
-                  removeSessionFromProject(session.projectId, session.id);
+                const token = useAuthStore.getState().session?.access_token;
+                if (session.projectId && token) {
+                  await removeSessionFromProject(session.projectId, session.id, token);
                 }
                 deleteSession(session.id);
                 setMenuSessionId(null);
@@ -1809,6 +1942,13 @@ export function Sidebar({
 
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
+                    {/* Loading indicator */}
+                    {projectsLoading && projects.length === 0 && (
+                      <div style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {language === 'id' ? 'Memuat folder...' : 'Loading folders...'}
+                      </div>
+                    )}
+
                     {projects.map((proj) => {
                       const isFolderOpen = expandedFolderIds.has(proj.id);
                       const folderSessions = sessions.filter(
@@ -1821,14 +1961,6 @@ export function Sidebar({
                           {/* Folder row */}
                           <div
                             className="clickable-pill"
-                            onClick={() => {
-                              setExpandedFolderIds((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(proj.id)) next.delete(proj.id);
-                                else next.add(proj.id);
-                                return next;
-                              });
-                            }}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -1840,34 +1972,65 @@ export function Sidebar({
                               fontSize: '12px',
                               fontWeight: isFolderOpen ? 600 : 400,
                               cursor: 'pointer',
+                              position: 'relative',
                             }}
                           >
-                            {isFolderOpen
-                              ? <FolderOpen size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
-                              : <Folder size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                            }
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
-                              {proj.name}
-                            </span>
-                            {folderSessions.length > 0 && (
-                              <span style={{
-                                fontSize: '10px',
-                                background: 'var(--brand-primary)',
-                                color: '#fff',
-                                borderRadius: '999px',
-                                padding: '0 5px',
-                                lineHeight: '16px',
-                                flexShrink: 0,
-                              }}>
-                                {folderSessions.length}
-                              </span>
-                            )}
-                            <span style={{ marginLeft: 'auto', flexShrink: 0, color: 'var(--text-muted)' }}>
+                            {/* Left: toggle expand */}
+                            <div
+                              style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                              onClick={() => {
+                                setExpandedFolderIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(proj.id)) next.delete(proj.id);
+                                  else next.add(proj.id);
+                                  return next;
+                                });
+                              }}
+                            >
                               {isFolderOpen
-                                ? <ChevronDown size={10} />
-                                : <ChevronRight size={10} />
+                                ? <FolderOpen size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                                : <Folder size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                               }
-                            </span>
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                                {proj.name}
+                              </span>
+                              {folderSessions.length > 0 && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  background: 'var(--brand-primary)',
+                                  color: '#fff',
+                                  borderRadius: '999px',
+                                  padding: '0 5px',
+                                  lineHeight: '16px',
+                                  flexShrink: 0,
+                                }}>
+                                  {folderSessions.length}
+                                </span>
+                              )}
+                              <span style={{ flexShrink: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                                {isFolderOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                              </span>
+                            </div>
+
+                            {/* Folder three-dot menu */}
+                            <FolderMenu
+                              proj={proj}
+                              language={language}
+                              t={t}
+                              accessToken={useAuthStore.getState().session?.access_token ?? null}
+                              renameFolder={renameProject}
+                              deleteFolder={deleteProject}
+                              onDeleted={() => {
+                                sessions
+                                  .filter((s) => s.projectId === proj.id)
+                                  .forEach((s) => moveSessionToProject(s.id, null));
+                                setExpandedFolderIds((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(proj.id);
+                                  return next;
+                                });
+                              }}
+                            />
                           </div>
 
                           {/* Inline chat list inside folder */}

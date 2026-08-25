@@ -42,6 +42,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
           useStorageStore.getState().syncFromSupabase(session.access_token);
         });
+        import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+          useProjectStore.getState().fetchFolders(session.access_token);
+        });
       }
 
       // Subscribe to live auth state changes
@@ -56,6 +59,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (_event === 'SIGNED_IN' && newSession?.access_token) {
           import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
             useStorageStore.getState().syncFromSupabase(newSession.access_token);
+          });
+          import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+            useProjectStore.getState().fetchFolders(newSession.access_token);
+          });
+        }
+
+        // Clear project folders on sign-out
+        if (_event === 'SIGNED_OUT') {
+          import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+            useProjectStore.getState().reset();
           });
         }
       });
