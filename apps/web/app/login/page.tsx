@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import {
   Lock,
   Mail,
@@ -22,7 +22,6 @@ import { useSettingsStore } from '../../src/features/settings/store/useSettingsS
 import { getTranslation } from '@anticeil/core';
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   
   const [email, setEmail] = useState('');
@@ -89,11 +88,12 @@ function LoginForm() {
 
   // If already logged in, redirect to /chat or the originally requested page
   useEffect(() => {
-    if (user) {
+    if (user && !isLoading) {
       const next = searchParams?.get('next');
-      router.push(next && next.startsWith('/') ? next : '/chat');
+      const dest = next && next.startsWith('/') ? next : '/chat';
+      window.location.href = dest;
     }
-  }, [user, router, searchParams]);
+  }, [user, isLoading, searchParams]);
 
   const handleResendEmail = async () => {
     if (!email.trim() || resendCooldown > 0 || isResending) return;
@@ -134,7 +134,10 @@ function LoginForm() {
     const { error } = await signInWithPassword(email.trim(), password);
     if (!error) {
       const next = searchParams?.get('next');
-      router.push(next && next.startsWith('/') ? next : '/chat');
+      const dest = next && next.startsWith('/') ? next : '/chat';
+      // Use hard navigation to ensure the server-side middleware
+      // picks up the new auth cookie set by @supabase/ssr
+      window.location.href = dest;
     }
   };
 
