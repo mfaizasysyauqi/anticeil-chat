@@ -132,9 +132,19 @@ export default {
           { headers: corsHeaders }
         );
       }
-      try {
         const userId = url.searchParams.get('userId') || '';
-        const list = await env.STORAGE_BUCKET.list({ prefix: userId ? `${userId}/` : undefined });
+        let list = await env.STORAGE_BUCKET.list({ prefix: userId ? `${userId}/` : undefined });
+        if (userId && list.objects.length === 0) {
+          const allList = await env.STORAGE_BUCKET.list();
+          const userObjects = allList.objects.filter(
+            (o) => o.key.startsWith(`${userId}/`) || o.key.startsWith('anonymous/') || !o.key.includes('/')
+          );
+          if (userObjects.length > 0) {
+            list = { ...allList, objects: userObjects };
+          } else {
+            list = allList;
+          }
+        }
         let totalBytes = 0;
         const breakdown = { docs: 0, images: 0, audio: 0, other: 0 };
         for (const obj of list.objects) {

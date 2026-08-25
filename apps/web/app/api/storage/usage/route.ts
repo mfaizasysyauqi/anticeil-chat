@@ -142,47 +142,74 @@ export async function GET(req: NextRequest) {
     const r2Breakdown = { docs: 0, images: 0, audio: 0, other: 0 };
     let isR2Available = true;
 
+    // 2a. Try Cloudflare Worker R2 bridge first (bypasses direct S3 TLS issues on local networks)
     try {
-      if (process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
-        let continuationToken: string | undefined;
-        let retries = 1;
-
-        while (retries > 0) {
-          try {
-            do {
-              const res = await r2.send(
-                new ListObjectsV2Command({
-                  Bucket: R2_BUCKET,
-                  Prefix: `${userId}/`,
-                  ContinuationToken: continuationToken,
-                  MaxKeys: 1000,
-                })
-              );
-
-              for (const obj of res.Contents ?? []) {
-                const size = obj.Size ?? 0;
-                r2Bytes += size;
-                r2FileCount++;
-                const category = categorize(obj.Key ?? '');
-                r2Breakdown[category] += size;
-              }
-
-              continuationToken = res.NextContinuationToken;
-            } while (continuationToken);
-
-            break; // Success
-          } catch (r2InnerErr: any) {
-            retries--;
-            if (retries === 0) {
-              // Graceful: if local ISP blocks direct S3 TLS handshake, don't spam terminal
-              isR2Available = true;
-              break;
-            }
-          }
+      const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL || 'http://127.0.0.1:8787';
+      const workerRes = await fetch(`${workerUrl}/api/storage/usage?userId=${encodeURIComponent(userId)}`, {
+        headers: { 'User-Agent': 'Anticeil-App/1.0' },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (workerRes.ok) {
+        const workerData = await workerRes.json();
+        if (typeof workerData.totalBytes === 'number' && workerData.totalBytes > 0) {
+          r2Bytes = workerData.totalBytes;
+          r2FileCount = workerData.fileCount || 0;
+          r2Breakdown.docs = workerData.breakdown?.docs || 0;
+          r2Breakdown.images = workerData.breakdown?.images || 0;
+          r2Breakdown.audio = workerData.breakdown?.audio || 0;
+          r2Breakdown.other = workerData.breakdown?.other || 0;
         }
       }
     } catch {
-      isR2Available = true;
+      // Worker fetch skipped/timed out
+    }
+
+    // 2b. Fallback to direct S3 SDK if worker bridge returned 0
+    if (r2Bytes === 0 && process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
+      try {
+        const res = await r2.send(
+          new ListObjectsV2Command({
+            Bucket: R2_BUCKET,
+            Prefix: `${userId}/`,
+            MaxKeys: 1000,
+          })
+        );
+        for (const obj of res.Contents ?? []) {
+          const size = obj.Size ?? 0;
+          r2Bytes += size;
+          r2FileCount++;
+          const category = categorize(obj.Key ?? '');
+          r2Breakdown[category] += size;
+        }
+      } catch {
+        // Direct S3 skipped
+      }
+    }
+
+    // 2c. Fallback to metadata sizes from Supabase (imagine_generations.metadata.size & pdf_documents.file_size)
+    if (r2Bytes === 0) {
+      if (imagineRes.status === 'fulfilled' && Array.isArray(imagineRes.value.data)) {
+        for (const img of imagineRes.value.data) {
+          const meta: any = typeof img.metadata === 'object' ? img.metadata : {};
+          const size = Number(meta?.size || 0);
+          if (size > 0) {
+            r2Bytes += size;
+            r2FileCount++;
+            if (meta?.type === 'audio') r2Breakdown.audio += size;
+            else r2Breakdown.images += size;
+          }
+        }
+      }
+      if (pdfRes.status === 'fulfilled' && Array.isArray(pdfRes.value.data)) {
+        for (const doc of pdfRes.value.data) {
+          const size = Number(doc.file_size || 0);
+          if (size > 0) {
+            r2Bytes += size;
+            r2FileCount++;
+            r2Breakdown.docs += size;
+          }
+        }
+      }
     }
 
     // ── 3. Combined Result ──────────────────────────────────────────────────
