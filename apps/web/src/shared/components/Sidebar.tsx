@@ -437,24 +437,33 @@ export function Sidebar({
     const token = useAuthStore.getState().session?.access_token;
     if (!token) return;
 
-    // Remove from old project
-    if (session.projectId) {
-      await removeSessionFromProject(session.projectId, session.id, token);
-    }
-    // Assign to new project
-    if (targetProjectId) {
-      await assignSessionToProject(targetProjectId, session.id, token);
-    }
-    // Update session's own projectId field
+    const oldProjectId = session.projectId;
+    
+    // Optimistic update - update UI immediately
     moveSessionToProject(session.id, targetProjectId);
     
-    // Refresh projects to get updated session lists
-    await fetchProjects(token);
-    
-    // Close menus
+    // Close menus immediately for snappy UX
     setMenuSessionId(null);
     setFolderSubmenuSessionId(null);
     setSubmenuPosition(null);
+
+    try {
+      // Remove from old project
+      if (oldProjectId) {
+        await removeSessionFromProject(oldProjectId, session.id, token);
+      }
+      // Assign to new project
+      if (targetProjectId) {
+        await assignSessionToProject(targetProjectId, session.id, token);
+      }
+      
+      // Refresh projects in background (no await - don't block UI)
+      fetchProjects(token);
+    } catch (error) {
+      console.error('Failed to move session:', error);
+      // Revert on error
+      moveSessionToProject(session.id, oldProjectId ?? null);
+    }
   };
 
   // Filter sessions by search query.

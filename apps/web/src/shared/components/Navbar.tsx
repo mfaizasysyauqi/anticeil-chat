@@ -55,8 +55,9 @@ export function Navbar({
   const createSession = useChatStore((s) => s.createSession);
 
   const projects = useProjectStore((s) => s.folders);
-  const assignSession = useProjectStore((s) => s.assignSession);
-  const removeSession = useProjectStore((s) => s.removeSession);
+  const assignSessionToProject = useProjectStore((s) => s.assignSession);
+  const removeSessionFromProject = useProjectStore((s) => s.removeSession);
+  const fetchProjects = useProjectStore((s) => s.fetchFolders);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const t = getTranslation(language);
@@ -101,22 +102,23 @@ export function Navbar({
       
       const accessToken = session.access_token;
       
-      // Check if already assigned to this project
-      const currentProject = projects.find(p => p.sessionIds.includes(activeSession.id));
+      // Optimistic update first
+      moveSessionToProject(activeSession.id, projectId);
       
-      if (currentProject?.id === projectId) {
-        // Remove from project if clicking the same one
-        await removeSession(projectId, activeSession.id, accessToken);
-      } else {
-        // Remove from old project if any
-        if (currentProject) {
-          await removeSession(currentProject.id, activeSession.id, accessToken);
-        }
-        // Assign to new project
-        await assignSession(projectId, activeSession.id, accessToken);
+      // Remove from old project if any
+      if (activeSession.projectId) {
+        await removeSessionFromProject(activeSession.projectId, activeSession.id, accessToken);
       }
+      
+      // Assign to new project
+      await assignSessionToProject(projectId, activeSession.id, accessToken);
+      
+      // Refresh in background (no await)
+      fetchProjects(accessToken);
     } catch (error) {
       console.error('Failed to assign project:', error);
+      // Revert on error
+      moveSessionToProject(activeSession.id, activeSession.projectId ?? null);
     }
     
     setIsProjectSubmenuOpen(false);
@@ -124,7 +126,7 @@ export function Navbar({
   };
 
   const handleRemoveFromProject = async () => {
-    if (!activeSession) return;
+    if (!activeSession || !activeSession.projectId) return;
     
     try {
       const { createBrowserClient } = await import('@supabase/ssr');
@@ -136,13 +138,20 @@ export function Navbar({
       if (!session) return;
       
       const accessToken = session.access_token;
-      const currentProject = projects.find(p => p.sessionIds.includes(activeSession.id));
+      const oldProjectId = activeSession.projectId;
       
-      if (currentProject) {
-        await removeSession(currentProject.id, activeSession.id, accessToken);
-      }
+      // Optimistic update
+      moveSessionToProject(activeSession.id, null);
+      
+      // API call
+      await removeSessionFromProject(oldProjectId, activeSession.id, accessToken);
+      
+      // Refresh in background
+      fetchProjects(accessToken);
     } catch (error) {
       console.error('Failed to remove from project:', error);
+      // Revert on error
+      moveSessionToProject(activeSession.id, activeSession.projectId);
     }
     
     setIsMenuOpen(false);
