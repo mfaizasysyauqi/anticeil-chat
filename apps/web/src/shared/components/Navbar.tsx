@@ -53,6 +53,7 @@ export function Navbar({
   const updateSession = useChatStore((s) => s.updateSession);
   const deleteSession = useChatStore((s) => s.deleteSession);
   const createSession = useChatStore((s) => s.createSession);
+  const moveSessionToProject = useChatStore((s) => s.moveSessionToProject);
 
   const projects = useProjectStore((s) => s.folders);
   const assignSessionToProject = useProjectStore((s) => s.assignSession);
