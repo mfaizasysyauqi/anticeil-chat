@@ -1260,34 +1260,38 @@ function StorageMeterPanel({ language }: { language: string }) {
   const fileCount = useStorageStore((s) => s.fileCount);
   const lastSyncedAt = useStorageStore((s) => s.lastSyncedAt);
   const syncFromSupabase = useStorageStore((s) => s.syncFromSupabase);
+  const isSyncing = useStorageStore((s) => s.isSyncing);
   const session = useAuthStore((s) => s.session);
-  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Auto-sync on mount + poll every 30s while panel is visible
+  useEffect(() => {
+    if (!session?.access_token) return;
+    // Immediate sync on open (force)
+    syncFromSupabase(session.access_token, true);
+    const interval = setInterval(() => {
+      syncFromSupabase(session.access_token, true);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [session?.access_token, syncFromSupabase]);
 
   const percentage = Math.min(100, Math.round((usedBytes / limitBytes) * 100));
   const isNearLimit = percentage >= 85;
   const barColor = percentage >= 98 ? '#EF4444' : isNearLimit ? '#F59E0B' : 'var(--brand-primary)';
 
   const breakdownItems = [
-    { label: language === 'id' ? 'Dokumen & PDF' : 'Docs & PDFs', bytes: breakdown.docs, color: '#0073EA' },
-    { label: language === 'id' ? 'Gambar & Video' : 'Images & Video', bytes: breakdown.images, color: '#8B5CF6' },
+    { label: language === 'id' ? 'Chat & Percakapan' : 'Chat & Conversations', bytes: breakdown.chat ?? 0, color: '#0073EA' },
+    { label: language === 'id' ? 'Otomasi & Alur Kerja' : 'Automations & Workflows', bytes: breakdown.automations ?? 0, color: '#F59E0B' },
+    { label: language === 'id' ? 'Dokumen & PDF' : 'Docs & PDFs', bytes: breakdown.docs, color: '#8B5CF6' },
+    { label: language === 'id' ? 'Gambar & Studio' : 'Images & Studio', bytes: breakdown.images, color: '#EC4899' },
     { label: language === 'id' ? 'Audio' : 'Audio', bytes: breakdown.audio, color: '#10B981' },
-    { label: language === 'id' ? 'Basis Data & Sesi' : 'Database & Sessions', bytes: breakdown.database, color: '#3ECF8E' },
+    { label: language === 'id' ? 'Basis Data' : 'Database', bytes: breakdown.database, color: '#3ECF8E' },
     { label: language === 'id' ? 'Lainnya' : 'Other', bytes: breakdown.other, color: '#6B7280' },
   ].filter((item) => item.bytes > 0);
 
   const syncedLabel = lastSyncedAt
-    ? (language === 'id' ? 'Terakhir disinkron: ' : 'Last synced: ') +
-      new Date(lastSyncedAt).toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })
-    : language === 'id' ? 'Belum pernah disinkron' : 'Never synced';
-
-  const handleSync = async () => {
-    if (!session?.access_token) return;
-    setIsSyncing(true);
-    // Force a fresh sync by calling with a bypass (reset lastSyncedAt first)
-    useStorageStore.setState({ lastSyncedAt: null });
-    await syncFromSupabase(session.access_token);
-    setIsSyncing(false);
-  };
+    ? (language === 'id' ? 'Diperbarui: ' : 'Updated: ') +
+      new Date(lastSyncedAt).toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : language === 'id' ? 'Memuat...' : 'Loading...';
 
   return (
     <div
@@ -1312,9 +1316,23 @@ function StorageMeterPanel({ language }: { language: string }) {
               : `${fileCount} items/files stored — Free Plan 1 GB`}
           </p>
         </div>
-        <span style={{ fontSize: '13px', fontWeight: 700, color: barColor, whiteSpace: 'nowrap' }}>
-          {percentage}%
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Live indicator */}
+          <span
+            title={isSyncing ? (language === 'id' ? 'Memperbarui...' : 'Refreshing...') : (language === 'id' ? 'Data langsung' : 'Live data')}
+            style={{
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              backgroundColor: isSyncing ? '#F59E0B' : '#3ECF8E',
+              display: 'inline-block',
+              animation: isSyncing ? 'pulse 1s ease-in-out infinite' : 'none',
+            }}
+          />
+          <span style={{ fontSize: '13px', fontWeight: 700, color: barColor, whiteSpace: 'nowrap' }}>
+            {percentage}%
+          </span>
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -1334,7 +1352,7 @@ function StorageMeterPanel({ language }: { language: string }) {
               height: '100%',
               background: barColor,
               borderRadius: '999px',
-              transition: 'width 0.3s ease',
+              transition: 'width 0.5s ease',
             }}
           />
         </div>
@@ -1396,13 +1414,36 @@ function StorageMeterPanel({ language }: { language: string }) {
             {language === 'id' ? 'Tabel & Dokumen Teks' : 'Tables & Document Records'}
           </span>
         </div>
+
+        <div style={{
+          padding: '10px 12px',
+          borderRadius: '8px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '3px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              {language === 'id' ? 'Data Lokal' : 'Local Data'}
+            </span>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#0073EA' }} />
+          </div>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            {formatStorageBytes(sources?.localBytes ?? 0)}
+          </span>
+          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+            {language === 'id' ? 'Chat, Otomasi & Pengaturan' : 'Chat, Automations & Settings'}
+          </span>
+        </div>
       </div>
 
       {/* Category Breakdown */}
       {breakdownItems.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {language === 'id' ? 'Rincian Kategori' : 'Category Breakdown'}
+            {language === 'id' ? 'Rincian Per Fitur' : 'Per-Feature Breakdown'}
           </span>
           {breakdownItems.map((item) => (
             <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1416,41 +1457,23 @@ function StorageMeterPanel({ language }: { language: string }) {
         </div>
       )}
 
-      {/* Sync Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+      {/* Live status footer — no manual sync button */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span
+          style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: isSyncing ? '#F59E0B' : '#3ECF8E',
+            flexShrink: 0,
+            animation: isSyncing ? 'pulse 1s ease-in-out infinite' : 'none',
+          }}
+        />
         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-          {syncedLabel}
+          {isSyncing
+            ? (language === 'id' ? 'Memperbarui penggunaan...' : 'Updating usage...')
+            : syncedLabel}
         </span>
-        {session?.access_token && (
-          <button
-            type="button"
-            onClick={handleSync}
-            disabled={isSyncing}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '5px 12px',
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-strong)',
-              borderRadius: 'var(--radius-sm, 6px)',
-              color: 'var(--text-secondary)',
-              fontSize: '11.5px',
-              fontWeight: 600,
-              cursor: isSyncing ? 'not-allowed' : 'pointer',
-              opacity: isSyncing ? 0.7 : 1,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <span style={{ display: 'inline-block', animation: isSyncing ? 'spin 1s linear infinite' : 'none' }}>
-              🔄
-            </span>
-            <span>{isSyncing
-              ? (language === 'id' ? 'Menyinkron...' : 'Syncing...')
-              : (language === 'id' ? 'Sinkron Sekarang' : 'Sync Now')
-            }</span>
-          </button>
-        )}
       </div>
     </div>
   );

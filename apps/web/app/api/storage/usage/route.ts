@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
     let dbFilesCount = 0;
     let dbDocBytes = 0;
     let dbImageBytes = 0;
+    let dbAutomationBytes = 0;
     let dbOtherBytes = 0;
 
     const [
@@ -114,7 +115,7 @@ export async function GET(req: NextRequest) {
     if (workflowsRes.status === 'fulfilled' && Array.isArray(workflowsRes.value.data)) {
       for (const w of workflowsRes.value.data) {
         const rowBytes = calculateStringBytes(w.name) + calculateJsonBytes(w.nodes) + calculateJsonBytes(w.edges);
-        dbOtherBytes += rowBytes;
+        dbAutomationBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -122,7 +123,7 @@ export async function GET(req: NextRequest) {
     if (runsRes.status === 'fulfilled' && Array.isArray(runsRes.value.data)) {
       for (const r of runsRes.value.data) {
         const rowBytes = calculateJsonBytes(r.logs) + calculateJsonBytes(r.result);
-        dbOtherBytes += rowBytes;
+        dbAutomationBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -189,6 +190,7 @@ export async function GET(req: NextRequest) {
       docs: r2Breakdown.docs + dbDocBytes,
       images: r2Breakdown.images + dbImageBytes,
       audio: r2Breakdown.audio,
+      automations: dbAutomationBytes,
       database: dbOtherBytes,
       other: r2Breakdown.other,
     };
