@@ -31,6 +31,8 @@ import {
   Presentation,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
+import { usePdfStore } from '../store/usePdfStore';
 import { getTranslation } from '@anticeil/core';
 import { useRouter } from 'next/navigation';
 
@@ -418,6 +420,40 @@ export function PdfToolsView() {
     }
   };
 
+  const savePdfResultToR2 = async (blob: Blob, fileName: string, toolType: string) => {
+    try {
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const token = useAuthStore.getState().session?.access_token || '';
+      const res = await fetch('/api/pdf/save-doc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({
+          name: fileName,
+          toolType,
+          base64Data: base64,
+          size: blob.size,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.document) {
+          usePdfStore.getState().addDocument(data.document);
+        }
+      }
+    } catch (err) {
+      console.warn('[PDF R2 Save Warning]:', err);
+    }
+  };
+
   const handleExecute = async () => {
     if (files.length === 0) return;
     setIsProcessing(true);
@@ -498,10 +534,12 @@ export function PdfToolsView() {
 
         const bytes = await pdfDoc.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `signed-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`signed-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Tanda tangan berhasil disematkan ke PDF!' : 'Signature embedded successfully!');
+        savePdfResultToR2(blob, finalName, 'sign');
       }
 
       // ── 2. WORD TO PDF (.docx, .doc) ──────────────────────────────────────
@@ -598,10 +636,12 @@ export function PdfToolsView() {
 
         const bytes = await newPdf.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `${item.name.replace(/\.[^/.]+$/, '')}.pdf`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`${item.name.replace(/\.[^/.]+$/, '')}.pdf`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Dokumen Word berhasil dikonversi ke PDF!' : 'Word document converted to PDF!');
+        savePdfResultToR2(blob, finalName, 'wordToPdf');
       }
 
       // ── 3. EXCEL / SPREADSHEET TO PDF (.xlsx, .csv) ───────────────────────
@@ -699,10 +739,12 @@ export function PdfToolsView() {
 
         const bytes = await newPdf.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `${item.name.replace(/\.[^/.]+$/, '')}.pdf`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`${item.name.replace(/\.[^/.]+$/, '')}.pdf`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Spreadsheet Excel berhasil dikonversi ke PDF!' : 'Excel spreadsheet converted to PDF!');
+        savePdfResultToR2(blob, finalName, 'excelToPdf');
       }
 
       // ── 4. POWERPOINT TO PDF (.pptx, .ppt) ────────────────────────────────
@@ -787,10 +829,12 @@ export function PdfToolsView() {
 
         const bytes = await newPdf.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `${item.name.replace(/\.[^/.]+$/, '')}.pdf`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`${item.name.replace(/\.[^/.]+$/, '')}.pdf`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Presentasi PowerPoint berhasil dikonversi ke PDF!' : 'PowerPoint converted to PDF!');
+        savePdfResultToR2(blob, finalName, 'pptToPdf');
       }
 
       // ── 5. IMAGE TO PDF ───────────────────────────────────────────────────
@@ -850,10 +894,12 @@ export function PdfToolsView() {
 
         const bytes = await newPdf.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `converted-images-${Date.now()}.pdf`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`converted-images-${Date.now()}.pdf`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Gambar berhasil dikonversi ke PDF!' : 'Images converted to PDF successfully!');
+        savePdfResultToR2(blob, finalName, 'imgToPdf');
       }
 
       // ── 6. ORGANIZE & DELETE PAGES ────────────────────────────────────────
@@ -905,10 +951,12 @@ export function PdfToolsView() {
 
         const bytes = await newDoc.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `organized-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`organized-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? `Berhasil menata halaman (${keepIndices.length}/${total} halaman)!` : `Organized pages (${keepIndices.length}/${total})!`);
+        savePdfResultToR2(blob, finalName, 'organize');
       }
 
       // ── 7. PAGE NUMBERS ───────────────────────────────────────────────────
@@ -961,10 +1009,12 @@ export function PdfToolsView() {
 
         const bytes = await pdfDoc.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `numbered-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`numbered-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Nomor halaman berhasil ditambahkan!' : 'Page numbers added successfully!');
+        savePdfResultToR2(blob, finalName, 'pageNumbers');
       }
 
       // ── 8. AI / RAG PREPARATION ───────────────────────────────────────────
@@ -1022,10 +1072,12 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
 
         const bytes = await pdfDoc.save({ useObjectStreams: true });
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `sanitized-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`sanitized-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Metadata privat berhasil dibersihkan sepenuhnya!' : 'Private metadata sanitized successfully!');
+        savePdfResultToR2(blob, finalName, 'sanitize');
       }
 
       // ── 10. INVERT / DARK MODE ────────────────────────────────────────────
@@ -1056,10 +1108,12 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
 
         const bytes = await pdfDoc.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `darkmode-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`darkmode-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(language === 'id' ? 'Mode gelap berhasil diterapkan ke PDF!' : 'Dark mode applied to PDF!');
+        savePdfResultToR2(blob, finalName, 'invertColors');
       }
 
       // ── 11. EXTRACT IMAGES ────────────────────────────────────────────────
@@ -1098,10 +1152,12 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
         }
         const mergedPdfBytes = await mergedPdf.save();
         const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+        const finalName = `merged-document-${Date.now()}.pdf`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`merged-document-${Date.now()}.pdf`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(tp.done);
+        savePdfResultToR2(blob, finalName, 'merge');
       }
 
       // ── 13. SPLIT ─────────────────────────────────────────────────────────
@@ -1130,10 +1186,12 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
         copiedPages.forEach((p: any) => splitDoc.addPage(p));
         const bytes = await splitDoc.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `split-pages-${start}-${end}.pdf`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`split-pages-${start}-${end}.pdf`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(tp.done);
+        savePdfResultToR2(blob, finalName, 'split');
       }
 
       // ── 14. WATERMARK ─────────────────────────────────────────────────────
@@ -1156,10 +1214,12 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
         }
         const bytes = await pdfDoc.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `watermarked-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`watermarked-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(tp.done);
+        savePdfResultToR2(blob, finalName, 'watermark');
       }
 
       // ── 15. ROTATE ────────────────────────────────────────────────────────
@@ -1176,10 +1236,12 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
         }
         const bytes = await pdfDoc.save();
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `rotated-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`rotated-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(tp.done);
+        savePdfResultToR2(blob, finalName, 'rotate');
       }
 
       // ── 16. COMPRESS ──────────────────────────────────────────────────────
@@ -1189,10 +1251,12 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
         const pdfDoc = await PDFDocument.load(item.arrayBuffer, { ignoreEncryption: true });
         const bytes = await pdfDoc.save({ useObjectStreams: true });
         const blob = new Blob([bytes], { type: 'application/pdf' });
+        const finalName = `compressed-${item.name}`;
         setResultUrl(URL.createObjectURL(blob));
-        setResultFileName(`compressed-${item.name}`);
+        setResultFileName(finalName);
         setIsSuccess(true);
         setStatusMessage(tp.done);
+        savePdfResultToR2(blob, finalName, 'compress');
       }
     } catch (err: any) {
       console.error(err);
@@ -2037,9 +2101,15 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={18} color="var(--accent-success)" />
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {statusMessage} ({resultFileName})
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {statusMessage} ({resultFileName})
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span>☁️</span>
+                    <span>{language === 'id' ? 'Tersimpan otomatis di Cloudflare R2 & Koleksi PDF' : 'Automatically saved to Cloudflare R2 & PDF Drawer'}</span>
+                  </span>
+                </div>
               </div>
               <a
                 href={resultUrl}

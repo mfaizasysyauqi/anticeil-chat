@@ -47,6 +47,7 @@ import {
   FolderMinus,
   Film,
   Music,
+  Download,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -57,6 +58,7 @@ import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useImagineStore } from '../../features/imagine/store/useImagineStore';
+import { usePdfStore, PdfDocumentItem, PdfFolderItem } from '../../features/pdf/store/usePdfStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { createClient } from '../utils/supabase/client';
 
@@ -677,6 +679,419 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
   );
 }
 
+// ─── PdfFolderMenu ────────────────────────────────────────────────────────────
+interface PdfFolderMenuProps {
+  folder: PdfFolderItem;
+  language: string;
+  renameFolder: (id: string, name: string) => void;
+  deleteFolder: (id: string) => void;
+  onOpenUpload: () => void;
+}
+
+function PdfFolderMenu({ folder, language, renameFolder, deleteFolder, onOpenUpload }: PdfFolderMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const [isRenaming, setIsRenaming] = React.useState(false);
+  const [renameText, setRenameText] = React.useState(folder.name);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
+        setOpen(false);
+        setIsRenaming(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const handleRename = () => {
+    const name = renameText.trim();
+    if (!name) return;
+    renameFolder(folder.id, name);
+    setIsRenaming(false);
+    setOpen(false);
+  };
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const menuWidth = 140;
+      const menuHeight = 110;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      setMenuPosition({ top, left });
+      setOpen(true);
+    }
+  };
+
+  if (isRenaming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+        <input
+          type="text"
+          value={renameText}
+          onChange={(e) => setRenameText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.stopPropagation(); handleRename(); }
+            if (e.key === 'Escape') { setIsRenaming(false); setOpen(false); }
+          }}
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '80px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: '4px',
+            padding: '2px 5px',
+            fontSize: '11px',
+            color: 'var(--text-primary)',
+            outline: 'none',
+          }}
+        />
+        <button type="button" onClick={(e) => { e.stopPropagation(); handleRename(); }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
+          <Check size={11} />
+        </button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); setIsRenaming(false); setOpen(false); }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
+          <X size={11} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="session-options-btn"
+        style={{
+          background: 'transparent', border: 'none', color: 'var(--text-muted)',
+          cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center',
+        }}
+      >
+        <MoreHorizontal size={12} />
+      </button>
+
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={portalRef}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            background: 'var(--bg-surface)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
+            padding: '4px',
+            zIndex: 999999999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '140px',
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setRenameText(folder.name); setIsRenaming(true); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Edit2 size={11} />
+            <span>{language === 'id' ? 'Ubah nama' : 'Rename'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenUpload(); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Upload size={11} />
+            <span>{language === 'id' ? 'Olah / Unggah PDF' : 'Process PDF'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Trash2 size={11} />
+            <span>{language === 'id' ? 'Hapus folder' : 'Delete folder'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// ─── PdfItemMenu ──────────────────────────────────────────────────────────────
+interface PdfItemMenuProps {
+  item: PdfDocumentItem;
+  language: string;
+  folders: PdfFolderItem[];
+  togglePin: (id: string) => void;
+  moveToFolder: (id: string, folderId: string | null) => void;
+  removeItem: (id: string) => void;
+}
+
+function PdfItemMenu({ item, language, folders, togglePin, moveToFolder, removeItem }: PdfItemMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [folderSubmenuOpen, setFolderSubmenuOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
+        setOpen(false);
+        setFolderSubmenuOpen(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+      setFolderSubmenuOpen(false);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const menuWidth = 150;
+      const menuHeight = 130;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      setMenuPosition({ top, left });
+      setOpen(true);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="session-options-btn"
+        style={{
+          background: 'transparent', border: 'none', color: 'var(--text-muted)',
+          cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center',
+        }}
+      >
+        <MoreHorizontal size={12} />
+      </button>
+
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={portalRef}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            background: 'var(--bg-surface)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
+            padding: '4px',
+            zIndex: 999999999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '150px',
+          }}
+        >
+          {/* Pin / Unpin */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); togglePin(item.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: item.isPinned ? '#EF4444' : 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Pin size={11} fill={item.isPinned ? '#EF4444' : 'none'} color="#EF4444" />
+            <span>{item.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan' : 'Pin')}</span>
+          </button>
+
+          {/* Move to folder */}
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setFolderSubmenuOpen(!folderSubmenuOpen); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                padding: '5px 8px', borderRadius: '4px', border: 'none', background: 'transparent',
+                color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FolderInput size={11} />
+                <span>{language === 'id' ? 'Pindah ke folder' : 'Move to folder'}</span>
+              </div>
+              <ChevronRight size={10} color="var(--text-muted)" />
+            </button>
+
+            {folderSubmenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: '100%',
+                  marginRight: '4px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  boxShadow: 'var(--shadow-xl)',
+                  padding: '4px',
+                  minWidth: '140px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  zIndex: 1000000000,
+                }}
+              >
+                {item.categoryId && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); moveToFolder(item.id, null); setOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                      borderRadius: '4px', border: 'none', background: 'transparent',
+                      color: 'var(--accent-warning, #eab308)', fontSize: '11px', cursor: 'pointer', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <FolderMinus size={11} />
+                    <span>{language === 'id' ? 'Keluarkan dari folder' : 'Remove from folder'}</span>
+                  </button>
+                )}
+
+                {folders.length === 0 ? (
+                  <div style={{ padding: '6px 8px', fontSize: '10.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    {language === 'id' ? 'Belum ada folder' : 'No folders'}
+                  </div>
+                ) : (
+                  folders.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); moveToFolder(item.id, f.id); setOpen(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                        borderRadius: '4px', border: 'none',
+                        background: item.categoryId === f.id ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                        color: item.categoryId === f.id ? '#EF4444' : 'var(--text-primary)',
+                        fontSize: '11px', cursor: 'pointer', textAlign: 'left', fontWeight: item.categoryId === f.id ? 600 : 400,
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = item.categoryId === f.id ? 'rgba(239, 68, 68, 0.15)' : 'transparent')}
+                    >
+                      <Folder size={11} />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Download */}
+          {item.url && (
+            <a
+              href={item.url}
+              download={item.name}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                borderRadius: '4px', border: 'none', background: 'transparent',
+                color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+                textDecoration: 'none',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <Download size={11} />
+              <span>{language === 'id' ? 'Unduh PDF' : 'Download PDF'}</span>
+            </a>
+          )}
+
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); removeItem(item.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Trash2 size={11} />
+            <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export function Sidebar({
   isOpenMobile = false,
   onCloseMobile,
@@ -727,14 +1142,20 @@ export function Sidebar({
     { id: 'wf_4', name: 'Ringkasan Rapat & Notula Otomatis dari Kalender', status: 'active', runsCount: 27, categoryId: 'wc_productivity' },
   ]);
 
-  // PDF Studio Mode UI States
-  const [isAddingPdfCategory, setIsAddingPdfCategory] = useState(false);
-  const [newPdfCategoryName, setNewPdfCategoryName] = useState('');
-  const [pdfHistory] = useState<PdfHistoryItem[]>([
-    { id: 'pdf_1', name: 'Laporan_Keuangan_Q3_Merged.pdf', action: 'Gabung PDF', time: '10m lalu', categoryId: 'dc_contracts' },
-    { id: 'pdf_2', name: 'Kontrak_Kerja_Watermarked.pdf', action: 'Cap Air', time: '1 jam lalu', categoryId: 'dc_contracts' },
-    { id: 'pdf_3', name: 'Paper_Arsitektur_AI_OCR.pdf', action: 'AI OCR', time: 'Kemarin', categoryId: 'dc_research' },
-  ]);
+  // PDF Mode State & Store
+  const pdfDocuments = usePdfStore((s) => s.documents);
+  const pdfFolders = usePdfStore((s) => s.folders);
+  const addPdfDocument = usePdfStore((s) => s.addDocument);
+  const removePdfDocument = usePdfStore((s) => s.removeDocument);
+  const togglePinPdfDocument = usePdfStore((s) => s.togglePinDocument);
+  const movePdfToFolder = usePdfStore((s) => s.moveToFolder);
+  const createPdfFolder = usePdfStore((s) => s.createFolder);
+  const renamePdfFolder = usePdfStore((s) => s.renameFolder);
+  const deletePdfFolder = usePdfStore((s) => s.deleteFolder);
+
+  const [activePdfFolderId, setActivePdfFolderId] = useState<string | null>(null);
+  const [isAddingPdfFolder, setIsAddingPdfFolder] = useState(false);
+  const [newPdfFolderName, setNewPdfFolderName] = useState('');
 
   // ── Project store (DB-backed via Supabase) ──────────────────────────────────
   const projects = useProjectStore((s) => s.folders);
@@ -1707,9 +2128,7 @@ export function Sidebar({
                     ? 'Anticeil Otomatisasi'
                     : 'Anticeil Automations'
                   : isPdfTools
-                    ? language === 'id'
-                      ? 'Anticeil Studio Dokumen'
-                      : 'Anticeil PDF Studio'
+                    ? 'Anticeil PDF'
                     : 'Anticeil'}
             </span>
           </div>
@@ -2404,7 +2823,7 @@ export function Sidebar({
              * C. PDF TOOLS MODE SIDEBAR CONTENT
              * ───────────────────────────────────────────────────────────── */
             <>
-              {/* PDF Categories */}
+              {/* PDF Folders */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div
                   onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
@@ -2418,7 +2837,7 @@ export function Sidebar({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {language === 'id' ? 'Kategori Dokumen' : 'Doc Categories'}
+                      {language === 'id' ? 'Koleksi PDF' : 'PDF Folders'}
                     </span>
                     {isProjectsExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
                   </div>
@@ -2426,64 +2845,70 @@ export function Sidebar({
 
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                    {documentCategories.map((cat) => (
-                      <div
-                        key={cat.id}
-                        className="clickable-pill"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '7px',
-                          padding: '4px 8px',
-                          borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeDocumentCategoryId === cat.id ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                          color: activeDocumentCategoryId === cat.id ? '#EF4444' : 'var(--text-secondary)',
-                          fontSize: '12px',
-                          fontWeight: activeDocumentCategoryId === cat.id ? 600 : 400,
-                          cursor: 'pointer',
-                          justifyContent: 'space-between',
-                        }}
-                      >
+                    {pdfFolders.map((cat) => {
+                      const count = pdfDocuments.filter((d) => d.categoryId === cat.id).length;
+                      const isActive = activePdfFolderId === cat.id;
+                      return (
                         <div
-                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
-                          onClick={() => setActiveDocumentCategory(activeDocumentCategoryId === cat.id ? null : cat.id)}
+                          key={cat.id}
+                          className="clickable-pill"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '7px',
+                            padding: '4px 8px',
+                            borderRadius: 'var(--radius-sm, 6px)',
+                            background: isActive ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                            color: isActive ? '#EF4444' : 'var(--text-secondary)',
+                            fontSize: '12px',
+                            fontWeight: isActive ? 600 : 400,
+                            cursor: 'pointer',
+                            justifyContent: 'space-between',
+                          }}
                         >
-                          <Folder size={12} color={activeDocumentCategoryId === cat.id ? '#EF4444' : 'var(--text-muted)'} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
-                          {cat.files.length > 0 && (
-                            <span style={{ fontSize: '10px', background: '#EF4444', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
-                              {cat.files.length}
-                            </span>
-                          )}
+                          <div
+                            style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                            onClick={() => setActivePdfFolderId(isActive ? null : cat.id)}
+                          >
+                            <Folder size={12} color={isActive ? '#EF4444' : 'var(--text-muted)'} />
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
+                            {count > 0 && (
+                              <span style={{ fontSize: '10px', background: '#EF4444', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
+                                {count}
+                              </span>
+                            )}
+                          </div>
+                          <PdfFolderMenu
+                            folder={cat}
+                            language={language}
+                            renameFolder={renamePdfFolder}
+                            deleteFolder={deletePdfFolder}
+                            onOpenUpload={() => {
+                              if (pathname !== '/pdf-tools') router.push('/pdf-tools');
+                              if (onCloseMobile) onCloseMobile();
+                            }}
+                          />
                         </div>
-                        <button
-                          type="button"
-                          title={language === 'id' ? 'Unggah dokumen' : 'Upload docs'}
-                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'documentCategory', id: cat.id }); }}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
-                        >
-                          <Upload size={11} />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
 
-                    {isAddingPdfCategory ? (
+                    {isAddingPdfFolder ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px' }}>
                         <input
                           type="text"
-                          placeholder={language === 'id' ? 'Nama kategori...' : 'Category name...'}
-                          value={newPdfCategoryName}
-                          onChange={(e) => setNewPdfCategoryName(e.target.value)}
+                          placeholder={language === 'id' ? 'Nama folder...' : 'Folder name...'}
+                          value={newPdfFolderName}
+                          onChange={(e) => setNewPdfFolderName(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                              const name = newPdfCategoryName.trim();
-                              if (name && !documentCategories.some((c) => c.name === name)) {
-                                createDocumentCategory(name);
-                                setNewPdfCategoryName('');
-                                setIsAddingPdfCategory(false);
+                              const name = newPdfFolderName.trim();
+                              if (name) {
+                                createPdfFolder(name);
+                                setNewPdfFolderName('');
+                                setIsAddingPdfFolder(false);
                               }
                             }
-                            if (e.key === 'Escape') setIsAddingPdfCategory(false);
+                            if (e.key === 'Escape') setIsAddingPdfFolder(false);
                           }}
                           autoFocus
                           style={{
@@ -2500,11 +2925,11 @@ export function Sidebar({
                         <button
                           type="button"
                           onClick={() => {
-                            const name = newPdfCategoryName.trim();
-                            if (name && !documentCategories.some((c) => c.name === name)) {
-                              createDocumentCategory(name);
-                              setNewPdfCategoryName('');
-                              setIsAddingPdfCategory(false);
+                            const name = newPdfFolderName.trim();
+                            if (name) {
+                              createPdfFolder(name);
+                              setNewPdfFolderName('');
+                              setIsAddingPdfFolder(false);
                             }
                           }}
                           style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer' }}
@@ -2513,7 +2938,7 @@ export function Sidebar({
                         </button>
                         <button
                           type="button"
-                          onClick={() => setIsAddingPdfCategory(false)}
+                          onClick={() => setIsAddingPdfFolder(false)}
                           style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                         >
                           <X size={12} />
@@ -2522,7 +2947,7 @@ export function Sidebar({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setIsAddingPdfCategory(true)}
+                        onClick={() => setIsAddingPdfFolder(true)}
                         className="clickable-pill"
                         style={{
                           display: 'flex',
@@ -2540,14 +2965,14 @@ export function Sidebar({
                         }}
                       >
                         <Plus size={11} />
-                        <span>{language === 'id' ? 'Tambah kategori' : 'Add category'}</span>
+                        <span>{language === 'id' ? 'Tambah folder' : 'Add folder'}</span>
                       </button>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* PDF Recent Processed History */}
+              {/* PDF Processed / Saved Documents */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div
                   onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
@@ -2561,54 +2986,80 @@ export function Sidebar({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {language === 'id' ? 'Dokumen Diproses' : 'Processed Files'}
+                      {language === 'id' ? 'Dokumen PDF Disimpan' : 'Saved PDF Documents'}
                     </span>
                     {isHistoryExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
                   </div>
                 </div>
 
                 {isHistoryExpanded && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {pdfHistory
-                      .filter((item) => {
-                        const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-                        const matchCat = activeDocumentCategoryId ? item.categoryId === activeDocumentCategoryId : true;
-                        return matchSearch && matchCat;
-                      })
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="clickable-pill"
-                          onClick={() => {
-                            if (pathname !== '/pdf-tools') router.push('/pdf-tools');
-                            if (onCloseMobile) onCloseMobile();
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 8px',
-                            borderRadius: 'var(--radius-sm, 6px)',
-                            background: 'transparent',
-                            color: 'var(--text-secondary)',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <FileText size={13} color="#EF4444" style={{ flexShrink: 0 }} />
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500 }}>
-                              {item.name}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {pdfDocuments.length === 0 ? (
+                      <div style={{ padding: '8px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center' }}>
+                        {language === 'id' ? 'Belum ada dokumen disimpan di R2' : 'No documents saved in R2 yet'}
+                      </div>
+                    ) : (
+                      pdfDocuments
+                        .filter((item) => {
+                          const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+                          const matchFolder = activePdfFolderId ? item.categoryId === activePdfFolderId : true;
+                          return matchSearch && matchFolder;
+                        })
+                        .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+                        .map((item) => (
+                          <div
+                            key={item.id}
+                            className="clickable-pill"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '5px 8px',
+                              borderRadius: 'var(--radius-sm, 6px)',
+                              background: item.isPinned ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
+                              color: 'var(--text-secondary)',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              justifyContent: 'space-between',
+                              position: 'relative',
+                            }}
+                          >
+                            <div
+                              style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                              onClick={() => {
+                                if (item.url) window.open(item.url, '_blank');
+                                else if (pathname !== '/pdf-tools') router.push('/pdf-tools');
+                                if (onCloseMobile) onCloseMobile();
+                              }}
+                            >
+                              {item.isPinned ? (
+                                <Pin size={12} color="#EF4444" fill="#EF4444" style={{ flexShrink: 0 }} />
+                              ) : (
+                                <FileText size={13} color="#EF4444" style={{ flexShrink: 0 }} />
+                              )}
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: item.isPinned ? 600 : 500 }}>
+                                  {item.name}
+                                </div>
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px' }}>
+                                  <span>{(item.size / 1024).toFixed(0)} KB</span>
+                                  <span>•</span>
+                                  <span>{item.createdAtLabel || 'Baru saja'}</span>
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '6px' }}>
-                              <span>{item.action}</span>
-                              <span>•</span>
-                              <span>{item.time}</span>
-                            </div>
+
+                            <PdfItemMenu
+                              item={item}
+                              language={language}
+                              folders={pdfFolders}
+                              togglePin={togglePinPdfDocument}
+                              moveToFolder={movePdfToFolder}
+                              removeItem={removePdfDocument}
+                            />
                           </div>
-                        </div>
-                      ))}
+                        ))
+                    )}
                   </div>
                 )}
               </div>
