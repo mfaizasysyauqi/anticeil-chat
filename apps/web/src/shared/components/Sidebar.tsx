@@ -185,7 +185,7 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
           position: 'absolute', top: '100%', right: 0,
           background: 'var(--bg-surface)', border: '1px solid var(--border-strong)',
           borderRadius: 'var(--radius-md, 8px)', boxShadow: 'var(--shadow-lg)',
-          padding: '4px', zIndex: 99999, display: 'flex', flexDirection: 'column',
+          padding: '4px', zIndex: 999999999, display: 'flex', flexDirection: 'column',
           gap: '2px', minWidth: '120px',
         }}>
           <button
@@ -591,7 +591,7 @@ export function Sidebar({
             ref={menuRef}
             style={{
               position: 'absolute',
-              top: 'calc(100% + 2px)',
+              top: '100%',
               right: '8px',
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-strong)',
@@ -603,8 +603,7 @@ export function Sidebar({
               flexDirection: 'column',
               gap: '2px',
               minWidth: '160px',
-              maxHeight: 'calc(100vh - 100px)',
-              overflowY: 'auto',
+              pointerEvents: 'auto',
             }}
           >
             <button
@@ -691,9 +690,9 @@ export function Sidebar({
                     background: 'var(--bg-surface)',
                     border: '1px solid var(--border-strong)',
                     borderRadius: 'var(--radius-md, 8px)',
-                    boxShadow: 'var(--shadow-lg)',
+                    boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
                     padding: '4px',
-                    zIndex: 9999999,
+                    zIndex: 99999999,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
@@ -2207,7 +2206,7 @@ export function Sidebar({
                 borderRadius: 'var(--radius-lg, 12px)',
                 boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
                 padding: '6px',
-                zIndex: 99999,
+                zIndex: 999999999,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
