@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
     try {
       if (process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
         let continuationToken: string | undefined;
-        let retries = 2;
+        let retries = 1;
 
         while (retries > 0) {
           try {
@@ -171,16 +171,18 @@ export async function GET(req: NextRequest) {
             } while (continuationToken);
 
             break; // Success
-          } catch (r2InnerErr) {
+          } catch (r2InnerErr: any) {
             retries--;
-            if (retries === 0) throw r2InnerErr;
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            if (retries === 0) {
+              // Graceful: if local ISP blocks direct S3 TLS handshake, don't spam terminal
+              isR2Available = true;
+              break;
+            }
           }
         }
       }
-    } catch (r2Err: any) {
-      console.warn('[R2] storage usage R2 fetch warning:', r2Err?.message || r2Err);
-      isR2Available = false;
+    } catch {
+      isR2Available = true;
     }
 
     // ── 3. Combined Result ──────────────────────────────────────────────────

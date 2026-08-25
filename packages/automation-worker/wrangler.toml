@@ -14,3 +14,8 @@ crons = [
 ENVIRONMENT = "production"
 WORKER_VERSION = "1.0.0"
 TELEGRAM_BOT_TOKEN = "8051537758:AAFiNt0MboxxLyN5c0VE9DUilNZZy_fuiKs"
+
+# Cloudflare R2 Storage Bucket Binding
+[[r2_buckets]]
+binding = "STORAGE_BUCKET"
+bucket_name = "anticeil-storage"

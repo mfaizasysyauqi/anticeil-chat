@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { createClient } from '@supabase/supabase-js';
-import { r2, R2_BUCKET, r2Key, r2PublicUrl } from '../../../../src/lib/r2';
+import { r2, R2_BUCKET, r2Key, r2PublicUrl, uploadToWorkerR2 } from '../../../../src/lib/r2';
 
 export async function POST(req: NextRequest) {
   try {
@@ -70,13 +70,19 @@ export async function POST(req: NextRequest) {
     let r2SavedKey = '';
     let publicUrl = mediaUrl || '';
 
-    // 2. Upload to Cloudflare R2 if buffer exists and R2 credentials are configured
+    // 2. Upload to Cloudflare R2 (Try Worker R2 Bridge first, then direct S3)
     if (buffer && buffer.length > 0) {
-      try {
-        if (process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
-          const safeName = prompt.slice(0, 30).replace(/[^a-zA-Z0-9_-]/g, '_') || type;
-          const key = r2Key(userId, category, `${Date.now()}-${safeName}.${fileExt}`);
+      const safeName = prompt.slice(0, 30).replace(/[^a-zA-Z0-9_-]/g, '_') || type;
+      const key = r2Key(userId, category, `${Date.now()}-${safeName}.${fileExt}`);
 
+      // Try Cloudflare Worker R2 bridge first
+      const workerUpload = await uploadToWorkerR2(key, buffer, contentType);
+      if (workerUpload?.success) {
+        r2SavedKey = key;
+        const generatedPublicUrl = r2PublicUrl(key);
+        if (generatedPublicUrl) publicUrl = generatedPublicUrl;
+      } else if (process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
+        try {
           await r2.send(
             new PutObjectCommand({
               Bucket: R2_BUCKET,
@@ -86,15 +92,12 @@ export async function POST(req: NextRequest) {
               ContentLength: buffer.length,
             })
           );
-
           r2SavedKey = key;
           const generatedPublicUrl = r2PublicUrl(key);
-          if (generatedPublicUrl) {
-            publicUrl = generatedPublicUrl;
-          }
+          if (generatedPublicUrl) publicUrl = generatedPublicUrl;
+        } catch {
+          // Graceful fallback if ISP TLS / network blocks direct S3
         }
-      } catch (r2Err: any) {
-        console.warn('[Imagine Save] R2 upload error:', r2Err?.message || r2Err);
       }
     }
 

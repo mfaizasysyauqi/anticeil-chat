@@ -7,6 +7,7 @@ export interface Env {
   ENVIRONMENT?: string;
   WORKER_VERSION?: string;
   TELEGRAM_BOT_TOKEN?: string;
+  STORAGE_BUCKET?: R2Bucket;
   GROQ_API_KEY?: string;
   GEMINI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
@@ -121,6 +122,91 @@ export default {
           { status: 500, headers: corsHeaders }
         );
       }
+    }
+
+    // R2 Storage Usage Endpoint: /api/storage/usage?userId=...
+    if (url.pathname === '/api/storage/usage') {
+      if (!env.STORAGE_BUCKET) {
+        return Response.json(
+          { totalBytes: 0, fileCount: 0, breakdown: { docs: 0, images: 0, audio: 0, other: 0 }, isR2Available: false },
+          { headers: corsHeaders }
+        );
+      }
+      try {
+        const userId = url.searchParams.get('userId') || '';
+        const list = await env.STORAGE_BUCKET.list({ prefix: userId ? `${userId}/` : undefined });
+        let totalBytes = 0;
+        const breakdown = { docs: 0, images: 0, audio: 0, other: 0 };
+        for (const obj of list.objects) {
+          totalBytes += obj.size;
+          const k = obj.key.toLowerCase();
+          if (/\.(jpg|jpeg|png|gif|webp|svg|mp4|mov|webm)$/.test(k)) breakdown.images += obj.size;
+          else if (/\.(mp3|wav|ogg|m4a|flac|aac)$/.test(k)) breakdown.audio += obj.size;
+          else if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|csv|txt|md)$/.test(k)) breakdown.docs += obj.size;
+          else breakdown.other += obj.size;
+        }
+        return Response.json(
+          { totalBytes, fileCount: list.objects.length, breakdown, isR2Available: true },
+          { headers: corsHeaders }
+        );
+      } catch (err: any) {
+        return Response.json(
+          { totalBytes: 0, fileCount: 0, error: err.message, isR2Available: false },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+
+    // R2 Storage Upload Endpoint: /api/storage/upload
+    if (url.pathname === '/api/storage/upload' && request.method === 'POST') {
+      if (!env.STORAGE_BUCKET) {
+        return Response.json({ error: 'STORAGE_BUCKET binding is missing' }, { status: 500, headers: corsHeaders });
+      }
+      try {
+        const contentType = request.headers.get('content-type') || 'application/octet-stream';
+        let key = request.headers.get('x-storage-key') || '';
+        let bodyBuffer: ArrayBuffer;
+
+        if (contentType.includes('application/json')) {
+          const bodyJson: any = await request.json();
+          key = bodyJson.key || key;
+          const base64 = (bodyJson.base64Data || '').replace(/^data:[^;]+;base64,/, '');
+          const binaryStr = atob(base64);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+          bodyBuffer = bytes.buffer;
+        } else {
+          bodyBuffer = await request.arrayBuffer();
+        }
+
+        if (!key) {
+          key = `uploads/${Date.now()}-file`;
+        }
+
+        await env.STORAGE_BUCKET.put(key, bodyBuffer, {
+          httpMetadata: { contentType },
+        });
+
+        return Response.json({ success: true, key, size: bodyBuffer.byteLength }, { headers: corsHeaders });
+      } catch (err: any) {
+        return Response.json({ error: err.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // R2 Storage Serve File Endpoint: /api/storage/file/:key
+    if (url.pathname.startsWith('/api/storage/file/')) {
+      if (!env.STORAGE_BUCKET) {
+        return new Response('STORAGE_BUCKET not configured', { status: 500, headers: corsHeaders });
+      }
+      const key = url.pathname.replace('/api/storage/file/', '');
+      const object = await env.STORAGE_BUCKET.get(key);
+      if (!object) {
+        return new Response('File Not Found', { status: 404, headers: corsHeaders });
+      }
+      const headers = new Headers(corsHeaders);
+      object.writeHttpMetadata(headers as any);
+      headers.set('etag', object.httpEtag);
+      return new Response(object.body as any, { headers });
     }
 
     return new Response('Not Found', { status: 404, headers: corsHeaders });

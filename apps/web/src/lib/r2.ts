@@ -48,6 +48,37 @@ export const R2_BUCKET = process.env.R2_BUCKET_NAME ?? 'anticeil-storage';
  * Public URL base for serving files (custom domain or R2 public bucket URL).
  * Set R2_PUBLIC_URL in env. Falls back to empty string (files won't be publicly accessible).
  */
+export const WORKER_URL = (
+  process.env.AUTOMATION_WORKER_URL ||
+  process.env.NEXT_PUBLIC_AUTOMATION_WORKER_URL ||
+  'http://localhost:8787'
+).replace(/\/$/, '');
+
+/**
+ * Upload directly via Cloudflare Worker R2 endpoint (bypasses ISP S3 TLS blocks)
+ */
+export async function uploadToWorkerR2(key: string, buffer: Buffer, contentType: string): Promise<{ success: boolean; key: string; size: number } | null> {
+  try {
+    const res = await fetch(`${WORKER_URL}/api/storage/upload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': contentType,
+        'X-Storage-Key': key,
+      },
+      body: buffer,
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // Worker not reachable
+  }
+  return null;
+}
+
+/**
+ * Query usage via Cloudflare Worker R2 endpoint
+ */
 export const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL ?? '').replace(/\/$/, '');
 
 /**

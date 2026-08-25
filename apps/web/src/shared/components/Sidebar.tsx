@@ -514,6 +514,14 @@ export function Sidebar({
 
   const handleTogglePin = (session: ChatSession, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!session.isPinned) {
+      const currentPinnedCount = userSessions.filter((s) => s.isPinned).length;
+      if (currentPinnedCount >= 3) {
+        alert(language === 'id' ? 'Maksimal 3 obrolan yang dapat disematkan ke paling atas.' : 'Maximum of 3 pinned chats allowed.');
+        setMenuSessionId(null);
+        return;
+      }
+    }
     updateSession(session.id, { isPinned: !session.isPinned });
     setMenuSessionId(null);
   };
@@ -587,15 +595,18 @@ export function Sidebar({
     return matchesSearch && !isInExistingProject;
   });
 
+  const pinnedSessions = filteredSessions.filter((s) => s.isPinned);
+  const unpinnedSessions = filteredSessions.filter((s) => !s.isPinned);
+
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const startOfYesterday = startOfToday - 24 * 60 * 60 * 1000;
 
-  const todaySessions = filteredSessions.filter((s) => s.updatedAt >= startOfToday);
-  const yesterdaySessions = filteredSessions.filter(
+  const todaySessions = unpinnedSessions.filter((s) => s.updatedAt >= startOfToday);
+  const yesterdaySessions = unpinnedSessions.filter(
     (s) => s.updatedAt >= startOfYesterday && s.updatedAt < startOfToday
   );
-  const earlierSessions = filteredSessions.filter((s) => s.updatedAt < startOfYesterday);
+  const earlierSessions = unpinnedSessions.filter((s) => s.updatedAt < startOfYesterday);
 
   const renderSessionItem = (session: ChatSession) => {
     const isActive = session.id === activeSessionId && pathname === '/chat';
@@ -2191,10 +2202,12 @@ export function Sidebar({
 
                     {projects.map((proj) => {
                       const isFolderOpen = expandedFolderIds.has(proj.id);
-                      const folderSessions = userSessions.filter(
-                        (s) => s.projectId === proj.id &&
-                          s.title.toLowerCase().includes(searchQuery.toLowerCase())
-                      );
+                      const folderSessions = userSessions
+                        .filter(
+                          (s) => s.projectId === proj.id &&
+                            s.title.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
 
                       return (
                         <div key={proj.id} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -2382,6 +2395,18 @@ export function Sidebar({
 
                 {isHistoryExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {/* Pinned Chats at the Very Top (Max 3) */}
+                    {pinnedSessions.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '2px' }}>
+                        <div style={{ padding: '3px 6px 1px 6px', fontSize: '10px', fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Pin size={10} color="var(--brand-primary)" />
+                          <span>{language === 'id' ? 'Disematkan' : 'Pinned'} ({pinnedSessions.length}/3)</span>
+                        </div>
+                        {pinnedSessions.map(renderSessionItem)}
+                        <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '4px 6px' }} />
+                      </div>
+                    )}
+
                     {todaySessions.length > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         {todaySessions.map(renderSessionItem)}

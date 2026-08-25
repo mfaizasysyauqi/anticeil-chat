@@ -91,6 +91,14 @@ export function Navbar({
 
   const handleTogglePin = () => {
     if (activeSession) {
+      if (!activeSession.isPinned) {
+        const currentPinnedCount = sessions.filter((s) => s.isPinned).length;
+        if (currentPinnedCount >= 3) {
+          alert(language === 'id' ? 'Maksimal 3 obrolan yang dapat disematkan ke atas.' : 'Maximum of 3 pinned chats allowed.');
+          setIsMenuOpen(false);
+          return;
+        }
+      }
       updateSession(activeSession.id, { isPinned: !activeSession.isPinned });
     }
     setIsMenuOpen(false);
