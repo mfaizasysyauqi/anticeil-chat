@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     );
 
     for (const { name, value, options } of cookiesToForward) {
-      // NextResponse.cookies.set accepts ResponseCookies options
+      // NextResponse.cookies.set with proper cookie options
       response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2]);
     }
 
