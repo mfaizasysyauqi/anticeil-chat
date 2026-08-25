@@ -354,11 +354,11 @@ export function Sidebar({
   const removeSessionFromProject = useProjectStore((s) => s.removeSession);
   const fetchProjects = useProjectStore((s) => s.fetchFolders);
 
-  // ── Workspace store (image/workflow/document collections — still localStorage) ──
   const imageCollections = useWorkspaceStore((s) => s.imageCollections);
   const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
   const setActiveImageCollection = useWorkspaceStore((s) => s.setActiveImageCollection);
   const createImageCollection = useWorkspaceStore((s) => s.createImageCollection);
+  const deleteImageCollection = useWorkspaceStore((s) => s.deleteImageCollection);
   const addFileToImageCollection = useWorkspaceStore((s) => s.addFileToImageCollection);
   const removeFileFromImageCollection = useWorkspaceStore((s) => s.removeFileFromImageCollection);
 
@@ -1535,7 +1535,7 @@ export function Sidebar({
            * ───────────────────────────────────────────────────────────── */}
           {isImagine ? (
             <>
-              {/* Imagine Collections */}
+              {/* Imagine Media Collections */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div
                   onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
@@ -1549,7 +1549,7 @@ export function Sidebar({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {language === 'id' ? 'Koleksi Gambar' : 'Image Collections'}
+                      {language === 'id' ? 'Koleksi Media' : 'Media Collections'}
                     </span>
                     {isProjectsExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
                   </div>
@@ -1557,7 +1557,9 @@ export function Sidebar({
 
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                    {imageCollections.map((col) => (
+                    {imageCollections
+                      .filter((col) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(col.id))
+                      .map((col) => (
                       <div
                         key={col.id}
                         className="clickable-pill"
@@ -1587,14 +1589,27 @@ export function Sidebar({
                             </span>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          title={language === 'id' ? 'Unggah gambar' : 'Upload images'}
-                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'imageCollection', id: col.id }); }}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
-                        >
-                          <Upload size={11} />
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            title={language === 'id' ? 'Unggah media' : 'Upload media'}
+                            onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'imageCollection', id: col.id }); }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                          >
+                            <Upload size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            title={language === 'id' ? 'Hapus koleksi' : 'Delete collection'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteImageCollection(col.id);
+                            }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
                       </div>
                     ))}
 
@@ -1602,7 +1617,7 @@ export function Sidebar({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px' }}>
                         <input
                           type="text"
-                          placeholder={language === 'id' ? 'Nama koleksi...' : 'Collection name...'}
+                          placeholder={language === 'id' ? 'Nama koleksi media...' : 'Media collection name...'}
                           value={newImagineCollectionName}
                           onChange={(e) => setNewImagineCollectionName(e.target.value)}
                           onKeyDown={(e) => {
@@ -1671,7 +1686,7 @@ export function Sidebar({
                         }}
                       >
                         <Plus size={11} />
-                        <span>{language === 'id' ? 'Tambah koleksi' : 'Add collection'}</span>
+                        <span>{language === 'id' ? 'Tambah koleksi media' : 'Add media collection'}</span>
                       </button>
                     )}
                   </div>

@@ -284,6 +284,33 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         );
       },
     }),
-    { name: 'anticeil-workspace-v2' }
+    {
+      name: 'anticeil-workspace-v3',
+      version: 1,
+      migrate: (persistedState: any) => {
+        if (persistedState && Array.isArray(persistedState.imageCollections)) {
+          persistedState.imageCollections = persistedState.imageCollections.filter(
+            (c: any) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id)
+          );
+        }
+        return persistedState;
+      },
+    }
   )
 );
+
+// Auto-cleanup legacy local storage items on client boot
+if (typeof window !== 'undefined') {
+  try {
+    const rawV2 = localStorage.getItem('anticeil-workspace-v2');
+    if (rawV2) {
+      const parsed = JSON.parse(rawV2);
+      if (parsed?.state?.imageCollections) {
+        parsed.state.imageCollections = parsed.state.imageCollections.filter(
+          (c: any) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id)
+        );
+        localStorage.setItem('anticeil-workspace-v2', JSON.stringify(parsed));
+      }
+    }
+  } catch {}
+}
