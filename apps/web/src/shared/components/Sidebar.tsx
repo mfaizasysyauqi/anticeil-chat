@@ -39,6 +39,7 @@ import {
   User,
   Plug,
   FileText,
+  Upload,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -46,6 +47,8 @@ import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { ConnectorsModal } from '../../features/connectors/components/ConnectorsModal';
 import { StorageMeter } from '../../features/storage/components/StorageMeter';
 import { getTranslation, ChatSession } from '@anticeil/core';
+import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
+import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 
 interface SidebarProps {
   isOpenMobile?: boolean;
@@ -53,6 +56,30 @@ interface SidebarProps {
   isDesktopCollapsed?: boolean;
   onToggleDesktopCollapse?: () => void;
   onOpenModelSelector?: () => void;
+}
+
+interface ImagineHistoryItem {
+  id: string;
+  prompt: string;
+  style: string;
+  time: string;
+  collectionId?: string;
+}
+
+interface AutomationWorkflowItem {
+  id: string;
+  name: string;
+  status: 'active' | 'paused';
+  runsCount: number;
+  categoryId?: string;
+}
+
+interface PdfHistoryItem {
+  id: string;
+  name: string;
+  action: string;
+  time: string;
+  categoryId?: string;
 }
 
 export function Sidebar({
@@ -67,8 +94,6 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
-  const [projects, setProjects] = useState<string[]>(['Personal', 'Work']);
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
@@ -76,40 +101,107 @@ export function Sidebar({
   const isAutomations = pathname === '/automations';
   const isPdfTools = pathname === '/pdf-tools';
 
-  // Imagine Mode States
-  const [imagineCollections, setImagineCollections] = useState<string[]>(['Cyberpunk', 'Wallpapers', 'Mockups & 3D']);
-  const [activeImagineCollection, setActiveImagineCollection] = useState<string | null>(null);
+  // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
   const [newImagineCollectionName, setNewImagineCollectionName] = useState('');
-  const [imagineHistory, setImagineHistory] = useState<Array<{ id: string; prompt: string; style: string; time: string; collection?: string }>>([
-    { id: 'img_1', prompt: 'Neon futuristic cyberpunk metropolis glowing in rain 8K', style: 'Cyberpunk', time: 'Just now', collection: 'Cyberpunk' },
-    { id: 'img_2', prompt: 'Minimalist 3D glassmorphic geometric crystal orb', style: '3D Render', time: '2h ago', collection: 'Mockups & 3D' },
-    { id: 'img_3', prompt: 'Anime style floating garden sunset cinematic', style: 'Anime', time: 'Yesterday', collection: 'Wallpapers' },
-    { id: 'img_4', prompt: 'Vintage oil painting foggy mountain cabin landscape', style: 'Oil Painting', time: '2 days ago', collection: 'Wallpapers' },
+  const [imagineHistory] = useState<ImagineHistoryItem[]>([
+    { id: 'img_1', prompt: 'Neon futuristic cyberpunk metropolis glowing in rain 8K', style: 'Cyberpunk', time: 'Just now', collectionId: 'ic_cyberpunk' },
+    { id: 'img_2', prompt: 'Minimalist 3D glassmorphic geometric crystal orb', style: '3D Render', time: '2h ago', collectionId: 'ic_mockups' },
+    { id: 'img_3', prompt: 'Anime style floating garden sunset cinematic', style: 'Anime', time: 'Yesterday', collectionId: 'ic_wallpapers' },
+    { id: 'img_4', prompt: 'Vintage oil painting foggy mountain cabin landscape', style: 'Oil Painting', time: '2 days ago', collectionId: 'ic_wallpapers' },
   ]);
 
-  // Automations Mode States
-  const [automationCategories, setAutomationCategories] = useState<string[]>(['Productivity', 'Marketing', 'CRM & Leads']);
-  const [activeAutomationCategory, setActiveAutomationCategory] = useState<string | null>(null);
+  // Automations Mode UI States
   const [isAddingAutomationCategory, setIsAddingAutomationCategory] = useState(false);
   const [newAutomationCategoryName, setNewAutomationCategoryName] = useState('');
-  const [automationWorkflows, setAutomationWorkflows] = useState<Array<{ id: string; name: string; status: 'active' | 'paused'; runsCount: number; category?: string }>>([
-    { id: 'wf_1', name: 'Briefing Kalender Harian Otomatis → Telegram/Email', status: 'active', runsCount: 42, category: 'Productivity' },
-    { id: 'wf_2', name: 'Klasifikasi Email VIP Gmail & Draf Otomatis', status: 'active', runsCount: 18, category: 'Productivity' },
-    { id: 'wf_3', name: 'Sinkronisasi Lead Kontak Baru ke Google Sheets', status: 'paused', runsCount: 9, category: 'CRM & Leads' },
-    { id: 'wf_4', name: 'Ringkasan Rapat & Notula Otomatis dari Kalender', status: 'active', runsCount: 27, category: 'Productivity' },
+  const [automationWorkflows] = useState<AutomationWorkflowItem[]>([
+    { id: 'wf_1', name: 'Briefing Kalender Harian Otomatis → Telegram/Email', status: 'active', runsCount: 42, categoryId: 'wc_productivity' },
+    { id: 'wf_2', name: 'Klasifikasi Email VIP Gmail & Draf Otomatis', status: 'active', runsCount: 18, categoryId: 'wc_productivity' },
+    { id: 'wf_3', name: 'Sinkronisasi Lead Kontak Baru ke Google Sheets', status: 'paused', runsCount: 9, categoryId: 'wc_crm' },
+    { id: 'wf_4', name: 'Ringkasan Rapat & Notula Otomatis dari Kalender', status: 'active', runsCount: 27, categoryId: 'wc_productivity' },
   ]);
 
-  // PDF Studio Mode States
-  const [pdfCategories, setPdfCategories] = useState<string[]>(['Semua Dokumen', 'Kontrak & Invoice', 'Laporan Riset']);
-  const [activePdfCategory, setActivePdfCategory] = useState<string | null>(null);
+  // PDF Studio Mode UI States
   const [isAddingPdfCategory, setIsAddingPdfCategory] = useState(false);
   const [newPdfCategoryName, setNewPdfCategoryName] = useState('');
-  const [pdfHistory, setPdfHistory] = useState<Array<{ id: string; name: string; action: string; time: string; category?: string }>>([
-    { id: 'pdf_1', name: 'Laporan_Keuangan_Q3_Merged.pdf', action: 'Gabung PDF', time: '10m lalu', category: 'Kontrak & Invoice' },
-    { id: 'pdf_2', name: 'Kontrak_Kerja_Watermarked.pdf', action: 'Cap Air', time: '1 jam lalu', category: 'Kontrak & Invoice' },
-    { id: 'pdf_3', name: 'Paper_Arsitektur_AI_OCR.pdf', action: 'AI OCR', time: 'Kemarin', category: 'Laporan Riset' },
+  const [pdfHistory] = useState<PdfHistoryItem[]>([
+    { id: 'pdf_1', name: 'Laporan_Keuangan_Q3_Merged.pdf', action: 'Gabung PDF', time: '10m lalu', categoryId: 'dc_contracts' },
+    { id: 'pdf_2', name: 'Kontrak_Kerja_Watermarked.pdf', action: 'Cap Air', time: '1 jam lalu', categoryId: 'dc_contracts' },
+    { id: 'pdf_3', name: 'Paper_Arsitektur_AI_OCR.pdf', action: 'AI OCR', time: 'Kemarin', categoryId: 'dc_research' },
   ]);
+
+  // Workspace store (persisted folders / collections / categories)
+  const projects = useWorkspaceStore((s) => s.projects);
+  const activeProjectId = useWorkspaceStore((s) => s.activeProjectId);
+  const setActiveProject = useWorkspaceStore((s) => s.setActiveProject);
+  const createProject = useWorkspaceStore((s) => s.createProject);
+  const renameProject = useWorkspaceStore((s) => s.renameProject);
+  const deleteProject = useWorkspaceStore((s) => s.deleteProject);
+  const addFileToProject = useWorkspaceStore((s) => s.addFileToProject);
+  const removeFileFromProject = useWorkspaceStore((s) => s.removeFileFromProject);
+
+  const imageCollections = useWorkspaceStore((s) => s.imageCollections);
+  const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
+  const setActiveImageCollection = useWorkspaceStore((s) => s.setActiveImageCollection);
+  const createImageCollection = useWorkspaceStore((s) => s.createImageCollection);
+  const addFileToImageCollection = useWorkspaceStore((s) => s.addFileToImageCollection);
+  const removeFileFromImageCollection = useWorkspaceStore((s) => s.removeFileFromImageCollection);
+
+  const workflowCategories = useWorkspaceStore((s) => s.workflowCategories);
+  const activeWorkflowCategoryId = useWorkspaceStore((s) => s.activeWorkflowCategoryId);
+  const setActiveWorkflowCategory = useWorkspaceStore((s) => s.setActiveWorkflowCategory);
+  const createWorkflowCategory = useWorkspaceStore((s) => s.createWorkflowCategory);
+  const addFileToWorkflowCategory = useWorkspaceStore((s) => s.addFileToWorkflowCategory);
+  const removeFileFromWorkflowCategory = useWorkspaceStore((s) => s.removeFileFromWorkflowCategory);
+
+  const documentCategories = useWorkspaceStore((s) => s.documentCategories);
+  const activeDocumentCategoryId = useWorkspaceStore((s) => s.activeDocumentCategoryId);
+  const setActiveDocumentCategory = useWorkspaceStore((s) => s.setActiveDocumentCategory);
+  const createDocumentCategory = useWorkspaceStore((s) => s.createDocumentCategory);
+  const addFileToDocumentCategory = useWorkspaceStore((s) => s.addFileToDocumentCategory);
+  const removeFileFromDocumentCategory = useWorkspaceStore((s) => s.removeFileFromDocumentCategory);
+
+  // Drawer state (file manager per folder)
+  const [drawerState, setDrawerState] = useState<{
+    type: 'project' | 'imageCollection' | 'workflowCategory' | 'documentCategory';
+    id: string;
+  } | null>(null);
+
+  const getDrawerFolder = () => {
+    if (!drawerState) return null;
+    if (drawerState.type === 'project') return projects.find((p) => p.id === drawerState.id) ?? null;
+    if (drawerState.type === 'imageCollection') return imageCollections.find((c) => c.id === drawerState.id) ?? null;
+    if (drawerState.type === 'workflowCategory') return workflowCategories.find((c) => c.id === drawerState.id) ?? null;
+    if (drawerState.type === 'documentCategory') return documentCategories.find((c) => c.id === drawerState.id) ?? null;
+    return null;
+  };
+
+  const drawerFolder = getDrawerFolder();
+
+  const handleDrawerFileAdded = (file: any) => {
+    if (!drawerState) return;
+    if (drawerState.type === 'project') addFileToProject(drawerState.id, file);
+    if (drawerState.type === 'imageCollection') addFileToImageCollection(drawerState.id, file);
+    if (drawerState.type === 'workflowCategory') addFileToWorkflowCategory(drawerState.id, file);
+    if (drawerState.type === 'documentCategory') addFileToDocumentCategory(drawerState.id, file);
+  };
+
+  const handleDrawerFileRemoved = (fileId: string) => {
+    if (!drawerState) return;
+    if (drawerState.type === 'project') removeFileFromProject(drawerState.id, fileId);
+    if (drawerState.type === 'imageCollection') removeFileFromImageCollection(drawerState.id, fileId);
+    if (drawerState.type === 'workflowCategory') removeFileFromWorkflowCategory(drawerState.id, fileId);
+    if (drawerState.type === 'documentCategory') removeFileFromDocumentCategory(drawerState.id, fileId);
+  };
+
+  const drawerAcceptTypes =
+    drawerState?.type === 'imageCollection'
+      ? 'image/*'
+      : drawerState?.type === 'documentCategory'
+      ? '.pdf,.doc,.docx,.txt,.csv,.json,.md'
+      : drawerState?.type === 'workflowCategory'
+      ? '.json,.yaml,.yml,.js,.ts,.py,.txt'
+      : '*/*';
 
   // Dropdown menu state for session options (...)
   const [menuSessionId, setMenuSessionId] = useState<string | null>(null);
@@ -189,8 +281,9 @@ export function Sidebar({
   };
 
   const handleAddProject = () => {
-    if (newProjectName.trim() && !projects.includes(newProjectName.trim())) {
-      setProjects([...projects, newProjectName.trim()]);
+    const name = newProjectName.trim();
+    if (name && !projects.some((p) => p.name === name)) {
+      createProject(name);
       setNewProjectName('');
       setIsAddingProject(false);
     }
@@ -913,10 +1006,9 @@ export function Sidebar({
 
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                    {imagineCollections.map((col) => (
+                    {imageCollections.map((col) => (
                       <div
-                        key={col}
-                        onClick={() => setActiveImagineCollection(activeImagineCollection === col ? null : col)}
+                        key={col.id}
                         className="clickable-pill"
                         style={{
                           display: 'flex',
@@ -924,15 +1016,34 @@ export function Sidebar({
                           gap: '7px',
                           padding: '4px 8px',
                           borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeImagineCollection === col ? 'rgba(162, 93, 220, 0.15)' : 'transparent',
-                          color: activeImagineCollection === col ? '#A25DDC' : 'var(--text-secondary)',
+                          background: activeImageCollectionId === col.id ? 'rgba(162, 93, 220, 0.15)' : 'transparent',
+                          color: activeImageCollectionId === col.id ? '#A25DDC' : 'var(--text-secondary)',
                           fontSize: '12px',
-                          fontWeight: activeImagineCollection === col ? 600 : 400,
+                          fontWeight: activeImageCollectionId === col.id ? 600 : 400,
                           cursor: 'pointer',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        <Folder size={12} color={activeImagineCollection === col ? '#A25DDC' : 'var(--text-muted)'} />
-                        <span>{col}</span>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                          onClick={() => setActiveImageCollection(activeImageCollectionId === col.id ? null : col.id)}
+                        >
+                          <Folder size={12} color={activeImageCollectionId === col.id ? '#A25DDC' : 'var(--text-muted)'} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{col.name}</span>
+                          {col.files.length > 0 && (
+                            <span style={{ fontSize: '10px', background: '#A25DDC', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
+                              {col.files.length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          title={language === 'id' ? 'Unggah gambar' : 'Upload images'}
+                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'imageCollection', id: col.id }); }}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                        >
+                          <Upload size={11} />
+                        </button>
                       </div>
                     ))}
 
@@ -945,8 +1056,9 @@ export function Sidebar({
                           onChange={(e) => setNewImagineCollectionName(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                              if (newImagineCollectionName.trim() && !imagineCollections.includes(newImagineCollectionName.trim())) {
-                                setImagineCollections([...imagineCollections, newImagineCollectionName.trim()]);
+                              const name = newImagineCollectionName.trim();
+                              if (name && !imageCollections.some((c) => c.name === name)) {
+                                createImageCollection(name);
                                 setNewImagineCollectionName('');
                                 setIsAddingImagineCollection(false);
                               }
@@ -968,8 +1080,9 @@ export function Sidebar({
                         <button
                           type="button"
                           onClick={() => {
-                            if (newImagineCollectionName.trim() && !imagineCollections.includes(newImagineCollectionName.trim())) {
-                              setImagineCollections([...imagineCollections, newImagineCollectionName.trim()]);
+                            const name = newImagineCollectionName.trim();
+                            if (name && !imageCollections.some((c) => c.name === name)) {
+                              createImageCollection(name);
                               setNewImagineCollectionName('');
                               setIsAddingImagineCollection(false);
                             }
@@ -1039,7 +1152,7 @@ export function Sidebar({
                     {imagineHistory
                       .filter((item) => {
                         const matchSearch = item.prompt.toLowerCase().includes(searchQuery.toLowerCase()) || item.style.toLowerCase().includes(searchQuery.toLowerCase());
-                        const matchCol = activeImagineCollection ? item.collection === activeImagineCollection : true;
+                        const matchCol = activeImageCollectionId ? item.collectionId === activeImageCollectionId : true;
                         return matchSearch && matchCol;
                       })
                       .map((item) => (
@@ -1107,10 +1220,9 @@ export function Sidebar({
 
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                    {automationCategories.map((cat) => (
+                    {workflowCategories.map((cat) => (
                       <div
-                        key={cat}
-                        onClick={() => setActiveAutomationCategory(activeAutomationCategory === cat ? null : cat)}
+                        key={cat.id}
                         className="clickable-pill"
                         style={{
                           display: 'flex',
@@ -1118,15 +1230,34 @@ export function Sidebar({
                           gap: '7px',
                           padding: '4px 8px',
                           borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeAutomationCategory === cat ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                          color: activeAutomationCategory === cat ? '#F59E0B' : 'var(--text-secondary)',
+                          background: activeWorkflowCategoryId === cat.id ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                          color: activeWorkflowCategoryId === cat.id ? '#F59E0B' : 'var(--text-secondary)',
                           fontSize: '12px',
-                          fontWeight: activeAutomationCategory === cat ? 600 : 400,
+                          fontWeight: activeWorkflowCategoryId === cat.id ? 600 : 400,
                           cursor: 'pointer',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        <Folder size={12} color={activeAutomationCategory === cat ? '#F59E0B' : 'var(--text-muted)'} />
-                        <span>{cat}</span>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                          onClick={() => setActiveWorkflowCategory(activeWorkflowCategoryId === cat.id ? null : cat.id)}
+                        >
+                          <Folder size={12} color={activeWorkflowCategoryId === cat.id ? '#F59E0B' : 'var(--text-muted)'} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
+                          {cat.files.length > 0 && (
+                            <span style={{ fontSize: '10px', background: '#F59E0B', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
+                              {cat.files.length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          title={language === 'id' ? 'Unggah berkas' : 'Upload files'}
+                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'workflowCategory', id: cat.id }); }}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                        >
+                          <Upload size={11} />
+                        </button>
                       </div>
                     ))}
 
@@ -1139,8 +1270,9 @@ export function Sidebar({
                           onChange={(e) => setNewAutomationCategoryName(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                              if (newAutomationCategoryName.trim() && !automationCategories.includes(newAutomationCategoryName.trim())) {
-                                setAutomationCategories([...automationCategories, newAutomationCategoryName.trim()]);
+                              const name = newAutomationCategoryName.trim();
+                              if (name && !workflowCategories.some((c) => c.name === name)) {
+                                createWorkflowCategory(name);
                                 setNewAutomationCategoryName('');
                                 setIsAddingAutomationCategory(false);
                               }
@@ -1162,8 +1294,9 @@ export function Sidebar({
                         <button
                           type="button"
                           onClick={() => {
-                            if (newAutomationCategoryName.trim() && !automationCategories.includes(newAutomationCategoryName.trim())) {
-                              setAutomationCategories([...automationCategories, newAutomationCategoryName.trim()]);
+                            const name = newAutomationCategoryName.trim();
+                            if (name && !workflowCategories.some((c) => c.name === name)) {
+                              createWorkflowCategory(name);
                               setNewAutomationCategoryName('');
                               setIsAddingAutomationCategory(false);
                             }
@@ -1233,7 +1366,7 @@ export function Sidebar({
                     {automationWorkflows
                       .filter((item) => {
                         const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-                        const matchCat = activeAutomationCategory ? item.category === activeAutomationCategory : true;
+                        const matchCat = activeWorkflowCategoryId ? item.categoryId === activeWorkflowCategoryId : true;
                         return matchSearch && matchCat;
                       })
                       .map((item) => (
@@ -1308,10 +1441,9 @@ export function Sidebar({
 
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                    {pdfCategories.map((cat) => (
+                    {documentCategories.map((cat) => (
                       <div
-                        key={cat}
-                        onClick={() => setActivePdfCategory(activePdfCategory === cat ? null : cat)}
+                        key={cat.id}
                         className="clickable-pill"
                         style={{
                           display: 'flex',
@@ -1319,15 +1451,34 @@ export function Sidebar({
                           gap: '7px',
                           padding: '4px 8px',
                           borderRadius: 'var(--radius-sm, 6px)',
-                          background: activePdfCategory === cat ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                          color: activePdfCategory === cat ? '#EF4444' : 'var(--text-secondary)',
+                          background: activeDocumentCategoryId === cat.id ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                          color: activeDocumentCategoryId === cat.id ? '#EF4444' : 'var(--text-secondary)',
                           fontSize: '12px',
-                          fontWeight: activePdfCategory === cat ? 600 : 400,
+                          fontWeight: activeDocumentCategoryId === cat.id ? 600 : 400,
                           cursor: 'pointer',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        <Folder size={12} color={activePdfCategory === cat ? '#EF4444' : 'var(--text-muted)'} />
-                        <span>{cat}</span>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                          onClick={() => setActiveDocumentCategory(activeDocumentCategoryId === cat.id ? null : cat.id)}
+                        >
+                          <Folder size={12} color={activeDocumentCategoryId === cat.id ? '#EF4444' : 'var(--text-muted)'} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
+                          {cat.files.length > 0 && (
+                            <span style={{ fontSize: '10px', background: '#EF4444', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
+                              {cat.files.length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          title={language === 'id' ? 'Unggah dokumen' : 'Upload docs'}
+                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'documentCategory', id: cat.id }); }}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                        >
+                          <Upload size={11} />
+                        </button>
                       </div>
                     ))}
 
@@ -1340,8 +1491,9 @@ export function Sidebar({
                           onChange={(e) => setNewPdfCategoryName(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                              if (newPdfCategoryName.trim() && !pdfCategories.includes(newPdfCategoryName.trim())) {
-                                setPdfCategories([...pdfCategories, newPdfCategoryName.trim()]);
+                              const name = newPdfCategoryName.trim();
+                              if (name && !documentCategories.some((c) => c.name === name)) {
+                                createDocumentCategory(name);
                                 setNewPdfCategoryName('');
                                 setIsAddingPdfCategory(false);
                               }
@@ -1363,8 +1515,9 @@ export function Sidebar({
                         <button
                           type="button"
                           onClick={() => {
-                            if (newPdfCategoryName.trim() && !pdfCategories.includes(newPdfCategoryName.trim())) {
-                              setPdfCategories([...pdfCategories, newPdfCategoryName.trim()]);
+                            const name = newPdfCategoryName.trim();
+                            if (name && !documentCategories.some((c) => c.name === name)) {
+                              createDocumentCategory(name);
                               setNewPdfCategoryName('');
                               setIsAddingPdfCategory(false);
                             }
@@ -1434,7 +1587,7 @@ export function Sidebar({
                     {pdfHistory
                       .filter((item) => {
                         const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-                        const matchCat = activePdfCategory ? item.category === activePdfCategory : true;
+                        const matchCat = activeDocumentCategoryId ? item.categoryId === activeDocumentCategoryId : true;
                         return matchSearch && matchCat;
                       })
                       .map((item) => (
@@ -1504,8 +1657,7 @@ export function Sidebar({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
                     {projects.map((proj) => (
                       <div
-                        key={proj}
-                        onClick={() => setActiveProjectId(activeProjectId === proj ? null : proj)}
+                        key={proj.id}
                         className="clickable-pill"
                         style={{
                           display: 'flex',
@@ -1513,15 +1665,34 @@ export function Sidebar({
                           gap: '7px',
                           padding: '4px 8px',
                           borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeProjectId === proj ? 'var(--bg-subtle)' : 'transparent',
-                          color: activeProjectId === proj ? 'var(--text-primary)' : 'var(--text-secondary)',
+                          background: activeProjectId === proj.id ? 'var(--bg-subtle)' : 'transparent',
+                          color: activeProjectId === proj.id ? 'var(--text-primary)' : 'var(--text-secondary)',
                           fontSize: '12px',
-                          fontWeight: activeProjectId === proj ? 600 : 400,
+                          fontWeight: activeProjectId === proj.id ? 600 : 400,
                           cursor: 'pointer',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        <Folder size={12} color={activeProjectId === proj ? 'var(--brand-primary)' : 'var(--text-muted)'} />
-                        <span>{proj}</span>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                          onClick={() => setActiveProject(activeProjectId === proj.id ? null : proj.id)}
+                        >
+                          <Folder size={12} color={activeProjectId === proj.id ? 'var(--brand-primary)' : 'var(--text-muted)'} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{proj.name}</span>
+                          {proj.files.length > 0 && (
+                            <span style={{ fontSize: '10px', background: 'var(--brand-primary)', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
+                              {proj.files.length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          title={language === 'id' ? 'Unggah berkas' : 'Upload files'}
+                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'project', id: proj.id }); }}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                        >
+                          <Upload size={11} />
+                        </button>
                       </div>
                     ))}
 
@@ -1820,6 +1991,17 @@ export function Sidebar({
       <ConnectorsModal
         isOpen={isConnectorsModalOpen}
         onClose={() => setIsConnectorsModalOpen(false)}
+      />
+
+      <FolderFileDrawer
+        isOpen={drawerState !== null}
+        onClose={() => setDrawerState(null)}
+        folderName={drawerFolder?.name ?? ''}
+        files={drawerFolder?.files ?? []}
+        onFileAdded={handleDrawerFileAdded}
+        onFileRemoved={handleDrawerFileRemoved}
+        acceptTypes={drawerAcceptTypes}
+        language={language}
       />
     </aside>
   );

@@ -5,18 +5,15 @@ import { createPortal } from 'react-dom';
 import {
   X,
   Plug,
-  Check,
-  Key,
   Shield,
-  ExternalLink,
-  Sparkles,
   Trash2,
-  Lock,
-  Layers,
-  FileText,
-  Mail,
-  Calendar,
-  FolderOpen,
+  CheckCircle2,
+  LogIn,
+  AlertCircle,
+  Key,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useConnectorsStore } from '../store/useConnectorsStore';
 import { ConnectorId, getTranslation } from '@anticeil/core';
@@ -28,9 +25,38 @@ interface ConnectorsModalProps {
   onClose: () => void;
 }
 
+// Which API-route provider name to use for each connector
+const OAUTH_PROVIDER: Partial<Record<ConnectorId, string>> = {
+  gmail: 'google',
+  calendar: 'google',
+  google_drive: 'google',
+  notion: 'notion',
+  github: 'github',
+};
+
+// Human-readable provider label shown on the button
+const PROVIDER_LABEL: Partial<Record<ConnectorId, string>> = {
+  gmail: 'Google',
+  calendar: 'Google',
+  google_drive: 'Google',
+  notion: 'Notion',
+  github: 'GitHub',
+};
+
+// Helpful links for getting tokens
+const TOKEN_LINKS: Partial<Record<ConnectorId, { url: string; label: string }>> = {
+  notion: {
+    url: 'https://www.notion.so/profile/integrations',
+    label: 'notion.so/profile/integrations',
+  },
+  github: {
+    url: 'https://github.com/settings/tokens',
+    label: 'github.com/settings/tokens',
+  },
+};
+
 export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -38,39 +64,83 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const connectors = useConnectorsStore((s) => s.connectors);
   const activeConnectorIds = useConnectorsStore((s) => s.activeConnectorIds);
   const toggleActiveConnector = useConnectorsStore((s) => s.toggleActiveConnector);
-  const setAccessToken = useConnectorsStore((s) => s.setAccessToken);
-  const toggleSandboxMode = useConnectorsStore((s) => s.toggleSandboxMode);
   const disconnectConnector = useConnectorsStore((s) => s.disconnectConnector);
+  const disconnectAllGoogle = useConnectorsStore((s) => s.disconnectAllGoogle);
+  const setAccessToken = useConnectorsStore((s) => s.setAccessToken);
+  const lastOAuthError = useConnectorsStore((s) => s.lastOAuthError);
+  const setLastOAuthError = useConnectorsStore((s) => s.setLastOAuthError);
 
   const language = useSettingsStore((s) => s.language);
   const t = getTranslation(language);
   const tc = t.connectors;
 
   const [selectedConnectorId, setSelectedConnectorId] = useState<ConnectorId>('gmail');
-  const [tokenInput, setTokenInput] = useState('');
-  const [emailInput, setEmailInput] = useState('');
-  const [statusMessage, setStatusMessage] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualToken, setManualToken] = useState('');
+  const [accountEmailInput, setAccountEmailInput] = useState('');
+  const [tokenSuccessMsg, setTokenSuccessMsg] = useState<string | null>(null);
 
   if (!isOpen || !mounted) return null;
 
   const current = connectors[selectedConnectorId];
   const isActiveInChat = activeConnectorIds.includes(selectedConnectorId);
+  const isConnected = current.status === 'connected';
+  const provider = OAUTH_PROVIDER[selectedConnectorId];
+  const providerLabel = PROVIDER_LABEL[selectedConnectorId];
+  const isGoogleService = ['gmail', 'calendar', 'google_drive'].includes(selectedConnectorId);
 
-  const handleSaveToken = () => {
-    if (!tokenInput.trim()) {
-      setStatusMessage('⚠️ ' + tc.tokenPlaceholder);
-      return;
-    }
-    setAccessToken(selectedConnectorId, tokenInput.trim(), emailInput.trim() || undefined);
-    setStatusMessage('✅ ' + tc.saveToken);
-    setTokenInput('');
-    setTimeout(() => setStatusMessage(''), 3000);
+  const handleConnectOAuth = () => {
+    if (!provider) return;
+    setIsRedirecting(true);
+    setLastOAuthError(null);
+    window.location.href = `/api/connectors/oauth/${provider}`;
   };
 
-  const handleToggleSandbox = (val: boolean) => {
-    toggleSandboxMode(selectedConnectorId, val);
-    setStatusMessage(val ? '🧪 ' + tc.sandboxTitle : tc.tokenTitle);
-    setTimeout(() => setStatusMessage(''), 3000);
+  const handleSaveManualToken = (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = manualToken.trim();
+    if (!token) return;
+
+    let email = accountEmailInput.trim() || undefined;
+    let name: string | undefined = undefined;
+
+    if (selectedConnectorId === 'notion') {
+      name = 'Notion Workspace';
+      email = email || 'notion-integration@internal';
+    } else if (selectedConnectorId === 'github') {
+      name = 'GitHub User';
+      email = email || 'github-token@user';
+    } else if (isGoogleService) {
+      name = 'Google Account';
+      email = email || 'google-user@oauth';
+    }
+
+    if (isGoogleService) {
+      // Connect all 3 google services with the provided token
+      setAccessToken('gmail', token, email, name);
+      setAccessToken('calendar', token, email, name);
+      setAccessToken('google_drive', token, email, name);
+    } else {
+      setAccessToken(selectedConnectorId, token, email, name);
+    }
+
+    setManualToken('');
+    setAccountEmailInput('');
+    setShowManualInput(false);
+    setTokenSuccessMsg(tc.tokenSaved || 'Token berhasil dihubungkan!');
+    setLastOAuthError(null);
+    setTimeout(() => setTokenSuccessMsg(null), 4000);
+  };
+
+  const handleDisconnect = () => {
+    disconnectConnector(selectedConnectorId);
+    setTokenSuccessMsg(null);
+  };
+
+  const handleDisconnectAllGoogle = () => {
+    disconnectAllGoogle();
+    setTokenSuccessMsg(null);
   };
 
   const modalContent = (
@@ -97,6 +167,8 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
           border: '1px solid var(--border-strong)',
           borderRadius: 'var(--radius-xl)',
           boxShadow: 'var(--shadow-xl)',
+          maxWidth: '780px',
+          width: '100%',
         }}
       >
         {/* Header */}
@@ -126,23 +198,10 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
               <Plug size={20} />
             </div>
             <div>
-              <h2
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                }}
-              >
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 {tc.title}
               </h2>
-              <p
-                style={{
-                  fontSize: '12px',
-                  color: 'var(--text-muted)',
-                  margin: '2px 0 0 0',
-                }}
-              >
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
                 {tc.subtitle}
               </p>
             </div>
@@ -167,8 +226,61 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
           </button>
         </div>
 
-        {/* Modal Body - Responsive Layout (Sidebar + Main Panel) */}
-        <div className="modal-responsive-body">
+        {/* OAuth Error Banner */}
+        {lastOAuthError && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              padding: '12px 18px',
+              backgroundColor: 'var(--accent-danger-subtle, rgba(239, 68, 68, 0.1))',
+              borderBottom: '1px solid var(--accent-danger, #ef4444)',
+              color: 'var(--accent-danger, #ef4444)',
+              fontSize: '12px',
+              lineHeight: 1.5,
+            }}
+          >
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span style={{ flex: 1 }}>{lastOAuthError}</span>
+            <button
+              onClick={() => setLastOAuthError(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'inherit',
+                padding: 0,
+                lineHeight: 1,
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Success Banner */}
+        {tokenSuccessMsg && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 18px',
+              backgroundColor: 'var(--accent-success-subtle, rgba(16, 185, 129, 0.12))',
+              borderBottom: '1px solid var(--accent-success, #10b981)',
+              color: 'var(--accent-success, #10b981)',
+              fontSize: '12px',
+              fontWeight: 600,
+            }}
+          >
+            <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1 }}>{tokenSuccessMsg}</span>
+          </div>
+        )}
+
+        {/* Modal Body */}
+        <div className="modal-responsive-body" style={{ minHeight: '380px' }}>
           {/* Left Sidebar: Connector List */}
           <div className="modal-responsive-sidebar">
             <div
@@ -188,12 +300,16 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
             {Object.values(connectors).map((conn) => {
               const isSelected = conn.id === selectedConnectorId;
               const isAttached = activeConnectorIds.includes(conn.id);
-              const isConnected = conn.status === 'connected';
+              const connected = conn.status === 'connected';
 
               return (
                 <button
                   key={conn.id}
-                  onClick={() => setSelectedConnectorId(conn.id)}
+                  onClick={() => {
+                    setSelectedConnectorId(conn.id);
+                    setShowManualInput(false);
+                    setTokenSuccessMsg(null);
+                  }}
                   className="modal-responsive-sidebar-item"
                   style={{
                     width: '100%',
@@ -209,16 +325,23 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                     backgroundColor: isSelected
                       ? 'var(--brand-subtle, rgba(99, 102, 241, 0.12))'
                       : 'transparent',
-                    color: isSelected
-                      ? 'var(--brand-primary)'
-                      : 'var(--text-primary)',
+                    color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
                     cursor: 'pointer',
                     textAlign: 'left',
                     transition: 'all 0.15s ease',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                    <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div
+                      style={{
+                        width: '22px',
+                        height: '22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
                       <ConnectorBrandIcon id={conn.id} size={20} />
                     </div>
                     <div style={{ overflow: 'hidden' }}>
@@ -239,11 +362,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                           color: isSelected ? 'var(--brand-primary)' : 'var(--text-muted)',
                         }}
                       >
-                        {conn.isSandboxMode
-                          ? tc.demoSandbox
-                          : isConnected
-                          ? tc.liveToken
-                          : tc.disconnected}
+                        {connected ? tc.liveToken : tc.disconnected}
                       </div>
                     </div>
                   </div>
@@ -263,7 +382,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                         {tc.activeInChat}
                       </span>
                     )}
-                    {isConnected && (
+                    {connected && (
                       <span
                         style={{
                           width: '7px',
@@ -279,15 +398,16 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
             })}
           </div>
 
-          {/* Right Main Panel: Detail & Configuration */}
+          {/* Right Main Panel */}
           <div
             className="modal-responsive-content"
             style={{
               backgroundColor: 'var(--bg-surface)',
               justifyContent: 'space-between',
+              padding: '20px',
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* Connector Header */}
               <div
                 style={{
@@ -314,231 +434,311 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                     <ConnectorBrandIcon id={current.id} size={28} />
                   </div>
                   <div>
-                    <h3
-                      style={{
-                        fontSize: '17px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        margin: 0,
-                      }}
-                    >
+                    <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                       {current.name}
                     </h3>
-                    <p
-                      style={{
-                        fontSize: '12px',
-                        color: 'var(--text-muted)',
-                        margin: '3px 0 0 0',
-                      }}
-                    >
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
                       {current.description}
                     </p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => toggleActiveConnector(current.id)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: isActiveInChat
-                      ? '1px solid var(--accent-success)'
-                      : '1px solid var(--border-strong)',
-                    backgroundColor: isActiveInChat
-                      ? 'var(--accent-success-subtle, rgba(16, 185, 129, 0.12))'
-                      : 'var(--bg-subtle)',
-                    color: isActiveInChat
-                      ? 'var(--accent-success)'
-                      : 'var(--text-secondary)',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {isActiveInChat ? tc.activeInChat : tc.attachToChat}
-                </button>
+                {/* Attach to Chat toggle */}
+                {isConnected && (
+                  <button
+                    type="button"
+                    onClick={() => toggleActiveConnector(current.id)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: isActiveInChat
+                        ? '1px solid var(--accent-success)'
+                        : '1px solid var(--border-strong)',
+                      backgroundColor: isActiveInChat
+                        ? 'var(--accent-success-subtle, rgba(16, 185, 129, 0.12))'
+                        : 'var(--bg-subtle)',
+                      color: isActiveInChat ? 'var(--accent-success)' : 'var(--text-secondary)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {isActiveInChat ? tc.activeInChat : tc.attachToChat}
+                  </button>
+                )}
               </div>
 
-              {/* Status Alert Notification */}
-              {statusMessage && (
+              {/* Connected Account Info */}
+              {isConnected && current.account && (
                 <div
                   style={{
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--brand-subtle, rgba(99, 102, 241, 0.1))',
-                    border: '1px solid var(--brand-primary)',
-                    color: 'var(--brand-primary)',
-                    fontSize: '12px',
-                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--accent-success)',
+                    backgroundColor: 'var(--accent-success-subtle, rgba(16, 185, 129, 0.08))',
                   }}
                 >
-                  {statusMessage}
+                  <CheckCircle2 size={16} color="var(--accent-success)" style={{ flexShrink: 0 }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-success)' }}>
+                      {tc.connectedAs}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        color: 'var(--text-primary)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {current.account.name
+                        ? `${current.account.name} — ${current.account.email}`
+                        : current.account.email}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Sandbox vs Live Mode Switch Card */}
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--border-strong)',
-                  backgroundColor: 'var(--bg-subtle)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    <Sparkles size={15} color="#f59e0b" />
-                    {tc.sandboxTitle}
-                  </div>
-                  <p
-                    style={{
-                      fontSize: '11px',
-                      color: 'var(--text-muted)',
-                      margin: '2px 0 0 0',
-                    }}
-                  >
-                    {tc.sandboxDesc}
-                  </p>
-                </div>
-
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={current.isSandboxMode}
-                    onChange={(e) => handleToggleSandbox(e.target.checked)}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer',
-                      accentColor: 'var(--brand-primary)',
-                    }}
-                  />
-                </label>
-              </div>
-
-              {/* Live BYOK Token Configuration */}
-              {!current.isSandboxMode && (
+              {/* OAuth Connect Card (when disconnected) */}
+              {!isConnected && provider && (
                 <div
                   style={{
-                    padding: '14px 16px',
+                    padding: '16px',
                     borderRadius: 'var(--radius-lg)',
                     border: '1px solid var(--border-strong)',
-                    backgroundColor: 'var(--bg-main)',
+                    backgroundColor: 'var(--bg-subtle)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px',
+                    gap: '12px',
                   }}
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    <Key size={14} color="var(--brand-primary)" />
-                    {tc.tokenTitle}
-                  </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-                    {tc.tokenSubtitle}
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    {tc.oauthDescription}
                   </p>
 
-                  <input
-                    type="password"
-                    placeholder={tc.tokenPlaceholder}
-                    value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value)}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'var(--bg-input)',
-                      color: 'var(--text-primary)',
-                      fontSize: '12px',
-                      outline: 'none',
-                      fontFamily: 'monospace',
-                    }}
-                  />
-
-                  <input
-                    type="email"
-                    placeholder={tc.emailPlaceholder}
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'var(--bg-input)',
-                      color: 'var(--text-primary)',
-                      fontSize: '12px',
-                      outline: 'none',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      paddingTop: '4px',
-                    }}
-                  >
-                    <a
-                      href="https://developers.google.com/oauthplayground"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleConnectOAuth}
+                      disabled={isRedirecting}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '11px',
-                        color: 'var(--brand-primary)',
-                        textDecoration: 'none',
-                        fontWeight: 500,
-                      }}
-                    >
-                      <span>Get Token from OAuth Playground</span>
-                      <ExternalLink size={12} />
-                    </a>
-
-                    <button
-                      type="button"
-                      onClick={handleSaveToken}
-                      style={{
-                        padding: '6px 14px',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        padding: '10px 18px',
                         borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--brand-primary)',
+                        backgroundColor: isRedirecting ? 'var(--bg-subtle)' : 'var(--brand-primary)',
                         border: 'none',
-                        color: '#FFFFFF',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
+                        color: isRedirecting ? 'var(--text-muted)' : '#FFFFFF',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: isRedirecting ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s ease',
                       }}
                     >
-                      {tc.saveToken}
+                      <LogIn size={15} />
+                      <span>
+                        {isRedirecting
+                          ? tc.connectingOAuth
+                          : `${tc.connectWithOAuth} ${providerLabel}`}
+                      </span>
                     </button>
                   </div>
                 </div>
               )}
+
+              {/* Reconnect / Change Account button (when connected) */}
+              {isConnected && provider && (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={handleConnectOAuth}
+                    disabled={isRedirecting}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '8px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: 'transparent',
+                      border: '1px solid var(--border-strong)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: isRedirecting ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <LogIn size={13} />
+                    <span>{isRedirecting ? tc.connectingOAuth : tc.reconnect}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Direct Token / API Key Input Section (Accordion) */}
+              <div
+                style={{
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-lg)',
+                  backgroundColor: 'var(--bg-subtle)',
+                  overflow: 'hidden',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowManualInput((prev) => !prev)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Key size={14} />
+                    {tc.manualTokenOption || 'Atau Masukkan Token / API Key Secara Manual'}
+                  </span>
+                  {showManualInput ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+
+                {showManualInput && (
+                  <form
+                    onSubmit={handleSaveManualToken}
+                    style={{
+                      padding: '12px 14px 16px 14px',
+                      borderTop: '1px solid var(--border-subtle)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                    }}
+                  >
+                    {/* Helper text with links */}
+                    {selectedConnectorId === 'notion' && (
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                        {tc.tokenHelperNotion ||
+                          'Buat Integrasi Internal di notion.so/profile/integrations lalu salin Secret Token (secret_... atau ntn_...).'}{' '}
+                        {TOKEN_LINKS.notion && (
+                          <a
+                            href={TOKEN_LINKS.notion.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: 'var(--brand-primary)',
+                              textDecoration: 'underline',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                            }}
+                          >
+                            {TOKEN_LINKS.notion.label}
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </p>
+                    )}
+
+                    {selectedConnectorId === 'github' && (
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                        {tc.tokenHelperGithub ||
+                          'Buat Personal Access Token di github.com/settings/tokens dengan izin "repo" dan "read:user".'}{' '}
+                        {TOKEN_LINKS.github && (
+                          <a
+                            href={TOKEN_LINKS.github.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: 'var(--brand-primary)',
+                              textDecoration: 'underline',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                            }}
+                          >
+                            {TOKEN_LINKS.github.label}
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </p>
+                    )}
+
+                    {isGoogleService && (
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                        {tc.tokenHelperGoogle ||
+                          'Atau tempel Access Token Google yang valid secara manual.'}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <input
+                        type="password"
+                        name={`connector-token-${selectedConnectorId}`}
+                        id={`connector-token-${selectedConnectorId}`}
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-form-type="other"
+                        placeholder={
+                          selectedConnectorId === 'notion'
+                            ? 'secret_... atau ntn_...'
+                            : selectedConnectorId === 'github'
+                            ? 'ghp_...'
+                            : tc.tokenInputPlaceholder || 'Tempel token akses di sini...'
+                        }
+                        value={manualToken}
+                        onChange={(e) => setManualToken(e.target.value)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-strong)',
+                          backgroundColor: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                          fontSize: '12px',
+                          fontFamily: 'monospace',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <button
+                        type="submit"
+                        disabled={!manualToken.trim()}
+                        style={{
+                          padding: '7px 16px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: manualToken.trim()
+                            ? 'var(--brand-primary)'
+                            : 'var(--bg-subtle)',
+                          color: manualToken.trim() ? '#FFFFFF' : 'var(--text-muted)',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: manualToken.trim() ? 'pointer' : 'not-allowed',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {tc.saveToken || 'Simpan & Hubungkan'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
 
               {/* Scopes & Permissions Card */}
               <div
@@ -595,32 +795,62 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                 borderTop: '1px solid var(--border-subtle)',
                 paddingTop: '16px',
                 marginTop: '16px',
+                flexWrap: 'wrap',
+                gap: '10px',
               }}
             >
-              {current.status === 'connected' ? (
-                <button
-                  type="button"
-                  onClick={() => disconnectConnector(current.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--accent-danger)',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Trash2 size={14} />
-                  <span>{tc.disconnect}</span>
-                </button>
-              ) : (
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  {tc.disconnected}
-                </span>
-              )}
+              {/* Disconnect actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isConnected ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleDisconnect}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'transparent',
+                        border: '1px solid var(--accent-danger-subtle, rgba(239, 68, 68, 0.3))',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '6px 12px',
+                        color: 'var(--accent-danger, #ef4444)',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <Trash2 size={13} />
+                      <span>{tc.disconnect}</span>
+                    </button>
+
+                    {isGoogleService && (
+                      <button
+                        type="button"
+                        onClick={handleDisconnectAllGoogle}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        {tc.disconnectAllGoogle || 'Putuskan Semua Google'}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {tc.disconnected}
+                  </span>
+                )}
+              </div>
 
               <button
                 type="button"

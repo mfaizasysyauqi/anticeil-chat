@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Eye,
   EyeOff,
-  Zap,
   CheckCircle2,
   Send,
   Loader2,
@@ -88,12 +87,13 @@ function LoginForm() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // If already logged in, redirect to /chat
+  // If already logged in, redirect to /chat or the originally requested page
   useEffect(() => {
     if (user) {
-      router.push('/chat');
+      const next = searchParams?.get('next');
+      router.push(next && next.startsWith('/') ? next : '/chat');
     }
-  }, [user, router]);
+  }, [user, router, searchParams]);
 
   const handleResendEmail = async () => {
     if (!email.trim() || resendCooldown > 0 || isResending) return;
@@ -133,7 +133,8 @@ function LoginForm() {
 
     const { error } = await signInWithPassword(email.trim(), password);
     if (!error) {
-      router.push('/chat');
+      const next = searchParams?.get('next');
+      router.push(next && next.startsWith('/') ? next : '/chat');
     }
   };
 
@@ -589,39 +590,6 @@ function LoginForm() {
             <ArrowRight size={16} />
           </button>
         </form>
-
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ flex: 1, height: '1px', background: '#E8E2D5' }} />
-          <span style={{ fontSize: '11px', color: '#8D91A5', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
-            {ta.or}
-          </span>
-          <div style={{ flex: 1, height: '1px', background: '#E8E2D5' }} />
-        </div>
-
-        {/* Guest Mode CTA */}
-        <Link
-          href="/chat"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            background: '#F8FAFC',
-            border: '1.5px solid #D8DCE8',
-            borderRadius: '10px',
-            padding: '12px',
-            color: '#181B34',
-            fontSize: '13.5px',
-            fontWeight: 700,
-            textDecoration: 'none',
-            transition: 'all 0.15s ease',
-            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.03)',
-          }}
-        >
-          <Zap size={15} color="#0073EA" />
-          <span>{ta.continueAsGuest}</span>
-        </Link>
 
         {/* Footer Link */}
         <div style={{ textAlign: 'center', fontSize: '13.5px', color: '#5F6377', marginTop: '2px' }}>

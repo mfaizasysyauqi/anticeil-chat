@@ -89,7 +89,7 @@ export class CalendarConnectorClient {
 
   constructor(options: CalendarClientOptions) {
     this.accessToken = options.accessToken;
-    this.isSandbox = options.isSandboxMode ?? (!options.accessToken);
+    this.isSandbox = options.isSandboxMode ?? false;
   }
 
   /**

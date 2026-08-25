@@ -12,5 +12,7 @@ export * from './domain/connectors/types';
 export * from './domain/connectors/gmailClient';
 export * from './domain/connectors/calendarClient';
 export * from './domain/connectors/driveClient';
+export * from './domain/connectors/notionClient';
+export * from './domain/connectors/githubClient';
 export * from './domain/connectors/toolRegistry';
 export * from './i18n';

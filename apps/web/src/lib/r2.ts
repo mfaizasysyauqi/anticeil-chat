@@ -1,4 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import https from 'https';
 
 const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -8,6 +10,15 @@ if (!accountId || !accessKeyId || !secretAccessKey) {
   // Not throwing — allow the app to boot; routes will return 500 if called without config
   console.warn('[R2] Missing R2 env vars. Storage features will not work.');
 }
+
+// In local dev, corporate proxies/antivirus software often intercept TLS connections
+// causing SSL handshake failures. We bypass certificate validation in development only.
+const requestHandler =
+  process.env.NODE_ENV !== 'production'
+    ? new NodeHttpHandler({
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+      })
+    : undefined;
 
 /**
  * Singleton S3Client configured to point to Cloudflare R2.
@@ -20,6 +31,7 @@ export const r2 = new S3Client({
     accessKeyId: accessKeyId ?? '',
     secretAccessKey: secretAccessKey ?? '',
   },
+  ...(requestHandler ? { requestHandler } : {}),
 });
 
 export const R2_BUCKET = process.env.R2_BUCKET_NAME ?? 'anticeil-storage';

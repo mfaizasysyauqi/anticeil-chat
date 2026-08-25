@@ -14,11 +14,8 @@ import {
   Cohere,
   Luma,
 } from '@lobehub/icons';
+import { Sliders } from 'lucide-react';
 
-// Unified dispatcher — used by page.tsx renderLucideIcon()
-// Each provider uses its available variant:
-//   .Color  → brand-color SVG (not all providers have this)
-//   default → mono/outline version (always available)
 export type ProviderKey =
   | 'openai'
   | 'anthropic'
@@ -30,7 +27,9 @@ export type ProviderKey =
   | 'perplexity'
   | 'huggingface'
   | 'cohere'
-  | 'luma';
+  | 'luma'
+  | 'custom'
+  | string;
 
 export function ProviderBrandLogo({
   provider,
@@ -39,20 +38,39 @@ export function ProviderBrandLogo({
   provider: ProviderKey;
   size?: number;
 }) {
-  switch (provider) {
-    // Mono-only (no .Color variant in this version)
-    case 'openai':      return <OpenAI size={size} />;
-    case 'anthropic':   return <Anthropic size={size} />;
-    case 'groq':        return <Groq size={size} />;
-    case 'ollama':      return <Ollama size={size} />;
-    // Color variants available
-    case 'gemini':      return <Gemini.Color size={size} />;
-    case 'deepseek':    return <DeepSeek.Color size={size} />;
-    case 'mistral':     return <Mistral.Color size={size} />;
-    case 'perplexity':  return <Perplexity.Color size={size} />;
-    case 'huggingface': return <HuggingFace.Color size={size} />;
-    case 'cohere':      return <Cohere.Color size={size} />;
-    case 'luma':        return <Luma.Color size={size} />;
-    default:            return null;
+  const p = (provider || '').toLowerCase();
+
+  switch (p) {
+    case 'openai':
+    case 'chatgpt':
+    case 'gpt':
+      return <OpenAI size={size} />;
+    case 'anthropic':
+    case 'claude':
+      return <Anthropic size={size} />;
+    case 'groq':
+      return <Groq size={size} />;
+    case 'ollama':
+      return <Ollama size={size} />;
+    case 'gemini':
+    case 'google':
+      return <Gemini.Color size={size} />;
+    case 'deepseek':
+      return <DeepSeek.Color size={size} />;
+    case 'mistral':
+      return <Mistral.Color size={size} />;
+    case 'perplexity':
+      return <Perplexity.Color size={size} />;
+    case 'huggingface':
+    case 'hf':
+      return <HuggingFace.Color size={size} />;
+    case 'cohere':
+      return <Cohere.Color size={size} />;
+    case 'luma':
+      return <Luma.Color size={size} />;
+    case 'custom':
+      return <Sliders size={size} color="var(--brand-primary, #0073ea)" />;
+    default:
+      return <Sliders size={size} color="var(--text-muted)" />;
   }
 }

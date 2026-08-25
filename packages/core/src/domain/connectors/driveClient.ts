@@ -46,7 +46,7 @@ export class GoogleDriveConnectorClient {
 
   constructor(options: DriveClientOptions) {
     this.accessToken = options.accessToken;
-    this.isSandbox = options.isSandboxMode ?? (!options.accessToken);
+    this.isSandbox = options.isSandboxMode ?? false;
   }
 
   /**

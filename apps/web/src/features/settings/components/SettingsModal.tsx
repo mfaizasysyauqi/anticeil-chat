@@ -33,6 +33,7 @@ import { useChatStore } from '../../chat/store/useChatStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useStorageStore, formatStorageBytes } from '../../storage/store/useStorageStore';
 import { StorageMeter } from '../../storage/components/StorageMeter';
+import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -376,7 +377,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                            <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <ProviderBrandLogo provider={provider.id as any} size={18} />
+                            </div>
                             <span style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>
                               {provider.name}
                             </span>
@@ -422,6 +426,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                             <input
                               type={isVisible ? 'text' : 'password'}
+                              name={`anticeil-apikey-${provider.id}`}
+                              id={`anticeil-apikey-${provider.id}`}
+                              autoComplete="new-password"
+                              data-lpignore="true"
+                              data-1p-ignore="true"
+                              data-form-type="other"
                               placeholder={`Enter ${provider.name} API Key...`}
                               value={config?.apiKey || ''}
                               onChange={(e) => handleKeyChange(provider.id, e.target.value)}

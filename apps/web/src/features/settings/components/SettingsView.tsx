@@ -24,6 +24,7 @@ import {
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useChatStore } from '../../chat/store/useChatStore';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
+import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
 export function SettingsView() {
   const apiKeys = useSettingsStore((s) => s.apiKeys);
@@ -369,7 +370,10 @@ export function SettingsView() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <ProviderBrandLogo provider={provider.id as any} size={20} />
+                    </div>
                     <span style={{ fontWeight: 600, fontSize: 'var(--font-md)', color: 'var(--text-primary)' }}>
                       {provider.name}
                     </span>
@@ -423,6 +427,12 @@ export function SettingsView() {
                     >
                       <input
                         type={isVisible ? 'text' : 'password'}
+                        name={`anticeil-apikey-${provider.id}`}
+                        id={`anticeil-apikey-${provider.id}`}
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-form-type="other"
                         placeholder={`Enter ${provider.name} API Key...`}
                         value={config?.apiKey || ''}
                         onChange={(e) => handleKeyChange(provider.id, e.target.value)}

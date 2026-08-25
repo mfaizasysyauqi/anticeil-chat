@@ -54,7 +54,13 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ totalBytes, breakdown, fileCount });
   } catch (err: any) {
-    console.error('[R2] storage usage error:', err);
-    return NextResponse.json({ error: err?.message ?? 'Failed' }, { status: 500 });
+    // Return empty usage on network/R2 SSL issues rather than crashing the page with 500
+    console.warn('[R2] storage usage warning (falling back to 0 bytes):', err?.message || err);
+    return NextResponse.json({
+      totalBytes: 0,
+      breakdown: { docs: 0, images: 0, audio: 0, other: 0 },
+      fileCount: 0,
+      isUnavailable: true,
+    });
   }
 }

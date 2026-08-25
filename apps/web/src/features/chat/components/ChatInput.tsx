@@ -31,12 +31,51 @@ import {
   parseUploadedFile,
   formatBytes,
   getModelById,
+  ConnectorId,
 } from '@anticeil/core';
 import { ModelSelectorModal } from './ModelSelectorModal';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
 import { ConnectorBrandIcon } from '../../connectors/components/ConnectorLogos';
 import { useStorageStore } from '../../storage/store/useStorageStore';
+
+const CONNECTOR_CHIPS: Array<{
+  id: ConnectorId;
+  label: string;
+  bg: string;
+  border: string;
+}> = [
+  {
+    id: 'gmail',
+    label: 'Gmail',
+    bg: 'rgba(239, 68, 68, 0.08)',
+    border: 'rgba(239, 68, 68, 0.25)',
+  },
+  {
+    id: 'calendar',
+    label: 'Calendar',
+    bg: 'rgba(59, 130, 246, 0.08)',
+    border: 'rgba(59, 130, 246, 0.25)',
+  },
+  {
+    id: 'google_drive',
+    label: 'Drive',
+    bg: 'rgba(245, 158, 11, 0.08)',
+    border: 'rgba(245, 158, 11, 0.25)',
+  },
+  {
+    id: 'notion',
+    label: 'Notion',
+    bg: 'rgba(107, 114, 128, 0.12)',
+    border: 'rgba(107, 114, 128, 0.3)',
+  },
+  {
+    id: 'github',
+    label: 'GitHub',
+    bg: 'rgba(147, 51, 234, 0.08)',
+    border: 'rgba(147, 51, 234, 0.25)',
+  },
+];
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: FileAttachment[]) => void;
@@ -58,6 +97,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
   const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
 
+  const connectors = useConnectorsStore((s) => s.connectors);
   const activeConnectorIds = useConnectorsStore((s) => s.activeConnectorIds);
   const toggleActiveConnector = useConnectorsStore((s) => s.toggleActiveConnector);
 
@@ -536,7 +576,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
                 <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 4px' }} />
 
-                {/* 4. Tambah Konektor */}
+                {/* 4. Kelola Konektor */}
                 <button
                   type="button"
                   onClick={() => {
@@ -564,87 +604,43 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                 >
                   <Plug size={16} color="var(--brand-primary)" />
                   <span style={{ color: 'var(--brand-primary)' }}>
-                    {t.connectors.addConnector}
+                    {t.connectors.manageConnectors}
                   </span>
                 </button>
               </div>
             )}
 
             {/* Quick toggle chips */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-
-              {/* Quick toggle chips */}
-              {activeConnectorIds.includes('gmail') && (
-                <button
-                  type="button"
-                  onClick={() => toggleActiveConnector('gmail')}
-                  title="Gmail Active (Click to toggle)"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '3px 8px',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    borderRadius: 'var(--radius-full, 9999px)',
-                    color: 'var(--text-primary)',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <ConnectorBrandIcon id="gmail" size={13} />
-                  <span>Gmail</span>
-                </button>
-              )}
-
-              {activeConnectorIds.includes('calendar') && (
-                <button
-                  type="button"
-                  onClick={() => toggleActiveConnector('calendar')}
-                  title="Google Calendar Active (Click to toggle)"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '3px 8px',
-                    background: 'rgba(59, 130, 246, 0.08)',
-                    border: '1px solid rgba(59, 130, 246, 0.25)',
-                    borderRadius: 'var(--radius-full, 9999px)',
-                    color: 'var(--text-primary)',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <ConnectorBrandIcon id="calendar" size={13} />
-                  <span>Calendar</span>
-                </button>
-              )}
-
-              {activeConnectorIds.includes('google_drive') && (
-                <button
-                  type="button"
-                  onClick={() => toggleActiveConnector('google_drive')}
-                  title="Google Drive Active (Click to toggle)"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '3px 8px',
-                    background: 'rgba(245, 158, 11, 0.08)',
-                    border: '1px solid rgba(245, 158, 11, 0.25)',
-                    borderRadius: 'var(--radius-full, 9999px)',
-                    color: 'var(--text-primary)',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <ConnectorBrandIcon id="google_drive" size={13} />
-                  <span>Drive</span>
-                </button>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+              {CONNECTOR_CHIPS.map((chip) => {
+                if (!activeConnectorIds.includes(chip.id)) return null;
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => toggleActiveConnector(chip.id)}
+                    title={`${chip.label} Aktif (Klik untuk lepas sematan)`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      padding: '3px 8px',
+                      background: chip.bg,
+                      border: `1px solid ${chip.border}`,
+                      borderRadius: 'var(--radius-full, 9999px)',
+                      color: 'var(--text-primary)',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <ConnectorBrandIcon id={chip.id} size={13} />
+                    <span>{chip.label}</span>
+                    <X size={11} style={{ opacity: 0.6, marginLeft: '2px' }} />
+                  </button>
+                );
+              })}
             </div>
 
             {/* Token Counter (Subtle next to plus button) */}

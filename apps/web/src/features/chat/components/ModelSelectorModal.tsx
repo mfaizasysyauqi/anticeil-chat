@@ -27,6 +27,7 @@ import {
 } from '@anticeil/core';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useChatStore } from '../store/useChatStore';
+import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
 interface ModelSelectorModalProps {
   onClose: () => void;
@@ -219,7 +220,7 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '8px',
+                    gap: '10px',
                     padding: '8px 12px',
                     borderRadius: 'var(--radius-md)',
                     background: isSelected ? 'var(--bg-surface)' : 'transparent',
@@ -229,11 +230,19 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
                     fontSize: '13px',
                     cursor: 'pointer',
                     textAlign: 'left',
+                    transition: 'all 0.15s ease',
                   }}
                 >
-                  <span>{provider.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
+                    <div style={{ width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <ProviderBrandLogo provider={provider.id as any} size={16} />
+                    </div>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {provider.name}
+                    </span>
+                  </div>
                   {!providerHasKey && (
-                    <span title="API Key missing" style={{ display: 'inline-flex' }}>
+                    <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
                       <AlertCircle size={13} color="var(--accent-warning)" />
                     </span>
                   )}

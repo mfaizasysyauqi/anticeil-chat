@@ -541,6 +541,8 @@ export const useChatStore = create<ChatState>()(
                 gmail: connectorsStore.getGmailClient(),
                 calendar: connectorsStore.getCalendarClient(),
                 drive: connectorsStore.getDriveClient(),
+                notion: connectorsStore.getNotionClient(),
+                github: connectorsStore.getGitHubClient(),
               });
               connectorsStore.recordToolExecution(res);
               executedResults.push(res);

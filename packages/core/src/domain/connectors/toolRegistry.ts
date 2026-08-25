@@ -7,6 +7,8 @@ import {
 import { GmailConnectorClient } from './gmailClient';
 import { CalendarConnectorClient } from './calendarClient';
 import { GoogleDriveConnectorClient } from './driveClient';
+import { NotionConnectorClient } from './notionClient';
+import { GitHubConnectorClient } from './githubClient';
 
 export const CONNECTOR_TOOLS: ConnectorToolDefinition[] = [
   // --- GMAIL TOOLS (CRUD) ---
@@ -365,6 +367,302 @@ export const CONNECTOR_TOOLS: ConnectorToolDefinition[] = [
       required: ['fileId'],
     },
   },
+
+  // --- NOTION TOOLS (CRUD) ---
+  {
+    name: 'notion_search',
+    connectorId: 'notion',
+    description: 'Search pages and databases in the connected Notion workspace.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Search query text (e.g. "Meeting Notes", "Roadmap", "Sprint")',
+        },
+        filter: {
+          type: 'string',
+          description: 'Filter results by type: "page" or "database"',
+          enum: ['page', 'database'],
+        },
+        maxResults: {
+          type: 'number',
+          description: 'Maximum results to return (default 10)',
+        },
+      },
+    },
+  },
+  {
+    name: 'notion_get_page',
+    connectorId: 'notion',
+    description: 'Get the full content of a Notion page by its ID.',
+    parameters: {
+      type: 'object',
+      properties: {
+        pageId: {
+          type: 'string',
+          description: 'The unique ID of the Notion page',
+          required: true,
+        },
+      },
+      required: ['pageId'],
+    },
+  },
+  {
+    name: 'notion_create_page',
+    connectorId: 'notion',
+    description: 'Create a new page in Notion under a parent page or database.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description: 'Title of the new page',
+          required: true,
+        },
+        content: {
+          type: 'string',
+          description: 'Markdown-style body content for the page',
+          required: true,
+        },
+        parentPageId: {
+          type: 'string',
+          description: 'ID of the parent page (use this OR parentDatabaseId)',
+        },
+        parentDatabaseId: {
+          type: 'string',
+          description: 'ID of the parent database (use this OR parentPageId)',
+        },
+      },
+      required: ['title', 'content'],
+    },
+  },
+  {
+    name: 'notion_update_page',
+    connectorId: 'notion',
+    description: 'Update a Notion page title and/or append new content blocks.',
+    parameters: {
+      type: 'object',
+      properties: {
+        pageId: {
+          type: 'string',
+          description: 'The ID of the page to update',
+          required: true,
+        },
+        title: {
+          type: 'string',
+          description: 'New title for the page (optional)',
+        },
+        appendContent: {
+          type: 'string',
+          description: 'Text to append as new blocks at the bottom of the page',
+        },
+      },
+      required: ['pageId'],
+    },
+  },
+  {
+    name: 'notion_archive_page',
+    connectorId: 'notion',
+    description: 'Archive (soft-delete) a Notion page by its ID.',
+    parameters: {
+      type: 'object',
+      properties: {
+        pageId: {
+          type: 'string',
+          description: 'The ID of the Notion page to archive',
+          required: true,
+        },
+      },
+      required: ['pageId'],
+    },
+  },
+  {
+    name: 'notion_query_database',
+    connectorId: 'notion',
+    description: 'Query rows from a Notion database with optional filters.',
+    parameters: {
+      type: 'object',
+      properties: {
+        databaseId: {
+          type: 'string',
+          description: 'The ID of the Notion database to query',
+          required: true,
+        },
+        maxResults: {
+          type: 'number',
+          description: 'Maximum rows to return (default 10)',
+        },
+      },
+      required: ['databaseId'],
+    },
+  },
+
+  // --- GITHUB TOOLS (CRUD) ---
+  {
+    name: 'github_list_repos',
+    connectorId: 'github',
+    description: 'List the authenticated user\'s GitHub repositories.',
+    parameters: {
+      type: 'object',
+      properties: {
+        sort: {
+          type: 'string',
+          description: 'Sort by: "updated" (default), "created", "pushed", "full_name"',
+          enum: ['updated', 'created', 'pushed', 'full_name'],
+        },
+        visibility: {
+          type: 'string',
+          description: 'Filter by visibility: "all" (default), "public", "private"',
+          enum: ['all', 'public', 'private'],
+        },
+        maxResults: {
+          type: 'number',
+          description: 'Maximum repos to return (default 10)',
+        },
+      },
+    },
+  },
+  {
+    name: 'github_list_issues',
+    connectorId: 'github',
+    description: 'List issues in a GitHub repository.',
+    parameters: {
+      type: 'object',
+      properties: {
+        owner: {
+          type: 'string',
+          description: 'Repository owner (username or org)',
+          required: true,
+        },
+        repo: {
+          type: 'string',
+          description: 'Repository name',
+          required: true,
+        },
+        state: {
+          type: 'string',
+          description: 'Filter by state: "open" (default), "closed", "all"',
+          enum: ['open', 'closed', 'all'],
+        },
+        labels: {
+          type: 'string',
+          description: 'Comma-separated labels to filter by (e.g. "bug,enhancement")',
+        },
+        maxResults: {
+          type: 'number',
+          description: 'Maximum issues to return (default 10)',
+        },
+      },
+      required: ['owner', 'repo'],
+    },
+  },
+  {
+    name: 'github_create_issue',
+    connectorId: 'github',
+    description: 'Create a new issue in a GitHub repository.',
+    parameters: {
+      type: 'object',
+      properties: {
+        owner: {
+          type: 'string',
+          description: 'Repository owner',
+          required: true,
+        },
+        repo: {
+          type: 'string',
+          description: 'Repository name',
+          required: true,
+        },
+        title: {
+          type: 'string',
+          description: 'Issue title',
+          required: true,
+        },
+        body: {
+          type: 'string',
+          description: 'Issue body/description (markdown supported)',
+        },
+        labels: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Labels to apply (e.g. ["bug", "help wanted"])',
+        },
+        assignees: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'GitHub usernames to assign',
+        },
+      },
+      required: ['owner', 'repo', 'title'],
+    },
+  },
+  {
+    name: 'github_update_issue',
+    connectorId: 'github',
+    description: 'Update an existing GitHub issue (title, body, state, or labels).',
+    parameters: {
+      type: 'object',
+      properties: {
+        owner: { type: 'string', description: 'Repository owner', required: true },
+        repo: { type: 'string', description: 'Repository name', required: true },
+        issueNumber: { type: 'number', description: 'Issue number to update', required: true },
+        title: { type: 'string', description: 'New title (optional)' },
+        body: { type: 'string', description: 'New body text (optional)' },
+        state: { type: 'string', description: '"open" or "closed"', enum: ['open', 'closed'] },
+        labels: { type: 'array', items: { type: 'string' }, description: 'New labels list' },
+      },
+      required: ['owner', 'repo', 'issueNumber'],
+    },
+  },
+  {
+    name: 'github_list_pull_requests',
+    connectorId: 'github',
+    description: 'List pull requests in a GitHub repository.',
+    parameters: {
+      type: 'object',
+      properties: {
+        owner: { type: 'string', description: 'Repository owner', required: true },
+        repo: { type: 'string', description: 'Repository name', required: true },
+        state: {
+          type: 'string',
+          description: 'Filter by state: "open" (default), "closed", "all"',
+          enum: ['open', 'closed', 'all'],
+        },
+        maxResults: { type: 'number', description: 'Maximum PRs to return (default 10)' },
+      },
+      required: ['owner', 'repo'],
+    },
+  },
+  {
+    name: 'github_list_commits',
+    connectorId: 'github',
+    description: 'List recent commits on a branch of a GitHub repository.',
+    parameters: {
+      type: 'object',
+      properties: {
+        owner: { type: 'string', description: 'Repository owner', required: true },
+        repo: { type: 'string', description: 'Repository name', required: true },
+        branch: { type: 'string', description: 'Branch name (defaults to default branch)' },
+        maxResults: { type: 'number', description: 'Maximum commits to return (default 10)' },
+      },
+      required: ['owner', 'repo'],
+    },
+  },
+  {
+    name: 'github_close_issue',
+    connectorId: 'github',
+    description: 'Close an open GitHub issue.',
+    parameters: {
+      type: 'object',
+      properties: {
+        owner: { type: 'string', description: 'Repository owner', required: true },
+        repo: { type: 'string', description: 'Repository name', required: true },
+        issueNumber: { type: 'number', description: 'Issue number to close', required: true },
+      },
+      required: ['owner', 'repo', 'issueNumber'],
+    },
+  },
 ];
 
 export async function executeConnectorTool(
@@ -373,6 +671,8 @@ export async function executeConnectorTool(
     gmail?: GmailConnectorClient;
     calendar?: CalendarConnectorClient;
     drive?: GoogleDriveConnectorClient;
+    notion?: NotionConnectorClient;
+    github?: GitHubConnectorClient;
   }
 ): Promise<ToolCallResult> {
   const { id, name, arguments: args } = toolCall;
@@ -393,7 +693,7 @@ export async function executeConnectorTool(
   try {
     // 1. Gmail Tools
     if (toolDef.connectorId === 'gmail') {
-      const gmail = clients.gmail || new GmailConnectorClient({ isSandboxMode: true });
+      const gmail = clients.gmail || new GmailConnectorClient({});
 
       switch (name) {
         case 'gmail_list_messages': {
@@ -461,7 +761,7 @@ export async function executeConnectorTool(
 
     // 2. Calendar Tools
     if (toolDef.connectorId === 'calendar') {
-      const calendar = clients.calendar || new CalendarConnectorClient({ isSandboxMode: true });
+      const calendar = clients.calendar || new CalendarConnectorClient({});
 
       switch (name) {
         case 'calendar_list_events': {
@@ -529,7 +829,7 @@ export async function executeConnectorTool(
 
     // 3. Google Drive Tools
     if (toolDef.connectorId === 'google_drive') {
-      const drive = clients.drive || new GoogleDriveConnectorClient({ isSandboxMode: true });
+      const drive = clients.drive || new GoogleDriveConnectorClient({});
 
       switch (name) {
         case 'drive_list_files': {
@@ -589,6 +889,141 @@ export async function executeConnectorTool(
             status: 'success',
             data: res,
             summary: `File deleted from Google Drive.`,
+            executedAt: Date.now(),
+          };
+        }
+      }
+    }
+
+    // 4. Notion Tools
+    if (toolDef.connectorId === 'notion') {
+      if (!clients.notion) throw new Error('Notion connector is not connected. Please connect Notion first.');
+      const notion = clients.notion;
+
+      switch (name) {
+        case 'notion_search': {
+          const res = await notion.search(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'notion', status: 'success',
+            data: res,
+            summary: `Found ${res.results.length} result(s) in Notion.`,
+            executedAt: Date.now(),
+          };
+        }
+        case 'notion_get_page': {
+          const res = await notion.getPageContent(args.pageId);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'notion', status: 'success',
+            data: res,
+            summary: `Retrieved Notion page "${res.page.title}" (${res.content.length} chars).`,
+            executedAt: Date.now(),
+          };
+        }
+        case 'notion_create_page': {
+          const res = await notion.createPage(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'notion', status: 'success',
+            data: res,
+            summary: res.message,
+            executedAt: Date.now(),
+          };
+        }
+        case 'notion_update_page': {
+          const res = await notion.updatePage(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'notion', status: 'success',
+            data: res,
+            summary: res.message,
+            executedAt: Date.now(),
+          };
+        }
+        case 'notion_archive_page': {
+          const res = await notion.archivePage(args.pageId);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'notion', status: 'success',
+            data: res,
+            summary: res.message,
+            executedAt: Date.now(),
+          };
+        }
+        case 'notion_query_database': {
+          const res = await notion.queryDatabase(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'notion', status: 'success',
+            data: res,
+            summary: `Queried Notion database: ${res.results.length} row(s) found.`,
+            executedAt: Date.now(),
+          };
+        }
+      }
+    }
+
+    // 5. GitHub Tools
+    if (toolDef.connectorId === 'github') {
+      if (!clients.github) throw new Error('GitHub connector is not connected. Please connect GitHub first.');
+      const github = clients.github;
+
+      switch (name) {
+        case 'github_list_repos': {
+          const res = await github.listRepos(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'github', status: 'success',
+            data: res,
+            summary: `Found ${res.repos.length} GitHub repo(s).`,
+            executedAt: Date.now(),
+          };
+        }
+        case 'github_list_issues': {
+          const res = await github.listIssues(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'github', status: 'success',
+            data: res,
+            summary: `Found ${res.issues.length} issue(s) in ${args.owner}/${args.repo}.`,
+            executedAt: Date.now(),
+          };
+        }
+        case 'github_create_issue': {
+          const res = await github.createIssue(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'github', status: 'success',
+            data: res,
+            summary: res.message,
+            executedAt: Date.now(),
+          };
+        }
+        case 'github_update_issue': {
+          const res = await github.updateIssue(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'github', status: 'success',
+            data: res,
+            summary: res.message,
+            executedAt: Date.now(),
+          };
+        }
+        case 'github_list_pull_requests': {
+          const res = await github.listPullRequests(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'github', status: 'success',
+            data: res,
+            summary: `Found ${res.pullRequests.length} PR(s) in ${args.owner}/${args.repo}.`,
+            executedAt: Date.now(),
+          };
+        }
+        case 'github_list_commits': {
+          const res = await github.listCommits(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'github', status: 'success',
+            data: res,
+            summary: `Found ${res.commits.length} commit(s) in ${args.owner}/${args.repo}.`,
+            executedAt: Date.now(),
+          };
+        }
+        case 'github_close_issue': {
+          const res = await github.closeIssue(args as any);
+          return {
+            toolCallId: id, toolName: name, connectorId: 'github', status: 'success',
+            data: res,
+            summary: res.message,
             executedAt: Date.now(),
           };
         }
