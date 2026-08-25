@@ -277,6 +277,7 @@ export function Sidebar({
   const deleteProject = useProjectStore((s) => s.deleteFolder);
   const assignSessionToProject = useProjectStore((s) => s.assignSession);
   const removeSessionFromProject = useProjectStore((s) => s.removeSession);
+  const fetchProjects = useProjectStore((s) => s.fetchFolders);
 
   // ── Workspace store (image/workflow/document collections — still localStorage) ──
   const imageCollections = useWorkspaceStore((s) => s.imageCollections);
@@ -446,8 +447,14 @@ export function Sidebar({
     }
     // Update session's own projectId field
     moveSessionToProject(session.id, targetProjectId);
+    
+    // Refresh projects to get updated session lists
+    await fetchProjects(token);
+    
+    // Close menus
     setMenuSessionId(null);
     setFolderSubmenuSessionId(null);
+    setSubmenuPosition(null);
   };
 
   // Filter sessions by search query.
