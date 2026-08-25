@@ -87,26 +87,64 @@ export function Navbar({
   };
 
   const handleAssignProject = async (projectId: string) => {
-    if (!activeSession || !user) return;
+    if (!activeSession) return;
     
-    const accessToken = user.id; // Simplified - in production use actual access token
-    
-    // Check if already assigned to this project
-    const currentProject = projects.find(p => p.sessionIds.includes(activeSession.id));
-    
-    if (currentProject?.id === projectId) {
-      // Remove from project if clicking the same one
-      await removeSession(projectId, activeSession.id, accessToken);
-    } else {
-      // Remove from old project if any
-      if (currentProject) {
-        await removeSession(currentProject.id, activeSession.id, accessToken);
+    try {
+      // Get access token from Supabase session
+      const { createBrowserClient } = await import('@supabase/ssr');
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const accessToken = session.access_token;
+      
+      // Check if already assigned to this project
+      const currentProject = projects.find(p => p.sessionIds.includes(activeSession.id));
+      
+      if (currentProject?.id === projectId) {
+        // Remove from project if clicking the same one
+        await removeSession(projectId, activeSession.id, accessToken);
+      } else {
+        // Remove from old project if any
+        if (currentProject) {
+          await removeSession(currentProject.id, activeSession.id, accessToken);
+        }
+        // Assign to new project
+        await assignSession(projectId, activeSession.id, accessToken);
       }
-      // Assign to new project
-      await assignSession(projectId, activeSession.id, accessToken);
+    } catch (error) {
+      console.error('Failed to assign project:', error);
     }
     
     setIsProjectSubmenuOpen(false);
+    setIsMenuOpen(false);
+  };
+
+  const handleRemoveFromProject = async () => {
+    if (!activeSession) return;
+    
+    try {
+      const { createBrowserClient } = await import('@supabase/ssr');
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const accessToken = session.access_token;
+      const currentProject = projects.find(p => p.sessionIds.includes(activeSession.id));
+      
+      if (currentProject) {
+        await removeSession(currentProject.id, activeSession.id, accessToken);
+      }
+    } catch (error) {
+      console.error('Failed to remove from project:', error);
+    }
+    
     setIsMenuOpen(false);
   };
 
@@ -128,7 +166,7 @@ export function Navbar({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 var(--studio-header-pad-x, 16px)',
-        zIndex: 50,
+        zIndex: 5000,
       }}
     >
       {/* Left: Burger Menu (Drawer on < 1024px & Desktop Expand) + Current Route Title */}
@@ -275,7 +313,7 @@ export function Navbar({
                 borderRadius: 'var(--radius-lg, 12px)',
                 boxShadow: 'var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.2))',
                 padding: '5px',
-                zIndex: 9999,
+                zIndex: 99999,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
@@ -361,11 +399,13 @@ export function Navbar({
                       borderRadius: 'var(--radius-md, 8px)',
                       boxShadow: 'var(--shadow-lg)',
                       padding: '4px',
-                      zIndex: 10000,
+                      zIndex: 100000,
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '2px',
                     }}
+                    onMouseEnter={() => setIsProjectSubmenuOpen(true)}
+                    onMouseLeave={() => setIsProjectSubmenuOpen(false)}
                   >
                     {projects.length === 0 ? (
                       <div style={{ padding: '8px', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -405,6 +445,35 @@ export function Navbar({
                   </div>
                 )}
               </div>
+
+              {/* 3. Keluarkan dari Proyek (Only show if session is in a project) */}
+              {activeSession && projects.some(p => p.sessionIds.includes(activeSession.id)) && (
+                <button
+                  type="button"
+                  onClick={handleRemoveFromProject}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 10px',
+                    borderRadius: 'var(--radius-md, 6px)',
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <Folder size={15} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+                  <span>{language === 'id' ? 'Keluarkan dari Proyek' : 'Remove from Project'}</span>
+                </button>
+              )}
 
               {/* Divider */}
               <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />

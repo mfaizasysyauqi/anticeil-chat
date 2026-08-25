@@ -185,7 +185,7 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
           position: 'absolute', top: '100%', right: 0,
           background: 'var(--bg-surface)', border: '1px solid var(--border-strong)',
           borderRadius: 'var(--radius-md, 8px)', boxShadow: 'var(--shadow-lg)',
-          padding: '4px', zIndex: 9999, display: 'flex', flexDirection: 'column',
+          padding: '4px', zIndex: 99999, display: 'flex', flexDirection: 'column',
           gap: '2px', minWidth: '120px',
         }}>
           <button
@@ -598,7 +598,7 @@ export function Sidebar({
               borderRadius: 'var(--radius-md, 8px)',
               boxShadow: 'var(--shadow-lg)',
               padding: '4px',
-              zIndex: 9999,
+              zIndex: 99999,
               display: 'flex',
               flexDirection: 'column',
               gap: '2px',
@@ -691,7 +691,7 @@ export function Sidebar({
                     borderRadius: 'var(--radius-md, 8px)',
                     boxShadow: 'var(--shadow-lg)',
                     padding: '4px',
-                    zIndex: 10000,
+                    zIndex: 100000,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
@@ -819,7 +819,7 @@ export function Sidebar({
         display: 'flex',
         background: 'var(--bg-sidebar)',
         flexShrink: 0,
-        zIndex: 40,
+        zIndex: 1000,
         overflow: 'visible',
       }}
     >
@@ -2205,7 +2205,7 @@ export function Sidebar({
                 borderRadius: 'var(--radius-lg, 12px)',
                 boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
                 padding: '6px',
-                zIndex: 9999,
+                zIndex: 99999,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
