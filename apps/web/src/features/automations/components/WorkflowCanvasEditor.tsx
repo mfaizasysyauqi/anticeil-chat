@@ -834,99 +834,116 @@ export function WorkflowCanvasEditor({
             overflow: 'hidden',
           }}
         >
-          {/* Drawer Header with tabs */}
+          {/* Drawer Header: Search Bar in place of tabs, or Section Title */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '10px 14px',
+              padding: '10px 12px',
               borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
               background: isDark ? '#262626' : '#F8FAFC',
               flexShrink: 0,
+              gap: '8px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {[
-                  { id: 'nodes' as const, icon: <Plus size={14} />, label: language === 'id' ? 'Node' : 'Nodes' },
-                  { id: 'inspector' as const, icon: <Columns2 size={14} />, label: language === 'id' ? 'Inspektur' : 'Inspector' },
-                ].map((tab) => (
+            {rightDrawerTab === 'nodes' || rightDrawerTab === 'search' ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  flex: 1,
+                  background: isDark ? '#1a1a1a' : '#FFFFFF',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #CBD5E1',
+                  minWidth: 0,
+                }}
+              >
+                <Search size={14} color="var(--brand-primary, #0073EA)" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={nodeCatalogSearch}
+                  onChange={(e) => setNodeCatalogSearch(e.target.value)}
+                  placeholder={
+                    language === 'id'
+                      ? 'Cari blok node, konektor, integrasi...'
+                      : 'Search nodes, actions, connectors...'
+                  }
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '12.5px',
+                    color: isDark ? '#F9FAFB' : '#0F172A',
+                    fontFamily: 'inherit',
+                    minWidth: 0,
+                  }}
+                />
+                {nodeCatalogSearch && (
                   <button
-                    key={tab.id}
                     type="button"
-                    onClick={() => setRightDrawerTab(tab.id)}
+                    onClick={() => setNodeCatalogSearch('')}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '5px',
-                      padding: '4px 10px', borderRadius: '6px', border: 'none',
-                      fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                      background: rightDrawerTab === tab.id
-                        ? (isDark ? 'rgba(0,115,234,0.2)' : '#EEF4FF')
-                        : 'transparent',
-                      color: rightDrawerTab === tab.id
-                        ? '#0073EA'
-                        : (isDark ? '#9CA3AF' : '#64748B'),
-                      transition: 'all 0.15s',
+                      background: 'transparent',
+                      border: 'none',
+                      color: isDark ? '#9CA3AF' : '#64748B',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
                   >
-                    {tab.icon}
-                    <span>{tab.label}</span>
+                    <X size={13} />
                   </button>
-                ))}
+                )}
               </div>
-              {rightDrawerTab === 'search' && (
-                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--brand-primary, #0073EA)', background: isDark ? 'rgba(0,115,234,0.15)' : '#EEF4FF', padding: '2px 7px', borderRadius: '4px' }}>
-                  {language === 'id' ? 'Cari' : 'Search'}
+            ) : rightDrawerTab === 'inspector' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '4px' }}>
+                <Columns2 size={15} color="var(--brand-primary, #0073EA)" />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: isDark ? '#F9FAFB' : '#0F172A' }}>
+                  {language === 'id' ? 'Inspektur Node' : 'Node Inspector'}
                 </span>
-              )}
-              {rightDrawerTab === 'ai' && (
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#C084FC', background: isDark ? 'rgba(192,132,252,0.15)' : '#F5F3FF', padding: '2px 7px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Sparkles size={11} />
-                  AI Studio
+              </div>
+            ) : rightDrawerTab === 'ai' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '4px' }}>
+                <Sparkles size={16} color="#C084FC" />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: isDark ? '#E9D5FF' : '#6D28D9' }}>
+                  {language === 'id' ? 'Asisten AI Workflow' : 'AI Workflow Assistant'}
                 </span>
-              )}
-            </div>
+              </div>
+            ) : null}
+
             <button
               type="button"
               onClick={() => setRightDrawerTab(null)}
               style={{
-                width: '26px', height: '26px', borderRadius: '6px',
-                border: 'none', background: 'transparent',
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
+                border: 'none',
+                background: 'transparent',
                 color: isDark ? '#9CA3AF' : '#64748B',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              <X size={15} />
+              <X size={16} />
             </button>
           </div>
 
           {/* Drawer Body */}
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px', minWidth: 0, boxSizing: 'border-box' }}>
 
-            {/* ── Tab: Nodes Catalog ── */}
-            {rightDrawerTab === 'nodes' && (
+            {/* ── Tab: Nodes Catalog (Search input moved to header) ── */}
+            {(rightDrawerTab === 'nodes' || rightDrawerTab === 'search') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* Search */}
-                <div
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    background: isDark ? '#262626' : '#F1F5F9',
-                    borderRadius: '8px', padding: '7px 10px',
-                    border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid #E2E8F0',
-                  }}
-                >
-                  <Search size={14} color={isDark ? '#9CA3AF' : '#94A3B8'} />
-                  <input
-                    type="text"
-                    value={nodeCatalogSearch}
-                    onChange={(e) => setNodeCatalogSearch(e.target.value)}
-                    placeholder={language === 'id' ? 'Cari blok node...' : 'Search nodes...'}
-                    style={{
-                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                      fontSize: '12.5px', color: isDark ? '#F9FAFB' : '#0F172A', fontFamily: 'inherit',
-                    }}
-                  />
-                </div>
 
                 {/* Node groups */}
                 {[
@@ -1039,123 +1056,6 @@ export function WorkflowCanvasEditor({
                   </p>
                 </div>
               )
-            )}
-
-            {/* ── Tab: Search / Command Palette ── */}
-            {rightDrawerTab === 'search' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    background: isDark ? '#262626' : '#F1F5F9',
-                    borderRadius: '8px', padding: '8px 10px',
-                    border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
-                  }}
-                >
-                  <Search size={14} color="var(--brand-primary, #0073EA)" />
-                  <input
-                    autoFocus
-                    type="text"
-                    value={commandSearch}
-                    onChange={(e) => setCommandSearch(e.target.value)}
-                    placeholder={
-                      language === 'id'
-                        ? 'Cari node, aksi, konektor...'
-                        : 'Search nodes, actions, connectors...'
-                    }
-                    style={{
-                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                      fontSize: '12.5px', color: isDark ? '#F9FAFB' : '#0F172A', fontFamily: 'inherit',
-                    }}
-                  />
-                  {commandSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setCommandSearch('')}
-                      style={{ background: 'transparent', border: 'none', color: isDark ? '#9CA3AF' : '#64748B', cursor: 'pointer', padding: 0 }}
-                    >
-                      <X size={13} />
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {[
-                    { id: 'trigger', label: 'Pemicu Cron / Webhook', category: 'Pemicu', icon: <Clock size={14} color="#D97706" /> },
-                    { id: 'ai', label: 'AI Reasoning Agent', category: 'AI & Logika', icon: <Sparkles size={14} color="#7C3AED" /> },
-                    { id: 'stickyNote', label: 'Catatan Tempel (Sticky Note)', category: 'Anotasi', icon: <StickyNote size={14} color="#F59E0B" /> },
-                    { id: 'calendar', label: 'Google Calendar Events', category: 'Konektor', icon: <Calendar size={14} color="#1A73E8" /> },
-                    { id: 'gmail', label: 'Gmail VIP Draft & Reply', category: 'Konektor', icon: <Mail size={14} color="#EA4335" /> },
-                    { id: 'telegram', label: 'Telegram Bot Alert', category: 'Konektor', icon: <Send size={14} color="#0088CC" /> },
-                    { id: 'drive', label: 'Google Drive Files', category: 'Konektor', icon: <FolderOpen size={14} color="#0F9D58" /> },
-                    { id: 'http', label: 'HTTP REST Webhook Request', category: 'Integrasi', icon: <Globe size={14} color="#3B82F6" /> },
-                    { id: 'code', label: 'Custom Code Execution (JS)', category: 'Developer', icon: <Code2 size={14} color="#10B981" /> },
-                    { id: 'database', label: 'Database Query (PostgreSQL)', category: 'Storage', icon: <Database size={14} color="#336791" /> },
-                    { id: 'spreadsheet', label: 'Google Sheets / Table', category: 'Storage', icon: <Sheet size={14} color="#34A853" /> },
-                    { id: 'delay', label: 'Delay / Wait Timer', category: 'Alur', icon: <Timer size={14} color="#A855F7" /> },
-                    { id: 'logic', label: 'Logika & Kondisi If/Else', category: 'Alur', icon: <GitBranch size={14} color="#0891B2" /> },
-                    { id: 'storage', label: 'Cloud Storage (S3 / R2)', category: 'Storage', icon: <HardDrive size={14} color="#FF9900" /> },
-                    { id: 'transform', label: 'Data Transform / Map', category: 'Alur', icon: <ArrowRightLeft size={14} color="#0EA5E9" /> },
-                  ]
-                    .filter((item) =>
-                      !commandSearch.trim() ||
-                      item.label.toLowerCase().includes(commandSearch.toLowerCase()) ||
-                      item.category.toLowerCase().includes(commandSearch.toLowerCase())
-                    )
-                    .map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          handleAddNode(item.id);
-                          setCommandSearch('');
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '8px',
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          border: isDark ? '1px solid rgba(255,255,255,0.04)' : '1px solid #F1F5F9',
-                          background: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF',
-                          color: isDark ? '#E5E7EB' : '#1E293B',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
-                          e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF';
-                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9';
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                          {item.icon}
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
-                        </div>
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            color: isDark ? '#9CA3AF' : '#64748B',
-                            background: isDark ? '#262626' : '#E2E8F0',
-                            padding: '2px 5px',
-                            borderRadius: '4px',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {item.category}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </div>
             )}
 
             {/* ── Tab: AI Workflow Assistant (Grok/Chat Page Styled Input Form) ── */}
