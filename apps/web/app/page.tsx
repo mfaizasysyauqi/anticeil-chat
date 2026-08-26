@@ -100,6 +100,17 @@ const TRANSLATIONS = {
       signIn: 'Log In',
       launchApp: 'Get Started Free',
     },
+    drawer: {
+      navigation: 'NAVIGATION',
+      close: 'CLOSE',
+      getStarted: 'GET STARTED',
+      directLinks: 'DIRECT LINKS',
+      terms: 'TERMS',
+      privacy: 'PRIVACY',
+      refund: 'REFUND',
+      apiKeys: 'API KEYS',
+      language: 'LANGUAGE',
+    },
     hero: {
       badge: 'The AI Work OS for Power Users • 100% Direct BYOK Gateway',
       title1: 'A platform built for a',
@@ -426,6 +437,17 @@ const TRANSLATIONS = {
       faq: 'Tanya Jawab',
       signIn: 'Masuk',
       launchApp: 'Mulai Gratis',
+    },
+    drawer: {
+      navigation: 'NAVIGASI',
+      close: 'TUTUP',
+      getStarted: 'MULAI SEKARANG',
+      directLinks: 'TAUTAN LANGSUNG',
+      terms: 'KETENTUAN',
+      privacy: 'PRIVASI',
+      refund: 'REFUND',
+      apiKeys: 'API KEYS',
+      language: 'BAHASA',
     },
     hero: {
       badge: 'Sistem Operasi Kerja AI Modern • Arsitektur BYOK 100% Privat',
@@ -888,46 +910,46 @@ export default function MondayWarmBeigeLandingPage() {
 
   // • Dynamic Interactive Aether Constellation & Particle Canvas in Hero •
   useEffect(() => {
+    if (!hydrated) return;
     const canvas = aetherCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     let animId: number;
-    let width = (canvas.width = canvas.parentElement?.offsetWidth || window.innerWidth);
-    let height = (canvas.height = canvas.parentElement?.offsetHeight || 650);
+    let width = 0;
+    let height = 0;
 
     const mouse: { x: number | null; y: number | null; radius: number } = { x: null, y: null, radius: 180 };
 
-    const handleResize = () => {
+    const updateSize = () => {
       if (!canvas || !canvas.parentElement) return;
-      width = canvas.width = canvas.parentElement.offsetWidth;
-      height = canvas.height = canvas.parentElement.offsetHeight;
-      init();
+      const rect = canvas.parentElement.getBoundingClientRect();
+      width = canvas.width = rect.width || window.innerWidth;
+      height = canvas.height = rect.height || window.innerHeight;
     };
-    window.addEventListener('resize', handleResize);
 
     const colors = [
-      'rgba(0, 115, 234, 0.85)', // Monday Electric Blue
-      'rgba(120, 75, 209, 0.85)', // Monday Purple
+      'rgba(0, 115, 234, 0.9)',   // Electric Blue
+      'rgba(120, 75, 209, 0.85)', // Purple
       'rgba(253, 171, 61, 0.85)', // Amber Speed
-      'rgba(0, 200, 117, 0.85)', // Emerald Privacy
-      'rgba(226, 68, 92, 0.85)', // Coral Studio
+      'rgba(0, 200, 117, 0.85)',  // Emerald Privacy
+      'rgba(226, 68, 92, 0.85)',  // Coral Studio
     ];
 
     class Particle {
       x: number;
       y: number;
-      directionX: number;
-      directionY: number;
+      vx: number;
+      vy: number;
       size: number;
       color: string;
 
-      constructor(x: number, y: number, directionX: number, directionY: number, size: number, color: string) {
+      constructor(x: number, y: number, vx: number, vy: number, size: number, color: string) {
         this.x = x;
         this.y = y;
-        this.directionX = directionX;
-        this.directionY = directionY;
+        this.vx = vx;
+        this.vy = vy;
         this.size = size;
         this.color = color;
       }
@@ -941,29 +963,39 @@ export default function MondayWarmBeigeLandingPage() {
       }
 
       update() {
-        if (this.x > width || this.x < 0) {
-          this.directionX = -this.directionX;
-        }
-        if (this.y > height || this.y < 0) {
-          this.directionY = -this.directionY;
-        }
-
-        // Mouse collision repulsion
+        // Mouse collision repulsion with smooth spring physics
         if (mouse.x !== null && mouse.y !== null) {
-          const dx = mouse.x - this.x;
-          const dy = mouse.y - this.y;
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < mouse.radius + this.size) {
-            const forceDirectionX = dx / distance;
-            const forceDirectionY = dy / distance;
+          if (distance < mouse.radius && distance > 0) {
             const force = (mouse.radius - distance) / mouse.radius;
-            this.x -= forceDirectionX * force * 4.5;
-            this.y -= forceDirectionY * force * 4.5;
+            const angle = Math.atan2(dy, dx);
+            this.x += Math.cos(angle) * force * 4.0;
+            this.y += Math.sin(angle) * force * 4.0;
           }
         }
 
-        this.x += this.directionX;
-        this.y += this.directionY;
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off canvas boundaries
+        if (this.x - this.size < 0) {
+          this.x = this.size;
+          this.vx = Math.abs(this.vx);
+        } else if (this.x + this.size > width) {
+          this.x = width - this.size;
+          this.vx = -Math.abs(this.vx);
+        }
+
+        if (this.y - this.size < 0) {
+          this.y = this.size;
+          this.vy = Math.abs(this.vy);
+        } else if (this.y + this.size > height) {
+          this.y = height - this.size;
+          this.vy = -Math.abs(this.vy);
+        }
+
         this.draw();
       }
     }
@@ -971,50 +1003,54 @@ export default function MondayWarmBeigeLandingPage() {
     let particles: Particle[] = [];
 
     function init() {
+      updateSize();
       particles = [];
-      const numberOfParticles = Math.floor((height * width) / 10000);
+      const numberOfParticles = Math.min(85, Math.max(50, Math.floor((height * width) / 16000)));
       for (let i = 0; i < numberOfParticles; i++) {
-        const size = Math.random() * 2.5 + 1.2;
+        const size = Math.random() * 2.2 + 1.2;
         const x = Math.random() * (width - size * 4) + size * 2;
         const y = Math.random() * (height - size * 4) + size * 2;
-        const directionX = Math.random() * 0.5 - 0.25;
-        const directionY = Math.random() * 0.5 - 0.25;
+        const speed = Math.random() * 0.5 + 0.3;
+        const angle = Math.random() * Math.PI * 2;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
         const color = colors[Math.floor(Math.random() * colors.length)];
-        particles.push(new Particle(x, y, directionX, directionY, size, color));
+        particles.push(new Particle(x, y, vx, vy, size, color));
       }
     }
 
     const connect = () => {
       if (!ctx) return;
-      let opacityValue = 1;
-      const maxDistance = (width / 7) * (height / 7);
+      const maxDistance = 120;
+      const maxDistanceSq = maxDistance * maxDistance;
 
       for (let a = 0; a < particles.length; a++) {
-        for (let b = a; b < particles.length; b++) {
-          const distance =
-            (particles[a].x - particles[b].x) * (particles[a].x - particles[b].x) +
-            (particles[a].y - particles[b].y) * (particles[a].y - particles[b].y);
+        for (let b = a + 1; b < particles.length; b++) {
+          const dx = particles[a].x - particles[b].x;
+          const dy = particles[a].y - particles[b].y;
+          const distSq = dx * dx + dy * dy;
 
-          if (distance < maxDistance) {
-            opacityValue = 1 - distance / 22000;
-            if (opacityValue > 0) {
-              const dx_mouse_a = mouse.x !== null ? particles[a].x - mouse.x : 1000;
-              const dy_mouse_a = mouse.y !== null ? particles[a].y - mouse.y : 1000;
-              const distance_mouse_a = Math.sqrt(dx_mouse_a * dx_mouse_a + dy_mouse_a * dy_mouse_a);
+          if (distSq < maxDistanceSq) {
+            const dist = Math.sqrt(distSq);
+            const opacityValue = (1 - dist / maxDistance) * 0.4;
 
-              if (mouse.x !== null && distance_mouse_a < mouse.radius) {
-                ctx.strokeStyle = `rgba(0, 115, 234, ${Math.min(0.9, opacityValue * 1.4)})`;
-                ctx.lineWidth = 1.3;
-              } else {
-                ctx.strokeStyle = `rgba(120, 75, 209, ${opacityValue * 0.4})`;
-                ctx.lineWidth = 0.8;
+            let isNearMouse = false;
+            if (mouse.x !== null && mouse.y !== null) {
+              const mdx = mouse.x - particles[a].x;
+              const mdy = mouse.y - particles[a].y;
+              if (mdx * mdx + mdy * mdy < mouse.radius * mouse.radius) {
+                isNearMouse = true;
               }
-
-              ctx.beginPath();
-              ctx.moveTo(particles[a].x, particles[a].y);
-              ctx.lineTo(particles[b].x, particles[b].y);
-              ctx.stroke();
             }
+
+            ctx.strokeStyle = isNearMouse
+              ? `rgba(0, 115, 234, ${Math.min(0.85, opacityValue * 2.2)})`
+              : `rgba(120, 75, 209, ${opacityValue})`;
+            ctx.lineWidth = isNearMouse ? 1.3 : 0.75;
+            ctx.beginPath();
+            ctx.moveTo(particles[a].x, particles[a].y);
+            ctx.lineTo(particles[b].x, particles[b].y);
+            ctx.stroke();
           }
         }
       }
@@ -1032,21 +1068,23 @@ export default function MondayWarmBeigeLandingPage() {
       mouse.y = null;
     };
 
-    const heroElement = canvas.parentElement;
-    if (heroElement) {
-      heroElement.addEventListener('mousemove', handleMouseMove as EventListener);
-      heroElement.addEventListener('mouseleave', handleMouseLeave as EventListener);
-    }
+    const handleResize = () => {
+      init();
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseout', handleMouseLeave);
 
     const animate = () => {
       if (!ctx) return;
-      animId = requestAnimationFrame(animate);
       ctx.clearRect(0, 0, width, height);
 
       for (let i = 0; i < particles.length; i++) {
         particles[i].update();
       }
       connect();
+      animId = requestAnimationFrame(animate);
     };
 
     init();
@@ -1055,12 +1093,10 @@ export default function MondayWarmBeigeLandingPage() {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
-      if (heroElement) {
-        heroElement.removeEventListener('mousemove', handleMouseMove as EventListener);
-        heroElement.removeEventListener('mouseleave', handleMouseLeave as EventListener);
-      }
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseout', handleMouseLeave);
     };
-  }, []);
+  }, [hydrated]);
 
 
 
@@ -1532,7 +1568,7 @@ export default function MondayWarmBeigeLandingPage() {
                   }}
                 >
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0073EA', boxShadow: '0 0 10px #0073EA' }} />
-                  NAVIGATION
+                  {t.drawer.navigation}
                 </span>
 
                 <button
@@ -1564,7 +1600,7 @@ export default function MondayWarmBeigeLandingPage() {
                     e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
                   }}
                 >
-                  <span>CLOSE</span>
+                  <span>{t.drawer.close}</span>
                   <X size={13} />
                 </button>
               </div>
@@ -1572,13 +1608,13 @@ export default function MondayWarmBeigeLandingPage() {
               {/* 2. Main Navigation Links (Numbered Big Editorial Typography in Anticeil Palette) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', margin: 'auto 0' }}>
                 {[
-                  { num: '01', label: 'WORKSPACES', href: '#board', color: '#0073EA' },
-                  { num: '02', label: 'FEATURES', href: '#features', color: '#784BD1' },
-                  { num: '03', label: 'SPEED RADAR', href: '#marquee', color: '#FDAB3D' },
-                  { num: '04', label: 'PRICING', href: '#pricing', color: '#00C875' },
-                  { num: '05', label: 'FAQ', href: '#faq', color: '#579BFC' },
-                  { num: '06', label: 'SIGN IN', href: '/login', color: '#A0A0A0' },
-                  { num: '07', label: 'GET STARTED', href: '/chat', color: '#0073EA', isHighlight: true },
+                  { num: '01', label: t.nav.workspaces.toUpperCase(), href: '#board', color: '#0073EA' },
+                  { num: '02', label: t.nav.features.toUpperCase(), href: '#features', color: '#784BD1' },
+                  { num: '03', label: t.nav.latency.toUpperCase(), href: '#marquee', color: '#FDAB3D' },
+                  { num: '04', label: t.nav.pricing.toUpperCase(), href: '#pricing', color: '#00C875' },
+                  { num: '05', label: t.nav.faq.toUpperCase(), href: '#faq', color: '#579BFC' },
+                  { num: '06', label: t.nav.signIn.toUpperCase(), href: '/login', color: '#A0A0A0' },
+                  { num: '07', label: t.drawer.getStarted, href: '/chat', color: '#0073EA', isHighlight: true },
                 ].map((item, idx) => (
                   <Link
                     key={idx}
@@ -1631,7 +1667,7 @@ export default function MondayWarmBeigeLandingPage() {
               <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <div style={{ marginBottom: '16px' }}>
                   <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#666666', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: '10px' }}>
-                    DIRECT LINKS
+                    {t.drawer.directLinks}
                   </span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '12px', fontFamily: 'monospace', color: '#A0A0A0' }}>
                     <Link
@@ -1641,7 +1677,7 @@ export default function MondayWarmBeigeLandingPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
-                      TERMS ↗
+                      {t.drawer.terms} ↗
                     </Link>
                     <Link
                       href="/privacy"
@@ -1650,7 +1686,7 @@ export default function MondayWarmBeigeLandingPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
-                      PRIVACY ↗
+                      {t.drawer.privacy} ↗
                     </Link>
                     <Link
                       href="/refund"
@@ -1659,7 +1695,7 @@ export default function MondayWarmBeigeLandingPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
-                      REFUND ↗
+                      {t.drawer.refund} ↗
                     </Link>
                     <Link
                       href="/settings"
@@ -1668,14 +1704,14 @@ export default function MondayWarmBeigeLandingPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
-                      API KEYS ↗
+                      {t.drawer.apiKeys} ↗
                     </Link>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px' }}>
                   <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#666666', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                    LANGUAGE
+                    {t.drawer.language}
                   </span>
                   <div
                     style={{
@@ -1732,32 +1768,36 @@ export default function MondayWarmBeigeLandingPage() {
         )}
       </AnimatePresence>
 
-      {/* 2. Hero Section • Enhanced with Interactive Aether Fluid Mesh Canvas & High-Contrast Cards */}
+      {/* 2. Hero Section • Symmetrical Full Screen with Interactive Aether Fluid Constellation Canvas */}
       <section
         style={{
           position: 'relative',
-          paddingTop: '135px',
-          paddingBottom: '40px',
+          minHeight: '100vh',
+          width: '100%',
+          boxSizing: 'border-box',
+          paddingTop: '88px',
+          paddingBottom: '48px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          justifyContent: 'center',
           textAlign: 'center',
           zIndex: 1,
           overflow: 'hidden',
         }}
       >
-        {/* • Ambient Chromatic Glow Background • */}
+        {/* • Symmetrical Ambient Chromatic Glow Background • */}
         <div
           style={{
             position: 'absolute',
-            top: '20px',
+            top: '50%',
             left: '50%',
-            transform: 'translateX(-50%)',
-            width: '85%',
-            maxWidth: '1000px',
-            height: '420px',
-            background: 'radial-gradient(ellipse 65% 50% at 50% 30%, rgba(0, 115, 234, 0.12) 0%, rgba(120, 75, 209, 0.08) 50%, rgba(253, 171, 61, 0.06) 80%, transparent 100%)',
-            filter: 'blur(50px)',
+            transform: 'translate(-50%, -50%)',
+            width: '90%',
+            maxWidth: '1100px',
+            height: '560px',
+            background: 'radial-gradient(ellipse 70% 55% at 50% 50%, rgba(0, 115, 234, 0.14) 0%, rgba(120, 75, 209, 0.09) 45%, rgba(253, 171, 61, 0.05) 75%, transparent 100%)',
+            filter: 'blur(60px)',
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -1774,7 +1814,7 @@ export default function MondayWarmBeigeLandingPage() {
             height: '100%',
             pointerEvents: 'none',
             zIndex: 0,
-            opacity: 0.9,
+            opacity: 0.95,
           }}
         />
 
@@ -1785,8 +1825,8 @@ export default function MondayWarmBeigeLandingPage() {
             bottom: 0,
             left: 0,
             right: 0,
-            height: '100px',
-            background: 'linear-gradient(to bottom, transparent, #FAF9F5)',
+            height: '120px',
+            background: 'linear-gradient(to bottom, transparent 0%, #FAF9F5 100%)',
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -2359,7 +2399,7 @@ export default function MondayWarmBeigeLandingPage() {
                 {/* 4. Assistant Response Body: Title + Comparison Table */}
                 <div style={{ marginTop: '6px' }}>
                   <div style={{ position: 'relative' }}>
-                    <MarkdownRenderer content={displayedStreamingResponse} />
+                    <MarkdownRenderer content={displayedStreamingResponse} theme="light" />
                     {isStreamingText && (
                       <span className="ai-typing-cursor" title="Streaming token..." />
                     )}

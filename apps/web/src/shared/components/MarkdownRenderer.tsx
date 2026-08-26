@@ -1,17 +1,63 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, Check, Play, Zap } from 'lucide-react';
+import { Copy, Check, Play } from 'lucide-react';
 import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
 
 interface MarkdownRendererProps {
   content: string;
+  /** 'light' = force high-contrast beige/charcoal colors (landing page & light theme). 'dark' = use CSS vars (default). */
+  theme?: 'light' | 'dark';
 }
 
-export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+interface Colors {
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  bgSubtle: string;
+  bgMain: string;
+  borderSubtle: string;
+  borderStrong: string;
+  brandPrimary: string;
+  tableBg: string;
+  tableHeaderBg: string;
+  tableStripeBg: string;
+}
+
+const DEFAULT_DARK_COLORS: Colors = {
+  textPrimary: 'var(--text-primary)',
+  textSecondary: 'var(--text-secondary)',
+  textMuted: 'var(--text-muted)',
+  bgSubtle: 'var(--bg-subtle)',
+  bgMain: 'var(--bg-main)',
+  borderSubtle: 'var(--border-subtle)',
+  borderStrong: 'var(--border-strong)',
+  brandPrimary: 'var(--brand-primary)',
+  tableBg: 'transparent',
+  tableHeaderBg: 'var(--bg-subtle)',
+  tableStripeBg: 'rgba(255, 255, 255, 0.02)',
+};
+
+const LIGHT_BEIGE_COLORS: Colors = {
+  textPrimary: '#181B34',       // Crisp deep charcoal/navy
+  textSecondary: '#374151',     // High-contrast slate gray
+  textMuted: '#6B7280',         // Soft caption gray
+  bgSubtle: '#F0F0EB',          // Clean warm beige surface
+  bgMain: '#FFFFFF',
+  borderSubtle: '#E2E2DC',      // Warm subtle border
+  borderStrong: '#D1D1CA',      // Defined table border
+  brandPrimary: '#0073EA',      // Anticeil royal blue
+  tableBg: '#FBFBFA',           // Light beige card background
+  tableHeaderBg: '#EDEDE7',     // Slightly deeper beige for header
+  tableStripeBg: '#F5F5F0',     // Alternating beige stripe
+};
+
+export function MarkdownRenderer({ content, theme = 'dark' }: MarkdownRendererProps) {
   if (!content) return null;
+
+  const colors = theme === 'light' ? LIGHT_BEIGE_COLORS : DEFAULT_DARK_COLORS;
 
   return (
     <div
@@ -22,11 +68,11 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         gap: '8px',
         fontSize: '14px',
         lineHeight: 1.65,
-        color: 'var(--text-primary)',
+        color: colors.textPrimary,
         wordBreak: 'break-word',
       }}
     >
-      {parseMarkdown(content)}
+      {parseMarkdown(content, colors)}
     </div>
   );
 }
@@ -60,7 +106,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
     <div
       style={{
         margin: '6px 0',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--radius-md, 8px)',
         background: 'var(--bg-main)',
         border: '1px solid var(--border-subtle)',
         overflow: 'hidden',
@@ -148,7 +194,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
 /**
  * Render inline formatting safely without recursive RegExp splitting.
  */
-function renderInlineFormatting(text: string): React.ReactNode[] {
+function renderInlineFormatting(text: string, colors: Colors = DEFAULT_DARK_COLORS): React.ReactNode[] {
   if (!text) return [];
 
   const tokens: React.ReactNode[] = [];
@@ -164,13 +210,13 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
         <code
           key={i}
           style={{
-            background: 'var(--bg-subtle)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-sm)',
+            background: colors.bgSubtle,
+            border: `1px solid ${colors.borderSubtle}`,
+            borderRadius: '4px',
             padding: '1px 5px',
             fontSize: '12px',
             fontFamily: 'JetBrains Mono, monospace',
-            color: 'var(--brand-primary)',
+            color: colors.brandPrimary,
           }}
         >
           {part.slice(1, -1)}
@@ -178,13 +224,13 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
       );
     } else if (part.startsWith('**') && part.endsWith('**') && part.length > 3) {
       tokens.push(
-        <strong key={i} style={{ fontWeight: 650, color: 'var(--text-primary)' }}>
+        <strong key={i} style={{ fontWeight: 700, color: colors.textPrimary }}>
           {part.slice(2, -2)}
         </strong>
       );
     } else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
       tokens.push(
-        <em key={i} style={{ fontStyle: 'italic' }}>
+        <em key={i} style={{ fontStyle: 'italic', color: 'inherit' }}>
           {part.slice(1, -1)}
         </em>
       );
@@ -204,7 +250,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: 'var(--brand-primary)',
+              color: colors.brandPrimary,
               textDecoration: 'underline',
               textUnderlineOffset: '3px',
               wordBreak: 'break-all',
@@ -228,8 +274,19 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
  * High-performance, 100% memory-safe single-pass Markdown parser.
  * Strictly guarantees progress on every loop iteration to prevent infinite loops.
  */
-function parseMarkdown(md: string): React.ReactNode[] {
+function parseMarkdown(md: string, colors: Colors = DEFAULT_DARK_COLORS): React.ReactNode[] {
   if (!md) return [];
+
+  const {
+    textPrimary,
+    textSecondary,
+    borderSubtle,
+    borderStrong,
+    brandPrimary,
+    tableBg,
+    tableHeaderBg,
+    tableStripeBg,
+  } = colors;
 
   const elements: React.ReactNode[] = [];
   const lines = md.split('\n');
@@ -266,12 +323,12 @@ function parseMarkdown(md: string): React.ReactNode[] {
             fontSize: '20px',
             fontWeight: 700,
             margin: '8px 0 4px 0',
-            color: 'var(--text-primary)',
-            borderBottom: '1px solid var(--border-subtle)',
+            color: textPrimary,
+            borderBottom: `1px solid ${borderSubtle}`,
             paddingBottom: '4px',
           }}
         >
-          {renderInlineFormatting(h1Match[1])}
+          {renderInlineFormatting(h1Match[1], colors)}
         </h1>
       );
       i++;
@@ -287,10 +344,10 @@ function parseMarkdown(md: string): React.ReactNode[] {
             fontSize: '17px',
             fontWeight: 650,
             margin: '6px 0 3px 0',
-            color: 'var(--text-primary)',
+            color: textPrimary,
           }}
         >
-          {renderInlineFormatting(h2Match[1])}
+          {renderInlineFormatting(h2Match[1], colors)}
         </h2>
       );
       i++;
@@ -306,10 +363,10 @@ function parseMarkdown(md: string): React.ReactNode[] {
             fontSize: '15px',
             fontWeight: 600,
             margin: '4px 0 2px 0',
-            color: 'var(--text-primary)',
+            color: textPrimary,
           }}
         >
-          {renderInlineFormatting(h3Match[1])}
+          {renderInlineFormatting(h3Match[1], colors)}
         </h3>
       );
       i++;
@@ -325,10 +382,10 @@ function parseMarkdown(md: string): React.ReactNode[] {
             fontSize: '14px',
             fontWeight: 600,
             margin: '3px 0 2px 0',
-            color: 'var(--text-primary)',
+            color: textPrimary,
           }}
         >
-          {renderInlineFormatting(h4Match[1])}
+          {renderInlineFormatting(h4Match[1], colors)}
         </h4>
       );
       i++;
@@ -348,16 +405,16 @@ function parseMarkdown(md: string): React.ReactNode[] {
           style={{
             margin: '4px 0',
             padding: '8px 14px',
-            borderLeft: '3px solid var(--brand-primary)',
-            background: 'var(--bg-subtle)',
-            borderRadius: '0 var(--radius-md) var(--radius-md) 0',
-            color: 'var(--text-secondary)',
+            borderLeft: `3px solid ${brandPrimary}`,
+            background: colors.bgSubtle,
+            borderRadius: '0 8px 8px 0',
+            color: textSecondary,
             fontStyle: 'italic',
           }}
         >
           {quoteLines.map((ql, qIdx) => (
             <p key={qIdx} style={{ margin: 0 }}>
-              {renderInlineFormatting(ql)}
+              {renderInlineFormatting(ql, colors)}
             </p>
           ))}
         </blockquote>
@@ -372,7 +429,7 @@ function parseMarkdown(md: string): React.ReactNode[] {
           key={keyIndex++}
           style={{
             border: 'none',
-            borderTop: '1px solid var(--border-subtle)',
+            borderTop: `1px solid ${borderSubtle}`,
             margin: '12px 0',
           }}
         />
@@ -400,7 +457,7 @@ function parseMarkdown(md: string): React.ReactNode[] {
           }}
         >
           {listItems.map((item, lIdx) => (
-            <li key={lIdx}>{renderInlineFormatting(item)}</li>
+            <li key={lIdx}>{renderInlineFormatting(item, colors)}</li>
           ))}
         </ul>
       );
@@ -426,7 +483,7 @@ function parseMarkdown(md: string): React.ReactNode[] {
           }}
         >
           {listItems.map((item, lIdx) => (
-            <li key={lIdx}>{renderInlineFormatting(item)}</li>
+            <li key={lIdx}>{renderInlineFormatting(item, colors)}</li>
           ))}
         </ol>
       );
@@ -458,10 +515,12 @@ function parseMarkdown(md: string): React.ReactNode[] {
             style={{
               overflowX: 'auto',
               WebkitOverflowScrolling: 'touch',
-              margin: '8px 0',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-strong)',
+              margin: '10px 0',
+              borderRadius: '10px',
+              border: `1px solid ${borderStrong}`,
+              background: tableBg,
               maxWidth: '100%',
+              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)',
             }}
           >
             <table
@@ -474,18 +533,22 @@ function parseMarkdown(md: string): React.ReactNode[] {
               }}
             >
               <thead>
-                <tr style={{ background: 'var(--bg-subtle)' }}>
+                <tr style={{ background: tableHeaderBg }}>
                   {headers.map((h, hIdx) => (
                     <th
                       key={hIdx}
                       style={{
-                        padding: '8px 12px',
-                        borderBottom: '1px solid var(--border-strong)',
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
+                        padding: '10px 14px',
+                        borderBottom: `1.5px solid ${borderStrong}`,
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        color: textPrimary,
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      {renderInlineFormatting(h)}
+                      {renderInlineFormatting(h, colors)}
                     </th>
                   ))}
                 </tr>
@@ -495,19 +558,23 @@ function parseMarkdown(md: string): React.ReactNode[] {
                   <tr
                     key={rIdx}
                     style={{
+                      background: rIdx % 2 === 1 ? tableStripeBg : 'transparent',
                       borderBottom:
-                        rIdx === bodyRows.length - 1 ? 'none' : '1px solid var(--border-subtle)',
+                        rIdx === bodyRows.length - 1 ? 'none' : `1px solid ${borderSubtle}`,
                     }}
                   >
                     {row.map((cell, cIdx) => (
                       <td
                         key={cIdx}
                         style={{
-                          padding: '7px 12px',
-                          color: 'var(--text-secondary)',
+                          padding: '9px 14px',
+                          color: cIdx === 0 ? textPrimary : textSecondary,
+                          fontWeight: cIdx === 0 ? 600 : 400,
+                          fontSize: '13px',
+                          lineHeight: 1.55,
                         }}
                       >
-                        {renderInlineFormatting(cell)}
+                        {renderInlineFormatting(cell, colors)}
                       </td>
                     ))}
                   </tr>
@@ -522,7 +589,7 @@ function parseMarkdown(md: string): React.ReactNode[] {
           <p key={keyIndex++} style={{ margin: 0, lineHeight: 1.65 }}>
             {tableLines.map((tl, tlIdx) => (
               <React.Fragment key={tlIdx}>
-                {renderInlineFormatting(tl)}
+                {renderInlineFormatting(tl, colors)}
                 {tlIdx < tableLines.length - 1 && <br />}
               </React.Fragment>
             ))}
@@ -557,10 +624,10 @@ function parseMarkdown(md: string): React.ReactNode[] {
 
     if (pLines.length > 0) {
       elements.push(
-        <p key={keyIndex++} style={{ margin: 0, lineHeight: 1.65 }}>
+        <p key={keyIndex++} style={{ margin: '3px 0', lineHeight: 1.65 }}>
           {pLines.map((pl, plIdx) => (
             <React.Fragment key={plIdx}>
-              {renderInlineFormatting(pl)}
+              {renderInlineFormatting(pl, colors)}
               {plIdx < pLines.length - 1 && <br />}
             </React.Fragment>
           ))}

@@ -103,26 +103,32 @@ export const AetherFlowHero = () => {
 
         const connect = () => {
             if (!canvas || !ctx) return;
-            let opacityValue = 1;
+            const maxDistance = 120;
+            const maxDistanceSq = maxDistance * maxDistance;
+            
             for (let a = 0; a < particles.length; a++) {
-                for (let b = a; b < particles.length; b++) {
-                    const distance = ((particles[a].x - particles[b].x) * (particles[a].x - particles[b].x))
-                        + ((particles[a].y - particles[b].y) * (particles[a].y - particles[b].y));
+                for (let b = a + 1; b < particles.length; b++) {
+                    const dx = particles[a].x - particles[b].x;
+                    const dy = particles[a].y - particles[b].y;
+                    const distSq = dx * dx + dy * dy;
                     
-                    if (distance < (canvas.width / 7) * (canvas.height / 7)) {
-                        opacityValue = 1 - (distance / 20000);
+                    if (distSq < maxDistanceSq) {
+                        const dist = Math.sqrt(distSq);
+                        const opacityValue = (1 - dist / maxDistance) * 0.4;
                         
-                        const dx_mouse_a = mouse.x !== null ? particles[a].x - mouse.x : 1000;
-                        const dy_mouse_a = mouse.y !== null ? particles[a].y - mouse.y : 1000;
-                        const distance_mouse_a = Math.sqrt(dx_mouse_a * dx_mouse_a + dy_mouse_a * dy_mouse_a);
-
-                        if (mouse.x !== null && distance_mouse_a < mouse.radius) {
-                             ctx.strokeStyle = `rgba(255, 255, 255, ${opacityValue})`;
-                        } else {
-                             ctx.strokeStyle = `rgba(200, 150, 255, ${opacityValue})`;
+                        let isNearMouse = false;
+                        if (mouse.x !== null && mouse.y !== null) {
+                            const mdx = mouse.x - particles[a].x;
+                            const mdy = mouse.y - particles[a].y;
+                            if (mdx * mdx + mdy * mdy < mouse.radius * mouse.radius) {
+                                isNearMouse = true;
+                            }
                         }
-                        
-                        ctx.lineWidth = 1;
+
+                        ctx.strokeStyle = isNearMouse
+                            ? `rgba(255, 255, 255, ${Math.min(0.85, opacityValue * 2)})`
+                            : `rgba(200, 150, 255, ${opacityValue})`;
+                        ctx.lineWidth = isNearMouse ? 1.2 : 0.75;
                         ctx.beginPath();
                         ctx.moveTo(particles[a].x, particles[a].y);
                         ctx.lineTo(particles[b].x, particles[b].y);
@@ -134,7 +140,6 @@ export const AetherFlowHero = () => {
 
         const animate = () => {
             if (!ctx) return;
-            animationFrameId = requestAnimationFrame(animate);
             // Set the background color inside the canvas draw loop
             ctx.fillStyle = '#07080A';
             ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
@@ -143,6 +148,7 @@ export const AetherFlowHero = () => {
                 particles[i].update();
             }
             connect();
+            animationFrameId = requestAnimationFrame(animate);
         };
         
         const handleMouseMove = (event: MouseEvent) => {
