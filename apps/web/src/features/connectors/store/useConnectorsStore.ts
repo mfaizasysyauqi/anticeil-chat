@@ -167,9 +167,10 @@ export const useConnectorsStore = create<ConnectorsState>()(
               lastSyncedAt: Date.now(),
             },
           },
-          // Auto-enable in active chat if connected
+          // Do NOT auto-pin connector into activeConnectorIds on connect.
+          // Only remove if disconnected.
           activeConnectorIds: token
-            ? Array.from(new Set([...state.activeConnectorIds, id]))
+            ? state.activeConnectorIds
             : state.activeConnectorIds.filter((item) => item !== id),
         }));
       },
@@ -312,13 +313,11 @@ export const useConnectorsStore = create<ConnectorsState>()(
       name: 'anticeil_connectors_store',
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        // Auto-activate any connector that has a stored access token
-        const connectedIds = (Object.keys(state.connectors) as ConnectorId[]).filter(
-          (id) => !!state.connectors[id].accessToken
-        );
-        if (connectedIds.length > 0) {
-          const merged = Array.from(new Set([...state.activeConnectorIds, ...connectedIds]));
-          state.activeConnectorIds = merged;
+        // Clean up any active connectors that are no longer authenticated
+        if (state.activeConnectorIds && state.activeConnectorIds.length > 0) {
+          state.activeConnectorIds = state.activeConnectorIds.filter(
+            (id) => !!state.connectors[id]?.accessToken
+          );
         }
       },
     }

@@ -576,7 +576,78 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
                 <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 4px' }} />
 
-                {/* 4. Kelola Konektor */}
+                {/* 4. Connected Connectors Quick Toggles */}
+                {Object.values(connectors).some((c) => !!c.accessToken) && (
+                  <>
+                    <div
+                      style={{
+                        padding: '4px 10px 2px 10px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        fontFamily: 'monospace',
+                        color: 'var(--text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {language === 'id' ? 'Konektor Terhubung' : 'Connected Connectors'}
+                    </div>
+                    {Object.values(connectors)
+                      .filter((c) => !!c.accessToken)
+                      .map((conn) => {
+                        const isPinned = activeConnectorIds.includes(conn.id);
+                        return (
+                          <button
+                            key={conn.id}
+                            type="button"
+                            onClick={() => toggleActiveConnector(conn.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '10px',
+                              width: '100%',
+                              padding: '7px 10px',
+                              borderRadius: 'var(--radius-md, 8px)',
+                              border: 'none',
+                              backgroundColor: isPinned
+                                ? 'var(--brand-subtle, rgba(0, 115, 234, 0.12))'
+                                : 'transparent',
+                              color: isPinned ? 'var(--brand-primary)' : 'var(--text-primary)',
+                              fontSize: '13px',
+                              fontWeight: isPinned ? 600 : 500,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'background 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isPinned) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isPinned) e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <ConnectorBrandIcon id={conn.id} size={15} />
+                              <span>{conn.name}</span>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: isPinned ? 'var(--accent-success)' : 'var(--text-muted)',
+                              }}
+                            >
+                              {isPinned ? (language === 'id' ? '✓ Disematkan' : '✓ Pinned') : (language === 'id' ? '+ Sematkan' : '+ Pin')}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 4px' }} />
+                  </>
+                )}
+
+                {/* 5. Kelola Konektor */}
                 <button
                   type="button"
                   onClick={() => {
