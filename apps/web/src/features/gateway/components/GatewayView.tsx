@@ -6,8 +6,6 @@ import {
   Key,
   Copy,
   Check,
-  RefreshCw,
-  Trash2,
   ExternalLink,
   ShieldCheck,
   Terminal,
@@ -16,19 +14,15 @@ import {
   Cookie,
   HardDrive,
   Volume2,
-  SlidersHorizontal,
   X,
   Zap,
   Globe,
-  Radio,
   CheckCircle2,
   AlertCircle,
-  Plus,
 } from 'lucide-react';
 import { useGatewayStore, GatewayApiKey } from '../store/useGatewayStore';
 import {
   ALL_GATEWAY_PROVIDERS,
-  PROVIDER_CATEGORY_LABELS,
   GatewayProvider,
   ProviderCategory,
 } from '../providers';
@@ -36,25 +30,18 @@ import {
 export const GatewayView: React.FC = () => {
   const {
     apiKeys,
-    requestLogs,
     activePort,
     providerConnections,
     activeCategory,
     searchQuery,
-    generateApiKey,
-    revokeApiKey,
-    toggleApiKey,
     setProviderConnection,
     toggleProvider,
-    disconnectProvider,
     setActiveCategory,
     setSearchQuery,
   } = useGatewayStore();
 
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [activeSnippetTab, setActiveSnippetTab] = useState<'cursor' | 'cline' | 'python' | 'curl'>('cursor');
   const [statusFilter, setStatusFilter] = useState<'all' | 'connected' | 'free'>('all');
 
@@ -97,13 +84,6 @@ export const GatewayView: React.FC = () => {
     setTimeout(() => setCopiedSnippet(null), 2000);
   };
 
-  const handleGenerateKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    generateApiKey(newKeyName);
-    setNewKeyName('');
-    setIsCreatingKey(false);
-  };
-
   const openConfigModal = (provider: GatewayProvider) => {
     setSelectedProvider(provider);
     const existing = providerConnections[provider.id];
@@ -142,11 +122,9 @@ export const GatewayView: React.FC = () => {
   // Filter providers
   const filteredProviders = useMemo(() => {
     return ALL_GATEWAY_PROVIDERS.filter((p) => {
-      // Category filter
       if (activeCategory !== 'all' && p.category !== activeCategory) {
         return false;
       }
-      // Status filter
       const conn = providerConnections[p.id];
       if (statusFilter === 'connected' && (!conn || !conn.isEnabled)) {
         return false;
@@ -154,7 +132,6 @@ export const GatewayView: React.FC = () => {
       if (statusFilter === 'free' && p.badge !== 'FREE' && p.authType !== 'no-auth') {
         return false;
       }
-      // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName = p.name.toLowerCase().includes(q);
@@ -216,511 +193,922 @@ print(response.choices[0].message.content)`,
   };
 
   const categories: Array<{ id: ProviderCategory | 'all'; label: string; icon: React.ReactNode }> = [
-    { id: 'all', label: 'Semua Provider (295+)', icon: <Globe className="w-4 h-4" /> },
-    { id: 'no-auth', label: 'Tingkat Gratis (No-Auth)', icon: <Sparkles className="w-4 h-4 text-emerald-400" /> },
-    { id: 'oauth', label: 'OAuth2 & IDE Keys', icon: <ShieldCheck className="w-4 h-4 text-cyan-400" /> },
-    { id: 'web-cookie', label: 'Web Cookies', icon: <Cookie className="w-4 h-4 text-amber-400" /> },
-    { id: 'apikey', label: 'Kunci API (192+)', icon: <Key className="w-4 h-4 text-indigo-400" /> },
-    { id: 'local', label: 'Lokal PC (Ollama/LM)', icon: <HardDrive className="w-4 h-4 text-purple-400" /> },
-    { id: 'search', label: 'Pencarian Web & RAG', icon: <Search className="w-4 h-4 text-blue-400" /> },
-    { id: 'audio', label: 'Audio & TTS', icon: <Volume2 className="w-4 h-4 text-rose-400" /> },
+    { id: 'all', label: 'Semua Provider (295+)', icon: <Globe size={15} /> },
+    { id: 'no-auth', label: 'Tingkat Gratis (No-Auth)', icon: <Sparkles size={15} color="#34d399" /> },
+    { id: 'oauth', label: 'OAuth2 & IDE Keys', icon: <ShieldCheck size={15} color="#38bdf8" /> },
+    { id: 'web-cookie', label: 'Web Cookies', icon: <Cookie size={15} color="#fbbf24" /> },
+    { id: 'apikey', label: 'Kunci API (192+)', icon: <Key size={15} color="#818cf8" /> },
+    { id: 'local', label: 'Lokal PC (Ollama/LM)', icon: <HardDrive size={15} color="#c084fc" /> },
+    { id: 'search', label: 'Pencarian Web & RAG', icon: <Search size={15} color="#60a5fa" /> },
+    { id: 'audio', label: 'Audio & TTS', icon: <Volume2 size={15} color="#f43f5e" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0d0f12] text-zinc-100 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* ── Top Header & Stats ────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 text-cyan-400">
-              <Cpu className="w-6 h-6 animate-pulse" />
+    <div
+      style={{
+        flex: 1,
+        height: '100%',
+        overflowY: 'auto',
+        background: 'var(--bg-main)',
+        color: 'var(--text-primary)',
+        padding: '24px 32px',
+        fontFamily: 'inherit',
+      }}
+    >
+      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* ── Top Header & Stats ──────────────────────────────────────── */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+            paddingBottom: '20px',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(16, 185, 129, 0.15))',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#06b6d4',
+              }}
+            >
+              <Cpu size={24} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-white">Anticeil Route</h1>
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                  Anticeil Route
+                </h1>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: '20px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    color: '#34d399',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399' }} />
                   Live Gateway
                 </span>
               </div>
-              <p className="text-sm text-zinc-400 mt-0.5">
-                Universal OpenAI-Compatible AI Gateway & 295+ Multi-Provider Hub.
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                Universal OpenAI-Compatible Gateway & Hub 295+ Provider Multi-Model.
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Quick Stats Badges */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <div className="px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800 text-center">
-            <div className="text-xs text-zinc-400 font-medium">Total Provider</div>
-            <div className="text-lg font-bold text-white">295+</div>
-          </div>
-          <div className="px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-emerald-500/20 text-center">
-            <div className="text-xs text-emerald-400 font-medium">Terhubung</div>
-            <div className="text-lg font-bold text-emerald-400">{connectedCount}</div>
-          </div>
-          <div className="px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800 text-center">
-            <div className="text-xs text-zinc-400 font-medium">Kunci Gateway</div>
-            <div className="text-lg font-bold text-white">{apiKeys.length}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Base URL & Domain Switcher Banner ─────────────────────────── */}
-      <div className="p-5 rounded-2xl bg-gradient-to-br from-zinc-900/90 via-zinc-900/50 to-zinc-950 border border-zinc-800/80 shadow-xl relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-              <Zap className="w-3.5 h-3.5" />
-              Endpoint Kompatibel OpenAI Universal
+          {/* Quick Stats Badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '10px',
+                padding: '8px 16px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Provider</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>295+</div>
             </div>
-            <div className="flex items-center gap-3">
-              <code className="text-base sm:text-lg font-mono text-zinc-100 font-bold bg-black/60 px-3 py-1.5 rounded-lg border border-zinc-800 selection:bg-cyan-500/30">
+            <div
+              style={{
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                borderRadius: '10px',
+                padding: '8px 16px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: '#34d399', fontWeight: 600 }}>Terhubung Aktif</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#34d399' }}>{connectedCount}</div>
+            </div>
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '10px',
+                padding: '8px 16px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Kunci Gateway</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>{apiKeys.length}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Base URL & Domain Switcher Banner ───────────────────────── */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(20, 24, 30, 0.95) 100%)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '14px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <Zap size={14} />
+              Endpoint OpenAI Universal Anticeil Route
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <code
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  fontFamily: 'monospace',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-strong)',
+                  color: 'var(--text-primary)',
+                }}
+              >
                 {baseUrl}
               </code>
               <button
+                type="button"
                 onClick={() => handleCopy(baseUrl, 'baseUrl')}
-                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors"
-                title="Salin Base URL"
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  color: copiedKeyId === 'baseUrl' ? '#34d399' : 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  transition: 'all 0.15s ease',
+                }}
               >
-                {copiedKeyId === 'baseUrl' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copiedKeyId === 'baseUrl' ? <Check size={14} /> : <Copy size={14} />}
+                {copiedKeyId === 'baseUrl' ? 'Tersalin' : 'Salin'}
               </button>
             </div>
           </div>
 
-          {/* Domain Mode Switcher */}
-          <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-zinc-800/80 self-start lg:self-center">
-            <span className="text-xs text-zinc-400 px-2 font-medium">Domain:</span>
+          {/* Domain Mode Switcher Buttons */}
+          <div
+            style={{
+              background: 'rgba(0, 0, 0, 0.35)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              padding: '4px 6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '0 6px', fontWeight: 600 }}>Domain:</span>
             <button
+              type="button"
               onClick={() => setDomainMode('auto')}
-              className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${
-                domainMode === 'auto'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              style={{
+                background: domainMode === 'auto' ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
+                border: domainMode === 'auto' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid transparent',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: domainMode === 'auto' ? '#38bdf8' : 'var(--text-secondary)',
+                cursor: 'pointer',
+              }}
             >
               Auto ({detectedOrigin.replace(/^https?:\/\//, '')})
             </button>
             <button
+              type="button"
               onClick={() => setDomainMode('cloud')}
-              className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${
-                domainMode === 'cloud'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              style={{
+                background: domainMode === 'cloud' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                border: domainMode === 'cloud' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid transparent',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: domainMode === 'cloud' ? '#34d399' : 'var(--text-secondary)',
+                cursor: 'pointer',
+              }}
             >
               anticeil.com
             </button>
             <button
+              type="button"
               onClick={() => setDomainMode('local')}
-              className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${
-                domainMode === 'local'
-                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              style={{
+                background: domainMode === 'local' ? 'rgba(192, 132, 252, 0.2)' : 'transparent',
+                border: domainMode === 'local' ? '1px solid rgba(192, 132, 252, 0.4)' : '1px solid transparent',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: domainMode === 'local' ? '#c084fc' : 'var(--text-secondary)',
+                cursor: 'pointer',
+              }}
             >
               localhost:{activePort}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* ── 295+ Provider Catalog Hub ─────────────────────────────────── */}
-      <div className="space-y-4">
-        {/* Category Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-800">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
-                activeCategory === cat.id
-                  ? 'bg-zinc-800 text-white border border-zinc-700 shadow-md'
-                  : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border border-zinc-800/60 hover:border-zinc-700'
-              }`}
-            >
-              {cat.icon}
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Search and Filters Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari dari 295+ provider, model (contoh: DeepSeek, Copilot, Cerebras, FLUX)..."
-              className="w-full pl-9 pr-4 py-2 bg-black/50 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/60"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {/* ── 295+ Provider Catalog Hub ───────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          
+          {/* Category Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              overflowX: 'auto',
+              paddingBottom: '4px',
+            }}
+          >
+            {categories.map((cat) => {
+              const isSelected = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveCategory(cat.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    background: isSelected ? 'var(--bg-elevated)' : 'var(--bg-card)',
+                    border: isSelected ? '1px solid var(--border-strong)' : '1px solid var(--border-subtle)',
+                    color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {cat.icon}
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <div className="flex items-center bg-black/40 p-1 rounded-lg border border-zinc-800">
+          {/* Search & Status Filter Bar */}
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '240px' }}>
+              <Search size={16} style={{ color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari dari 295+ provider, model (contoh: DeepSeek, Copilot, Cerebras, FLUX)..."
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '13px',
+                  color: 'var(--text-primary)',
+                  width: '100%',
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.25)', padding: '3px 4px', borderRadius: '8px' }}>
               <button
+                type="button"
                 onClick={() => setStatusFilter('all')}
-                className={`px-2.5 py-1 text-xs font-medium rounded ${
-                  statusFilter === 'all' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                style={{
+                  background: statusFilter === 'all' ? 'var(--bg-elevated)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: statusFilter === 'all' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
               >
                 Semua
               </button>
               <button
+                type="button"
                 onClick={() => setStatusFilter('connected')}
-                className={`px-2.5 py-1 text-xs font-medium rounded ${
-                  statusFilter === 'connected' ? 'bg-emerald-500/20 text-emerald-300' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                style={{
+                  background: statusFilter === 'connected' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: statusFilter === 'connected' ? '#34d399' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
               >
                 Aktif ({connectedCount})
               </button>
               <button
+                type="button"
                 onClick={() => setStatusFilter('free')}
-                className={`px-2.5 py-1 text-xs font-medium rounded ${
-                  statusFilter === 'free' ? 'bg-cyan-500/20 text-cyan-300' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                style={{
+                  background: statusFilter === 'free' ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: statusFilter === 'free' ? '#38bdf8' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
               >
                 Tingkat Gratis
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Providers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProviders.map((provider) => {
-            const conn = providerConnections[provider.id];
-            const isConnected = conn?.isEnabled;
+          {/* Providers Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+              gap: '14px',
+            }}
+          >
+            {filteredProviders.map((provider) => {
+              const conn = providerConnections[provider.id];
+              const isConnected = conn?.isEnabled;
 
-            return (
-              <div
-                key={provider.id}
-                className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${
-                  isConnected
-                    ? 'bg-zinc-900/90 border-emerald-500/30 shadow-lg shadow-emerald-500/5'
-                    : 'bg-zinc-900/40 border-zinc-800/80 hover:border-zinc-700/80'
-                }`}
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-white text-sm sm:text-base">{provider.name}</h3>
+              const badgeColors = {
+                FREE: { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399' },
+                OAUTH: { bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.3)', text: '#38bdf8' },
+                COOKIE: { bg: 'rgba(251, 191, 36, 0.15)', border: 'rgba(251, 191, 36, 0.3)', text: '#fbbf24' },
+                'API KEY': { bg: 'rgba(129, 140, 248, 0.15)', border: 'rgba(129, 140, 248, 0.3)', text: '#818cf8' },
+                LOCAL: { bg: 'rgba(192, 132, 252, 0.15)', border: 'rgba(192, 132, 252, 0.3)', text: '#c084fc' },
+                RAG: { bg: 'rgba(96, 165, 250, 0.15)', border: 'rgba(96, 165, 250, 0.3)', text: '#60a5fa' },
+              }[provider.badge || 'API KEY'];
+
+              return (
+                <div
+                  key={provider.id}
+                  style={{
+                    background: isConnected ? 'linear-gradient(145deg, var(--bg-card), rgba(16, 185, 129, 0.04))' : 'var(--bg-card)',
+                    border: isConnected ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    transition: 'border 0.2s ease, box-shadow 0.2s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {provider.name}
+                        </span>
                         {provider.badge && (
                           <span
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${
-                              provider.badge === 'FREE'
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                : provider.badge === 'OAUTH'
-                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                                : provider.badge === 'COOKIE'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                            }`}
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: badgeColors.bg,
+                              border: `1px solid ${badgeColors.border}`,
+                              color: badgeColors.text,
+                            }}
                           >
                             {provider.badge}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{provider.description}</p>
                     </div>
+
+                    <p
+                      style={{
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.45,
+                        margin: 0,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {provider.description}
+                    </p>
+
+                    {/* Models preview pills */}
+                    {provider.models && provider.models.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '4px' }}>
+                        {provider.models.slice(0, 2).map((m) => (
+                          <span
+                            key={m}
+                            style={{
+                              fontSize: '10px',
+                              fontFamily: 'monospace',
+                              background: 'rgba(0,0,0,0.3)',
+                              border: '1px solid var(--border-subtle)',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            {m}
+                          </span>
+                        ))}
+                        {provider.models.length > 2 && (
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            +{provider.models.length - 2} lainnya
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Models Preview */}
-                  {provider.models && provider.models.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      {provider.models.slice(0, 3).map((model) => (
-                        <span
-                          key={model}
-                          className="px-2 py-0.5 text-[11px] font-mono rounded bg-black/40 text-zinc-300 border border-zinc-800"
+                  {/* Card Bottom Controls */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingTop: '10px',
+                      borderTop: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <div>
+                      {provider.website && (
+                        <a
+                          href={provider.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontSize: '11px',
+                            color: 'var(--text-muted)',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
                         >
-                          {model}
-                        </span>
-                      ))}
-                      {provider.models.length > 3 && (
-                        <span className="text-[10px] text-zinc-400 font-medium">
-                          +{provider.models.length - 3} lainnya
-                        </span>
+                          Website <ExternalLink size={11} />
+                        </a>
                       )}
                     </div>
-                  )}
-                </div>
 
-                {/* Footer Controls */}
-                <div className="flex items-center justify-between gap-2 pt-4 mt-3 border-t border-zinc-800/80">
-                  <div className="flex items-center gap-2">
-                    {provider.website && (
-                      <a
-                        href={provider.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1"
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => openConfigModal(provider)}
+                        style={{
+                          background: 'var(--bg-elevated)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          cursor: 'pointer',
+                        }}
                       >
-                        Web <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => openConfigModal(provider)}
-                      className="px-3 py-1 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors"
-                    >
-                      Konfigurasi
-                    </button>
-                    <button
-                      onClick={() => toggleProvider(provider.id)}
-                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                        isConnected
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                          : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
-                      {isConnected ? 'Aktif' : 'Sambungkan'}
-                    </button>
+                        Atur
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleProvider(provider.id)}
+                        style={{
+                          background: isConnected ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-elevated)',
+                          border: isConnected ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--border-subtle)',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: isConnected ? '#34d399' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: isConnected ? '#34d399' : 'var(--text-muted)',
+                          }}
+                        />
+                        {isConnected ? 'Aktif' : 'Sambungkan'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {filteredProviders.length === 0 && (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-muted)',
+                fontSize: '13px',
+              }}
+            >
+              Tidak ada provider yang cocok dengan kriteria pencarian.
+            </div>
+          )}
         </div>
 
-        {filteredProviders.length === 0 && (
-          <div className="text-center py-12 bg-zinc-900/30 rounded-2xl border border-zinc-800">
-            <Search className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-            <p className="text-zinc-400 text-sm">Tidak ada provider yang cocok dengan filter pencarian.</p>
-          </div>
-        )}
-      </div>
-
-      {/* ── 1-Click Code Snippets Card (Cursor / Cline / Python / Curl) ── */}
-      <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Terminal className="w-5 h-5 text-cyan-400" />
-              1-Click Setup untuk Aplikasi Eksternal
-            </h2>
-            <p className="text-xs text-zinc-400">
-              Salin cuplikan konfigurasi ini ke Cursor IDE, VS Code Cline, atau skrip Python Anda.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-zinc-800">
-            <button
-              onClick={() => setActiveSnippetTab('cursor')}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                activeSnippetTab === 'cursor' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Cursor IDE
-            </button>
-            <button
-              onClick={() => setActiveSnippetTab('cline')}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                activeSnippetTab === 'cline' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              VS Code Cline
-            </button>
-            <button
-              onClick={() => setActiveSnippetTab('python')}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                activeSnippetTab === 'python' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Python SDK
-            </button>
-            <button
-              onClick={() => setActiveSnippetTab('curl')}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                activeSnippetTab === 'curl' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              cURL CLI
-            </button>
-          </div>
-        </div>
-
-        <div className="relative">
-          <pre className="p-4 rounded-xl bg-black/80 border border-zinc-800/80 font-mono text-xs text-zinc-300 overflow-x-auto selection:bg-cyan-500/30">
-            {snippets[activeSnippetTab]}
-          </pre>
-          <button
-            onClick={() => handleCopySnippet(snippets[activeSnippetTab], activeSnippetTab)}
-            className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 flex items-center gap-1.5 transition-colors border border-zinc-700"
+        {/* ── 1-Click Code Snippets Card (Cursor / Cline / Python / Curl) ── */}
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '14px',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
           >
-            {copiedSnippet === activeSnippetTab ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" /> Tersalin!
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" /> Salin Cuplikan
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Provider Configuration Modal ───────────────────────────────── */}
-      {selectedProvider && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-[#12151a] border border-zinc-800 rounded-2xl p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-white">{selectedProvider.name}</h3>
-                  {selectedProvider.badge && (
-                    <span className="px-2 py-0.5 text-xs font-bold rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                      {selectedProvider.badge}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-zinc-400 mt-0.5">{selectedProvider.description}</p>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <Terminal size={18} color="#06b6d4" />
+                1-Click Setup untuk Aplikasi Eksternal
               </div>
-              <button
-                onClick={() => setSelectedProvider(null)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                Salin konfigurasi ini ke Cursor IDE, VS Code Cline, atau skrip Python Anda.
+              </p>
             </div>
 
-            <div className="space-y-4">
-              {/* API Key field */}
-              {selectedProvider.authType === 'apikey' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">
-                    <span>API Key / Personal Token</span>
-                    {selectedProvider.website && (
-                      <a
-                        href={selectedProvider.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-cyan-400 hover:underline flex items-center gap-1 font-normal"
-                      >
-                        Dapatkan Key <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </label>
-                  <input
-                    type="password"
-                    value={modalApiKey}
-                    onChange={(e) => setModalApiKey(e.target.value)}
-                    placeholder="Masukkan API Key (sk-... / gsk_... / ghp_...)"
-                    className="w-full px-3.5 py-2.5 bg-black/60 border border-zinc-800 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              )}
+            <div
+              style={{
+                background: 'rgba(0,0,0,0.3)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '8px',
+                padding: '3px 4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              {(['cursor', 'cline', 'python', 'curl'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveSnippetTab(tab)}
+                  style={{
+                    background: activeSnippetTab === tab ? 'var(--bg-elevated)' : 'transparent',
+                    border: activeSnippetTab === tab ? '1px solid var(--border-strong)' : '1px solid transparent',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: activeSnippetTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    textTransform: tab === 'curl' ? 'uppercase' : 'capitalize',
+                  }}
+                >
+                  {tab === 'cursor' ? 'Cursor IDE' : tab === 'cline' ? 'VS Code Cline' : tab === 'python' ? 'Python SDK' : 'cURL'}
+                </button>
+              ))}
+            </div>
+          </div>
 
-              {/* Web Cookie field */}
-              {selectedProvider.authType === 'cookie' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">Session Cookie Token</label>
-                  <input
-                    type="password"
-                    value={modalCookieToken}
-                    onChange={(e) => setModalCookieToken(e.target.value)}
-                    placeholder="Masukkan session cookie token dari browser Anda"
-                    className="w-full px-3.5 py-2.5 bg-black/60 border border-zinc-800 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
-                  />
-                  <p className="text-[11px] text-zinc-500">
-                    Buka Developer Tools (F12) → Application → Cookies di browser Anda, lalu salin session token.
+          <div style={{ position: 'relative' }}>
+            <pre
+              style={{
+                background: 'rgba(0, 0, 0, 0.45)',
+                border: '1px solid var(--border-strong)',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                fontSize: '12px',
+                fontFamily: 'monospace',
+                color: 'var(--text-secondary)',
+                overflowX: 'auto',
+                margin: 0,
+                lineHeight: 1.5,
+              }}
+            >
+              {snippets[activeSnippetTab]}
+            </pre>
+            <button
+              type="button"
+              onClick={() => handleCopySnippet(snippets[activeSnippetTab], activeSnippetTab)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: copiedSnippet === activeSnippetTab ? '#34d399' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              {copiedSnippet === activeSnippetTab ? <Check size={13} /> : <Copy size={13} />}
+              {copiedSnippet === activeSnippetTab ? 'Tersalin' : 'Salin Cuplikan'}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Configuration Modal ─────────────────────────────────────── */}
+        {selectedProvider && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.75)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+            }}
+          >
+            <div
+              style={{
+                background: 'var(--bg-main)',
+                border: '1px solid var(--border-strong)',
+                borderRadius: '16px',
+                width: '100%',
+                maxWidth: '480px',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '18px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingBottom: '12px',
+                  borderBottom: '1px solid var(--border-subtle)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                      {selectedProvider.name}
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                    {selectedProvider.description}
                   </p>
                 </div>
-              )}
-
-              {/* OAuth token field */}
-              {selectedProvider.authType === 'oauth' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">OAuth Access Token / CLI Keyring</label>
-                  <input
-                    type="password"
-                    value={modalOAuthToken}
-                    onChange={(e) => setModalOAuthToken(e.target.value)}
-                    placeholder="Masukkan OAuth Token atau token dari CLI IDE Anda"
-                    className="w-full px-3.5 py-2.5 bg-black/60 border border-zinc-800 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              )}
-
-              {/* Base URL (Optional) */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-400">Base URL Endpoint (Opsional)</label>
-                <input
-                  type="text"
-                  value={modalBaseUrl}
-                  onChange={(e) => setModalBaseUrl(e.target.value)}
-                  placeholder={selectedProvider.defaultBaseUrl || 'https://api.openai.com/v1'}
-                  className="w-full px-3.5 py-2 bg-black/40 border border-zinc-800/80 rounded-xl text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              {/* Test Connection feedback */}
-              {testResult && (
-                <div
-                  className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                    testResult === 'success'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                  }`}
-                >
-                  {testResult === 'success' ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" /> Kredensial berhasil tervalidasi dan siap digunakan!
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-4 h-4" /> Gagal memvalidasi kredensial. Silakan periksa kembali key Anda.
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between gap-3 pt-3 border-t border-zinc-800/80">
-              <button
-                type="button"
-                onClick={handleTestConnection}
-                disabled={isTestingConnection}
-                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors"
-              >
-                {isTestingConnection ? 'Menguji...' : 'Uji Koneksi'}
-              </button>
-
-              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setSelectedProvider(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-medium text-zinc-400 hover:text-zinc-200"
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                 >
-                  Batal
+                  <X size={18} />
                 </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {selectedProvider.authType === 'apikey' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      <span>API Key / Secret Token</span>
+                      {selectedProvider.website && (
+                        <a
+                          href={selectedProvider.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: '#06b6d4', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          Dapatkan Key <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      value={modalApiKey}
+                      onChange={(e) => setModalApiKey(e.target.value)}
+                      placeholder="Masukkan API Key..."
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid var(--border-strong)',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '13px',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                )}
+
+                {selectedProvider.authType === 'cookie' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>Session Cookie Token</span>
+                    <input
+                      type="password"
+                      value={modalCookieToken}
+                      onChange={(e) => setModalCookieToken(e.target.value)}
+                      placeholder="Masukkan session cookie token..."
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid var(--border-strong)',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '13px',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                      }}
+                    />
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      Salin session token dari Developer Tools (F12) browser Anda.
+                    </span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Base URL (Opsional)</span>
+                  <input
+                    type="text"
+                    value={modalBaseUrl}
+                    onChange={(e) => setModalBaseUrl(e.target.value)}
+                    placeholder={selectedProvider.defaultBaseUrl || 'https://api.openai.com/v1'}
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.2)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                      color: 'var(--text-secondary)',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {testResult && (
+                  <div
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: testResult === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)',
+                      border: testResult === 'success' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)',
+                      color: testResult === 'success' ? '#34d399' : '#f43f5e',
+                    }}
+                  >
+                    {testResult === 'success' ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+                    {testResult === 'success' ? 'Kredensial berhasil tervalidasi!' : 'Gagal memvalidasi kredensial.'}
+                  </div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-subtle)',
+                }}
+              >
                 <button
                   type="button"
-                  onClick={handleSaveProviderConfig}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-xs font-bold text-white shadow-lg transition-all"
+                  onClick={handleTestConnection}
+                  disabled={isTestingConnection}
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                  }}
                 >
-                  Simpan & Sambungkan
+                  {isTestingConnection ? 'Menguji...' : 'Uji Koneksi'}
                 </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProvider(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '8px 14px',
+                      fontSize: '12px',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveProviderConfig}
+                    style={{
+                      background: 'var(--brand-primary)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(0, 115, 234, 0.3)',
+                    }}
+                  >
+                    Simpan & Sambungkan
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
