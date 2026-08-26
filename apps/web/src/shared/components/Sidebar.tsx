@@ -1230,12 +1230,11 @@ interface WorkflowCategoryRowProps {
   isActive: boolean;
   fileCount: number;
   onSelect: () => void;
-  onUpload: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
 }
 
-function WorkflowCategoryRow({ cat, language, isActive, fileCount, onSelect, onUpload, onRename, onDelete }: WorkflowCategoryRowProps) {
+function WorkflowCategoryRow({ cat, language, isActive, fileCount, onSelect, onRename, onDelete }: WorkflowCategoryRowProps) {
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [renameText, setRenameText] = React.useState(cat.name);
   const [open, setOpen] = React.useState(false);
@@ -1296,11 +1295,7 @@ function WorkflowCategoryRow({ cat, language, isActive, fileCount, onSelect, onU
               <span style={{ fontSize: '10px', background: '#F59E0B', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>{fileCount}</span>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-            <button type="button" title={language === 'id' ? 'Unggah berkas' : 'Upload files'} onClick={(e) => { e.stopPropagation(); onUpload(); }}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}>
-              <Upload size={11} />
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <button ref={buttonRef} type="button" onClick={toggleMenu} className="session-options-btn"
               style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>
               <MoreHorizontal size={12} />
@@ -1425,7 +1420,13 @@ export function Sidebar({
 
   const removeImagineItem = useImagineStore((s) => s.removeItem);
 
-  const workflowCategories = useWorkspaceStore((s) => s.workflowCategories);
+  const rawWorkflowCategories = useWorkspaceStore((s) => s.workflowCategories);
+  const workflowCategories = useMemo(() => {
+    const PLACEHOLDERS = ['productivity', 'marketing', 'crm & leads', 'crm', 'email & communication', 'produktivitas'];
+    return (rawWorkflowCategories || []).filter(
+      (c) => !PLACEHOLDERS.includes((c.name ?? '').toLowerCase().trim())
+    );
+  }, [rawWorkflowCategories]);
   const activeWorkflowCategoryId = useWorkspaceStore((s) => s.activeWorkflowCategoryId);
   const setActiveWorkflowCategory = useWorkspaceStore((s) => s.setActiveWorkflowCategory);
   const createWorkflowCategory = useWorkspaceStore((s) => s.createWorkflowCategory);
@@ -2892,7 +2893,6 @@ export function Sidebar({
                         language={language}
                         isActive={activeWorkflowCategoryId === cat.id}
                         onSelect={() => setActiveWorkflowCategory(activeWorkflowCategoryId === cat.id ? null : cat.id)}
-                        onUpload={() => setDrawerState({ type: 'workflowCategory', id: cat.id })}
                         onRename={(name) => renameWorkflowCategory(cat.id, name)}
                         onDelete={() => {
                           deleteWorkflowCategoryStore(cat.id);
