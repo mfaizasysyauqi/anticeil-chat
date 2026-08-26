@@ -1443,7 +1443,6 @@ export default function MondayWarmBeigeLandingPage() {
               className="btn-monday-primary hide-on-mobile"
             >
               <span>{t.nav.launchApp}</span>
-              <ArrowRight size={13} />
             </Link>
 
             {/* Mobile Burger Menu Button */}
@@ -1896,7 +1895,6 @@ export default function MondayWarmBeigeLandingPage() {
               className="btn-monday-primary"
             >
               <span>{t.hero.ctaPrimary}</span>
-              <ArrowRight size={17} />
             </Link>
 
             <a

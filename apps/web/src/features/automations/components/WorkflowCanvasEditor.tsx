@@ -860,7 +860,7 @@ export function WorkflowCanvasEditor({
           </div>
 
           {/* Drawer Body */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px', minWidth: 0, boxSizing: 'border-box' }}>
 
             {/* ── Tab: Nodes Catalog ── */}
             {rightDrawerTab === 'nodes' && (

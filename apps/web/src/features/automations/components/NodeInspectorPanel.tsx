@@ -139,8 +139,12 @@ export function NodeInspectorPanel({
         boxShadow: isDark
           ? '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)'
           : '0 12px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-        width: isMobile ? '280px' : '320px',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        minWidth: 0,
         maxHeight: '75vh',
+        overflowX: 'hidden',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
@@ -150,8 +154,8 @@ export function NodeInspectorPanel({
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #F1F5F9' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #F1F5F9', minWidth: 0, gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0, flex: 1 }}>
           <div
             style={{
               width: '24px',
@@ -161,21 +165,22 @@ export function NodeInspectorPanel({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             {getNodeIcon()}
           </div>
-          <div>
-            <span style={{ fontSize: '12.5px', fontWeight: 800, color: isDark ? '#F8FAFC' : '#1E293B' }}>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 800, color: isDark ? '#F8FAFC' : '#1E293B', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {language === 'id' ? 'Konfigurasi Node' : 'Node Config'}
             </span>
-            <div style={{ fontSize: '10px', color: isDark ? '#94A3B8' : '#64748B' }}>
+            <div style={{ fontSize: '10px', color: isDark ? '#94A3B8' : '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {nodeType}
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
           <button
             type="button"
             onClick={onDeleteNode}
@@ -191,6 +196,8 @@ export function NodeInspectorPanel({
               gap: '4px',
               fontSize: '11px',
               fontWeight: 700,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
             title="Hapus Node"
           >
@@ -208,6 +215,7 @@ export function NodeInspectorPanel({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             <X size={15} />
@@ -223,6 +231,9 @@ export function NodeInspectorPanel({
           background: isDark ? 'rgba(0,0,0,0.3)' : '#F1F5F9',
           padding: '3px',
           borderRadius: '8px',
+          minWidth: 0,
+          width: '100%',
+          boxSizing: 'border-box',
         }}
       >
         {[
@@ -236,7 +247,8 @@ export function NodeInspectorPanel({
             onClick={() => setActiveTab(tab.id as any)}
             style={{
               flex: 1,
-              padding: '5px 0',
+              minWidth: 0,
+              padding: '5px 2px',
               borderRadius: '6px',
               border: 'none',
               background: activeTab === tab.id ? (isDark ? '#1F2937' : '#FFFFFF') : 'transparent',
@@ -246,6 +258,9 @@ export function NodeInspectorPanel({
               cursor: 'pointer',
               boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {tab.label}
@@ -255,7 +270,7 @@ export function NodeInspectorPanel({
 
       {/* Tab 1: Parameters */}
       {activeTab === 'params' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
           {/* Universal Title */}
           <div>
             <label style={labelStyle}>{language === 'id' ? 'Nama / Judul Node' : 'Node Title'}</label>
@@ -752,12 +767,12 @@ export function NodeInspectorPanel({
 
       {/* Tab 2: Dynamic Variables Picker */}
       {activeTab === 'variables' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '11px', color: isDark ? '#94A3B8' : '#64748B', lineHeight: 1.4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ fontSize: '11px', color: isDark ? '#94A3B8' : '#64748B', lineHeight: 1.4, overflowWrap: 'break-word', wordBreak: 'break-word' }}>
             Klik variabel di bawah untuk menyalin tag dinamis ke kolom template/prompt:
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: 0 }}>
             {[
               { tag: '{{ $trigger.data }}', desc: 'Payload data dari trigger awal' },
               { tag: '{{ $json.output }}', desc: 'Output data dari blok sebelumnya' },
@@ -778,20 +793,24 @@ export function NodeInspectorPanel({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: '8px',
+                  minWidth: 0,
+                  width: '100%',
+                  boxSizing: 'border-box',
                 }}
               >
-                <div>
-                  <div style={{ fontSize: '11.5px', fontFamily: 'monospace', fontWeight: 700, color: '#0073EA' }}>
+                <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                  <div style={{ fontSize: '11.5px', fontFamily: 'monospace', fontWeight: 700, color: '#0073EA', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {v.tag}
                   </div>
-                  <div style={{ fontSize: '10px', color: isDark ? '#94A3B8' : '#64748B' }}>
+                  <div style={{ fontSize: '10px', color: isDark ? '#94A3B8' : '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {v.desc}
                   </div>
                 </div>
                 {copiedVar === v.tag ? (
-                  <Check size={13} color="#10B981" />
+                  <Check size={13} color="#10B981" style={{ flexShrink: 0 }} />
                 ) : (
-                  <Copy size={13} color={isDark ? '#64748B' : '#94A3B8'} />
+                  <Copy size={13} color={isDark ? '#64748B' : '#94A3B8'} style={{ flexShrink: 0 }} />
                 )}
               </div>
             ))}
@@ -801,7 +820,7 @@ export function NodeInspectorPanel({
 
       {/* Tab 3: Settings & Execution Safety */}
       {activeTab === 'settings' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
           <div>
             <label style={labelStyle}>Opsi Retry saat Gagal</label>
             <select
