@@ -23,6 +23,7 @@ import {
   X,
   ShieldCheck,
   Bot,
+  Cpu,
   PanelLeftClose,
   PanelLeftOpen,
   Folder,
@@ -2281,6 +2282,25 @@ export function Sidebar({
               }}
             >
               <FileText size={17} />
+            </Link>
+
+            {/* Anticeil Route (AI Gateway) */}
+            <Link
+              href="/gateway"
+              title={t.nav.gateway || 'Route Gateway'}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: pathname === '/gateway' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                color: pathname === '/gateway' ? '#10B981' : 'var(--text-secondary)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Cpu size={17} />
             </Link>
           </div>
         </div>

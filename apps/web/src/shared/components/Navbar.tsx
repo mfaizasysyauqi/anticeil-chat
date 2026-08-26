@@ -282,6 +282,8 @@ export function Navbar({
               ? (activeWorkflowTitle ? `${t.nav.automations} / ${activeWorkflowTitle}` : t.nav.automations)
               : pathname === '/pdf-tools'
               ? t.nav.pdfTools
+              : pathname === '/gateway'
+              ? (t.nav.gateway || 'Route Gateway')
               : pathname === '/settings'
               ? t.nav.settings
               : activeSession?.title || 'Anticeil'}
