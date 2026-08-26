@@ -1714,7 +1714,7 @@ export function ImagineView() {
                       id={item.id}
                       isPinned={item.isPinned}
                       prompt={item.prompt}
-                      url={item.url}
+                      url={(item as any).url || (item as any).audioUrl || ''}
                       collectionId={item.collectionId}
                       collections={imageCollections}
                       language={language}

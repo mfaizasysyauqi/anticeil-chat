@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { ProviderCategory, ProviderConnection } from '../providers/types';
 
 export interface GatewayApiKey {
   id: string;
@@ -26,11 +27,27 @@ export interface GatewayRequestLog {
   userAgent?: string;
 }
 
+export interface CustomCompatibleEndpoint {
+  id: string;
+  name: string;
+  type: 'openai' | 'anthropic';
+  baseUrl: string;
+  apiKey?: string;
+  models: string[];
+  createdAt: number;
+}
+
 interface GatewayState {
   apiKeys: GatewayApiKey[];
   requestLogs: GatewayRequestLog[];
   isServerRunning: boolean;
   activePort: number;
+
+  // Provider Hub State
+  providerConnections: Record<string, ProviderConnection>;
+  customEndpoints: CustomCompatibleEndpoint[];
+  activeCategory: ProviderCategory | 'all';
+  searchQuery: string;
 
   // Actions
   generateApiKey: (name?: string) => GatewayApiKey;
@@ -38,6 +55,17 @@ interface GatewayState {
   toggleApiKey: (id: string) => void;
   addRequestLog: (log: GatewayRequestLog) => void;
   clearRequestLogs: () => void;
+
+  // Provider Connection Actions
+  setProviderConnection: (providerId: string, connection: Partial<ProviderConnection>) => void;
+  toggleProvider: (providerId: string) => void;
+  disconnectProvider: (providerId: string) => void;
+  setActiveCategory: (cat: ProviderCategory | 'all') => void;
+  setSearchQuery: (query: string) => void;
+
+  // Custom Endpoint Actions
+  addCustomEndpoint: (endpoint: Omit<CustomCompatibleEndpoint, 'id' | 'createdAt'>) => void;
+  removeCustomEndpoint: (id: string) => void;
 }
 
 function generateRandomKey(): string {
@@ -65,6 +93,18 @@ export const useGatewayStore = create<GatewayState>()(
       requestLogs: [],
       isServerRunning: true,
       activePort: 3000,
+
+      // Initial Provider Hub State
+      providerConnections: {
+        pollinations: { providerId: 'pollinations', isEnabled: true, testStatus: 'success' },
+        'duckduckgo-web': { providerId: 'duckduckgo-web', isEnabled: true, testStatus: 'success' },
+        puter: { providerId: 'puter', isEnabled: true, testStatus: 'success' },
+        'jina-reader': { providerId: 'jina-reader', isEnabled: true, testStatus: 'success' },
+        'ollama-local': { providerId: 'ollama-local', isEnabled: true, baseUrl: 'http://localhost:11434' },
+      },
+      customEndpoints: [],
+      activeCategory: 'all',
+      searchQuery: '',
 
       generateApiKey: (name) => {
         const newKey: GatewayApiKey = {
@@ -111,13 +151,79 @@ export const useGatewayStore = create<GatewayState>()(
       clearRequestLogs: () => {
         set({ requestLogs: [] });
       },
+
+      // Provider Connections
+      setProviderConnection: (providerId, partial) => {
+        set((state) => {
+          const current = state.providerConnections[providerId] || {
+            providerId,
+            isEnabled: true,
+          };
+          return {
+            providerConnections: {
+              ...state.providerConnections,
+              [providerId]: {
+                ...current,
+                ...partial,
+                connectedAt: Date.now(),
+                isEnabled: true,
+              },
+            },
+          };
+        });
+      },
+
+      toggleProvider: (providerId) => {
+        set((state) => {
+          const current = state.providerConnections[providerId];
+          if (!current) {
+            return {
+              providerConnections: {
+                ...state.providerConnections,
+                [providerId]: { providerId, isEnabled: true, connectedAt: Date.now() },
+              },
+            };
+          }
+          return {
+            providerConnections: {
+              ...state.providerConnections,
+              [providerId]: { ...current, isEnabled: !current.isEnabled },
+            },
+          };
+        });
+      },
+
+      disconnectProvider: (providerId) => {
+        set((state) => {
+          const next = { ...state.providerConnections };
+          delete next[providerId];
+          return { providerConnections: next };
+        });
+      },
+
+      setActiveCategory: (activeCategory) => set({ activeCategory }),
+      setSearchQuery: (searchQuery) => set({ searchQuery }),
+
+      // Custom Endpoints
+      addCustomEndpoint: (endpoint) => {
+        const newEndpoint: CustomCompatibleEndpoint = {
+          ...endpoint,
+          id: `custom_${Date.now().toString(36)}`,
+          createdAt: Date.now(),
+        };
+        set((state) => ({
+          customEndpoints: [newEndpoint, ...state.customEndpoints],
+        }));
+      },
+
+      removeCustomEndpoint: (id) => {
+        set((state) => ({
+          customEndpoints: state.customEndpoints.filter((e) => e.id !== id),
+        }));
+      },
     }),
     {
-      name: 'anticeil_gateway_storage',
-      partialize: (state) => ({
-        apiKeys: state.apiKeys,
-        requestLogs: state.requestLogs.slice(0, 30),
-      }),
+      name: 'anticeil_gateway_providers_v2',
     }
   )
 );

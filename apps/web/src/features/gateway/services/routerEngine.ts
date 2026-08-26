@@ -1,11 +1,11 @@
 import {
   LLMProviderId,
-  LLMModel,
   PROVIDER_MODELS,
   PROVIDER_DEFINITIONS,
   getProviderById,
 } from '@anticeil/core';
 import { FREE_GROQ_KEYS, FREE_GEMINI_KEYS, getNextFreeKey } from '../../chat/data/byokApi';
+import { ALL_GATEWAY_PROVIDERS, getGatewayProviderById } from '../providers';
 
 export interface RouteRequest {
   model: string;
@@ -21,29 +21,41 @@ export interface RouteRequest {
 }
 
 export interface ModelResolution {
-  providerId: LLMProviderId;
+  providerId: string;
   normalizedModelId: string;
   baseUrl: string;
   apiKey: string;
+  authType: 'no-auth' | 'oauth' | 'cookie' | 'apikey' | 'local';
 }
 
-// Map common aliases or prefix models to specific providers
+// Map common aliases or prefix models across all 295+ providers
 export function resolveModelProvider(
   modelInput: string,
-  userApiKeys: Record<string, { apiKey: string; baseUrl?: string }> = {}
+  userApiKeys: Record<string, { apiKey?: string; baseUrl?: string; cookieToken?: string; oauthToken?: string }> = {}
 ): ModelResolution {
-  const rawModel = (modelInput || 'gpt-4o-mini').trim();
-  let providerId: LLMProviderId = 'openai';
+  const rawModel = (modelInput || 'groq/compound').trim();
+  let providerId: string = 'openai';
   let normalizedModelId = rawModel;
+  let authType: 'no-auth' | 'oauth' | 'cookie' | 'apikey' | 'local' = 'apikey';
 
-  // 1. Explicit prefix: e.g. "anthropic/claude-3-7-sonnet" or "groq/llama-3.3-70b-versatile"
+  // 1. Explicit prefix: e.g. "pollinations/flux", "sambanova/DeepSeek-R1", "copilot/gpt-4o"
   if (rawModel.includes('/')) {
     const [prefix, ...rest] = rawModel.split('/');
     const cleanPrefix = prefix.toLowerCase();
     const cleanModel = rest.join('/');
 
-    if (cleanPrefix in PROVIDER_DEFINITIONS || ['openai', 'anthropic', 'gemini', 'groq', 'deepseek', 'ollama', 'openrouter', 'custom'].includes(cleanPrefix)) {
-      providerId = (cleanPrefix === 'openrouter' ? 'custom' : cleanPrefix) as LLMProviderId;
+    const matchedProvider = getGatewayProviderById(cleanPrefix) || 
+      (cleanPrefix === 'ddg' ? getGatewayProviderById('duckduckgo-web') : undefined) ||
+      (cleanPrefix === 'copilot' ? getGatewayProviderById('github') : undefined) ||
+      (cleanPrefix === 'cf' ? getGatewayProviderById('cloudflare-ai') : undefined) ||
+      (cleanPrefix === 'ollama' ? getGatewayProviderById('ollama-local') : undefined);
+
+    if (matchedProvider) {
+      providerId = matchedProvider.id;
+      normalizedModelId = cleanModel || rawModel;
+      authType = matchedProvider.authType;
+    } else if (cleanPrefix in PROVIDER_DEFINITIONS || ['openai', 'anthropic', 'gemini', 'groq', 'deepseek', 'ollama', 'openrouter', 'custom'].includes(cleanPrefix)) {
+      providerId = cleanPrefix === 'openrouter' ? 'custom' : cleanPrefix;
       normalizedModelId = cleanModel;
     }
   } else {
@@ -59,7 +71,8 @@ export function resolveModelProvider(
       lower.includes('llama') ||
       lower.includes('mixtral') ||
       lower.includes('gemma') ||
-      lower.includes('qwen')
+      lower.includes('qwen') ||
+      lower.includes('compound')
     ) {
       providerId = 'groq';
     } else if (lower.startsWith('gpt') || lower.startsWith('o1') || lower.startsWith('o3') || lower.startsWith('chatgpt')) {
@@ -68,17 +81,20 @@ export function resolveModelProvider(
       // Look up in known model lists
       for (const [pId, models] of Object.entries(PROVIDER_MODELS)) {
         if (models.some((m) => m.id === rawModel)) {
-          providerId = pId as LLMProviderId;
+          providerId = pId;
           break;
         }
       }
     }
   }
 
-  // Get provider definition and default base URL
-  let apiKey = userApiKeys[providerId]?.apiKey || process.env[`${providerId.toUpperCase()}_API_KEY`] || '';
+  // Get credentials from user store or environment variables
+  let apiKey = userApiKeys[providerId]?.apiKey || process.env[`${providerId.toUpperCase().replace(/-/g, '_')}_API_KEY`] || '';
+  const providerMeta = getGatewayProviderById(providerId);
+  const def = getProviderById(providerId as LLMProviderId);
+  let baseUrl = userApiKeys[providerId]?.baseUrl || providerMeta?.defaultBaseUrl || def?.defaultBaseUrl || '';
 
-  // If DeepSeek was requested but no key is configured, fallback to Groq's active smart model with free key
+  // Smart fallback for DeepSeek and Groq models if no direct key is set
   if (providerId === 'deepseek' && !apiKey) {
     providerId = 'groq';
     normalizedModelId = 'groq/compound';
@@ -104,9 +120,6 @@ export function resolveModelProvider(
     }
   }
 
-  const def = getProviderById(providerId);
-  let baseUrl = userApiKeys[providerId]?.baseUrl || def?.defaultBaseUrl || '';
-
   // Fallback to built-in free tier keys for Groq & Gemini if no custom key is provided
   if (!apiKey) {
     if (providerId === 'groq') {
@@ -116,13 +129,15 @@ export function resolveModelProvider(
     }
   }
 
-  // Default OpenAI base URL if empty
+  // Default Base URLs
   if (!baseUrl) {
     if (providerId === 'openai') baseUrl = 'https://api.openai.com/v1';
     if (providerId === 'anthropic') baseUrl = 'https://api.anthropic.com/v1';
     if (providerId === 'deepseek') baseUrl = 'https://api.deepseek.com/v1';
     if (providerId === 'groq') baseUrl = 'https://api.groq.com/openai/v1';
     if (providerId === 'gemini') baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+    if (providerId === 'pollinations') baseUrl = 'https://text.pollinations.ai';
+    if (providerId === 'ollama-local') baseUrl = 'http://localhost:11434';
   }
 
   return {
@@ -130,29 +145,55 @@ export function resolveModelProvider(
     normalizedModelId,
     baseUrl,
     apiKey,
+    authType,
   };
 }
 
-export function getAllGatewayModels(): Array<{ id: string; name: string; provider: string; context_window?: number }> {
-  const result: Array<{ id: string; name: string; provider: string; context_window?: number }> = [];
+export function getAllGatewayModels(): Array<{ id: string; name: string; provider: string; context_window?: number; badge?: string }> {
+  const result: Array<{ id: string; name: string; provider: string; context_window?: number; badge?: string }> = [];
+  const addedIds = new Set<string>();
 
+  // 1. Add models from all 295+ providers
+  for (const p of ALL_GATEWAY_PROVIDERS) {
+    if (p.models && p.models.length > 0) {
+      for (const mId of p.models) {
+        if (!addedIds.has(mId)) {
+          addedIds.add(mId);
+          result.push({
+            id: mId,
+            name: `${mId} (${p.name})`,
+            provider: p.id,
+            badge: p.badge,
+            context_window: 128000,
+          });
+        }
+      }
+    }
+  }
+
+  // 2. Add standard core models
   for (const [providerId, models] of Object.entries(PROVIDER_MODELS)) {
     for (const m of models) {
-      // Add standard model ID
-      result.push({
-        id: m.id,
-        name: m.name,
-        provider: providerId,
-        context_window: m.contextWindow,
-      });
+      if (!addedIds.has(m.id)) {
+        addedIds.add(m.id);
+        result.push({
+          id: m.id,
+          name: m.name,
+          provider: providerId,
+          context_window: m.contextWindow,
+        });
+      }
 
-      // Also add prefixed version for unambiguous routing (e.g. groq/llama-3.3-70b-versatile)
-      result.push({
-        id: `${providerId}/${m.id}`,
-        name: `${m.name} (${providerId.toUpperCase()})`,
-        provider: providerId,
-        context_window: m.contextWindow,
-      });
+      const prefixed = `${providerId}/${m.id}`;
+      if (!addedIds.has(prefixed)) {
+        addedIds.add(prefixed);
+        result.push({
+          id: prefixed,
+          name: `${m.name} (${providerId.toUpperCase()})`,
+          provider: providerId,
+          context_window: m.contextWindow,
+        });
+      }
     }
   }
 
