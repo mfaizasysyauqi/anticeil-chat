@@ -31,7 +31,13 @@ import {
   Folder,
   ChevronDown,
   ArrowUp,
+  MoreHorizontal,
+  FolderInput,
+  FolderMinus,
+  ChevronRight,
+  Trash2,
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { ImagineModelSelectorModal, IMAGINE_PROVIDERS } from './ImagineModelSelectorModal';
 import { ImagineVoiceSelectorModal } from './ImagineVoiceSelectorModal';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -135,6 +141,321 @@ function blobToBase64(blob: Blob): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+// ─── ImagineCardMenu (3-dot Menu & Submenu) ──────────────────────────────────
+interface ImagineCardMenuProps {
+  id: string;
+  isPinned?: boolean;
+  prompt?: string;
+  url?: string;
+  collectionId?: string | null;
+  collections: { id: string; name: string }[];
+  language: string;
+  onTogglePin: () => void;
+  onMoveToCollection: (colId: string | null) => void;
+  onCopyPrompt?: () => void;
+  onDownload?: () => void;
+  onDelete?: () => void;
+}
+
+function ImagineCardMenu({
+  id,
+  isPinned,
+  prompt,
+  url,
+  collectionId,
+  collections,
+  language,
+  onTogglePin,
+  onMoveToCollection,
+  onCopyPrompt,
+  onDownload,
+  onDelete,
+}: ImagineCardMenuProps) {
+  const [open, setOpen] = useState(false);
+  const [showFolderSub, setShowFolderSub] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
+        setOpen(false);
+        setShowFolderSub(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+      setShowFolderSub(false);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuW = 175;
+    const menuH = 170;
+    let left = rect.right - menuW;
+    if (left < 8) left = 8;
+    let top = rect.bottom + 4;
+    if (top + menuH > window.innerHeight) {
+      top = rect.top - menuH - 4;
+    }
+    setMenuPosition({ top, left });
+    setOpen(true);
+  };
+
+  const handleCopy = () => {
+    if (onCopyPrompt) {
+      onCopyPrompt();
+    } else if (prompt) {
+      navigator.clipboard.writeText(prompt);
+    }
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+      setOpen(false);
+    }, 1200);
+  };
+
+  const btnStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '7px',
+    padding: '6px 9px',
+    borderRadius: '6px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '12px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    width: '100%',
+    transition: 'background-color 0.12s ease',
+  };
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="session-options-btn"
+        title="Opsi Media"
+        style={{
+          background: isPinned ? 'rgba(162, 93, 220, 0.15)' : 'var(--bg-subtle)',
+          border: `1px solid ${isPinned ? 'rgba(162, 93, 220, 0.4)' : 'var(--border-subtle)'}`,
+          color: isPinned ? '#A25DDC' : 'var(--text-muted)',
+          borderRadius: '6px',
+          padding: '4px 6px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px',
+          transition: 'all 0.15s ease',
+        }}
+      >
+        {isPinned && <Pin size={11} fill="#A25DDC" />}
+        <MoreHorizontal size={13} />
+      </button>
+
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={portalRef}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
+            padding: '4px',
+            zIndex: 999999999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '175px',
+          }}
+        >
+          {/* Pin / Unpin */}
+          <button
+            type="button"
+            style={btnStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onClick={() => {
+              onTogglePin();
+              setOpen(false);
+            }}
+          >
+            <Pin size={12} fill={isPinned ? '#A25DDC' : 'none'} color={isPinned ? '#A25DDC' : undefined} />
+            <span>
+              {isPinned
+                ? language === 'id'
+                  ? 'Lepas sematan'
+                  : 'Unpin from top'
+                : language === 'id'
+                ? 'Sematkan di atas'
+                : 'Pin to top'}
+            </span>
+          </button>
+
+          {/* Copy Prompt */}
+          {prompt && (
+            <button
+              type="button"
+              style={btnStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              onClick={handleCopy}
+            >
+              {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
+              <span>
+                {copied
+                  ? language === 'id'
+                    ? 'Tersalin!'
+                    : 'Copied!'
+                  : language === 'id'
+                  ? 'Salin Prompt'
+                  : 'Copy Prompt'}
+              </span>
+            </button>
+          )}
+
+          {/* Move to folder Submenu */}
+          {collections.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                style={btnStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                  setShowFolderSub(true);
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <FolderInput size={12} />
+                <span style={{ flex: 1 }}>{language === 'id' ? 'Pindah ke folder' : 'Move to folder'}</span>
+                <ChevronRight size={11} color="var(--text-muted)" />
+              </button>
+
+              {showFolderSub && (
+                <div
+                  onMouseEnter={() => setShowFolderSub(true)}
+                  onMouseLeave={() => setShowFolderSub(false)}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '100%',
+                    marginLeft: '2px',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    boxShadow: 'var(--shadow-xl)',
+                    padding: '4px',
+                    zIndex: 999999999,
+                    minWidth: '150px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                  }}
+                >
+                  {collectionId && (
+                    <button
+                      type="button"
+                      style={btnStyle}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      onClick={() => {
+                        onMoveToCollection(null);
+                        setOpen(false);
+                        setShowFolderSub(false);
+                      }}
+                    >
+                      <FolderMinus size={11} />
+                      <span>{language === 'id' ? 'Lepas dari folder' : 'Remove from folder'}</span>
+                    </button>
+                  )}
+                  {collections.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      style={{
+                        ...btnStyle,
+                        fontWeight: collectionId === c.id ? 650 : 400,
+                        color: collectionId === c.id ? '#A25DDC' : 'var(--text-primary)',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      onClick={() => {
+                        onMoveToCollection(c.id);
+                        setOpen(false);
+                        setShowFolderSub(false);
+                      }}
+                    >
+                      <Folder size={11} color={collectionId === c.id ? '#A25DDC' : undefined} />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {c.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Download */}
+          {onDownload && (
+            <button
+              type="button"
+              style={btnStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              onClick={() => {
+                onDownload();
+                setOpen(false);
+              }}
+            >
+              <Download size={12} />
+              <span>{language === 'id' ? 'Unduh Berkas' : 'Download File'}</span>
+            </button>
+          )}
+
+          {/* Delete */}
+          {onDelete && (
+            <button
+              type="button"
+              style={{ ...btnStyle, color: 'var(--accent-danger, #EF4444)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              onClick={() => {
+                onDelete();
+                setOpen(false);
+              }}
+            >
+              <Trash2 size={12} />
+              <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+            </button>
+          )}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 }
 
 export function ImagineView() {
@@ -499,6 +820,7 @@ export function ImagineView() {
 
   // Imagine store — persisted media, pin, folder
   const addImagineItem = useImagineStore((s) => s.addItem);
+  const removeImagineItem = useImagineStore((s) => s.removeItem);
   const toggleImaginePin = useImagineStore((s) => s.togglePin);
   const moveImagineToCollection = useImagineStore((s) => s.moveToCollection);
   const hydrateFromApi = useImagineStore((s) => s.hydrateFromApi);
@@ -1388,85 +1710,20 @@ export function ImagineView() {
                   >
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.createdAt}</span>
 
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      {/* Pin button */}
-                      <button
-                        type="button"
-                        title={item.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan di atas' : 'Pin to top')}
-                        onClick={() => toggleImaginePin(item.id)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '3px',
-                          padding: '4px 7px',
-                          background: item.isPinned ? 'rgba(162,93,220,0.15)' : 'var(--bg-subtle)',
-                          border: `1px solid ${item.isPinned ? '#A25DDC' : 'var(--border-subtle)'}`,
-                          borderRadius: '6px',
-                          color: item.isPinned ? '#A25DDC' : 'var(--text-muted)',
-                          fontSize: '11px', cursor: 'pointer',
-                        }}
-                      >
-                        <Pin size={11} fill={item.isPinned ? '#A25DDC' : 'none'} />
-                      </button>
-
-                      {/* Move to folder */}
-                      {imageCollections.length > 0 && (
-                        <select
-                          value={item.collectionId || ''}
-                          title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
-                          onChange={(e) => moveImagineToCollection(item.id, e.target.value || null)}
-                          style={{
-                            background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
-                            borderRadius: '6px', fontSize: '11px', color: 'var(--text-muted)',
-                            cursor: 'pointer', padding: '3px 6px', outline: 'none',
-                          }}
-                        >
-                          <option value="">📁 {language === 'id' ? 'Semua' : 'None'}</option>
-                          {imageCollections.map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => handleCopyPrompt(item.id, item.prompt)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '6px',
-                          color: copiedId === item.id ? 'var(--accent-success)' : 'var(--text-secondary)',
-                          fontSize: '11px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {copiedId === item.id ? <Check size={12} /> : <Copy size={12} />}
-                        <span>{copiedId === item.id ? ti.copied : ti.copyPrompt}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadAudio(item)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 10px',
-                          background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '6px',
-                          color: 'var(--brand-primary)',
-                          fontWeight: 600,
-                          fontSize: '11px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <Download size={12} />
-                        <span>Unduh .WAV</span>
-                      </button>
-                    </div>
+                    <ImagineCardMenu
+                      id={item.id}
+                      isPinned={item.isPinned}
+                      prompt={item.prompt}
+                      url={item.url}
+                      collectionId={item.collectionId}
+                      collections={imageCollections}
+                      language={language}
+                      onTogglePin={() => toggleImaginePin(item.id)}
+                      onMoveToCollection={(colId) => moveImagineToCollection(item.id, colId)}
+                      onCopyPrompt={() => handleCopyPrompt(item.id, item.prompt)}
+                      onDownload={() => handleDownloadAudio(item)}
+                      onDelete={() => removeImagineItem(item.id)}
+                    />
                   </div>
                 </div>
               );
@@ -1574,72 +1831,31 @@ export function ImagineView() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      marginTop: 'auto',
                       paddingTop: '6px',
                       borderTop: '1px solid var(--border-subtle)',
                     }}
                   >
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{vid.model}</span>
-                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      {/* Pin button */}
-                      <button
-                        type="button"
-                        title={vid.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan di atas' : 'Pin to top')}
-                        onClick={() => toggleImaginePin(vid.id)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '3px',
-                          padding: '4px 7px',
-                          background: vid.isPinned ? 'rgba(162,93,220,0.15)' : 'var(--bg-subtle)',
-                          border: `1px solid ${vid.isPinned ? '#A25DDC' : 'var(--border-subtle)'}`,
-                          borderRadius: '4px',
-                          color: vid.isPinned ? '#A25DDC' : 'var(--text-muted)',
-                          fontSize: '11px', cursor: 'pointer',
-                        }}
-                      >
-                        <Pin size={11} fill={vid.isPinned ? '#A25DDC' : 'none'} />
-                      </button>
-
-                      {/* Move to folder */}
-                      {imageCollections.length > 0 && (
-                        <select
-                          value={vid.collectionId || ''}
-                          title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
-                          onChange={(e) => moveImagineToCollection(vid.id, e.target.value || null)}
-                          style={{
-                            background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
-                            borderRadius: '4px', fontSize: '11px', color: 'var(--text-muted)',
-                            cursor: 'pointer', padding: '3px 5px', outline: 'none',
-                          }}
-                        >
-                          <option value="">📁 {language === 'id' ? 'Semua' : 'None'}</option>
-                          {imageCollections.map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
-                      )}
-
-                      <a
-                        href={vid.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download={`imagine-video-${vid.id}.jpg`}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '4px',
-                          color: 'var(--text-secondary)',
-                          fontSize: '11px',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        <Download size={12} />
-                        <span>{ti.download}</span>
-                      </a>
-                    </div>
+                    <ImagineCardMenu
+                      id={vid.id}
+                      isPinned={vid.isPinned}
+                      prompt={vid.prompt}
+                      url={vid.url}
+                      collectionId={vid.collectionId}
+                      collections={imageCollections}
+                      language={language}
+                      onTogglePin={() => toggleImaginePin(vid.id)}
+                      onMoveToCollection={(colId) => moveImagineToCollection(vid.id, colId)}
+                      onCopyPrompt={() => handleCopyPrompt(vid.id, vid.prompt)}
+                      onDownload={() => {
+                        const a = document.createElement('a');
+                        a.href = vid.url;
+                        a.download = `imagine-video-${vid.id}.mp4`;
+                        a.target = '_blank';
+                        a.click();
+                      }}
+                      onDelete={() => removeImagineItem(vid.id)}
+                    />
                   </div>
                 </div>
               </div>
@@ -1773,74 +1989,26 @@ export function ImagineView() {
                       {img.createdAt}
                     </span>
 
-                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      {/* Pin button */}
-                      <button
-                        type="button"
-                        title={img.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan di atas' : 'Pin to top')}
-                        onClick={() => toggleImaginePin(img.id)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '3px',
-                          padding: '4px 7px',
-                          background: img.isPinned ? 'rgba(162,93,220,0.15)' : 'var(--bg-subtle)',
-                          border: `1px solid ${img.isPinned ? '#A25DDC' : 'var(--border-subtle)'}`,
-                          borderRadius: '4px',
-                          color: img.isPinned ? '#A25DDC' : 'var(--text-muted)',
-                          fontSize: '11px', cursor: 'pointer',
-                        }}
-                      >
-                        <Pin size={11} fill={img.isPinned ? '#A25DDC' : 'none'} />
-                      </button>
-
-                      {/* Move to folder */}
-                      {imageCollections.length > 0 && (
-                        <select
-                          value={img.collectionId || ''}
-                          title={language === 'id' ? 'Pindah ke folder' : 'Move to folder'}
-                          onChange={(e) => moveImagineToCollection(img.id, e.target.value || null)}
-                          style={{
-                            background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
-                            borderRadius: '4px', fontSize: '11px', color: 'var(--text-muted)',
-                            cursor: 'pointer', padding: '3px 5px', outline: 'none',
-                          }}
-                        >
-                          <option value="">📁 {language === 'id' ? 'Semua' : 'None'}</option>
-                          {imageCollections.map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => handleCopyPrompt(img.id, img.prompt)}
-                        title={ti.copyPrompt}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '4px',
-                          padding: '4px 8px', background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)', borderRadius: '4px',
-                          color: copiedId === img.id ? 'var(--accent-success)' : 'var(--text-secondary)',
-                          fontSize: '11px', cursor: 'pointer',
-                        }}
-                      >
-                        {copiedId === img.id ? <Check size={12} /> : <Copy size={12} />}
-                        <span>{copiedId === img.id ? ti.copied : ti.copyPrompt}</span>
-                      </button>
-
-                      <a
-                        href={img.url} target="_blank" rel="noopener noreferrer"
-                        download={`imagine-${img.id}.jpg`} title={ti.download}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '4px',
-                          padding: '4px 8px', background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)', borderRadius: '4px',
-                          color: 'var(--text-secondary)', fontSize: '11px', textDecoration: 'none',
-                        }}
-                      >
-                        <Download size={12} />
-                        <span>{ti.download}</span>
-                      </a>
-                    </div>
+                    <ImagineCardMenu
+                      id={img.id}
+                      isPinned={img.isPinned}
+                      prompt={img.prompt}
+                      url={img.url}
+                      collectionId={img.collectionId}
+                      collections={imageCollections}
+                      language={language}
+                      onTogglePin={() => toggleImaginePin(img.id)}
+                      onMoveToCollection={(colId) => moveImagineToCollection(img.id, colId)}
+                      onCopyPrompt={() => handleCopyPrompt(img.id, img.prompt)}
+                      onDownload={() => {
+                        const a = document.createElement('a');
+                        a.href = img.url;
+                        a.download = `imagine-${img.id}.jpg`;
+                        a.target = '_blank';
+                        a.click();
+                      }}
+                      onDelete={() => removeImagineItem(img.id)}
+                    />
                   </div>
                 </div>
               </div>
