@@ -63,6 +63,7 @@ import { usePdfStore, PdfDocumentItem, PdfFolderItem } from '../../features/pdf/
 import { useAutomationStore } from '../../features/automations/store/useAutomationStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { createClient } from '../utils/supabase/client';
+import { useGatewayStore, GatewaySubNav } from '../../features/gateway/store/useGatewayStore';
 
 interface SidebarProps {
   isOpenMobile?: boolean;
@@ -1326,6 +1327,80 @@ function WorkflowCategoryRow({ cat, language, isActive, fileCount, onSelect, onR
     </div>
   );
 }
+// ─── GatewaySidebarNav ────────────────────────────────────────────────────────────────────────────────
+// 8 Gateway module items shown inside the main sidebar drawer when pathname === '/gateway'
+function GatewaySidebarNav() {
+  const { activeSubNav, setActiveSubNav, apiKeys, combos, requestLogs, compression } = useGatewayStore();
+
+  const connectedCount = useGatewayStore((s) =>
+    Object.values(s.providerConnections).filter((c) => c.isEnabled).length
+  );
+
+  const items: Array<{ id: GatewaySubNav; label: string; icon: string; badge?: string; color: string }> = [
+    { id: 'providers',   label: 'Katalog 295+ Provider', icon: '🌐', badge: `${connectedCount} aktif`, color: '#10b981' },
+    { id: 'api-keys',    label: 'Manajer Kunci API',     icon: '🔑', badge: `${apiKeys.length}`,       color: '#818cf8' },
+    { id: 'quota',       label: 'Provider Quota & Limits', icon: '📊', color: '#38bdf8' },
+    { id: 'endpoint',    label: 'Endpoints & Setup',     icon: '⚡', color: '#fbbf24' },
+    { id: 'combos',      label: 'Combos & Failover',     icon: '🔀', badge: `${combos.length}`,        color: '#f97316' },
+    { id: 'compressor',  label: 'Context Compressor',    icon: '🗜️',  badge: compression.mode.toUpperCase(), color: '#a78bfa' },
+    { id: 'traffic',     label: 'Traffic Inspector',     icon: '📡', badge: requestLogs.length > 0 ? `${requestLogs.length}` : undefined, color: '#34d399' },
+    { id: 'discovery',   label: 'Radar Akses Gratisan',  icon: '🎯', color: '#fb7185' },
+  ];
+
+  const groups = [
+    { label: 'Pusat Perutean', ids: ['providers', 'api-keys', 'quota', 'endpoint'] as GatewaySubNav[] },
+    { label: 'Fitur Cerdas',   ids: ['combos', 'compressor', 'traffic', 'discovery'] as GatewaySubNav[] },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {groups.map((group) => (
+        <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '8px 10px 4px' }}>
+            {group.label}
+          </div>
+          {group.ids.map((id) => {
+            const item = items.find((i) => i.id === id)!;
+            const isActive = activeSubNav === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveSubNav(id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '7px 10px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: isActive ? 700 : 400,
+                  cursor: 'pointer',
+                  background: isActive ? 'var(--bg-elevated)' : 'transparent',
+                  border: 'none',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  transition: 'all 0.12s ease',
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <span style={{ fontSize: '13px', flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '8px', background: isActive ? `${item.color}22` : 'var(--bg-subtle)', color: isActive ? item.color : 'var(--text-muted)', flexShrink: 0, marginLeft: '4px' }}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function Sidebar({
   isOpenMobile = false,
@@ -1349,6 +1424,7 @@ export function Sidebar({
   const isImagine = pathname === '/imagine';
   const isAutomations = pathname === '/automations';
   const isPdfTools = pathname === '/pdf-tools';
+  const isGateway = pathname === '/gateway';
 
   // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
@@ -2377,7 +2453,9 @@ export function Sidebar({
                     : 'Anticeil Automations'
                   : isPdfTools
                     ? 'Anticeil PDF'
-                    : 'Anticeil'}
+                    : isGateway
+                      ? 'Route Gateway'
+                      : 'Anticeil'}
             </span>
           </div>
 
@@ -2515,6 +2593,10 @@ export function Sidebar({
               <FileText size={15} color="#EF4444" />
               <span>{language === 'id' ? 'Olah PDF Baru' : 'New PDF Task'}</span>
             </button>
+          ) : isGateway ? (
+            <div style={{ padding: '4px 10px 2px', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Anticeil Route v1.0
+            </div>
           ) : (
             <button
               type="button"
@@ -2543,7 +2625,7 @@ export function Sidebar({
           )}
 
           {/* Connectors & Integrations Shortcut in Chat Mode */}
-          {!isImagine && !isAutomations && !isPdfTools && (
+          {!isImagine && !isAutomations && !isPdfTools && !isGateway && (
             <button
               type="button"
               onClick={() => setIsConnectorsModalOpen(true)}
@@ -2595,9 +2677,13 @@ export function Sidebar({
                     ? language === 'id'
                       ? 'Cari alur kerja...'
                       : 'Search workflows...'
-                    : isPdfTools
+                    : isGateway
                       ? language === 'id'
-                        ? 'Cari file PDF...'
+                        ? 'Cari modul gateway...'
+                        : 'Search gateway modules...'
+                      : isPdfTools
+                        ? language === 'id'
+                          ? 'Cari file PDF...'
                         : 'Search PDF files...'
                       : t.sidebar.searchChats
               }
@@ -3342,9 +3428,14 @@ export function Sidebar({
                 )}
               </div>
             </>
+          ) : isGateway ? (
+            /* ─────────────────────────────────────────────────────────────
+             * D. GATEWAY MODE SIDEBAR CONTENT
+             * ───────────────────────────────────────────────────────────── */
+            <GatewaySidebarNav />
           ) : (
             /* ─────────────────────────────────────────────────────────────
-             * D. DEFAULT CHAT MODE SIDEBAR CONTENT
+             * E. DEFAULT CHAT MODE SIDEBAR CONTENT
              * ───────────────────────────────────────────────────────────── */
             <>
               {/* Projects Section */}

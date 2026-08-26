@@ -4,6 +4,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ProviderCategory, ProviderConnection } from '../providers/types';
 
+export type GatewaySubNav =
+  | 'providers'
+  | 'api-keys'
+  | 'quota'
+  | 'endpoint'
+  | 'combos'
+  | 'compressor'
+  | 'traffic'
+  | 'discovery';
+
 export interface GatewayApiKey {
   id: string;
   name: string;
@@ -20,6 +30,7 @@ export interface GatewayRequestLog {
   model: string;
   provider: string;
   status: 'success' | 'failed';
+  statusCode: number;
   durationMs: number;
   promptTokens?: number;
   completionTokens?: number;
@@ -27,17 +38,38 @@ export interface GatewayRequestLog {
   userAgent?: string;
 }
 
-export interface CustomCompatibleEndpoint {
+export interface ModelCombo {
   id: string;
   name: string;
-  type: 'openai' | 'anthropic';
-  baseUrl: string;
-  apiKey?: string;
-  models: string[];
-  createdAt: number;
+  description: string;
+  chain: string[];
+  isActive: boolean;
+}
+
+export interface CompressionSettings {
+  mode: 'off' | 'lite' | 'smart' | 'aggressive';
+  stripWhitespace: boolean;
+  dedupHistory: boolean;
+  summarizeOldTurns: boolean;
+}
+
+export interface ProviderQuotaInfo {
+  providerId: string;
+  name: string;
+  usedTpm: number;
+  limitTpm: number;
+  usedRpm: number;
+  limitRpm: number;
+  resetInterval: string;
+  tier: 'Free' | 'Tier 1' | 'Unlimited';
 }
 
 interface GatewayState {
+  // Navigation
+  activeSubNav: GatewaySubNav;
+  setActiveSubNav: (nav: GatewaySubNav) => void;
+
+  // Keys & Server
   apiKeys: GatewayApiKey[];
   requestLogs: GatewayRequestLog[];
   isServerRunning: boolean;
@@ -45,9 +77,19 @@ interface GatewayState {
 
   // Provider Hub State
   providerConnections: Record<string, ProviderConnection>;
-  customEndpoints: CustomCompatibleEndpoint[];
   activeCategory: ProviderCategory | 'all';
   searchQuery: string;
+
+  // Combos & Failover
+  combos: ModelCombo[];
+  addCombo: (combo: Omit<ModelCombo, 'id'>) => void;
+  removeCombo: (id: string) => void;
+  toggleCombo: (id: string) => void;
+
+  // Context Compression
+  compression: CompressionSettings;
+  setCompressionMode: (mode: CompressionSettings['mode']) => void;
+  updateCompression: (settings: Partial<CompressionSettings>) => void;
 
   // Actions
   generateApiKey: (name?: string) => GatewayApiKey;
@@ -62,10 +104,6 @@ interface GatewayState {
   disconnectProvider: (providerId: string) => void;
   setActiveCategory: (cat: ProviderCategory | 'all') => void;
   setSearchQuery: (query: string) => void;
-
-  // Custom Endpoint Actions
-  addCustomEndpoint: (endpoint: Omit<CustomCompatibleEndpoint, 'id' | 'createdAt'>) => void;
-  removeCustomEndpoint: (id: string) => void;
 }
 
 function generateRandomKey(): string {
@@ -80,17 +118,43 @@ function generateRandomKey(): string {
 export const useGatewayStore = create<GatewayState>()(
   persist(
     (set, get) => ({
+      activeSubNav: 'providers',
+      setActiveSubNav: (activeSubNav) => set({ activeSubNav }),
+
       apiKeys: [
         {
           id: 'default_key',
           name: 'Primary Local Key (Cursor & Cline)',
           key: 'sk-anticeil-live-local-universal-key',
           createdAt: Date.now(),
-          requestCount: 0,
+          requestCount: 14,
           isActive: true,
         },
       ],
-      requestLogs: [],
+      requestLogs: [
+        {
+          id: 'log-1',
+          timestamp: Date.now() - 120000,
+          model: 'groq/compound',
+          provider: 'groq',
+          status: 'success',
+          statusCode: 200,
+          durationMs: 245,
+          promptTokens: 258,
+          completionTokens: 117,
+        },
+        {
+          id: 'log-2',
+          timestamp: Date.now() - 480000,
+          model: 'gemini-2.0-flash',
+          provider: 'gemini',
+          status: 'success',
+          statusCode: 200,
+          durationMs: 310,
+          promptTokens: 142,
+          completionTokens: 88,
+        },
+      ],
       isServerRunning: true,
       activePort: 3000,
 
@@ -102,9 +166,71 @@ export const useGatewayStore = create<GatewayState>()(
         'jina-reader': { providerId: 'jina-reader', isEnabled: true, testStatus: 'success' },
         'ollama-local': { providerId: 'ollama-local', isEnabled: true, baseUrl: 'http://localhost:11434' },
       },
-      customEndpoints: [],
       activeCategory: 'all',
       searchQuery: '',
+
+      // Initial Combos & Failover Chains
+      combos: [
+        {
+          id: 'combo-fast-free',
+          name: '🚀 Ultra Fast Free Tier Cascade',
+          description: 'Coba Groq LPU pertama; jika limit (429), otomatis beralih ke Gemini Flash & Cerebras dalam 50ms.',
+          chain: ['groq/compound', 'gemini/gemini-2.0-flash', 'cerebras/llama-3.3-70b'],
+          isActive: true,
+        },
+        {
+          id: 'combo-reasoning',
+          name: '🧠 Deep Reasoning & Math Fallback',
+          description: 'Rute penalaran berat: DeepSeek-R1 (SambaNova) -> Gemini Thinking -> Claude 3.7 Sonnet.',
+          chain: ['sambanova/DeepSeek-R1', 'gemini/gemini-2.0-flash-thinking', 'anthropic/claude-3-7-sonnet'],
+          isActive: true,
+        },
+        {
+          id: 'combo-coding',
+          name: '💻 Coding Specialist Cascade',
+          description: 'Rute khusus koding IDE: Qwen 2.5 Coder -> Claude 3.5 Sonnet -> GPT-4o.',
+          chain: ['alibaba/qwen2.5-coder-32b-instruct', 'copilot/claude-3-5-sonnet', 'openai/gpt-4o'],
+          isActive: true,
+        },
+      ],
+
+      addCombo: (combo) => {
+        const newCombo: ModelCombo = {
+          ...combo,
+          id: `combo_${Date.now().toString(36)}`,
+        };
+        set((state) => ({ combos: [newCombo, ...state.combos] }));
+      },
+
+      removeCombo: (id) => {
+        set((state) => ({ combos: state.combos.filter((c) => c.id !== id) }));
+      },
+
+      toggleCombo: (id) => {
+        set((state) => ({
+          combos: state.combos.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c)),
+        }));
+      },
+
+      // Context Compression Settings
+      compression: {
+        mode: 'smart',
+        stripWhitespace: true,
+        dedupHistory: true,
+        summarizeOldTurns: true,
+      },
+
+      setCompressionMode: (mode) => {
+        set((state) => ({
+          compression: { ...state.compression, mode },
+        }));
+      },
+
+      updateCompression: (settings) => {
+        set((state) => ({
+          compression: { ...state.compression, ...settings },
+        }));
+      },
 
       generateApiKey: (name) => {
         const newKey: GatewayApiKey = {
@@ -203,27 +329,9 @@ export const useGatewayStore = create<GatewayState>()(
 
       setActiveCategory: (activeCategory) => set({ activeCategory }),
       setSearchQuery: (searchQuery) => set({ searchQuery }),
-
-      // Custom Endpoints
-      addCustomEndpoint: (endpoint) => {
-        const newEndpoint: CustomCompatibleEndpoint = {
-          ...endpoint,
-          id: `custom_${Date.now().toString(36)}`,
-          createdAt: Date.now(),
-        };
-        set((state) => ({
-          customEndpoints: [newEndpoint, ...state.customEndpoints],
-        }));
-      },
-
-      removeCustomEndpoint: (id) => {
-        set((state) => ({
-          customEndpoints: state.customEndpoints.filter((e) => e.id !== id),
-        }));
-      },
     }),
     {
-      name: 'anticeil_gateway_providers_v2',
+      name: 'anticeil_gateway_providers_v3',
     }
   )
 );
