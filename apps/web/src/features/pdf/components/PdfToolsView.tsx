@@ -29,11 +29,16 @@ import {
   Lock,
   FileSpreadsheet,
   Presentation,
+  Plus,
+  ChevronDown,
+  ArrowUp,
+  Wand2,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { usePdfStore } from '../store/usePdfStore';
-import { getTranslation } from '@anticeil/core';
+import { getTranslation, getModelById } from '@anticeil/core';
+import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
 import { useRouter } from 'next/navigation';
 
 export type PdfToolCategory = 'all' | 'popular' | 'convert' | 'edit' | 'organize' | 'security';
@@ -81,6 +86,21 @@ export function PdfToolsView() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [copiedResult, setCopiedResult] = useState(false);
+
+  // AI Prompt Chatform State & Model Selection
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const chatformTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Model resolution
+  const activeProviderId = useSettingsStore((s) => s.activeProviderId);
+  const activeModelId = useSettingsStore((s) => s.activeModelId);
+  const getModelsForProvider = useSettingsStore((s) => s.getModelsForProvider);
+  const providerModels = getModelsForProvider ? getModelsForProvider(activeProviderId) : [];
+  const matchedModel = providerModels.find((m) => m.id === activeModelId) || getModelById(activeModelId);
+  const modelDisplayName = matchedModel?.name || activeModelId || 'Select Model';
 
   // Tool specific configurations
   const [splitRange, setSplitRange] = useState('1-3');
@@ -1294,6 +1314,74 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
     router.push('/chat');
   };
 
+  const handleAiPdfCommand = (promptText?: string) => {
+    const textToProcess = (promptText || aiPrompt).trim();
+    if (!textToProcess) return;
+
+    setIsGeneratingAi(true);
+    const p = textToProcess.toLowerCase();
+
+    // Smart tool detection based on prompt
+    if (p.includes('sign') || p.includes('tanda tangan') || p.includes('ttd') || p.includes('paraf')) {
+      setActiveTool('sign');
+      setActiveCategory('popular');
+    } else if (p.includes('word') || p.includes('docx') || p.includes('doc ke pdf')) {
+      setActiveTool('wordToPdf');
+      setActiveCategory('convert');
+    } else if (p.includes('excel') || p.includes('xlsx') || p.includes('csv') || p.includes('spreadsheet')) {
+      setActiveTool('excelToPdf');
+      setActiveCategory('convert');
+    } else if (p.includes('ppt') || p.includes('powerpoint') || p.includes('slide') || p.includes('presentasi')) {
+      setActiveTool('pptToPdf');
+      setActiveCategory('convert');
+    } else if (p.includes('image') || p.includes('gambar') || p.includes('foto') || p.includes('jpg') || p.includes('png')) {
+      setActiveTool('imgToPdf');
+      setActiveCategory('convert');
+    } else if (p.includes('rag') || p.includes('siapkan') || p.includes('prepare') || p.includes('markdown') || p.includes('ai')) {
+      setActiveTool('aiPrepare');
+      setActiveCategory('popular');
+    } else if (p.includes('ocr') || p.includes('ekstrak teks') || p.includes('baca teks')) {
+      setActiveTool('ocr');
+      setActiveCategory('popular');
+    } else if (p.includes('merge') || p.includes('gabung') || p.includes('satukan')) {
+      setActiveTool('merge');
+      setActiveCategory('organize');
+    } else if (p.includes('split') || p.includes('pisah') || p.includes('bagi')) {
+      setActiveTool('split');
+      setActiveCategory('organize');
+    } else if (p.includes('compress') || p.includes('kompres') || p.includes('perkecil')) {
+      setActiveTool('compress');
+      setActiveCategory('organize');
+    } else if (p.includes('watermark') || p.includes('cap') || p.includes('tanda air')) {
+      setActiveTool('watermark');
+      setActiveCategory('edit');
+      const wmMatch = textToProcess.match(/(?:watermark|cap|tanda air)\s+["']?([^"']+)["']?/i);
+      if (wmMatch && wmMatch[1]) setWatermarkText(wmMatch[1]);
+    } else if (p.includes('rotate') || p.includes('putar')) {
+      setActiveTool('rotate');
+      setActiveCategory('organize');
+    } else if (p.includes('dark') || p.includes('gelap') || p.includes('invert') || p.includes('malam')) {
+      setActiveTool('invertColors');
+      setActiveCategory('edit');
+    } else if (p.includes('page number') || p.includes('nomor halaman') || p.includes('penomoran')) {
+      setActiveTool('pageNumbers');
+      setActiveCategory('organize');
+    } else if (p.includes('organize') || p.includes('hapus halaman') || p.includes('delete page')) {
+      setActiveTool('organize');
+      setActiveCategory('organize');
+    } else if (p.includes('sanitize') || p.includes('metadata') || p.includes('bersihkan')) {
+      setActiveTool('sanitize');
+      setActiveCategory('security');
+    }
+
+    setTimeout(() => {
+      setIsGeneratingAi(false);
+      if (files.length === 0) {
+        fileInputRef.current?.click();
+      }
+    }, 350);
+  };
+
   return (
     <div className="page-scroll-container">
       <div className="page-content-wrapper">
@@ -1319,6 +1407,230 @@ Dokumen ini telah diproses secara lokal oleh engine Anticeil untuk analisis pena
               : 'Sign, convert Word/Excel/PPT/Images to PDF, and prepare documents for AI reasoning locally and securely.'}
           </p>
         </div>
+
+        {/* ── AI PDF Chatform (ChatInput-style) ── */}
+        <div
+          style={{
+            background: 'var(--bg-input, var(--bg-surface))',
+            border: `1px solid ${isFocused ? 'var(--border-focus, var(--brand-primary))' : 'var(--border-subtle)'}`,
+            borderRadius: 'var(--radius-xl, 16px)',
+            boxShadow: isFocused ? 'var(--shadow-lg)' : 'var(--shadow-md)',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '10px 14px',
+            marginBottom: '24px',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {/* Textarea */}
+          <textarea
+            ref={chatformTextareaRef}
+            value={aiPrompt}
+            onChange={(e) => {
+              setAiPrompt(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleAiPdfCommand();
+              }
+            }}
+            placeholder={
+              language === 'id'
+                ? 'Jelaskan instruksi pengeditan PDF, misal: "Tanda tangani PDF ini", "Konversi Word ke PDF", "Ekstrak teks & siapkan untuk RAG"...'
+                : 'Describe what you want to do (e.g. "Sign this PDF", "Convert Word to PDF", "Extract structured text for RAG")...'
+            }
+            rows={1}
+            style={{
+              width: '100%',
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              resize: 'none',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              lineHeight: 1.55,
+              padding: '2px',
+              maxHeight: '160px',
+              fontFamily: 'inherit',
+            }}
+          />
+
+          {/* Bottom toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '8px',
+              paddingTop: '6px',
+            }}
+          >
+            {/* Left: + Quick Action Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                title={language === 'id' ? 'Pilih Berkas' : 'Select Files'}
+                className="clickable-pill"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '50%',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0,
+                }}
+              >
+                <Plus size={19} />
+              </button>
+
+              {!aiPrompt && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                  {[
+                    {
+                      emoji: '✍️',
+                      label: language === 'id' ? 'Tanda Tangani' : 'Sign PDF',
+                      prompt: language === 'id' ? 'Tanda tangani PDF ini dan simpan' : 'Sign this PDF document',
+                    },
+                    {
+                      emoji: '📄',
+                      label: language === 'id' ? 'Word ke PDF' : 'Word to PDF',
+                      prompt: language === 'id' ? 'Konversikan dokumen Word ke PDF berkualitas tinggi' : 'Convert Word document to high quality PDF',
+                    },
+                    {
+                      emoji: '🔍',
+                      label: language === 'id' ? 'Ekstrak untuk RAG' : 'Prepare for AI / RAG',
+                      prompt: language === 'id' ? 'Ekstrak tabel dan struktur teks dokumen untuk penalaran AI RAG' : 'Extract structured Markdown & tables for AI reasoning',
+                    },
+                    {
+                      emoji: '🗜️',
+                      label: language === 'id' ? 'Kompres PDF' : 'Compress PDF',
+                      prompt: language === 'id' ? 'Kompres ukuran file PDF ini' : 'Compress and optimize this PDF filesize',
+                    },
+                  ].map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setAiPrompt(s.prompt);
+                        handleAiPdfCommand(s.prompt);
+                      }}
+                      className="clickable-pill"
+                      style={{
+                        border: '1px solid var(--border-subtle)',
+                        background: 'var(--bg-subtle)',
+                        color: 'var(--text-secondary)',
+                        borderRadius: '16px',
+                        padding: '3px 10px',
+                        fontSize: '11.5px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        whiteSpace: 'nowrap',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--brand-primary)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }}
+                    >
+                      {s.emoji} {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Model Selector + Send Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              {/* Model Selector Dropdown Button */}
+              <button
+                type="button"
+                onClick={() => setIsModelSelectorOpen(true)}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  padding: '5px 8px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  maxWidth: '220px',
+                  transition: 'color 0.15s ease, background 0.15s ease',
+                }}
+              >
+                <span
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    color: 'var(--text-primary)',
+                    fontWeight: 500,
+                    fontSize: '13px',
+                  }}
+                >
+                  {modelDisplayName}
+                </span>
+                <ChevronDown size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+              </button>
+
+              {/* Circular Send Button */}
+              <button
+                type="button"
+                onClick={() => handleAiPdfCommand()}
+                disabled={isGeneratingAi || (!aiPrompt.trim() && files.length === 0)}
+                title={language === 'id' ? 'Proses dengan AI' : 'Process with AI'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  background:
+                    isGeneratingAi || (!aiPrompt.trim() && files.length === 0)
+                      ? 'var(--bg-subtle)'
+                      : 'var(--text-primary)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  color: isGeneratingAi || (!aiPrompt.trim() && files.length === 0) ? 'var(--text-muted)' : 'var(--bg-main)',
+                  cursor: isGeneratingAi || (!aiPrompt.trim() && files.length === 0) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0,
+                }}
+              >
+                {isGeneratingAi ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <ArrowUp size={16} />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ModelSelectorModal Dialog */}
+        {isModelSelectorOpen && (
+          <ModelSelectorModal onClose={() => setIsModelSelectorOpen(false)} />
+        )}
 
         {/* ── Category Filter Pills ── */}
         <div

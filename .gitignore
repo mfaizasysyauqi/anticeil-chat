@@ -42,3 +42,7 @@ pnpm-debug.log*
 # build output
 build/
 *.tsbuildinfo
+
+# wrangler / cloudflare dev
+.wrangler/
+**/.wrangler/

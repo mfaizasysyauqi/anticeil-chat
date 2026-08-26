@@ -5,6 +5,8 @@ export type LLMProviderId =
   | 'deepseek'
   | 'groq'
   | 'ollama'
+  | 'elevenlabs'
+  | 'stability'
   | 'custom';
 
 export type Role = 'user' | 'assistant' | 'system';

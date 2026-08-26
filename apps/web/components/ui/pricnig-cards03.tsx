@@ -2,273 +2,452 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { CheckCircle2 } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 
 interface Pricing03Props {
   lang?: 'en' | 'id';
 }
 
-const PRICING_CONTENT = {
-  id: {
-    recommended: 'Paling Direkomendasikan',
-    plans: [
-      {
-        title: 'Paket Pemula - Core Gateway',
-        price: 'Rp 0',
-        billing: 'gratis selamanya • 100% direct',
-        features: [
-          'Koneksi kunci API BYOK tanpa batas',
-          'Akses ke OpenAI GPT-4o, Claude 3.7, Gemini 2.0 & Groq',
-          'Dukungan model lokal 100% offline via Ollama',
-          'Vault kunci terenkripsi AES-256 di browser',
-          'Gunakan semua model tanpa markup harga token',
-        ],
-        button: 'Mulai Gratis',
-        link: '/chat',
-      },
-      {
-        title: 'Paket Pro - Akses Lengkap',
-        price: 'Rp 149.000',
-        billing: 'per bulan • ditagih tahunan',
-        recommended: true,
-        features: [
-          'Semua fitur pada Paket Pemula',
-          'Pencarian Web Langsung Otonom & kutipan sumber',
-          'Pengurai dokumen cerdas Multi-Berkas & PDF',
-          'Studio Visual & Video AI (Flux.1 / Luma Ray 2)',
-          'Visual Workflow Automations & cloud runner',
-          'Live Artifact Code Sandbox & Preview Instan',
-        ],
-        button: 'Coba Gratis Pro 14 Hari',
-        link: '/register',
-      },
-      {
-        title: 'Paket Tim & Enterprise',
-        price: 'Rp 449.000',
-        billing: 'per pengguna / bulan • ditagih tahunan',
-        features: [
-          'Semua fitur pada Paket Pro',
-          'Penyimpanan workspace Cloudflare R2 tanpa batas',
-          'Shared Model Context Protocol (MCP) konektor (GitHub, Notion, Drive)',
-          'Eksekusi otomatisasi pipeline cloud 24/7 tanpa batas',
-          'Hingga 50 anggota tim dengan kontrol hak akses berbasis peran',
-          'Dukungan prioritas 24/7 & integrasi custom provider',
-        ],
-        button: 'Dapatkan Paket Enterprise',
-        link: '/register?plan=enterprise',
-      },
-    ],
-  },
+type FeatureValue = string | boolean;
+
+interface PlanTier {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  billingSubtitle: string;
+  isPopular?: boolean;
+  features: {
+    conversations: FeatureValue;
+    channels: FeatureValue;
+    voice: FeatureValue;
+    captainAi: FeatureValue;
+    helpCenter: FeatureValue;
+    teams: FeatureValue;
+    automationRules: FeatureValue;
+    ssoSaml: FeatureValue;
+    auditLogs: FeatureValue;
+    dataRetention: FeatureValue;
+  };
+  buttonText: string;
+  link: string;
+}
+
+const FEATURE_LABELS = {
   en: {
-    recommended: 'Recommended for Power Users',
-    plans: [
-      {
-        title: 'Starter Pack - Core Gateway',
-        price: '$0',
-        billing: 'forever free • 100% direct',
-        features: [
-          'Unlimited direct BYOK API key connections',
-          'Access to OpenAI GPT-4o, Claude 3.7, Gemini 2.0 & Groq',
-          '100% offline local model support via Ollama',
-          'Client-side AES-256 encrypted key vault',
-          'Continue using all models with zero data markup',
-        ],
-        button: 'Get Started Free',
-        link: '/chat',
-      },
-      {
-        title: 'Pro Pack - Lifetime Access',
-        price: '$9',
-        billing: 'per month • billed annually',
-        recommended: true,
-        features: [
-          'Everything from the Starter plan',
-          'Autonomous Live Web Grounding search & citations',
-          'Multi-File PDF & Document Intelligence parsing suite',
-          'AI Image & Video Studio (Flux.1 / Luma Ray 2)',
-          'Visual Workflow Automations & Cloud pipeline runner',
-          'Live Artifact Code Sandbox & Instant Preview',
-        ],
-        button: 'Start 14-Day Free Pro Trial',
-        link: '/register',
-      },
-      {
-        title: 'Enterprise Pack',
-        price: '$29',
-        billing: 'per user / month • billed annually',
-        features: [
-          'Everything from the Pro plan',
-          'Shared Cloudflare R2 zero-latency workspace storage',
-          'Shared Model Context Protocol (MCP) connectors (GitHub, Notion, Drive)',
-          'Unlimited 24/7 background cloud workflow executions',
-          'Up to 50 team members included with role-based access',
-          'Priority 24/7 dedicated support & custom provider onboarding',
-        ],
-        button: 'Get Enterprise Suite',
-        link: '/register?plan=enterprise',
-      },
-    ],
+    conversations: 'Conversations',
+    channels: 'Channels',
+    voice: 'Voice',
+    captainAi: 'Captain AI',
+    helpCenter: 'Help center',
+    teams: 'Teams',
+    automationRules: 'Automation rules',
+    ssoSaml: 'SSO / SAML',
+    auditLogs: 'Audit logs',
+    dataRetention: 'Data retention',
+    mostPopular: 'Most popular',
+  },
+  id: {
+    conversations: 'Percakapan',
+    channels: 'Kanal Akses',
+    voice: 'Dikte Suara',
+    captainAi: 'Captain AI',
+    helpCenter: 'Pusat Bantuan',
+    teams: 'Kolaborasi Tim',
+    automationRules: 'Aturan Otomasi',
+    ssoSaml: 'SSO / SAML',
+    auditLogs: 'Log Audit',
+    dataRetention: 'Retensi Data',
+    mostPopular: 'Paling Populer',
   },
 };
 
+const PLANS_DATA: Record<'en' | 'id', PlanTier[]> = {
+  en: [
+    {
+      id: 'hacker',
+      name: 'Hacker',
+      price: '$0',
+      period: '/agent/month',
+      billingSubtitle: 'Up to 2 agents',
+      features: {
+        conversations: '500/month',
+        channels: 'Live chat',
+        voice: false,
+        captainAi: false,
+        helpCenter: false,
+        teams: false,
+        automationRules: false,
+        ssoSaml: false,
+        auditLogs: false,
+        dataRetention: '30 days',
+      },
+      buttonText: 'Get started free',
+      link: '/chat',
+    },
+    {
+      id: 'startups',
+      name: 'Startups',
+      price: '$19',
+      period: '/agent/month',
+      billingSubtitle: 'billed annually',
+      features: {
+        conversations: 'Unlimited *',
+        channels: 'All',
+        voice: false,
+        captainAi: '300 credits',
+        helpCenter: true,
+        teams: false,
+        automationRules: false,
+        ssoSaml: false,
+        auditLogs: false,
+        dataRetention: '1 year',
+      },
+      buttonText: 'Buy Startups',
+      link: '/register?plan=startups',
+    },
+    {
+      id: 'business',
+      name: 'Business',
+      price: '$39',
+      period: '/agent/month',
+      billingSubtitle: 'billed annually',
+      isPopular: true,
+      features: {
+        conversations: 'Unlimited *',
+        channels: 'All',
+        voice: true,
+        captainAi: '500 credits',
+        helpCenter: true,
+        teams: true,
+        automationRules: true,
+        ssoSaml: false,
+        auditLogs: false,
+        dataRetention: '2 years',
+      },
+      buttonText: 'Buy Business',
+      link: '/register?plan=business',
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: '$99',
+      period: '/agent/month',
+      billingSubtitle: 'billed annually',
+      features: {
+        conversations: 'Unlimited *',
+        channels: 'All',
+        voice: true,
+        captainAi: '800 credits',
+        helpCenter: true,
+        teams: true,
+        automationRules: true,
+        ssoSaml: true,
+        auditLogs: true,
+        dataRetention: '3 years',
+      },
+      buttonText: 'Buy Enterprise',
+      link: '/register?plan=enterprise',
+    },
+  ],
+  id: [
+    {
+      id: 'hacker',
+      name: 'Hacker',
+      price: 'Rp 0',
+      period: '/agen/bulan',
+      billingSubtitle: 'Hingga 2 agen',
+      features: {
+        conversations: '500/bulan',
+        channels: 'Live chat',
+        voice: false,
+        captainAi: false,
+        helpCenter: false,
+        teams: false,
+        automationRules: false,
+        ssoSaml: false,
+        auditLogs: false,
+        dataRetention: '30 hari',
+      },
+      buttonText: 'Mulai Gratis',
+      link: '/chat',
+    },
+    {
+      id: 'startups',
+      name: 'Startups',
+      price: 'Rp 149.000',
+      period: '/agen/bulan',
+      billingSubtitle: 'ditagih tahunan',
+      features: {
+        conversations: 'Tanpa Batas *',
+        channels: 'Semua',
+        voice: false,
+        captainAi: '300 kredit',
+        helpCenter: true,
+        teams: false,
+        automationRules: false,
+        ssoSaml: false,
+        auditLogs: false,
+        dataRetention: '1 tahun',
+      },
+      buttonText: 'Beli Startups',
+      link: '/register?plan=startups',
+    },
+    {
+      id: 'business',
+      name: 'Business',
+      price: 'Rp 299.000',
+      period: '/agen/bulan',
+      billingSubtitle: 'ditagih tahunan',
+      isPopular: true,
+      features: {
+        conversations: 'Tanpa Batas *',
+        channels: 'Semua',
+        voice: true,
+        captainAi: '500 kredit',
+        helpCenter: true,
+        teams: true,
+        automationRules: true,
+        ssoSaml: false,
+        auditLogs: false,
+        dataRetention: '2 tahun',
+      },
+      buttonText: 'Beli Business',
+      link: '/register?plan=business',
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 'Rp 799.000',
+      period: '/agen/bulan',
+      billingSubtitle: 'ditagih tahunan',
+      features: {
+        conversations: 'Tanpa Batas *',
+        channels: 'Semua',
+        voice: true,
+        captainAi: '800 kredit',
+        helpCenter: true,
+        teams: true,
+        automationRules: true,
+        ssoSaml: true,
+        auditLogs: true,
+        dataRetention: '3 tahun',
+      },
+      buttonText: 'Beli Enterprise',
+      link: '/register?plan=enterprise',
+    },
+  ],
+};
+
+const FEATURE_KEYS: Array<keyof PlanTier['features']> = [
+  'conversations',
+  'channels',
+  'voice',
+  'captainAi',
+  'helpCenter',
+  'teams',
+  'automationRules',
+  'ssoSaml',
+  'auditLogs',
+  'dataRetention',
+];
+
 export default function Pricing_03({ lang: propLang }: Pricing03Props) {
   const storeLang = useSettingsStore((s) => s.language);
-  const activeLang = propLang || (storeLang === 'id' ? 'id' : 'en');
-  const t = PRICING_CONTENT[activeLang];
+  const activeLang: 'en' | 'id' = (propLang || storeLang === 'id' ? 'id' : 'en');
+  const labels = FEATURE_LABELS[activeLang];
+  const plans = PLANS_DATA[activeLang];
 
   return (
-    <section style={{ maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px 16px' }}>
-      {/* Top 2 Cards Row with 4 Corner Pins */}
+    <div style={{ width: '100%', maxWidth: '1220px', margin: '0 auto', padding: '10px 0 20px 0' }}>
       <div
         style={{
-          position: 'relative',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '24px',
-          marginBottom: '28px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '18px',
+          alignItems: 'stretch',
         }}
       >
-        {/* 4 Corner Pins */}
-        <div style={{ position: 'absolute', left: '-4px', top: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
-        <div style={{ position: 'absolute', right: '-4px', top: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
-        <div style={{ position: 'absolute', left: '-4px', bottom: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
-        <div style={{ position: 'absolute', right: '-4px', bottom: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
+        {plans.map((plan) => {
+          const isHighlight = plan.isPopular;
 
-        {t.plans.slice(0, 2).map((plan, index) => (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              borderRadius: '0px',
-              background: '#FFFFFF',
-              border: plan.recommended ? '4px solid #BBF7D0' : '1px solid #E4E4E7',
-              boxShadow: plan.recommended ? '0 20px 35px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.02)' : '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
-              padding: '32px 28px',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-            }}
-          >
-            <div>
-              {plan.recommended && (
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#16A34A', marginBottom: '12px' }}>
-                  {t.recommended}
-                </div>
-              )}
-
+          return (
+            <div
+              key={plan.id}
+              style={{
+                borderRadius: '16px',
+                background: '#FFFFFF',
+                border: isHighlight ? '2px solid #1E6BEB' : '1px solid #E5E7EB',
+                boxShadow: isHighlight
+                  ? '0 12px 32px -4px rgba(30, 107, 235, 0.16), 0 2px 6px rgba(0,0,0,0.04)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.04)',
+                padding: '28px 22px 24px 22px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                position: 'relative',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              }}
+            >
               <div>
-                <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#181B34', margin: '0 0 8px 0', letterSpacing: '-0.02em' }}>
-                  {plan.title}
-                </h3>
-                <p style={{ fontSize: '38px', fontWeight: 800, color: '#181B34', margin: '0', letterSpacing: '-0.03em' }}>
-                  {plan.price}
-                </p>
-                <p style={{ fontSize: '13.5px', color: '#71717A', margin: '4px 0 20px 0' }}>
-                  {plan.billing}
-                </p>
+                {/* Top Title & Optional Badge */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    minHeight: '26px',
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: '18px',
+                      fontWeight: 700,
+                      color: '#111827',
+                      margin: 0,
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {plan.name}
+                  </h3>
+
+                  {isHighlight && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        background: '#1E6BEB',
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {labels.mostPopular}
+                    </span>
+                  )}
+                </div>
+
+                {/* Price Display */}
+                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      fontSize: '36px',
+                      fontWeight: 800,
+                      color: '#111827',
+                      letterSpacing: '-0.03em',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {plan.price}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: 400,
+                      color: '#6B7280',
+                      marginLeft: '4px',
+                    }}
+                  >
+                    {plan.period}
+                  </span>
+                </div>
+
+                {/* Billing Subtitle */}
+                <div
+                  style={{
+                    fontSize: '12.5px',
+                    color: '#6B7280',
+                    marginTop: '4px',
+                    marginBottom: '26px',
+                  }}
+                >
+                  {plan.billingSubtitle}
+                </div>
+
+                {/* Comparison Key-Value Rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  {FEATURE_KEYS.map((key) => {
+                    const label = labels[key];
+                    const val = plan.features[key];
+
+                    return (
+                      <div
+                        key={key}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          minHeight: '22px',
+                          fontSize: '12.5px',
+                        }}
+                      >
+                        <span style={{ color: '#4B5563', fontWeight: 400 }}>{label}</span>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                          {typeof val === 'boolean' ? (
+                            val ? (
+                              <Check size={16} strokeWidth={2.6} color="#16A34A" />
+                            ) : (
+                              <span style={{ color: '#9CA3AF', fontSize: '15px', lineHeight: 1 }}>—</span>
+                            )
+                          ) : (
+                            <span
+                              style={{
+                                color: '#111827',
+                                fontWeight: 600,
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              {val}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: '13px' }}>
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '14.5px', color: '#27272A', lineHeight: 1.5 }}>
-                    <CheckCircle2 size={16} color="#22C55E" style={{ flexShrink: 0, marginTop: '3px' }} />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              {/* Action Button */}
+              <div style={{ marginTop: '28px' }}>
+                <Link
+                  href={plan.link}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    padding: '11px 16px',
+                    borderRadius: '8px',
+                    fontSize: '13.5px',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    background: '#1E6BEB',
+                    color: '#FFFFFF',
+                    boxShadow: isHighlight
+                      ? '0 4px 14px rgba(30, 107, 235, 0.35)'
+                      : '0 2px 6px rgba(30, 107, 235, 0.2)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#1557C0';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#1E6BEB';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {plan.buttonText}
+                </Link>
+              </div>
             </div>
-
-            <div>
-              <Link
-                href={plan.link}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '100%',
-                  padding: '13px 20px',
-                  borderRadius: '6px',
-                  fontSize: '14.5px',
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                  background: plan.recommended ? '#0073EA' : '#181B34',
-                  color: '#FFFFFF',
-                  boxShadow: plan.recommended ? '0 4px 14px rgba(0, 115, 234, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {plan.button}
-              </Link>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-
-      {/* Bottom 1 Full-Width Card with 4 Corner Pins */}
-      <div style={{ position: 'relative' }}>
-        {/* 4 Corner Pins */}
-        <div style={{ position: 'absolute', left: '-4px', top: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
-        <div style={{ position: 'absolute', right: '-4px', top: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
-        <div style={{ position: 'absolute', left: '-4px', bottom: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
-        <div style={{ position: 'absolute', right: '-4px', bottom: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#71717A', zIndex: 10 }} />
-
-        <div
-          style={{
-            borderRadius: '0px',
-            background: '#FFFFFF',
-            border: '1px solid #E4E4E7',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
-            padding: '36px 32px',
-            transition: 'all 0.3s ease',
-          }}
-        >
-          <div>
-            <h3 style={{ fontSize: '24px', fontWeight: 800, color: '#181B34', margin: '0 0 8px 0', letterSpacing: '-0.02em' }}>
-              {t.plans[2].title}
-            </h3>
-            <p style={{ fontSize: '40px', fontWeight: 800, color: '#181B34', margin: '0', letterSpacing: '-0.03em' }}>
-              {t.plans[2].price}
-            </p>
-            <p style={{ fontSize: '13.5px', color: '#71717A', margin: '4px 0 20px 0' }}>
-              {t.plans[2].billing}
-            </p>
-
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-              {t.plans[2].features.map((feature, idx) => (
-                <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '14.5px', color: '#27272A', lineHeight: 1.5 }}>
-                  <CheckCircle2 size={16} color="#22C55E" style={{ flexShrink: 0, marginTop: '3px' }} />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div style={{ position: 'relative', width: '100%' }}>
-              <Link
-                href={t.plans[2].link}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '100%',
-                  padding: '14px 24px',
-                  borderRadius: '6px',
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  textDecoration: 'none',
-                  background: '#181B34',
-                  color: '#FFFFFF',
-                  boxShadow: '0 4px 14px rgba(24, 27, 52, 0.25)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {t.plans[2].button}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 }

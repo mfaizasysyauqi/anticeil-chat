@@ -10,6 +10,7 @@ import { DelayNode } from './DelayNode';
 import { TransformNode } from './TransformNode';
 import { SpreadsheetNode } from './SpreadsheetNode';
 import { StorageNode } from './StorageNode';
+import { StickyNoteNode } from './StickyNoteNode';
 
 export const nodeTypes = {
   triggerNode: TriggerNode,
@@ -24,6 +25,7 @@ export const nodeTypes = {
   transformNode: TransformNode,
   spreadsheetNode: SpreadsheetNode,
   storageNode: StorageNode,
+  stickyNoteNode: StickyNoteNode,
 };
 
 export * from './TriggerNode';

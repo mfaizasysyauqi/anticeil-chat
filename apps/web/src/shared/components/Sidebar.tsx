@@ -59,6 +59,7 @@ import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStor
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useImagineStore } from '../../features/imagine/store/useImagineStore';
 import { usePdfStore, PdfDocumentItem, PdfFolderItem } from '../../features/pdf/store/usePdfStore';
+import { useAutomationStore } from '../../features/automations/store/useAutomationStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { createClient } from '../utils/supabase/client';
 
@@ -1109,6 +1110,7 @@ export function Sidebar({
   // Track which project folders are expanded (showing their chats)
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
   const [isMounted, setIsMounted] = useState(false);
+  const session = useAuthStore((s) => s.session);
 
   const isImagine = pathname === '/imagine';
   const isAutomations = pathname === '/automations';
@@ -1132,15 +1134,20 @@ export function Sidebar({
     type: item.type,
   }));
 
-  // Automations Mode UI States
+  // Automations Mode UI States (Real Supabase-backed store)
   const [isAddingAutomationCategory, setIsAddingAutomationCategory] = useState(false);
   const [newAutomationCategoryName, setNewAutomationCategoryName] = useState('');
-  const [automationWorkflows] = useState<AutomationWorkflowItem[]>([
-    { id: 'wf_1', name: 'Briefing Kalender Harian Otomatis → Telegram/Email', status: 'active', runsCount: 42, categoryId: 'wc_productivity' },
-    { id: 'wf_2', name: 'Klasifikasi Email VIP Gmail & Draf Otomatis', status: 'active', runsCount: 18, categoryId: 'wc_productivity' },
-    { id: 'wf_3', name: 'Sinkronisasi Lead Kontak Baru ke Google Sheets', status: 'paused', runsCount: 9, categoryId: 'wc_crm' },
-    { id: 'wf_4', name: 'Ringkasan Rapat & Notula Otomatis dari Kalender', status: 'active', runsCount: 27, categoryId: 'wc_productivity' },
-  ]);
+  const automationWorkflows = useAutomationStore((s) => s.workflows);
+  const fetchAutomationWorkflows = useAutomationStore((s) => s.fetchWorkflows);
+  const createAutomationWorkflow = useAutomationStore((s) => s.createWorkflow);
+  const setActiveAutomationWorkflow = useAutomationStore((s) => s.setActiveWorkflow);
+  const activeAutomationWorkflowId = useAutomationStore((s) => s.activeWorkflowId);
+
+  useEffect(() => {
+    if (session?.access_token) {
+      fetchAutomationWorkflows(session.access_token);
+    }
+  }, [session?.access_token, fetchAutomationWorkflows]);
 
   // PDF Mode State & Store
   const pdfDocuments = usePdfStore((s) => s.documents);
@@ -2032,28 +2039,6 @@ export function Sidebar({
             >
               <FileText size={17} />
             </Link>
-
-            {/* Connectors */}
-            <button
-              type="button"
-              onClick={() => setIsConnectorsModalOpen(true)}
-              title={t.nav.connectors}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Plug size={17} />
-            </button>
           </div>
         </div>
 
@@ -2208,7 +2193,13 @@ export function Sidebar({
           ) : isAutomations ? (
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                const newWfId = `wf_${Date.now().toString(36)}`;
+                const newWf = await createAutomationWorkflow({
+                  id: newWfId,
+                  name: language === 'id' ? `Alur Kerja Baru #${newWfId.slice(-4)}` : `New Agent Workflow #${newWfId.slice(-4)}`,
+                }, session?.access_token);
+                setActiveAutomationWorkflow(newWf.id, newWf.name);
                 if (pathname !== '/automations') router.push('/automations');
                 if (onCloseMobile) onCloseMobile();
               }}
@@ -2285,6 +2276,34 @@ export function Sidebar({
             >
               <SquarePen size={15} color="var(--brand-primary)" />
               <span>{t.nav.newChat}</span>
+            </button>
+          )}
+
+          {/* Connectors & Integrations Shortcut in Chat Mode */}
+          {!isImagine && !isAutomations && !isPdfTools && (
+            <button
+              type="button"
+              onClick={() => setIsConnectorsModalOpen(true)}
+              className="clickable-pill"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 10px',
+                borderRadius: 'var(--radius-md, 6px)',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '12.5px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Plug size={14} color="var(--brand-primary)" />
+              <span>{t.nav.connectors || (language === 'id' ? 'Konektor & Integrasi' : 'Connectors & Integrations')}</span>
             </button>
           )}
 
@@ -2767,53 +2786,63 @@ export function Sidebar({
 
                 {isHistoryExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {automationWorkflows
-                      .filter((item) => {
-                        const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-                        const matchCat = activeWorkflowCategoryId ? item.categoryId === activeWorkflowCategoryId : true;
-                        return matchSearch && matchCat;
-                      })
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="clickable-pill"
-                          onClick={() => {
-                            if (pathname !== '/automations') router.push('/automations');
-                            if (onCloseMobile) onCloseMobile();
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 8px',
-                            borderRadius: 'var(--radius-sm, 6px)',
-                            background: 'transparent',
-                            color: 'var(--text-secondary)',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: '7px',
-                              height: '7px',
-                              borderRadius: '50%',
-                              backgroundColor: item.status === 'active' ? '#10B981' : '#F59E0B',
-                              boxShadow: item.status === 'active' ? '0 0 6px rgba(16, 185, 129, 0.5)' : 'none',
-                              flexShrink: 0,
-                            }}
-                          />
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500 }}>
-                              {item.name}
+                    {automationWorkflows.length === 0 ? (
+                      <div style={{ padding: '8px 6px', color: 'var(--text-muted)', fontSize: '11.5px', textAlign: 'center' }}>
+                        {language === 'id' ? 'Belum ada alur kerja' : 'No active workflows'}
+                      </div>
+                    ) : (
+                      automationWorkflows
+                        .filter((item) => {
+                          const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+                          const matchCat = activeWorkflowCategoryId ? item.categoryId === activeWorkflowCategoryId : true;
+                          return matchSearch && matchCat;
+                        })
+                        .map((item) => {
+                          const isActive = activeAutomationWorkflowId === item.id;
+                          return (
+                            <div
+                              key={item.id}
+                              className="clickable-pill"
+                              onClick={() => {
+                                setActiveAutomationWorkflow(item.id, item.name);
+                                if (pathname !== '/automations') router.push('/automations');
+                                if (onCloseMobile) onCloseMobile();
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 8px',
+                                borderRadius: 'var(--radius-sm, 6px)',
+                                background: isActive ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                                color: isActive ? '#F59E0B' : 'var(--text-secondary)',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: '7px',
+                                  height: '7px',
+                                  borderRadius: '50%',
+                                  backgroundColor: item.status === 'active' ? '#10B981' : '#F59E0B',
+                                  boxShadow: item.status === 'active' ? '0 0 6px rgba(16, 185, 129, 0.5)' : 'none',
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: isActive ? '#F59E0B' : 'var(--text-primary)', fontWeight: isActive ? 650 : 500 }}>
+                                  {item.name}
+                                </div>
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                  {item.runsCount || 0} {language === 'id' ? 'eksekusi' : 'runs'}
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              {item.runsCount} {language === 'id' ? 'eksekusi' : 'runs'}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })
+                    )}
                   </div>
                 )}
               </div>

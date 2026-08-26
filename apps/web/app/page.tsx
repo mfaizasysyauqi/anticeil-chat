@@ -1492,7 +1492,7 @@ export default function MondayWarmBeigeLandingPage() {
               }}
             />
 
-            {/* Right-Side Editorial Slide-Over Drawer (Harmonized with Anticeil Midnight Theme) */}
+            {/* Right-Side Editorial Slide-Over Drawer (Harmonized with Chat Page Charcoal Dark Theme) */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -1505,14 +1505,14 @@ export default function MondayWarmBeigeLandingPage() {
                 right: 0,
                 width: '100%',
                 maxWidth: '460px',
-                background: '#181B34', // Anticeil Midnight Navy
-                color: '#FFFFFF',
+                background: '#141414', // Pure dark charcoal matching chat page sidebar & modals
+                color: '#F2F2F2',
                 zIndex: 9999,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 padding: '32px 30px 38px 30px',
-                boxShadow: '-10px 0 50px rgba(0, 0, 0, 0.6)',
+                boxShadow: '-10px 0 50px rgba(0, 0, 0, 0.85)',
                 borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
                 overflowY: 'auto',
               }}
@@ -1547,7 +1547,7 @@ export default function MondayWarmBeigeLandingPage() {
                     borderRadius: '9999px',
                     background: 'rgba(255, 255, 255, 0.06)',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
-                    color: '#FFFFFF',
+                    color: '#F2F2F2',
                     fontSize: '11px',
                     fontFamily: 'monospace',
                     fontWeight: 600,
@@ -1578,7 +1578,7 @@ export default function MondayWarmBeigeLandingPage() {
                   { num: '03', label: 'SPEED RADAR', href: '#marquee', color: '#FDAB3D' },
                   { num: '04', label: 'PRICING', href: '#pricing', color: '#00C875' },
                   { num: '05', label: 'FAQ', href: '#faq', color: '#579BFC' },
-                  { num: '06', label: 'SIGN IN', href: '/login', color: '#808396' },
+                  { num: '06', label: 'SIGN IN', href: '/login', color: '#A0A0A0' },
                   { num: '07', label: 'GET STARTED', href: '/chat', color: '#0073EA', isHighlight: true },
                 ].map((item, idx) => (
                   <Link
@@ -1590,7 +1590,7 @@ export default function MondayWarmBeigeLandingPage() {
                       alignItems: 'baseline',
                       gap: '14px',
                       textDecoration: 'none',
-                      color: item.isHighlight ? '#0073EA' : '#FFFFFF',
+                      color: item.isHighlight ? '#0073EA' : '#F2F2F2',
                       transition: 'transform 0.15s ease, color 0.15s ease',
                     }}
                     onMouseEnter={(e) => {
@@ -1599,7 +1599,7 @@ export default function MondayWarmBeigeLandingPage() {
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateX(0)';
-                      e.currentTarget.style.color = item.isHighlight ? '#0073EA' : '#FFFFFF';
+                      e.currentTarget.style.color = item.isHighlight ? '#0073EA' : '#F2F2F2';
                     }}
                   >
                     <span
@@ -1631,16 +1631,16 @@ export default function MondayWarmBeigeLandingPage() {
               {/* 3. Drawer Footer: Direct Links & Language Selector */}
               <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <div style={{ marginBottom: '16px' }}>
-                  <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#808396', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#666666', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: '10px' }}>
                     DIRECT LINKS
                   </span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '12px', fontFamily: 'monospace', color: '#B2B4C2' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '12px', fontFamily: 'monospace', color: '#A0A0A0' }}>
                     <Link
                       href="/terms"
                       onClick={() => setIsMobileMenuOpen(false)}
                       style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s ease' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#B2B4C2')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
                       TERMS ↗
                     </Link>
@@ -1649,7 +1649,7 @@ export default function MondayWarmBeigeLandingPage() {
                       onClick={() => setIsMobileMenuOpen(false)}
                       style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s ease' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#B2B4C2')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
                       PRIVACY ↗
                     </Link>
@@ -1658,7 +1658,7 @@ export default function MondayWarmBeigeLandingPage() {
                       onClick={() => setIsMobileMenuOpen(false)}
                       style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s ease' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#B2B4C2')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
                       REFUND ↗
                     </Link>
@@ -1667,7 +1667,7 @@ export default function MondayWarmBeigeLandingPage() {
                       onClick={() => setIsMobileMenuOpen(false)}
                       style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s ease' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#0073EA')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#B2B4C2')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#A0A0A0')}
                     >
                       API KEYS ↗
                     </Link>
@@ -1675,15 +1675,15 @@ export default function MondayWarmBeigeLandingPage() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px' }}>
-                  <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#808396', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#666666', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                     LANGUAGE
                   </span>
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
                       borderRadius: '6px',
                       padding: '2px',
                       gap: '2px',
@@ -1701,7 +1701,7 @@ export default function MondayWarmBeigeLandingPage() {
                         fontFamily: 'monospace',
                         cursor: 'pointer',
                         background: lang === 'id' ? '#0073EA' : 'transparent',
-                        color: lang === 'id' ? '#FFFFFF' : '#808396',
+                        color: lang === 'id' ? '#FFFFFF' : '#A0A0A0',
                         transition: 'all 0.15s ease',
                       }}
                     >
@@ -1719,7 +1719,7 @@ export default function MondayWarmBeigeLandingPage() {
                         fontFamily: 'monospace',
                         cursor: 'pointer',
                         background: lang === 'en' ? '#0073EA' : 'transparent',
-                        color: lang === 'en' ? '#FFFFFF' : '#808396',
+                        color: lang === 'en' ? '#FFFFFF' : '#A0A0A0',
                         transition: 'all 0.15s ease',
                       }}
                     >

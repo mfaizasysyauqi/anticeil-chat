@@ -31,9 +31,10 @@ import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
 interface ModelSelectorModalProps {
   onClose: () => void;
+  targetCapability?: 'text' | 'image' | 'audio' | 'video';
 }
 
-export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
+export function ModelSelectorModal({ onClose, targetCapability = 'text' }: ModelSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -49,7 +50,26 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
   const currentProviderId = activeSession?.providerId || activeProviderId || 'openai';
   const currentModelId = activeSession?.modelId || activeModelId;
 
-  const [selectedProviderId, setSelectedProviderId] = useState<LLMProviderId>(currentProviderId);
+  // Filter providers to only those matching the target capability
+  const filteredProviders = PROVIDER_DEFINITIONS.filter((provider) => {
+    if (targetCapability === 'text' || !targetCapability) {
+      // Text generation / reasoning (Chat, PDF Studio, Automations): exclude pure audio/image providers
+      return provider.id !== 'elevenlabs' && provider.id !== 'stability';
+    }
+    if (targetCapability === 'audio') {
+      return provider.id === 'elevenlabs';
+    }
+    if (targetCapability === 'image') {
+      return provider.id === 'stability';
+    }
+    return true;
+  });
+
+  const initialProvider = filteredProviders.some((p) => p.id === currentProviderId)
+    ? currentProviderId
+    : filteredProviders[0]?.id || 'groq';
+
+  const [selectedProviderId, setSelectedProviderId] = useState<LLMProviderId>(initialProvider);
 
   const updateSession = useChatStore((s) => s.updateSession);
   const setActiveProviderAndModel = useSettingsStore((s) => s.setActiveProviderAndModel);
@@ -61,7 +81,17 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
 
   const isCurrentProviderLoading = Boolean(isLoadingModels[selectedProviderId]);
-  const models = getModelsForProvider(selectedProviderId);
+  const rawModels = getModelsForProvider(selectedProviderId);
+  const models = rawModels.filter((m) => {
+    if (targetCapability === 'text' || !targetCapability) {
+      // Filter out pure video/image generation models
+      if (m.capabilities?.video && !m.capabilities?.text) return false;
+      if (m.capabilities?.imageGen && !m.capabilities?.text) return false;
+      if (m.id.includes('video') || m.id.includes('flux') || m.id.includes('sdxl') || m.id.includes('suno') || m.id.includes('udio')) return false;
+    }
+    return true;
+  });
+
   const isLiveFetched = Boolean(dynamicModels[selectedProviderId] && dynamicModels[selectedProviderId]!.length > 0);
   const hasKey = hasConfiguredKey(selectedProviderId);
   const language = useSettingsStore((s) => s.language);
@@ -207,7 +237,7 @@ export function ModelSelectorModal({ onClose }: ModelSelectorModalProps) {
         <div className="modal-responsive-body">
           {/* Provider Tabs */}
           <div className="modal-responsive-sidebar">
-            {PROVIDER_DEFINITIONS.map((provider) => {
+            {filteredProviders.map((provider) => {
               const isSelected = provider.id === selectedProviderId;
               const providerHasKey = hasConfiguredKey(provider.id);
 

@@ -33,6 +33,7 @@ import {
   ArrowUp,
 } from 'lucide-react';
 import { ImagineModelSelectorModal, IMAGINE_PROVIDERS } from './ImagineModelSelectorModal';
+import { ImagineVoiceSelectorModal } from './ImagineVoiceSelectorModal';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useStorageStore } from '../../storage/store/useStorageStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
@@ -152,12 +153,19 @@ export function ImagineView() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showKeyGuide, setShowKeyGuide] = useState(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+
+  // ── Voice auto-fetch state ──────────────────────────────────────────
+  const [availableVoices, setAvailableVoices] = useState<{ id: string; label: string }[]>([]);
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+  const apiKeys = useSettingsStore((s) => s.apiKeys);
 
   // Audio Playback State
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState<{ [id: string]: number }>({});
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const mediaModes: { id: MediaMode; label: string; icon: React.ReactNode }[] = [
     { id: 'image', label: language === 'id' ? 'Gambar' : 'Image', icon: <ImageIcon size={14} /> },
@@ -286,7 +294,7 @@ export function ImagineView() {
     },
   ];
 
-  const voicePresets = [
+  const VOICE_PRESETS_FALLBACK = [
     { id: 'gadis', label: 'Gadis (Wanita Indonesia - Natural Neural)' },
     { id: 'ardi', label: 'Ardi (Pria Indonesia - Wibawa & Formal)' },
     { id: 'jenny', label: 'Jenny (English US - Studio Host)' },
@@ -294,6 +302,98 @@ export function ImagineView() {
     { id: 'lofi_synth', label: 'Lofi Piano & Vinyl (Music Synth)' },
     { id: 'cyberpunk_synth', label: 'Cyberpunk Synthwave (Ambient Beats)' },
   ];
+
+  // Auto-fetch voices when selectedModel or mediaMode changes
+  useEffect(() => {
+    if (mediaMode !== 'audio') return;
+    setIsLoadingVoices(true);
+
+    const elevenKey = apiKeys.elevenlabs?.apiKey;
+    const openaiKey = apiKeys.openai?.apiKey;
+
+    // ElevenLabs: fetch real voices from API
+    if (selectedModel === 'elevenlabs' && elevenKey && elevenKey.length > 5) {
+      fetch('https://api.elevenlabs.io/v1/voices', {
+        headers: { 'xi-api-key': elevenKey },
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          const voices = (data.voices || []).map((v: { voice_id: string; name: string; labels?: { accent?: string } }) => ({
+            id: v.voice_id,
+            label: `${v.name}${v.labels?.accent ? ` · ${v.labels.accent}` : ''}`,
+          }));
+          setAvailableVoices(voices.length ? voices : VOICE_PRESETS_FALLBACK);
+          if (voices.length) setSelectedVoice(voices[0].id);
+        })
+        .catch(() => setAvailableVoices(VOICE_PRESETS_FALLBACK))
+        .finally(() => setIsLoadingVoices(false));
+      return;
+    }
+
+    // OpenAI TTS: fixed preset voices
+    if (selectedModel === 'openai-tts' && openaiKey && openaiKey.length > 5) {
+      setAvailableVoices([
+        { id: 'alloy',   label: 'Alloy (Neutral · Versatile)' },
+        { id: 'echo',    label: 'Echo (Male · Dramatic)' },
+        { id: 'fable',   label: 'Fable (British · Storytelling)' },
+        { id: 'nova',    label: 'Nova (Female · Energetic)' },
+        { id: 'onyx',    label: 'Onyx (Male · Deep)' },
+        { id: 'shimmer', label: 'Shimmer (Female · Warm)' },
+      ]);
+      setSelectedVoice('alloy');
+      setIsLoadingVoices(false);
+      return;
+    }
+
+    // Microsoft Edge TTS / Google TTS: fetch browser voices
+    if (selectedModel === 'microsoft-tts' || selectedModel === 'google-tts') {
+      const filterFn = selectedModel === 'google-tts'
+        ? (v: SpeechSynthesisVoice) => v.voiceURI.toLowerCase().includes('google') || v.name.toLowerCase().includes('google')
+        : () => true;
+
+      const loadBrowserVoices = () => {
+        const all = typeof window !== 'undefined' ? window.speechSynthesis.getVoices() : [];
+        const filtered = all.filter(filterFn).map((v) => ({ id: v.voiceURI, label: `${v.name} (${v.lang})` }));
+        const voices = filtered.length ? filtered : VOICE_PRESETS_FALLBACK;
+        setAvailableVoices(voices);
+        if (filtered.length) setSelectedVoice(filtered[0].id);
+        setIsLoadingVoices(false);
+      };
+
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const synth = window.speechSynthesis;
+        const immediate = synth.getVoices();
+        if (immediate.length) { loadBrowserVoices(); }
+        else { synth.onvoiceschanged = loadBrowserVoices; }
+      } else {
+        setAvailableVoices(VOICE_PRESETS_FALLBACK);
+        setIsLoadingVoices(false);
+      }
+      return;
+    }
+
+    // Music models: genre/style presets
+    if (selectedModel === 'suno' || selectedModel === 'udio') {
+      setAvailableVoices([
+        { id: 'pop',        label: 'Pop Vocal (Upbeat & Catchy)' },
+        { id: 'lofi',       label: 'Lofi Hip-Hop (Chill Beats)' },
+        { id: 'jazz',       label: 'Jazz & Soul (Smooth Instrumental)' },
+        { id: 'rock',       label: 'Rock (Electric Guitar)' },
+        { id: 'classical',  label: 'Classical (Orchestral)' },
+        { id: 'ambient',    label: 'Ambient (Soundscape)' },
+        { id: 'electronic', label: 'Electronic (Synthwave)' },
+      ]);
+      setSelectedVoice('pop');
+      setIsLoadingVoices(false);
+      return;
+    }
+
+    // Default fallback
+    setAvailableVoices(VOICE_PRESETS_FALLBACK);
+    setSelectedVoice(VOICE_PRESETS_FALLBACK[0].id);
+    setIsLoadingVoices(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedModel, mediaMode, apiKeys.elevenlabs?.apiKey, apiKeys.openai?.apiKey]);
 
   const activeModels = mediaMode === 'image' ? imageModels : mediaMode === 'video' ? videoModels : audioModels;
   const currentModelInfo = activeModels.find((m) => m.id === selectedModel) || activeModels[0];
@@ -564,8 +664,11 @@ export function ImagineView() {
 
       setIsGenerating(true);
       const durationSec = Math.max(5, Math.min(25, Math.ceil(prompt.trim().split(' ').length * 0.45)));
-      const voiceLabel = voicePresets.find((v) => v.id === selectedVoice)?.label || 'Neural Voice';
-      const category = selectedVoice.includes('synth') ? 'music' : 'speech';
+      const voiceLabel =
+        availableVoices.find((v) => v.id === selectedVoice)?.label ||
+        VOICE_PRESETS_FALLBACK.find((v) => v.id === selectedVoice)?.label ||
+        'Neural Voice';
+      const category = selectedVoice.includes('synth') || selectedModel === 'suno' || selectedModel === 'udio' ? 'music' : 'speech';
 
       const wavBlob = createWavBlob(durationSec, 440, selectedVoice);
       let finalAudioUrl = '';
@@ -725,6 +828,16 @@ export function ImagineView() {
           onSelectModel={(id) => setSelectedModel(id)}
         />
 
+        <ImagineVoiceSelectorModal
+          isOpen={isVoiceModalOpen}
+          onClose={() => setIsVoiceModalOpen(false)}
+          selectedVoiceId={selectedVoice}
+          onSelectVoice={(id) => setSelectedVoice(id)}
+          availableVoices={availableVoices}
+          currentModelName={modelDisplayName}
+          isLoading={isLoadingVoices}
+        />
+
         <form
           onSubmit={handleGenerate}
           style={{
@@ -874,31 +987,44 @@ export function ImagineView() {
                 </div>
               )}
 
-              {/* Audio voice pill */}
+              {/* Audio voice dialog trigger pill */}
               {mediaMode === 'audio' && (
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={selectedVoice}
-                    onChange={(e) => setSelectedVoice(e.target.value)}
-                    style={{
-                      appearance: 'none',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '20px',
-                      color: 'var(--text-secondary)',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      padding: '4px 24px 4px 10px',
-                      outline: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {voicePresets.map((v) => (
-                      <option key={v.id} value={v.id}>{v.label}</option>
-                    ))}
-                  </select>
-                  <Mic size={11} color="var(--text-muted)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsVoiceModalOpen(true)}
+                  className="clickable-pill"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '20px',
+                    color: 'var(--text-secondary)',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    padding: '4px 12px',
+                    cursor: 'pointer',
+                    maxWidth: '240px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-strong)';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }}
+                >
+                  <Mic size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {availableVoices.find((v) => v.id === selectedVoice)?.label ||
+                     VOICE_PRESETS_FALLBACK.find((v) => v.id === selectedVoice)?.label ||
+                     (language === 'id' ? 'Pilih Suara' : 'Select Voice')}
+                  </span>
+                  <ChevronDown size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                </button>
               )}
             </div>
 

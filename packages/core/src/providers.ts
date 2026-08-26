@@ -253,6 +253,32 @@ export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
       supportsStreaming: true,
     },
   ],
+  elevenlabs: [
+    {
+      id: 'eleven_turbo_v2_5',
+      name: 'ElevenLabs Turbo v2.5',
+      providerId: 'elevenlabs',
+      contextWindow: 0,
+      description: 'Ultra-realistic emotional voice synthesis with multilingual support',
+      inputCostPer1M: 0,
+      outputCostPer1M: 0,
+      supportsStreaming: true,
+      capabilities: { text: false, vision: false, reasoning: false, imageGen: false, docAnalysis: false, tts: true },
+    },
+  ],
+  stability: [
+    {
+      id: 'stable-diffusion-xl',
+      name: 'Stable Diffusion XL Turbo',
+      providerId: 'stability',
+      contextWindow: 0,
+      description: 'Artistic image generation for illustrations, concept art, and anime styles',
+      inputCostPer1M: 0,
+      outputCostPer1M: 0,
+      supportsStreaming: false,
+      capabilities: { text: false, vision: false, reasoning: false, imageGen: true, docAnalysis: false },
+    },
+  ],
 };
 
 export const PROVIDER_DEFINITIONS: ProviderDefinition[] = [
@@ -309,6 +335,24 @@ export const PROVIDER_DEFINITIONS: ProviderDefinition[] = [
     docUrl: 'https://ollama.com/download',
     models: PROVIDER_MODELS.ollama,
     requiresApiKey: false,
+  },
+  {
+    id: 'elevenlabs',
+    name: 'ElevenLabs',
+    icon: 'elevenlabs',
+    defaultBaseUrl: 'https://api.elevenlabs.io/v1',
+    docUrl: 'https://elevenlabs.io/app/settings/api-keys',
+    models: PROVIDER_MODELS.elevenlabs,
+    requiresApiKey: true,
+  },
+  {
+    id: 'stability',
+    name: 'Stability AI',
+    icon: 'stability',
+    defaultBaseUrl: 'https://api.stability.ai',
+    docUrl: 'https://platform.stability.ai/account/keys',
+    models: PROVIDER_MODELS.stability,
+    requiresApiKey: true,
   },
   {
     id: 'custom',

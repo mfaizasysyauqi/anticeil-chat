@@ -47,7 +47,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'black-forest-labs',
     name: 'Black Forest Labs',
-    logoKey: 'custom',
+    logoKey: 'black-forest-labs',
     badge: '100% Gratis',
     description: 'Pionir model difusi visual generasi baru berkecepatan tinggi tanpa batas.',
     capabilities: ['image'],
@@ -138,7 +138,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'stability-ai',
     name: 'Stability AI',
-    logoKey: 'custom',
+    logoKey: 'stability-ai',
     description: 'Koleksi model open-weight visual dan video sinematik industri kreatif.',
     capabilities: ['image', 'video'],
     models: [
@@ -184,7 +184,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'kuaishou-kling',
     name: 'Kuaishou Kling AI',
-    logoKey: 'custom',
+    logoKey: 'kuaishou-kling',
     description: 'Mesin render video gerak fisik realistis beresolusi tinggi.',
     capabilities: ['video'],
     models: [
@@ -202,7 +202,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'runway-ml',
     name: 'Runway ML',
-    logoKey: 'custom',
+    logoKey: 'runway-ml',
     description: 'Platform video AI generatif standar industri perfilman dan visual FX.',
     capabilities: ['video'],
     models: [
@@ -220,7 +220,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'microsoft-azure',
     name: 'Microsoft Azure Speech',
-    logoKey: 'custom',
+    logoKey: 'microsoft-azure',
     badge: '100% Gratis',
     description: 'Sintesis suara vokal manusia neural alami dengan dukungan lebih dari 100 bahasa.',
     capabilities: ['audio'],
@@ -239,7 +239,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'elevenlabs',
     name: 'ElevenLabs',
-    logoKey: 'custom',
+    logoKey: 'elevenlabs',
     badge: 'Best Voice',
     description: 'Pemimpin teknologi sintesis suara dan kloning vokal emosional paling alami di dunia.',
     capabilities: ['audio'],
@@ -258,7 +258,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'suno-ai',
     name: 'Suno AI',
-    logoKey: 'custom',
+    logoKey: 'suno-ai',
     badge: 'AI Music',
     description: 'Studio komposisi lagu AI lengkap dengan vokal, lirik, dan aransemen instrumen.',
     capabilities: ['audio'],
@@ -277,7 +277,7 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   {
     id: 'udio-ai',
     name: 'Udio AI',
-    logoKey: 'custom',
+    logoKey: 'udio-ai',
     description: 'Produksi audio & musik fidelitas tinggi dengan ragam genre dan mastering instrumen.',
     capabilities: ['audio'],
     models: [

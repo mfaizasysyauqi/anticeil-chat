@@ -113,16 +113,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       // ── Initial Data ────────────────────────────────────────────────────────
       projects: [],
       imageCollections: [],
-      workflowCategories: [
-        { id: 'wc_productivity', name: 'Productivity', createdAt: Date.now(), files: [] },
-        { id: 'wc_marketing', name: 'Marketing', createdAt: Date.now(), files: [] },
-        { id: 'wc_crm', name: 'CRM & Leads', createdAt: Date.now(), files: [] },
-      ],
-      documentCategories: [
-        { id: 'dc_all', name: 'Semua Dokumen', createdAt: Date.now(), files: [] },
-        { id: 'dc_contracts', name: 'Kontrak & Invoice', createdAt: Date.now(), files: [] },
-        { id: 'dc_research', name: 'Laporan Riset', createdAt: Date.now(), files: [] },
-      ],
+      workflowCategories: [],
+      documentCategories: [],
 
       activeProjectId: null,
       activeImageCollectionId: null,

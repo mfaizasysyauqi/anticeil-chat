@@ -47,6 +47,8 @@ const initialApiKeys: ApiKeysState = {
   deepseek: { apiKey: '', isEnabled: true },
   groq: { apiKey: '', isEnabled: true },
   ollama: { apiKey: '', baseUrl: 'http://localhost:11434', isEnabled: true },
+  elevenlabs: { apiKey: '', isEnabled: true },
+  stability: { apiKey: '', isEnabled: true },
   custom: { apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', isEnabled: true },
 };
 
