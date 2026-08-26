@@ -361,7 +361,9 @@ export function WorkflowCanvasEditor({
     }, 400);
   };
 
-  // ── Global Canvas Keyboard Shortcuts (n8n style) ──
+  const [clipboardNode, setClipboardNode] = useState<Node | null>(null);
+
+  // ── Global Canvas Keyboard Shortcuts (n8n style + Copy/Paste/Delete) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -370,19 +372,103 @@ export function WorkflowCanvasEditor({
         activeEl instanceof HTMLTextAreaElement ||
         activeEl?.getAttribute('contenteditable') === 'true';
 
-      // 1. Open Add Node catalog: 'n' or 'N' (when not inside an input)
+      // 1. Copy selected node: Ctrl+C or Cmd+C
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+        if (!isInput && selectedNode) {
+          e.preventDefault();
+          setClipboardNode(selectedNode);
+          setExecutionToast(
+            language === 'id'
+              ? `✓ Node "${(selectedNode.data?.title as string) || selectedNode.type}" disalin`
+              : `✓ Node "${(selectedNode.data?.title as string) || selectedNode.type}" copied`
+          );
+          setTimeout(() => setExecutionToast(null), 2000);
+        }
+      }
+
+      // 2. Paste copied node: Ctrl+V or Cmd+V
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+        if (!isInput && clipboardNode) {
+          e.preventDefault();
+          const newId = `node_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+          const pastedNode: Node = {
+            ...clipboardNode,
+            id: newId,
+            position: {
+              x: (clipboardNode.position?.x || 100) + 40,
+              y: (clipboardNode.position?.y || 100) + 40,
+            },
+            selected: true,
+            data: {
+              ...clipboardNode.data,
+              title: clipboardNode.data?.title ? `${clipboardNode.data.title} (Copy)` : undefined,
+            },
+          };
+          setNodes((nds) => [...nds.map((n) => ({ ...n, selected: false })), pastedNode]);
+          setSelectedNode(pastedNode);
+          setClipboardNode(pastedNode); // allow cascading pastes
+          setExecutionToast(
+            language === 'id' ? '✓ Node berhasil ditempel ke canvas' : '✓ Node pasted to canvas'
+          );
+          setTimeout(() => setExecutionToast(null), 2000);
+        }
+      }
+
+      // 3. Duplicate node: Ctrl+D or Cmd+D
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+        if (!isInput && selectedNode) {
+          e.preventDefault();
+          const newId = `node_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+          const dupNode: Node = {
+            ...selectedNode,
+            id: newId,
+            position: {
+              x: (selectedNode.position?.x || 100) + 30,
+              y: (selectedNode.position?.y || 100) + 30,
+            },
+            selected: true,
+            data: {
+              ...selectedNode.data,
+              title: selectedNode.data?.title ? `${selectedNode.data.title} (Copy)` : undefined,
+            },
+          };
+          setNodes((nds) => [...nds.map((n) => ({ ...n, selected: false })), dupNode]);
+          setSelectedNode(dupNode);
+          setExecutionToast(language === 'id' ? '✓ Node diduplikasi' : '✓ Node duplicated');
+          setTimeout(() => setExecutionToast(null), 2000);
+        }
+      }
+
+      // 4. Delete node: Backspace or Delete
+      if (!isInput && (e.key === 'Backspace' || e.key === 'Delete')) {
+        if (selectedNode) {
+          e.preventDefault();
+          const deletedTitle = (selectedNode.data?.title as string) || selectedNode.type || 'Node';
+          setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
+          setEdges((eds) =>
+            eds.filter((edge) => edge.source !== selectedNode.id && edge.target !== selectedNode.id)
+          );
+          setSelectedNode(null);
+          setExecutionToast(
+            language === 'id' ? `✓ ${deletedTitle} dihapus` : `✓ ${deletedTitle} deleted`
+          );
+          setTimeout(() => setExecutionToast(null), 2000);
+        }
+      }
+
+      // 5. Open Add Node catalog: 'n' or 'N' (when not inside an input)
       if (!isInput && (e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
         setRightDrawerTab((prev) => (prev === 'nodes' ? null : 'nodes'));
       }
 
-      // 2. Search / Add node: Ctrl+K or Cmd+K
+      // 6. Search / Add node: Ctrl+K or Cmd+K
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         setRightDrawerTab((prev) => (prev === 'nodes' ? null : 'nodes'));
       }
 
-      // 3. Add sticky note: Shift+S
+      // 7. Add sticky note: Shift+S
       if (e.shiftKey && (e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (!isInput) {
           e.preventDefault();
@@ -390,7 +476,7 @@ export function WorkflowCanvasEditor({
         }
       }
 
-      // 4. Open inspector panel: Shift+F
+      // 8. Open inspector panel: Shift+F
       if (e.shiftKey && (e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (!isInput) {
           e.preventDefault();
@@ -405,7 +491,7 @@ export function WorkflowCanvasEditor({
         }
       }
 
-      // 5. AI Assistant: Ctrl+J or Cmd+J
+      // 9. AI Assistant: Ctrl+J or Cmd+J
       if ((e.ctrlKey || e.metaKey) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault();
         setRightDrawerTab((prev) => (prev === 'ai' ? null : 'ai'));
@@ -419,7 +505,7 @@ export function WorkflowCanvasEditor({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nodes, selectedNode, rightDrawerTab]);
+  }, [nodes, selectedNode, clipboardNode, rightDrawerTab, language]);
 
   // Real Cloudflare Worker Edge Execution Runner
   const handleRunCloudflareWorker = async () => {
