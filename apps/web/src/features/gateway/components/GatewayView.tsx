@@ -47,6 +47,7 @@ import {
   GatewayProvider,
   ProviderCategory,
 } from '../providers';
+import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
 interface SectionConfig {
   id: ProviderCategory;
@@ -449,26 +450,26 @@ print(response.choices[0].message.content)`,
     { name: 'Cloudflare Workers AI', usedTpm: 1200, limitTpm: 10000, usedRpm: 5, limitRpm: 100, tier: '10k Free Neurons/Day', resetIn: 'Daily' },
   ];
 
-  // Render provider card icon
+  // Render provider card icon — uses real brand logos via @lobehub/icons
   const renderProviderIcon = (provider: GatewayProvider) => {
-    const iconColors: Record<string, { bg: string; color: string }> = {
-      oauth: { bg: 'rgba(0, 210, 255, 0.12)', color: '#00d2ff' },
-      ide: { bg: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8' },
-      'web-cookie': { bg: 'rgba(168, 85, 247, 0.12)', color: '#c084fc' },
-      'no-auth': { bg: 'rgba(16, 185, 129, 0.12)', color: '#34d399' },
-      apikey: { bg: 'rgba(99, 102, 241, 0.12)', color: '#818cf8' },
-      'upstream-proxy': { bg: 'rgba(100, 116, 139, 0.12)', color: '#94a3b8' },
-      aggregators: { bg: 'rgba(236, 72, 153, 0.12)', color: '#f43f5e' },
-      enterprise: { bg: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24' },
-      'cloud-agent': { bg: 'rgba(20, 184, 166, 0.12)', color: '#14b8a6' },
-      local: { bg: 'rgba(234, 179, 8, 0.12)', color: '#eab308' },
-      search: { bg: 'rgba(59, 130, 246, 0.12)', color: '#60a5fa' },
-      embeddings: { bg: 'rgba(139, 92, 246, 0.12)', color: '#a78bfa' },
-      image: { bg: 'rgba(217, 70, 239, 0.12)', color: '#d946ef' },
-      audio: { bg: 'rgba(244, 63, 94, 0.12)', color: '#f43f5e' },
-      video: { bg: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' },
+    const catBg: Record<string, string> = {
+      oauth: 'rgba(0, 210, 255, 0.08)',
+      ide: 'rgba(56, 189, 248, 0.08)',
+      'web-cookie': 'rgba(168, 85, 247, 0.08)',
+      'no-auth': 'rgba(16, 185, 129, 0.08)',
+      apikey: 'rgba(99, 102, 241, 0.08)',
+      'upstream-proxy': 'rgba(100, 116, 139, 0.08)',
+      aggregators: 'rgba(236, 72, 153, 0.08)',
+      enterprise: 'rgba(245, 158, 11, 0.08)',
+      'cloud-agent': 'rgba(20, 184, 166, 0.08)',
+      local: 'rgba(234, 179, 8, 0.08)',
+      search: 'rgba(59, 130, 246, 0.08)',
+      embeddings: 'rgba(139, 92, 246, 0.08)',
+      image: 'rgba(217, 70, 239, 0.08)',
+      audio: 'rgba(244, 63, 94, 0.08)',
+      video: 'rgba(239, 68, 68, 0.08)',
     };
-    const c = iconColors[provider.category] || iconColors.apikey;
+    const bg = catBg[provider.category] || catBg.apikey;
 
     return (
       <div
@@ -476,42 +477,16 @@ print(response.choices[0].message.content)`,
           width: '32px',
           height: '32px',
           borderRadius: '8px',
-          background: c.bg,
+          background: bg,
           border: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: c.color,
           flexShrink: 0,
+          overflow: 'hidden',
         }}
       >
-        {provider.category === 'oauth' ? (
-          <ShieldCheck size={16} />
-        ) : provider.category === 'ide' ? (
-          <Terminal size={16} />
-        ) : provider.category === 'web-cookie' ? (
-          <Cookie size={16} />
-        ) : provider.category === 'no-auth' ? (
-          <Sparkles size={16} />
-        ) : provider.category === 'local' ? (
-          <HardDrive size={16} />
-        ) : provider.category === 'search' ? (
-          <Search size={16} />
-        ) : provider.category === 'audio' ? (
-          <Volume2 size={16} />
-        ) : provider.category === 'video' ? (
-          <Video size={16} />
-        ) : provider.category === 'image' ? (
-          <ImageIcon size={16} />
-        ) : provider.category === 'cloud-agent' ? (
-          <Bot size={16} />
-        ) : provider.category === 'enterprise' ? (
-          <Building2 size={16} />
-        ) : provider.category === 'aggregators' ? (
-          <Layers size={16} />
-        ) : (
-          <Key size={16} />
-        )}
+        <ProviderBrandLogo provider={provider.id} size={18} />
       </div>
     );
   };

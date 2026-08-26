@@ -49,6 +49,10 @@ import {
   Film,
   Music,
   Download,
+  Gauge,
+  Sliders,
+  Radar,
+  GitFork,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -1336,15 +1340,15 @@ function GatewaySidebarNav() {
     Object.values(s.providerConnections).filter((c) => c.isEnabled).length
   );
 
-  const items: Array<{ id: GatewaySubNav; label: string; icon: string; badge?: string; color: string }> = [
-    { id: 'providers',   label: 'Katalog 295+ Provider', icon: '🌐', badge: `${connectedCount} aktif`, color: '#10b981' },
-    { id: 'api-keys',    label: 'Manajer Kunci API',     icon: '🔑', badge: `${apiKeys.length}`,       color: '#818cf8' },
-    { id: 'quota',       label: 'Provider Quota & Limits', icon: '📊', color: '#38bdf8' },
-    { id: 'endpoint',    label: 'Endpoints & Setup',     icon: '⚡', color: '#fbbf24' },
-    { id: 'combos',      label: 'Combos & Failover',     icon: '🔀', badge: `${combos.length}`,        color: '#f97316' },
-    { id: 'compressor',  label: 'Context Compressor',    icon: '🗜️',  badge: compression.mode.toUpperCase(), color: '#a78bfa' },
-    { id: 'traffic',     label: 'Traffic Inspector',     icon: '📡', badge: requestLogs.length > 0 ? `${requestLogs.length}` : undefined, color: '#34d399' },
-    { id: 'discovery',   label: 'Radar Akses Gratisan',  icon: '🎯', color: '#fb7185' },
+  const items: Array<{ id: GatewaySubNav; label: string; icon: React.ReactNode; badge?: string; color: string }> = [
+    { id: 'providers',   label: 'Katalog 295+ Provider',   icon: <Globe size={14} color="#10b981" />,   badge: `${connectedCount} aktif`, color: '#10b981' },
+    { id: 'api-keys',    label: 'Manajer Kunci API',       icon: <KeyRound size={14} color="#818cf8" />, badge: `${apiKeys.length}`,       color: '#818cf8' },
+    { id: 'quota',       label: 'Provider Quota & Limits', icon: <Gauge size={14} color="#38bdf8" />,    color: '#38bdf8' },
+    { id: 'endpoint',    label: 'Endpoints & Setup',       icon: <Zap size={14} color="#fbbf24" />,      color: '#fbbf24' },
+    { id: 'combos',      label: 'Combos & Failover',       icon: <GitFork size={14} color="#f97316" />,  badge: `${combos.length}`,        color: '#f97316' },
+    { id: 'compressor',  label: 'Context Compressor',      icon: <Sliders size={14} color="#a78bfa" />,  badge: compression.mode.toUpperCase(), color: '#a78bfa' },
+    { id: 'traffic',     label: 'Traffic Inspector',       icon: <Activity size={14} color="#34d399" />, badge: requestLogs.length > 0 ? `${requestLogs.length}` : undefined, color: '#34d399' },
+    { id: 'discovery',   label: 'Radar Akses Gratisan',    icon: <Radar size={14} color="#fb7185" />,    color: '#fb7185' },
   ];
 
   const groups = [
@@ -1385,7 +1389,9 @@ function GatewaySidebarNav() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                  <span style={{ fontSize: '13px', flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', flexShrink: 0 }}>
+                    {item.icon}
+                  </span>
                   <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
                 </div>
                 {item.badge && (
