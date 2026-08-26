@@ -19,6 +19,7 @@ import {
   Play,
   Save,
   ArrowLeft,
+  ArrowUp,
   Plus,
   Clock,
   Sparkles,
@@ -59,6 +60,8 @@ import { nodeTypes } from './nodes';
 import { NodeInspectorPanel } from './NodeInspectorPanel';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAutomationStore } from '../store/useAutomationStore';
+import { getModelById } from '@anticeil/core';
+import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
 
 interface WorkflowCanvasEditorProps {
   workflowId: string;
@@ -170,9 +173,17 @@ export function WorkflowCanvasEditor({
   const [totalExecutionTime, setTotalExecutionTime] = useState<number | null>(null);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
 
-  // Right Drawer Tab State: 'nodes' | 'inspector' | null
-  const [rightDrawerTab, setRightDrawerTab] = useState<'nodes' | 'inspector' | null>(null);
+  // Right Drawer Tab State: 'nodes' | 'inspector' | 'search' | 'ai' | null
+  const [rightDrawerTab, setRightDrawerTab] = useState<'nodes' | 'inspector' | 'search' | 'ai' | null>(null);
   const [nodeCatalogSearch, setNodeCatalogSearch] = useState('');
+  const [commandSearch, setCommandSearch] = useState('');
+  const [aiPromptInput, setAiPromptInput] = useState('');
+  const [isGeneratingAiCanvas, setIsGeneratingAiCanvas] = useState(false);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+
+  const activeModelId = useSettingsStore((s) => s.activeModelId);
+  const activeModel = getModelById(activeModelId);
+  const activeModelName = activeModel?.name || 'Compound';
 
   // Responsive UI states
   const [isMobile, setIsMobile] = useState(false);
@@ -325,6 +336,30 @@ export function WorkflowCanvasEditor({
     setRightDrawerTab('inspector');
   };
 
+  // AI Assistant Canvas Generator
+  const handleExecuteAiGeneration = () => {
+    if (!aiPromptInput.trim() || isGeneratingAiCanvas) return;
+    setIsGeneratingAiCanvas(true);
+    setTimeout(() => {
+      const p = aiPromptInput.toLowerCase();
+      if (p.includes('telegram') || p.includes('bot')) {
+        handleAddNode('telegram');
+      } else if (p.includes('calendar') || p.includes('jadwal')) {
+        handleAddNode('calendar');
+      } else if (p.includes('gmail') || p.includes('email')) {
+        handleAddNode('gmail');
+      } else if (p.includes('note') || p.includes('catatan')) {
+        handleAddNode('stickyNote');
+      } else {
+        handleAddNode('ai');
+      }
+      setIsGeneratingAiCanvas(false);
+      setAiPromptInput('');
+      setExecutionToast('✓ Blok node baru berhasil ditambahkan oleh AI ke canvas!');
+      setTimeout(() => setExecutionToast(null), 3000);
+    }, 400);
+  };
+
   // ── Global Canvas Keyboard Shortcuts (n8n style) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -343,7 +378,7 @@ export function WorkflowCanvasEditor({
       // 2. Command bar / search: Ctrl+K or Cmd+K
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        setRightDrawerTab('nodes');
+        setRightDrawerTab((prev) => (prev === 'search' ? null : 'search'));
       }
 
       // 3. Add sticky note: Shift+S
@@ -372,7 +407,7 @@ export function WorkflowCanvasEditor({
       // 5. AI Assistant: Ctrl+J or Cmd+J
       if ((e.ctrlKey || e.metaKey) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault();
-        setRightDrawerTab('nodes');
+        setRightDrawerTab((prev) => (prev === 'ai' ? null : 'ai'));
       }
 
       // Escape to close drawer
@@ -734,10 +769,10 @@ export function WorkflowCanvasEditor({
           {/* 2. Search / Command bar [Ctrl] [K] */}
           <FloatingDockButton
             icon={<Search size={17} />}
-            label={language === 'id' ? 'Cari node' : 'Search nodes'}
+            label={language === 'id' ? 'Cari node & perintah' : 'Search nodes & commands'}
             shortcut={['Ctrl', 'K']}
-            isActive={rightDrawerTab === 'nodes'}
-            onClick={() => setRightDrawerTab('nodes')}
+            isActive={rightDrawerTab === 'search'}
+            onClick={() => setRightDrawerTab((prev) => (prev === 'search' ? null : 'search'))}
           />
 
           {/* 3. Add sticky note [Shift] [S] */}
@@ -774,8 +809,8 @@ export function WorkflowCanvasEditor({
             }
             label={language === 'id' ? 'Asisten AI Workflow' : 'AI Assistant'}
             shortcut={['Ctrl', 'J']}
-            isActive={rightDrawerTab === 'nodes'}
-            onClick={() => setRightDrawerTab('nodes')}
+            isActive={rightDrawerTab === 'ai'}
+            onClick={() => setRightDrawerTab((prev) => (prev === 'ai' ? null : 'ai'))}
           />
         </div>
 
@@ -811,32 +846,45 @@ export function WorkflowCanvasEditor({
               flexShrink: 0,
             }}
           >
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[
-                { id: 'nodes' as const, icon: <Plus size={14} />, label: language === 'id' ? 'Node' : 'Nodes' },
-                { id: 'inspector' as const, icon: <Columns2 size={14} />, label: language === 'id' ? 'Inspektur' : 'Inspector' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setRightDrawerTab(tab.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    padding: '4px 10px', borderRadius: '6px', border: 'none',
-                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    background: rightDrawerTab === tab.id
-                      ? (isDark ? 'rgba(0,115,234,0.2)' : '#EEF4FF')
-                      : 'transparent',
-                    color: rightDrawerTab === tab.id
-                      ? '#0073EA'
-                      : (isDark ? '#9CA3AF' : '#64748B'),
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {[
+                  { id: 'nodes' as const, icon: <Plus size={14} />, label: language === 'id' ? 'Node' : 'Nodes' },
+                  { id: 'inspector' as const, icon: <Columns2 size={14} />, label: language === 'id' ? 'Inspektur' : 'Inspector' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setRightDrawerTab(tab.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '4px 10px', borderRadius: '6px', border: 'none',
+                      fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                      background: rightDrawerTab === tab.id
+                        ? (isDark ? 'rgba(0,115,234,0.2)' : '#EEF4FF')
+                        : 'transparent',
+                      color: rightDrawerTab === tab.id
+                        ? '#0073EA'
+                        : (isDark ? '#9CA3AF' : '#64748B'),
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+              {rightDrawerTab === 'search' && (
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--brand-primary, #0073EA)', background: isDark ? 'rgba(0,115,234,0.15)' : '#EEF4FF', padding: '2px 7px', borderRadius: '4px' }}>
+                  {language === 'id' ? 'Cari' : 'Search'}
+                </span>
+              )}
+              {rightDrawerTab === 'ai' && (
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#C084FC', background: isDark ? 'rgba(192,132,252,0.15)' : '#F5F3FF', padding: '2px 7px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Sparkles size={11} />
+                  AI Studio
+                </span>
+              )}
             </div>
             <button
               type="button"
@@ -991,6 +1039,305 @@ export function WorkflowCanvasEditor({
                   </p>
                 </div>
               )
+            )}
+
+            {/* ── Tab: Search / Command Palette ── */}
+            {rightDrawerTab === 'search' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: isDark ? '#262626' : '#F1F5F9',
+                    borderRadius: '8px', padding: '8px 10px',
+                    border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                  }}
+                >
+                  <Search size={14} color="var(--brand-primary, #0073EA)" />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={commandSearch}
+                    onChange={(e) => setCommandSearch(e.target.value)}
+                    placeholder={
+                      language === 'id'
+                        ? 'Cari node, aksi, konektor...'
+                        : 'Search nodes, actions, connectors...'
+                    }
+                    style={{
+                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                      fontSize: '12.5px', color: isDark ? '#F9FAFB' : '#0F172A', fontFamily: 'inherit',
+                    }}
+                  />
+                  {commandSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setCommandSearch('')}
+                      style={{ background: 'transparent', border: 'none', color: isDark ? '#9CA3AF' : '#64748B', cursor: 'pointer', padding: 0 }}
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {[
+                    { id: 'trigger', label: 'Pemicu Cron / Webhook', category: 'Pemicu', icon: <Clock size={14} color="#D97706" /> },
+                    { id: 'ai', label: 'AI Reasoning Agent', category: 'AI & Logika', icon: <Sparkles size={14} color="#7C3AED" /> },
+                    { id: 'stickyNote', label: 'Catatan Tempel (Sticky Note)', category: 'Anotasi', icon: <StickyNote size={14} color="#F59E0B" /> },
+                    { id: 'calendar', label: 'Google Calendar Events', category: 'Konektor', icon: <Calendar size={14} color="#1A73E8" /> },
+                    { id: 'gmail', label: 'Gmail VIP Draft & Reply', category: 'Konektor', icon: <Mail size={14} color="#EA4335" /> },
+                    { id: 'telegram', label: 'Telegram Bot Alert', category: 'Konektor', icon: <Send size={14} color="#0088CC" /> },
+                    { id: 'drive', label: 'Google Drive Files', category: 'Konektor', icon: <FolderOpen size={14} color="#0F9D58" /> },
+                    { id: 'http', label: 'HTTP REST Webhook Request', category: 'Integrasi', icon: <Globe size={14} color="#3B82F6" /> },
+                    { id: 'code', label: 'Custom Code Execution (JS)', category: 'Developer', icon: <Code2 size={14} color="#10B981" /> },
+                    { id: 'database', label: 'Database Query (PostgreSQL)', category: 'Storage', icon: <Database size={14} color="#336791" /> },
+                    { id: 'spreadsheet', label: 'Google Sheets / Table', category: 'Storage', icon: <Sheet size={14} color="#34A853" /> },
+                    { id: 'delay', label: 'Delay / Wait Timer', category: 'Alur', icon: <Timer size={14} color="#A855F7" /> },
+                    { id: 'logic', label: 'Logika & Kondisi If/Else', category: 'Alur', icon: <GitBranch size={14} color="#0891B2" /> },
+                    { id: 'storage', label: 'Cloud Storage (S3 / R2)', category: 'Storage', icon: <HardDrive size={14} color="#FF9900" /> },
+                    { id: 'transform', label: 'Data Transform / Map', category: 'Alur', icon: <ArrowRightLeft size={14} color="#0EA5E9" /> },
+                  ]
+                    .filter((item) =>
+                      !commandSearch.trim() ||
+                      item.label.toLowerCase().includes(commandSearch.toLowerCase()) ||
+                      item.category.toLowerCase().includes(commandSearch.toLowerCase())
+                    )
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          handleAddNode(item.id);
+                          setCommandSearch('');
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          border: isDark ? '1px solid rgba(255,255,255,0.04)' : '1px solid #F1F5F9',
+                          background: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF',
+                          color: isDark ? '#E5E7EB' : '#1E293B',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF';
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          {item.icon}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            color: isDark ? '#9CA3AF' : '#64748B',
+                            background: isDark ? '#262626' : '#E2E8F0',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.category}
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Tab: AI Workflow Assistant (Grok/Chat Page Styled Input Form) ── */}
+            {rightDrawerTab === 'ai' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Chat Page Input Box Capsule */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: isDark ? '#262626' : '#FFFFFF',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                    borderRadius: '16px',
+                    padding: '12px 14px',
+                    boxShadow: isDark ? '0 6px 24px rgba(0,0,0,0.35)' : '0 4px 16px rgba(0,0,0,0.06)',
+                    gap: '10px',
+                  }}
+                >
+                  <textarea
+                    autoFocus
+                    value={aiPromptInput}
+                    onChange={(e) => setAiPromptInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleExecuteAiGeneration();
+                      }
+                    }}
+                    placeholder={
+                      language === 'id'
+                        ? 'Tanya apa saja atau jelaskan alur/node yang ingin dibuat...'
+                        : 'Ask anything or describe the workflow/node to generate...'
+                    }
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      resize: 'none',
+                      color: isDark ? '#F9FAFB' : '#0F172A',
+                      fontSize: '13px',
+                      lineHeight: 1.5,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+
+                  {/* Bottom Action Bar inside the capsule */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingTop: '4px',
+                      borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #F1F5F9',
+                    }}
+                  >
+                    {/* Left: Quick Actions / Preset Chip */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setAiPromptInput('Tambahkan notifikasi Telegram bot alert jika hasil AI mendeteksi status critical')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                          background: isDark ? 'rgba(255,255,255,0.04)' : '#F8FAFC',
+                          color: isDark ? '#A0A0A0' : '#64748B',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : '#F8FAFC')}
+                      >
+                        <Plus size={12} color="var(--brand-primary, #0073EA)" />
+                        <span>Preset</span>
+                      </button>
+                    </div>
+
+                    {/* Right: Custom Model Selector Button & Send Arrow */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setIsModelSelectorOpen(true)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          background: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+                          border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                          borderRadius: '8px',
+                          padding: '4px 8px',
+                          color: isDark ? '#E5E7EB' : '#334155',
+                          fontSize: '11.5px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9')}
+                        title={language === 'id' ? 'Ganti Model AI' : 'Change AI Model'}
+                      >
+                        <span style={{ maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {activeModelName}
+                        </span>
+                        <ChevronDown size={12} color={isDark ? '#9CA3AF' : '#64748B'} />
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isGeneratingAiCanvas || !aiPromptInput.trim()}
+                        onClick={handleExecuteAiGeneration}
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '50%',
+                          border: 'none',
+                          background: aiPromptInput.trim()
+                            ? 'var(--brand-primary, #0073EA)'
+                            : isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
+                          color: aiPromptInput.trim() ? '#FFFFFF' : (isDark ? '#666666' : '#94A3B8'),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: isGeneratingAiCanvas || !aiPromptInput.trim() ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.15s ease',
+                          boxShadow: aiPromptInput.trim() ? '0 2px 8px rgba(0, 115, 234, 0.35)' : 'none',
+                        }}
+                        title={language === 'id' ? 'Kirim ke Canvas' : 'Generate to Canvas'}
+                      >
+                        {isGeneratingAiCanvas ? <Loader2 size={14} className="animate-spin" /> : <ArrowUp size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Prompts List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#9CA3AF' : '#64748B' }}>
+                    {language === 'id' ? 'Saran Cepat:' : 'Quick Prompts:'}
+                  </span>
+                  {[
+                    'Tambahkan notifikasi bot Telegram darurat',
+                    'Koneksikan ke Google Calendar untuk cek agenda rapat',
+                    'Buat filter email VIP dengan Gmail',
+                    'Tambahkan agen AI synthesizer',
+                  ].map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setAiPromptInput(suggestion)}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: '8px',
+                        border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
+                        background: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC',
+                        color: isDark ? '#D1D5DB' : '#475569',
+                        fontSize: '11.5px',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isDark ? 'rgba(0, 115, 234, 0.12)' : '#F0F9FF';
+                        e.currentTarget.style.borderColor = 'var(--brand-primary, #0073EA)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC';
+                        e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#E2E8F0';
+                      }}
+                    >
+                      💡 {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -1347,6 +1694,14 @@ export function WorkflowCanvasEditor({
             <Zap size={14} color="#F38020" style={{ flexShrink: 0 }} />
             <span>{executionToast}</span>
           </div>
+        )}
+
+        {/* Model Selector Modal for AI Assistant */}
+        {isModelSelectorOpen && (
+          <ModelSelectorModal
+            onClose={() => setIsModelSelectorOpen(false)}
+            targetCapability="text"
+          />
         )}
       </div>
     </div>
