@@ -5,7 +5,7 @@ import {
   getProviderById,
 } from '@anticeil/core';
 import { FREE_GROQ_KEYS, FREE_GEMINI_KEYS, getNextFreeKey } from '../../chat/data/byokApi';
-import { ALL_GATEWAY_PROVIDERS, getGatewayProviderById } from '../providers';
+import { ALL_GATEWAY_PROVIDERS, getGatewayProviderById, AuthType } from '../providers';
 
 export interface RouteRequest {
   model: string;
@@ -25,7 +25,7 @@ export interface ModelResolution {
   normalizedModelId: string;
   baseUrl: string;
   apiKey: string;
-  authType: 'no-auth' | 'oauth' | 'cookie' | 'apikey' | 'local';
+  authType: AuthType;
 }
 
 // Map common aliases or prefix models across all 295+ providers
@@ -36,7 +36,7 @@ export function resolveModelProvider(
   const rawModel = (modelInput || 'groq/compound').trim();
   let providerId: string = 'openai';
   let normalizedModelId = rawModel;
-  let authType: 'no-auth' | 'oauth' | 'cookie' | 'apikey' | 'local' = 'apikey';
+  let authType: AuthType = 'apikey';
 
   // 1. Explicit prefix: e.g. "pollinations/flux", "sambanova/DeepSeek-R1", "copilot/gpt-4o"
   if (rawModel.includes('/')) {

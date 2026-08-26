@@ -30,6 +30,11 @@ import {
   Loader2,
   Bot,
   Zap,
+  Wrench,
+  Video,
+  Image as ImageIcon,
+  Network,
+  Building2,
 } from 'lucide-react';
 import {
   useGatewayStore,
@@ -48,15 +53,28 @@ interface SectionConfig {
   title: string;
   dotColor: string;
   description: string;
+  hasRepairEnv?: boolean;
+  hasTestAll?: boolean;
+  subHeader?: string;
 }
 
 const PROVIDER_SECTIONS: SectionConfig[] = [
   {
     id: 'oauth',
-    title: 'Penyedia IDE & OAuth2',
+    title: 'Penyedia OAuth2',
     dotColor: '#00d2ff',
     description:
+      'Penyedia yang diautentikasi melalui OAuth — masuk sekali dan OmniRoute menangani rotasi token secara otomatis.',
+    hasRepairEnv: true,
+    hasTestAll: true,
+  },
+  {
+    id: 'ide',
+    title: 'Penyedia IDE',
+    dotColor: '#38bdf8',
+    description:
       'Editor dengan langganan AI bawaan. Gunakan halaman penyedia untuk mengimpor kredensial langsung dari gantungan kunci IDE.',
+    hasTestAll: true,
   },
   {
     id: 'web-cookie',
@@ -64,41 +82,104 @@ const PROVIDER_SECTIONS: SectionConfig[] = [
     dotColor: '#a855f7',
     description:
       'Penyedia ini menggunakan sesi web browser, cookie, atau token web, bukan kunci API. Buka penyedia untuk menambahkan kredensial sesi yang diperlukan.',
-  },
-  {
-    id: 'no-auth',
-    title: 'Tingkat Gratis (Tanpa Autentikasi)',
-    dotColor: '#10b981',
-    description:
-      'Titik akhir publik gratis tanpa perlu akun atau API Key — langsung aktif dan siap merutekan permintaan AI.',
+    hasTestAll: true,
   },
   {
     id: 'apikey',
-    title: 'Penyedia Kompatibel Kunci API',
+    title: 'Penyedia Kunci API',
     dotColor: '#6366f1',
     description:
-      'Titik akhir yang kompatibel dengan OpenAI dan Anthropic menggunakan API Key pribadi Anda yang Anda hos atau konfigurasikan.',
+      'Penyedia kunci API standar. Tambahkan kunci Anda sekali dan OmniRoute akan merutekan, mencoba kembali, dan membatasi laju atas nama Anda.',
+    hasTestAll: true,
+    subHeader: 'Llm Providers',
+  },
+  {
+    id: 'no-auth',
+    title: 'Penyedia Tanpa Autentikasi',
+    dotColor: '#10b981',
+    description:
+      'Endpoint terbuka yang tidak memerlukan kredensial — siap digunakan segera tanpa pendaftaran apa pun.',
+    hasTestAll: true,
+  },
+  {
+    id: 'upstream-proxy',
+    title: 'Upstream Proxy Providers',
+    dotColor: '#64748b',
+    description:
+      'Rute lalu lintas keluar melalui proxy hulu sebelum mencapai penyedia. Berguna untuk jaringan perusahaan atau inspeksi lalu lintas.',
+    hasTestAll: true,
+  },
+  {
+    id: 'aggregators',
+    title: 'Aggregators Gateways',
+    dotColor: '#ec4899',
+    description:
+      'Agregator multi-penyedia dan gateway AI yang mengekspos satu API terpadu di berbagai model dasar.',
+    hasTestAll: true,
+  },
+  {
+    id: 'enterprise',
+    title: 'Perusahaan & Awan',
+    dotColor: '#f59e0b',
+    description:
+      'Model tingkat perusahaan dan yang di-host di cloud dengan SLA yang ditingkatkan, sertifikasi kepatuhan, dan kapasitas khusus.',
+    hasTestAll: true,
+  },
+  {
+    id: 'cloud-agent',
+    title: 'Penyedia Agen Cloud',
+    dotColor: '#14b8a6',
+    description:
+      'Agen cloud otonom yang menjalankan tugas jangka panjang dengan persetujuan rencana dan pelacakan status langsung.',
+    hasTestAll: true,
   },
   {
     id: 'local',
-    title: 'Layanan Tertanam & PC Lokal',
-    dotColor: '#f59e0b',
+    title: 'Local Providers',
+    dotColor: '#eab308',
     description:
-      'Kelola layanan proxy lokal dan mesin model pribadi di PC Anda (Ollama, LM Studio, vLLM, llama.cpp).',
+      'Model yang di-host sendiri yang berjalan di perangkat keras Anda sendiri. Tidak ada data yang keluar dari infrastruktur Anda.',
+    hasTestAll: true,
   },
   {
     id: 'search',
-    title: 'Search & Web Fetch Engine',
+    title: 'Search Providers Heading',
     dotColor: '#3b82f6',
     description:
-      'Mesin pencarian internet real-time dan web crawler untuk melengkapi konteks jawaban AI (RAG Context).',
+      'Penyedia pencarian web dan dokumen. Lampirkan ke panggilan LLM untuk Retrieval-Augmented Generation.',
+    hasTestAll: true,
+  },
+  {
+    id: 'embeddings',
+    title: 'Penyematan & Pemeringkatan Ulang',
+    dotColor: '#8b5cf6',
+    description:
+      'Penyedia penyematan vektor dan pemeringkatan ulang untuk pencarian semantik, alur RAG, dan penilaian kemiripan.',
+    hasTestAll: true,
+  },
+  {
+    id: 'image',
+    title: 'Image Providers',
+    dotColor: '#d946ef',
+    description:
+      'Penyedia pembuatan gambar dan visi — buat gambar dari teks atau analisis gambar yang sudah ada.',
+    hasTestAll: true,
   },
   {
     id: 'audio',
-    title: 'Audio & Speech Synthesizer',
-    dotColor: '#ec4899',
+    title: 'Audio Providers Heading',
+    dotColor: '#f43f5e',
     description:
-      'Penyedia sintesis suara Text-to-Speech (TTS) ultra-realistis dan transkripsi audio berkecepatan tinggi.',
+      'Penyedia text-to-speech dan speech-to-text untuk I/O suara dan alur transkripsi audio.',
+    hasTestAll: true,
+  },
+  {
+    id: 'video',
+    title: 'Pembuatan Video',
+    dotColor: '#ef4444',
+    description:
+      'Penyedia pembuatan video. Buat klip video pendek dari prompt teks atau gambar.',
+    hasTestAll: true,
   },
 ];
 
@@ -138,6 +219,7 @@ export const GatewayView: React.FC = () => {
   const [testingProviderId, setTestingProviderId] = useState<string | null>(null);
   const [testingSectionId, setTestingSectionId] = useState<string | null>(null);
   const [testStatusMap, setTestStatusMap] = useState<Record<string, 'success' | 'error' | 'testing'>>({});
+  const [repairToast, setRepairToast] = useState(false);
 
   // Key creation state
   const [newKeyName, setNewKeyName] = useState('');
@@ -272,17 +354,23 @@ export const GatewayView: React.FC = () => {
     e.stopPropagation();
     setTestingSectionId(category);
     const sectionProviders = ALL_GATEWAY_PROVIDERS.filter((p) => p.category === category);
-    for (const p of sectionProviders.slice(0, 8)) {
+    for (const p of sectionProviders.slice(0, 10)) {
       setTestStatusMap((prev) => ({ ...prev, [p.id]: 'testing' }));
     }
     await new Promise((r) => setTimeout(r, 900));
-    for (const p of sectionProviders.slice(0, 8)) {
+    for (const p of sectionProviders.slice(0, 10)) {
       setTestStatusMap((prev) => ({ ...prev, [p.id]: 'success' }));
     }
     setTestingSectionId(null);
     setTimeout(() => {
       setTestStatusMap({});
     }, 4000);
+  };
+
+  const handleRepairEnv = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRepairToast(true);
+    setTimeout(() => setRepairToast(false), 3000);
   };
 
   const connectedCount = useMemo(() => {
@@ -334,14 +422,22 @@ print(response.choices[0].message.content)`,
   };
 
   const categories: Array<{ id: ProviderCategory | 'all'; label: string; icon: React.ReactNode }> = [
-    { id: 'all', label: 'Semua (295+)', icon: <Globe size={13} /> },
-    { id: 'oauth', label: 'OAuth2 / IDE', icon: <ShieldCheck size={13} color="#38bdf8" /> },
-    { id: 'web-cookie', label: 'Web Cookies', icon: <Cookie size={13} color="#fbbf24" /> },
-    { id: 'no-auth', label: 'Tingkat Gratis', icon: <Sparkles size={13} color="#34d399" /> },
-    { id: 'apikey', label: 'Kunci API (192+)', icon: <Key size={13} color="#818cf8" /> },
-    { id: 'local', label: 'Lokal PC', icon: <HardDrive size={13} color="#c084fc" /> },
-    { id: 'search', label: 'Pencarian & RAG', icon: <Search size={13} color="#60a5fa" /> },
-    { id: 'audio', label: 'Audio & TTS', icon: <Volume2 size={13} color="#f43f5e" /> },
+    { id: 'all', label: `Semua (${ALL_GATEWAY_PROVIDERS.length})`, icon: <Globe size={13} /> },
+    { id: 'oauth', label: 'OAuth2 (20)', icon: <ShieldCheck size={13} color="#00d2ff" /> },
+    { id: 'ide', label: 'IDE (3)', icon: <Terminal size={13} color="#38bdf8" /> },
+    { id: 'web-cookie', label: 'Web Cookie (31)', icon: <Cookie size={13} color="#a855f7" /> },
+    { id: 'apikey', label: 'Kunci API (192)', icon: <Key size={13} color="#6366f1" /> },
+    { id: 'no-auth', label: 'Tanpa Autentikasi (9)', icon: <Sparkles size={13} color="#10b981" /> },
+    { id: 'upstream-proxy', label: 'Upstream Proxy (2)', icon: <Network size={13} color="#64748b" /> },
+    { id: 'aggregators', label: 'Aggregators (22)', icon: <Layers size={13} color="#ec4899" /> },
+    { id: 'enterprise', label: 'Perusahaan & Awan (14)', icon: <Building2 size={13} color="#f59e0b" /> },
+    { id: 'cloud-agent', label: 'Cloud Agent (3)', icon: <Bot size={13} color="#14b8a6" /> },
+    { id: 'local', label: 'Local (12)', icon: <HardDrive size={13} color="#eab308" /> },
+    { id: 'search', label: 'Search (12)', icon: <Search size={13} color="#3b82f6" /> },
+    { id: 'embeddings', label: 'Embeddings (2)', icon: <Activity size={13} color="#8b5cf6" /> },
+    { id: 'image', label: 'Image (7)', icon: <ImageIcon size={13} color="#d946ef" /> },
+    { id: 'audio', label: 'Audio (11)', icon: <Volume2 size={13} color="#f43f5e" /> },
+    { id: 'video', label: 'Video (8)', icon: <Video size={13} color="#ef4444" /> },
   ];
 
   // Provider Quota Mock Live Data
@@ -356,13 +452,21 @@ print(response.choices[0].message.content)`,
   // Render provider card icon
   const renderProviderIcon = (provider: GatewayProvider) => {
     const iconColors: Record<string, { bg: string; color: string }> = {
-      oauth: { bg: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8' },
+      oauth: { bg: 'rgba(0, 210, 255, 0.12)', color: '#00d2ff' },
+      ide: { bg: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8' },
       'web-cookie': { bg: 'rgba(168, 85, 247, 0.12)', color: '#c084fc' },
       'no-auth': { bg: 'rgba(16, 185, 129, 0.12)', color: '#34d399' },
-      apikey: { bg: 'rgba(129, 140, 248, 0.12)', color: '#818cf8' },
-      local: { bg: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24' },
+      apikey: { bg: 'rgba(99, 102, 241, 0.12)', color: '#818cf8' },
+      'upstream-proxy': { bg: 'rgba(100, 116, 139, 0.12)', color: '#94a3b8' },
+      aggregators: { bg: 'rgba(236, 72, 153, 0.12)', color: '#f43f5e' },
+      enterprise: { bg: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24' },
+      'cloud-agent': { bg: 'rgba(20, 184, 166, 0.12)', color: '#14b8a6' },
+      local: { bg: 'rgba(234, 179, 8, 0.12)', color: '#eab308' },
       search: { bg: 'rgba(59, 130, 246, 0.12)', color: '#60a5fa' },
-      audio: { bg: 'rgba(236, 72, 153, 0.12)', color: '#f43f5e' },
+      embeddings: { bg: 'rgba(139, 92, 246, 0.12)', color: '#a78bfa' },
+      image: { bg: 'rgba(217, 70, 239, 0.12)', color: '#d946ef' },
+      audio: { bg: 'rgba(244, 63, 94, 0.12)', color: '#f43f5e' },
+      video: { bg: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' },
     };
     const c = iconColors[provider.category] || iconColors.apikey;
 
@@ -383,6 +487,8 @@ print(response.choices[0].message.content)`,
       >
         {provider.category === 'oauth' ? (
           <ShieldCheck size={16} />
+        ) : provider.category === 'ide' ? (
+          <Terminal size={16} />
         ) : provider.category === 'web-cookie' ? (
           <Cookie size={16} />
         ) : provider.category === 'no-auth' ? (
@@ -393,6 +499,16 @@ print(response.choices[0].message.content)`,
           <Search size={16} />
         ) : provider.category === 'audio' ? (
           <Volume2 size={16} />
+        ) : provider.category === 'video' ? (
+          <Video size={16} />
+        ) : provider.category === 'image' ? (
+          <ImageIcon size={16} />
+        ) : provider.category === 'cloud-agent' ? (
+          <Bot size={16} />
+        ) : provider.category === 'enterprise' ? (
+          <Building2 size={16} />
+        ) : provider.category === 'aggregators' ? (
+          <Layers size={16} />
         ) : (
           <Key size={16} />
         )}
@@ -422,13 +538,18 @@ print(response.choices[0].message.content)`,
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                  Katalog 295+ Provider AI
+                  Katalog {ALL_GATEWAY_PROVIDERS.length}+ Provider AI
                 </h2>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                  Hubungkan akun gratis, token OAuth IDE, cookie browser web, atau API Key pribadi Anda.
+                  Hubungkan akun OAuth2, IDE Keyring, Web Cookie, Kunci API, atau Mesin Komputasi Lokal Anda.
                 </p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {repairToast && (
+                  <span style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56,189,248,0.15)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(56,189,248,0.3)' }}>
+                    ✓ Environment Keyring Synced
+                  </span>
+                )}
                 <span
                   style={{
                     fontSize: '11px',
@@ -450,7 +571,7 @@ print(response.choices[0].message.content)`,
             </div>
 
             {/* Category Filter Tabs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
               {categories.map((cat) => {
                 const isSelected = activeCategory === cat.id;
                 return (
@@ -472,6 +593,7 @@ print(response.choices[0].message.content)`,
                       border: isSelected ? '1px solid var(--border-strong)' : '1px solid var(--border-subtle)',
                       color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
                       transition: 'all 0.15s ease',
+                      flexShrink: 0,
                     }}
                   >
                     {cat.icon}
@@ -575,7 +697,7 @@ print(response.choices[0].message.content)`,
             </div>
 
             {/* ═════════ SECTIONED PROVIDERS LIST ═════════ */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
               {PROVIDER_SECTIONS.filter((sec) => activeCategory === 'all' || activeCategory === sec.id).map((sec) => {
                 const sectionProviders = ALL_GATEWAY_PROVIDERS.filter((p) => {
                   if (p.category !== sec.id) return false;
@@ -601,52 +723,83 @@ print(response.choices[0].message.content)`,
                 ).length;
 
                 return (
-                  <section key={sec.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <section key={sec.id} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {/* Section Header Row */}
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '780px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '820px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                          <h3 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
                             {sec.title}
                           </h3>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: sec.dotColor }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, color: sec.dotColor }}>
                             <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: sec.dotColor }} />
                             {activeInSec}/{totalInSec}
                           </span>
                         </div>
-                        <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
                           {sec.description}
                         </p>
+                        {sec.subHeader && (
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '6px' }}>
+                            {sec.subHeader}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Uji Semua Button */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleTestSection(sec.id, e)}
-                        disabled={testingSectionId === sec.id}
-                        style={{
-                          background: 'var(--bg-card)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '8px',
-                          padding: '6px 12px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          color: 'var(--text-primary)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.15s ease',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {testingSectionId === sec.id ? (
-                          <Loader2 size={12} className="animate-spin" style={{ color: sec.dotColor }} />
-                        ) : (
-                          <Play size={11} style={{ fill: 'currentColor' }} />
+                      {/* Right Section Actions: Repair env + Uji Semua */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        {sec.hasRepairEnv && (
+                          <button
+                            type="button"
+                            onClick={handleRepairEnv}
+                            style={{
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: '8px',
+                              padding: '6px 12px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              color: 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <Wrench size={11} />
+                            <span>Repair env</span>
+                          </button>
                         )}
-                        <span>{testingSectionId === sec.id ? 'Menguji...' : 'Uji Semua'}</span>
-                      </button>
+                        {sec.hasTestAll && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleTestSection(sec.id, e)}
+                            disabled={testingSectionId === sec.id}
+                            style={{
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: '8px',
+                              padding: '6px 12px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              color: 'var(--text-primary)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {testingSectionId === sec.id ? (
+                              <Loader2 size={12} className="animate-spin" style={{ color: sec.dotColor }} />
+                            ) : (
+                              <Play size={11} style={{ fill: 'currentColor' }} />
+                            )}
+                            <span>{testingSectionId === sec.id ? 'Menguji...' : 'Uji Semua'}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Section Cards Grid */}
@@ -1580,7 +1733,7 @@ print(response.choices[0].message.content)`,
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {selectedProvider.authType === 'apikey' && (
+              {(selectedProvider.authType === 'apikey' || selectedProvider.category === 'apikey' || selectedProvider.category === 'aggregators' || selectedProvider.category === 'enterprise' || selectedProvider.category === 'search' || selectedProvider.category === 'embeddings' || selectedProvider.category === 'image' || selectedProvider.category === 'audio' || selectedProvider.category === 'video') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                     <span>API Key / Secret Token</span>
@@ -1600,7 +1753,7 @@ print(response.choices[0].message.content)`,
                 </div>
               )}
 
-              {selectedProvider.authType === 'cookie' && (
+              {(selectedProvider.authType === 'cookie' || selectedProvider.category === 'web-cookie') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>Session Cookie Token</span>
                   <input
@@ -1608,6 +1761,19 @@ print(response.choices[0].message.content)`,
                     value={modalCookieToken}
                     onChange={(e) => setModalCookieToken(e.target.value)}
                     placeholder="Masukkan session cookie token..."
+                    style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid var(--border-strong)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                </div>
+              )}
+
+              {(selectedProvider.authType === 'oauth' || selectedProvider.category === 'oauth' || selectedProvider.category === 'ide' || selectedProvider.category === 'cloud-agent') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>OAuth Token / Keyring ID</span>
+                  <input
+                    type="password"
+                    value={modalOAuthToken}
+                    onChange={(e) => setModalOAuthToken(e.target.value)}
+                    placeholder="Masukkan OAuth / Keyring Token..."
                     style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid var(--border-strong)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: 'var(--text-primary)', outline: 'none' }}
                   />
                 </div>

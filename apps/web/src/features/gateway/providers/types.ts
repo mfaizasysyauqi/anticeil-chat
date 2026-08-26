@@ -1,13 +1,21 @@
 export type ProviderCategory =
-  | 'no-auth'
   | 'oauth'
+  | 'ide'
   | 'web-cookie'
   | 'apikey'
+  | 'no-auth'
+  | 'upstream-proxy'
+  | 'aggregators'
+  | 'enterprise'
+  | 'cloud-agent'
   | 'local'
   | 'search'
-  | 'audio';
+  | 'embeddings'
+  | 'image'
+  | 'audio'
+  | 'video';
 
-export type AuthType = 'no-auth' | 'oauth' | 'cookie' | 'apikey' | 'local';
+export type AuthType = 'no-auth' | 'oauth' | 'cookie' | 'apikey' | 'local' | 'proxy';
 
 export interface GatewayProvider {
   id: string;
@@ -17,7 +25,7 @@ export interface GatewayProvider {
   description: string;
   website?: string;
   icon?: string;
-  badge?: 'FREE' | 'OAUTH' | 'COOKIE' | 'API KEY' | 'LOCAL' | 'RAG';
+  badge?: string;
   models?: string[];
   defaultBaseUrl?: string;
   requiresKey?: boolean;
