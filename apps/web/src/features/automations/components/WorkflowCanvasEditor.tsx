@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -161,6 +161,21 @@ export function WorkflowCanvasEditor({
 }: WorkflowCanvasEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // ── Undo / Redo history ──────────────────────────────────────────────────
+  type HistorySnapshot = { nodes: Node[]; edges: Edge[] };
+  const undoStack = useRef<HistorySnapshot[]>([]);
+  const redoStack = useRef<HistorySnapshot[]>([]);
+
+  /** Call BEFORE any mutation so the pre-mutation state can be restored. */
+  const pushHistory = useCallback(
+    (currentNodes: Node[], currentEdges: Edge[]) => {
+      undoStack.current.push({ nodes: currentNodes, edges: currentEdges });
+      if (undoStack.current.length > 100) undoStack.current.shift(); // cap at 100
+      redoStack.current = []; // any new action clears redo
+    },
+    []
+  );
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isSimulatingRun, setIsSimulatingRun] = useState(false);
   const [isRunningWorker, setIsRunningWorker] = useState(false);
@@ -218,18 +233,20 @@ export function WorkflowCanvasEditor({
   }, []);
 
   const onConnect = useCallback(
-    (params: Connection) =>
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            animated: true,
-            style: { stroke: '#0073EA', strokeWidth: 2 },
-          },
-          eds
-        )
-      ),
-    [setEdges]
+    (params: Connection) => {
+      // snapshot before connecting
+      setNodes((currentNodes) => {
+        setEdges((currentEdges) => {
+          pushHistory(currentNodes, currentEdges);
+          return addEdge(
+            { ...params, animated: true, style: { stroke: '#0073EA', strokeWidth: 2 } },
+            currentEdges
+          );
+        });
+        return currentNodes;
+      });
+    },
+    [setNodes, setEdges, pushHistory]
   );
 
   const handleNodeClick = (_: React.MouseEvent, node: Node) => {
@@ -247,6 +264,7 @@ export function WorkflowCanvasEditor({
 
   const handleDeleteSelected = () => {
     if (!selectedNode) return;
+    pushHistory(nodes, edges);
     setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
     setEdges((eds) => eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id));
     setSelectedNode(null);
@@ -332,6 +350,7 @@ export function WorkflowCanvasEditor({
     if (!factory) return;
     newNode = factory();
 
+    pushHistory(nodes, edges);
     setNodes((nds) => [...nds, newNode]);
     setSelectedNode(newNode);
     setRightDrawerTab('inspector');
@@ -363,6 +382,13 @@ export function WorkflowCanvasEditor({
 
   const [clipboardNode, setClipboardNode] = useState<Node | null>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- edges used for undo
+  const nodesRef = useRef(nodes);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const edgesRef = useRef(edges);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
+
   // ── Global Canvas Keyboard Shortcuts (n8n style + Copy/Paste/Delete) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -372,8 +398,43 @@ export function WorkflowCanvasEditor({
         activeEl instanceof HTMLTextAreaElement ||
         activeEl?.getAttribute('contenteditable') === 'true';
 
+      // 0. Undo: Ctrl+Z or Cmd+Z
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        if (!isInput) {
+          e.preventDefault();
+          const snapshot = undoStack.current.pop();
+          if (snapshot) {
+            redoStack.current.push({ nodes: nodesRef.current, edges: edgesRef.current });
+            setNodes(snapshot.nodes);
+            setEdges(snapshot.edges);
+            setSelectedNode(null);
+            setExecutionToast(language === 'id' ? '↩ Undo' : '↩ Undone');
+            setTimeout(() => setExecutionToast(null), 1500);
+          }
+        }
+      }
+
+      // 0b. Redo: Ctrl+Y or Ctrl+Shift+Z or Cmd+Shift+Z
+      const isRedo =
+        ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'));
+      if (isRedo) {
+        if (!isInput) {
+          e.preventDefault();
+          const snapshot = redoStack.current.pop();
+          if (snapshot) {
+            undoStack.current.push({ nodes: nodesRef.current, edges: edgesRef.current });
+            setNodes(snapshot.nodes);
+            setEdges(snapshot.edges);
+            setSelectedNode(null);
+            setExecutionToast(language === 'id' ? '↪ Redo' : '↪ Redone');
+            setTimeout(() => setExecutionToast(null), 1500);
+          }
+        }
+      }
+
       // 1. Copy selected node: Ctrl+C or Cmd+C
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'c' || e.key === 'C')) {
         if (!isInput && selectedNode) {
           e.preventDefault();
           setClipboardNode(selectedNode);
@@ -387,9 +448,10 @@ export function WorkflowCanvasEditor({
       }
 
       // 2. Paste copied node: Ctrl+V or Cmd+V
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'v' || e.key === 'V')) {
         if (!isInput && clipboardNode) {
           e.preventDefault();
+          pushHistory(nodesRef.current, edgesRef.current);
           const newId = `node_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
           const pastedNode: Node = {
             ...clipboardNode,
@@ -415,9 +477,10 @@ export function WorkflowCanvasEditor({
       }
 
       // 3. Duplicate node: Ctrl+D or Cmd+D
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'd' || e.key === 'D')) {
         if (!isInput && selectedNode) {
           e.preventDefault();
+          pushHistory(nodesRef.current, edgesRef.current);
           const newId = `node_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
           const dupNode: Node = {
             ...selectedNode,
@@ -443,6 +506,7 @@ export function WorkflowCanvasEditor({
       if (!isInput && (e.key === 'Backspace' || e.key === 'Delete')) {
         if (selectedNode) {
           e.preventDefault();
+          pushHistory(nodesRef.current, edgesRef.current);
           const deletedTitle = (selectedNode.data?.title as string) || selectedNode.type || 'Node';
           setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
           setEdges((eds) =>
@@ -505,7 +569,7 @@ export function WorkflowCanvasEditor({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nodes, selectedNode, clipboardNode, rightDrawerTab, language]);
+  }, [nodes, edges, selectedNode, clipboardNode, rightDrawerTab, language, pushHistory, setNodes, setEdges]);
 
   // Real Cloudflare Worker Edge Execution Runner
   const handleRunCloudflareWorker = async () => {
