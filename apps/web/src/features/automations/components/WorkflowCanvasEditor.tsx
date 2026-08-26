@@ -170,8 +170,8 @@ export function WorkflowCanvasEditor({
   const [totalExecutionTime, setTotalExecutionTime] = useState<number | null>(null);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
 
-  // Right Drawer Tab State: 'nodes' | 'inspector' | null
-  const [rightDrawerTab, setRightDrawerTab] = useState<'nodes' | 'inspector' | null>(null);
+  // Right Drawer Tab State: 'nodes' | 'inspector' | 'search' | 'ai' | null
+  const [rightDrawerTab, setRightDrawerTab] = useState<'nodes' | 'inspector' | 'search' | 'ai' | null>(null);
   const [nodeCatalogSearch, setNodeCatalogSearch] = useState('');
 
   // Floating Action Dock States & Modals
@@ -347,10 +347,10 @@ export function WorkflowCanvasEditor({
         setRightDrawerTab((prev) => (prev === 'nodes' ? null : 'nodes'));
       }
 
-      // 2. Command bar: Ctrl+K or Cmd+K
+      // 2. Command bar / search: Ctrl+K or Cmd+K
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        setIsCommandBarOpen((prev) => !prev);
+        setRightDrawerTab((prev) => (prev === 'search' ? null : 'search'));
       }
 
       // 3. Add sticky note: Shift+S
@@ -379,7 +379,7 @@ export function WorkflowCanvasEditor({
       // 5. AI Assistant: Ctrl+J or Cmd+J
       if ((e.ctrlKey || e.metaKey) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault();
-        setIsAiModalOpen((prev) => !prev);
+        setRightDrawerTab((prev) => (prev === 'ai' ? null : 'ai'));
       }
 
       // Escape to close modals and drawer
@@ -721,7 +721,7 @@ export function WorkflowCanvasEditor({
         <div
           style={{
             position: 'absolute',
-            right: rightDrawerTab ? '310px' : '12px',
+            right: rightDrawerTab ? '342px' : '12px',
             top: '50%',
             transform: 'translateY(-50%)',
             zIndex: 20,
@@ -740,12 +740,13 @@ export function WorkflowCanvasEditor({
             onClick={() => setRightDrawerTab((prev) => (prev === 'nodes' ? null : 'nodes'))}
           />
 
-          {/* 2. Command bar [Ctrl] [K] */}
+          {/* 2. Search / Command bar [Ctrl] [K] */}
           <FloatingDockButton
             icon={<Search size={17} />}
-            label={language === 'id' ? 'Bilah perintah' : 'Command bar'}
+            label={language === 'id' ? 'Cari node & perintah' : 'Search nodes & commands'}
             shortcut={['Ctrl', 'K']}
-            onClick={() => setIsCommandBarOpen(true)}
+            isActive={rightDrawerTab === 'search'}
+            onClick={() => setRightDrawerTab((prev) => (prev === 'search' ? null : 'search'))}
           />
 
           {/* 3. Add sticky note [Shift] [S] */}
@@ -782,7 +783,8 @@ export function WorkflowCanvasEditor({
             }
             label={language === 'id' ? 'Asisten AI Workflow' : 'AI Assistant'}
             shortcut={['Ctrl', 'J']}
-            onClick={() => setIsAiModalOpen(true)}
+            isActive={rightDrawerTab === 'ai'}
+            onClick={() => setRightDrawerTab((prev) => (prev === 'ai' ? null : 'ai'))}
           />
         </div>
 
@@ -794,7 +796,7 @@ export function WorkflowCanvasEditor({
             top: 0,
             right: 0,
             bottom: 0,
-            width: '300px',
+            width: isMobile ? '100%' : '330px',
             zIndex: 40,
             display: 'flex',
             flexDirection: 'column',
@@ -818,10 +820,12 @@ export function WorkflowCanvasEditor({
               flexShrink: 0,
             }}
           >
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               {[
                 { id: 'nodes' as const, icon: <Plus size={14} />, label: language === 'id' ? 'Node' : 'Nodes' },
                 { id: 'inspector' as const, icon: <Columns2 size={14} />, label: language === 'id' ? 'Inspektur' : 'Inspector' },
+                { id: 'search' as const, icon: <Search size={14} />, label: language === 'id' ? 'Cari' : 'Search' },
+                { id: 'ai' as const, icon: <Sparkles size={14} style={{ color: '#C084FC' }} />, label: 'AI' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -999,241 +1003,236 @@ export function WorkflowCanvasEditor({
                 </div>
               )
             )}
-          </div>
-        </div>
 
-        {/* ── 1. Command Bar Palette Modal (Ctrl+K) ── */}
-        {isCommandBarOpen && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.65)',
-              backdropFilter: 'blur(6px)',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-              paddingTop: '12vh',
-              paddingLeft: '16px',
-              paddingRight: '16px',
-            }}
-            onClick={() => setIsCommandBarOpen(false)}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: '100%',
-                maxWidth: '560px',
-                background: isDark ? '#1e1e1e' : '#FFFFFF',
-                borderRadius: '16px',
-                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
-                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.45)',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              {/* Search input header */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '14px 18px',
-                  borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #F1F5F9',
-                }}
-              >
-                <Search size={18} color="var(--brand-primary)" />
-                <input
-                  autoFocus
-                  type="text"
-                  value={commandSearch}
-                  onChange={(e) => setCommandSearch(e.target.value)}
-                  placeholder={
-                    language === 'id'
-                      ? 'Cari blok node, aksi, integrasi, atau perintah...'
-                      : 'Search node types, actions, connectors, or commands...'
-                  }
+            {/* ── Tab: Search / Command Palette ── */}
+            {rightDrawerTab === 'search' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div
                   style={{
-                    flex: 1,
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '14px',
-                    color: isDark ? '#F9FAFB' : '#0F172A',
-                    fontFamily: 'inherit',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setIsCommandBarOpen(false)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: isDark ? '#9CA3AF' : '#64748B',
-                    cursor: 'pointer',
-                    padding: '2px',
-                    display: 'flex',
-                    alignItems: 'center',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: isDark ? '#262626' : '#F1F5F9',
+                    borderRadius: '8px', padding: '8px 10px',
+                    border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
                   }}
                 >
-                  <X size={16} />
-                </button>
-              </div>
-
-              {/* Command suggestions list */}
-              <div style={{ maxHeight: '360px', overflowY: 'auto', padding: '8px' }}>
-                {[
-                  { id: 'trigger', label: 'Pemicu Cron / Webhook (Trigger)', category: 'Pemicu', icon: <Clock size={15} color="#D97706" /> },
-                  { id: 'ai', label: 'AI Reasoning Agent (Claude/GPT/DeepSeek)', category: 'AI & Logika', icon: <Sparkles size={15} color="#7C3AED" /> },
-                  { id: 'stickyNote', label: 'Catatan Tempel (Sticky Note)', category: 'Anotasi', icon: <StickyNote size={15} color="#F59E0B" /> },
-                  { id: 'calendar', label: 'Konektor Google Calendar (Acara & Jadwal)', category: 'Konektor', icon: <Calendar size={15} color="#1A73E8" /> },
-                  { id: 'gmail', label: 'Konektor Gmail VIP (Draf & Klasifikasi)', category: 'Konektor', icon: <Mail size={15} color="#EA4335" /> },
-                  { id: 'telegram', label: 'Konektor Telegram Bot (Notifikasi Pesan)', category: 'Konektor', icon: <Send size={15} color="#0088CC" /> },
-                  { id: 'drive', label: 'Konektor Google Drive (Dokumen & Berkas)', category: 'Konektor', icon: <FolderOpen size={15} color="#0F9D58" /> },
-                  { id: 'http', label: 'HTTP Webhook Request (REST API)', category: 'Integrasi', icon: <Globe size={15} color="#3B82F6" /> },
-                  { id: 'code', label: 'Custom Code Execution (JS / Python)', category: 'Developer', icon: <Code2 size={15} color="#10B981" /> },
-                  { id: 'database', label: 'Database Query (PostgreSQL / Supabase)', category: 'Penyimpanan', icon: <Database size={15} color="#336791" /> },
-                  { id: 'spreadsheet', label: 'Spreadsheet Sheet (Google Sheets / Table)', category: 'Penyimpanan', icon: <Sheet size={15} color="#34A853" /> },
-                  { id: 'delay', label: 'Delay / Wait Timer (Jeda Eksekusi)', category: 'Alur', icon: <Timer size={15} color="#A855F7" /> },
-                  { id: 'logic', label: 'Logika & Kondisi If/Else', category: 'Alur', icon: <GitBranch size={15} color="#0891B2" /> },
-                ]
-                  .filter((item) =>
-                    !commandSearch.trim() ||
-                    item.label.toLowerCase().includes(commandSearch.toLowerCase()) ||
-                    item.category.toLowerCase().includes(commandSearch.toLowerCase())
-                  )
-                  .map((item) => (
+                  <Search size={14} color="var(--brand-primary, #0073EA)" />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={commandSearch}
+                    onChange={(e) => setCommandSearch(e.target.value)}
+                    placeholder={
+                      language === 'id'
+                        ? 'Cari node, aksi, konektor...'
+                        : 'Search nodes, actions, connectors...'
+                    }
+                    style={{
+                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                      fontSize: '12.5px', color: isDark ? '#F9FAFB' : '#0F172A', fontFamily: 'inherit',
+                    }}
+                  />
+                  {commandSearch && (
                     <button
-                      key={item.id}
                       type="button"
-                      onClick={() => {
-                        handleAddNode(item.id);
-                        setIsCommandBarOpen(false);
-                        setCommandSearch('');
-                      }}
-                      className="clickable-pill"
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '10px',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: 'transparent',
-                        color: isDark ? '#E5E7EB' : '#1E293B',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'background 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
+                      onClick={() => setCommandSearch('')}
+                      style={{ background: 'transparent', border: 'none', color: isDark ? '#9CA3AF' : '#64748B', cursor: 'pointer', padding: 0 }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </div>
-                      <span
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {[
+                    { id: 'trigger', label: 'Pemicu Cron / Webhook', category: 'Pemicu', icon: <Clock size={14} color="#D97706" /> },
+                    { id: 'ai', label: 'AI Reasoning Agent', category: 'AI & Logika', icon: <Sparkles size={14} color="#7C3AED" /> },
+                    { id: 'stickyNote', label: 'Catatan Tempel (Sticky Note)', category: 'Anotasi', icon: <StickyNote size={14} color="#F59E0B" /> },
+                    { id: 'calendar', label: 'Google Calendar Events', category: 'Konektor', icon: <Calendar size={14} color="#1A73E8" /> },
+                    { id: 'gmail', label: 'Gmail VIP Draft & Reply', category: 'Konektor', icon: <Mail size={14} color="#EA4335" /> },
+                    { id: 'telegram', label: 'Telegram Bot Alert', category: 'Konektor', icon: <Send size={14} color="#0088CC" /> },
+                    { id: 'drive', label: 'Google Drive Files', category: 'Konektor', icon: <FolderOpen size={14} color="#0F9D58" /> },
+                    { id: 'http', label: 'HTTP REST Webhook Request', category: 'Integrasi', icon: <Globe size={14} color="#3B82F6" /> },
+                    { id: 'code', label: 'Custom Code Execution (JS)', category: 'Developer', icon: <Code2 size={14} color="#10B981" /> },
+                    { id: 'database', label: 'Database Query (PostgreSQL)', category: 'Storage', icon: <Database size={14} color="#336791" /> },
+                    { id: 'spreadsheet', label: 'Google Sheets / Table', category: 'Storage', icon: <Sheet size={14} color="#34A853" /> },
+                    { id: 'delay', label: 'Delay / Wait Timer', category: 'Alur', icon: <Timer size={14} color="#A855F7" /> },
+                    { id: 'logic', label: 'Logika & Kondisi If/Else', category: 'Alur', icon: <GitBranch size={14} color="#0891B2" /> },
+                    { id: 'storage', label: 'Cloud Storage (S3 / R2)', category: 'Storage', icon: <HardDrive size={14} color="#FF9900" /> },
+                    { id: 'transform', label: 'Data Transform / Map', category: 'Alur', icon: <ArrowRightLeft size={14} color="#0EA5E9" /> },
+                  ]
+                    .filter((item) =>
+                      !commandSearch.trim() ||
+                      item.label.toLowerCase().includes(commandSearch.toLowerCase()) ||
+                      item.category.toLowerCase().includes(commandSearch.toLowerCase())
+                    )
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          handleAddNode(item.id);
+                          setCommandSearch('');
+                        }}
                         style={{
-                          fontSize: '10.5px',
-                          color: isDark ? '#9CA3AF' : '#64748B',
-                          background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          border: isDark ? '1px solid rgba(255,255,255,0.04)' : '1px solid #F1F5F9',
+                          background: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF',
+                          color: isDark ? '#E5E7EB' : '#1E293B',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF';
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9';
                         }}
                       >
-                        {item.category}
-                      </span>
-                    </button>
-                  ))}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          {item.icon}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            color: isDark ? '#9CA3AF' : '#64748B',
+                            background: isDark ? '#262626' : '#E2E8F0',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.category}
+                        </span>
+                      </button>
+                    ))}
+                </div>
               </div>
+            )}
 
-              {/* Modal footer shortcut hints */}
-              <div
-                style={{
-                  padding: '8px 16px',
-                  background: isDark ? '#141414' : '#F8FAFC',
-                  borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: '11px',
-                  color: isDark ? '#9CA3AF' : '#64748B',
-                }}
-              >
-                <span>Tekan <kbd style={{ background: isDark ? '#2a2a2a' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>↵ Enter</kbd> untuk menambahkan ke canvas</span>
-                <span><kbd style={{ background: isDark ? '#2a2a2a' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>ESC</kbd> untuk menutup</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── 2. AI Canvas Assistant Modal (Ctrl+J) ── */}
-        {isAiModalOpen && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.65)',
-              backdropFilter: 'blur(6px)',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-              paddingTop: '14vh',
-              paddingLeft: '16px',
-              paddingRight: '16px',
-            }}
-            onClick={() => setIsAiModalOpen(false)}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: '100%',
-                maxWidth: '560px',
-                background: isDark ? '#1e1e1e' : '#FFFFFF',
-                borderRadius: '16px',
-                border: isDark ? '1px solid rgba(192, 132, 252, 0.3)' : '1px solid rgba(192, 132, 252, 0.4)',
-                boxShadow: '0 20px 60px rgba(124, 58, 237, 0.25)',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '16px 18px',
-                gap: '12px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={18} color="#C084FC" />
-                  <span style={{ fontSize: '14.5px', fontWeight: 700, color: isDark ? '#FFFFFF' : '#1E293B' }}>
-                    {language === 'id' ? 'Asisten AI Workflow Studio' : 'AI Workflow Studio Assistant'}
+            {/* ── Tab: AI Workflow Assistant ── */}
+            {rightDrawerTab === 'ai' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 10px',
+                    background: isDark ? 'rgba(124, 58, 237, 0.15)' : '#F5F3FF',
+                    borderRadius: '8px',
+                    border: isDark ? '1px solid rgba(192, 132, 252, 0.25)' : '1px solid #DDD6FE',
+                  }}
+                >
+                  <Sparkles size={16} color="#C084FC" />
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: isDark ? '#E9D5FF' : '#6D28D9' }}>
+                    {language === 'id' ? 'Asisten AI Workflow' : 'AI Workflow Assistant'}
                   </span>
                 </div>
+
+                <textarea
+                  autoFocus
+                  value={aiPromptInput}
+                  onChange={(e) => setAiPromptInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (!aiPromptInput.trim()) return;
+                      setIsGeneratingAiCanvas(true);
+                      setTimeout(() => {
+                        const p = aiPromptInput.toLowerCase();
+                        if (p.includes('telegram') || p.includes('bot')) {
+                          handleAddNode('telegram');
+                        } else if (p.includes('calendar') || p.includes('jadwal')) {
+                          handleAddNode('calendar');
+                        } else if (p.includes('gmail') || p.includes('email')) {
+                          handleAddNode('gmail');
+                        } else if (p.includes('note') || p.includes('catatan')) {
+                          handleAddNode('stickyNote');
+                        } else {
+                          handleAddNode('ai');
+                        }
+                        setIsGeneratingAiCanvas(false);
+                        setAiPromptInput('');
+                        setExecutionToast('✓ Blok node baru berhasil ditambahkan oleh AI ke canvas!');
+                        setTimeout(() => setExecutionToast(null), 3000);
+                      }, 400);
+                    }
+                  }}
+                  placeholder={
+                    language === 'id'
+                      ? 'Deskripsikan alur atau node yang ingin ditambahkan (contoh: "Tambahkan notifikasi Telegram alert jika hasil AI mendeteksi pesan darurat")...'
+                      : 'Describe what you want to add or change on the canvas (e.g. "Add a Telegram bot alert node to notify me on critical events")...'
+                  }
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    background: isDark ? '#262626' : '#F8FAFC',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #CBD5E1',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    fontSize: '12.5px',
+                    color: isDark ? '#F9FAFB' : '#0F172A',
+                    outline: 'none',
+                    resize: 'none',
+                    lineHeight: 1.5,
+                    fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                />
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#9CA3AF' : '#64748B' }}>
+                    {language === 'id' ? 'Saran Cepat:' : 'Quick Prompts:'}
+                  </span>
+                  {[
+                    'Tambahkan notifikasi bot Telegram darurat',
+                    'Koneksikan ke Google Calendar untuk cek rapat',
+                    'Buat filter email VIP dengan Gmail',
+                    'Tambahkan agen AI synthesizer',
+                  ].map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setAiPromptInput(suggestion)}
+                      style={{
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
+                        background: isDark ? '#262626' : '#F8FAFC',
+                        color: isDark ? '#D1D5DB' : '#475569',
+                        fontSize: '11px',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isDark ? 'rgba(192, 132, 252, 0.15)' : '#F5F3FF';
+                        e.currentTarget.style.borderColor = '#C084FC';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isDark ? '#262626' : '#F8FAFC';
+                        e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#E2E8F0';
+                      }}
+                    >
+                      💡 {suggestion}
+                    </button>
+                  ))}
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setIsAiModalOpen(false)}
-                  style={{ background: 'transparent', border: 'none', color: isDark ? '#9CA3AF' : '#64748B', cursor: 'pointer' }}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <textarea
-                autoFocus
-                value={aiPromptInput}
-                onChange={(e) => setAiPromptInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
+                  disabled={isGeneratingAiCanvas || !aiPromptInput.trim()}
+                  onClick={() => {
                     if (!aiPromptInput.trim()) return;
                     setIsGeneratingAiCanvas(true);
                     setTimeout(() => {
@@ -1251,73 +1250,34 @@ export function WorkflowCanvasEditor({
                       }
                       setIsGeneratingAiCanvas(false);
                       setAiPromptInput('');
-                      setIsAiModalOpen(false);
                       setExecutionToast('✓ Blok node baru berhasil ditambahkan oleh AI ke canvas!');
                       setTimeout(() => setExecutionToast(null), 3000);
                     }, 400);
-                  }
-                }}
-                placeholder={
-                  language === 'id'
-                    ? 'Jelaskan blok atau alur baru yang ingin ditambahkan ke canvas (contoh: "Tambahkan notifikasi Telegram alert jika hasil AI mendeteksi pesan darurat")...'
-                    : 'Describe what you want to add or change on the canvas (e.g. "Add a Telegram bot alert node to notify me on critical events")...'
-                }
-                rows={3}
-                style={{
-                  width: '100%',
-                  background: isDark ? '#262626' : '#F8FAFC',
-                  border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
-                  borderRadius: '10px',
-                  padding: '10px 12px',
-                  fontSize: '13px',
-                  color: isDark ? '#F9FAFB' : '#0F172A',
-                  outline: 'none',
-                  resize: 'none',
-                  lineHeight: 1.5,
-                  fontFamily: 'inherit',
-                }}
-              />
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '11px', color: isDark ? '#9CA3AF' : '#64748B' }}>
-                  Tekan <kbd style={{ background: isDark ? '#262626' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>↵ Enter</kbd> untuk eksekusi
-                </span>
-
-                <button
-                  type="button"
-                  disabled={isGeneratingAiCanvas || !aiPromptInput.trim()}
-                  onClick={() => {
-                    if (!aiPromptInput.trim()) return;
-                    setIsGeneratingAiCanvas(true);
-                    setTimeout(() => {
-                      handleAddNode('ai');
-                      setIsGeneratingAiCanvas(false);
-                      setAiPromptInput('');
-                      setIsAiModalOpen(false);
-                    }, 400);
                   }}
                   style={{
+                    width: '100%',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '6px',
-                    padding: '6px 14px',
+                    padding: '8px 14px',
                     borderRadius: '8px',
                     border: 'none',
                     background: 'linear-gradient(135deg, #7C3AED 0%, #C084FC 100%)',
                     color: '#FFFFFF',
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     fontWeight: 700,
                     cursor: isGeneratingAiCanvas || !aiPromptInput.trim() ? 'not-allowed' : 'pointer',
                     opacity: isGeneratingAiCanvas || !aiPromptInput.trim() ? 0.6 : 1,
                   }}
                 >
-                  <Sparkles size={13} />
-                  <span>{isGeneratingAiCanvas ? 'Menyusun...' : 'Generate ke Canvas'}</span>
+                  <Sparkles size={14} />
+                  <span>{isGeneratingAiCanvas ? (language === 'id' ? 'Menyusun...' : 'Generating...') : (language === 'id' ? 'Generate ke Canvas' : 'Generate to Canvas')}</span>
                 </button>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* ── Cloudflare Worker Execution Trace Console Modal ── */}
         {showTraceModal && (
