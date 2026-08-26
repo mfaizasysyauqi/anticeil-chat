@@ -1093,6 +1093,244 @@ function PdfItemMenu({ item, language, folders, togglePin, moveToFolder, removeI
   );
 }
 
+// ─── WorkflowItemMenu ─────────────────────────────────────────────────────────
+interface WorkflowItemMenuProps {
+  item: { id: string; name: string; categoryId?: string | null };
+  language: string;
+  categories: { id: string; name: string }[];
+  onRename: (name: string) => void;
+  onDelete: () => void;
+  onMoveToCategory: (catId: string | null) => void;
+}
+
+function WorkflowItemMenu({ item, language, categories, onRename, onDelete, onMoveToCategory }: WorkflowItemMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const [isRenaming, setIsRenaming] = React.useState(false);
+  const [renameText, setRenameText] = React.useState(item.name);
+  const [showFolderSub, setShowFolderSub] = React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) { setOpen(false); setIsRenaming(false); setShowFolderSub(false); }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) { setOpen(false); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuW = 170; const menuH = 130;
+    let left = rect.right - menuW; if (left < 8) left = 8;
+    let top = rect.bottom + 4; if (top + menuH > window.innerHeight) top = rect.top - menuH - 4;
+    setMenuPosition({ top, left });
+    setOpen(true);
+  };
+
+  const commit = () => {
+    const name = renameText.trim();
+    if (name && name !== item.name) onRename(name);
+    setIsRenaming(false); setOpen(false);
+  };
+
+  const btnStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+    borderRadius: '4px', border: 'none', background: 'transparent',
+    color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left', width: '100%',
+  };
+  const dangerStyle: React.CSSProperties = { ...btnStyle, color: 'var(--accent-danger)' };
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+      {isRenaming ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+          <input
+            type="text" value={renameText}
+            onChange={(e) => setRenameText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setIsRenaming(false); } }}
+            autoFocus onClick={(e) => e.stopPropagation()}
+            style={{ width: '90px', background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: '4px', padding: '2px 5px', fontSize: '11px', color: 'var(--text-primary)', outline: 'none' }}
+          />
+          <button type="button" onClick={commit} style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px', display: 'flex' }}><Check size={11} /></button>
+          <button type="button" onClick={() => setIsRenaming(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px', display: 'flex' }}><X size={11} /></button>
+        </div>
+      ) : (
+        <button ref={buttonRef} type="button" onClick={toggleMenu} className="session-options-btn"
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>
+          <MoreHorizontal size={12} />
+        </button>
+      )}
+
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div ref={portalRef} onClick={(e) => e.stopPropagation()}
+          style={{ position: 'fixed', top: `${menuPosition.top}px`, left: `${menuPosition.left}px`, background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md, 8px)', boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))', padding: '4px', zIndex: 999999999, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '170px' }}>
+          <button type="button" style={btnStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onClick={() => { setRenameText(item.name); setIsRenaming(true); setOpen(false); }}>
+            <Edit2 size={11} /><span>{language === 'id' ? 'Ubah nama' : 'Rename'}</span>
+          </button>
+
+          {categories.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button type="button" style={btnStyle}
+                onMouseEnter={(e) => { (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'); setShowFolderSub(true); }}
+                onMouseLeave={(e) => { (e.currentTarget.style.backgroundColor = 'transparent'); }}>
+                <FolderInput size={11} /><span style={{ flex: 1 }}>{language === 'id' ? 'Pindah ke folder' : 'Move to folder'}</span><ChevronRight size={10} />
+              </button>
+              {showFolderSub && (
+                <div onMouseEnter={() => setShowFolderSub(true)} onMouseLeave={() => setShowFolderSub(false)}
+                  style={{ position: 'absolute', top: 0, left: '100%', marginLeft: '2px', background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md, 8px)', boxShadow: 'var(--shadow-xl)', padding: '4px', zIndex: 999999999, minWidth: '150px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {item.categoryId && (
+                    <button type="button" style={btnStyle}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      onClick={() => { onMoveToCategory(null); setOpen(false); setShowFolderSub(false); }}>
+                      <FolderMinus size={11} /><span>{language === 'id' ? 'Lepas dari folder' : 'Remove from folder'}</span>
+                    </button>
+                  )}
+                  {categories.map((cat) => (
+                    <button key={cat.id} type="button" style={{ ...btnStyle, fontWeight: item.categoryId === cat.id ? 600 : 400 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      onClick={() => { onMoveToCategory(cat.id); setOpen(false); setShowFolderSub(false); }}>
+                      <Folder size={11} color={item.categoryId === cat.id ? '#F59E0B' : undefined} /><span>{cat.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <button type="button" style={dangerStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onClick={() => { onDelete(); setOpen(false); }}>
+            <Trash2 size={11} /><span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// ─── WorkflowCategoryRow ──────────────────────────────────────────────────────
+interface WorkflowCategoryRowProps {
+  cat: { id: string; name: string; files: any[] };
+  language: string;
+  isActive: boolean;
+  fileCount: number;
+  onSelect: () => void;
+  onUpload: () => void;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+}
+
+function WorkflowCategoryRow({ cat, language, isActive, fileCount, onSelect, onUpload, onRename, onDelete }: WorkflowCategoryRowProps) {
+  const [isRenaming, setIsRenaming] = React.useState(false);
+  const [renameText, setRenameText] = React.useState(cat.name);
+  const [open, setOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (buttonRef.current && !buttonRef.current.contains(target) && portalRef.current && !portalRef.current.contains(target))
+        setOpen(false);
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const commit = () => {
+    const name = renameText.trim();
+    if (name && name !== cat.name) onRename(name);
+    setIsRenaming(false); setOpen(false);
+  };
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) { setOpen(false); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuW = 150; const menuH = 100;
+    let left = rect.right - menuW; if (left < 8) left = 8;
+    let top = rect.bottom + 4; if (top + menuH > window.innerHeight) top = rect.top - menuH - 4;
+    setMenuPosition({ top, left });
+    setOpen(true);
+  };
+
+  const btnStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+    borderRadius: '4px', border: 'none', background: 'transparent',
+    color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left', width: '100%',
+  };
+
+  return (
+    <div className="clickable-pill" style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '4px 8px', borderRadius: 'var(--radius-sm, 6px)', background: isActive ? 'rgba(245, 158, 11, 0.15)' : 'transparent', color: isActive ? '#F59E0B' : 'var(--text-secondary)', fontSize: '12px', fontWeight: isActive ? 600 : 400, cursor: 'pointer', justifyContent: 'space-between' }}>
+      {isRenaming ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }} onClick={(e) => e.stopPropagation()}>
+          <input type="text" value={renameText} onChange={(e) => setRenameText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setIsRenaming(false); }}
+            autoFocus
+            style={{ flex: 1, background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: '4px', padding: '2px 5px', fontSize: '11px', color: 'var(--text-primary)', outline: 'none' }} />
+          <button type="button" onClick={commit} style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px', display: 'flex' }}><Check size={11} /></button>
+          <button type="button" onClick={() => setIsRenaming(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px', display: 'flex' }}><X size={11} /></button>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }} onClick={onSelect}>
+            <Folder size={12} color={isActive ? '#F59E0B' : 'var(--text-muted)'} />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
+            {fileCount > 0 && (
+              <span style={{ fontSize: '10px', background: '#F59E0B', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>{fileCount}</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+            <button type="button" title={language === 'id' ? 'Unggah berkas' : 'Upload files'} onClick={(e) => { e.stopPropagation(); onUpload(); }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}>
+              <Upload size={11} />
+            </button>
+            <button ref={buttonRef} type="button" onClick={toggleMenu} className="session-options-btn"
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>
+              <MoreHorizontal size={12} />
+            </button>
+          </div>
+        </>
+      )}
+
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div ref={portalRef} onClick={(e) => e.stopPropagation()}
+          style={{ position: 'fixed', top: `${menuPosition.top}px`, left: `${menuPosition.left}px`, background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md, 8px)', boxShadow: 'var(--shadow-xl)', padding: '4px', zIndex: 999999999, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '150px' }}>
+          <button type="button" style={btnStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onClick={(e) => { e.stopPropagation(); setRenameText(cat.name); setIsRenaming(true); setOpen(false); }}>
+            <Edit2 size={11} /><span>{language === 'id' ? 'Ubah nama' : 'Rename'}</span>
+          </button>
+          <button type="button" style={{ ...btnStyle, color: 'var(--accent-danger)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onClick={(e) => { e.stopPropagation(); onDelete(); setOpen(false); }}>
+            <Trash2 size={11} /><span>{language === 'id' ? 'Hapus folder' : 'Delete folder'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export function Sidebar({
   isOpenMobile = false,
   onCloseMobile,
@@ -1140,6 +1378,8 @@ export function Sidebar({
   const automationWorkflows = useAutomationStore((s) => s.workflows);
   const fetchAutomationWorkflows = useAutomationStore((s) => s.fetchWorkflows);
   const createAutomationWorkflow = useAutomationStore((s) => s.createWorkflow);
+  const updateAutomationWorkflow = useAutomationStore((s) => s.updateWorkflow);
+  const deleteAutomationWorkflow = useAutomationStore((s) => s.deleteWorkflow);
   const setActiveAutomationWorkflow = useAutomationStore((s) => s.setActiveWorkflow);
   const activeAutomationWorkflowId = useAutomationStore((s) => s.activeWorkflowId);
 
@@ -1189,6 +1429,8 @@ export function Sidebar({
   const activeWorkflowCategoryId = useWorkspaceStore((s) => s.activeWorkflowCategoryId);
   const setActiveWorkflowCategory = useWorkspaceStore((s) => s.setActiveWorkflowCategory);
   const createWorkflowCategory = useWorkspaceStore((s) => s.createWorkflowCategory);
+  const renameWorkflowCategory = useWorkspaceStore((s) => s.renameWorkflowCategory);
+  const deleteWorkflowCategoryStore = useWorkspaceStore((s) => s.deleteWorkflowCategory);
   const addFileToWorkflowCategory = useWorkspaceStore((s) => s.addFileToWorkflowCategory);
   const removeFileFromWorkflowCategory = useWorkspaceStore((s) => s.removeFileFromWorkflowCategory);
 
@@ -2644,44 +2886,20 @@ export function Sidebar({
                 {isProjectsExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
                     {workflowCategories.map((cat) => (
-                      <div
+                      <WorkflowCategoryRow
                         key={cat.id}
-                        className="clickable-pill"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '7px',
-                          padding: '4px 8px',
-                          borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeWorkflowCategoryId === cat.id ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                          color: activeWorkflowCategoryId === cat.id ? '#F59E0B' : 'var(--text-secondary)',
-                          fontSize: '12px',
-                          fontWeight: activeWorkflowCategoryId === cat.id ? 600 : 400,
-                          cursor: 'pointer',
-                          justifyContent: 'space-between',
+                        cat={cat}
+                        language={language}
+                        isActive={activeWorkflowCategoryId === cat.id}
+                        onSelect={() => setActiveWorkflowCategory(activeWorkflowCategoryId === cat.id ? null : cat.id)}
+                        onUpload={() => setDrawerState({ type: 'workflowCategory', id: cat.id })}
+                        onRename={(name) => renameWorkflowCategory(cat.id, name)}
+                        onDelete={() => {
+                          deleteWorkflowCategoryStore(cat.id);
+                          if (activeWorkflowCategoryId === cat.id) setActiveWorkflowCategory(null);
                         }}
-                      >
-                        <div
-                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
-                          onClick={() => setActiveWorkflowCategory(activeWorkflowCategoryId === cat.id ? null : cat.id)}
-                        >
-                          <Folder size={12} color={activeWorkflowCategoryId === cat.id ? '#F59E0B' : 'var(--text-muted)'} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
-                          {cat.files.length > 0 && (
-                            <span style={{ fontSize: '10px', background: '#F59E0B', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
-                              {cat.files.length}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          title={language === 'id' ? 'Unggah berkas' : 'Upload files'}
-                          onClick={(e) => { e.stopPropagation(); setDrawerState({ type: 'workflowCategory', id: cat.id }); }}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
-                        >
-                          <Upload size={11} />
-                        </button>
-                      </div>
+                        fileCount={cat.files.length}
+                      />
                     ))}
 
                     {isAddingAutomationCategory ? (
@@ -2839,6 +3057,17 @@ export function Sidebar({
                                   {item.runsCount || 0} {language === 'id' ? 'eksekusi' : 'runs'}
                                 </div>
                               </div>
+                              <WorkflowItemMenu
+                                item={item}
+                                language={language}
+                                categories={workflowCategories}
+                                onRename={(name) => updateAutomationWorkflow(item.id, { name }, session?.access_token)}
+                                onDelete={() => {
+                                  deleteAutomationWorkflow(item.id, session?.access_token);
+                                  if (activeAutomationWorkflowId === item.id) setActiveAutomationWorkflow(null, null);
+                                }}
+                                onMoveToCategory={(catId) => updateAutomationWorkflow(item.id, { categoryId: catId }, session?.access_token)}
+                              />
                             </div>
                           );
                         })
