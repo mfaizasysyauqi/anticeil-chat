@@ -20,7 +20,7 @@ export const LogicNode = memo(({ data, selected }: NodeProps) => {
     <div
       style={{
         width: '230px',
-        background: isDark ? '#141824' : '#FFFFFF',
+        background: isDark ? '#1e1e1e' : '#FFFFFF',
         borderRadius: '14px',
         border: selected
           ? '2px solid #6366F1'
@@ -48,7 +48,7 @@ export const LogicNode = memo(({ data, selected }: NodeProps) => {
           width: '11px',
           height: '11px',
           background: '#6366F1',
-          border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+          border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
           boxShadow: '0 0 0 2px #6366F1',
           zIndex: 10,
         }}
@@ -108,7 +108,7 @@ export const LogicNode = memo(({ data, selected }: NodeProps) => {
           style={{
             fontSize: '11px',
             fontFamily: 'monospace',
-            background: isDark ? '#0B0F19' : '#F8FAFC',
+            background: isDark ? '#141414' : '#F8FAFC',
             padding: '4px 8px',
             borderRadius: '6px',
             color: isDark ? '#A5B4FC' : '#334155',
@@ -167,7 +167,7 @@ export const LogicNode = memo(({ data, selected }: NodeProps) => {
               width: '11px',
               height: '11px',
               background: '#16A34A',
-              border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+              border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
               boxShadow: '0 0 0 2px #16A34A',
               right: '-6px',
               zIndex: 10,
@@ -214,7 +214,7 @@ export const LogicNode = memo(({ data, selected }: NodeProps) => {
               width: '11px',
               height: '11px',
               background: '#DC2626',
-              border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+              border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
               boxShadow: '0 0 0 2px #DC2626',
               right: '-6px',
               zIndex: 10,

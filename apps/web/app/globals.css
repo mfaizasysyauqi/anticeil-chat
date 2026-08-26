@@ -905,3 +905,56 @@ code, pre, kbd {
   word-break: normal !important;
 }
 
+/* ReactFlow Workflow Canvas Controls & Minimap Styling (matching chat theme) */
+.react-flow__controls {
+  background: var(--bg-surface, #1e1e1e) !important;
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+.react-flow__controls-button {
+  background: var(--bg-surface, #1e1e1e) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--text-primary, #f2f2f2) !important;
+  fill: var(--text-primary, #f2f2f2) !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.15s ease !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-surface-hover, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__minimap {
+  background: var(--bg-surface, #1e1e1e) !important;
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-theme='light'] .react-flow__minimap-mask {
+  fill: rgba(240, 240, 235, 0.55) !important;
+}
+

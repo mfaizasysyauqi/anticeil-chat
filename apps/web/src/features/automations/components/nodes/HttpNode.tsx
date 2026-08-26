@@ -37,7 +37,7 @@ export const HttpNode = memo(({ data, selected }: NodeProps) => {
     <div
       style={{
         width: '260px',
-        background: isDark ? '#141824' : '#FFFFFF',
+        background: isDark ? '#1e1e1e' : '#FFFFFF',
         borderRadius: '14px',
         border: selected
           ? '2px solid #0073EA'
@@ -61,7 +61,7 @@ export const HttpNode = memo(({ data, selected }: NodeProps) => {
           width: '10px',
           height: '10px',
           background: '#0073EA',
-          border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+          border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
           boxShadow: '0 0 0 2px #0073EA',
         }}
       />
@@ -120,7 +120,7 @@ export const HttpNode = memo(({ data, selected }: NodeProps) => {
             fontSize: '11px',
             fontFamily: 'monospace',
             color: isDark ? '#94A3B8' : '#64748B',
-            background: isDark ? '#0B0F19' : '#F8FAFC',
+            background: isDark ? '#141414' : '#F8FAFC',
             padding: '4px 8px',
             borderRadius: '6px',
             border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
@@ -141,7 +141,7 @@ export const HttpNode = memo(({ data, selected }: NodeProps) => {
           width: '10px',
           height: '10px',
           background: '#0073EA',
-          border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+          border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
           boxShadow: '0 0 0 2px #0073EA',
         }}
       />

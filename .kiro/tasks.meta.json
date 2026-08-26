@@ -1,0 +1,136 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "Particles visible in Chrome Desktop": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350300
+      }
+    ],
+    "Particles visible in Firefox Desktop": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350366
+      }
+    ],
+    "Particles visible in Edge Desktop": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350420
+      }
+    ],
+    "Mouse repulsion effect works": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350462
+      }
+    ],
+    "Connection lines appear between nearby particles": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350506
+      }
+    ],
+    "Window resize re-initializes particles correctly": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350595
+      }
+    ],
+    "No console errors (hydration, handleResize, canvas ref)": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350644
+      }
+    ],
+    "Hero content remains clickable": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350692
+      }
+    ],
+    "Language switcher works without flicker": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350738
+      }
+    ],
+    "Performance: Smooth 60fps animation": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732350778
+      }
+    ],
+    "1. Write bug condition exploration property test": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603152
+      },
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732614016
+      }
+    ],
+    "2. Fix handleResize scope error": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603266
+      }
+    ],
+    "3. Fix canvas ref retry logic": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603326
+      }
+    ],
+    "4. Fix hydration mismatch for navigation": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603377
+      }
+    ],
+    "5. Implement canvas dimension fix": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603434
+      }
+    ],
+    "6. Verify z-index layering": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603489
+      }
+    ],
+    "7. Add animation frame monitoring": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603565
+      }
+    ],
+    "8. Integration testing and visual verification": [
+      {
+        "executionId": "fbd3e2a4-4742-4b9d-93c8-85052b0e2b59",
+        "chatSessionId": "sess_821314e8-94ac-4237-9867-8d7c54199960",
+        "timestamp": 1787732603661
+      }
+    ]
+  }
+}

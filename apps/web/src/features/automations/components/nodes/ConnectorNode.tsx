@@ -77,7 +77,7 @@ export const ConnectorNode = memo(({ data, selected }: NodeProps) => {
     <div
       style={{
         width: '240px',
-        background: isDark ? '#141824' : '#FFFFFF',
+        background: isDark ? '#1e1e1e' : '#FFFFFF',
         borderRadius: '14px',
         border: selected
           ? `2px solid ${meta.color}`
@@ -102,7 +102,7 @@ export const ConnectorNode = memo(({ data, selected }: NodeProps) => {
           width: '10px',
           height: '10px',
           background: meta.color,
-          border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+          border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
           boxShadow: `0 0 0 2px ${meta.color}`,
         }}
       />
@@ -169,7 +169,7 @@ export const ConnectorNode = memo(({ data, selected }: NodeProps) => {
           width: '10px',
           height: '10px',
           background: meta.color,
-          border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+          border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
           boxShadow: `0 0 0 2px ${meta.color}`,
         }}
       />

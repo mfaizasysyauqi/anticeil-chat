@@ -34,7 +34,7 @@ export const TriggerNode = memo(({ data, selected }: NodeProps) => {
     <div
       style={{
         width: '240px',
-        background: isDark ? '#141824' : '#FFFFFF',
+        background: isDark ? '#1e1e1e' : '#FFFFFF',
         borderRadius: '14px',
         border: selected
           ? '2px solid #F59E0B'
@@ -115,7 +115,7 @@ export const TriggerNode = memo(({ data, selected }: NodeProps) => {
           width: '10px',
           height: '10px',
           background: '#F59E0B',
-          border: isDark ? '2px solid #141824' : '2px solid #FFFFFF',
+          border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF',
           boxShadow: '0 0 0 2px #F59E0B',
         }}
       />

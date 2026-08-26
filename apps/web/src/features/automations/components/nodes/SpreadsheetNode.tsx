@@ -27,8 +27,8 @@ export const SpreadsheetNode = memo(({ data, selected }: NodeProps) => {
   const svc = SVC[nodeData.service] || SVC['google-sheets'];
 
   return (
-    <div style={{ width: '260px', background: isDark ? '#141824' : '#FFFFFF', borderRadius: '14px', border: selected ? '2px solid #0073EA' : isDark ? '1.5px solid rgba(255,255,255,0.12)' : '1.5px solid #E2E8F0', boxShadow: selected ? '0 0 0 4px rgba(0,115,234,0.2), 0 8px 24px rgba(0,0,0,0.3)' : '0 4px 14px rgba(0,0,0,0.06)', overflow: 'hidden', transition: 'all 0.2s ease', fontFamily: "'Inter', -apple-system, sans-serif" }}>
-      <Handle type="target" position={Position.Left} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #141824' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
+    <div style={{ width: '260px', background: isDark ? '#1e1e1e' : '#FFFFFF', borderRadius: '14px', border: selected ? '2px solid #0073EA' : isDark ? '1.5px solid rgba(255,255,255,0.12)' : '1.5px solid #E2E8F0', boxShadow: selected ? '0 0 0 4px rgba(0,115,234,0.2), 0 8px 24px rgba(0,0,0,0.3)' : '0 4px 14px rgba(0,0,0,0.06)', overflow: 'hidden', transition: 'all 0.2s ease', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+      <Handle type="target" position={Position.Left} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: isDark ? 'rgba(52,168,83,0.1)' : '#F0FDF4', borderBottom: isDark ? '1px solid rgba(52,168,83,0.2)' : '1px solid #BBF7D0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -50,7 +50,7 @@ export const SpreadsheetNode = memo(({ data, selected }: NodeProps) => {
         </div>
       </div>
 
-      <Handle type="source" position={Position.Right} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #141824' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
+      <Handle type="source" position={Position.Right} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
     </div>
   );
 });

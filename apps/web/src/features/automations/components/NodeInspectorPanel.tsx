@@ -62,7 +62,7 @@ export function NodeInspectorPanel({
     padding: '7px 10px',
     borderRadius: '7px',
     border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid #CBD5E1',
-    background: isDark ? '#0B0F19' : '#FFFFFF',
+    background: isDark ? '#141414' : '#FFFFFF',
     color: isDark ? '#F8FAFC' : '#1E293B',
     fontSize: '12px',
     outline: 'none',
@@ -131,7 +131,7 @@ export function NodeInspectorPanel({
   return (
     <div
       style={{
-        background: isDark ? 'rgba(17, 24, 39, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+        background: isDark ? 'rgba(30, 30, 30, 0.98)' : 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(12px)',
         border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
         borderRadius: '14px',
@@ -251,7 +251,7 @@ export function NodeInspectorPanel({
               padding: '5px 2px',
               borderRadius: '6px',
               border: 'none',
-              background: activeTab === tab.id ? (isDark ? '#1F2937' : '#FFFFFF') : 'transparent',
+              background: activeTab === tab.id ? (isDark ? '#262626' : '#FFFFFF') : 'transparent',
               color: activeTab === tab.id ? (isDark ? '#FFFFFF' : '#0F172A') : (isDark ? '#9CA3AF' : '#64748B'),
               fontSize: '11px',
               fontWeight: activeTab === tab.id ? 700 : 500,

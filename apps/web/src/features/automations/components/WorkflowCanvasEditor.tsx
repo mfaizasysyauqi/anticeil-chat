@@ -469,7 +469,7 @@ export function WorkflowCanvasEditor({
         height: 'calc(100vh - 60px)',
         display: 'flex',
         flexDirection: 'column',
-        background: isDark ? '#0B0F19' : '#FAF9F5',
+        background: isDark ? '#171717' : '#FAF9F5',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -478,7 +478,7 @@ export function WorkflowCanvasEditor({
       <div
         style={{
           height: isMobile ? '46px' : '50px',
-          background: isDark ? '#141824' : '#FFFFFF',
+          background: isDark ? '#141414' : '#FFFFFF',
           borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E6E1D7',
           padding: isMobile ? '0 var(--studio-header-pad-x-mobile, 12px)' : '0 var(--studio-header-pad-x, 16px)',
           display: 'flex',
@@ -666,7 +666,7 @@ export function WorkflowCanvasEditor({
           maxZoom={2}
           style={{
             flex: 1,
-            background: isDark ? '#0B0F19' : '#FAF9F5',
+            background: isDark ? '#171717' : '#FAF9F5',
           }}
         >
           <Controls
@@ -707,7 +707,7 @@ export function WorkflowCanvasEditor({
               style={{
                 borderRadius: 10,
                 border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #CBD5E1',
-                background: isDark ? '#141824' : '#FFFFFF',
+                background: isDark ? '#1e1e1e' : '#FFFFFF',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
                 width: 190, height: 125,
               }}
@@ -798,7 +798,7 @@ export function WorkflowCanvasEditor({
             zIndex: 40,
             display: 'flex',
             flexDirection: 'column',
-            background: isDark ? '#111827' : '#FFFFFF',
+            background: isDark ? '#1e1e1e' : '#FFFFFF',
             borderLeft: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
             boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.18)',
             transform: rightDrawerTab ? 'translateX(0)' : 'translateX(100%)',
@@ -814,7 +814,7 @@ export function WorkflowCanvasEditor({
               justifyContent: 'space-between',
               padding: '10px 14px',
               borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
-              background: isDark ? '#1F2937' : '#F8FAFC',
+              background: isDark ? '#262626' : '#F8FAFC',
               flexShrink: 0,
             }}
           >
@@ -869,7 +869,7 @@ export function WorkflowCanvasEditor({
                 <div
                   style={{
                     display: 'flex', alignItems: 'center', gap: '8px',
-                    background: isDark ? '#1F2937' : '#F1F5F9',
+                    background: isDark ? '#262626' : '#F1F5F9',
                     borderRadius: '8px', padding: '7px 10px',
                     border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid #E2E8F0',
                   }}
@@ -1025,7 +1025,7 @@ export function WorkflowCanvasEditor({
               style={{
                 width: '100%',
                 maxWidth: '560px',
-                background: isDark ? '#111827' : '#FFFFFF',
+                background: isDark ? '#1e1e1e' : '#FFFFFF',
                 borderRadius: '16px',
                 border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
                 boxShadow: '0 20px 60px rgba(0, 0, 0, 0.45)',
@@ -1161,7 +1161,7 @@ export function WorkflowCanvasEditor({
               <div
                 style={{
                   padding: '8px 16px',
-                  background: isDark ? '#0B0F19' : '#F8FAFC',
+                  background: isDark ? '#141414' : '#F8FAFC',
                   borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                   display: 'flex',
                   alignItems: 'center',
@@ -1170,8 +1170,8 @@ export function WorkflowCanvasEditor({
                   color: isDark ? '#9CA3AF' : '#64748B',
                 }}
               >
-                <span>Tekan <kbd style={{ background: isDark ? '#1F2937' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>↵ Enter</kbd> untuk menambahkan ke canvas</span>
-                <span><kbd style={{ background: isDark ? '#1F2937' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>ESC</kbd> untuk menutup</span>
+                <span>Tekan <kbd style={{ background: isDark ? '#2a2a2a' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>↵ Enter</kbd> untuk menambahkan ke canvas</span>
+                <span><kbd style={{ background: isDark ? '#2a2a2a' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>ESC</kbd> untuk menutup</span>
               </div>
             </div>
           </div>
@@ -1200,7 +1200,7 @@ export function WorkflowCanvasEditor({
               style={{
                 width: '100%',
                 maxWidth: '560px',
-                background: isDark ? '#111827' : '#FFFFFF',
+                background: isDark ? '#1e1e1e' : '#FFFFFF',
                 borderRadius: '16px',
                 border: isDark ? '1px solid rgba(192, 132, 252, 0.3)' : '1px solid rgba(192, 132, 252, 0.4)',
                 boxShadow: '0 20px 60px rgba(124, 58, 237, 0.25)',
@@ -1265,7 +1265,7 @@ export function WorkflowCanvasEditor({
                 rows={3}
                 style={{
                   width: '100%',
-                  background: isDark ? '#1F2937' : '#F8FAFC',
+                  background: isDark ? '#262626' : '#F8FAFC',
                   border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
                   borderRadius: '10px',
                   padding: '10px 12px',
@@ -1280,7 +1280,7 @@ export function WorkflowCanvasEditor({
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '11px', color: isDark ? '#9CA3AF' : '#64748B' }}>
-                  Tekan <kbd style={{ background: isDark ? '#1F2937' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>↵ Enter</kbd> untuk eksekusi
+                  Tekan <kbd style={{ background: isDark ? '#262626' : '#E2E8F0', padding: '1px 4px', borderRadius: '3px' }}>↵ Enter</kbd> untuk eksekusi
                 </span>
 
                 <button
@@ -1339,7 +1339,7 @@ export function WorkflowCanvasEditor({
                 width: '100%',
                 maxWidth: '680px',
                 maxHeight: '85vh',
-                background: isDark ? '#111827' : '#FFFFFF',
+                background: isDark ? '#1e1e1e' : '#FFFFFF',
                 borderRadius: '16px',
                 border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
                 boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
@@ -1352,7 +1352,7 @@ export function WorkflowCanvasEditor({
               <div
                 style={{
                   padding: '16px 20px',
-                  background: isDark ? '#1F2937' : '#F8FAFC',
+                  background: isDark ? '#262626' : '#F8FAFC',
                   borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                   display: 'flex',
                   alignItems: 'center',
@@ -1425,7 +1425,7 @@ export function WorkflowCanvasEditor({
                   <div
                     key={idx}
                     style={{
-                      background: isDark ? '#1F2937' : '#F1F5F9',
+                      background: isDark ? '#262626' : '#F1F5F9',
                       border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #CBD5E1',
                       borderRadius: '10px',
                       padding: '12px 14px',
@@ -1468,7 +1468,7 @@ export function WorkflowCanvasEditor({
                     {/* Step Output Payload View */}
                     <div
                       style={{
-                        background: isDark ? '#111827' : '#FFFFFF',
+                        background: isDark ? '#1e1e1e' : '#FFFFFF',
                         border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                         borderRadius: '6px',
                         padding: '8px 10px',
@@ -1489,7 +1489,7 @@ export function WorkflowCanvasEditor({
               <div
                 style={{
                   padding: '12px 20px',
-                  background: isDark ? '#1F2937' : '#F8FAFC',
+                  background: isDark ? '#262626' : '#F8FAFC',
                   borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                   display: 'flex',
                   justifyContent: 'flex-end',
@@ -1535,7 +1535,7 @@ export function WorkflowCanvasEditor({
               style={{
                 width: '100%',
                 maxWidth: '600px',
-                background: isDark ? '#111827' : '#FFFFFF',
+                background: isDark ? '#1e1e1e' : '#FFFFFF',
                 borderRadius: '16px',
                 border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
                 boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
@@ -1571,7 +1571,7 @@ export function WorkflowCanvasEditor({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    background: isDark ? '#1F2937' : '#F1F5F9',
+                    background: isDark ? '#262626' : '#F1F5F9',
                     padding: '8px 12px',
                     borderRadius: '8px',
                     border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #CBD5E1',
@@ -1732,7 +1732,7 @@ function FloatingDockButton({
             right: 'calc(100% + 10px)',
             top: '50%',
             transform: 'translateY(-50%)',
-            backgroundColor: '#0F172A',
+            backgroundColor: '#1e1e1e',
             color: '#FFFFFF',
             padding: '5px 9px',
             borderRadius: '7px',

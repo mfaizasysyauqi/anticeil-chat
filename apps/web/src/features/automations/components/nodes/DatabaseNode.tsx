@@ -31,7 +31,7 @@ export const DatabaseNode = memo(({ data, selected }: NodeProps) => {
     <div
       style={{
         width: '260px',
-        background: isDark ? '#141824' : '#FFFFFF',
+        background: isDark ? '#1e1e1e' : '#FFFFFF',
         borderRadius: '14px',
         border: selected ? '2px solid #0073EA' : isDark ? '1.5px solid rgba(255,255,255,0.12)' : '1.5px solid #E2E8F0',
         boxShadow: selected ? '0 0 0 4px rgba(0,115,234,0.2), 0 8px 24px rgba(0,0,0,0.3)' : '0 4px 14px rgba(0,0,0,0.06)',
@@ -40,7 +40,7 @@ export const DatabaseNode = memo(({ data, selected }: NodeProps) => {
         fontFamily: "'Inter', -apple-system, sans-serif",
       }}
     >
-      <Handle type="target" position={Position.Left} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #141824' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
+      <Handle type="target" position={Position.Left} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: isDark ? 'rgba(51,103,145,0.12)' : '#F0F9FF', borderBottom: isDark ? '1px solid rgba(51,103,145,0.25)' : '1px solid #BAE6FD' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -70,7 +70,7 @@ export const DatabaseNode = memo(({ data, selected }: NodeProps) => {
         </div>
       </div>
 
-      <Handle type="source" position={Position.Right} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #141824' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
+      <Handle type="source" position={Position.Right} style={{ width: '10px', height: '10px', background: '#0073EA', border: isDark ? '2px solid #1e1e1e' : '2px solid #FFFFFF', boxShadow: '0 0 0 2px #0073EA' }} />
     </div>
   );
 });
