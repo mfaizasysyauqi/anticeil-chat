@@ -76,9 +76,36 @@ export function resolveModelProvider(
   }
 
   // Get provider definition and default base URL
+  let apiKey = userApiKeys[providerId]?.apiKey || process.env[`${providerId.toUpperCase()}_API_KEY`] || '';
+
+  // If DeepSeek was requested but no key is configured, fallback to Groq's active smart model with free key
+  if (providerId === 'deepseek' && !apiKey) {
+    providerId = 'groq';
+    normalizedModelId = 'groq/compound';
+  }
+
+  // Groq model aliases normalization
+  if (providerId === 'groq') {
+    if (
+      normalizedModelId === 'deepseek-r1' ||
+      normalizedModelId === 'deepseek-r1-70b' ||
+      normalizedModelId === 'deepseek-r1-distill-llama-70b' ||
+      normalizedModelId === 'llama-3.3-70b-versatile' ||
+      normalizedModelId === 'compound' ||
+      normalizedModelId === 'compound-beta'
+    ) {
+      normalizedModelId = 'groq/compound';
+    } else if (normalizedModelId === 'llama-3.1' || normalizedModelId === 'llama-8b' || normalizedModelId === 'compound-mini') {
+      normalizedModelId = 'groq/compound-mini';
+    } else if (normalizedModelId.includes('qwen')) {
+      normalizedModelId = 'qwen/qwen3.6-27b';
+    } else if (normalizedModelId.includes('gpt-oss') || normalizedModelId.includes('oss-120b')) {
+      normalizedModelId = 'openai/gpt-oss-120b';
+    }
+  }
+
   const def = getProviderById(providerId);
   let baseUrl = userApiKeys[providerId]?.baseUrl || def?.defaultBaseUrl || '';
-  let apiKey = userApiKeys[providerId]?.apiKey || process.env[`${providerId.toUpperCase()}_API_KEY`] || '';
 
   // Fallback to built-in free tier keys for Groq & Gemini if no custom key is provided
   if (!apiKey) {

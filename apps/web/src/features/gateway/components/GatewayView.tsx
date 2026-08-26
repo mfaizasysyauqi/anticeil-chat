@@ -42,13 +42,23 @@ export function GatewayView() {
   const [selectedSnippetTab, setSelectedSnippetTab] = useState<'cursor' | 'cline' | 'python' | 'curl'>('cursor');
   const [modelSearch, setModelSearch] = useState('');
 
+  const [domainMode, setDomainMode] = useState<'auto' | 'cloud' | 'local'>('auto');
+  const [customDomain, setCustomDomain] = useState('');
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setOrigin(window.location.origin);
     }
   }, []);
 
-  const baseUrl = `${origin}/api/v1`;
+  const baseUrl = useMemo(() => {
+    if (domainMode === 'cloud') return 'https://anticeil.com/api/v1';
+    if (domainMode === 'local') return 'http://localhost:3000/api/v1';
+    if (customDomain.trim()) return `${customDomain.replace(/\/+$/, '')}/api/v1`;
+    return `${origin}/api/v1`;
+  }, [domainMode, customDomain, origin]);
+
+  const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
   const allModels = useMemo(() => getAllGatewayModels(), []);
   const activePrimaryApiKey = apiKeys.find((k) => k.isActive)?.key || 'sk-anticeil-live-local-universal-key';
 
@@ -147,13 +157,13 @@ print(response.choices[0].message.content)`;
               }}
             >
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} />
-              Active on Localhost
+              {isLocal ? 'Active (Local Dev)' : 'Active (Cloud Production)'}
             </span>
           </div>
           <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
             {language === 'id'
-              ? 'Gunakan Anticeil sebagai proxy AI Gateway lokal yang kompatibel dengan format standar OpenAI untuk Cursor, VS Code (Cline), Obsidian, dan script Python.'
-              : 'Use Anticeil as a local OpenAI-compatible AI Gateway proxy for Cursor IDE, VS Code (Cline/Continue), Obsidian, and Python scripts.'}
+              ? 'Gunakan Anticeil sebagai proxy AI Gateway yang kompatibel dengan format standar OpenAI untuk Cursor IDE, VS Code (Cline/Continue), Obsidian, dan script Python.'
+              : 'Use Anticeil as an OpenAI-compatible AI Gateway proxy for Cursor IDE, VS Code (Cline/Continue), Obsidian, and Python scripts.'}
           </p>
         </div>
 
@@ -170,8 +180,60 @@ print(response.choices[0].message.content)`;
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--brand-primary, #0073EA)', marginBottom: '4px' }}>
-                OpenAI-Compatible Base URL
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--brand-primary, #0073EA)' }}>
+                  OpenAI-Compatible Base URL
+                </span>
+                <div style={{ display: 'inline-flex', background: 'var(--bg-subtle)', borderRadius: '6px', padding: '2px', border: '1px solid var(--border-subtle)' }}>
+                  <button
+                    type="button"
+                    onClick={() => setDomainMode('auto')}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: domainMode === 'auto' ? 'var(--brand-primary, #0073EA)' : 'transparent',
+                      color: domainMode === 'auto' ? '#fff' : 'var(--text-muted)',
+                      fontSize: '11px',
+                      fontWeight: domainMode === 'auto' ? 700 : 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Auto ({isLocal ? 'Local' : 'Cloud'})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDomainMode('cloud')}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: domainMode === 'cloud' ? 'var(--brand-primary, #0073EA)' : 'transparent',
+                      color: domainMode === 'cloud' ? '#fff' : 'var(--text-muted)',
+                      fontSize: '11px',
+                      fontWeight: domainMode === 'cloud' ? 700 : 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    anticeil.com
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDomainMode('local')}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      background: domainMode === 'local' ? 'var(--brand-primary, #0073EA)' : 'transparent',
+                      color: domainMode === 'local' ? '#fff' : 'var(--text-muted)',
+                      fontSize: '11px',
+                      fontWeight: domainMode === 'local' ? 700 : 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    localhost:3000
+                  </button>
+                </div>
               </div>
               <div style={{ fontSize: '18px', fontWeight: 750, fontFamily: 'var(--font-mono, monospace)', color: 'var(--text-primary)' }}>
                 {baseUrl}
