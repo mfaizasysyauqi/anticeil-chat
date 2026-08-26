@@ -173,9 +173,10 @@ export function WorkflowCanvasEditor({
   const [totalExecutionTime, setTotalExecutionTime] = useState<number | null>(null);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
 
-  // Right Drawer Tab State: 'inspector' | 'ai' | null
-  const [rightDrawerTab, setRightDrawerTab] = useState<'inspector' | 'ai' | null>(null);
+  // Right Drawer Tab State: 'nodes' | 'inspector' | 'ai' | null
+  const [rightDrawerTab, setRightDrawerTab] = useState<'nodes' | 'inspector' | 'ai' | null>(null);
   const [nodeCatalogSearch, setNodeCatalogSearch] = useState('');
+  const [inspectorNodeSearch, setInspectorNodeSearch] = useState('');
   const [commandSearch, setCommandSearch] = useState('');
   const [aiPromptInput, setAiPromptInput] = useState('');
   const [isGeneratingAiCanvas, setIsGeneratingAiCanvas] = useState(false);
@@ -369,16 +370,16 @@ export function WorkflowCanvasEditor({
         activeEl instanceof HTMLTextAreaElement ||
         activeEl?.getAttribute('contenteditable') === 'true';
 
-      // 1. Open Search & Inspector: 'n' or 'N' (when not inside an input)
+      // 1. Open Add Node catalog: 'n' or 'N' (when not inside an input)
       if (!isInput && (e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
-        setRightDrawerTab((prev) => (prev === 'inspector' ? null : 'inspector'));
+        setRightDrawerTab((prev) => (prev === 'nodes' ? null : 'nodes'));
       }
 
-      // 2. Search & Inspector: Ctrl+K or Cmd+K
+      // 2. Search / Add node: Ctrl+K or Cmd+K
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        setRightDrawerTab((prev) => (prev === 'inspector' ? null : 'inspector'));
+        setRightDrawerTab((prev) => (prev === 'nodes' ? null : 'nodes'));
       }
 
       // 3. Add sticky note: Shift+S
@@ -757,30 +758,28 @@ export function WorkflowCanvasEditor({
             transition: 'right 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          {/* 1. Search & Inspector [Ctrl+K / Shift+F / N] */}
+          {/* 1. Tambah Node / Catalog [+] */}
+          <FloatingDockButton
+            icon={<Plus size={18} />}
+            label={language === 'id' ? 'Tambah node' : 'Add node'}
+            shortcut={['N']}
+            isActive={rightDrawerTab === 'nodes'}
+            onClick={() => setRightDrawerTab((prev) => (prev === 'nodes' ? null : 'nodes'))}
+          />
+
+          {/* 2. Node Inspector (Cari node terpasang) */}
           <FloatingDockButton
             icon={<Columns2 size={17} />}
-            label={language === 'id' ? 'Search & Inspector' : 'Search & Inspector'}
-            shortcut={['Ctrl', 'K']}
+            label={language === 'id' ? 'Inspektur Node' : 'Node Inspector'}
+            shortcut={['⇧', 'F']}
             isActive={rightDrawerTab === 'inspector'}
             onClick={() => {
               if (rightDrawerTab === 'inspector') {
                 setRightDrawerTab(null);
               } else {
+                if (!selectedNode && nodes.length > 0) setSelectedNode(nodes[0]);
                 setRightDrawerTab('inspector');
               }
-            }}
-          />
-
-          {/* 2. Tambah Node / Catalog [+] */}
-          <FloatingDockButton
-            icon={<Plus size={18} />}
-            label={language === 'id' ? 'Tambah node' : 'Add node'}
-            shortcut={['N']}
-            isActive={rightDrawerTab === 'inspector' && !selectedNode}
-            onClick={() => {
-              setSelectedNode(null);
-              setRightDrawerTab('inspector');
             }}
           />
 
@@ -839,11 +838,18 @@ export function WorkflowCanvasEditor({
               flexShrink: 0,
             }}
           >
-            {rightDrawerTab === 'inspector' ? (
+            {rightDrawerTab === 'nodes' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Plus size={16} color="var(--brand-primary, #0073EA)" />
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: isDark ? '#F9FAFB' : '#0F172A' }}>
+                  {language === 'id' ? 'Tambah Node' : 'Add Node'}
+                </span>
+              </div>
+            ) : rightDrawerTab === 'inspector' ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Columns2 size={16} color="var(--brand-primary, #0073EA)" />
                 <span style={{ fontSize: '13.5px', fontWeight: 700, color: isDark ? '#F9FAFB' : '#0F172A' }}>
-                  {language === 'id' ? 'Search & Inspector' : 'Search & Inspector'}
+                  {language === 'id' ? 'Inspektur Node' : 'Node Inspector'}
                 </span>
               </div>
             ) : rightDrawerTab === 'ai' ? (
@@ -878,10 +884,10 @@ export function WorkflowCanvasEditor({
           {/* Drawer Body */}
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px', minWidth: 0, boxSizing: 'border-box' }}>
 
-            {/* ── View: Search & Inspector ── */}
-            {rightDrawerTab === 'inspector' && (
+            {/* ── View 1: Add Node Catalog ── */}
+            {rightDrawerTab === 'nodes' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* Search Form Bar inside Drawer Body */}
+                {/* Search Form Bar for Add Node */}
                 <div
                   style={{
                     display: 'flex',
@@ -900,9 +906,9 @@ export function WorkflowCanvasEditor({
                     value={nodeCatalogSearch}
                     onChange={(e) => setNodeCatalogSearch(e.target.value)}
                     placeholder={
-                      selectedNode
-                        ? (language === 'id' ? 'Cari node / konfigurasi...' : 'Search nodes or config...')
-                        : (language === 'id' ? 'Cari node, aksi, konektor...' : 'Search nodes, actions, connectors...')
+                      language === 'id'
+                        ? 'Cari blok node, konektor, integrasi...'
+                        : 'Search nodes, actions, connectors...'
                     }
                     style={{
                       flex: 1,
@@ -925,9 +931,203 @@ export function WorkflowCanvasEditor({
                   )}
                 </div>
 
-                {/* If a node is selected and no search query active: Show Inspector Panel */}
-                {selectedNode && !nodeCatalogSearch.trim() ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Categorized node list */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {[
+                    {
+                      cat: 'Pemicu & Alur',
+                      items: [
+                        { type: 'trigger', icon: <Clock size={13} />, label: 'Pemicu Cron / Webhook', color: '#D97706', bg: isDark ? 'rgba(217,119,6,0.15)' : '#FEF3C7' },
+                        { type: 'logic', icon: <GitBranch size={13} />, label: 'Logika & Kondisi', color: '#0891B2', bg: isDark ? 'rgba(8,145,178,0.15)' : '#CFFAFE' },
+                        { type: 'delay', icon: <Timer size={13} />, label: 'Delay / Wait', color: '#A855F7', bg: isDark ? 'rgba(168,85,247,0.15)' : '#FAF5FF' },
+                      ],
+                    },
+                    {
+                      cat: 'AI & Kode',
+                      items: [
+                        { type: 'ai', icon: <Sparkles size={13} />, label: 'AI Reasoning Agent', color: '#7C3AED', bg: isDark ? 'rgba(124,58,237,0.15)' : '#F3E8FF' },
+                        { type: 'code', icon: <Code2 size={13} />, label: 'Custom Code (JS/PY)', color: '#10B981', bg: isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5' },
+                        { type: 'transform', icon: <ArrowRightLeft size={13} />, label: 'Data Transform', color: '#0EA5E9', bg: isDark ? 'rgba(14,165,233,0.15)' : '#F0F9FF' },
+                      ],
+                    },
+                    {
+                      cat: 'Konektor & Integrasi',
+                      items: [
+                        { type: 'http', icon: <Globe size={13} />, label: 'HTTP Request', color: '#3B82F6', bg: isDark ? 'rgba(59,130,246,0.15)' : '#DBEAFE' },
+                        { type: 'calendar', icon: <Calendar size={13} />, label: 'Google Calendar', color: '#1A73E8', bg: isDark ? 'rgba(26,115,232,0.15)' : '#E8F0FE' },
+                        { type: 'gmail', icon: <Mail size={13} />, label: 'Gmail VIP Draft', color: '#EA4335', bg: isDark ? 'rgba(234,67,53,0.15)' : '#FCE8E6' },
+                        { type: 'email', icon: <Mail size={13} />, label: 'Email (SendGrid/Resend)', color: '#DC2626', bg: isDark ? 'rgba(234,67,53,0.1)' : '#FEF2F2' },
+                        { type: 'telegram', icon: <Send size={13} />, label: 'Telegram Bot Alert', color: '#0088CC', bg: isDark ? 'rgba(0,136,204,0.15)' : '#E0F2FE' },
+                      ],
+                    },
+                    {
+                      cat: 'Data & Penyimpanan',
+                      items: [
+                        { type: 'database', icon: <Database size={13} />, label: 'Database (PG/Mongo)', color: '#336791', bg: isDark ? 'rgba(51,103,145,0.15)' : '#F0F9FF' },
+                        { type: 'spreadsheet', icon: <Sheet size={13} />, label: 'Spreadsheet / Sheets', color: '#34A853', bg: isDark ? 'rgba(52,168,83,0.15)' : '#F0FDF4' },
+                        { type: 'storage', icon: <HardDrive size={13} />, label: 'Cloud Storage (S3/R2)', color: '#F59E0B', bg: isDark ? 'rgba(255,153,0,0.15)' : '#FFFBEB' },
+                      ],
+                    },
+                    {
+                      cat: 'Anotasi',
+                      items: [
+                        { type: 'stickyNote', icon: <StickyNote size={13} />, label: 'Sticky Note', color: '#F59E0B', bg: isDark ? 'rgba(245,158,11,0.15)' : '#FFFBEB' },
+                      ],
+                    },
+                  ].map((group) => {
+                    const filtered = nodeCatalogSearch
+                      ? group.items.filter((item) =>
+                          item.label.toLowerCase().includes(nodeCatalogSearch.toLowerCase()) ||
+                          group.cat.toLowerCase().includes(nodeCatalogSearch.toLowerCase())
+                        )
+                      : group.items;
+                    if (filtered.length === 0) return null;
+                    return (
+                      <div key={group.cat}>
+                        <div
+                          style={{
+                            fontSize: '9.5px', fontWeight: 800,
+                            color: isDark ? '#64748B' : '#94A3B8',
+                            textTransform: 'uppercase', letterSpacing: '0.08em',
+                            marginBottom: '6px',
+                          }}
+                        >
+                          {group.cat}
+                        </div>
+                        {filtered.map((item) => (
+                          <button
+                            key={item.type}
+                            type="button"
+                            onClick={() => {
+                              handleAddNode(item.type);
+                              setNodeCatalogSearch('');
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '8px',
+                              padding: '7px 10px', borderRadius: '7px', border: 'none',
+                              background: item.bg, color: item.color,
+                              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                              textAlign: 'left', width: '100%', marginBottom: '4px',
+                              transition: 'transform 0.1s ease',
+                            }}
+                          >
+                            {item.icon}
+                            <span>{item.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── View 2: Node Inspector (dengan search untuk node yang sudah dipasang) ── */}
+            {rightDrawerTab === 'inspector' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Search Form Bar: khusus mencari node yang sudah dipasang di canvas */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: isDark ? '#262626' : '#F1F5F9',
+                    borderRadius: '8px',
+                    padding: '7px 10px',
+                    border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                  }}
+                >
+                  <Search size={14} color="var(--brand-primary, #0073EA)" />
+                  <input
+                    type="text"
+                    value={inspectorNodeSearch}
+                    onChange={(e) => setInspectorNodeSearch(e.target.value)}
+                    placeholder={
+                      language === 'id'
+                        ? 'Cari node yang terpasang di canvas...'
+                        : 'Search placed nodes on canvas...'
+                    }
+                    style={{
+                      flex: 1,
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      fontSize: '12.5px',
+                      color: isDark ? '#F9FAFB' : '#0F172A',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                  {inspectorNodeSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setInspectorNodeSearch('')}
+                      style={{ background: 'transparent', border: 'none', color: isDark ? '#9CA3AF' : '#64748B', cursor: 'pointer', padding: 0 }}
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* If searching placed nodes */}
+                {inspectorNodeSearch.trim() ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#9CA3AF' : '#64748B' }}>
+                      {language === 'id' ? 'Hasil Node Terpasang:' : 'Matching Placed Nodes:'}
+                    </span>
+                    {nodes
+                      .filter((n) => {
+                        const q = inspectorNodeSearch.toLowerCase();
+                        const title = ((n.data?.title as string) || '').toLowerCase();
+                        const type = (n.type || '').toLowerCase();
+                        const label = ((n.data?.label as string) || '').toLowerCase();
+                        return title.includes(q) || type.includes(q) || label.includes(q);
+                      })
+                      .map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedNode(n);
+                            setInspectorNodeSearch('');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            border: selectedNode?.id === n.id
+                              ? '1.5px solid #0073EA'
+                              : isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
+                            background: selectedNode?.id === n.id
+                              ? (isDark ? 'rgba(0,115,234,0.15)' : '#EFF6FF')
+                              : (isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF'),
+                            color: isDark ? '#F3F4F6' : '#1F2937',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <span style={{ fontWeight: 600 }}>{(n.data?.title as string) || n.type || 'Node'}</span>
+                          <span style={{ fontSize: '10px', color: isDark ? '#9CA3AF' : '#64748B', background: isDark ? '#1e1e1e' : '#F1F5F9', padding: '2px 6px', borderRadius: '4px' }}>
+                            {n.type}
+                          </span>
+                        </button>
+                      ))}
+                    {nodes.filter((n) => {
+                      const q = inspectorNodeSearch.toLowerCase();
+                      const title = ((n.data?.title as string) || '').toLowerCase();
+                      const type = (n.type || '').toLowerCase();
+                      return title.includes(q) || type.includes(q);
+                    }).length === 0 && (
+                      <p style={{ fontSize: '12px', color: isDark ? '#9CA3AF' : '#64748B', margin: '8px 0', textAlign: 'center' }}>
+                        {language === 'id' ? 'Tidak ada node terpasang yang cocok.' : 'No matching placed nodes.'}
+                      </p>
+                    )}
+                  </div>
+                ) : selectedNode ? (
+                  /* If a node is selected: Show Inspector Panel + placed nodes selector */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <NodeInspectorPanel
                       node={selectedNode}
                       isDark={isDark}
@@ -937,117 +1137,83 @@ export function WorkflowCanvasEditor({
                       onDeleteNode={handleDeleteSelected}
                       onClose={() => { setSelectedNode(null); }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setSelectedNode(null)}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #CBD5E1',
-                        background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
-                        color: 'var(--brand-primary, #0073EA)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <Plus size={14} />
-                      <span>{language === 'id' ? '+ Tambah / Cari Node Lain' : '+ Add / Search Other Node'}</span>
-                    </button>
+
+                    {/* Placed Nodes Quick Switcher */}
+                    {nodes.length > 1 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '6px', borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#9CA3AF' : '#64748B' }}>
+                          {language === 'id' ? 'Pilih Node Terpasang Lainnya:' : 'Select Other Placed Node:'}
+                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {nodes
+                            .filter((n) => n.id !== selectedNode.id)
+                            .map((n) => (
+                              <button
+                                key={n.id}
+                                type="button"
+                                onClick={() => setSelectedNode(n)}
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #CBD5E1',
+                                  background: isDark ? '#1a1a1a' : '#F8FAFC',
+                                  color: isDark ? '#D1D5DB' : '#334155',
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {(n.data?.title as string) || n.type}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  /* If no node selected OR search query typed: Show Node Catalog */
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {[
-                      {
-                        cat: 'Pemicu & Alur',
-                        items: [
-                          { type: 'trigger', icon: <Clock size={13} />, label: 'Pemicu Cron / Webhook', color: '#D97706', bg: isDark ? 'rgba(217,119,6,0.15)' : '#FEF3C7' },
-                          { type: 'logic', icon: <GitBranch size={13} />, label: 'Logika & Kondisi', color: '#0891B2', bg: isDark ? 'rgba(8,145,178,0.15)' : '#CFFAFE' },
-                          { type: 'delay', icon: <Timer size={13} />, label: 'Delay / Wait', color: '#A855F7', bg: isDark ? 'rgba(168,85,247,0.15)' : '#FAF5FF' },
-                        ],
-                      },
-                      {
-                        cat: 'AI & Kode',
-                        items: [
-                          { type: 'ai', icon: <Sparkles size={13} />, label: 'AI Reasoning Agent', color: '#7C3AED', bg: isDark ? 'rgba(124,58,237,0.15)' : '#F3E8FF' },
-                          { type: 'code', icon: <Code2 size={13} />, label: 'Custom Code (JS/PY)', color: '#10B981', bg: isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5' },
-                          { type: 'transform', icon: <ArrowRightLeft size={13} />, label: 'Data Transform', color: '#0EA5E9', bg: isDark ? 'rgba(14,165,233,0.15)' : '#F0F9FF' },
-                        ],
-                      },
-                      {
-                        cat: 'Konektor & Integrasi',
-                        items: [
-                          { type: 'http', icon: <Globe size={13} />, label: 'HTTP Request', color: '#3B82F6', bg: isDark ? 'rgba(59,130,246,0.15)' : '#DBEAFE' },
-                          { type: 'calendar', icon: <Calendar size={13} />, label: 'Google Calendar', color: '#1A73E8', bg: isDark ? 'rgba(26,115,232,0.15)' : '#E8F0FE' },
-                          { type: 'gmail', icon: <Mail size={13} />, label: 'Gmail VIP Draft', color: '#EA4335', bg: isDark ? 'rgba(234,67,53,0.15)' : '#FCE8E6' },
-                          { type: 'email', icon: <Mail size={13} />, label: 'Email (SendGrid/Resend)', color: '#DC2626', bg: isDark ? 'rgba(234,67,53,0.1)' : '#FEF2F2' },
-                          { type: 'telegram', icon: <Send size={13} />, label: 'Telegram Bot Alert', color: '#0088CC', bg: isDark ? 'rgba(0,136,204,0.15)' : '#E0F2FE' },
-                        ],
-                      },
-                      {
-                        cat: 'Data & Penyimpanan',
-                        items: [
-                          { type: 'database', icon: <Database size={13} />, label: 'Database (PG/Mongo)', color: '#336791', bg: isDark ? 'rgba(51,103,145,0.15)' : '#F0F9FF' },
-                          { type: 'spreadsheet', icon: <Sheet size={13} />, label: 'Spreadsheet / Sheets', color: '#34A853', bg: isDark ? 'rgba(52,168,83,0.15)' : '#F0FDF4' },
-                          { type: 'storage', icon: <HardDrive size={13} />, label: 'Cloud Storage (S3/R2)', color: '#F59E0B', bg: isDark ? 'rgba(255,153,0,0.15)' : '#FFFBEB' },
-                        ],
-                      },
-                      {
-                        cat: 'Anotasi',
-                        items: [
-                          { type: 'stickyNote', icon: <StickyNote size={13} />, label: 'Sticky Note', color: '#F59E0B', bg: isDark ? 'rgba(245,158,11,0.15)' : '#FFFBEB' },
-                        ],
-                      },
-                    ].map((group) => {
-                      const filtered = nodeCatalogSearch
-                        ? group.items.filter((item) =>
-                            item.label.toLowerCase().includes(nodeCatalogSearch.toLowerCase()) ||
-                            group.cat.toLowerCase().includes(nodeCatalogSearch.toLowerCase())
-                          )
-                        : group.items;
-                      if (filtered.length === 0) return null;
-                      return (
-                        <div key={group.cat}>
-                          <div
-                            style={{
-                              fontSize: '9.5px', fontWeight: 800,
-                              color: isDark ? '#64748B' : '#94A3B8',
-                              textTransform: 'uppercase', letterSpacing: '0.08em',
-                              marginBottom: '6px',
-                            }}
-                          >
-                            {group.cat}
-                          </div>
-                          {filtered.map((item) => (
-                            <button
-                              key={item.type}
-                              type="button"
-                              onClick={() => {
-                                handleAddNode(item.type);
-                                setNodeCatalogSearch('');
-                              }}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                padding: '7px 10px', borderRadius: '7px', border: 'none',
-                                background: item.bg, color: item.color,
-                                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                                textAlign: 'left', width: '100%', marginBottom: '4px',
-                                transition: 'transform 0.1s ease',
-                              }}
-                            >
-                              {item.icon}
-                              <span>{item.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      );
-                    })}
+                  /* If no node selected: Show list of placed nodes on canvas */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#9CA3AF' : '#64748B' }}>
+                      {language === 'id' ? `Daftar Node Terpasang (${nodes.length}):` : `Placed Nodes on Canvas (${nodes.length}):`}
+                    </span>
+                    {nodes.length === 0 ? (
+                      <div
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          padding: '30px 16px', gap: '10px', opacity: 0.6,
+                        }}
+                      >
+                        <Columns2 size={24} color={isDark ? '#9CA3AF' : '#94A3B8'} />
+                        <p style={{ fontSize: '12px', color: isDark ? '#9CA3AF' : '#64748B', textAlign: 'center', margin: 0 }}>
+                          {language === 'id' ? 'Belum ada node yang terpasang. Gunakan tombol [+] untuk menambahkan node.' : 'No nodes placed yet. Use the [+] button to add nodes.'}
+                        </p>
+                      </div>
+                    ) : (
+                      nodes.map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onClick={() => setSelectedNode(n)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
+                            background: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF',
+                            color: isDark ? '#F3F4F6' : '#1F2937',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <span style={{ fontWeight: 600 }}>{(n.data?.title as string) || n.type || 'Node'}</span>
+                          <span style={{ fontSize: '10px', color: isDark ? '#9CA3AF' : '#64748B', background: isDark ? '#1e1e1e' : '#F1F5F9', padding: '2px 6px', borderRadius: '4px' }}>
+                            {n.type}
+                          </span>
+                        </button>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
