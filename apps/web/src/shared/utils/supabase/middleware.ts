@@ -4,9 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 // Routes that require an authenticated session
 const PROTECTED_ROUTES = [
   '/chat',
-  '/automations',
   '/imagine',
-  '/pdf-tools',
+  '/gateway',
   '/prompts',
   '/settings',
 ];

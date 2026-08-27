@@ -45,15 +45,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
           useProjectStore.getState().fetchFolders(session.access_token);
         });
-        import('../../automations/store/useAutomationStore').then(({ useAutomationStore }) => {
-          useAutomationStore.getState().fetchWorkflows(session.access_token);
-        });
       } else {
         import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
           useProjectStore.getState().reset();
-        });
-        import('../../automations/store/useAutomationStore').then(({ useAutomationStore }) => {
-          useAutomationStore.getState().reset();
         });
       }
 
@@ -73,18 +67,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
             useProjectStore.getState().fetchFolders(newSession.access_token);
           });
-          import('../../automations/store/useAutomationStore').then(({ useAutomationStore }) => {
-            useAutomationStore.getState().fetchWorkflows(newSession.access_token);
-          });
         }
 
         // Clear project folders and storage on sign-out
         if (_event === 'SIGNED_OUT' || !newSession) {
           import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
             useProjectStore.getState().reset();
-          });
-          import('../../automations/store/useAutomationStore').then(({ useAutomationStore }) => {
-            useAutomationStore.getState().reset();
           });
           import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
             useStorageStore.getState().resetStorage();

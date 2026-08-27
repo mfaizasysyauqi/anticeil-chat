@@ -18,7 +18,6 @@ import { useSettingsStore } from '../../features/settings/store/useSettingsStore
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
-import { useAutomationStore } from '../../features/automations/store/useAutomationStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { getTranslation } from '@anticeil/core';
 
@@ -45,8 +44,6 @@ export function Navbar({
 
   const isBuildOpen = useBuildStore((s) => s.isOpen);
   const toggleBuild = useBuildStore((s) => s.toggle);
-
-  const activeWorkflowTitle = useAutomationStore((s) => s.activeWorkflowTitle);
 
   const activeSessionId = useChatStore((s) => s.activeSessionId);
   const sessions = useChatStore((s) => s.sessions);
@@ -278,10 +275,6 @@ export function Navbar({
           >
             {pathname === '/imagine'
               ? t.nav.imagine
-              : pathname === '/automations'
-              ? (activeWorkflowTitle ? `${t.nav.automations} / ${activeWorkflowTitle}` : t.nav.automations)
-              : pathname === '/pdf-tools'
-              ? t.nav.pdfTools
               : pathname === '/gateway'
               ? (t.nav.gateway || 'Route Gateway')
               : pathname === '/settings'
@@ -560,10 +553,6 @@ export function Navbar({
                     ? language === 'id' ? 'Hapus Obrolan' : 'Delete Chat'
                     : pathname === '/imagine'
                     ? language === 'id' ? 'Hapus Gambar' : 'Delete Images'
-                    : pathname === '/automations'
-                    ? language === 'id' ? 'Hapus Alur Kerja' : 'Delete Workflows'
-                    : pathname === '/pdf-tools'
-                    ? language === 'id' ? 'Hapus Dokumen' : 'Delete Documents'
                     : language === 'id' ? 'Reset Halaman' : 'Reset Page'}
                 </span>
               </button>
