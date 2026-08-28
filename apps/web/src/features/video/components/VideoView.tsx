@@ -20,10 +20,10 @@ export function VideoView() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedRatio, setSelectedRatio] = useState('16:9');
-  const [selectedDuration, setSelectedDuration] = useState('1:1');
+  const [selectedDuration, setSelectedDuration] = useState('3:2');
 
   const ratios = ['1:1', '16:9', '9:16', '4:3', '3:2'];
-  const durations = ['1:1', '16:9', '9:16', '4:3', '3:2'];
+  const durations = ['3:2', '4:3', '9:16', '16:9'];
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +148,7 @@ export function VideoView() {
                       padding: '4px 8px',
                       borderRadius: '6px',
                       border: 'none',
-                      background: selectedRatio === ratio ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                      background: selectedRatio === ratio ? '#fb7185' : 'var(--bg-subtle)',
                       color: selectedRatio === ratio ? '#fff' : 'var(--text-muted)',
                       fontSize: '11px',
                       fontWeight: selectedRatio === ratio ? 600 : 400,
@@ -163,7 +163,7 @@ export function VideoView() {
 
               {/* Duration Chips */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                {['1:1', '16:9', '9:16', '4:3', '3:2'].map((dur) => (
+                {durations.map((dur) => (
                   <button
                     key={dur}
                     type="button"
