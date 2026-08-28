@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import {
   Music,
   Wand2,
-  Sparkles,
   Mic,
   Radio,
+  ArrowUp,
+  Volume2,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
@@ -17,267 +18,262 @@ export function AudioView() {
 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [audioType, setAudioType] = useState<'speech' | 'music' | 'sfx'>('speech');
+  const [isFocused, setIsFocused] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('gadis');
+  const [audioSpeed, setAudioSpeed] = useState(1.0);
 
-  const handleGenerate = async () => {
+  const voices = [
+    { id: 'gadis', label: 'Gadis Indonesia' },
+    { id: 'pria', label: 'Pria Indonesia' },
+    { id: 'girl', label: 'Girl English' },
+    { id: 'man', label: 'Man English' },
+  ];
+
+  const speeds = [
+    { value: 0.75, label: '0.75' },
+    { value: 1.0, label: '1.0' },
+    { value: 1.25, label: '1.25' },
+    { value: 1.5, label: '1.5' },
+  ];
+
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!prompt.trim()) return;
     
     setIsGenerating(true);
     // Simulate generation
     await new Promise(resolve => setTimeout(resolve, 2000));
     setIsGenerating(false);
+    setPrompt('');
   };
 
-  const audioTypes = [
-    { id: 'speech' as const, label: language === 'id' ? 'Suara' : 'Speech', icon: <Mic size={14} /> },
-    { id: 'music' as const, label: language === 'id' ? 'Musik' : 'Music', icon: <Music size={14} /> },
-    { id: 'sfx' as const, label: language === 'id' ? 'Efek' : 'SFX', icon: <Radio size={14} /> },
-  ];
-
   return (
-    <div
-      style={{
-        height: '100%',
-        width: '100%',
-        background: 'var(--bg-main)',
-        color: 'var(--text-primary)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '24px',
-        boxSizing: 'border-box',
-        fontFamily: 'inherit',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          maxWidth: '800px',
-          width: '100%',
-          textAlign: 'center',
-          marginBottom: '32px',
-        }}
-      >
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '8px 16px',
-            borderRadius: '12px',
-            background: 'rgba(96, 165, 250, 0.1)',
-            border: '1px solid rgba(96, 165, 250, 0.2)',
-            marginBottom: '16px',
-          }}
-        >
-          <Music size={20} color="#60a5fa" />
-          <span style={{ fontSize: '14px', fontWeight: 600, color: '#60a5fa' }}>
-            {language === 'id' ? 'Audio — Studio AI Suara' : 'Audio — AI Sound Studio'}
-          </span>
+    <div className="page-scroll-container">
+      <div className="page-content-wrapper">
+        {/* Header */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <span style={{ fontSize: '24px' }}>🎵</span>
+            <h1
+              style={{
+                fontSize: '22px',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                color: 'var(--text-primary)',
+                margin: 0,
+              }}
+            >
+              {language === 'id' ? 'Audio — Studio Sintesis Suara' : 'Audio — Voice Synthesizer Studio'}
+            </h1>
+          </div>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+            {language === 'id'
+              ? 'Ciptakan suara narasi, musik, dan efek audio dengan AI generatif berkualitas tinggi.'
+              : 'Generate voice narration, music, and sound effects with high-quality generative AI.'}
+          </p>
         </div>
 
-        <h1
+        {/* ── Prompt Card (Chat-style elegant floating input) ── */}
+        <form
+          onSubmit={handleGenerate}
           style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            margin: '0 0 12px 0',
-            color: 'var(--text-primary)',
-          }}
-        >
-          {language === 'id' ? 'Buat Audio AI' : 'Generate AI Audio'}
-        </h1>
-
-        <p
-          style={{
-            fontSize: '14px',
-            color: 'var(--text-secondary)',
-            margin: 0,
-            lineHeight: 1.6,
-          }}
-        >
-          {language === 'id'
-            ? 'Ciptakan suara, musik, dan efek audio dengan AI generatif'
-            : 'Create speech, music, and sound effects with generative AI'}
-        </p>
-      </div>
-
-      {/* Audio Type Selector */}
-      <div
-        style={{
-          maxWidth: '800px',
-          width: '100%',
-          marginBottom: '16px',
-        }}
-      >
-        <div
-          style={{
+            background: 'var(--bg-input)',
+            border: `1px solid ${isFocused ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
+            borderRadius: 'var(--radius-xl)',
+            marginBottom: '28px',
+            boxShadow: isFocused ? 'var(--shadow-lg)' : 'var(--shadow-md)',
             display: 'flex',
-            gap: '8px',
-            padding: '4px',
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            border: '1px solid var(--border-subtle)',
+            flexDirection: 'column',
+            padding: '10px 14px',
+            transition: 'all 0.2s ease',
           }}
         >
-          {audioTypes.map((type) => (
+          {/* Textarea */}
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                if (prompt.trim() && !isGenerating) handleGenerate(e as unknown as React.FormEvent);
+              }
+            }}
+            placeholder={
+              language === 'id'
+                ? 'Ketik narasi atau musik yang ingin disuarakan (contoh: Selamat datang di Anticeil AI, asisten produktivitas cerdas masa depan)...'
+                : 'Type the narration or music prompt you want to voice (e.g. Welcome to Anticeil AI, your privacy-first intelligent assistant)...'
+            }
+            rows={3}
+            style={{
+              width: '100%',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              resize: 'none',
+              fontSize: '14px',
+              color: 'var(--text-primary)',
+              lineHeight: 1.6,
+              fontFamily: 'inherit',
+              marginBottom: '8px',
+            }}
+          />
+
+          {/* Control Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Left: Model Selector + Voice Options */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              {/* Model Selector Button */}
+              <button
+                type="button"
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Mic size={13} color="#60a5fa" />
+                <span>Microsoft Edge Neural TTS</span>
+              </button>
+
+              {/* Voice Selector Dropdown */}
+              <select
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                {voices.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.label}
+                  </option>
+                ))}
+              </select>
+
+              {/* Speed Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                {speeds.map((speed) => (
+                  <button
+                    key={speed.value}
+                    type="button"
+                    onClick={() => setAudioSpeed(speed.value)}
+                    className="clickable-pill"
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: audioSpeed === speed.value ? '#60a5fa' : 'var(--bg-subtle)',
+                      color: audioSpeed === speed.value ? '#fff' : 'var(--text-muted)',
+                      fontSize: '11px',
+                      fontWeight: audioSpeed === speed.value ? 600 : 400,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {speed.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Generate Button */}
             <button
-              key={type.id}
-              type="button"
-              onClick={() => setAudioType(type.id)}
+              type="submit"
+              disabled={!prompt.trim() || isGenerating}
+              className="clickable-pill"
               style={{
-                flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
-                padding: '8px 12px',
-                borderRadius: '7px',
-                background: audioType === type.id ? '#60a5fa' : 'transparent',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
                 border: 'none',
-                color: audioType === type.id ? '#fff' : 'var(--text-secondary)',
-                fontSize: '13px',
-                fontWeight: audioType === type.id ? 600 : 400,
-                cursor: 'pointer',
+                background: isGenerating || !prompt.trim() ? 'var(--bg-subtle)' : '#60a5fa',
+                color: '#fff',
+                cursor: isGenerating || !prompt.trim() ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
+                flexShrink: 0,
               }}
             >
-              {type.icon}
-              {type.label}
+              {isGenerating ? <Wand2 size={16} className="animate-spin" /> : <ArrowUp size={16} />}
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
+        </form>
 
-      {/* Prompt Input */}
-      <div
-        style={{
-          maxWidth: '800px',
-          width: '100%',
-          marginBottom: '24px',
-        }}
-      >
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={
-            audioType === 'speech'
-              ? language === 'id'
-                ? 'Tulis teks yang ingin diucapkan dengan suara natural...'
-                : 'Write the text you want spoken with natural voice...'
-              : audioType === 'music'
-              ? language === 'id'
-                ? 'Jelaskan musik yang ingin Anda ciptakan (contoh: Lagu pop ceria dengan gitar akustik dan piano)...'
-                : 'Describe the music you want to create (e.g., Upbeat pop song with acoustic guitar and piano)...'
-              : language === 'id'
-              ? 'Jelaskan efek suara yang Anda butuhkan (contoh: Suara hujan deras dengan petir di kejauhan)...'
-              : 'Describe the sound effect you need (e.g., Heavy rain with distant thunder)...'
-          }
-          style={{
-            width: '100%',
-            minHeight: '120px',
-            padding: '16px',
-            fontSize: '14px',
-            lineHeight: 1.6,
-            borderRadius: '12px',
-            border: '1px solid var(--border-subtle)',
-            background: 'var(--bg-card)',
-            color: 'var(--text-primary)',
-            resize: 'vertical',
-            fontFamily: 'inherit',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-        />
-      </div>
+        {/* ── Recent Generations Section ── */}
+        <div style={{ marginTop: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <Music size={18} color="#60a5fa" />
+            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
+              {language === 'id' ? 'Audio & Sintesis Suara' : 'Audio & Voice Synthesizer Studio'}
+            </h2>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                background: 'var(--bg-subtle)',
+                padding: '2px 7px',
+                borderRadius: '10px',
+              }}
+            >
+              0
+            </span>
+          </div>
 
-      {/* Generate Button */}
-      <button
-        type="button"
-        onClick={handleGenerate}
-        disabled={!prompt.trim() || isGenerating}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          padding: '12px 24px',
-          borderRadius: '10px',
-          background: isGenerating ? 'var(--bg-subtle)' : '#60a5fa',
-          border: 'none',
-          color: '#fff',
-          fontSize: '14px',
-          fontWeight: 600,
-          cursor: isGenerating || !prompt.trim() ? 'not-allowed' : 'pointer',
-          opacity: isGenerating || !prompt.trim() ? 0.6 : 1,
-          transition: 'all 0.2s ease',
-        }}
-      >
-        {isGenerating ? (
-          <>
-            <Wand2 size={16} className="animate-spin" />
-            <span>{language === 'id' ? 'Membuat Audio...' : 'Generating Audio...'}</span>
-          </>
-        ) : (
-          <>
-            <Mic size={16} />
-            <span>{language === 'id' ? 'Buat Audio' : 'Generate Audio'}</span>
-          </>
-        )}
-      </button>
-
-      {/* Recent Generations */}
-      <div
-        style={{
-          maxWidth: '800px',
-          width: '100%',
-          marginTop: '48px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '16px',
-          }}
-        >
-          <Sparkles size={18} color="#60a5fa" />
-          <h2
+          <div
             style={{
-              fontSize: '18px',
-              fontWeight: 600,
-              margin: 0,
-              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '6px 10px',
+              marginBottom: '8px',
             }}
           >
-            {language === 'id' ? 'Audio Terbaru' : 'Recent Audio'}
-          </h2>
-          <span
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#10b981' }}>
+              100% {language === 'id' ? 'Gratis' : 'Free'} • {language === 'id' ? 'Sintesis Neural Sisi-Klien' : 'Client-Side Neural Synthesis'}
+            </span>
+          </div>
+
+          {/* Empty State */}
+          <div
             style={{
-              fontSize: '12px',
-              color: 'var(--text-muted)',
-              background: 'var(--bg-subtle)',
-              padding: '2px 8px',
+              padding: '48px 24px',
+              textAlign: 'center',
               borderRadius: '12px',
+              border: '1px dashed var(--border-subtle)',
+              background: 'var(--bg-card)',
             }}
           >
-            0
-          </span>
-        </div>
-
-        <div
-          style={{
-            padding: '32px',
-            textAlign: 'center',
-            borderRadius: '12px',
-            border: '1px dashed var(--border-subtle)',
-            background: 'var(--bg-card)',
-          }}
-        >
-          <Music size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-            {language === 'id' ? 'Belum ada audio yang dibuat' : 'No audio generated yet'}
-          </p>
+            <Music size={40} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 4px 0' }}>
+              {language === 'id' ? 'Belum ada audio yang dibuat' : 'No audio generated yet'}
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+              {language === 'id' ? 'Ketik prompt di atas untuk memulai generasi audio' : 'Type a prompt above to start generating audio'}
+            </p>
+          </div>
         </div>
       </div>
     </div>
