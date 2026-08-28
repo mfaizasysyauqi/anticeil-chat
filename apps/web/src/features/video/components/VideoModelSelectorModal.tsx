@@ -1,19 +1,129 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Film, Check, Key } from 'lucide-react';
+import { X, Film, Check, KeyRound, Lock, CheckCircle2 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
 export interface VideoModelInfo {
   id: string;
   name: string;
-  provider: string;
-  keyType: 'free' | 'openai' | 'custom';
-  keyRequirement: string;
   description: string;
+  keyType: 'free' | 'openai' | 'runway' | 'pika' | 'custom';
+  keyRequirement: string;
   badge?: string;
+  tags: string[];
 }
+
+export interface VideoProviderInfo {
+  id: string;
+  name: string;
+  logoKey: string;
+  badge?: string;
+  description: string;
+  models: VideoModelInfo[];
+}
+
+export const VIDEO_PROVIDERS: VideoProviderInfo[] = [
+  {
+    id: 'luma-ai',
+    name: 'Luma AI',
+    logoKey: 'luma',
+    badge: 'Trending',
+    description: 'Teknologi Dream Machine untuk sintesis video sinematik bergerak 3D.',
+    models: [
+      {
+        id: 'luma',
+        name: 'Luma Ray 2 (Dream Machine)',
+        description: 'Sintesis video dinamis dengan pergerakan kamera sinematik mulus dan kedalaman 3D.',
+        keyType: 'free',
+        keyRequirement: 'Gratis / Client Fast Stream',
+        tags: ['Cinematic Camera', 'Realistis 3D', 'Fast Generation'],
+      },
+    ],
+  },
+  {
+    id: 'kuaishou-kling',
+    name: 'Kuaishou Kling AI',
+    logoKey: 'kuaishou-kling',
+    description: 'Mesin render video gerak fisik realistis beresolusi tinggi.',
+    models: [
+      {
+        id: 'kling',
+        name: 'Kling AI v1.6 Pro',
+        description: 'Generator video gerak realistis untuk simulasi karakter manusia, hewan, dan panorama lanskap.',
+        keyType: 'free',
+        keyRequirement: 'Gratis / Direct Stream',
+        tags: ['Karakter Realistis', 'Fisika Alami', 'High Framerate'],
+      },
+    ],
+  },
+  {
+    id: 'runway-ml',
+    name: 'Runway ML',
+    logoKey: 'runway-ml',
+    description: 'Platform video AI generatif standar industri perfilman dan visual FX.',
+    models: [
+      {
+        id: 'runway',
+        name: 'Runway Gen-3 Alpha Turbo',
+        description: 'Generasi video ultra-realistis dengan kontrol arah pencahayaan dan sinematografi profesional.',
+        keyType: 'runway',
+        keyRequirement: 'Memerlukan Runway API Key',
+        tags: ['VFX Grade', 'Camera Director', 'Ultra Smooth'],
+      },
+    ],
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    logoKey: 'openai',
+    description: 'Model video simulasi dunia nyata dan fisika sinematik.',
+    models: [
+      {
+        id: 'sora',
+        name: 'OpenAI Sora Turbo',
+        description: 'Model simulasi dunia nyata dan fisika sinematik dengan pergerakan objek dinamis.',
+        keyType: 'openai',
+        keyRequirement: 'Memerlukan OpenAI API Key',
+        tags: ['World Physics', '1080p Cinema', 'Dynamic Motion'],
+      },
+    ],
+  },
+  {
+    id: 'stability-ai',
+    name: 'Stability AI',
+    logoKey: 'stability-ai',
+    description: 'Model video sinematik open-weight untuk industri kreatif.',
+    models: [
+      {
+        id: 'svd',
+        name: 'Stable Video Diffusion',
+        description: 'Generator gerakan video dari gambar dengan kontrol fps dan stabilitas frame tinggi.',
+        keyType: 'free',
+        keyRequirement: 'Gratis / Client Stream',
+        tags: ['Image-to-Video', 'Smooth FPS', 'Neural Motion'],
+      },
+    ],
+  },
+  {
+    id: 'pika-labs',
+    name: 'Pika Labs',
+    logoKey: 'pika-labs',
+    description: 'Platform pembuatan video AI dengan kontrol timeline dan editing.',
+    models: [
+      {
+        id: 'pika',
+        name: 'Pika 1.0 Studio',
+        description: 'Platform pembuatan video AI dengan editor timeline dan kontrol frame-by-frame untuk kreasi presisi tinggi.',
+        keyType: 'pika',
+        keyRequirement: 'Memerlukan Pika API Key',
+        tags: ['Timeline Editor', 'Frame Control', 'Precision Edit'],
+      },
+    ],
+  },
+];
 
 interface VideoModelSelectorModalProps {
   isOpen: boolean;
@@ -22,244 +132,511 @@ interface VideoModelSelectorModalProps {
   onSelectModel: (id: string) => void;
 }
 
-export const VIDEO_MODELS: VideoModelInfo[] = [
-  {
-    id: 'luma',
-    name: 'Luma Ray 2 (Dream Machine)',
-    provider: 'Luma AI',
-    keyType: 'free',
-    keyRequirement: 'Gratis / Client Stream',
-    description: 'Sintesis video dinamis dengan pergerakan kamera sinematik yang mulus.',
-    badge: '100% Gratis',
-  },
-  {
-    id: 'kling',
-    name: 'Kling AI v1.6',
-    provider: 'Kuaishou AI',
-    keyType: 'free',
-    keyRequirement: 'Gratis / Direct Stream',
-    description: 'Generator video gerak realistis untuk animasi karakter dan lanskap.',
-    badge: '100% Gratis',
-  },
-  {
-    id: 'runway',
-    name: 'Runway Gen-3 Alpha',
-    provider: 'Runway ML',
-    keyType: 'custom',
-    keyRequirement: 'Memerlukan Runway API Key',
-    description: 'Model video generatif tingkat profesional dengan kontrol presisi tinggi.',
-  },
-  {
-    id: 'sora',
-    name: 'OpenAI Sora',
-    provider: 'OpenAI',
-    keyType: 'openai',
-    keyRequirement: 'Memerlukan OpenAI API Key',
-    description: 'Model video fisika dunia nyata mutakhir dari OpenAI dengan simulasi kompleks.',
-  },
-  {
-    id: 'pika',
-    name: 'Pika 1.0',
-    provider: 'Pika Labs',
-    keyType: 'custom',
-    keyRequirement: 'Memerlukan Pika API Key',
-    description: 'Platform pembuatan video AI dengan editor timeline dan kontrol frame-by-frame.',
-  },
-];
-
 export function VideoModelSelectorModal({
   isOpen,
   onClose,
   selectedModelId,
   onSelectModel,
 }: VideoModelSelectorModalProps) {
+  const [mounted, setMounted] = useState(false);
+  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const language = useSettingsStore((s) => s.language);
 
-  if (!isOpen) return null;
+  // Find provider containing the currently selected model
+  const initialProvider = React.useMemo(() => {
+    const found = VIDEO_PROVIDERS.find((p) => p.models.some((m) => m.id === selectedModelId));
+    return found ? found.id : VIDEO_PROVIDERS[0]?.id || '';
+  }, [selectedModelId]);
 
-  const selectedModel = VIDEO_MODELS.find((m) => m.id === selectedModelId);
+  const [activeProviderId, setActiveProviderId] = useState<string>(initialProvider);
 
-  return createPortal(
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      const found = VIDEO_PROVIDERS.find((p) => p.models.some((m) => m.id === selectedModelId));
+      if (found) {
+        setActiveProviderId(found.id);
+      } else if (VIDEO_PROVIDERS.length > 0) {
+        setActiveProviderId(VIDEO_PROVIDERS[0].id);
+      }
+    }
+  }, [isOpen, selectedModelId]);
+
+  if (!isOpen || !mounted) return null;
+
+  const currentProvider = VIDEO_PROVIDERS.find((p) => p.id === activeProviderId) || VIDEO_PROVIDERS[0];
+  const currentModels = currentProvider?.models || [];
+
+  const modalContent = (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(4px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999,
-        padding: '20px',
+        zIndex: 99999,
+        padding: '16px',
       }}
       onClick={onClose}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'var(--bg-surface)',
-          borderRadius: '16px',
           width: '100%',
           maxWidth: '920px',
-          maxHeight: '85vh',
+          height: '580px',
+          maxHeight: '90vh',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-strong)',
+          borderRadius: 'var(--radius-xl, 16px)',
+          boxShadow: 'var(--shadow-2xl, 0 25px 50px -12px rgba(0, 0, 0, 0.5))',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: 'var(--shadow-2xl)',
-          border: '1px solid var(--border-subtle)',
+          overflow: 'hidden',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           style={{
-            padding: '20px 24px',
+            padding: '16px 20px',
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            background: 'var(--bg-surface)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Film size={22} color="#fb7185" />
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(251, 113, 133, 0.12)',
+                color: '#fb7185',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Film size={18} />
+            </div>
             <div>
-              <h2 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                {language === 'id' ? 'Model Video & Motion' : 'Video & Motion Models'}
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3
+                  style={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                  }}
+                >
+                  {language === 'id' ? 'Model Video & Animasi' : 'Video & Animation Models'}
+                </h3>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 650,
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    background: 'var(--bg-subtle)',
+                    color: '#fb7185',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  🎬 {language === 'id' ? 'Mode Video' : 'Video Mode'}
+                </span>
+              </div>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
                 {language === 'id'
-                  ? 'Pilih provider dan model generatif yang disesuaikan untuk tipe generasi ini.'
+                  ? 'Pilih provider dan model generatif yang disesuaikan khusus untuk fitur ini.'
                   : 'Select a generative provider and model tailored for this generation type.'}
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              border: 'none',
-              background: 'var(--bg-subtle)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <X size={16} />
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                setSettingsOpen(true);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.borderColor = 'var(--border-strong)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-subtle)';
+              }}
+            >
+              <KeyRound size={13} color="#fb7185" />
+              <span>{language === 'id' ? 'Atur API Key' : 'Manage API Keys'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' }}>
-              {language === 'id' ? 'PENYEDIA YANG DIDUKUNG' : 'SUPPORTED PROVIDERS'} ({VIDEO_MODELS.length})
-            </h3>
-          </div>
+        {/* Modal Body: Left Providers + Right Models */}
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Left: Providers List */}
+          <div
+            style={{
+              width: '240px',
+              borderRight: '1px solid var(--border-subtle)',
+              background: 'var(--bg-main)',
+              overflowY: 'auto',
+              padding: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                padding: '6px 8px 4px 8px',
+              }}
+            >
+              {language === 'id' ? 'Penyedia Layanan' : 'Supported Providers'} ({VIDEO_PROVIDERS.length})
+            </div>
 
-          {/* Models Grid */}
-          <div style={{ display: 'grid', gap: '12px' }}>
-            {VIDEO_MODELS.map((model) => {
-              const isSelected = model.id === selectedModelId;
+            {VIDEO_PROVIDERS.map((provider) => {
+              const active = provider.id === activeProviderId;
+              const hasActiveModel = provider.models.some((m) => m.id === selectedModelId);
+
               return (
                 <button
-                  key={model.id}
+                  key={provider.id}
                   type="button"
-                  onClick={() => {
-                    onSelectModel(model.id);
-                    onClose();
-                  }}
+                  onClick={() => setActiveProviderId(provider.id)}
                   style={{
-                    padding: '16px',
-                    borderRadius: '12px',
-                    border: `2px solid ${isSelected ? '#fb7185' : 'var(--border-subtle)'}`,
-                    background: isSelected ? 'rgba(251, 113, 133, 0.08)' : 'var(--bg-card)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '9px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid',
+                    borderColor: active ? '#fb7185' : 'transparent',
+                    background: active ? 'rgba(251, 113, 133, 0.08)' : 'transparent',
+                    color: active ? '#fb7185' : 'var(--text-primary)',
                     cursor: 'pointer',
                     textAlign: 'left',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.15s ease',
                     position: 'relative',
                   }}
+                  onMouseEnter={(e) => {
+                    if (!active) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
-                  {/* Header Row */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                          {model.name}
-                        </h4>
-                        {model.badge && (
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: '6px',
-                              background: '#10b981',
-                              color: '#fff',
-                            }}
-                          >
-                            {model.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                        {model.provider}
-                      </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
+                    <div
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ProviderBrandLogo provider={provider.logoKey} size={18} />
                     </div>
-                    {isSelected && (
+                    <div style={{ minWidth: 0 }}>
                       <div
                         style={{
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          background: '#fb7185',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          fontSize: '13px',
+                          fontWeight: active ? 700 : 500,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
-                        <Check size={12} color="#fff" />
+                        {provider.name}
                       </div>
-                    )}
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                        {provider.models.length} {language === 'id' ? 'model' : 'models'}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Description */}
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 10px 0', lineHeight: 1.5 }}>
-                    {model.description}
-                  </p>
-
-                  {/* Key Requirement */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 10px',
-                      borderRadius: '8px',
-                      background: model.keyType === 'free' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-                      border: `1px solid ${model.keyType === 'free' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(251, 191, 36, 0.2)'}`,
-                      width: 'fit-content',
-                    }}
-                  >
-                    {model.keyType === 'free' ? (
-                      <Check size={12} color="#10b981" />
-                    ) : (
-                      <Key size={12} color="#fbbf24" />
-                    )}
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: model.keyType === 'free' ? '#10b981' : '#fbbf24' }}>
-                      {model.keyRequirement}
-                    </span>
-                  </div>
+                  {hasActiveModel && (
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'var(--accent-success, #10b981)',
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
                 </button>
               );
             })}
           </div>
+
+          {/* Right: Models List for Current Provider */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '16px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              background: 'var(--bg-surface)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: '8px',
+                borderBottom: '1px solid var(--border-subtle)',
+              }}
+            >
+              <div>
+                <span
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {currentProvider?.name}
+                </span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                  • {currentModels.length}{' '}
+                  {language === 'id' ? 'model tersedia' : 'models available'}
+                </span>
+              </div>
+
+              {currentProvider?.badge && (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    background: 'rgba(0, 200, 117, 0.12)',
+                    color: 'var(--accent-success)',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                  }}
+                >
+                  {currentProvider.badge}
+                </span>
+              )}
+            </div>
+
+            {/* Model Cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {currentModels.map((model) => {
+                const isSelected = selectedModelId === model.id;
+
+                return (
+                  <div
+                    key={model.id}
+                    onClick={() => {
+                      onSelectModel(model.id);
+                      onClose();
+                    }}
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      border: `1.5px solid ${isSelected ? '#fb7185' : 'var(--border-subtle)'}`,
+                      background: isSelected ? 'rgba(251, 113, 133, 0.04)' : 'var(--bg-surface)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '14px',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 0 0 1px #fb7185' : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-strong)';
+                        e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                        e.currentTarget.style.backgroundColor = 'var(--bg-surface)';
+                      }
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Model Title & Tags */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          marginBottom: '6px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            color: isSelected ? '#fb7185' : 'var(--text-primary)',
+                          }}
+                        >
+                          {model.name}
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'var(--bg-main)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-muted)',
+                            fontFamily: 'monospace',
+                          }}
+                        >
+                          {model.id}
+                        </span>
+
+                        {model.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: 650,
+                              padding: '1.5px 6px',
+                              borderRadius: '4px',
+                              background:
+                                tag.includes('Gratis') || tag.includes('Free')
+                                  ? 'rgba(0, 200, 117, 0.1)'
+                                  : 'rgba(251, 113, 133, 0.08)',
+                              color:
+                                tag.includes('Gratis') || tag.includes('Free')
+                                  ? 'var(--accent-success)'
+                                  : '#fb7185',
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Description */}
+                      <p
+                        style={{
+                          fontSize: '12px',
+                          color: 'var(--text-secondary)',
+                          margin: '0 0 8px 0',
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        {model.description}
+                      </p>
+
+                      {/* Requirement note */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          fontSize: '11px',
+                          color:
+                            model.keyType === 'free'
+                              ? 'var(--accent-success)'
+                              : 'var(--accent-warning, #d97706)',
+                          fontWeight: 550,
+                        }}
+                      >
+                        {model.keyType === 'free' ? (
+                          <CheckCircle2 size={12} color="var(--accent-success)" />
+                        ) : (
+                          <Lock size={12} color="var(--accent-warning, #d97706)" />
+                        )}
+                        <span>{model.keyRequirement}</span>
+                      </div>
+                    </div>
+
+                    {/* Radio / Selection Check */}
+                    <div
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: `2px solid ${isSelected ? '#fb7185' : 'var(--border-strong)'}`,
+                        background: isSelected ? '#fb7185' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: '2px',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {isSelected && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 }

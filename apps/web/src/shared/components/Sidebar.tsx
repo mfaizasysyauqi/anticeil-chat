@@ -62,7 +62,7 @@ import { StorageMeter } from '../../features/storage/components/StorageMeter';
 import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
-import { useImagineStore } from '../../features/imagine/store/useImagineStore';
+import { useImageStore } from '../../features/image/store/useImageStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { createClient } from '../utils/supabase/client';
 
@@ -686,19 +686,19 @@ export function Sidebar({
   const [isMounted, setIsMounted] = useState(false);
   const session = useAuthStore((s) => s.session);
 
-  const isImagine = pathname === '/imagine';
+  const isImage = pathname === '/image';
   const isVideo = pathname === '/video';
   const isAudio = pathname === '/audio';
-  const isMediaMode = isImagine || isVideo || isAudio;
+  const isMediaMode = isImage || isVideo || isAudio;
 
   // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
   const [newImagineCollectionName, setNewImagineCollectionName] = useState('');
 
-  // Real imagine history from store
-  const imagineItems = useImagineStore((s) => s.items);
-  const toggleImaginePin = useImagineStore((s) => s.togglePin);
-  const moveImagineToCollection = useImagineStore((s) => s.moveToCollection);
+  // Real image history from store
+  const imagineItems = useImageStore((s) => s.items);
+  const toggleImaginePin = useImageStore((s) => s.togglePin);
+  const moveImagineToCollection = useImageStore((s) => s.moveToCollection);
   const imagineHistory: ImagineHistoryItem[] = imagineItems.map((item) => ({
     id: item.id,
     prompt: item.prompt,
@@ -728,7 +728,7 @@ export function Sidebar({
   const addFileToImageCollection = useWorkspaceStore((s) => s.addFileToImageCollection);
   const removeFileFromImageCollection = useWorkspaceStore((s) => s.removeFileFromImageCollection);
 
-  const removeImagineItem = useImagineStore((s) => s.removeItem);
+  const removeImagineItem = useImageStore((s) => s.removeItem);
 
   const documentCategories = useWorkspaceStore((s) => s.documentCategories);
   const activeDocumentCategoryId = useWorkspaceStore((s) => s.activeDocumentCategoryId);
@@ -1516,9 +1516,9 @@ export function Sidebar({
               <MessageSquare size={17} />
             </Link>
 
-            {/* Imagine */}
+            {/* Image */}
             <Link
-              href="/imagine"
+              href="/image"
               title={t.nav.imagine}
               style={{
                 width: '34px',
@@ -1527,8 +1527,8 @@ export function Sidebar({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: pathname === '/imagine' ? 'rgba(162, 93, 220, 0.2)' : 'transparent',
-                color: pathname === '/imagine' ? '#A25DDC' : 'var(--text-secondary)',
+                background: pathname === '/image' ? 'rgba(162, 93, 220, 0.2)' : 'transparent',
+                color: pathname === '/image' ? '#A25DDC' : 'var(--text-secondary)',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -1639,8 +1639,8 @@ export function Sidebar({
                 textOverflow: 'ellipsis',
               }}
             >
-              {isImagine
-                ? 'Anticeil Imagine'
+              {isImage
+                ? 'Anticeil Image'
                 : isVideo
                 ? 'Anticeil Video'
                 : isAudio
@@ -1693,11 +1693,11 @@ export function Sidebar({
 
         {/* Primary Action Button (Mode-Aware) */}
         <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {isImagine ? (
+          {isImage ? (
             <button
               type="button"
               onClick={() => {
-                if (pathname !== '/imagine') router.push('/imagine');
+                if (pathname !== '/image') router.push('/image');
                 if (onCloseMobile) onCloseMobile();
               }}
               className="clickable-pill"
@@ -1707,7 +1707,7 @@ export function Sidebar({
                 gap: '8px',
                 padding: '7px 10px',
                 borderRadius: 'var(--radius-md, 6px)',
-                background: pathname === '/imagine' ? 'var(--bg-subtle)' : 'transparent',
+                background: pathname === '/image' ? 'var(--bg-subtle)' : 'transparent',
                 border: 'none',
                 color: 'var(--text-primary)',
                 fontSize: '13px',
@@ -1719,7 +1719,7 @@ export function Sidebar({
               }}
             >
               <Sparkles size={15} color="#A25DDC" />
-              <span>{language === 'id' ? 'Imagine Baru' : 'New Imagine'}</span>
+              <span>{language === 'id' ? 'Gambar Baru' : 'New Image'}</span>
             </button>
           ) : isVideo ? (
             <button
@@ -1849,7 +1849,7 @@ export function Sidebar({
             <input
               type="text"
               placeholder={
-                isImagine
+                isImage
                   ? language === 'id'
                     ? 'Cari prompt gambar...'
                     : 'Search image prompts...'
@@ -2101,7 +2101,7 @@ export function Sidebar({
                           >
                             {/* Type icon & Title */}
                             <div
-                              onClick={() => { if (pathname !== '/imagine') router.push('/imagine'); if (onCloseMobile) onCloseMobile(); }}
+                              onClick={() => { if (pathname !== '/image') router.push('/image'); if (onCloseMobile) onCloseMobile(); }}
                               style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
                             >
                               {item.type === 'video' ? (

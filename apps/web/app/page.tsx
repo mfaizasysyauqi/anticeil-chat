@@ -3630,8 +3630,8 @@ export default function MondayWarmBeigeLandingPage() {
                 <Link href="/pdf-tools" style={{ color: '#B2B4C2', textDecoration: 'none', transition: 'color 0.15s ease' }}>
                   PDF Studio & Tools
                 </Link>
-                <Link href="/imagine" style={{ color: '#B2B4C2', textDecoration: 'none', transition: 'color 0.15s ease' }}>
-                  Imagine Visual Studio
+                <Link href="/image" style={{ color: '#B2B4C2', textDecoration: 'none', transition: 'color 0.15s ease' }}>
+                  Image Visual Studio
                 </Link>
                 <Link href="/automations" style={{ color: '#B2B4C2', textDecoration: 'none', transition: 'color 0.15s ease' }}>
                   Automations & Pipelines

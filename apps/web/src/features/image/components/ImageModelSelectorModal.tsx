@@ -20,9 +20,9 @@ import {
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
-export type ImagineCapability = 'image' | 'video' | 'audio';
+export type ImageCapability = 'image' | 'video' | 'audio';
 
-export interface ImagineModelItem {
+export interface ImageModelItem {
   id: string;
   name: string;
   description: string;
@@ -30,20 +30,20 @@ export interface ImagineModelItem {
   keyRequirement: string;
   badge?: string;
   tags: string[];
-  capability: ImagineCapability;
+  capability: ImageCapability;
 }
 
-export interface ImagineProviderItem {
+export interface ImageProviderItem {
   id: string;
   name: string;
   logoKey: string;
   badge?: string;
   description: string;
-  capabilities: ImagineCapability[];
-  models: ImagineModelItem[];
+  capabilities: ImageCapability[];
+  models: ImageModelItem[];
 }
 
-export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
+export const IMAGE_PROVIDERS: ImageProviderItem[] = [
   {
     id: 'black-forest-labs',
     name: 'Black Forest Labs',
@@ -294,28 +294,28 @@ export const IMAGINE_PROVIDERS: ImagineProviderItem[] = [
   },
 ];
 
-interface ImagineModelSelectorModalProps {
+interface ImageModelSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  mediaMode: ImagineCapability;
+  mediaMode: ImageCapability;
   selectedModelId: string;
   onSelectModel: (modelId: string) => void;
 }
 
-export function ImagineModelSelectorModal({
+export function ImageModelSelectorModal({
   isOpen,
   onClose,
   mediaMode,
   selectedModelId,
   onSelectModel,
-}: ImagineModelSelectorModalProps) {
+}: ImageModelSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const language = useSettingsStore((s) => s.language);
 
   // Filter providers that strictly support the current mediaMode
   const filteredProviders = React.useMemo(() => {
-    return IMAGINE_PROVIDERS.filter((provider) =>
+    return IMAGE_PROVIDERS.filter((provider) =>
       provider.capabilities.includes(mediaMode)
     );
   }, [mediaMode]);

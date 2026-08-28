@@ -273,7 +273,7 @@ export function Navbar({
               maxWidth: '300px',
             }}
           >
-            {pathname === '/imagine'
+            {pathname === '/image'
               ? t.nav.imagine
               : pathname === '/settings'
               ? t.nav.settings

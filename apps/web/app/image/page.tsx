@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { AppShell } from '../../src/shared/components/AppShell';
-import { ImagineView } from '../../src/features/imagine/components/ImagineView';
+import { ImageView } from '../../src/features/image/components/ImageView';
 
-export default function ImaginePage() {
+export default function ImagePage() {
   return (
     <AppShell showSidebar={true}>
-      <ImagineView />
+      <ImageView />
     </AppShell>
   );
 }

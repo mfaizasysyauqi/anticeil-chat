@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
-import { AudioModelSelectorModal, AUDIO_MODELS } from './AudioModelSelectorModal';
+import { AudioModelSelectorModal, AUDIO_PROVIDERS } from './AudioModelSelectorModal';
+import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
+import { MediaControlButton } from '../../../shared/components/MediaControlButton';
 
 export function AudioView() {
   const language = useSettingsStore((s) => s.language);
@@ -20,13 +22,17 @@ export function AudioView() {
 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('gadis');
   const [audioSpeed, setAudioSpeed] = useState(1.0);
   const [selectedModel, setSelectedModel] = useState('microsoft-tts');
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 
-  const currentModel = AUDIO_MODELS.find((m) => m.id === selectedModel) || AUDIO_MODELS[0];
+  // Find current provider and model for display name
+  const currentProvider = AUDIO_PROVIDERS.find((p) =>
+    p.models.some((m) => m.id === selectedModel)
+  );
+  const currentModelInfo = currentProvider?.models.find((m) => m.id === selectedModel);
+  const modelDisplayName = currentModelInfo?.name || selectedModel;
 
   const voices = [
     { id: 'gadis', label: 'Gadis Indonesia' },
@@ -87,95 +93,47 @@ export function AudioView() {
           onSelectModel={(id) => setSelectedModel(id)}
         />
 
-        <form
+        <MediaPromptForm
+          prompt={prompt}
+          onPromptChange={setPrompt}
           onSubmit={handleGenerate}
-          style={{
-            background: 'var(--bg-input)',
-            border: `1px solid ${isFocused ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
-            borderRadius: 'var(--radius-xl)',
-            marginBottom: '28px',
-            boxShadow: isFocused ? 'var(--shadow-lg)' : 'var(--shadow-md)',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '10px 14px',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          {/* Textarea */}
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                if (prompt.trim() && !isGenerating) handleGenerate(e as unknown as React.FormEvent);
-              }
-            }}
-            placeholder={
-              language === 'id'
-                ? 'Ketik narasi atau musik yang ingin disuarakan (contoh: Selamat datang di Anticeil AI, asisten produktivitas cerdas masa depan)...'
-                : 'Type the narration or music prompt you want to voice (e.g. Welcome to Anticeil AI, your privacy-first intelligent assistant)...'
-            }
-            rows={3}
-            style={{
-              width: '100%',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              resize: 'none',
-              fontSize: '14px',
-              color: 'var(--text-primary)',
-              lineHeight: 1.6,
-              fontFamily: 'inherit',
-              marginBottom: '8px',
-            }}
-          />
-
-          {/* Control Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-            {/* Left: Model Selector + Voice Options */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              {/* Model Selector Button */}
-              <button
-                type="button"
-                onClick={() => setIsModelSelectorOpen(true)}
-                className="clickable-pill"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '4px 10px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-secondary)',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Mic size={13} color="#60a5fa" />
-                <span>{currentModel.name.split(' ')[0]} {currentModel.name.split(' ')[1]} {currentModel.name.split(' ')[2]}</span>
-                <ChevronDown size={12} />
-              </button>
-
+          isGenerating={isGenerating}
+          placeholder={
+            language === 'id'
+              ? 'Ketik narasi atau musik yang ingin disuarakan (contoh: Selamat datang di Anticeil AI, asisten produktivitas cerdas masa depan)...'
+              : 'Type the narration or music prompt you want to voice (e.g. Welcome to Anticeil AI, your privacy-first intelligent assistant)...'
+          }
+          modelDisplayName={modelDisplayName}
+          onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
+          language={language}
+          brandColor="#60a5fa"
+          additionalControls={
+            <>
               {/* Voice Selector Dropdown */}
               <select
                 value={selectedVoice}
                 onChange={(e) => setSelectedVoice(e.target.value)}
                 style={{
-                  padding: '4px 10px',
+                  padding: '7px 14px',
                   borderRadius: '8px',
                   border: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-surface)',
+                  background: 'var(--bg-subtle)',
                   color: 'var(--text-secondary)',
-                  fontSize: '12px',
+                  fontSize: '13px',
                   fontWeight: 500,
                   cursor: 'pointer',
                   outline: 'none',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#60a5fa';
+                  e.currentTarget.style.background = 'var(--bg-card)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                  e.currentTarget.style.background = 'var(--bg-subtle)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
                 }}
               >
                 {voices.map((voice) => (
@@ -185,56 +143,29 @@ export function AudioView() {
                 ))}
               </select>
 
-              {/* Speed Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                {speeds.map((speed) => (
-                  <button
-                    key={speed.value}
-                    type="button"
-                    onClick={() => setAudioSpeed(speed.value)}
-                    className="clickable-pill"
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: audioSpeed === speed.value ? '#60a5fa' : 'var(--bg-subtle)',
-                      color: audioSpeed === speed.value ? '#fff' : 'var(--text-muted)',
-                      fontSize: '11px',
-                      fontWeight: audioSpeed === speed.value ? 600 : 400,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {speed.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+              {/* Separator between Voice and Speed */}
+              <div
+                style={{
+                  width: '1px',
+                  height: '24px',
+                  background: 'var(--border-subtle)',
+                  flexShrink: 0,
+                }}
+              />
 
-            {/* Right: Generate Button */}
-            <button
-              type="submit"
-              disabled={!prompt.trim() || isGenerating}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                border: 'none',
-                background: isGenerating || !prompt.trim() ? 'var(--bg-subtle)' : '#60a5fa',
-                color: '#fff',
-                cursor: isGenerating || !prompt.trim() ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-            >
-              {isGenerating ? <Wand2 size={16} className="animate-spin" /> : <ArrowUp size={16} />}
-            </button>
-          </div>
-        </form>
+              {/* Speed Selector */}
+              {speeds.map((speed) => (
+                <MediaControlButton
+                  key={speed.value}
+                  label={`${speed.label}x`}
+                  isSelected={audioSpeed === speed.value}
+                  onClick={() => setAudioSpeed(speed.value)}
+                  brandColor="#60a5fa"
+                />
+              ))}
+            </>
+          }
+        />
 
         {/* ── Recent Generations Section ── */}
         <div style={{ marginTop: '32px' }}>
@@ -254,20 +185,6 @@ export function AudioView() {
               }}
             >
               0
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '6px 10px',
-              marginBottom: '8px',
-            }}
-          >
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#10b981' }}>
-              100% {language === 'id' ? 'Gratis' : 'Free'} • {language === 'id' ? 'Sintesis Neural Sisi-Klien' : 'Client-Side Neural Synthesis'}
             </span>
           </div>
 

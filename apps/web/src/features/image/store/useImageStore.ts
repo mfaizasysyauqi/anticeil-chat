@@ -8,7 +8,7 @@ import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
 
 export type MediaType = 'image' | 'video' | 'audio';
 
-export interface ImagineMediaItem {
+export interface ImageMediaItem {
   id: string;
   type: MediaType;
   prompt: string;
@@ -31,12 +31,12 @@ export interface ImagineMediaItem {
   createdAtLabel: string; // human label
 }
 
-interface ImagineState {
-  items: ImagineMediaItem[];
+interface ImageState {
+  items: ImageMediaItem[];
   isLoading: boolean;
 
   // CRUD
-  addItem: (item: Omit<ImagineMediaItem, 'isPinned' | 'collectionId'>) => void;
+  addItem: (item: Omit<ImageMediaItem, 'isPinned' | 'collectionId'>) => void;
   removeItem: (id: string) => void;
 
   // Pin
@@ -51,7 +51,7 @@ interface ImagineState {
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
-export const useImagineStore = create<ImagineState>()(
+export const useImageStore = create<ImageState>()(
   persist(
     (set, get) => ({
       items: [],
@@ -99,7 +99,7 @@ export const useImagineStore = create<ImagineState>()(
           if (!res.ok) return;
           const data = await res.json();
 
-          const toItem = (raw: any, type: MediaType): ImagineMediaItem => ({
+          const toItem = (raw: any, type: MediaType): ImageMediaItem => ({
             id: raw.id,
             type,
             prompt: raw.prompt || '',
@@ -118,7 +118,7 @@ export const useImagineStore = create<ImagineState>()(
             createdAtLabel: raw.createdAt || 'Just now',
           });
 
-          const incoming: ImagineMediaItem[] = [
+          const incoming: ImageMediaItem[] = [
             ...(data.images || []).map((i: any) => toItem(i, 'image')),
             ...(data.videos || []).map((i: any) => toItem(i, 'video')),
             ...(data.audios || []).map((i: any) => toItem(i, 'audio')),

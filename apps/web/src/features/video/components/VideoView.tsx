@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
-import { VideoModelSelectorModal, VIDEO_MODELS } from './VideoModelSelectorModal';
+import { VideoModelSelectorModal, VIDEO_PROVIDERS } from './VideoModelSelectorModal';
+import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
+import { MediaControlButton } from '../../../shared/components/MediaControlButton';
 
 export function VideoView() {
   const language = useSettingsStore((s) => s.language);
@@ -20,16 +22,20 @@ export function VideoView() {
 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const [selectedRatio, setSelectedRatio] = useState('16:9');
   const [selectedDuration, setSelectedDuration] = useState('3:2');
   const [selectedModel, setSelectedModel] = useState('luma');
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 
   const ratios = ['1:1', '16:9', '9:16', '4:3', '3:2'];
-  const durations = ['3:2', '4:3', '9:16', '16:9'];
+  const durations = ['3s', '5s', '10s'];
 
-  const currentModel = VIDEO_MODELS.find((m) => m.id === selectedModel) || VIDEO_MODELS[0];
+  // Find current provider and model for display name
+  const currentProvider = VIDEO_PROVIDERS.find((p) =>
+    p.models.some((m) => m.id === selectedModel)
+  );
+  const currentModelInfo = currentProvider?.models.find((m) => m.id === selectedModel);
+  const modelDisplayName = currentModelInfo?.name || selectedModel;
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,156 +82,56 @@ export function VideoView() {
           onSelectModel={(id) => setSelectedModel(id)}
         />
 
-        <form
+        <MediaPromptForm
+          prompt={prompt}
+          onPromptChange={setPrompt}
           onSubmit={handleGenerate}
-          style={{
-            background: 'var(--bg-input)',
-            border: `1px solid ${isFocused ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
-            borderRadius: 'var(--radius-xl)',
-            marginBottom: '28px',
-            boxShadow: isFocused ? 'var(--shadow-lg)' : 'var(--shadow-md)',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '10px 14px',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          {/* Textarea */}
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                if (prompt.trim() && !isGenerating) handleGenerate(e as unknown as React.FormEvent);
-              }
-            }}
-            placeholder={
-              language === 'id'
-                ? 'Jelaskan video yang ingin Anda buat secara detail (contoh: Drone terbang di atas hutan hujan tropis, 4K sinematik)...'
-                : 'Describe the video you want to generate in detail (e.g. Drone flying over tropical rainforest, 4K cinematic)...'
-            }
-            rows={3}
-            style={{
-              width: '100%',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              resize: 'none',
-              fontSize: '14px',
-              color: 'var(--text-primary)',
-              lineHeight: 1.6,
-              fontFamily: 'inherit',
-              marginBottom: '8px',
-            }}
-          />
-
-          {/* Control Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-            {/* Left: Model Selector + Options */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              {/* Model Selector Button */}
-              <button
-                type="button"
-                onClick={() => setIsModelSelectorOpen(true)}
-                className="clickable-pill"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '4px 10px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-secondary)',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Film size={13} color="#fb7185" />
-                <span>{currentModel.name.split(' ')[0]} {currentModel.name.split(' ')[1]}</span>
-                <ChevronDown size={12} />
-              </button>
-
+          isGenerating={isGenerating}
+          placeholder={
+            language === 'id'
+              ? 'Jelaskan video yang ingin Anda buat secara detail (contoh: Drone terbang di atas hutan hujan tropis, 4K sinematik)...'
+              : 'Describe the video you want to generate in detail (e.g. Drone flying over tropical rainforest, 4K cinematic)...'
+          }
+          modelDisplayName={modelDisplayName}
+          onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
+          language={language}
+          brandColor="#fb7185"
+          additionalControls={
+            <>
               {/* Ratio Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                {ratios.map((ratio) => (
-                  <button
-                    key={ratio}
-                    type="button"
-                    onClick={() => setSelectedRatio(ratio)}
-                    className="clickable-pill"
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: selectedRatio === ratio ? '#fb7185' : 'var(--bg-subtle)',
-                      color: selectedRatio === ratio ? '#fff' : 'var(--text-muted)',
-                      fontSize: '11px',
-                      fontWeight: selectedRatio === ratio ? 600 : 400,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {ratio}
-                  </button>
-                ))}
-              </div>
+              {ratios.map((ratio) => (
+                <MediaControlButton
+                  key={ratio}
+                  label={ratio}
+                  isSelected={selectedRatio === ratio}
+                  onClick={() => setSelectedRatio(ratio)}
+                  brandColor="#fb7185"
+                />
+              ))}
+
+              {/* Separator between Ratio and Duration */}
+              <div
+                style={{
+                  width: '1px',
+                  height: '24px',
+                  background: 'var(--border-subtle)',
+                  flexShrink: 0,
+                }}
+              />
 
               {/* Duration Chips */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                {durations.map((dur) => (
-                  <button
-                    key={dur}
-                    type="button"
-                    onClick={() => setSelectedDuration(dur)}
-                    className="clickable-pill"
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: selectedDuration === dur ? '#fb7185' : 'var(--bg-subtle)',
-                      color: selectedDuration === dur ? '#fff' : 'var(--text-muted)',
-                      fontSize: '11px',
-                      fontWeight: selectedDuration === dur ? 600 : 400,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {dur}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: Generate Button */}
-            <button
-              type="submit"
-              disabled={!prompt.trim() || isGenerating}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                border: 'none',
-                background: isGenerating || !prompt.trim() ? 'var(--bg-subtle)' : '#fb7185',
-                color: '#fff',
-                cursor: isGenerating || !prompt.trim() ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-            >
-              {isGenerating ? <Wand2 size={16} className="animate-spin" /> : <ArrowUp size={16} />}
-            </button>
-          </div>
-        </form>
+              {durations.map((dur) => (
+                <MediaControlButton
+                  key={dur}
+                  label={dur}
+                  isSelected={selectedDuration === dur}
+                  onClick={() => setSelectedDuration(dur)}
+                  brandColor="#fb7185"
+                />
+              ))}
+            </>
+          }
+        />
 
         {/* ── Recent Generations Section ── */}
         <div style={{ marginTop: '32px' }}>
@@ -245,20 +151,6 @@ export function VideoView() {
               }}
             >
               0
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '6px 10px',
-              marginBottom: '8px',
-            }}
-          >
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#10b981' }}>
-              100% {language === 'id' ? 'Gratis' : 'Free'} • {language === 'id' ? 'Sintesis Neural Sisi-Klien' : 'Client-Side Neural Synthesis'}
             </span>
           </div>
 

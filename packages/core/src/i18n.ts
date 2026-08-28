@@ -30,7 +30,7 @@ export const TRANSLATIONS = {
     nav: {
       chat: 'Chat',
       newChat: 'New Chat',
-      imagine: 'Imagine',
+      imagine: 'Image',
       pdfTools: 'PDF',
       automations: 'Automations',
       gateway: 'Route Gateway',
@@ -353,7 +353,7 @@ export const TRANSLATIONS = {
     nav: {
       chat: 'Percakapan',
       newChat: 'Percakapan Baru',
-      imagine: 'Imagine',
+      imagine: 'Gambar',
       pdfTools: 'PDF',
       automations: 'Otomatisasi',
       gateway: 'Route Gateway',

@@ -25,7 +25,7 @@ export interface VoiceItem {
   gender?: 'female' | 'male' | 'neutral' | 'music';
 }
 
-interface ImagineVoiceSelectorModalProps {
+interface ImageVoiceSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedVoiceId: string;
@@ -35,7 +35,7 @@ interface ImagineVoiceSelectorModalProps {
   isLoading?: boolean;
 }
 
-export function ImagineVoiceSelectorModal({
+export function ImageVoiceSelectorModal({
   isOpen,
   onClose,
   selectedVoiceId,
@@ -43,7 +43,7 @@ export function ImagineVoiceSelectorModal({
   availableVoices,
   currentModelName,
   isLoading = false,
-}: ImagineVoiceSelectorModalProps) {
+}: ImageVoiceSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
