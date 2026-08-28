@@ -65,7 +65,7 @@ const PROVIDER_SECTIONS: SectionConfig[] = [
     title: 'Penyedia OAuth2',
     dotColor: '#00d2ff',
     description:
-      'Penyedia yang diautentikasi melalui OAuth — masuk sekali dan OmniRoute menangani rotasi token secara otomatis.',
+      'Penyedia yang diautentikasi melalui OAuth — masuk sekali dan Gateway menangani rotasi token secara otomatis.',
     hasRepairEnv: true,
     hasTestAll: true,
   },
@@ -90,7 +90,7 @@ const PROVIDER_SECTIONS: SectionConfig[] = [
     title: 'Penyedia Kunci API',
     dotColor: '#6366f1',
     description:
-      'Penyedia kunci API standar. Tambahkan kunci Anda sekali dan OmniRoute akan merutekan, mencoba kembali, dan membatasi laju atas nama Anda.',
+      'Penyedia kunci API standar. Tambahkan kunci Anda sekali dan Gateway akan merutekan, mencoba kembali, dan membatasi laju atas nama Anda.',
     hasTestAll: true,
     subHeader: 'Llm Providers',
   },

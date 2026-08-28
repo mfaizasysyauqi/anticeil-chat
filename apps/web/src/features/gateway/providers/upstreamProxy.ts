@@ -18,7 +18,7 @@ export const UPSTREAM_PROXY_PROVIDERS: GatewayProvider[] = [
     authType: 'proxy',
     badge: 'Proxy',
     description: 'Local and remote CLI reverse proxy bridge for corporate networks and traffic inspection.',
-    website: 'https://github.com/diegosouzapw/OmniRoute',
+    website: 'https://github.com/anticeil/gateway',
     models: ['cliproxyapi/tunnel'],
   },
 ];
