@@ -687,6 +687,9 @@ export function Sidebar({
   const session = useAuthStore((s) => s.session);
 
   const isImagine = pathname === '/imagine';
+  const isVideo = pathname === '/video';
+  const isAudio = pathname === '/audio';
+  const isMediaMode = isImagine || isVideo || isAudio;
 
   // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
@@ -1531,6 +1534,44 @@ export function Sidebar({
             >
               <ImageIcon size={17} />
             </Link>
+
+            {/* Video */}
+            <Link
+              href="/video"
+              title={language === 'id' ? 'Video' : 'Video'}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: pathname === '/video' ? 'rgba(251, 113, 133, 0.2)' : 'transparent',
+                color: pathname === '/video' ? '#fb7185' : 'var(--text-secondary)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Film size={17} />
+            </Link>
+
+            {/* Audio */}
+            <Link
+              href="/audio"
+              title={language === 'id' ? 'Audio' : 'Audio'}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: pathname === '/audio' ? 'rgba(96, 165, 250, 0.2)' : 'transparent',
+                color: pathname === '/audio' ? '#60a5fa' : 'var(--text-secondary)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Music size={17} />
+            </Link>
           </div>
         </div>
 
@@ -1600,6 +1641,10 @@ export function Sidebar({
             >
               {isImagine
                 ? 'Anticeil Imagine'
+                : isVideo
+                ? 'Anticeil Video'
+                : isAudio
+                ? 'Anticeil Audio'
                 : 'Anticeil'}
             </span>
           </div>
@@ -1676,6 +1721,62 @@ export function Sidebar({
               <Sparkles size={15} color="#A25DDC" />
               <span>{language === 'id' ? 'Imagine Baru' : 'New Imagine'}</span>
             </button>
+          ) : isVideo ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (pathname !== '/video') router.push('/video');
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className="clickable-pill"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 10px',
+                borderRadius: 'var(--radius-md, 6px)',
+                background: pathname === '/video' ? 'var(--bg-subtle)' : 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'background 0.15s ease',
+              }}
+            >
+              <Film size={15} color="#fb7185" />
+              <span>{language === 'id' ? 'Video Baru' : 'New Video'}</span>
+            </button>
+          ) : isAudio ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (pathname !== '/audio') router.push('/audio');
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className="clickable-pill"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 10px',
+                borderRadius: 'var(--radius-md, 6px)',
+                background: pathname === '/audio' ? 'var(--bg-subtle)' : 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'background 0.15s ease',
+              }}
+            >
+              <Music size={15} color="#60a5fa" />
+              <span>{language === 'id' ? 'Audio Baru' : 'New Audio'}</span>
+            </button>
           ) : (
             <button
               type="button"
@@ -1704,7 +1805,7 @@ export function Sidebar({
           )}
 
           {/* Connectors & Integrations Shortcut in Chat Mode */}
-          {!isImagine && (
+          {!isMediaMode && (
             <button
               type="button"
               onClick={() => setIsConnectorsModalOpen(true)}
@@ -1752,6 +1853,14 @@ export function Sidebar({
                   ? language === 'id'
                     ? 'Cari prompt gambar...'
                     : 'Search image prompts...'
+                  : isVideo
+                  ? language === 'id'
+                    ? 'Cari prompt video...'
+                    : 'Search video prompts...'
+                  : isAudio
+                  ? language === 'id'
+                    ? 'Cari prompt audio...'
+                    : 'Search audio prompts...'
                     : t.sidebar.searchChats
               }
               value={searchQuery}
@@ -1780,9 +1889,9 @@ export function Sidebar({
           }}
         >
           {/* ─────────────────────────────────────────────────────────────
-           * A. IMAGINE MODE SIDEBAR CONTENT
+           * A. MEDIA MODE SIDEBAR CONTENT (Image/Video/Audio)
            * ───────────────────────────────────────────────────────────── */}
-          {isImagine ? (
+          {isMediaMode ? (
             <>
               {/* Imagine Media Collections */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1798,7 +1907,11 @@ export function Sidebar({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {language === 'id' ? 'Koleksi Media' : 'Media Collections'}
+                      {isVideo 
+                        ? (language === 'id' ? 'Koleksi Video' : 'Video Collections')
+                        : isAudio
+                        ? (language === 'id' ? 'Koleksi Audio' : 'Audio Collections')
+                        : (language === 'id' ? 'Koleksi Gambar' : 'Image Collections')}
                     </span>
                     {isProjectsExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
                   </div>
