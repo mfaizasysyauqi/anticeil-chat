@@ -275,8 +275,6 @@ export function Navbar({
           >
             {pathname === '/imagine'
               ? t.nav.imagine
-              : pathname === '/gateway'
-              ? (t.nav.gateway || 'Route Gateway')
               : pathname === '/settings'
               ? t.nav.settings
               : activeSession?.title || 'Anticeil'}
