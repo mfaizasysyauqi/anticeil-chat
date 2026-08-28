@@ -8,9 +8,11 @@ import {
   Radio,
   ArrowUp,
   Volume2,
+  ChevronDown,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
+import { AudioModelSelectorModal, AUDIO_MODELS } from './AudioModelSelectorModal';
 
 export function AudioView() {
   const language = useSettingsStore((s) => s.language);
@@ -21,6 +23,10 @@ export function AudioView() {
   const [isFocused, setIsFocused] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('gadis');
   const [audioSpeed, setAudioSpeed] = useState(1.0);
+  const [selectedModel, setSelectedModel] = useState('microsoft-tts');
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+
+  const currentModel = AUDIO_MODELS.find((m) => m.id === selectedModel) || AUDIO_MODELS[0];
 
   const voices = [
     { id: 'gadis', label: 'Gadis Indonesia' },
@@ -74,6 +80,13 @@ export function AudioView() {
         </div>
 
         {/* ── Prompt Card (Chat-style elegant floating input) ── */}
+        <AudioModelSelectorModal
+          isOpen={isModelSelectorOpen}
+          onClose={() => setIsModelSelectorOpen(false)}
+          selectedModelId={selectedModel}
+          onSelectModel={(id) => setSelectedModel(id)}
+        />
+
         <form
           onSubmit={handleGenerate}
           style={{
@@ -127,6 +140,7 @@ export function AudioView() {
               {/* Model Selector Button */}
               <button
                 type="button"
+                onClick={() => setIsModelSelectorOpen(true)}
                 className="clickable-pill"
                 style={{
                   display: 'flex',
@@ -144,7 +158,8 @@ export function AudioView() {
                 }}
               >
                 <Mic size={13} color="#60a5fa" />
-                <span>Microsoft Edge Neural TTS</span>
+                <span>{currentModel.name.split(' ')[0]} {currentModel.name.split(' ')[1]} {currentModel.name.split(' ')[2]}</span>
+                <ChevronDown size={12} />
               </button>
 
               {/* Voice Selector Dropdown */}

@@ -8,9 +8,11 @@ import {
   ArrowUp,
   Ratio,
   Clock,
+  ChevronDown,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
+import { VideoModelSelectorModal, VIDEO_MODELS } from './VideoModelSelectorModal';
 
 export function VideoView() {
   const language = useSettingsStore((s) => s.language);
@@ -21,9 +23,13 @@ export function VideoView() {
   const [isFocused, setIsFocused] = useState(false);
   const [selectedRatio, setSelectedRatio] = useState('16:9');
   const [selectedDuration, setSelectedDuration] = useState('3:2');
+  const [selectedModel, setSelectedModel] = useState('luma');
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 
   const ratios = ['1:1', '16:9', '9:16', '4:3', '3:2'];
   const durations = ['3:2', '4:3', '9:16', '16:9'];
+
+  const currentModel = VIDEO_MODELS.find((m) => m.id === selectedModel) || VIDEO_MODELS[0];
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +69,13 @@ export function VideoView() {
         </div>
 
         {/* ── Prompt Card (Chat-style elegant floating input) ── */}
+        <VideoModelSelectorModal
+          isOpen={isModelSelectorOpen}
+          onClose={() => setIsModelSelectorOpen(false)}
+          selectedModelId={selectedModel}
+          onSelectModel={(id) => setSelectedModel(id)}
+        />
+
         <form
           onSubmit={handleGenerate}
           style={{
@@ -116,6 +129,7 @@ export function VideoView() {
               {/* Model Selector Button */}
               <button
                 type="button"
+                onClick={() => setIsModelSelectorOpen(true)}
                 className="clickable-pill"
                 style={{
                   display: 'flex',
@@ -133,7 +147,8 @@ export function VideoView() {
                 }}
               >
                 <Film size={13} color="#fb7185" />
-                <span>Luma Ray 2</span>
+                <span>{currentModel.name.split(' ')[0]} {currentModel.name.split(' ')[1]}</span>
+                <ChevronDown size={12} />
               </button>
 
               {/* Ratio Selector */}
