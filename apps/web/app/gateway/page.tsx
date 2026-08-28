@@ -6,7 +6,7 @@ import { GatewayView } from '../../src/features/gateway/components/GatewayView';
 
 export default function GatewayPage() {
   return (
-    <AppShell showSidebar={true}>
+    <AppShell showSidebar={false}>
       <GatewayView />
     </AppShell>
   );

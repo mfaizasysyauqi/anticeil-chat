@@ -1,4 +1,4 @@
-import {
+﻿import {
   LLMProviderId,
   PROVIDER_MODELS,
   PROVIDER_DEFINITIONS,
@@ -54,7 +54,7 @@ export function resolveModelProvider(
       providerId = matchedProvider.id;
       normalizedModelId = cleanModel || rawModel;
       authType = matchedProvider.authType;
-    } else if (cleanPrefix in PROVIDER_DEFINITIONS || ['openai', 'anthropic', 'gemini', 'groq', 'deepseek', 'ollama', 'openrouter', 'custom'].includes(cleanPrefix)) {
+    } else if (cleanPrefix in PROVIDER_DEFINITIONS || ['openai', 'anthropic', 'gemini', 'groq', 'deepseek', 'ollama', 'openrouter', 'custom', 'together', 'fireworks', 'sambanova', 'cerebras', 'mistral', 'cohere', 'perplexity', 'hyperbolic', 'novita', 'xai', 'siliconflow', 'nebius', 'deepinfra', 'alibaba', 'upstage'].includes(cleanPrefix)) {
       providerId = cleanPrefix === 'openrouter' ? 'custom' : cleanPrefix;
       normalizedModelId = cleanModel;
     }
@@ -100,7 +100,7 @@ export function resolveModelProvider(
     normalizedModelId = 'groq/compound';
   }
 
-  // Groq model aliases normalization
+  // Provider specific model normalizations & aliases
   if (providerId === 'groq') {
     if (
       normalizedModelId === 'deepseek-r1' ||
@@ -120,6 +120,26 @@ export function resolveModelProvider(
     }
   }
 
+  // Anthropic alias normalization
+  if (providerId === 'anthropic') {
+    if (normalizedModelId === 'claude-3-7-sonnet' || normalizedModelId === 'claude-3.7-sonnet') {
+      normalizedModelId = 'claude-3-7-sonnet-20250219';
+    } else if (normalizedModelId === 'claude-3-5-sonnet' || normalizedModelId === 'claude-3.5-sonnet') {
+      normalizedModelId = 'claude-3-5-sonnet-20241022';
+    } else if (normalizedModelId === 'claude-3-5-haiku' || normalizedModelId === 'claude-3.5-haiku') {
+      normalizedModelId = 'claude-3-5-haiku-20241022';
+    }
+  }
+
+  // OpenAI alias normalization
+  if (providerId === 'openai') {
+    if (normalizedModelId === 'gpt-4.5') {
+      normalizedModelId = 'gpt-4.5-preview';
+    } else if (normalizedModelId === 'o3') {
+      normalizedModelId = 'o3-mini';
+    }
+  }
+
   // Fallback to built-in free tier keys for Groq & Gemini if no custom key is provided
   if (!apiKey) {
     if (providerId === 'groq') {
@@ -129,15 +149,84 @@ export function resolveModelProvider(
     }
   }
 
-  // Default Base URLs
+  // Default Base URLs for all primary AI Providers
   if (!baseUrl) {
-    if (providerId === 'openai') baseUrl = 'https://api.openai.com/v1';
-    if (providerId === 'anthropic') baseUrl = 'https://api.anthropic.com/v1';
-    if (providerId === 'deepseek') baseUrl = 'https://api.deepseek.com/v1';
-    if (providerId === 'groq') baseUrl = 'https://api.groq.com/openai/v1';
-    if (providerId === 'gemini') baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-    if (providerId === 'pollinations') baseUrl = 'https://text.pollinations.ai';
-    if (providerId === 'ollama-local') baseUrl = 'http://localhost:11434';
+    switch (providerId) {
+      case 'openai':
+        baseUrl = 'https://api.openai.com/v1';
+        break;
+      case 'anthropic':
+        baseUrl = 'https://api.anthropic.com/v1';
+        break;
+      case 'gemini':
+        baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+        break;
+      case 'groq':
+        baseUrl = 'https://api.groq.com/openai/v1';
+        break;
+      case 'deepseek':
+        baseUrl = 'https://api.deepseek.com/v1';
+        break;
+      case 'sambanova':
+        baseUrl = 'https://api.sambanova.ai/v1';
+        break;
+      case 'cerebras':
+        baseUrl = 'https://api.cerebras.ai/v1';
+        break;
+      case 'together':
+        baseUrl = 'https://api.together.xyz/v1';
+        break;
+      case 'fireworks':
+        baseUrl = 'https://api.fireworks.ai/inference/v1';
+        break;
+      case 'mistral':
+        baseUrl = 'https://api.mistral.ai/v1';
+        break;
+      case 'cohere':
+        baseUrl = 'https://api.cohere.com/v2';
+        break;
+      case 'perplexity':
+        baseUrl = 'https://api.perplexity.ai';
+        break;
+      case 'hyperbolic':
+        baseUrl = 'https://api.hyperbolic.xyz/v1';
+        break;
+      case 'novita':
+        baseUrl = 'https://api.novita.ai/v3/openai';
+        break;
+      case 'xai':
+        baseUrl = 'https://api.x.ai/v1';
+        break;
+      case 'openrouter':
+      case 'custom':
+        baseUrl = 'https://openrouter.ai/api/v1';
+        break;
+      case 'siliconflow':
+        baseUrl = 'https://api.siliconflow.cn/v1';
+        break;
+      case 'nebius':
+        baseUrl = 'https://api.studio.nebius.ai/v1';
+        break;
+      case 'deepinfra':
+        baseUrl = 'https://api.deepinfra.com/v1/openai';
+        break;
+      case 'alibaba':
+        baseUrl = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
+        break;
+      case 'upstage':
+        baseUrl = 'https://api.upstage.ai/v1/solar';
+        break;
+      case 'pollinations':
+        baseUrl = 'https://text.pollinations.ai';
+        break;
+      case 'ollama-local':
+      case 'ollama':
+        baseUrl = 'http://localhost:11434';
+        break;
+      default:
+        baseUrl = 'https://api.openai.com/v1';
+        break;
+    }
   }
 
   return {

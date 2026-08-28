@@ -1,5 +1,4 @@
 import { S3Client } from '@aws-sdk/client-s3';
-import { NodeHttpHandler } from '@smithy/node-http-handler';
 import https from 'https';
 
 const accountId = process.env.R2_ACCOUNT_ID;
@@ -13,18 +12,13 @@ if (!accountId || !accessKeyId || !secretAccessKey) {
 
 // In local dev, corporate proxies/antivirus software often intercept TLS connections
 // causing SSL handshake failures. We bypass certificate validation in development only.
-const requestHandler =
+const devHttpsAgent =
   process.env.NODE_ENV !== 'production'
-    ? new NodeHttpHandler({
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false,
-          // Add connection timeout and keep-alive settings
-          keepAlive: true,
-          keepAliveMsecs: 30000,
-          timeout: 60000,
-        }),
-        connectionTimeout: 5000,
-        requestTimeout: 30000,
+    ? new https.Agent({
+        rejectUnauthorized: false,
+        keepAlive: true,
+        keepAliveMsecs: 30000,
+        timeout: 60000,
       })
     : undefined;
 
@@ -39,7 +33,7 @@ export const r2 = new S3Client({
     accessKeyId: accessKeyId ?? '',
     secretAccessKey: secretAccessKey ?? '',
   },
-  ...(requestHandler ? { requestHandler } : {}),
+  ...(devHttpsAgent ? { requestHandler: { httpsAgent: devHttpsAgent } as any } : {}),
 });
 
 export const R2_BUCKET = process.env.R2_BUCKET_NAME ?? 'anticeil-storage';

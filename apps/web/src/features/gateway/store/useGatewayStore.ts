@@ -1,12 +1,14 @@
-'use client';
+﻿'use client';
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ProviderCategory, ProviderConnection } from '../providers/types';
 
 export type GatewaySubNav =
+  | 'home'
   | 'providers'
   | 'api-keys'
+  | 'playground'
   | 'quota'
   | 'endpoint'
   | 'combos'
@@ -29,53 +31,42 @@ export interface GatewayRequestLog {
   timestamp: number;
   model: string;
   provider: string;
-  status: 'success' | 'failed';
+  status: 'success' | 'error' | 'throttled';
   statusCode: number;
   durationMs: number;
-  promptTokens?: number;
-  completionTokens?: number;
-  clientIp?: string;
-  userAgent?: string;
+  promptTokens: number;
+  completionTokens: number;
+  failoverFrom?: string;
+  compressedSavedTokens?: number;
 }
 
 export interface ModelCombo {
   id: string;
   name: string;
   description: string;
-  chain: string[];
+  chain: string[]; // e.g. ['groq/deepseek-r1', 'gemini-2.0-flash', 'anthropic/claude-3-7-sonnet']
   isActive: boolean;
 }
 
 export interface CompressionSettings {
-  mode: 'off' | 'lite' | 'smart' | 'aggressive';
+  mode: 'off' | 'mild' | 'smart' | 'aggressive' | 'extreme';
   stripWhitespace: boolean;
   dedupHistory: boolean;
   summarizeOldTurns: boolean;
 }
 
-export interface ProviderQuotaInfo {
-  providerId: string;
-  name: string;
-  usedTpm: number;
-  limitTpm: number;
-  usedRpm: number;
-  limitRpm: number;
-  resetInterval: string;
-  tier: 'Free' | 'Tier 1' | 'Unlimited';
-}
-
-interface GatewayState {
+export interface GatewayState {
   // Navigation
   activeSubNav: GatewaySubNav;
   setActiveSubNav: (nav: GatewaySubNav) => void;
 
-  // Keys & Server
+  // Primary API Keys
   apiKeys: GatewayApiKey[];
   requestLogs: GatewayRequestLog[];
   isServerRunning: boolean;
   activePort: number;
 
-  // Provider Hub State
+  // Provider Hub Connections (Keys, Custom URLs, OAuth, Cookie)
   providerConnections: Record<string, ProviderConnection>;
   activeCategory: ProviderCategory | 'all';
   searchQuery: string;
@@ -104,6 +95,10 @@ interface GatewayState {
   disconnectProvider: (providerId: string) => void;
   setActiveCategory: (cat: ProviderCategory | 'all') => void;
   setSearchQuery: (query: string) => void;
+
+  // Backup & Restore
+  exportConfig: () => string;
+  importConfig: (json: string) => boolean;
 }
 
 function generateRandomKey(): string {
@@ -118,13 +113,13 @@ function generateRandomKey(): string {
 export const useGatewayStore = create<GatewayState>()(
   persist(
     (set, get) => ({
-      activeSubNav: 'providers',
+      activeSubNav: 'home',
       setActiveSubNav: (activeSubNav) => set({ activeSubNav }),
 
       apiKeys: [
         {
           id: 'default_key',
-          name: 'Primary Local Key (Cursor & Cline)',
+          name: 'Primary Universal Key (Cursor & IDEs)',
           key: 'sk-anticeil-live-local-universal-key',
           createdAt: Date.now(),
           requestCount: 14,
@@ -173,7 +168,7 @@ export const useGatewayStore = create<GatewayState>()(
       combos: [
         {
           id: 'combo-fast-free',
-          name: '🚀 Ultra Fast Free Tier Cascade',
+          name: '⚡ Ultra Fast Free Tier Cascade',
           description: 'Coba Groq LPU pertama; jika limit (429), otomatis beralih ke Gemini Flash & Cerebras dalam 50ms.',
           chain: ['groq/compound', 'gemini/gemini-2.0-flash', 'cerebras/llama-3.3-70b'],
           isActive: true,
@@ -329,6 +324,37 @@ export const useGatewayStore = create<GatewayState>()(
 
       setActiveCategory: (activeCategory) => set({ activeCategory }),
       setSearchQuery: (searchQuery) => set({ searchQuery }),
+
+      exportConfig: () => {
+        const state = get();
+        const exportData = {
+          version: 3,
+          exportedAt: Date.now(),
+          apiKeys: state.apiKeys,
+          providerConnections: state.providerConnections,
+          combos: state.combos,
+          compression: state.compression,
+        };
+        return JSON.stringify(exportData, null, 2);
+      },
+
+      importConfig: (json: string) => {
+        try {
+          const data = JSON.parse(json);
+          if (data && typeof data === 'object') {
+            set((state) => ({
+              apiKeys: Array.isArray(data.apiKeys) ? data.apiKeys : state.apiKeys,
+              providerConnections: data.providerConnections || state.providerConnections,
+              combos: Array.isArray(data.combos) ? data.combos : state.combos,
+              compression: data.compression || state.compression,
+            }));
+            return true;
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      },
     }),
     {
       name: 'anticeil_gateway_providers_v3',

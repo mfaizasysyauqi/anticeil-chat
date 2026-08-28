@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:web": "pnpm --filter web dev",
+    "dev:gateway": "pnpm --filter omniroute dev",
     "dev:desktop": "pnpm --filter desktop tauri:dev",
     "dev:desktop:ui": "pnpm --filter desktop dev",
     "dev:mobile": "pnpm --filter mobile start",
@@ -25,6 +26,14 @@
   "pnpm": {
     "overrides": {
       "@types/react": "^19.0.10"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "better-sqlite3",
+      "esbuild",
+      "omniroute",
+      "sharp"
+    ]
   }
 }

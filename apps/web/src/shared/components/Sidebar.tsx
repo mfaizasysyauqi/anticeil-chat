@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
+  Home,
+  Play,
+  Power,
   Search,
   MessageSquare,
   SquarePen,
@@ -53,6 +56,7 @@ import {
   Sliders,
   Radar,
   GitFork,
+  Terminal,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -671,76 +675,139 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
 // ─── GatewaySidebarNav ────────────────────────────────────────────────────────────────────────────────
 // 8 Gateway module items shown inside the main sidebar drawer when pathname === '/gateway'
 function GatewaySidebarNav() {
-  const { activeSubNav, setActiveSubNav, apiKeys, combos, requestLogs, compression } = useGatewayStore();
+  const { activeSubNav, setActiveSubNav, apiKeys, combos, requestLogs, compression, isServerRunning } = useGatewayStore();
 
   const connectedCount = useGatewayStore((s) =>
     Object.values(s.providerConnections).filter((c) => c.isEnabled).length
   );
 
-  const items: Array<{ id: GatewaySubNav; label: string; icon: React.ReactNode; badge?: string; color: string }> = [
-    { id: 'providers',   label: 'Katalog 295+ Provider',   icon: <Globe size={14} color="#10b981" />,   badge: `${connectedCount} aktif`, color: '#10b981' },
-    { id: 'api-keys',    label: 'Manajer Kunci API',       icon: <KeyRound size={14} color="#818cf8" />, badge: `${apiKeys.length}`,       color: '#818cf8' },
-    { id: 'quota',       label: 'Provider Quota & Limits', icon: <Gauge size={14} color="#38bdf8" />,    color: '#38bdf8' },
-    { id: 'endpoint',    label: 'Endpoints & Setup',       icon: <Zap size={14} color="#fbbf24" />,      color: '#fbbf24' },
-    { id: 'combos',      label: 'Combos & Failover',       icon: <GitFork size={14} color="#f97316" />,  badge: `${combos.length}`,        color: '#f97316' },
-    { id: 'compressor',  label: 'Context Compressor',      icon: <Sliders size={14} color="#a78bfa" />,  badge: compression.mode.toUpperCase(), color: '#a78bfa' },
-    { id: 'traffic',     label: 'Traffic Inspector',       icon: <Activity size={14} color="#34d399" />, badge: requestLogs.length > 0 ? `${requestLogs.length}` : undefined, color: '#34d399' },
-    { id: 'discovery',   label: 'Radar Akses Gratisan',    icon: <Radar size={14} color="#fb7185" />,    color: '#fb7185' },
+  const items: Array<{ id: GatewaySubNav; label: string; sub?: string; icon: React.ReactNode; badge?: string; color: string }> = [
+    { id: 'home',        label: 'Rumah',                   sub: 'Dashboard overview',        icon: <Home size={15} color="#60a5fa" />,     color: '#60a5fa' },
+    { id: 'endpoint',    label: 'Endpoint',                sub: 'URL koneksi AI Anda',       icon: <Zap size={14} color="#38bdf8" />,      color: '#38bdf8' },
+    { id: 'api-keys',    label: 'Manajer API',             sub: 'Kelola kunci dan akses API', icon: <KeyRound size={14} color="#f59e0b" />, badge: `${apiKeys.length}`, color: '#f59e0b' },
+    { id: 'providers',   label: 'Penyedia',                sub: 'Manage AI providers',       icon: <Globe size={14} color="#818cf8" />,    badge: `${connectedCount} aktif`, color: '#818cf8' },
+    { id: 'combos',      label: 'Kombo',                   sub: 'Penyedia grup untuk failov...', icon: <GitFork size={14} color="#a855f7" />, badge: `${combos.length}`, color: '#a855f7' },
+    { id: 'quota',       label: 'Provider Quota',          sub: 'Track provider usage limits', icon: <Gauge size={14} color="#f472b6" />, color: '#f472b6' },
+    { id: 'playground',  label: 'Live Playground',         sub: 'Uji streaming model & TTFT', icon: <Terminal size={14} color="#eab308" />, badge: 'LIVE', color: '#eab308' },
+    { id: 'compressor',  label: 'Context Compressor',      sub: 'RTK & Caveman token saver', icon: <Sliders size={14} color="#f97316" />, badge: compression.mode.toUpperCase(), color: '#f97316' },
+    { id: 'traffic',     label: 'Traffic Inspector',       sub: 'Live request debugger',     icon: <Activity size={14} color="#34d399" />, badge: requestLogs.length > 0 ? `${requestLogs.length}` : undefined, color: '#34d399' },
+    { id: 'discovery',   label: 'Radar Akses Gratisan',    sub: '0-cost open models',        icon: <Radar size={14} color="#fb7185" />, color: '#fb7185' },
   ];
 
-  const groups = [
-    { label: 'Pusat Perutean', ids: ['providers', 'api-keys', 'quota', 'endpoint'] as GatewaySubNav[] },
-    { label: 'Fitur Cerdas',   ids: ['combos', 'compressor', 'traffic', 'discovery'] as GatewaySubNav[] },
+  const sections = [
+    { label: '', ids: ['home'] as GatewaySubNav[] },
+    { label: 'OMNIPROXY', ids: ['endpoint', 'api-keys', 'providers', 'combos', 'quota'] as GatewaySubNav[] },
+    { label: 'FITUR CERDAS & TOOLS', ids: ['playground', 'compressor', 'traffic', 'discovery'] as GatewaySubNav[] },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      {groups.map((group) => (
-        <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '8px 10px 4px' }}>
-            {group.label}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {sections.map((sec, idx) => (
+          <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            {sec.label && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '10px 10px 4px' }}>
+                {sec.label}
+              </div>
+            )}
+            {sec.ids.map((id) => {
+              const item = items.find((i) => i.id === id);
+              if (!item) return null;
+              const isActive = activeSubNav === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActiveSubNav(id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: isActive ? 700 : 500,
+                    cursor: 'pointer',
+                    background: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                    border: isActive ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid transparent',
+                    color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                    transition: 'all 0.12s ease',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', flexShrink: 0 }}>
+                      {item.icon}
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12.5px' }}>{item.label}</span>
+                      {item.sub && (
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {item.sub}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {item.badge && (
+                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '6px', background: isActive ? `${item.color}26` : 'var(--bg-subtle)', color: item.color, flexShrink: 0, marginLeft: '4px' }}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-          {group.ids.map((id) => {
-            const item = items.find((i) => i.id === id)!;
-            const isActive = activeSubNav === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setActiveSubNav(id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '7px 10px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: isActive ? 700 : 400,
-                  cursor: 'pointer',
-                  background: isActive ? 'var(--bg-elevated)' : 'transparent',
-                  border: 'none',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  transition: 'all 0.12s ease',
-                  textAlign: 'left',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', flexShrink: 0 }}>
-                    {item.icon}
-                  </span>
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
-                </div>
-                {item.badge && (
-                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '8px', background: isActive ? `${item.color}22` : 'var(--bg-subtle)', color: isActive ? item.color : 'var(--text-muted)', flexShrink: 0, marginLeft: '4px' }}>
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        ))}
+      </div>
+
+      {/* Bottom Status Bar */}
+      <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#f59e0b', padding: '0 4px' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b' }} />
+          <span>Sinkronisasi aktif</span>
         </div>
-      ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+          <button
+            type="button"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '6px',
+              padding: '6px 8px',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+            }}
+          >
+            <Play size={11} color="#34d399" /> Mulai ...
+          </button>
+          <button
+            type="button"
+            style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '6px',
+              padding: '6px 8px',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: '#f87171',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+            }}
+          >
+            <Power size={11} color="#f87171" /> Matikan
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

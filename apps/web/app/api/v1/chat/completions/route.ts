@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { resolveModelProvider } from '@/features/gateway/services/routerEngine';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-anticeil-keys',
 };
 
 export async function OPTIONS() {
@@ -44,12 +44,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract Bearer token if provided in request
+    // Extract Bearer token and optional client-supplied user provider keys header
     const authHeader = req.headers.get('authorization') || '';
     const bearerKey = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : '';
 
+    let clientKeys: Record<string, { apiKey?: string; baseUrl?: string }> = {};
+    const clientKeysHeader = req.headers.get('x-anticeil-keys');
+    if (clientKeysHeader) {
+      try {
+        clientKeys = JSON.parse(clientKeysHeader);
+      } catch {}
+    }
+
     // Resolve provider & model
-    const resolution = resolveModelProvider(model || 'gpt-4o-mini', {});
+    const resolution = resolveModelProvider(model || 'groq/compound', clientKeys);
 
     // If caller provided a direct provider key (e.g. sk-... or gsk_...) instead of Anticeil gateway key, use it
     let effectiveApiKey = resolution.apiKey;
@@ -59,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     const { providerId, normalizedModelId, baseUrl } = resolution;
 
-    // ── 1. Anthropic Provider ───────────────────────────────────────────────
+    // ─── 1. Anthropic Provider ──────────────────────────────────────────
     if (providerId === 'anthropic') {
       const systemMessage = messages.find((m: any) => m.role === 'system');
       const chatMessages = messages
@@ -171,7 +179,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── 2. Google Gemini Provider ───────────────────────────────────────────
+    // ─── 2. Google Gemini Provider ───────────────────────────────────────
     if (providerId === 'gemini') {
       const contents = messages
         .filter((m: any) => m.role === 'user' || m.role === 'assistant')
@@ -274,14 +282,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── 3. Standard OpenAI / Groq / DeepSeek / Ollama / Custom ────────────────
+    // ─── 3. Standard OpenAI / Groq / DeepSeek / Ollama / Custom ────────
     const endpoint = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (effectiveApiKey) {
+      headers['Authorization'] = `Bearer ${effectiveApiKey}`;
+    }
+
     const upstreamRes = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${effectiveApiKey}`,
-      },
+      headers,
       body: JSON.stringify({
         model: normalizedModelId,
         messages,

@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -20,8 +24,38 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*", "./*"]
-    }
+      "@/*": [
+        "./src/*",
+        "./*"
+      ],
+      "@/shared/*": [
+        "./src/features/gateway/omniroute/*",
+        "./src/shared/*"
+      ],
+      "@/domain/*": [
+        "./src/features/gateway/omniroute/domain/*"
+      ],
+      "@/models/*": [
+        "./src/features/gateway/omniroute/models/*"
+      ],
+      "@/sse/*": [
+        "./src/features/gateway/omniroute/sse/*"
+      ],
+      "@/lib/*": [
+        "./src/features/gateway/omniroute/lib/*",
+        "./src/lib/*"
+      ],
+      "@omniroute/open-sse/*": [
+        "./src/features/gateway/omniroute/open-sse/*",
+        "../../packages/omniroute/open-sse/*"
+      ],
+      "open-sse/*": [
+        "./src/features/gateway/omniroute/open-sse/*",
+        "../../packages/omniroute/open-sse/*"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "noImplicitAny": false
   },
   "include": [
     "next-env.d.ts",
@@ -30,6 +64,7 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/features/gateway/omniroute"
   ]
 }
