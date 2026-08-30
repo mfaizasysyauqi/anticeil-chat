@@ -395,8 +395,14 @@ code, pre, kbd {
   background: var(--bg-sidebar);
 }
 
-/* Desktop collapsed state */
-.app-sidebar-drawer.collapsed:not(.drawer-open),
+/* Desktop collapsed state — keep 48px icon rail visible */
+.app-sidebar-drawer.collapsed:not(.drawer-open) {
+  width: 48px !important;
+  min-width: 48px !important;
+  overflow: visible !important;
+  visibility: visible !important;
+}
+
 .sidebar-responsive.collapsed:not(.open) {
   width: 0px !important;
   min-width: 0px !important;
@@ -404,6 +410,14 @@ code, pre, kbd {
   overflow: hidden !important;
   visibility: hidden !important;
 }
+
+/* Hide workspace panel on desktop when sidebar is in mini-rail (collapsed) mode */
+@media (min-width: 1024px) {
+  .desktop-collapsed-hidden {
+    display: none !important;
+  }
+}
+
 
 /* Icon rail: visible by default on desktop */
 .sidebar-icon-rail {

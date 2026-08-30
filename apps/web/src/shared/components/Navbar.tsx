@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   Menu,
   MoreVertical,
-  PanelLeftOpen,
   Pin,
   Folder,
   Trash2,
@@ -242,29 +241,6 @@ export function Navbar({
           </button>
         )}
 
-        {/* Desktop Expand Sidebar Button (when collapsed on >= 1024px) */}
-        {isDesktopSidebarCollapsed && onToggleDesktopSidebar && (
-          <button
-            onClick={onToggleDesktopSidebar}
-            className="hide-on-drawer"
-            title="Expand sidebar"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-            aria-label="Expand sidebar"
-          >
-            <PanelLeftOpen size={18} />
-          </button>
-        )}
 
         {/* Page / Session Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>

@@ -2088,6 +2088,31 @@ export function Sidebar({
             </Link>
           </div>
 
+          {/* Expand button — only shown on desktop when collapsed */}
+          {isDesktopCollapsed && onToggleDesktopCollapse && (
+            <button
+              onClick={onToggleDesktopCollapse}
+              title="Expand sidebar"
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                marginBottom: '2px',
+              }}
+              aria-label="Expand sidebar"
+            >
+              <PanelLeftOpen size={17} />
+            </button>
+          )}
+
           {/* Quick App Icons */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
             {/* Chat */}
@@ -2190,8 +2215,10 @@ export function Sidebar({
 
       {/* ─────────────────────────────────────────────────────────────
        * 2. Main Workspace & Navigation Panel (Grok / Monday style)
+       * Hidden on desktop when sidebar is collapsed (mini-rail mode)
        * ───────────────────────────────────────────────────────────── */}
       <div
+        className={`sidebar-workspace-panel${isDesktopCollapsed ? ' desktop-collapsed-hidden' : ''}`}
         style={{
           flex: 1,
           background: 'var(--bg-sidebar)',
