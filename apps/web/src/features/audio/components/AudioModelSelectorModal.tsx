@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Music, Check, KeyRound, Lock, CheckCircle2 } from 'lucide-react';
+import { X, Music, Mic, Ear, Check, KeyRound, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
+
+export type AudioCategory = 'music' | 'tts' | 'stt';
 
 export interface AudioModelInfo {
   id: string;
   name: string;
   description: string;
-  keyType: 'free' | 'openai' | 'gemini' | 'elevenlabs' | 'suno' | 'udio' | 'microsoft';
+  keyType: 'free' | 'openai' | 'gemini' | 'elevenlabs' | 'suno' | 'udio' | 'microsoft' | 'groq' | 'deepgram' | 'assemblyai';
   keyRequirement: string;
   badge?: string;
   tags: string[];
@@ -22,78 +24,46 @@ export interface AudioProviderInfo {
   logoKey: string;
   badge?: string;
   description: string;
-  category: 'speech' | 'music';
+  category: AudioCategory;
   models: AudioModelInfo[];
 }
 
 export const AUDIO_PROVIDERS: AudioProviderInfo[] = [
+  // ─── MUSIC & COMPOSITION ───────────────────────────────────────────
   {
-    id: 'microsoft-azure',
-    name: 'Microsoft Azure Speech',
-    logoKey: 'microsoft-azure',
-    badge: '100% Gratis',
-    description: 'Sintesis suara vokal manusia neural alami dengan dukungan lebih dari 100 bahasa.',
-    category: 'speech',
+    id: 'anticeil-music',
+    name: 'Anticeil',
+    logoKey: 'anticeil',
+    badge: 'FREE',
+    description: 'Model musik AI gratis — tanpa API key, langsung pakai.',
+    category: 'music',
     models: [
       {
-        id: 'microsoft-tts',
-        name: 'Microsoft Edge Neural TTS',
-        description: 'Sintesis suara manusia alami bahasa Indonesia (Gadis, Ardi) dan global dengan aksen presisi.',
-        keyType: 'microsoft',
-        keyRequirement: '100% Gratis via Edge Neural Engine',
-        tags: ['Bahasa Indonesia', 'Natural Neural', '100% Gratis'],
+        id: 'udio',
+        name: 'Udio Music v1.5 (Anticeil Free)',
+        description: 'Komposisi musik fidelitas tinggi berbagai genre — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Stereo Master', 'Instrumen Akustik', 'Dinamika Kaya'],
       },
-    ],
-  },
-  {
-    id: 'google-deepmind',
-    name: 'Google DeepMind',
-    logoKey: 'gemini',
-    description: 'Teknologi sintesis vokal ekspresif dari Google AI Studio & DeepMind.',
-    category: 'speech',
-    models: [
       {
-        id: 'google-tts',
-        name: 'Google Cloud TTS (Journey & Chirp HD)',
-        description: 'Sintesis suara vokal ekspresif manusia dengan intonasi natural dari DeepMind.',
-        keyType: 'gemini',
-        keyRequirement: 'Memerlukan Gemini / Google Cloud Key',
-        tags: ['Journey Voice', 'Chirp HD', 'Multilingual Speech'],
+        id: 'suno-free',
+        name: 'Suno v4 AI Music (Anticeil Free)',
+        description: 'Menciptakan lagu utuh lengkap dengan lirik & vokal — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Full Song & Vocal', 'Lirik Otomatis', '100% Gratis'],
       },
-    ],
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    logoKey: 'openai',
-    description: 'Model sintesis suara narasi fidelitas tinggi kualitas studio.',
-    category: 'speech',
-    models: [
       {
-        id: 'openai-tts',
-        name: 'OpenAI TTS-1 HD',
-        description: 'Sintesis vokal narasi fidelitas tinggi kualitas studio (Alloy, Echo, Onyx, Shimmer).',
-        keyType: 'openai',
-        keyRequirement: 'Memerlukan OpenAI API Key',
-        tags: ['Studio Quality', '6 Preset Vokal', 'Lossless Output'],
-      },
-    ],
-  },
-  {
-    id: 'elevenlabs',
-    name: 'ElevenLabs',
-    logoKey: 'elevenlabs',
-    badge: 'Best Voice',
-    description: 'Pemimpin teknologi sintesis suara dan kloning vokal emosional paling alami di dunia.',
-    category: 'speech',
-    models: [
-      {
-        id: 'elevenlabs',
-        name: 'ElevenLabs Turbo v2.5',
-        description: 'Sintesis vokal manusia ultra-realistis dengan emosi mendalam, jeda nafas, dan nada dinamis.',
-        keyType: 'elevenlabs',
-        keyRequirement: 'Memerlukan ElevenLabs API Key',
-        tags: ['Voice Cloning', 'Ekspresi Emosional', 'Multi-Language'],
+        id: 'musicgen-stereo',
+        name: 'Meta MusicGen 3.3B (Anticeil Free)',
+        description: 'Model aransemen musik instrumen terbuka dari Meta AI — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Open Source', 'Stereo 32kHz', 'Meta AI'],
       },
     ],
   },
@@ -110,25 +80,318 @@ export const AUDIO_PROVIDERS: AudioProviderInfo[] = [
         name: 'Suno v4 AI Music Studio',
         description: 'Menciptakan lagu utuh mulai dari lofi, pop, jazz, hingga rock berdasarkan deskripsi teks.',
         keyType: 'suno',
-        keyRequirement: 'Gratis / Audio Stream Engine',
+        keyRequirement: 'Memerlukan Suno API Key / Web Engine',
         tags: ['Full Song & Vocal', 'Lirik Otomatis', 'Studio Arranger'],
+      },
+      {
+        id: 'suno-v3.5',
+        name: 'Suno v3.5 Composition Engine',
+        description: 'Model komposisi lagu yang cepat dan stabil untuk berbagai variasi genre.',
+        keyType: 'suno',
+        keyRequirement: 'Memerlukan Suno API Key',
+        tags: ['Fast Gen', 'Multi-Genre', 'Vocal Stems'],
       },
     ],
   },
   {
     id: 'udio-ai',
     name: 'Udio AI',
-    logoKey: 'udio-ai',
+    logoKey: 'udio',
+    badge: 'High Fidelity',
     description: 'Produksi audio & musik fidelitas tinggi dengan ragam genre dan mastering instrumen.',
     category: 'music',
     models: [
       {
-        id: 'udio',
+        id: 'udio-v1.5',
         name: 'Udio Music v1.5 Studio Master',
         description: 'Komposisi musik fidelitas tinggi dengan ragam genre, vokal stereo, dan dinamika kaya.',
         keyType: 'udio',
-        keyRequirement: 'Gratis / Direct Audio Synth',
+        keyRequirement: 'Memerlukan Udio API Key',
         tags: ['Stereo Master', 'Instrumen Akustik', 'Dinamika Kaya'],
+      },
+    ],
+  },
+  {
+    id: 'google-deepmind-music',
+    name: 'Google DeepMind',
+    logoKey: 'gemini',
+    description: 'Model generasi audio dan tekstur melodi eksperimental dari Google AI Studio.',
+    category: 'music',
+    models: [
+      {
+        id: 'musiclm',
+        name: 'Google MusicLM / Lyria',
+        description: 'Generasi melodi dan tekstur musikal berkualitas tinggi berbasis model difusi audio Google.',
+        keyType: 'gemini',
+        keyRequirement: 'Memerlukan Gemini API Key',
+        tags: ['Lyria Synth', 'HD Audio', 'DeepMind Research'],
+      },
+    ],
+  },
+  {
+    id: 'meta-musicgen',
+    name: 'Meta AudioCraft',
+    logoKey: 'huggingface',
+    badge: 'FREE',
+    description: 'Model aransemen musik transformer terbuka dari Meta AI Research.',
+    category: 'music',
+    models: [
+      {
+        id: 'musicgen-stereo',
+        name: 'MusicGen Stereo 3.3B',
+        description: 'Model aransemen musik terbuka berkualitas tinggi dengan kendali melodi dan instrumen.',
+        keyType: 'free',
+        keyRequirement: 'Gratis via HuggingFace Inference',
+        tags: ['Open Source', 'Stereo 32kHz', 'Meta AI'],
+      },
+    ],
+  },
+
+  // ─── SPEECH & NARRATION (TTS) ──────────────────────────────────────
+  {
+    id: 'anticeil-tts',
+    name: 'Anticeil',
+    logoKey: 'anticeil',
+    badge: 'FREE',
+    description: 'Model sintesis suara gratis tanpa API key — langsung pakai.',
+    category: 'tts',
+    models: [
+      {
+        id: 'microsoft-tts',
+        name: 'Microsoft Edge Neural TTS (Anticeil Free)',
+        description: 'Sintesis suara vokal alami Bahasa Indonesia (Gadis, Ardi) & global — gratis via Anticeil.',
+        keyType: 'microsoft',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Bahasa Indonesia', 'Natural Neural', '100% Gratis'],
+      },
+      {
+        id: 'fish-speech',
+        name: 'Fish Speech v1.5 (Anticeil Free)',
+        description: 'Zero-shot voice cloning dan konversi vokal alami latensi rendah — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Zero-Shot Clone', 'Low Latency', '100% Gratis'],
+      },
+    ],
+  },
+  {
+    id: 'microsoft-azure',
+    name: 'Microsoft Azure Speech',
+    logoKey: 'azure',
+    badge: 'FREE',
+    description: 'Sintesis suara vokal manusia neural alami dengan dukungan lebih dari 100 bahasa.',
+    category: 'tts',
+    models: [
+      {
+        id: 'azure-neural-tts',
+        name: 'Microsoft Azure Neural Speech Studio',
+        description: 'Sintesis suara manusia alami bahasa Indonesia dan global dengan aksen presisi tinggi.',
+        keyType: 'microsoft',
+        keyRequirement: '100% Gratis via Edge Neural Engine',
+        tags: ['Bahasa Indonesia', 'Natural Neural', '100% Gratis'],
+      },
+    ],
+  },
+  {
+    id: 'openai-tts',
+    name: 'OpenAI',
+    logoKey: 'openai',
+    description: 'Model sintesis suara narasi fidelitas tinggi kualitas studio.',
+    category: 'tts',
+    models: [
+      {
+        id: 'openai-tts',
+        name: 'OpenAI TTS-1 HD',
+        description: 'Sintesis vokal narasi fidelitas tinggi kualitas studio (Alloy, Echo, Onyx, Shimmer, Nova, Fable).',
+        keyType: 'openai',
+        keyRequirement: 'Memerlukan OpenAI API Key',
+        tags: ['Studio Quality', '6 Preset Vokal', 'Lossless Output'],
+      },
+      {
+        id: 'openai-tts-standard',
+        name: 'OpenAI TTS-1 Standard',
+        description: 'Model sintesis vokal cepat dengan latensi rendah untuk aplikasi interaktif real-time.',
+        keyType: 'openai',
+        keyRequirement: 'Memerlukan OpenAI API Key',
+        tags: ['Low Latency', 'Fast Stream', 'Standard Voice'],
+      },
+    ],
+  },
+  {
+    id: 'elevenlabs',
+    name: 'ElevenLabs',
+    logoKey: 'elevenlabs',
+    badge: 'Best Voice',
+    description: 'Pemimpin teknologi sintesis suara dan kloning vokal emosional paling alami di dunia.',
+    category: 'tts',
+    models: [
+      {
+        id: 'elevenlabs',
+        name: 'ElevenLabs Turbo v2.5',
+        description: 'Sintesis vokal manusia ultra-realistis dengan emosi mendalam, jeda nafas, dan nada dinamis.',
+        keyType: 'elevenlabs',
+        keyRequirement: 'Memerlukan ElevenLabs API Key',
+        tags: ['Voice Cloning', 'Ekspresi Emosional', 'Multi-Language'],
+      },
+      {
+        id: 'elevenlabs-multilingual',
+        name: 'ElevenLabs Multilingual v2',
+        description: 'Kualitas vokal sinematik dalam 29+ bahasa dengan intonasi natural dan aksen asli.',
+        keyType: 'elevenlabs',
+        keyRequirement: 'Memerlukan ElevenLabs API Key',
+        tags: ['29+ Bahasa', 'Cinema Quality', 'Rich Emotion'],
+      },
+    ],
+  },
+  {
+    id: 'google-deepmind-tts',
+    name: 'Google DeepMind',
+    logoKey: 'gemini',
+    description: 'Teknologi sintesis vokal ekspresif dari Google AI Studio & DeepMind.',
+    category: 'tts',
+    models: [
+      {
+        id: 'google-tts',
+        name: 'Google Cloud TTS (Journey & Chirp HD)',
+        description: 'Sintesis suara vokal ekspresif manusia dengan intonasi natural dari DeepMind.',
+        keyType: 'gemini',
+        keyRequirement: 'Memerlukan Gemini / Google Cloud Key',
+        tags: ['Journey Voice', 'Chirp HD', 'Multilingual Speech'],
+      },
+    ],
+  },
+  {
+    id: 'fish-audio',
+    name: 'Fish Audio',
+    logoKey: 'fishaudio',
+    category: 'tts',
+    description: 'Model vokal open source zero-shot voice conversion dan TTS.',
+    models: [
+      {
+        id: 'fish-speech',
+        name: 'Fish Speech v1.5',
+        description: 'Zero-shot voice cloning dan konversi vokal berkualitas tinggi dengan latensi super rendah.',
+        keyType: 'free',
+        keyRequirement: 'Gratis / Open Source Engine',
+        tags: ['Zero-Shot Clone', 'Low Latency', 'Open Weights'],
+      },
+    ],
+  },
+
+  // ─── SPEECH TO TEXT (STT) ──────────────────────────────────────────
+  {
+    id: 'anticeil-stt',
+    name: 'Anticeil',
+    logoKey: 'anticeil',
+    badge: 'FREE',
+    description: 'Transkripsi audio & pengenalan suara gratis tanpa API key.',
+    category: 'stt',
+    models: [
+      {
+        id: 'whisper-free',
+        name: 'Whisper Large v3 Turbo (Anticeil Free)',
+        description: 'Transkripsi audio akurasi tinggi ke teks dalam 100+ bahasa — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Multilingual', 'Timestamp Akurat', '100% Gratis'],
+      },
+    ],
+  },
+  {
+    id: 'openai-stt',
+    name: 'OpenAI',
+    logoKey: 'openai',
+    description: 'Model transkripsi suara OpenAI Whisper standar industri global.',
+    category: 'stt',
+    models: [
+      {
+        id: 'openai-whisper',
+        name: 'OpenAI Whisper Large v3',
+        description: 'Transkripsi audio paling akurat dengan pemisahan kalimat, tanda baca, dan deteksi bahasa otomatis.',
+        keyType: 'openai',
+        keyRequirement: 'Memerlukan OpenAI API Key',
+        tags: ['State-of-the-art', '100+ Bahasa', 'Word Timestamps'],
+      },
+      {
+        id: 'openai-whisper-turbo',
+        name: 'OpenAI Whisper Turbo',
+        description: 'Transkripsi ultra-cepat dengan optimasi latensi rendah untuk file audio panjang.',
+        keyType: 'openai',
+        keyRequirement: 'Memerlukan OpenAI API Key',
+        tags: ['High Speed', 'Low Latency', 'Cost Efficient'],
+      },
+    ],
+  },
+  {
+    id: 'groq-stt',
+    name: 'Groq AI',
+    logoKey: 'groq',
+    badge: 'Ultra Fast',
+    description: 'Inference engine Whisper tercepat di dunia ditenagai oleh Groq LPU™.',
+    category: 'stt',
+    models: [
+      {
+        id: 'groq-whisper',
+        name: 'Groq Whisper Large v3 LPU',
+        description: 'Transkripsi instan dengan kecepatan hingga 216x real-time (sub-detik untuk rekaman suara).',
+        keyType: 'groq',
+        keyRequirement: 'Memerlukan Groq API Key',
+        tags: ['216x Real-Time', 'LPU Speed', 'High Precision'],
+      },
+    ],
+  },
+  {
+    id: 'google-cloud-stt',
+    name: 'Google Cloud',
+    logoKey: 'gemini',
+    description: 'Speech-to-Text v2 tingkat enterprise dengan model Gemini Chirp.',
+    category: 'stt',
+    models: [
+      {
+        id: 'google-stt',
+        name: 'Google Cloud Speech v2 (Chirp 2)',
+        description: 'Model speech recognition universal Google dengan diarisasi pembicara & filter kebisingan latar.',
+        keyType: 'gemini',
+        keyRequirement: 'Memerlukan Gemini / Google Cloud Key',
+        tags: ['Chirp 2', 'Speaker Diarization', 'Noise Robust'],
+      },
+    ],
+  },
+  {
+    id: 'deepgram-stt',
+    name: 'Deepgram',
+    logoKey: 'deepgram',
+    badge: 'High Accuracy',
+    description: 'Platform speech AI enterprise dengan model deep learning Nova-2.',
+    category: 'stt',
+    models: [
+      {
+        id: 'deepgram-nova',
+        name: 'Deepgram Nova-2 Speech AI',
+        description: 'Transkripsi akurasi tertinggi dengan biaya terendah untuk meeting, podcast, dan percakapan.',
+        keyType: 'deepgram',
+        keyRequirement: 'Memerlukan Deepgram API Key',
+        tags: ['Nova-2 Arch', 'Smart Formatting', 'Fast Inference'],
+      },
+    ],
+  },
+  {
+    id: 'assemblyai-stt',
+    name: 'AssemblyAI',
+    logoKey: 'assemblyai',
+    category: 'stt',
+    description: 'Model Speech-to-Text canggih dengan pemahaman konteks audio dan sentimen.',
+    models: [
+      {
+        id: 'assemblyai-universal',
+        name: 'AssemblyAI Universal-2',
+        description: 'Transkripsi percakapan cerdas dengan deteksi entitas, auto-formatting, dan analisis audio.',
+        keyType: 'assemblyai',
+        keyRequirement: 'Memerlukan AssemblyAI API Key',
+        tags: ['Universal-2', 'Entity Detection', 'Audio Intelligence'],
       },
     ],
   },
@@ -137,6 +400,7 @@ export const AUDIO_PROVIDERS: AudioProviderInfo[] = [
 interface AudioModelSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  category?: AudioCategory;
   selectedModelId: string;
   onSelectModel: (id: string) => void;
 }
@@ -144,18 +408,42 @@ interface AudioModelSelectorModalProps {
 export function AudioModelSelectorModal({
   isOpen,
   onClose,
+  category = 'music',
   selectedModelId,
   onSelectModel,
 }: AudioModelSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const language = useSettingsStore((s) => s.language);
+  const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
 
-  // Find provider containing the currently selected model
+  const KEY_TYPE_TO_PROVIDER: Record<string, string> = {
+    openai: 'openai', gemini: 'gemini', elevenlabs: 'elevenlabs',
+    suno: 'suno', udio: 'udio', groq: 'groq',
+    deepgram: 'deepgram', assemblyai: 'assemblyai',
+  };
+
+  const providerKeyMissing = (provider: AudioProviderInfo) => {
+    const nonFreeKeyType = provider.models.find(
+      (m) => m.keyType !== 'free' && m.keyType !== 'microsoft'
+    )?.keyType;
+    if (!nonFreeKeyType) return false;
+    const storeId = KEY_TYPE_TO_PROVIDER[nonFreeKeyType];
+    if (!storeId) return false;
+    return !hasConfiguredKey(storeId as any);
+  };
+
+  // Filter providers strictly according to the active tab category
+  const filteredProviders = React.useMemo(() => {
+    if (!category) return AUDIO_PROVIDERS;
+    return AUDIO_PROVIDERS.filter((p) => p.category === category);
+  }, [category]);
+
+  // Find provider containing the currently selected model within the filtered list
   const initialProvider = React.useMemo(() => {
-    const found = AUDIO_PROVIDERS.find((p) => p.models.some((m) => m.id === selectedModelId));
-    return found ? found.id : AUDIO_PROVIDERS[0]?.id || '';
-  }, [selectedModelId]);
+    const found = filteredProviders.find((p) => p.models.some((m) => m.id === selectedModelId));
+    return found ? found.id : filteredProviders[0]?.id || '';
+  }, [filteredProviders, selectedModelId]);
 
   const [activeProviderId, setActiveProviderId] = useState<string>(initialProvider);
 
@@ -165,23 +453,63 @@ export function AudioModelSelectorModal({
 
   useEffect(() => {
     if (isOpen) {
-      const found = AUDIO_PROVIDERS.find((p) => p.models.some((m) => m.id === selectedModelId));
+      const found = filteredProviders.find((p) => p.models.some((m) => m.id === selectedModelId));
       if (found) {
         setActiveProviderId(found.id);
-      } else if (AUDIO_PROVIDERS.length > 0) {
-        setActiveProviderId(AUDIO_PROVIDERS[0].id);
+      } else if (filteredProviders.length > 0) {
+        setActiveProviderId(filteredProviders[0].id);
       }
     }
-  }, [isOpen, selectedModelId]);
+  }, [isOpen, category, selectedModelId, filteredProviders]);
 
   if (!isOpen || !mounted) return null;
 
-  const currentProvider = AUDIO_PROVIDERS.find((p) => p.id === activeProviderId) || AUDIO_PROVIDERS[0];
+  const currentProvider =
+    filteredProviders.find((p) => p.id === activeProviderId) || filteredProviders[0];
   const currentModels = currentProvider?.models || [];
 
-  // Organize providers by category
-  const speechProviders = AUDIO_PROVIDERS.filter((p) => p.category === 'speech');
-  const musicProviders = AUDIO_PROVIDERS.filter((p) => p.category === 'music');
+  // Header meta based on category
+  const headerMeta = {
+    music: {
+      icon: <Music size={18} />,
+      title: language === 'id' ? 'Model Musik & Komposisi AI' : 'AI Music & Composition Models',
+      badge: `🎵 ${language === 'id' ? 'Mode Musik' : 'Music Mode'}`,
+      subtitle:
+        language === 'id'
+          ? 'Pilih provider dan model generatif musik untuk studio kreasi audio.'
+          : 'Select a generative music provider and model tailored for music creation.',
+      sidebarTitle: language === 'id' ? 'Provider Musik' : 'Music Providers',
+    },
+    tts: {
+      icon: <Mic size={18} />,
+      title: language === 'id' ? 'Model Text-to-Speech (TTS)' : 'Text-to-Speech (TTS) Models',
+      badge: `🎙️ ${language === 'id' ? 'Mode Suara (TTS)' : 'TTS Voice Mode'}`,
+      subtitle:
+        language === 'id'
+          ? 'Pilih engine sintesis vokal manusia neural alami dengan berbagai aksen & bahasa.'
+          : 'Select a neural speech synthesis engine supporting natural voices and languages.',
+      sidebarTitle: language === 'id' ? 'Provider Suara' : 'Speech Providers',
+    },
+    stt: {
+      icon: <Ear size={18} />,
+      title: language === 'id' ? 'Model Transkripsi Speech-to-Text' : 'Speech-to-Text (STT) Models',
+      badge: `👂 ${language === 'id' ? 'Mode Transkripsi (STT)' : 'STT Transcription Mode'}`,
+      subtitle:
+        language === 'id'
+          ? 'Pilih model pengenalan suara dan transkripsi audio fidelitas tinggi.'
+          : 'Select a high-fidelity speech recognition and audio-to-text transcription model.',
+      sidebarTitle: language === 'id' ? 'Provider Transkripsi' : 'STT Providers',
+    },
+  }[category] || {
+    icon: <Music size={18} />,
+    title: language === 'id' ? 'Model Audio & Suara AI' : 'Audio & Speech Models',
+    badge: `🎵 ${language === 'id' ? 'Mode Audio' : 'Audio Mode'}`,
+    subtitle:
+      language === 'id'
+        ? 'Pilih provider dan model generatif audio yang sesuai.'
+        : 'Select an audio generative provider and model.',
+    sidebarTitle: language === 'id' ? 'Provider' : 'Providers',
+  };
 
   const modalContent = (
     <div
@@ -238,7 +566,7 @@ export function AudioModelSelectorModal({
                 justifyContent: 'center',
               }}
             >
-              <Music size={18} />
+              {headerMeta.icon}
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -250,7 +578,7 @@ export function AudioModelSelectorModal({
                     margin: 0,
                   }}
                 >
-                  {language === 'id' ? 'Model Audio, Vokal & Musik' : 'Audio, Speech & Music Models'}
+                  {headerMeta.title}
                 </h3>
                 <span
                   style={{
@@ -263,13 +591,11 @@ export function AudioModelSelectorModal({
                     border: '1px solid var(--border-subtle)',
                   }}
                 >
-                  🎵 {language === 'id' ? 'Mode Audio' : 'Audio Mode'}
+                  {headerMeta.badge}
                 </span>
               </div>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                {language === 'id'
-                  ? 'Pilih provider dan model generatif yang disesuaikan khusus untuk fitur ini.'
-                  : 'Select a generative provider and model tailored for this generation type.'}
+                {headerMeta.subtitle}
               </p>
             </div>
           </div>
@@ -347,7 +673,6 @@ export function AudioModelSelectorModal({
               flexShrink: 0,
             }}
           >
-            {/* Speech Providers Section */}
             <div>
               <div
                 style={{
@@ -356,14 +681,14 @@ export function AudioModelSelectorModal({
                   color: 'var(--text-muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
-                  padding: '6px 8px 4px 8px',
+                  padding: '6px 8px 6px 8px',
                 }}
               >
-                {language === 'id' ? 'Suara & Narasi' : 'Speech & Narration'} ({speechProviders.length})
+                {headerMeta.sidebarTitle} ({filteredProviders.length})
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {speechProviders.map((provider) => {
+                {filteredProviders.map((provider) => {
                   const active = provider.id === activeProviderId;
                   const hasActiveModel = provider.models.some((m) => m.id === selectedModelId);
 
@@ -407,17 +732,36 @@ export function AudioModelSelectorModal({
                         >
                           <ProviderBrandLogo provider={provider.logoKey} size={18} />
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontSize: '13px',
-                              fontWeight: active ? 700 : 500,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {provider.name}
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <div
+                              style={{
+                                fontSize: '13px',
+                                fontWeight: active ? 700 : 500,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {provider.id.startsWith('anticeil') ? 'Anticeil' : provider.name}
+                            </div>
+                            {(provider.badge === 'FREE' ||
+                              provider.models.every((m) => m.keyType === 'free' || m.keyType === 'microsoft')) && (
+                              <span
+                                style={{
+                                  fontSize: '9px',
+                                  fontWeight: 700,
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  background: 'rgba(16,185,129,0.15)',
+                                  color: '#10b981',
+                                  border: '1px solid rgba(16,185,129,0.3)',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                FREE
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
                             {provider.models.length} {language === 'id' ? 'model' : 'models'}
@@ -425,104 +769,17 @@ export function AudioModelSelectorModal({
                         </div>
                       </div>
 
-                      {hasActiveModel && (
+                      {providerKeyMissing(provider) ? (
+                        <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                          <AlertCircle size={13} color="var(--accent-warning)" />
+                        </span>
+                      ) : (
                         <span
-                          style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: 'var(--accent-success, #10b981)',
-                            flexShrink: 0,
-                          }}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Music Providers Section */}
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  padding: '6px 8px 4px 8px',
-                  marginTop: '4px',
-                }}
-              >
-                {language === 'id' ? 'Musik & Komposisi' : 'Music & Composition'} ({musicProviders.length})
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {musicProviders.map((provider) => {
-                  const active = provider.id === activeProviderId;
-                  const hasActiveModel = provider.models.some((m) => m.id === selectedModelId);
-
-                  return (
-                    <button
-                      key={provider.id}
-                      type="button"
-                      onClick={() => setActiveProviderId(provider.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '9px 12px',
-                        borderRadius: '10px',
-                        border: '1px solid',
-                        borderColor: active ? '#60a5fa' : 'transparent',
-                        background: active ? 'rgba(96, 165, 250, 0.08)' : 'transparent',
-                        color: active ? '#60a5fa' : 'var(--text-primary)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                        position: 'relative',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
-                        <div
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <ProviderBrandLogo provider={provider.logoKey} size={18} />
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontSize: '13px',
-                              fontWeight: active ? 700 : 500,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {provider.name}
-                          </div>
-                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                            {provider.models.length} {language === 'id' ? 'model' : 'models'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {hasActiveModel && (
-                        <span
+                          title={
+                            provider.models.every((m) => m.keyType === 'free' || m.keyType === 'microsoft')
+                              ? 'Free & Ready'
+                              : 'API Key Configured'
+                          }
                           style={{
                             width: '6px',
                             height: '6px',
@@ -571,8 +828,7 @@ export function AudioModelSelectorModal({
                   {currentProvider?.name}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '8px' }}>
-                  • {currentModels.length}{' '}
-                  {language === 'id' ? 'model tersedia' : 'models available'}
+                  • {currentModels.length} {language === 'id' ? 'model tersedia' : 'models available'}
                 </span>
               </div>
 
@@ -596,6 +852,10 @@ export function AudioModelSelectorModal({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {currentModels.map((model) => {
                 const isSelected = selectedModelId === model.id;
+                const isFree =
+                  model.keyType === 'free' ||
+                  model.keyType === 'microsoft' ||
+                  model.badge === 'FREE';
 
                 return (
                   <div
@@ -707,14 +967,13 @@ export function AudioModelSelectorModal({
                           alignItems: 'center',
                           gap: '5px',
                           fontSize: '11px',
-                          color:
-                            model.keyType === 'free' || model.keyType === 'microsoft' || model.keyType === 'suno' || model.keyType === 'udio'
-                              ? 'var(--accent-success)'
-                              : 'var(--accent-warning, #d97706)',
+                          color: isFree
+                            ? 'var(--accent-success)'
+                            : 'var(--accent-warning, #d97706)',
                           fontWeight: 550,
                         }}
                       >
-                        {model.keyType === 'free' || model.keyType === 'microsoft' || model.keyType === 'suno' || model.keyType === 'udio' ? (
+                        {isFree ? (
                           <CheckCircle2 size={12} color="var(--accent-success)" />
                         ) : (
                           <Lock size={12} color="var(--accent-warning, #d97706)" />

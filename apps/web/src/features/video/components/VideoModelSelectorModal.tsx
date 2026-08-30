@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Film, Check, KeyRound, Lock, CheckCircle2 } from 'lucide-react';
+import { X, Film, Check, KeyRound, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
@@ -27,10 +27,55 @@ export interface VideoProviderInfo {
 
 export const VIDEO_PROVIDERS: VideoProviderInfo[] = [
   {
+    id: 'anticeil',
+    name: 'Anticeil',
+    logoKey: 'anticeil',
+    badge: 'FREE',
+    description: 'Model generasi video gratis — tanpa API key, langsung pakai.',
+    models: [
+      {
+        id: 'luma',
+        name: 'Luma Ray 2 (Anticeil Free)',
+        description: 'Video sinematik 3D dengan pergerakan kamera dinamis — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Cinematic Camera', 'Realistis 3D', 'Fast Generation'],
+      },
+      {
+        id: 'kling',
+        name: 'Kling AI v1.6 Pro (Anticeil Free)',
+        description: 'Generator video gerak realistis untuk simulasi karakter manusia dan panorama — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Karakter Realistis', 'Fisika Alami', 'High Framerate'],
+      },
+      {
+        id: 'svd',
+        name: 'Stable Video Diffusion (Anticeil Free)',
+        description: 'Generator gerakan video dari gambar dengan FPS stabil — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Image-to-Video', 'Smooth FPS', 'Neural Motion'],
+      },
+      {
+        id: 'runway-gen3',
+        name: 'Runway Gen-3 Alpha Turbo (Anticeil Relay)',
+        description: 'Generasi video ultra-realistis via streaming relay Anticeil — gratis tanpa API key.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['VFX Grade', 'Camera Director', 'Ultra Smooth'],
+      },
+    ],
+  },
+  {
     id: 'luma-ai',
     name: 'Luma AI',
     logoKey: 'luma',
-    badge: 'Trending',
+    badge: 'FREE',
     description: 'Teknologi Dream Machine untuk sintesis video sinematik bergerak 3D.',
     models: [
       {
@@ -47,6 +92,7 @@ export const VIDEO_PROVIDERS: VideoProviderInfo[] = [
     id: 'kuaishou-kling',
     name: 'Kuaishou Kling AI',
     logoKey: 'kuaishou-kling',
+    badge: 'FREE',
     description: 'Mesin render video gerak fisik realistis beresolusi tinggi.',
     models: [
       {
@@ -95,6 +141,7 @@ export const VIDEO_PROVIDERS: VideoProviderInfo[] = [
     id: 'stability-ai',
     name: 'Stability AI',
     logoKey: 'stability-ai',
+    badge: 'FREE',
     description: 'Model video sinematik open-weight untuk industri kreatif.',
     models: [
       {
@@ -141,6 +188,19 @@ export function VideoModelSelectorModal({
   const [mounted, setMounted] = useState(false);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const language = useSettingsStore((s) => s.language);
+  const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
+
+  const KEY_TYPE_TO_PROVIDER: Record<string, string> = {
+    openai: 'openai', runway: 'runway', pika: 'pika',
+  };
+
+  const providerKeyMissing = (provider: VideoProviderInfo) => {
+    const nonFreeKeyType = provider.models.find((m) => m.keyType !== 'free')?.keyType;
+    if (!nonFreeKeyType) return false; // all free
+    const storeId = KEY_TYPE_TO_PROVIDER[nonFreeKeyType];
+    if (!storeId) return false;
+    return !hasConfiguredKey(storeId as any);
+  };
 
   // Find provider containing the currently selected model
   const initialProvider = React.useMemo(() => {
@@ -391,17 +451,35 @@ export function VideoModelSelectorModal({
                     >
                       <ProviderBrandLogo provider={provider.logoKey} size={18} />
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: active ? 700 : 500,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {provider.name}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: '13px',
+                            fontWeight: active ? 700 : 500,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {provider.id === 'anticeil' ? 'Anticeil' : provider.name}
+                        </div>
+                        {(provider.badge === 'FREE' || provider.models.every((m) => m.keyType === 'free')) && (
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              fontWeight: 700,
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'rgba(16,185,129,0.15)',
+                              color: '#10b981',
+                              border: '1px solid rgba(16,185,129,0.3)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            FREE
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
                         {provider.models.length} {language === 'id' ? 'model' : 'models'}
@@ -409,8 +487,13 @@ export function VideoModelSelectorModal({
                     </div>
                   </div>
 
-                  {hasActiveModel && (
+                  {providerKeyMissing(provider) ? (
+                    <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                      <AlertCircle size={13} color="var(--accent-warning)" />
+                    </span>
+                  ) : (
                     <span
+                      title={provider.models.every((m) => m.keyType === 'free') ? 'Free & Ready' : 'API Key Configured'}
                       style={{
                         width: '6px',
                         height: '6px',

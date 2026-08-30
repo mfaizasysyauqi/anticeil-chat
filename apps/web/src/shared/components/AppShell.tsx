@@ -5,6 +5,9 @@ import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { ModelSelectorModal } from '../../features/chat/components/ModelSelectorModal';
 import { SettingsModal } from '../../features/settings/components/SettingsModal';
+import { CreditLimitModal } from '../../features/credits/components/CreditLimitModal';
+import { PricingModal } from '../../features/pricing/components/PricingModal';
+import { AuthModal } from '../../features/auth/components/AuthModal';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 
 interface AppShellProps {
@@ -79,6 +82,10 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
         isOpen={isSettingsOpen}
         onClose={() => setSettingsOpen(false)}
       />
+
+      <CreditLimitModal />
+      <PricingModal />
+      <AuthModal />
     </div>
   );
 }

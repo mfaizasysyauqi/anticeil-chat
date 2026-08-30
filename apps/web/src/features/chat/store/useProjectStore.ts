@@ -17,17 +17,18 @@ interface ProjectState {
   error: string | null;
 
   // Lifecycle
+  loadLocalFolders: () => void;
   fetchFolders: (accessToken: string) => Promise<void>;
   reset: () => void;
 
   // CRUD
-  createFolder: (name: string, accessToken: string) => Promise<ProjectFolder | null>;
-  renameFolder: (id: string, name: string, accessToken: string) => Promise<void>;
-  deleteFolder: (id: string, accessToken: string) => Promise<void>;
+  createFolder: (name: string, accessToken?: string | null) => Promise<ProjectFolder | null>;
+  renameFolder: (id: string, name: string, accessToken?: string | null) => Promise<void>;
+  deleteFolder: (id: string, accessToken?: string | null) => Promise<void>;
 
   // Session assignment
-  assignSession: (folderId: string, sessionId: string, accessToken: string) => Promise<void>;
-  removeSession: (folderId: string, sessionId: string, accessToken: string) => Promise<void>;
+  assignSession: (folderId: string, sessionId: string, accessToken?: string | null) => Promise<void>;
+  removeSession: (folderId: string, sessionId: string, accessToken?: string | null) => Promise<void>;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -50,16 +51,49 @@ function authHeaders(token: string) {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
+function saveLocal(folders: ProjectFolder[]) {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('anticeil-project-store', JSON.stringify(folders));
+    } catch {}
+  }
+}
+
+function readLocal(): ProjectFolder[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem('anticeil-project-store');
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+  }
+  return [];
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
-  folders: [],
+  folders: readLocal(),
   isLoading: false,
   error: null,
 
-  reset: () => set({ folders: [], isLoading: false, error: null }),
+  loadLocalFolders: () => {
+    const local = readLocal();
+    set({ folders: local, isLoading: false });
+  },
+
+  reset: () => {
+    const local = readLocal();
+    set({ folders: local, isLoading: false, error: null });
+  },
 
   fetchFolders: async (accessToken) => {
+    if (!accessToken) {
+      get().loadLocalFolders();
+      return;
+    }
     set({ isLoading: true, error: null });
     try {
       const res = await fetch('/api/projects', {
@@ -67,17 +101,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const { folders } = await res.json();
-      set({ folders: (folders ?? []).map(fromRow), isLoading: false });
+      const mapped = (folders ?? []).map(fromRow);
+      set({ folders: mapped, isLoading: false });
+      saveLocal(mapped);
     } catch (err: unknown) {
       set({ error: (err as Error).message, isLoading: false });
+      // Fallback to local
+      get().loadLocalFolders();
     }
   },
 
   createFolder: async (name, accessToken) => {
-    // Optimistic: add a temp entry immediately
-    const tempId = `temp_${Date.now()}`;
-    const tempFolder: ProjectFolder = { id: tempId, name, createdAt: Date.now(), sessionIds: [] };
-    set((s) => ({ folders: [...s.folders, tempFolder] }));
+    const folderId = `folder_${Date.now()}`;
+    const newFolder: ProjectFolder = { id: folderId, name, createdAt: Date.now(), sessionIds: [] };
+    const updated = [...get().folders, newFolder];
+    set({ folders: updated });
+    saveLocal(updated);
+
+    if (!accessToken) {
+      return newFolder;
+    }
 
     try {
       const res = await fetch('/api/projects', {
@@ -85,53 +128,55 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         headers: authHeaders(accessToken),
         body: JSON.stringify({ name }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const { folder } = await res.json();
-      const real = fromRow(folder);
-      // Replace temp with real
-      set((s) => ({
-        folders: s.folders.map((f) => (f.id === tempId ? real : f)),
-      }));
-      return real;
+      if (res.ok) {
+        const { folder } = await res.json();
+        const real = fromRow(folder);
+        const next = get().folders.map((f) => (f.id === folderId ? real : f));
+        set({ folders: next });
+        saveLocal(next);
+        return real;
+      }
     } catch (err: unknown) {
-      // Roll back temp
-      set((s) => ({ folders: s.folders.filter((f) => f.id !== tempId), error: (err as Error).message }));
-      return null;
+      console.warn('[ProjectStore] Cloud create folder failed, kept locally:', err);
     }
+
+    return newFolder;
   },
 
   renameFolder: async (id, name, accessToken) => {
     const prev = get().folders;
-    // Optimistic update
-    set((s) => ({
-      folders: s.folders.map((f) => (f.id === id ? { ...f, name } : f)),
-    }));
+    const updated = prev.map((f) => (f.id === id ? { ...f, name } : f));
+    set({ folders: updated });
+    saveLocal(updated);
+
+    if (!accessToken) return;
 
     try {
-      const res = await fetch(`/api/projects/${id}`, {
+      await fetch(`/api/projects/${id}`, {
         method: 'PATCH',
         headers: authHeaders(accessToken),
         body: JSON.stringify({ name }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err: unknown) {
-      set({ folders: prev, error: (err as Error).message });
+      console.warn('[ProjectStore] Cloud rename folder failed:', err);
     }
   },
 
   deleteFolder: async (id, accessToken) => {
     const prev = get().folders;
-    // Optimistic removal
-    set((s) => ({ folders: s.folders.filter((f) => f.id !== id) }));
+    const updated = prev.filter((f) => f.id !== id);
+    set({ folders: updated });
+    saveLocal(updated);
+
+    if (!accessToken) return;
 
     try {
-      const res = await fetch(`/api/projects/${id}`, {
+      await fetch(`/api/projects/${id}`, {
         method: 'DELETE',
         headers: authHeaders(accessToken),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err: unknown) {
-      set({ folders: prev, error: (err as Error).message });
+      console.warn('[ProjectStore] Cloud delete folder failed:', err);
     }
   },
 
@@ -141,20 +186,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!folder || folder.sessionIds.includes(sessionId)) return;
 
     const newIds = [...folder.sessionIds, sessionId];
-    // Optimistic
-    set((s) => ({
-      folders: s.folders.map((f) => (f.id === folderId ? { ...f, sessionIds: newIds } : f)),
-    }));
+    const updated = prev.map((f) => (f.id === folderId ? { ...f, sessionIds: newIds } : f));
+    set({ folders: updated });
+    saveLocal(updated);
+
+    if (!accessToken) return;
 
     try {
-      const res = await fetch(`/api/projects/${folderId}`, {
+      await fetch(`/api/projects/${folderId}`, {
         method: 'PATCH',
         headers: authHeaders(accessToken),
         body: JSON.stringify({ session_ids: newIds }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err: unknown) {
-      set({ folders: prev, error: (err as Error).message });
+      console.warn('[ProjectStore] Cloud assignSession failed:', err);
     }
   },
 
@@ -164,20 +209,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!folder) return;
 
     const newIds = folder.sessionIds.filter((id) => id !== sessionId);
-    // Optimistic
-    set((s) => ({
-      folders: s.folders.map((f) => (f.id === folderId ? { ...f, sessionIds: newIds } : f)),
-    }));
+    const updated = prev.map((f) => (f.id === folderId ? { ...f, sessionIds: newIds } : f));
+    set({ folders: updated });
+    saveLocal(updated);
+
+    if (!accessToken) return;
 
     try {
-      const res = await fetch(`/api/projects/${folderId}`, {
+      await fetch(`/api/projects/${folderId}`, {
         method: 'PATCH',
         headers: authHeaders(accessToken),
         body: JSON.stringify({ session_ids: newIds }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err: unknown) {
-      set({ folders: prev, error: (err as Error).message });
+      console.warn('[ProjectStore] Cloud removeSession failed:', err);
     }
   },
 }));

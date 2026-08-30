@@ -24,6 +24,7 @@ import { streamBYOKChat } from '../data/byokApi';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
+import { useCreditStore } from '../../credits/store/useCreditStore';
 
 interface ChatState {
   sessions: ChatSession[];
@@ -54,6 +55,8 @@ interface ChatState {
   navigateMessageVersion: (sessionId: string, userMessageId: string, direction: 'prev' | 'next') => void;
   getActiveSession: () => ChatSession | undefined;
   getActiveMessages: () => ChatMessage[];
+  syncWithCloud: (accessToken: string) => Promise<void>;
+  pushSessionToCloud: (sessionId: string) => Promise<void>;
 }
 
 const initialSessionId = 'session-default';
@@ -196,6 +199,9 @@ export const useChatStore = create<ChatState>()(
         const session = state.getActiveSession();
         if (!session || !prompt.trim()) return;
 
+        const allowed = useCreditStore.getState().deductCredits('image', 'anticeil');
+        if (!allowed) return;
+
         const cleanPrompt = prompt.trim();
         const userMessageId = `msg-user-${Date.now()}`;
         const userMessage: ChatMessage = {
@@ -278,6 +284,9 @@ export const useChatStore = create<ChatState>()(
         const state = get();
         const session = state.getActiveSession();
         if (!session) return;
+
+        const allowed = useCreditStore.getState().deductCredits('video', 'anticeil');
+        if (!allowed) return;
 
         const cleanPrompt = prompt.trim();
         const userMessageId = `msg-user-${Date.now()}`;
@@ -367,6 +376,12 @@ export const useChatStore = create<ChatState>()(
 
         const session = state.getActiveSession();
         if (!session) return;
+
+        // Credit check & deduction for Anticeil Free provider
+        if (session.providerId === 'anticeil') {
+          const allowed = useCreditStore.getState().deductCredits('chat', 'anticeil');
+          if (!allowed) return;
+        }
 
         const settings = useSettingsStore.getState();
         const apiKeyConfig = settings.apiKeys[session.providerId];
@@ -967,6 +982,53 @@ export const useChatStore = create<ChatState>()(
           }));
         } finally {
           set({ isGenerating: false, abortController: null });
+        }
+      },
+
+      syncWithCloud: async (accessToken: string) => {
+        if (!accessToken) return;
+        try {
+          const res = await fetch('/api/db/sync', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.sessions) && data.sessions.length > 0) {
+              const localSessions = get().sessions;
+              const localIds = new Set(localSessions.map((s) => s.id));
+              const newCloudSessions = data.sessions.filter((s: ChatSession) => !localIds.has(s.id));
+              const mergedMsgs = { ...get().messages, ...(data.messages || {}) };
+              set({
+                sessions: [...newCloudSessions, ...localSessions],
+                messages: mergedMsgs,
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('[ChatStore] Cloud sync failed:', err);
+        }
+      },
+
+      pushSessionToCloud: async (sessionId: string) => {
+        const auth = useAuthStore.getState();
+        if (auth.tier !== 'pro' || !auth.session?.access_token) return;
+
+        const session = get().sessions.find((s) => s.id === sessionId);
+        const messages = get().messages[sessionId] || [];
+
+        if (!session) return;
+
+        try {
+          await fetch('/api/db/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${auth.session.access_token}`,
+            },
+            body: JSON.stringify({ session, messages }),
+          });
+        } catch (e) {
+          console.warn('[ChatStore] Pro session push failed:', e);
         }
       },
     }),

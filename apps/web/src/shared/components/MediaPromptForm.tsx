@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ArrowUp, RefreshCw, ChevronDown } from 'lucide-react';
+import { useAuthStore } from '../../features/auth/store/useAuthStore';
 
 export interface MediaPromptFormProps {
   prompt: string;
@@ -29,156 +30,186 @@ export function MediaPromptForm({
   additionalControls,
 }: MediaPromptFormProps) {
   const [isFocused, setIsFocused] = React.useState(false);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prompt.trim() || isGenerating) return;
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
+    onSubmit(e);
+  };
+
+  // Auto-resize textarea height: min 2 lines (~44px), max 7 lines (~154px)
+  React.useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      // 2 lines: ~44px, 7 lines: ~154px (line-height: ~22px)
+      const minHeight = 44;
+      const maxHeight = 154;
+      const targetHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight));
+      textareaRef.current.style.height = `${targetHeight}px`;
+      textareaRef.current.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
+    }
+  }, [prompt]);
 
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={handleFormSubmit}
       style={{
-        background: 'var(--bg-surface)',
-        border: `1.5px solid ${isFocused ? brandColor : 'var(--border-subtle)'}`,
-        borderRadius: '16px',
-        padding: '16px',
-        maxWidth: '900px',
         width: '100%',
+        maxWidth: '860px',
+        background: 'var(--bg-input, var(--bg-surface))',
+        border: `1px solid ${
+          isFocused ? 'var(--border-focus, ' + brandColor + ')' : 'var(--border-subtle)'
+        }`,
+        borderRadius: 'var(--radius-xl, 16px)',
         boxShadow: isFocused
-          ? `0 0 0 3px ${brandColor}20, var(--shadow-lg)`
-          : 'var(--shadow-md)',
+          ? 'var(--shadow-lg, 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1))'
+          : 'var(--shadow-md, 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1))',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '10px 14px',
+        position: 'relative',
         transition: 'all 0.2s ease',
       }}
     >
       {/* Textarea */}
       <textarea
+        ref={textareaRef}
         value={prompt}
         onChange={(e) => onPromptChange(e.target.value)}
         placeholder={placeholder}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            if (prompt.trim() && !isGenerating) onSubmit(e as unknown as React.FormEvent);
+            handleFormSubmit(e as unknown as React.FormEvent);
           }
         }}
-        rows={3}
+        rows={2}
         style={{
           width: '100%',
+          minHeight: '44px',
+          maxHeight: '154px',
           background: 'transparent',
           border: 'none',
           outline: 'none',
+          resize: 'none',
           color: 'var(--text-primary)',
           fontSize: '14px',
-          fontFamily: 'inherit',
-          resize: 'none',
-          marginBottom: '12px',
-          lineHeight: '1.6',
+          lineHeight: '22px',
+          padding: '2px',
         }}
       />
 
-      {/* Bottom Row: All Controls + Submit Button */}
+      {/* Bottom Toolbar */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '10px',
-          flexWrap: 'wrap',
+          marginTop: '8px',
+          paddingTop: '6px',
+          gap: '8px',
         }}
       >
-        {/* Left Side: Model Selector + Additional Controls */}
+        {/* Left Side: Additional Controls (Style/Ratio/Voice etc) */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             flex: 1,
             flexWrap: 'wrap',
             minWidth: 0,
           }}
         >
-          {/* Model Selector Button */}
+          {additionalControls}
+        </div>
+
+        {/* Right Side: Model Selector + Submit Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {/* Model Selector Dropdown Text (Grok style matching ChatInput) */}
           <button
             type="button"
             onClick={onModelSelectorOpen}
+            title={language === 'id' ? 'Pilih Model' : 'Select Model'}
+            className="clickable-pill"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              background: 'var(--bg-subtle)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-primary)',
-              fontSize: '12.5px',
-              fontWeight: 600,
+              gap: '5px',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              padding: '5px 8px',
+              borderRadius: 'var(--radius-md, 8px)',
+              fontSize: '13px',
+              fontWeight: 500,
               cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              maxWidth: '240px',
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-card)';
-              e.currentTarget.style.borderColor = brandColor;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--bg-subtle)';
-              e.currentTarget.style.borderColor = 'var(--border-subtle)';
+              maxWidth: '220px',
+              transition: 'color 0.15s ease, background 0.15s ease',
             }}
           >
             <span
               style={{
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                color: 'var(--text-primary)',
+                fontWeight: 500,
+                fontSize: '13px',
               }}
             >
               {modelDisplayName}
             </span>
-            <ChevronDown size={13} color={brandColor} style={{ flexShrink: 0 }} />
+            <ChevronDown size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
           </button>
 
-          {/* Separator */}
-          {additionalControls && (
-            <div
-              style={{
-                width: '1px',
-                height: '24px',
-                background: 'var(--border-subtle)',
-                flexShrink: 0,
-              }}
-            />
-          )}
-
-          {/* Additional Controls (Style/Ratio/Voice/Speed/etc.) */}
-          {additionalControls}
+          {/* Send / Generate Submit Button (Round Circle matching ChatInput) */}
+          <button
+            type="submit"
+            disabled={isGenerating || !prompt.trim()}
+            title={language === 'id' ? 'Hasilkan' : 'Generate'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              border: 'none',
+              background:
+                prompt.trim() && !isGenerating
+                  ? 'var(--text-primary)'
+                  : 'var(--bg-subtle)',
+              color:
+                prompt.trim() && !isGenerating
+                  ? 'var(--bg-main)'
+                  : 'var(--text-muted)',
+              boxShadow:
+                prompt.trim() && !isGenerating
+                  ? 'var(--shadow-sm)'
+                  : 'none',
+              cursor: prompt.trim() && !isGenerating ? 'pointer' : 'default',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {isGenerating ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : (
+              <ArrowUp size={17} strokeWidth={2.5} />
+            )}
+          </button>
         </div>
-
-        {/* Right Side: Submit Button */}
-        <button
-          type="submit"
-          disabled={isGenerating || !prompt.trim()}
-          title={language === 'id' ? 'Hasilkan' : 'Generate'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '38px',
-            height: '38px',
-            borderRadius: '10px',
-            border: 'none',
-            background: prompt.trim() && !isGenerating ? brandColor : 'var(--bg-subtle)',
-            color: prompt.trim() && !isGenerating ? '#ffffff' : 'var(--text-muted)',
-            cursor: prompt.trim() && !isGenerating ? 'pointer' : 'not-allowed',
-            transition: 'all 0.15s ease',
-            flexShrink: 0,
-            opacity: prompt.trim() && !isGenerating ? 1 : 0.5,
-          }}
-        >
-          {isGenerating ? (
-            <RefreshCw size={16} className="animate-spin" />
-          ) : (
-            <ArrowUp size={18} strokeWidth={2.5} />
-          )}
-        </button>
       </div>
     </form>
   );

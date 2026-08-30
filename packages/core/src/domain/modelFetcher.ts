@@ -8,9 +8,12 @@ export interface RawProviderModelResponse {
     display_name?: string;
     context_window?: number;
     context_length?: number;
+    max_input_tokens?: number;
     description?: string;
     active?: boolean;
     owned_by?: string;
+    type?: string;
+    capabilities?: Record<string, unknown>;
   }>;
   models?: Array<{
     name: string;
@@ -33,7 +36,12 @@ export async function fetchProviderModels(
   const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
   const fallbackModels = PROVIDER_MODELS[providerId] || [];
 
-  if (providerDef?.requiresApiKey && (!apiKey || apiKey.trim().length < 4)) {
+  if (
+    providerDef?.requiresApiKey &&
+    providerId !== 'custom' &&
+    providerId !== 'omniroute' &&
+    (!apiKey || apiKey.trim().length < 4)
+  ) {
     return fallbackModels;
   }
 
@@ -49,7 +57,36 @@ export async function fetchProviderModels(
     };
 
     switch (providerId) {
+      case 'anticeil':
+      case 'elevenlabs':
+      case 'azure':
+      case 'deepgram':
+      case 'assemblyai':
+      case 'fishaudio':
+      case 'suno':
+      case 'udio':
+      case 'stability':
+      case 'fal':
+      case 'recraft':
+      case 'luma':
+      case 'kling':
+      case 'runway':
+      case 'pika':
+      case 'tavily':
+      case 'brave':
+        clearTimeout(timeoutId);
+        return fallbackModels;
+
       case 'openai':
+      case 'deepseek':
+      case 'groq':
+      case 'openrouter':
+      case 'together':
+      case 'fireworks':
+      case 'mistral':
+      case 'xai':
+      case 'perplexity':
+      case 'cohere':
         endpoint = `${baseUrl}/models`;
         headers.Authorization = `Bearer ${apiKey.trim()}`;
         break;
@@ -65,20 +102,11 @@ export async function fetchProviderModels(
         endpoint = `${baseUrl}/models?key=${apiKey.trim()}`;
         break;
 
-      case 'deepseek':
-        endpoint = `${baseUrl}/models`;
-        headers.Authorization = `Bearer ${apiKey.trim()}`;
-        break;
-
-      case 'groq':
-        endpoint = `${baseUrl}/models`;
-        headers.Authorization = `Bearer ${apiKey.trim()}`;
-        break;
-
       case 'ollama':
         endpoint = `${baseUrl}/api/tags`;
         break;
 
+      case 'omniroute':
       case 'custom':
       default:
         endpoint = `${baseUrl}/models`;
@@ -122,6 +150,7 @@ function parseModelsResponse(
   data: RawProviderModelResponse & Record<string, unknown>
 ): LLMModel[] {
   const models: LLMModel[] = [];
+  const seenIds = new Set<string>();
 
   // Google Gemini format: { models: [{ name: "models/gemini-2.0-flash", displayName: "..." }] }
   if (providerId === 'gemini' && Array.isArray(data.models)) {
@@ -132,23 +161,24 @@ function parseModelsResponse(
       ) {
         continue;
       }
-      const cleanId = item.name.replace(/^models\//, '');
-      if (cleanId.includes('embedding') || cleanId.includes('aqa')) {
-        continue;
-      }
+      const rawName = item.name || '';
+      const cleanId = rawName.replace(/^models\//, '');
+      if (!cleanId) continue;
+      if (seenIds.has(cleanId)) continue;
+      seenIds.add(cleanId);
 
-      const contextWindow = item.inputTokenLimit || 1048576;
-      const isVision = cleanId.includes('flash') || cleanId.includes('pro');
-      const isReasoning = cleanId.includes('thinking') || cleanId.includes('exp');
+      const isVision = cleanId.includes('flash') || cleanId.includes('pro') || cleanId.includes('vision');
+      const isReasoning = cleanId.includes('thinking') || cleanId.includes('reasoning') || cleanId.includes('2.0');
       const isImageGen = cleanId.includes('imagen');
+      const contextWindow = item.inputTokenLimit || 1048576;
 
       models.push({
         id: cleanId,
-        name: item.displayName || cleanId,
+        name: item.displayName || formatModelName(cleanId),
         providerId: 'gemini',
         contextWindow,
-        description: item.description || `Gemini active model (${cleanId})`,
-        inputCostPer1M: cleanId.includes('pro') ? 1.25 : 0.1,
+        description: item.description || 'Google Gemini multivariant neural model',
+        inputCostPer1M: cleanId.includes('pro') ? 1.25 : 0.075,
         outputCostPer1M: cleanId.includes('pro') ? 5.0 : 0.4,
         supportsStreaming: true,
         supportsVision: isVision,
@@ -171,6 +201,9 @@ function parseModelsResponse(
   if (providerId === 'ollama' && Array.isArray(data.models)) {
     for (const item of data.models) {
       const modelName = item.name;
+      if (!modelName || seenIds.has(modelName)) continue;
+      seenIds.add(modelName);
+
       const isReasoning = modelName.includes('r1') || modelName.includes('reasoning');
       const isVision = modelName.includes('vision') || modelName.includes('llava');
 
@@ -202,7 +235,8 @@ function parseModelsResponse(
   if (Array.isArray(data.data)) {
     for (const item of data.data) {
       const id = item.id;
-      if (!id) continue;
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
 
       // Filter out non-chat models for OpenAI
       if (providerId === 'openai') {
@@ -229,45 +263,13 @@ function parseModelsResponse(
         }
       }
 
-      const isReasoning =
-        id.includes('r1') ||
-        id.includes('reason') ||
-        id.startsWith('o1') ||
-        id.startsWith('o3');
-
-      const isVision =
-        id.includes('vision') ||
-        id.includes('4o') ||
-        id.includes('claude') ||
-        id.includes('flash') ||
-        id.includes('pixtral');
-
-      const isAudio =
-        id.includes('audio') ||
-        id.includes('tts') ||
-        id.includes('voice') ||
-        id.includes('speech') ||
-        id.includes('realtime') ||
-        id.includes('4o');
-
-      const isImageGen = id.includes('dall-e') || id.includes('flux') || id.includes('image');
-      const isFast = providerId === 'groq' || id.includes('mini') || id.includes('haiku') || id.includes('flash');
-
-      const contextWindow =
-        item.context_window ||
-        item.context_length ||
-        (id.includes('claude') ? 200000 : id.includes('128k') || id.includes('4o') ? 128000 : 32768);
-
-      const isWebSearch =
-        id.includes('sonar') ||
-        id.includes('perplexity') ||
-        id.includes('search') ||
-        id.includes('online') ||
-        id.includes('compound') ||
-        providerId === 'gemini' ||
-        id.includes('4o');
+      const rawType = (typeof item.type === 'string' ? item.type : '').toLowerCase();
+      const rawCapabilities = (typeof item.capabilities === 'object' && item.capabilities !== null)
+        ? (item.capabilities as Record<string, boolean>)
+        : {};
 
       const isVideo =
+        rawType === 'video' ||
         id.includes('video') ||
         id.includes('sora') ||
         id.includes('runway') ||
@@ -279,27 +281,90 @@ function parseModelsResponse(
         id.includes('wan2') ||
         id.includes('ltx') ||
         id.includes('haiper') ||
+        id.includes('seedance') ||
+        id.includes('veo') ||
         id.includes('pika');
+
+      const isImageGen =
+        rawType === 'image' ||
+        id.includes('dall-e') ||
+        id.includes('flux') ||
+        id.includes('imagen') ||
+        id.includes('image');
+
+      const isAudio =
+        rawType === 'audio' ||
+        rawType === 'speech' ||
+        rawType === 'transcription' ||
+        id.includes('audio') ||
+        id.includes('tts') ||
+        id.includes('voice') ||
+        id.includes('speech') ||
+        id.includes('transcribe') ||
+        id.includes('realtime');
+
+      const isReasoning =
+        rawCapabilities.reasoning === true ||
+        id.includes('r1') ||
+        id.includes('reason') ||
+        id.startsWith('o1') ||
+        id.startsWith('o3');
+
+      const isVision =
+        rawCapabilities.vision === true ||
+        id.includes('vision') ||
+        id.includes('4o') ||
+        id.includes('claude') ||
+        id.includes('flash') ||
+        id.includes('pixtral');
+
+      const isFast =
+        providerId === 'groq' ||
+        id.includes('mini') ||
+        id.includes('haiku') ||
+        id.includes('flash') ||
+        id.includes('fast');
+
+      const isText = rawType ? (rawType === 'text' || rawType === 'chat' || (!isVideo && !isImageGen)) : true;
+
+      const contextWindow =
+        item.context_window ||
+        item.context_length ||
+        item.max_input_tokens ||
+        (id.includes('claude') ? 200000 : id.includes('128k') || id.includes('4o') || id.includes('gemini') ? 128000 : 32768);
+
+      const isWebSearch =
+        id.includes('sonar') ||
+        id.includes('perplexity') ||
+        id.includes('search') ||
+        id.includes('online') ||
+        id.includes('compound') ||
+        providerId === 'gemini';
+
+      const modelDescription =
+        item.description ||
+        (item.owned_by ? `Routed via ${item.owned_by} (${providerId === 'omniroute' ? 'OmniRoute Gateway' : providerId.toUpperCase()})` : `${providerId === 'omniroute' ? 'OmniRoute' : providerId.toUpperCase()} active API model`);
 
       models.push({
         id,
         name: item.display_name || item.name || formatModelName(id),
         providerId,
         contextWindow,
-        description: item.description || `${providerId.toUpperCase()} active API model`,
+        description: modelDescription,
         inputCostPer1M: 0,
         outputCostPer1M: 0,
         supportsStreaming: true,
         supportsReasoning: isReasoning,
         supportsVision: isVision,
         isPopular:
+          id.includes('auto/best') ||
           id.includes('4o') ||
           id.includes('sonnet') ||
           id.includes('flash') ||
           id.includes('70b') ||
           id.includes('deepseek-chat'),
         capabilities: {
-          text: true,
+          text: isText,
           vision: isVision,
           reasoning: isReasoning,
           imageGen: isImageGen,
@@ -321,6 +386,10 @@ function parseModelsResponse(
  * Converts a raw model ID like 'llama-3.3-70b-versatile' or 'claude-3-7-sonnet-20250219' into a clean human label.
  */
 function formatModelName(id: string): string {
+  if (id.startsWith('auto/')) {
+    const slug = id.replace(/^auto\//, '');
+    return `Auto: ${slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
+  }
   return id
     .replace(/^models\//, '')
     .replace(/:latest$/, '')

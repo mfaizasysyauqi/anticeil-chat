@@ -36,6 +36,8 @@ import {
   Settings,
   HelpCircle,
   Zap,
+  Palette,
+  Database,
   Image as ImageIcon,
   Workflow,
   Globe,
@@ -64,6 +66,7 @@ import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStor
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useImageStore } from '../../features/image/store/useImageStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
+import { useCreditStore } from '../../features/credits/store/useCreditStore';
 import { createClient } from '../utils/supabase/client';
 
 interface SidebarProps {
@@ -783,6 +786,9 @@ export function Sidebar({
   // Profile Popover State
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  // Mini Sidebar Settings Popover State
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
   const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
 
   const sessions = useChatStore((s) => s.sessions);
@@ -798,9 +804,16 @@ export function Sidebar({
   const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const user = useAuthStore((s) => s.user);
+  const tier = useAuthStore((s) => s.tier);
   const signOut = useAuthStore((s) => s.signOut);
   const initializeAuth = useAuthStore((s) => s.initializeAuth);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+  const dailyCredits = useCreditStore((s) => s.credits) || 0;
+  const maxCredits = useCreditStore((s) => s.maxDailyCredits) || 50;
+  const paidCredits = useCreditStore((s) => s.paidCredits) || 0;
+  const openPricingModal = useCreditStore((s) => s.openPricingModal);
   const t = getTranslation(language);
 
   // Helper to reliably get accessToken from active session or store
@@ -842,14 +855,19 @@ export function Sidebar({
       if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
         setIsProfileMenuOpen(false);
       }
+
+      // Check if click is outside mini-sidebar settings menu
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(target)) {
+        setIsSettingsMenuOpen(false);
+      }
     };
     
     // Add listener only if we have active menus
-    if (menuSessionId || folderSubmenuSessionId || isProfileMenuOpen) {
+    if (menuSessionId || folderSubmenuSessionId || isProfileMenuOpen || isSettingsMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuSessionId, folderSubmenuSessionId, isProfileMenuOpen]);
+  }, [menuSessionId, folderSubmenuSessionId, isProfileMenuOpen, isSettingsMenuOpen]);
 
   const handleSelectSession = (sessionId: string) => {
     selectSession(sessionId);
@@ -1573,30 +1591,6 @@ export function Sidebar({
               <Music size={17} />
             </Link>
           </div>
-        </div>
-
-        {/* Bottom: Settings Shortcut */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            title={t.nav.settings}
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Settings size={17} />
-          </button>
         </div>
       </div>
 
@@ -2435,15 +2429,89 @@ export function Sidebar({
             flexShrink: 0,
           }}
         >
-          {/* Floating Profile Popover Menu (Above the button) */}
+          {/* Floating Profile Popover Menu (moved to be anchored at trigger button) */}
+
+          {/* AI Credits Meter (Matching StorageMeter design) */}
+          <div style={{ marginBottom: '8px' }}>
+            <div
+              onClick={() => openPricingModal('topup')}
+              title={language === 'id' ? 'Kredit AI Harian & Saldo Tambahan — Klik untuk Top-up / Upgrade' : 'Daily AI Credits & Extra Balance — Click to Top-up / Upgrade'}
+              className="clickable-pill"
+              style={{
+                padding: '8px 12px',
+                borderRadius: 'var(--radius-md, 8px)',
+                backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <Zap size={12} color="#f59e0b" fill="#f59e0b" />
+                  <span>{language === 'id' ? 'Kredit AI' : 'AI Credits'}</span>
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontWeight: 700, color: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : 'var(--text-primary)' }}>
+                    {dailyCredits}/{maxCredits}
+                  </span>
+                  {paidCredits > 0 && (
+                    <span style={{
+                      fontSize: '9.5px',
+                      fontWeight: 800,
+                      color: '#f59e0b',
+                      background: 'rgba(245, 158, 11, 0.18)',
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                    }}>
+                      +{paidCredits}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress Track */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '4px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--border-subtle)',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    width: `${Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100))}%`,
+                    height: '100%',
+                    backgroundColor: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : '#f59e0b',
+                    borderRadius: '9999px',
+                    transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Storage Quota Progress Bar (Sleek Compact View) */}
+          <div style={{ marginBottom: '8px' }}>
+            <StorageMeter compact onManageClick={() => openPricingModal('tiers')} />
+          </div>
+
+          {/* Profile Trigger Button (Avatar + Name) */}
+          <div style={{ position: 'relative' }}>
+          {/* Floating Profile Popover Menu (anchored above trigger button only) */}
           {isProfileMenuOpen && (
             <div
               className="animate-fade-in"
               style={{
                 position: 'absolute',
-                bottom: 'calc(100% + 8px)',
-                left: '8px',
-                right: '8px',
+                bottom: 'calc(100% + 6px)',
+                left: 0,
+                right: 0,
                 backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border-strong)',
                 borderRadius: 'var(--radius-lg, 12px)',
@@ -2455,7 +2523,7 @@ export function Sidebar({
                 gap: '2px',
               }}
             >
-              {/* User Email Header */}
+              {/* User Header */}
               <div
                 style={{
                   padding: '8px 10px 6px 10px',
@@ -2471,68 +2539,94 @@ export function Sidebar({
                 </div>
               </div>
 
-              {/* Logout / Login Action */}
+              {/* Settings Section Label */}
+              <div style={{ padding: '6px 10px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {language === 'id' ? 'Pengaturan' : 'Settings'}
+              </div>
 
-              {/* 2. Logout */}
+              {/* API Keys */}
+              <button
+                type="button"
+                onClick={() => { openSettingsTab('keys'); setIsProfileMenuOpen(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <KeyRound size={14} color="var(--text-secondary)" />
+                <span>{language === 'id' ? 'Kunci API (BYOK)' : 'API Keys (BYOK)'}</span>
+              </button>
+
+              {/* Appearance */}
+              <button
+                type="button"
+                onClick={() => { openSettingsTab('appearance'); setIsProfileMenuOpen(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Palette size={14} color="var(--text-secondary)" />
+                <span>{language === 'id' ? 'Tampilan & Bahasa' : 'Appearance & Language'}</span>
+              </button>
+
+              {/* Database */}
+              <button
+                type="button"
+                onClick={() => { openSettingsTab('backup'); setIsProfileMenuOpen(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Database size={14} color="var(--text-secondary)" />
+                <span>{language === 'id' ? 'Database & Cadangan' : 'Database & Backup'}</span>
+              </button>
+
+              {/* Divider */}
+              <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
+
+              {/* Tingkatkan Paket */}
+              <button
+                type="button"
+                onClick={() => { openPricingModal('tiers'); setIsProfileMenuOpen(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,115,234,0.08)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Zap size={14} color="var(--brand-primary)" />
+                <span>{language === 'id' ? 'Tingkatkan Paket' : 'Upgrade Plan'}</span>
+              </button>
+
+              {/* Divider */}
+              <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
+
+              {/* Logout / Login */}
               {user ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    signOut();
-                    setIsProfileMenuOpen(false);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-md, 6px)',
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--accent-danger)',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
+                  onClick={() => { signOut(); setIsProfileMenuOpen(false); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--accent-danger)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
-                  <LogOut size={15} />
+                  <LogOut size={14} />
                   <span>{language === 'id' ? 'Keluar' : 'Log Out'}</span>
                 </button>
               ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setIsProfileMenuOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-md, 6px)',
-                    textDecoration: 'none',
-                    color: 'var(--accent-danger)',
-                    fontSize: '13px',
-                    fontWeight: 600,
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    openAuthModal('login');
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
-                  <LogOut size={15} />
-                  <span>{language === 'id' ? 'Keluar' : 'Log Out'}</span>
-                </Link>
+                  <LogOut size={14} />
+                  <span>{language === 'id' ? 'Masuk' : 'Log In'}</span>
+                </button>
               )}
             </div>
           )}
-
-          {/* Storage Quota Progress Bar (Sleek Compact View) */}
-          <div style={{ marginBottom: '8px' }}>
-            <StorageMeter compact onManageClick={() => setSettingsOpen(true)} />
-          </div>
-
-          {/* Profile Trigger Button (Avatar + Name) */}
           <button
             type="button"
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -2571,22 +2665,42 @@ export function Sidebar({
             </div>
 
             <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <div
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: 'var(--text-primary)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {displayName}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {displayName}
+                </span>
+                <span
+                  style={{
+                    fontSize: '9.5px',
+                    fontWeight: 800,
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                    background: tier === 'enterprise' ? 'rgba(139, 92, 246, 0.15)' : tier === 'pro' ? 'rgba(0, 115, 234, 0.15)' : 'rgba(0, 200, 117, 0.12)',
+                    color: tier === 'enterprise' ? '#a78bfa' : tier === 'pro' ? 'var(--brand-primary)' : 'var(--accent-success)',
+                    border: `1px solid ${tier === 'enterprise' ? 'rgba(139, 92, 246, 0.4)' : tier === 'pro' ? 'rgba(0, 115, 234, 0.3)' : 'rgba(0, 200, 117, 0.3)'}`,
+                    flexShrink: 0,
+                  }}
+                >
+                  {tier === 'enterprise' ? 'ENTERPRISE' : tier === 'pro' ? 'PRO' : 'FREE'}
+                </span>
+              </div>
+              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {tier === 'enterprise' ? 'Custom Supabase' : tier === 'pro' ? 'Supabase Cloud' : (language === 'id' ? 'Penyimpanan Lokal' : 'Local Storage')}
               </div>
             </div>
 
             <MoreHorizontal size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
           </button>
+          </div>{/* end position:relative wrapper */}
         </div>
       </div>
 

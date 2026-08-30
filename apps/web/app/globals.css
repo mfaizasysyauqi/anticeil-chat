@@ -354,8 +354,8 @@ code, pre, kbd {
 /* Desktop Sidebar Base (>= 1024px) */
 .app-sidebar-drawer,
 .sidebar-responsive {
-  width: 260px;
-  min-width: 260px;
+  width: 288px;
+  min-width: 288px;
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-sidebar);
   display: flex;
@@ -394,8 +394,8 @@ code, pre, kbd {
     left: 0 !important;
     bottom: 0 !important;
     height: 100vh !important;
-    width: 280px !important;
-    min-width: 280px !important;
+    width: 300px !important;
+    min-width: 300px !important;
     box-shadow: var(--shadow-xl) !important;
     transform: translateX(-100%) !important;
     z-index: 100 !important;
@@ -406,8 +406,8 @@ code, pre, kbd {
   .sidebar-responsive.open {
     transform: translateX(0) !important;
     visibility: visible !important;
-    width: 280px !important;
-    min-width: 280px !important;
+    width: 300px !important;
+    min-width: 300px !important;
     overflow: visible !important;
   }
 

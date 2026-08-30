@@ -51,12 +51,12 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
           transition: 'all 0.15s ease',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            <HardDrive size={12} color={barColor} />
-            <span>{language === 'id' ? 'Penyimpanan' : 'Storage'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', gap: '4px', minWidth: 0 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)', minWidth: 0, overflow: 'hidden' }}>
+            <HardDrive size={12} color={barColor} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{language === 'id' ? 'Penyimpanan' : 'Storage'}</span>
           </span>
-          <span style={{ fontWeight: 700, color: isFull ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
+          <span style={{ fontWeight: 700, color: isFull ? 'var(--accent-danger)' : 'var(--text-primary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
             {formatStorageBytes(usedBytes)} / {formatStorageBytes(limitBytes)}
           </span>
         </div>

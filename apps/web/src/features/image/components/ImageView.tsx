@@ -34,6 +34,7 @@ import { useStorageStore } from '../../storage/store/useStorageStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useImageStore } from '../store/useImageStore';
 import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
+import { useCreditStore } from '../../credits/store/useCreditStore';
 import { getTranslation } from '@anticeil/core';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
 import { MediaControlButton } from '../../../shared/components/MediaControlButton';
@@ -488,6 +489,13 @@ export function ImageView() {
     e.preventDefault();
     if (!prompt.trim()) return;
 
+    // Credit check & deduction for Anticeil Free models
+    const isAnticeilFree = currentModelInfo?.keyType === 'free';
+    if (isAnticeilFree) {
+      const allowed = useCreditStore.getState().deductCredits(mediaMode, 'anticeil');
+      if (!allowed) return;
+    }
+
     if (mediaMode === 'image') {
       const estimatedBytes = 1.2 * 1024 * 1024;
       if (!canFit(estimatedBytes)) {
@@ -620,11 +628,11 @@ export function ImageView() {
                       appearance: 'none',
                       background: 'var(--bg-subtle)',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: '8px',
+                      borderRadius: 'var(--radius-md, 6px)',
                       color: 'var(--text-secondary)',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       fontWeight: 500,
-                      padding: '6px 28px 6px 14px',
+                      padding: '4px 26px 4px 10px',
                       outline: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
@@ -634,7 +642,7 @@ export function ImageView() {
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
-                  <Palette size={13} color="var(--text-muted)" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  <Palette size={12} color="var(--text-muted)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                 </div>
               )}
 

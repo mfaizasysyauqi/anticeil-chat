@@ -45,20 +45,58 @@ export function SettingsView() {
   const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [draftKeys, setDraftKeys] = useState<Record<string, { apiKey?: string; baseUrl?: string }>>({});
+
   const toggleVisibility = (id: string) => {
     setVisibleKeys((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleKeyChange = (providerId: LLMProviderId, value: string) => {
-    setApiKey(providerId, value);
-    setSavedStatus((prev) => ({ ...prev, [providerId]: true }));
-    setTimeout(() => {
-      setSavedStatus((prev) => ({ ...prev, [providerId]: false }));
-    }, 2000);
+  const handleDraftKeyChange = (providerId: string, value: string) => {
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        apiKey: value,
+      },
+    }));
   };
 
-  const handleBaseUrlChange = (providerId: LLMProviderId, baseUrl: string) => {
-    setApiKey(providerId, apiKeys[providerId]?.apiKey || '', baseUrl);
+  const handleDraftBaseUrlChange = (providerId: string, baseUrl: string) => {
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        baseUrl,
+      },
+    }));
+  };
+
+  const handleSaveProvider = (providerId: LLMProviderId) => {
+    const draft = draftKeys[providerId];
+    const savedKey = apiKeys[providerId]?.apiKey || '';
+    const savedUrl = apiKeys[providerId]?.baseUrl;
+
+    const keyToSave = draft?.apiKey !== undefined ? draft.apiKey : savedKey;
+    const urlToSave = draft?.baseUrl !== undefined ? draft.baseUrl : savedUrl;
+
+    setApiKey(providerId, keyToSave, urlToSave);
+    setSavedStatus((prev) => ({ ...prev, [providerId]: true }));
+    setDraftKeys((prev) => {
+      const next = { ...prev };
+      delete next[providerId];
+      return next;
+    });
+    setTimeout(() => {
+      setSavedStatus((prev) => ({ ...prev, [providerId]: false }));
+    }, 2500);
+  };
+
+  const handleCancelProvider = (providerId: LLMProviderId) => {
+    setDraftKeys((prev) => {
+      const next = { ...prev };
+      delete next[providerId];
+      return next;
+    });
   };
 
   const handleExportData = () => {
@@ -351,6 +389,21 @@ export function SettingsView() {
             const config = apiKeys[provider.id];
             const isVisible = visibleKeys[provider.id];
             const isSaved = savedStatus[provider.id];
+
+            const savedKey = config?.apiKey || '';
+            const savedBaseUrl =
+              provider.id === 'omniroute'
+                ? (!config?.baseUrl || config?.baseUrl?.includes('openrouter.ai') ? 'http://localhost:20128/v1' : config.baseUrl)
+                : provider.id === 'custom'
+                ? (config?.baseUrl?.includes('openrouter.ai') ? 'http://localhost:1234/v1' : (config?.baseUrl || 'http://localhost:1234/v1'))
+                : (config?.baseUrl || '');
+
+            const currentKey = draftKeys[provider.id]?.apiKey !== undefined ? draftKeys[provider.id]!.apiKey! : savedKey;
+            const currentBaseUrl = draftKeys[provider.id]?.baseUrl !== undefined ? draftKeys[provider.id]!.baseUrl! : savedBaseUrl;
+
+            const isKeyDirty = currentKey !== savedKey;
+            const isUrlDirty = draftKeys[provider.id]?.baseUrl !== undefined && draftKeys[provider.id]!.baseUrl !== savedBaseUrl;
+            const isDirty = isKeyDirty || isUrlDirty;
             const hasKey = provider.requiresApiKey
               ? Boolean(config?.apiKey && config.apiKey.length > 5)
               : true;
@@ -414,6 +467,15 @@ export function SettingsView() {
                   </a>
                 </div>
 
+                {/* Anticeil Built-in Description */}
+                {provider.id === 'anticeil' && (
+                  <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                    {language === 'id'
+                      ? 'Provider bawaan gratis yang siap dipakai langsung tanpa API key. Menggunakan model pilihan dari Google Gemini & Groq Cloud LPU.'
+                      : 'Default built-in free provider that is ready to use without an API key. Powered by Google Gemini & Groq Cloud LPU.'}
+                  </p>
+                )}
+
                 {/* API Key Input Field */}
                 {provider.requiresApiKey && (
                   <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
@@ -434,8 +496,14 @@ export function SettingsView() {
                         data-1p-ignore="true"
                         data-form-type="other"
                         placeholder={`Enter ${provider.name} API Key...`}
-                        value={config?.apiKey || ''}
-                        onChange={(e) => handleKeyChange(provider.id, e.target.value)}
+                        value={currentKey}
+                        onChange={(e) => handleDraftKeyChange(provider.id, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSaveProvider(provider.id);
+                          }
+                        }}
                         style={{
                           width: '100%',
                           padding: '9px 36px 9px var(--space-md)',
@@ -470,16 +538,27 @@ export function SettingsView() {
                 )}
 
                 {/* Custom Base URL (Optional for Ollama/Custom/OpenAI) */}
-                {(provider.id === 'ollama' || provider.id === 'custom') && (
+                {(provider.id === 'ollama' || provider.id === 'omniroute' || provider.id === 'custom') && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '2px' }}>
                     <label style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>
                       Base URL Endpoint
                     </label>
                     <input
                       type="text"
+                      name={`anticeil-baseurl-${provider.id}`}
+                      id={`anticeil-baseurl-${provider.id}`}
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
                       placeholder={provider.defaultBaseUrl}
-                      value={config?.baseUrl || ''}
-                      onChange={(e) => handleBaseUrlChange(provider.id, e.target.value)}
+                      value={currentBaseUrl}
+                      onChange={(e) => handleDraftBaseUrlChange(provider.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveProvider(provider.id);
+                        }
+                      }}
                       style={{
                         padding: '8px var(--space-md)',
                         background: 'var(--bg-input)',
@@ -494,11 +573,45 @@ export function SettingsView() {
                   </div>
                 )}
 
-                {isSaved && (
+                {isDirty ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveProvider(provider.id)}
+                      style={{
+                        padding: '6px 14px',
+                        background: 'var(--brand-primary, #0073ea)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 650,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {language === 'id' ? 'Simpan' : 'Save'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCancelProvider(provider.id)}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'var(--bg-subtle)',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {language === 'id' ? 'Batal' : 'Cancel'}
+                    </button>
+                  </div>
+                ) : isSaved ? (
                   <div style={{ fontSize: 'var(--font-xs)', color: 'var(--accent-success)' }}>
                     ✓ {t.settings.savedCachedLocally}
                   </div>
-                )}
+                ) : null}
               </div>
             );
           })}

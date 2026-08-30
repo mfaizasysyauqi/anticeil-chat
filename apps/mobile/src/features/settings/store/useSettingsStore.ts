@@ -27,13 +27,38 @@ interface SettingsState {
 }
 
 const initialApiKeys: ApiKeysState = {
+  anticeil: { apiKey: '', isEnabled: true },
   openai: { apiKey: '', isEnabled: true },
   anthropic: { apiKey: '', isEnabled: true },
   gemini: { apiKey: '', isEnabled: true },
   deepseek: { apiKey: '', isEnabled: true },
   groq: { apiKey: '', isEnabled: true },
+  openrouter: { apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', isEnabled: true },
+  together: { apiKey: '', baseUrl: 'https://api.together.xyz/v1', isEnabled: true },
+  fireworks: { apiKey: '', baseUrl: 'https://api.fireworks.ai/inference/v1', isEnabled: true },
+  mistral: { apiKey: '', baseUrl: 'https://api.mistral.ai/v1', isEnabled: true },
+  xai: { apiKey: '', baseUrl: 'https://api.x.ai/v1', isEnabled: true },
+  perplexity: { apiKey: '', baseUrl: 'https://api.perplexity.ai', isEnabled: true },
+  cohere: { apiKey: '', baseUrl: 'https://api.cohere.com/v1', isEnabled: true },
   ollama: { apiKey: '', baseUrl: 'http://localhost:11434', isEnabled: true },
-  custom: { apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', isEnabled: true },
+  elevenlabs: { apiKey: '', baseUrl: 'https://api.elevenlabs.io/v1', isEnabled: true },
+  azure: { apiKey: '', baseUrl: 'https://api.cognitive.microsoft.com/sts/v1.0', isEnabled: true },
+  deepgram: { apiKey: '', baseUrl: 'https://api.deepgram.com/v1', isEnabled: true },
+  assemblyai: { apiKey: '', baseUrl: 'https://api.assemblyai.com/v2', isEnabled: true },
+  fishaudio: { apiKey: '', baseUrl: 'https://api.fish.audio/v1', isEnabled: true },
+  suno: { apiKey: '', baseUrl: 'https://api.suno.ai/v1', isEnabled: true },
+  udio: { apiKey: '', baseUrl: 'https://api.udio.com/v1', isEnabled: true },
+  stability: { apiKey: '', baseUrl: 'https://api.stability.ai', isEnabled: true },
+  fal: { apiKey: '', baseUrl: 'https://queue.fal.run', isEnabled: true },
+  recraft: { apiKey: '', baseUrl: 'https://external.api.recraft.ai/v1', isEnabled: true },
+  luma: { apiKey: '', baseUrl: 'https://api.lumalabs.ai/dream-machine/v1', isEnabled: true },
+  kling: { apiKey: '', baseUrl: 'https://api.klingai.com/v1', isEnabled: true },
+  runway: { apiKey: '', baseUrl: 'https://api.dev.runwayml.com/v1', isEnabled: true },
+  pika: { apiKey: '', baseUrl: 'https://api.pika.art/v1', isEnabled: true },
+  tavily: { apiKey: '', baseUrl: 'https://api.tavily.com', isEnabled: true },
+  brave: { apiKey: '', baseUrl: 'https://api.search.brave.com/res/v1', isEnabled: true },
+  omniroute: { apiKey: '', baseUrl: 'http://localhost:20128/v1', isEnabled: true },
+  custom: { apiKey: '', baseUrl: 'http://localhost:1234/v1', isEnabled: true },
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -70,6 +95,7 @@ export const useSettingsStore = create<SettingsState>()(
         set({ activeProviderId: providerId, activeModelId: modelId }),
 
       hasConfiguredKey: (providerId) => {
+        if (providerId === 'anticeil') return true;
         const config = get().apiKeys[providerId];
         const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
         if (!providerDef?.requiresApiKey) return true;

@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { User, Session, AuthError } from '@supabase/supabase-js';
+import { UserTier } from '@anticeil/core';
 import { createClient } from '../../../shared/utils/supabase/client';
 
 interface AuthState {
@@ -9,6 +10,9 @@ interface AuthState {
   session: Session | null;
   isLoading: boolean;
   error: string | null;
+  tier: UserTier;
+  isAuthModalOpen: boolean;
+  authModalMode: 'login' | 'register';
 
   // Actions
   initializeAuth: () => Promise<void>;
@@ -16,6 +20,22 @@ interface AuthState {
   signUpWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  setTier: (tier: UserTier) => Promise<void>;
+  fetchUserTier: (accessToken?: string) => Promise<UserTier>;
+  openAuthModal: (mode?: 'login' | 'register') => void;
+  setAuthModalOpen: (open: boolean) => void;
+}
+
+function getStoredTier(): UserTier {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('anticeil_user_tier');
+      if (stored === 'pro' || stored === 'starter' || stored === 'enterprise' || stored === 'free') {
+        return stored as UserTier;
+      }
+    } catch {}
+  }
+  return 'free';
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -23,6 +43,73 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   isLoading: true,
   error: null,
+  tier: getStoredTier(),
+  isAuthModalOpen: false,
+  authModalMode: 'login',
+
+  openAuthModal: (mode = 'login') => set({ isAuthModalOpen: true, authModalMode: mode }),
+  setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
+
+  fetchUserTier: async (token) => {
+    try {
+      const accessToken = token || get().session?.access_token;
+      if (!accessToken) {
+        const stored = getStoredTier();
+        set({ tier: stored });
+        return stored;
+      }
+
+      const res = await fetch('/api/user/tier', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const validTiers: UserTier[] = ['free', 'starter', 'pro', 'enterprise'];
+        const tier: UserTier = validTiers.includes(data.tier) ? data.tier : 'free';
+        set({ tier });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('anticeil_user_tier', tier);
+        }
+        return tier;
+      }
+    } catch {}
+    return get().tier;
+  },
+
+  setTier: async (tier: UserTier) => {
+    set({ tier });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('anticeil_user_tier', tier);
+      } catch {}
+    }
+
+    const session = get().session;
+    if (session?.access_token) {
+      try {
+        await fetch('/api/user/tier', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ tier }),
+        });
+      } catch (e) {
+        console.warn('[AuthStore] Failed to update tier in Supabase:', e);
+      }
+
+      // If user upgraded to Pro, sync data
+      if (tier === 'pro') {
+        import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+          useStorageStore.getState().syncFromSupabase(session.access_token, true);
+        });
+        import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+          useProjectStore.getState().fetchFolders(session.access_token);
+        });
+      }
+    }
+  },
 
   initializeAuth: async () => {
     try {
@@ -37,7 +124,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       });
 
-      // Sync real storage and project folders from Supabase for this authenticated user
+      // Sync user tier
+      if (session?.access_token) {
+        get().fetchUserTier(session.access_token);
+      }
+
+      // Sync storage and project folders for this user
       if (session?.access_token) {
         import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
           useStorageStore.getState().syncFromSupabase(session.access_token);
@@ -46,8 +138,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           useProjectStore.getState().fetchFolders(session.access_token);
         });
       } else {
+        // Free / offline mode: load local folders
         import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
-          useProjectStore.getState().reset();
+          useProjectStore.getState().loadLocalFolders();
         });
       }
 
@@ -59,8 +152,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
 
-        // Re-sync storage & projects whenever user logs in
         if (_event === 'SIGNED_IN' && newSession?.access_token) {
+          get().fetchUserTier(newSession.access_token);
           import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
             useStorageStore.getState().syncFromSupabase(newSession.access_token);
           });
@@ -69,10 +162,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           });
         }
 
-        // Clear project folders and storage on sign-out
+        // On sign out, fallback to local storage mode
         if (_event === 'SIGNED_OUT' || !newSession) {
           import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
-            useProjectStore.getState().reset();
+            useProjectStore.getState().loadLocalFolders();
           });
           import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
             useStorageStore.getState().resetStorage();
@@ -107,6 +200,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (data.session?.access_token) {
+        get().fetchUserTier(data.session.access_token);
         import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
           useStorageStore.getState().syncFromSupabase(data.session.access_token);
         });
@@ -132,6 +226,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password,
         options: {
           emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+          data: { tier: get().tier || 'free' },
         },
       });
 
@@ -150,6 +245,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         const token = data.session.access_token;
         if (token) {
+          get().fetchUserTier(token);
           import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
             useProjectStore.getState().fetchFolders(token);
           });
@@ -177,7 +273,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await supabase.auth.signOut();
       set({ user: null, session: null, error: null });
       import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
-        useProjectStore.getState().reset();
+        useProjectStore.getState().loadLocalFolders();
       });
       import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
         useStorageStore.getState().resetStorage();

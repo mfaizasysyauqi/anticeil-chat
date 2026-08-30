@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useChatStore } from '../store/useChatStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 import {
   estimateTokens,
   getTranslation,
@@ -113,6 +114,9 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
   const sessions = useChatStore((s) => s.sessions);
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
   const activeProviderId = useSettingsStore((s) => s.activeProviderId);
   const activeModelId = useSettingsStore((s) => s.activeModelId);
   const getModelsForProvider = useSettingsStore((s) => s.getModelsForProvider);
@@ -181,11 +185,16 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
     }
   };
 
-  // Auto-resize textarea height
+  // Auto-resize textarea height: min 2 lines (~44px), max 7 lines (~154px)
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const minHeight = 44;
+      const maxHeight = 154;
+      const targetHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight));
+      textareaRef.current.style.height = `${targetHeight}px`;
+      textareaRef.current.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
   }, [text, textareaRef]);
 
@@ -249,6 +258,12 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
   const handleSubmit = () => {
     if ((!text.trim() && attachments.length === 0) || isGenerating) return;
+
+    // Grok/ChatGPT style: prompt user to sign in before sending their first prompt
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
 
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
@@ -405,18 +420,19 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
               ? t.chat.listeningVoice
               : t.chat.placeholder
           }
-          rows={1}
+          rows={2}
           style={{
             width: '100%',
+            minHeight: '44px',
+            maxHeight: '154px',
             background: 'transparent',
             border: 'none',
             outline: 'none',
             resize: 'none',
             color: 'var(--text-primary)',
             fontSize: '14px',
-            lineHeight: 1.55,
+            lineHeight: '22px',
             padding: '2px',
-            maxHeight: '180px',
           }}
         />
 

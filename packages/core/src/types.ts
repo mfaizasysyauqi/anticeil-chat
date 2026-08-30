@@ -1,12 +1,35 @@
 export type LLMProviderId =
+  | 'anticeil'
   | 'openai'
   | 'anthropic'
   | 'gemini'
   | 'deepseek'
   | 'groq'
+  | 'openrouter'
+  | 'together'
+  | 'fireworks'
+  | 'mistral'
+  | 'xai'
+  | 'perplexity'
+  | 'cohere'
   | 'ollama'
   | 'elevenlabs'
+  | 'azure'
+  | 'deepgram'
+  | 'assemblyai'
+  | 'fishaudio'
+  | 'suno'
+  | 'udio'
   | 'stability'
+  | 'fal'
+  | 'recraft'
+  | 'luma'
+  | 'kling'
+  | 'runway'
+  | 'pika'
+  | 'tavily'
+  | 'brave'
+  | 'omniroute'
   | 'custom';
 
 export type Role = 'user' | 'assistant' | 'system';
@@ -47,6 +70,8 @@ export interface ProviderDefinition {
   docUrl: string;
   models: LLMModel[];
   requiresApiKey: boolean;
+  category?: 'chat' | 'audio' | 'image' | 'video' | 'search' | 'custom';
+  description?: string;
 }
 
 export interface FileAttachment {
@@ -128,3 +153,39 @@ export interface ChatStreamChunk {
   promptTokens?: number;
   completionTokens?: number;
 }
+
+export type UserTier = 'free' | 'starter' | 'pro' | 'enterprise';
+
+export interface ProjectFolderData {
+  id: string;
+  name: string;
+  createdAt: number;
+  sessionIds: string[];
+}
+
+export interface AnticeilDatabaseBackup {
+  version: string;
+  exportedAt: string;
+  source: 'local' | 'cloud';
+  tier?: UserTier;
+  userId?: string;
+  data: {
+    sessions: ChatSession[];
+    messages: Record<string, ChatMessage[]>;
+    folders: ProjectFolderData[];
+    personas?: Persona[];
+    connectors?: Record<string, any>;
+    workspace?: {
+      projects?: any[];
+      imageCollections?: any[];
+      workflowCategories?: any[];
+      documentCategories?: any[];
+    };
+    settings?: {
+      apiKeys?: Partial<ApiKeysState>;
+      theme?: 'dark' | 'light';
+      language?: string;
+    };
+  };
+}
+

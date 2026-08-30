@@ -61,16 +61,7 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
 
   const providerDef = getProviderById(providerId);
   const baseUrl = apiKeyConfig.baseUrl || providerDef?.defaultBaseUrl || '';
-  let apiKey = apiKeyConfig.apiKey;
-
-  // Fallback to built-in free tier rotating key pool if user has no custom BYOK key
-  if (!apiKey) {
-    if (providerId === 'groq') {
-      apiKey = getNextFreeKey('groq');
-    } else if (providerId === 'gemini') {
-      apiKey = getNextFreeKey('gemini');
-    }
-  }
+  const apiKey = apiKeyConfig.apiKey;
 
   if (providerDef?.requiresApiKey && !apiKey) {
     throw new Error(`API key is required for ${providerDef.name}. Please configure it in Settings.`);
@@ -100,8 +91,75 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
 
   let response: Response;
 
-  // 1. OpenAI / Groq / DeepSeek / Custom Endpoint (OpenAI Chat Completions API)
-  if (providerId === 'openai' || providerId === 'groq' || providerId === 'deepseek' || providerId === 'custom') {
+  // 0. Anticeil Free Multi-Provider Gateway (Google Gemini + Groq Cloud LPU)
+  if (providerId === 'anticeil') {
+    const isGeminiModel = modelId.startsWith('gemini') || modelId.includes('gemini');
+
+    if (isGeminiModel) {
+      const geminiKey = apiKey || getNextFreeKey('gemini');
+      const geminiBaseUrl = baseUrl || 'https://generativelanguage.googleapis.com/v1beta';
+      const endpoint = `${geminiBaseUrl.replace(/\/+$/, '')}/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiKey}`;
+      const contents = formattedMessages.map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }));
+
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
+          generationConfig: {
+            temperature,
+          },
+        }),
+        signal,
+      });
+    } else {
+      // Groq Models
+      const groqKey = apiKey || getNextFreeKey('groq');
+      const groqBaseUrl = baseUrl || 'https://api.groq.com/openai/v1';
+      const endpoint = `${groqBaseUrl.replace(/\/+$/, '')}/chat/completions`;
+      const payloadMessages = [
+        { role: 'system', content: effectiveSystemPrompt },
+        ...formattedMessages,
+      ];
+
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${groqKey}`,
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: payloadMessages,
+          temperature,
+          stream: true,
+        }),
+        signal,
+      });
+    }
+  }
+
+  // 1. OpenAI / Groq / DeepSeek / OpenRouter / Together / Fireworks / Mistral / xAI / Perplexity / Cohere / Custom Endpoint
+  else if (
+    providerId === 'openai' ||
+    providerId === 'groq' ||
+    providerId === 'deepseek' ||
+    providerId === 'openrouter' ||
+    providerId === 'together' ||
+    providerId === 'fireworks' ||
+    providerId === 'mistral' ||
+    providerId === 'xai' ||
+    providerId === 'perplexity' ||
+    providerId === 'cohere' ||
+    providerId === 'omniroute' ||
+    providerId === 'custom'
+  ) {
     const endpoint = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
     const payloadMessages = [
       { role: 'system', content: effectiveSystemPrompt },

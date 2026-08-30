@@ -25,10 +25,24 @@ interface SettingsState {
   theme: 'dark' | 'light';
   language: Language;
   isSettingsOpen: boolean;
+  activeSettingsTab: 'keys' | 'appearance' | 'backup';
+  customSupabaseUrl: string;
+  customSupabaseAnonKey: string;
+  customR2AccountId: string;
+  customR2BucketName: string;
+  customR2AccessKeyId: string;
+  customR2SecretAccessKey: string;
+  customR2PublicUrl: string;
+  activeMediaStorageDriver: 'supabase' | 'r2';
   
   // Actions
   setSettingsOpen: (open: boolean) => void;
+  setSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
+  openSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
   setApiKey: (providerId: LLMProviderId, apiKey: string, baseUrl?: string) => void;
+  setCustomSupabaseConfig: (url: string, anonKey: string) => void;
+  setCustomR2Config: (config: { accountId: string; bucketName: string; accessKeyId: string; secretAccessKey: string; publicUrl: string }) => void;
+  setActiveMediaStorageDriver: (driver: 'supabase' | 'r2') => void;
   toggleProvider: (providerId: LLMProviderId, isEnabled: boolean) => void;
   setActiveProviderAndModel: (providerId: LLMProviderId, modelId: string) => void;
   setTheme: (theme: 'dark' | 'light') => void;
@@ -41,47 +55,46 @@ interface SettingsState {
 }
 
 const initialApiKeys: ApiKeysState = {
+  anticeil: { apiKey: '', isEnabled: true },
   openai: { apiKey: '', isEnabled: true },
   anthropic: { apiKey: '', isEnabled: true },
   gemini: { apiKey: '', isEnabled: true },
   deepseek: { apiKey: '', isEnabled: true },
   groq: { apiKey: '', isEnabled: true },
+  openrouter: { apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', isEnabled: true },
+  together: { apiKey: '', baseUrl: 'https://api.together.xyz/v1', isEnabled: true },
+  fireworks: { apiKey: '', baseUrl: 'https://api.fireworks.ai/inference/v1', isEnabled: true },
+  mistral: { apiKey: '', baseUrl: 'https://api.mistral.ai/v1', isEnabled: true },
+  xai: { apiKey: '', baseUrl: 'https://api.x.ai/v1', isEnabled: true },
+  perplexity: { apiKey: '', baseUrl: 'https://api.perplexity.ai', isEnabled: true },
+  cohere: { apiKey: '', baseUrl: 'https://api.cohere.com/v1', isEnabled: true },
   ollama: { apiKey: '', baseUrl: 'http://localhost:11434', isEnabled: true },
-  elevenlabs: { apiKey: '', isEnabled: true },
-  stability: { apiKey: '', isEnabled: true },
-  custom: { apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', isEnabled: true },
+  elevenlabs: { apiKey: '', baseUrl: 'https://api.elevenlabs.io/v1', isEnabled: true },
+  azure: { apiKey: '', baseUrl: 'https://api.cognitive.microsoft.com/sts/v1.0', isEnabled: true },
+  deepgram: { apiKey: '', baseUrl: 'https://api.deepgram.com/v1', isEnabled: true },
+  assemblyai: { apiKey: '', baseUrl: 'https://api.assemblyai.com/v2', isEnabled: true },
+  fishaudio: { apiKey: '', baseUrl: 'https://api.fish.audio/v1', isEnabled: true },
+  suno: { apiKey: '', baseUrl: 'https://api.suno.ai/v1', isEnabled: true },
+  udio: { apiKey: '', baseUrl: 'https://api.udio.com/v1', isEnabled: true },
+  stability: { apiKey: '', baseUrl: 'https://api.stability.ai', isEnabled: true },
+  fal: { apiKey: '', baseUrl: 'https://queue.fal.run', isEnabled: true },
+  recraft: { apiKey: '', baseUrl: 'https://external.api.recraft.ai/v1', isEnabled: true },
+  luma: { apiKey: '', baseUrl: 'https://api.lumalabs.ai/dream-machine/v1', isEnabled: true },
+  kling: { apiKey: '', baseUrl: 'https://api.klingai.com/v1', isEnabled: true },
+  runway: { apiKey: '', baseUrl: 'https://api.dev.runwayml.com/v1', isEnabled: true },
+  pika: { apiKey: '', baseUrl: 'https://api.pika.art/v1', isEnabled: true },
+  tavily: { apiKey: '', baseUrl: 'https://api.tavily.com', isEnabled: true },
+  brave: { apiKey: '', baseUrl: 'https://api.search.brave.com/res/v1', isEnabled: true },
+  omniroute: { apiKey: '', baseUrl: 'http://localhost:20128/v1', isEnabled: true },
+  custom: { apiKey: '', baseUrl: 'http://localhost:1234/v1', isEnabled: true },
 };
 
 function getInitialLanguage(): Language {
-  if (typeof window !== 'undefined') {
-    try {
-      const direct = localStorage.getItem('anticeil_lang');
-      if (direct === 'en' || direct === 'id') return direct;
-      const raw = localStorage.getItem('anticeil_settings_storage');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.state?.language === 'en' || parsed?.state?.language === 'id') {
-          return parsed.state.language;
-        }
-      }
-    } catch {}
-  }
-  return 'en';
+  return 'en'; // persist middleware rehydrates the real value after mount
 }
 
 function getInitialTheme(): 'dark' | 'light' {
-  if (typeof window !== 'undefined') {
-    try {
-      const raw = localStorage.getItem('anticeil_settings_storage');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.state?.theme === 'dark' || parsed?.state?.theme === 'light') {
-          return parsed.state.theme;
-        }
-      }
-    } catch {}
-  }
-  return 'light';
+  return 'light'; // persist middleware rehydrates the real value after mount
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -90,13 +103,44 @@ export const useSettingsStore = create<SettingsState>()(
       apiKeys: initialApiKeys,
       dynamicModels: {},
       isLoadingModels: {},
-      activeProviderId: 'groq' as LLMProviderId,
-      activeModelId: 'compound-beta',
+      activeProviderId: DEFAULT_PROVIDER_ID,
+      activeModelId: DEFAULT_MODEL_ID,
       theme: getInitialTheme(),
       language: getInitialLanguage(),
       isSettingsOpen: false,
+      activeSettingsTab: 'keys',
+      customSupabaseUrl: '',
+      customSupabaseAnonKey: '',
+      customR2AccountId: '',
+      customR2BucketName: '',
+      customR2AccessKeyId: '',
+      customR2SecretAccessKey: '',
+      customR2PublicUrl: '',
+      activeMediaStorageDriver: 'supabase' as 'supabase' | 'r2',
 
       setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
+      setSettingsTab: (tab) => set({ activeSettingsTab: tab }),
+      openSettingsTab: (tab) => set({ activeSettingsTab: tab, isSettingsOpen: true }),
+
+      setActiveMediaStorageDriver: (driver: 'supabase' | 'r2') => set({ activeMediaStorageDriver: driver }),
+
+
+      setCustomSupabaseConfig: (url: string, anonKey: string) => {
+        set({ customSupabaseUrl: url.trim(), customSupabaseAnonKey: anonKey.trim() });
+      },
+
+
+      setCustomR2Config: ({ accountId, bucketName, accessKeyId, secretAccessKey, publicUrl }) => {
+        const t = (s: string) => s.trim();
+        set({
+          customR2AccountId: t(accountId),
+          customR2BucketName: t(bucketName),
+          customR2AccessKeyId: t(accessKeyId),
+          customR2SecretAccessKey: t(secretAccessKey),
+          customR2PublicUrl: t(publicUrl),
+        });
+      },
+
 
       setApiKey: (providerId, apiKey, baseUrl) => {
         const trimmedKey = apiKey.trim();
@@ -115,7 +159,13 @@ export const useSettingsStore = create<SettingsState>()(
         }));
 
         // Automatically fetch live models when valid key or endpoint is entered
-        if (trimmedKey.length > 4 || providerId === 'ollama') {
+        if (
+          trimmedKey.length > 4 ||
+          providerId === 'ollama' ||
+          providerId === 'omniroute' ||
+          providerId === 'custom' ||
+          Boolean(trimmedUrl)
+        ) {
           get().refreshModels(providerId);
         }
       },
@@ -152,11 +202,15 @@ export const useSettingsStore = create<SettingsState>()(
       },
 
       hasConfiguredKey: (providerId) => {
-        // Built-in free tier keys available for Groq and Gemini
-        if (providerId === 'groq' || providerId === 'gemini') return true;
+        // Built-in free tier key available only for Anticeil
+        if (providerId === 'anticeil') return true;
         const config = get().apiKeys[providerId];
         const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
-        if (!providerDef?.requiresApiKey) return true;
+        // For local/keyless providers: ready only if models have been fetched
+        if (!providerDef?.requiresApiKey) {
+          const models = get().dynamicModels[providerId];
+          return Boolean(models && models.length > 0);
+        }
         return Boolean(config?.apiKey && config.apiKey.length > 5);
       },
 
@@ -168,13 +222,37 @@ export const useSettingsStore = create<SettingsState>()(
 
         for (const providerId of providersToFetch) {
           const keyConfig = state.apiKeys[providerId];
+          let baseUrl = keyConfig?.baseUrl;
           let apiKey = keyConfig?.apiKey || '';
-          // Fallback to free tier pool key for Groq & Gemini if user hasn't set one
-          if (!apiKey) {
-            if (providerId === 'groq') apiKey = FREE_GROQ_KEYS[0] || '';
-            if (providerId === 'gemini') apiKey = FREE_GEMINI_KEYS[0] || '';
+
+          // Only Anticeil uses internal free key pool
+          if (providerId === 'anticeil') {
+            apiKey = FREE_GEMINI_KEYS[0] || '';
           }
-          const baseUrl = keyConfig?.baseUrl;
+
+          // Ensure OmniRoute always has its default port 20128 if unset
+          if (providerId === 'omniroute' && (!baseUrl || baseUrl.includes('openrouter.ai'))) {
+            baseUrl = 'http://localhost:20128/v1';
+          }
+
+          // Ensure Custom Endpoint never accidentally points to openrouter
+          if (providerId === 'custom' && baseUrl?.includes('openrouter.ai')) {
+            baseUrl = 'http://localhost:1234/v1';
+          }
+
+          const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
+          // If provider requires an API key and user hasn't provided one, clear dynamic models and skip
+          if (
+            providerDef?.requiresApiKey &&
+            providerId !== 'custom' &&
+            providerId !== 'omniroute' &&
+            (!apiKey || apiKey.length < 4)
+          ) {
+            set((s) => ({
+              dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
+            }));
+            continue;
+          }
 
           set((s) => ({
             isLoadingModels: { ...s.isLoadingModels, [providerId]: true },
@@ -199,11 +277,16 @@ export const useSettingsStore = create<SettingsState>()(
 
       getModelsForProvider: (providerId) => {
         const state = get();
-        const dynamic = state.dynamicModels[providerId];
-        if (dynamic && dynamic.length > 0) {
-          return dynamic;
-        }
-        return PROVIDER_MODELS[providerId] || [];
+        const list = (state.dynamicModels[providerId] && state.dynamicModels[providerId]!.length > 0)
+          ? state.dynamicModels[providerId]!
+          : (PROVIDER_MODELS[providerId] || []);
+
+        const seen = new Set<string>();
+        return list.filter((m) => {
+          if (!m || !m.id || seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        });
       },
 
       clearAllKeys: () => {
@@ -233,13 +316,38 @@ export const useSettingsStore = create<SettingsState>()(
         if (state?.theme && typeof document !== 'undefined') {
           document.documentElement.setAttribute('data-theme', state.theme);
         }
-        // Auto-fetch live models for free tier providers (Groq and Gemini)
+        // Auto-migrate persisted localStorage settings
+        if (state?.apiKeys) {
+          let needsUpdate = false;
+          const updatedKeys = { ...state.apiKeys };
+
+          if (!updatedKeys.omniroute || !updatedKeys.omniroute.baseUrl) {
+            updatedKeys.omniroute = { apiKey: '', baseUrl: 'http://localhost:20128/v1', isEnabled: true };
+            needsUpdate = true;
+          }
+          if (updatedKeys.custom?.baseUrl?.includes('openrouter.ai')) {
+            updatedKeys.custom = { apiKey: '', baseUrl: 'http://localhost:1234/v1', isEnabled: true };
+            needsUpdate = true;
+          }
+          if (needsUpdate) {
+            useSettingsStore.setState({ apiKeys: updatedKeys });
+          }
+        }
+
+        // Auto-fetch live models for configured providers on startup
         if (typeof window !== 'undefined') {
           setTimeout(() => {
             const current = useSettingsStore.getState();
             if (current.refreshModels) {
-              current.refreshModels('groq');
-              current.refreshModels('gemini');
+              current.refreshModels('anticeil');
+              current.refreshModels('omniroute');
+              if (current.apiKeys) {
+                for (const [pId, cfg] of Object.entries(current.apiKeys)) {
+                  if (pId === 'omniroute' || (cfg?.apiKey && cfg.apiKey.length > 5)) {
+                    current.refreshModels(pId as LLMProviderId);
+                  }
+                }
+              }
             }
           }, 300);
         }
@@ -251,6 +359,14 @@ export const useSettingsStore = create<SettingsState>()(
         activeModelId: state.activeModelId,
         theme: state.theme,
         language: state.language,
+        customSupabaseUrl: state.customSupabaseUrl,
+        customSupabaseAnonKey: state.customSupabaseAnonKey,
+        customR2AccountId: state.customR2AccountId,
+        customR2BucketName: state.customR2BucketName,
+        customR2AccessKeyId: state.customR2AccessKeyId,
+        customR2SecretAccessKey: state.customR2SecretAccessKey,
+        customR2PublicUrl: state.customR2PublicUrl,
+        activeMediaStorageDriver: state.activeMediaStorageDriver,
       }),
     }
   )

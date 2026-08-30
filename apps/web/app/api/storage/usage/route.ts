@@ -28,11 +28,16 @@ function calculateJsonBytes(data: unknown): number {
 export async function GET(req: NextRequest) {
   try {
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
+    const customSupabaseUrl = req.headers.get('x-custom-supabase-url');
+    const customSupabaseKey = req.headers.get('x-custom-supabase-key');
+
+    const supabaseUrl = customSupabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = customSupabaseKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     // Identify user via Supabase Auth
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       token ? { global: { headers: { Authorization: `Bearer ${token}` } } } : undefined
     );
     const { data: { user } } = await supabase.auth.getUser(token ?? '');
@@ -47,6 +52,8 @@ export async function GET(req: NextRequest) {
     let dbImageBytes = 0;
     let dbAutomationBytes = 0;
     let dbOtherBytes = 0;
+    let dbTextBytes = 0;
+    let dbFileBytes = 0;
 
     const [
       pdfRes,
@@ -57,6 +64,8 @@ export async function GET(req: NextRequest) {
       workflowsRes,
       runsRes,
       messagesRes,
+      chatSessionsRes,
+      chatMessagesRes,
     ] = await Promise.allSettled([
       supabase.from('pdf_documents').select('id, filename, file_size, extracted_text, summary').eq('user_id', userId),
       supabase.from('imagine_generations').select('id, prompt, negative_prompt, metadata').eq('user_id', userId),
@@ -66,7 +75,50 @@ export async function GET(req: NextRequest) {
       supabase.from('automation_workflows').select('id, name, nodes, edges').eq('user_id', userId),
       supabase.from('automation_runs').select('id, logs, result').eq('user_id', userId),
       supabase.from('omnichannel_messages').select('id, content, media_url').eq('user_id', userId),
+      supabase.from('chat_sessions').select('id, title, system_prompt, provider_id, model_id').eq('user_id', userId),
+      supabase.from('chat_messages').select('id, content, reasoning_content, attachments, image_url, video_url').eq('user_id', userId),
     ]);
+
+    // Chat Sessions
+    if (chatSessionsRes.status === 'fulfilled' && Array.isArray(chatSessionsRes.value.data)) {
+      for (const s of chatSessionsRes.value.data) {
+        const rowBytes = calculateStringBytes(s.id) + calculateStringBytes(s.title) + calculateStringBytes(s.system_prompt) + 64;
+        dbTextBytes += rowBytes;
+        dbBytes += rowBytes;
+      }
+    }
+
+    // Chat Messages
+    if (chatMessagesRes.status === 'fulfilled' && Array.isArray(chatMessagesRes.value.data)) {
+      for (const m of chatMessagesRes.value.data) {
+        const textBytes = calculateStringBytes(m.content) + calculateStringBytes(m.reasoning_content) + 64;
+        dbTextBytes += textBytes;
+        dbBytes += textBytes;
+
+        if (Array.isArray(m.attachments)) {
+          for (const att of m.attachments) {
+            const attSize = Number(att?.size || 0) || calculateStringBytes(att?.data) || calculateStringBytes(att?.url);
+            if (attSize > 0) {
+              dbFileBytes += attSize;
+              dbBytes += attSize;
+              dbFilesCount++;
+            }
+          }
+        }
+        if (m.image_url && m.image_url.startsWith('data:')) {
+          const imgSize = calculateStringBytes(m.image_url);
+          dbFileBytes += imgSize;
+          dbBytes += imgSize;
+          dbFilesCount++;
+        }
+        if (m.video_url && m.video_url.startsWith('data:')) {
+          const vidSize = calculateStringBytes(m.video_url);
+          dbFileBytes += vidSize;
+          dbBytes += vidSize;
+          dbFilesCount++;
+        }
+      }
+    }
 
     if (pdfRes.status === 'fulfilled' && Array.isArray(pdfRes.value.data)) {
       for (const doc of pdfRes.value.data) {
@@ -74,6 +126,7 @@ export async function GET(req: NextRequest) {
         const fileSize = Number(doc.file_size || 0);
         const totalDocSize = textBytes + (fileSize > 0 ? fileSize : 0);
         dbDocBytes += totalDocSize;
+        dbFileBytes += fileSize > 0 ? fileSize : textBytes;
         dbBytes += totalDocSize;
         dbFilesCount++;
       }
@@ -83,6 +136,7 @@ export async function GET(req: NextRequest) {
       for (const img of imagineRes.value.data) {
         const imgBytes = calculateStringBytes(img.prompt) + calculateStringBytes(img.negative_prompt) + calculateJsonBytes(img.metadata);
         dbImageBytes += imgBytes;
+        dbTextBytes += imgBytes;
         dbBytes += imgBytes;
         dbFilesCount++;
       }
@@ -92,6 +146,7 @@ export async function GET(req: NextRequest) {
       for (const f of foldersRes.value.data) {
         const rowBytes = calculateStringBytes(f.name) + calculateJsonBytes(f.session_ids);
         dbOtherBytes += rowBytes;
+        dbTextBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -100,6 +155,7 @@ export async function GET(req: NextRequest) {
       for (const p of promptsRes.value.data) {
         const rowBytes = calculateStringBytes(p.title) + calculateStringBytes(p.content);
         dbOtherBytes += rowBytes;
+        dbTextBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -108,6 +164,7 @@ export async function GET(req: NextRequest) {
       for (const c of connectorsRes.value.data) {
         const rowBytes = calculateStringBytes(c.connector_id) + calculateJsonBytes(c.config);
         dbOtherBytes += rowBytes;
+        dbTextBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -116,6 +173,7 @@ export async function GET(req: NextRequest) {
       for (const w of workflowsRes.value.data) {
         const rowBytes = calculateStringBytes(w.name) + calculateJsonBytes(w.nodes) + calculateJsonBytes(w.edges);
         dbAutomationBytes += rowBytes;
+        dbTextBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -124,6 +182,7 @@ export async function GET(req: NextRequest) {
       for (const r of runsRes.value.data) {
         const rowBytes = calculateJsonBytes(r.logs) + calculateJsonBytes(r.result);
         dbAutomationBytes += rowBytes;
+        dbTextBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -132,6 +191,7 @@ export async function GET(req: NextRequest) {
       for (const m of messagesRes.value.data) {
         const rowBytes = calculateStringBytes(m.content) + calculateStringBytes(m.media_url);
         dbOtherBytes += rowBytes;
+        dbTextBytes += rowBytes;
         dbBytes += rowBytes;
       }
     }
@@ -142,7 +202,7 @@ export async function GET(req: NextRequest) {
     const r2Breakdown = { docs: 0, images: 0, audio: 0, other: 0 };
     let isR2Available = true;
 
-    // 2a. Try Cloudflare Worker R2 bridge first (bypasses direct S3 TLS issues on local networks)
+    // 2a. Try Cloudflare Worker R2 bridge first
     try {
       const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL || 'http://127.0.0.1:8787';
       const workerRes = await fetch(`${workerUrl}/api/storage/usage?userId=${encodeURIComponent(userId)}`, {
@@ -164,7 +224,7 @@ export async function GET(req: NextRequest) {
       // Worker fetch skipped/timed out
     }
 
-    // 2b. Fallback to direct S3 SDK if worker bridge returned 0
+    // 2b. Direct S3 SDK
     if (r2Bytes === 0 && process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
       try {
         const res = await r2.send(
@@ -186,7 +246,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2c. Fallback to metadata sizes from Supabase (imagine_generations.metadata.size & pdf_documents.file_size)
+    // 2c. Fallback to metadata sizes from Supabase
     if (r2Bytes === 0) {
       if (imagineRes.status === 'fulfilled' && Array.isArray(imagineRes.value.data)) {
         for (const img of imagineRes.value.data) {
@@ -220,13 +280,19 @@ export async function GET(req: NextRequest) {
       images: r2Breakdown.images + dbImageBytes,
       audio: r2Breakdown.audio,
       automations: dbAutomationBytes,
-      database: dbOtherBytes,
+      database: dbOtherBytes + dbTextBytes,
+      chat: dbTextBytes,
       other: r2Breakdown.other,
     };
+
     const sources = {
       r2Bytes,
       databaseBytes: dbBytes,
       isR2Available,
+      dbTextBytes,
+      dbFileBytes,
+      r2FileBytes: r2Bytes,
+      r2TextBytes: 0,
     };
 
     return NextResponse.json({
@@ -236,11 +302,11 @@ export async function GET(req: NextRequest) {
       sources,
     });
   } catch (err: any) {
-    console.warn('[Storage Usage] Fallback error:', err?.message || err);
+    console.warn('[Storage Usage] Error:', err?.message || err);
     return NextResponse.json({
       totalBytes: 0,
-      breakdown: { docs: 0, images: 0, audio: 0, database: 0, other: 0 },
-      sources: { r2Bytes: 0, databaseBytes: 0, isR2Available: false },
+      breakdown: { docs: 0, images: 0, audio: 0, database: 0, chat: 0, automations: 0, other: 0 },
+      sources: { r2Bytes: 0, databaseBytes: 0, isR2Available: false, dbTextBytes: 0, dbFileBytes: 0, r2FileBytes: 0, r2TextBytes: 0 },
       fileCount: 0,
       isUnavailable: true,
     });

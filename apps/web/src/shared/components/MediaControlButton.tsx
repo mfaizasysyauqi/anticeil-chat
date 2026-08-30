@@ -20,12 +20,12 @@ export function MediaControlButton({
       type="button"
       onClick={onClick}
       style={{
-        padding: '6px 14px',
-        borderRadius: '8px',
-        border: 'none',
+        padding: '4px 10px',
+        borderRadius: 'var(--radius-md, 6px)',
+        border: isSelected ? 'none' : '1px solid var(--border-subtle)',
         background: isSelected ? brandColor : 'var(--bg-subtle)',
-        color: isSelected ? '#fff' : 'var(--text-muted)',
-        fontSize: '13px',
+        color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+        fontSize: '12px',
         fontWeight: isSelected ? 600 : 500,
         cursor: 'pointer',
         transition: 'all 0.15s ease',
@@ -33,14 +33,14 @@ export function MediaControlButton({
       }}
       onMouseEnter={(e) => {
         if (!isSelected) {
-          e.currentTarget.style.background = 'var(--bg-card)';
+          e.currentTarget.style.background = 'var(--bg-surface)';
           e.currentTarget.style.color = 'var(--text-primary)';
         }
       }}
       onMouseLeave={(e) => {
         if (!isSelected) {
           e.currentTarget.style.background = 'var(--bg-subtle)';
-          e.currentTarget.style.color = 'var(--text-muted)';
+          e.currentTarget.style.color = 'var(--text-secondary)';
         }
       }}
     >

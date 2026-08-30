@@ -13,8 +13,71 @@ export function parseSSELine(line: string, providerId: LLMProviderId): ChatStrea
     try {
       const data = JSON.parse(jsonStr);
 
-      // OpenAI / Groq / DeepSeek / Custom (standard OpenAI chat completions format)
-      if (providerId === 'openai' || providerId === 'groq' || providerId === 'deepseek' || providerId === 'custom') {
+      // Anticeil multi-model support (auto-detect Gemini vs Groq/OpenAI response format)
+      if (providerId === 'anticeil') {
+        if (data.candidates && Array.isArray(data.candidates)) {
+          const candidate = data.candidates[0];
+          const parts = candidate?.content?.parts || [];
+          let delta = '';
+          let reasoningDelta = '';
+
+          for (const part of parts) {
+            if (part.thought) {
+              reasoningDelta += part.thought;
+            } else if (part.text) {
+              delta += part.text;
+            }
+          }
+
+          const isDone = candidate?.finishReason !== undefined && candidate?.finishReason !== null;
+          return {
+            delta,
+            reasoningDelta,
+            isDone,
+            promptTokens: data.usageMetadata?.promptTokenCount,
+            completionTokens: data.usageMetadata?.candidatesTokenCount,
+          };
+        }
+
+        if (data.choices && Array.isArray(data.choices)) {
+          const choice = data.choices[0];
+          if (!choice) return null;
+
+          const delta = choice.delta?.content || choice.text || '';
+          const reasoningDelta =
+            choice.delta?.reasoning_content ||
+            choice.delta?.reasoning ||
+            choice.delta?.thought ||
+            '';
+          const isDone = choice.finish_reason !== null && choice.finish_reason !== undefined;
+          const promptTokens = data.usage?.prompt_tokens;
+          const completionTokens = data.usage?.completion_tokens;
+
+          return {
+            delta,
+            reasoningDelta,
+            isDone,
+            promptTokens,
+            completionTokens,
+          };
+        }
+      }
+
+      // OpenAI / Groq / DeepSeek / OpenRouter / Together / Fireworks / Mistral / xAI / Perplexity / Cohere / Custom
+      if (
+        providerId === 'openai' ||
+        providerId === 'groq' ||
+        providerId === 'deepseek' ||
+        providerId === 'openrouter' ||
+        providerId === 'together' ||
+        providerId === 'fireworks' ||
+        providerId === 'mistral' ||
+        providerId === 'xai' ||
+        providerId === 'perplexity' ||
+        providerId === 'cohere' ||
+        providerId === 'omniroute' ||
+        providerId === 'custom'
+      ) {
         const choice = data.choices?.[0];
         if (!choice) return null;
 

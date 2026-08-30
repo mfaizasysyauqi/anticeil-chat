@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   Lock,
+  AlertCircle,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
@@ -45,10 +46,120 @@ export interface ImageProviderItem {
 
 export const IMAGE_PROVIDERS: ImageProviderItem[] = [
   {
+    id: 'anticeil',
+    name: 'Anticeil',
+    logoKey: 'anticeil',
+    badge: 'FREE',
+    description: 'Model generatif gratis untuk gambar, video, dan audio — tanpa API key.',
+    capabilities: ['image', 'video', 'audio'],
+    models: [
+      {
+        id: 'flux',
+        name: 'FLUX.1 Schnell (Anticeil Free)',
+        description: 'Generasi visual kilat resolusi tinggi langsung di peramban — gratis, tanpa API key.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Client Direct', 'Ultra Cepat', 'Photorealistic'],
+        capability: 'image',
+      },
+      {
+        id: 'flux-dev',
+        name: 'FLUX.1 Dev 8K Ultra (Anticeil Free)',
+        description: 'Detail visual tingkat master dengan akurasi pencahayaan dan tekstur — gratis.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['8K Ultra', 'Superior Lighting', 'Precision Detail'],
+        capability: 'image',
+      },
+      {
+        id: 'sdxl',
+        name: 'Stable Diffusion XL Turbo (Anticeil Free)',
+        description: 'Generasi visual artistik, konsep seni, dan anime super cepat — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Artistic Styles', 'Anime & Concept Art', 'Fast Stream'],
+        capability: 'image',
+      },
+      {
+        id: 'luma',
+        name: 'Luma Ray 2 (Anticeil Free)',
+        description: 'Video sinematik bergerak 3D dengan kamera dinamis — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Cinematic Camera', 'Realistis 3D', 'Fast Generation'],
+        capability: 'video',
+      },
+      {
+        id: 'kling',
+        name: 'Kling AI v1.6 Pro (Anticeil Free)',
+        description: 'Generator video gerak fisik realistis untuk simulasi karakter — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Karakter Realistis', 'Fisika Alami', 'High Framerate'],
+        capability: 'video',
+      },
+      {
+        id: 'svd',
+        name: 'Stable Video Diffusion (Anticeil Free)',
+        description: 'Generator gerakan video dari gambar dengan FPS stabil — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Image-to-Video', 'Smooth FPS', 'Neural Motion'],
+        capability: 'video',
+      },
+      {
+        id: 'microsoft-tts',
+        name: 'Microsoft Edge Neural TTS (Anticeil Free)',
+        description: 'Sintesis suara vokal alami Bahasa Indonesia & global — gratis via Anticeil.',
+        keyType: 'microsoft',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Bahasa Indonesia', 'Natural Neural', '100% Gratis'],
+        capability: 'audio',
+      },
+      {
+        id: 'fish-speech',
+        name: 'Fish Speech v1.5 (Anticeil Free)',
+        description: 'Zero-shot voice cloning dan konversi vokal ultra-responsif — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Zero-Shot Clone', 'Low Latency', '100% Gratis'],
+        capability: 'audio',
+      },
+      {
+        id: 'suno-free',
+        name: 'Suno v4 AI Music (Anticeil Free)',
+        description: 'Menciptakan lagu utuh lengkap dengan lirik & vokal — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Full Song & Vocal', 'Lirik Otomatis', '100% Gratis'],
+        capability: 'audio',
+      },
+      {
+        id: 'udio',
+        name: 'Udio Music v1.5 (Anticeil Free)',
+        description: 'Komposisi musik fidelitas tinggi berbagai genre — gratis via Anticeil.',
+        keyType: 'free',
+        keyRequirement: '100% Gratis — Tanpa API Key',
+        badge: 'FREE',
+        tags: ['Stereo Master', 'Instrumen Akustik', 'Dinamika Kaya'],
+        capability: 'audio',
+      },
+    ],
+  },
+  {
     id: 'black-forest-labs',
     name: 'Black Forest Labs',
     logoKey: 'black-forest-labs',
-    badge: '100% Gratis',
+    badge: 'FREE',
     description: 'Pionir model difusi visual generasi baru berkecepatan tinggi tanpa batas.',
     capabilities: ['image'],
     models: [
@@ -166,7 +277,7 @@ export const IMAGE_PROVIDERS: ImageProviderItem[] = [
     id: 'luma-ai',
     name: 'Luma AI',
     logoKey: 'luma',
-    badge: 'Trending',
+    badge: 'FREE',
     description: 'Teknologi Dream Machine untuk sintesis video sinematik bergerak 3D.',
     capabilities: ['video'],
     models: [
@@ -185,6 +296,7 @@ export const IMAGE_PROVIDERS: ImageProviderItem[] = [
     id: 'kuaishou-kling',
     name: 'Kuaishou Kling AI',
     logoKey: 'kuaishou-kling',
+    badge: 'FREE',
     description: 'Mesin render video gerak fisik realistis beresolusi tinggi.',
     capabilities: ['video'],
     models: [
@@ -221,7 +333,7 @@ export const IMAGE_PROVIDERS: ImageProviderItem[] = [
     id: 'microsoft-azure',
     name: 'Microsoft Azure Speech',
     logoKey: 'microsoft-azure',
-    badge: '100% Gratis',
+    badge: 'FREE',
     description: 'Sintesis suara vokal manusia neural alami dengan dukungan lebih dari 100 bahasa.',
     capabilities: ['audio'],
     models: [
@@ -312,6 +424,22 @@ export function ImageModelSelectorModal({
   const [mounted, setMounted] = useState(false);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const language = useSettingsStore((s) => s.language);
+  const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
+
+  const KEY_TYPE_TO_PROVIDER: Record<string, string> = {
+    openai: 'openai', gemini: 'gemini', stability: 'stability',
+    elevenlabs: 'elevenlabs', suno: 'suno', runway: 'runway',
+  };
+
+  const providerKeyMissing = (provider: ImageProviderItem) => {
+    const nonFreeKeyType = provider.models.find(
+      (m) => m.keyType !== 'free' && m.keyType !== 'microsoft' && m.capability === mediaMode
+    )?.keyType;
+    if (!nonFreeKeyType) return false;
+    const storeId = KEY_TYPE_TO_PROVIDER[nonFreeKeyType];
+    if (!storeId) return false;
+    return !hasConfiguredKey(storeId as any);
+  };
 
   // Filter providers that strictly support the current mediaMode
   const filteredProviders = React.useMemo(() => {
@@ -609,17 +737,38 @@ export function ImageModelSelectorModal({
                     >
                       <ProviderBrandLogo provider={provider.logoKey} size={18} />
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: active ? 700 : 500,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {provider.name}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: '13px',
+                            fontWeight: active ? 700 : 500,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {provider.id === 'anticeil' ? 'Anticeil' : provider.name}
+                        </div>
+                        {(provider.badge === 'FREE' ||
+                          provider.models
+                            .filter((m) => m.capability === mediaMode)
+                            .every((m) => m.keyType === 'free' || m.keyType === 'microsoft')) && (
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              fontWeight: 700,
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'rgba(16,185,129,0.15)',
+                              color: '#10b981',
+                              border: '1px solid rgba(16,185,129,0.3)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            FREE
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
                         {provider.models.filter((m) => m.capability === mediaMode).length}{' '}
@@ -628,8 +777,19 @@ export function ImageModelSelectorModal({
                     </div>
                   </div>
 
-                  {hasActiveModel && (
+                  {providerKeyMissing(provider) ? (
+                    <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                      <AlertCircle size={13} color="var(--accent-warning)" />
+                    </span>
+                  ) : (
                     <span
+                      title={
+                        provider.models
+                          .filter((m) => m.capability === mediaMode)
+                          .every((m) => m.keyType === 'free' || m.keyType === 'microsoft')
+                          ? 'Free & Ready'
+                          : 'API Key Configured'
+                      }
                       style={{
                         width: '6px',
                         height: '6px',

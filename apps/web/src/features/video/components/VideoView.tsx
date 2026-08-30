@@ -13,6 +13,7 @@ import {
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
 import { VideoModelSelectorModal, VIDEO_PROVIDERS } from './VideoModelSelectorModal';
+import { useCreditStore } from '../../credits/store/useCreditStore';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
 import { MediaControlButton } from '../../../shared/components/MediaControlButton';
 
@@ -40,6 +41,13 @@ export function VideoView() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
+
+    // Credit check & deduction for Anticeil Free video models
+    const isAnticeilFree = currentProvider?.id === 'anticeil' || currentModelInfo?.keyType === 'free';
+    if (isAnticeilFree) {
+      const allowed = useCreditStore.getState().deductCredits('video', 'anticeil');
+      if (!allowed) return;
+    }
     
     setIsGenerating(true);
     // Simulate generation
@@ -89,47 +97,54 @@ export function VideoView() {
           isGenerating={isGenerating}
           placeholder={
             language === 'id'
-              ? 'Jelaskan video yang ingin Anda buat secara detail (contoh: Drone terbang di atas hutan hujan tropis, 4K sinematik)...'
-              : 'Describe the video you want to generate in detail (e.g. Drone flying over tropical rainforest, 4K cinematic)...'
+              ? 'Deskripsikan video yang ingin dibuat...'
+              : 'Describe the video you want to generate...'
           }
           modelDisplayName={modelDisplayName}
           onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
           language={language}
           brandColor="#fb7185"
           additionalControls={
-            <>
-              {/* Ratio Selector */}
-              {ratios.map((ratio) => (
-                <MediaControlButton
-                  key={ratio}
-                  label={ratio}
-                  isSelected={selectedRatio === ratio}
-                  onClick={() => setSelectedRatio(ratio)}
-                  brandColor="#fb7185"
-                />
-              ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Ratio Group */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Ratio size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
+                {ratios.map((ratio) => (
+                  <MediaControlButton
+                    key={ratio}
+                    label={ratio}
+                    isSelected={selectedRatio === ratio}
+                    onClick={() => setSelectedRatio(ratio)}
+                    brandColor="#fb7185"
+                  />
+                ))}
+              </div>
 
-              {/* Separator between Ratio and Duration */}
+              {/* Distinct Vertical Separator */}
               <div
                 style={{
                   width: '1px',
-                  height: '24px',
-                  background: 'var(--border-subtle)',
+                  height: '18px',
+                  backgroundColor: 'var(--border-strong, rgba(0,0,0,0.15))',
+                  margin: '0 2px',
                   flexShrink: 0,
                 }}
               />
 
-              {/* Duration Chips */}
-              {durations.map((dur) => (
-                <MediaControlButton
-                  key={dur}
-                  label={dur}
-                  isSelected={selectedDuration === dur}
-                  onClick={() => setSelectedDuration(dur)}
-                  brandColor="#fb7185"
-                />
-              ))}
-            </>
+              {/* Duration Group */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Clock size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
+                {durations.map((dur) => (
+                  <MediaControlButton
+                    key={dur}
+                    label={dur}
+                    isSelected={selectedDuration === dur}
+                    onClick={() => setSelectedDuration(dur)}
+                    brandColor="#fb7185"
+                  />
+                ))}
+              </div>
+            </div>
           }
         />
 

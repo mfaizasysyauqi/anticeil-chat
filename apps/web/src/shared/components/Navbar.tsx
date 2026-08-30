@@ -39,6 +39,7 @@ export function Navbar({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const language = useSettingsStore((s) => s.language);
+  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const user = useAuthStore((s) => s.user);
   const initializeAuth = useAuthStore((s) => s.initializeAuth);
 
@@ -313,6 +314,8 @@ export function Navbar({
             <span className="hide-on-mobile">{t.buildMode.title}</span>
           </button>
         )}
+
+
 
         {/* Feature-Aware Context Action Dropdown (...) */}
         <div style={{ position: 'relative' }} ref={menuRef}>

@@ -42,6 +42,25 @@ export const r2 = new S3Client({
   ...(requestHandler ? { requestHandler } : {}),
 });
 
+/**
+ * Creates a dedicated S3Client pointing to a custom Cloudflare R2 instance (for Enterprise BYOS).
+ */
+export function createCustomR2Client(config: {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+}): S3Client {
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${config.accountId.trim()}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: config.accessKeyId.trim(),
+      secretAccessKey: config.secretAccessKey.trim(),
+    },
+    ...(requestHandler ? { requestHandler } : {}),
+  });
+}
+
 export const R2_BUCKET = process.env.R2_BUCKET_NAME ?? 'anticeil-storage';
 
 /**

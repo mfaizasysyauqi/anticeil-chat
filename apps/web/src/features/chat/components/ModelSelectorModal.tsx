@@ -67,7 +67,7 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
 
   const initialProvider = filteredProviders.some((p) => p.id === currentProviderId)
     ? currentProviderId
-    : filteredProviders[0]?.id || 'groq';
+    : filteredProviders[0]?.id || 'anticeil';
 
   const [selectedProviderId, setSelectedProviderId] = useState<LLMProviderId>(initialProvider);
 
@@ -82,7 +82,11 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
 
   const isCurrentProviderLoading = Boolean(isLoadingModels[selectedProviderId]);
   const rawModels = getModelsForProvider(selectedProviderId);
+  const seenModelIds = new Set<string>();
   const models = rawModels.filter((m) => {
+    if (!m || !m.id || seenModelIds.has(m.id)) return false;
+    seenModelIds.add(m.id);
+
     if (targetCapability === 'text' || !targetCapability) {
       // Filter out pure video/image generation models
       if (m.capabilities?.video && !m.capabilities?.text) return false;
@@ -240,6 +244,7 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
             {filteredProviders.map((provider) => {
               const isSelected = provider.id === selectedProviderId;
               const providerHasKey = hasConfiguredKey(provider.id);
+              const isFreeProvider = provider.id === 'anticeil' || !provider.requiresApiKey;
 
               return (
                 <button
@@ -270,8 +275,36 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {provider.name}
                     </span>
+                    {isFreeProvider && (
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          padding: '1px 5px',
+                          borderRadius: '3px',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          color: 'var(--accent-success, #10b981)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          letterSpacing: '0.04em',
+                          flexShrink: 0,
+                        }}
+                      >
+                        FREE
+                      </span>
+                    )}
                   </div>
-                  {!providerHasKey && (
+                  {providerHasKey ? (
+                    <span
+                      title={isFreeProvider ? 'Free & Ready' : 'API Key Configured'}
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'var(--accent-success, #10b981)',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : (
                     <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
                       <AlertCircle size={13} color="var(--accent-warning)" />
                     </span>
@@ -288,6 +321,30 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
               gap: '10px',
             }}
           >
+            {/* Informative Banner for Anticeil Free Provider */}
+            {selectedProviderId === 'anticeil' && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '9px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'rgba(0, 115, 234, 0.08)',
+                  border: '1px solid rgba(0, 115, 234, 0.2)',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <Sparkles size={15} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                <span>
+                  {language === 'id'
+                    ? 'Provider bawaan Anticeil siap digunakan gratis tanpa input API key. Model ditenagai oleh Google Gemini & Groq Cloud LPU.'
+                    : 'Anticeil built-in provider is ready to use for free without any API key. Powered by Google Gemini & Groq Cloud LPU.'}
+                </span>
+              </div>
+            )}
+
             {/* Warning Banner if API Key is missing for this provider */}
             {!hasKey && (
               <div
