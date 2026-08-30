@@ -88,7 +88,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
             maxWidth: '860px',
             width: '100%',
             margin: '0 auto',
-            padding: 'var(--space-2xl) var(--page-pad-x)',
+            padding: 'var(--space-2xl) 0',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
