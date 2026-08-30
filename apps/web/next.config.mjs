@@ -3,17 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: [
     '@anticeil/core',
-    '@univerjs/core',
-    '@univerjs/design',
-    '@univerjs/engine-render',
-    '@univerjs/engine-formula',
-    '@univerjs/ui',
-    '@univerjs/docs',
-    '@univerjs/docs-ui',
-    '@univerjs/sheets',
-    '@univerjs/sheets-ui',
-    '@univerjs/sheets-formula',
   ],
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
   // Suppress development-only warnings in production
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
