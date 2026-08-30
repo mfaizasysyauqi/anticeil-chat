@@ -2003,9 +2003,9 @@ export function Sidebar({
 
   const displayName =
     (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name) ||
-    (user?.email ? user.email.split('@')[0] : '');
+    (user?.email ? user.email.split('@')[0] : 'Guest');
 
-  const displayEmail = user?.email || '';
+  const displayEmail = user?.email || '-';
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!isMounted) {
