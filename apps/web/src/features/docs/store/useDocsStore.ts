@@ -504,7 +504,17 @@ export const useDocsStore = create<DocsState>((set, get) => {
     },
 
     togglePin: (id: string) => {
-      const updated = get().documents.map((d) =>
+      const docs = get().documents;
+      const doc = docs.find((d) => d.id === id);
+      if (!doc) return;
+
+      const pinnedDocsCount = docs.filter((d) => d.isPinned).length;
+      if (!doc.isPinned && pinnedDocsCount >= 3) {
+        alert('Maksimal 3 dokumen yang dapat disematkan / Maximum of 3 pinned documents allowed.');
+        return;
+      }
+
+      const updated = docs.map((d) =>
         d.id === id ? { ...d, isPinned: !d.isPinned } : d
       );
       set({ documents: updated });

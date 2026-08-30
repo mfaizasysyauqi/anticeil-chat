@@ -38,6 +38,7 @@ import { useCreditStore } from '../../credits/store/useCreditStore';
 import { getTranslation } from '@anticeil/core';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
 import { MediaControlButton } from '../../../shared/components/MediaControlButton';
+import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
 
 type MediaMode = 'image' | 'video' | 'audio';
 
@@ -61,41 +62,46 @@ interface ImageItem {
 }
 
 // ─── ImagineCardMenu (3-dot Menu & Submenu) ──────────────────────────────────
-interface ImageCardMenuProps {
+export interface MediaCardMenuProps {
   id: string;
   isPinned?: boolean;
-  prompt?: string;
-  url?: string;
+  prompt: string;
+  url: string;
+  type?: 'image' | 'video' | 'audio';
   collectionId?: string | null;
-  collections: { id: string; name: string }[];
+  collections?: Array<{ id: string; name: string }>;
   language: string;
-  onTogglePin: () => void;
-  onMoveToCollection: (colId: string | null) => void;
+  onTogglePin?: () => void;
+  onMoveToCollection?: (collectionId: string | null) => void;
   onCopyPrompt?: () => void;
   onDownload?: () => void;
   onDelete?: () => void;
 }
 
-function ImageCardMenu({
+export function MediaCardMenu({
   id,
-  isPinned,
+  isPinned = false,
   prompt,
   url,
+  type = 'image',
   collectionId,
-  collections,
+  collections = [],
   language,
-  onTogglePin,
-  onMoveToCollection,
+  onTogglePin = () => {},
+  onMoveToCollection = () => {},
   onCopyPrompt,
   onDownload,
   onDelete,
-}: ImageCardMenuProps) {
+}: MediaCardMenuProps) {
   const [open, setOpen] = useState(false);
   const [showFolderSub, setShowFolderSub] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+
   const buttonRef = useRef<HTMLButtonElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
+
+  const accentColor = type === 'video' ? '#fb7185' : type === 'audio' ? '#60a5fa' : '#A25DDC';
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -170,9 +176,9 @@ function ImageCardMenu({
         className="session-options-btn"
         title="Opsi Media"
         style={{
-          background: isPinned ? 'rgba(162, 93, 220, 0.15)' : 'var(--bg-subtle)',
-          border: `1px solid ${isPinned ? 'rgba(162, 93, 220, 0.4)' : 'var(--border-subtle)'}`,
-          color: isPinned ? '#A25DDC' : 'var(--text-muted)',
+          background: isPinned ? `${accentColor}26` : 'var(--bg-subtle)',
+          border: `1px solid ${isPinned ? `${accentColor}66` : 'var(--border-subtle)'}`,
+          color: isPinned ? accentColor : 'var(--text-muted)',
           borderRadius: '6px',
           padding: '4px 6px',
           cursor: 'pointer',
@@ -182,7 +188,7 @@ function ImageCardMenu({
           transition: 'all 0.15s ease',
         }}
       >
-        {isPinned && <Pin size={11} fill="#A25DDC" />}
+        {isPinned && <Pin size={11} fill={accentColor} color={accentColor} />}
         <MoreHorizontal size={13} />
       </button>
 
@@ -217,7 +223,7 @@ function ImageCardMenu({
               setOpen(false);
             }}
           >
-            <Pin size={12} fill={isPinned ? '#A25DDC' : 'none'} color={isPinned ? '#A25DDC' : undefined} />
+            <Pin size={12} fill={isPinned ? accentColor : 'none'} color={isPinned ? accentColor : undefined} />
             <span>
               {isPinned
                 ? language === 'id'
@@ -252,62 +258,66 @@ function ImageCardMenu({
           )}
 
           {/* Move to folder Submenu */}
-          {collections.length > 0 && (
-            <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                style={btnStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                  setShowFolderSub(true);
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              style={btnStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                setShowFolderSub(true);
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <FolderInput size={12} />
+              <span style={{ flex: 1 }}>{language === 'id' ? 'Pindah ke folder' : 'Move to folder'}</span>
+              <ChevronRight size={11} color="var(--text-muted)" />
+            </button>
+
+            {showFolderSub && (
+              <div
+                onMouseEnter={() => setShowFolderSub(true)}
+                onMouseLeave={() => setShowFolderSub(false)}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '100%',
+                  marginLeft: '2px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  boxShadow: 'var(--shadow-xl)',
+                  padding: '4px',
+                  zIndex: 999999999,
+                  minWidth: '150px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
                 }}
               >
-                <FolderInput size={12} />
-                <span style={{ flex: 1 }}>{language === 'id' ? 'Pindah ke folder' : 'Move to folder'}</span>
-                <ChevronRight size={11} color="var(--text-muted)" />
-              </button>
-
-              {showFolderSub && (
-                <div
-                  onMouseEnter={() => setShowFolderSub(true)}
-                  onMouseLeave={() => setShowFolderSub(false)}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '100%',
-                    marginLeft: '2px',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-strong)',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    boxShadow: 'var(--shadow-xl)',
-                    padding: '4px',
-                    zIndex: 999999999,
-                    minWidth: '150px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                  }}
-                >
-                  {collectionId && (
-                    <button
-                      type="button"
-                      style={btnStyle}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      onClick={() => {
-                        onMoveToCollection(null);
-                        setOpen(false);
-                        setShowFolderSub(false);
-                      }}
-                    >
-                      <FolderMinus size={11} />
-                      <span>{language === 'id' ? 'Lepas dari folder' : 'Remove from folder'}</span>
-                    </button>
-                  )}
-                  {collections.map((c) => (
+                {collectionId && (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    onClick={() => {
+                      onMoveToCollection(null);
+                      setOpen(false);
+                      setShowFolderSub(false);
+                    }}
+                  >
+                    <FolderMinus size={11} />
+                    <span>{language === 'id' ? 'Keluarkan dari folder' : 'Remove from folder'}</span>
+                  </button>
+                )}
+                {collections.length === 0 ? (
+                  <div style={{ padding: '6px 8px', fontSize: '10.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    {language === 'id' ? 'Belum ada folder' : 'No folders'}
+                  </div>
+                ) : (
+                  collections.map((c) => (
                     <button
                       key={c.id}
                       type="button"
@@ -329,11 +339,11 @@ function ImageCardMenu({
                         {c.name}
                       </span>
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                  ))
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Download */}
           {onDownload && (
@@ -356,15 +366,18 @@ function ImageCardMenu({
           {onDelete && (
             <button
               type="button"
-              style={{ ...btnStyle, color: 'var(--accent-danger, #EF4444)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+              style={{
+                ...btnStyle,
+                color: 'var(--accent-danger, #ef4444)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               onClick={() => {
                 onDelete();
                 setOpen(false);
               }}
             >
-              <Trash2 size={12} />
+              <Trash2 size={12} color="#ef4444" />
               <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
             </button>
           )}
@@ -374,6 +387,8 @@ function ImageCardMenu({
     </div>
   );
 }
+
+export const ImageCardMenu = MediaCardMenu;
 
 export function ImageView() {
   const session = useAuthStore((s) => s.session);
@@ -477,6 +492,9 @@ export function ImageView() {
   const generatedImages = filterAndSort(
     imageItems.filter((i) => i.type === 'image') as Array<ImageItem & { isPinned: boolean; collectionId: string | null }>
   );
+
+  // Media detail modal state
+  const [selectedMediaItem, setSelectedMediaItem] = useState<(typeof imageItems)[0] | null>(null);
 
   // Load history from Supabase once on mount
   useEffect(() => {
@@ -823,6 +841,11 @@ export function ImageView() {
                   display: 'flex',
                   flexDirection: 'column',
                   boxShadow: 'var(--shadow-sm)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  const fullItem = imageItems.find((i) => i.id === img.id);
+                  if (fullItem) setSelectedMediaItem(fullItem);
                 }}
               >
                 {/* Image */}
@@ -889,11 +912,12 @@ export function ImageView() {
                       </div>
                     </div>
 
-                    <ImageCardMenu
+                    <MediaCardMenu
                       id={img.id}
                       isPinned={(imageItems.find((i) => i.id === img.id) as any)?.isPinned}
                       prompt={img.prompt}
                       url={img.url}
+                      type="image"
                       collectionId={(imageItems.find((i) => i.id === img.id) as any)?.collectionId || null}
                       collections={imageCollections}
                       language={language}
@@ -910,6 +934,14 @@ export function ImageView() {
           </div>
         )}
       </div>
+
+      {/* Media Detail Modal */}
+      <MediaDetailModal
+        item={selectedMediaItem}
+        onClose={() => setSelectedMediaItem(null)}
+        onDelete={(id) => { removeImageItem(id); setSelectedMediaItem(null); }}
+        language={language as 'en' | 'id'}
+      />
     </div>
   );
 }

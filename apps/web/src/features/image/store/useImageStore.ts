@@ -71,14 +71,20 @@ export const useImageStore = create<ImageState>()(
       },
 
       togglePin: (id) => {
-        // Max 3 pinned across all media
+        // Max 3 pinned items per media type (image, video, audio)
         const { items } = get();
         const item = items.find((i) => i.id === id);
         if (!item) return;
-        if (!item.isPinned && items.filter((i) => i.isPinned).length >= 3) {
-          alert('Maksimal 3 item dapat disematkan / Max 3 items can be pinned');
+
+        const mediaType = item.type || 'image';
+        const pinnedInType = items.filter((i) => (i.type || 'image') === mediaType && i.isPinned).length;
+
+        if (!item.isPinned && pinnedInType >= 3) {
+          const typeLabel = mediaType === 'video' ? 'video' : mediaType === 'audio' ? 'audio' : 'gambar';
+          alert(`Maksimal 3 ${typeLabel} yang dapat disematkan / Maximum of 3 pinned ${typeLabel}s allowed.`);
           return;
         }
+
         set((s) => ({
           items: s.items.map((i) => (i.id === id ? { ...i, isPinned: !i.isPinned } : i)),
         }));

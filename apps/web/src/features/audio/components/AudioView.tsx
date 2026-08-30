@@ -27,6 +27,9 @@ import { AudioModelSelectorModal, AUDIO_PROVIDERS } from './AudioModelSelectorMo
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
 import { MediaControlButton } from '../../../shared/components/MediaControlButton';
+import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
+import { MediaCardMenu } from '../../image/components/ImageView';
+import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
 import { generateProceduralMusic, generateSpeechAudio } from '../utils/audioGenerator';
 
 type AudioTab = 'music' | 'tts' | 'stt';
@@ -47,6 +50,7 @@ export function AudioView() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('gadis');
   const [audioSpeed, setAudioSpeed] = useState(1.0);
+  const [selectedMediaItem, setSelectedMediaItem] = useState<any>(null);
 
   // Model state separated per category/tab
   const [selectedMusicModel, setSelectedMusicModel] = useState('udio');
@@ -72,8 +76,10 @@ export function AudioView() {
   const addImageItem = useImageStore((s) => s.addItem);
   const removeImageItem = useImageStore((s) => s.removeItem);
   const toggleImagePin = useImageStore((s) => s.togglePin);
+  const moveImageToCollection = useImageStore((s) => s.moveToCollection);
   const hydrateFromApi = useImageStore((s) => s.hydrateFromApi);
   const imageItems = useImageStore((s) => s.items);
+  const imageCollections = useWorkspaceStore((s) => s.imageCollections);
 
   const generatedAudios = imageItems
     .filter((i) => i.type === 'audio')
@@ -364,7 +370,7 @@ export function AudioView() {
                   {isPlaying ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: '2px' }} />}
                 </button>
 
-                <div style={{ overflow: 'hidden' }}>
+                <div style={{ overflow: 'hidden', cursor: 'pointer' }} onClick={() => setSelectedMediaItem(item)}>
                   <div
                     style={{
                       fontSize: '13.5px',
@@ -405,71 +411,21 @@ export function AudioView() {
 
               {/* Actions */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <button
-                  type="button"
-                  onClick={() => toggleImagePin(item.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: item.isPinned ? '#60a5fa' : 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '6px',
-                    borderRadius: '6px',
-                  }}
-                  title={item.isPinned ? 'Lepas Sematan' : 'Sematkan'}
-                >
-                  <Pin size={14} style={{ transform: item.isPinned ? 'rotate(45deg)' : 'none' }} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleCopyPrompt(item.prompt, item.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: copiedId === item.id ? '#10B981' : 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '6px',
-                    borderRadius: '6px',
-                  }}
-                  title="Salin Prompt"
-                >
-                  {copiedId === item.id ? <Check size={14} /> : <Copy size={14} />}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDownloadAudio(item.url, item.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '6px',
-                    borderRadius: '6px',
-                  }}
-                  title="Download WAV"
-                >
-                  <Download size={14} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => removeImageItem(item.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '6px',
-                    borderRadius: '6px',
-                  }}
-                  title="Hapus Audio"
-                  onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
-                >
-                  <Trash2 size={14} />
-                </button>
+                <MediaCardMenu
+                  id={item.id}
+                  isPinned={item.isPinned}
+                  prompt={item.prompt}
+                  url={item.url}
+                  type="audio"
+                  collectionId={item.collectionId || null}
+                  collections={imageCollections}
+                  language={language}
+                  onTogglePin={() => toggleImagePin(item.id)}
+                  onMoveToCollection={(colId) => moveImageToCollection(item.id, colId)}
+                  onCopyPrompt={() => handleCopyPrompt(item.prompt, item.id)}
+                  onDownload={() => handleDownloadAudio(item.url, item.id)}
+                  onDelete={() => removeImageItem(item.id)}
+                />
               </div>
             </div>
           );
@@ -922,6 +878,14 @@ export function AudioView() {
           </div>
         )}
       </div>
+
+      {/* Media Detail Modal */}
+      <MediaDetailModal
+        item={selectedMediaItem}
+        onClose={() => setSelectedMediaItem(null)}
+        onDelete={(id) => { removeImageItem(id); setSelectedMediaItem(null); }}
+        language={language as 'en' | 'id'}
+      />
     </div>
   );
 }

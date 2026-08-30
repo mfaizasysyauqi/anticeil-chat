@@ -70,6 +70,7 @@ import { useImageStore } from '../../features/image/store/useImageStore';
 import { useDocsStore, DocItem } from '../../features/docs/store/useDocsStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { useCreditStore } from '../../features/credits/store/useCreditStore';
+import { MediaDetailModal } from './MediaDetailModal';
 import { createClient } from '../utils/supabase/client';
 
 interface SidebarProps {
@@ -475,9 +476,46 @@ interface ImagineItemMenuProps {
 function ImagineItemMenu({ item, language, collections, togglePin, moveToCollection, removeItem }: ImagineItemMenuProps) {
   const [open, setOpen] = React.useState(false);
   const [folderSubmenuOpen, setFolderSubmenuOpen] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
   const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const portalRef = React.useRef<HTMLDivElement>(null);
+
+  const fullMediaItem = useImageStore((s) => s.items).find((i) => i.id === item.id);
+
+  const handleCopyPrompt = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(item.prompt);
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+        setOpen(false);
+      }, 1000);
+    } catch {}
+  };
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (fullMediaItem?.url) {
+      try {
+        const res = await fetch(fullMediaItem.url);
+        const blob = await res.blob();
+        const ext = item.type === 'video' ? 'mp4' : item.type === 'audio' ? 'mp3' : 'png';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `anticeil-${item.type}-${item.id.slice(0, 8)}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        window.open(fullMediaItem.url, '_blank');
+      }
+    }
+    setOpen(false);
+  };
 
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -501,8 +539,8 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
       setFolderSubmenuOpen(false);
     } else {
       const rect = e.currentTarget.getBoundingClientRect();
-      const menuWidth = 150;
-      const menuHeight = 120;
+      const menuWidth = 160;
+      const menuHeight = 160;
       let left = rect.right - menuWidth;
       if (left < 10) left = 10;
       let top = rect.bottom + 4;
@@ -547,7 +585,7 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
             display: 'flex',
             flexDirection: 'column',
             gap: '2px',
-            minWidth: '150px',
+            minWidth: '155px',
           }}
         >
           {/* Pin / Unpin */}
@@ -570,6 +608,40 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
               </button>
             );
           })()}
+
+          {/* Copy Prompt */}
+          <button
+            type="button"
+            onClick={handleCopyPrompt}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: copied ? '#10B981' : 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            {copied ? <Check size={11} color="#10B981" /> : <Copy size={11} />}
+            <span>{copied ? (language === 'id' ? 'Tersalin!' : 'Copied!') : (language === 'id' ? 'Salin Prompt' : 'Copy Prompt')}</span>
+          </button>
+
+          {/* Download File */}
+          {fullMediaItem?.url && (
+            <button
+              type="button"
+              onClick={handleDownload}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                borderRadius: '4px', border: 'none', background: 'transparent',
+                color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <Download size={11} />
+              <span>{language === 'id' ? 'Unduh Berkas' : 'Download'}</span>
+            </button>
+          )}
 
           {/* Move to folder */}
           <div style={{ position: 'relative' }}>
@@ -1277,6 +1349,7 @@ export function Sidebar({
   // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
   const [newImagineCollectionName, setNewImagineCollectionName] = useState('');
+  const [selectedMediaItem, setSelectedMediaItem] = useState<any>(null);
 
   // Real image history from store
   const imagineItems = useImageStore((s) => s.items);
@@ -3100,9 +3173,10 @@ export function Sidebar({
                             {/* Type icon & Title */}
                             <div
                               onClick={() => {
-                                const targetPath = item.type === 'video' ? '/video' : item.type === 'audio' ? '/audio' : '/image';
-                                if (pathname !== targetPath) router.push(targetPath);
-                                if (onCloseMobile) onCloseMobile();
+                                const fullItem = imagineItems.find((i) => i.id === item.id);
+                                if (fullItem) {
+                                  setSelectedMediaItem(fullItem);
+                                }
                               }}
                               style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
                             >
@@ -3726,6 +3800,13 @@ export function Sidebar({
         onFileRemoved={handleDrawerFileRemoved}
         acceptTypes={drawerAcceptTypes}
         language={language}
+      />
+
+      <MediaDetailModal
+        item={selectedMediaItem}
+        onClose={() => setSelectedMediaItem(null)}
+        onDelete={(id) => { removeImagineItem(id); setSelectedMediaItem(null); }}
+        language={language as 'en' | 'id'}
       />
     </aside>
   );

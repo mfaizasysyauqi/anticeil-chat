@@ -25,6 +25,9 @@ import { VideoModelSelectorModal, VIDEO_PROVIDERS } from './VideoModelSelectorMo
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
 import { MediaControlButton } from '../../../shared/components/MediaControlButton';
+import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
+import { MediaCardMenu } from '../../image/components/ImageView';
+import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
 import { generateCinematicVideo } from '../utils/videoGenerator';
 
 export function VideoView() {
@@ -38,6 +41,7 @@ export function VideoView() {
   const [selectedDuration, setSelectedDuration] = useState('5s');
   const [selectedModel, setSelectedModel] = useState('luma');
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [selectedMediaItem, setSelectedMediaItem] = useState<any>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
@@ -51,8 +55,10 @@ export function VideoView() {
   const addImageItem = useImageStore((s) => s.addItem);
   const removeImageItem = useImageStore((s) => s.removeItem);
   const toggleImagePin = useImageStore((s) => s.togglePin);
+  const moveImageToCollection = useImageStore((s) => s.moveToCollection);
   const hydrateFromApi = useImageStore((s) => s.hydrateFromApi);
   const imageItems = useImageStore((s) => s.items);
+  const imageCollections = useWorkspaceStore((s) => s.imageCollections);
 
   const generatedVideos = imageItems
     .filter((i) => i.type === 'video')
@@ -466,8 +472,10 @@ export function VideoView() {
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
+                          cursor: 'pointer',
                         }}
                         title={item.prompt}
+                        onClick={() => setSelectedMediaItem(item)}
                       >
                         {item.prompt}
                       </p>
@@ -477,63 +485,21 @@ export function VideoView() {
                           {item.model || 'Luma Ray 2'}
                         </span>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyPrompt(item.prompt, item.id)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: copiedId === item.id ? '#10B981' : 'var(--text-muted)',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                            title="Salin Prompt"
-                          >
-                            {copiedId === item.id ? <Check size={13} /> : <Copy size={13} />}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadVideo(item.url, item.id)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text-muted)',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                            title="Download Video (.webm)"
-                          >
-                            <Download size={13} />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => removeImageItem(item.id)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text-muted)',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                            title="Hapus Video"
-                            onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                        <MediaCardMenu
+                          id={item.id}
+                          isPinned={item.isPinned}
+                          prompt={item.prompt}
+                          url={item.url}
+                          type="video"
+                          collectionId={item.collectionId || null}
+                          collections={imageCollections}
+                          language={language}
+                          onTogglePin={() => toggleImagePin(item.id)}
+                          onMoveToCollection={(colId) => moveImageToCollection(item.id, colId)}
+                          onCopyPrompt={() => handleCopyPrompt(item.prompt, item.id)}
+                          onDownload={() => handleDownloadVideo(item.url, item.id)}
+                          onDelete={() => removeImageItem(item.id)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -562,6 +528,14 @@ export function VideoView() {
           )}
         </div>
       </div>
+
+      {/* Media Detail Modal */}
+      <MediaDetailModal
+        item={selectedMediaItem}
+        onClose={() => setSelectedMediaItem(null)}
+        onDelete={(id) => { removeImageItem(id); setSelectedMediaItem(null); }}
+        language={language as 'en' | 'id'}
+      />
     </div>
   );
 }
