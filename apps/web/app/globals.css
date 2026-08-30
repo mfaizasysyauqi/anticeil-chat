@@ -258,7 +258,8 @@ code, pre, kbd {
     width: 100% !important;
   }
   .navbar-container {
-    padding: 0 var(--studio-header-pad-x-mobile, 7px) !important;
+    padding-left: var(--studio-header-pad-x-mobile, 7px) !important;
+    padding-right: var(--page-pad-x-mobile, 16px) !important;
   }
   /* On tablet/mobile: disable centered max-width so content left-edge
      aligns exactly with the navbar burger icon (no extra auto margin) */

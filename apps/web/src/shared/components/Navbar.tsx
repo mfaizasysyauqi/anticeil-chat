@@ -208,7 +208,7 @@ export function Navbar({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 var(--studio-header-pad-x, 16px)',
+        padding: '0 var(--page-pad-x, 24px)',
         zIndex: 5000,
       }}
     >
@@ -299,8 +299,10 @@ export function Navbar({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '5px',
-              padding: '5px 10px',
+              justifyContent: 'center',
+              height: '32px',
+              padding: '0 10px',
+              boxSizing: 'border-box',
               background: isBuildOpen ? 'var(--brand-subtle, rgba(0, 115, 234, 0.15))' : 'transparent',
               border: isBuildOpen ? '1px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
               borderRadius: 'var(--radius-md)',
@@ -308,6 +310,7 @@ export function Navbar({
               cursor: 'pointer',
               fontSize: '12.5px',
               fontWeight: 600,
+              gap: '5px',
               transition: 'all 0.15s ease',
             }}
           >
