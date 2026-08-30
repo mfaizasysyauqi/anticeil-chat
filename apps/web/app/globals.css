@@ -40,8 +40,8 @@
   /* Global Studio & Page Horizontal Spacing Tokens (Symmetric & DRY) */
   --page-pad-x: 24px;
   --page-pad-x-mobile: 16px;
-  --studio-header-pad-x: var(--page-pad-x);          /* alias → same as content */
-  --studio-header-pad-x-mobile: var(--page-pad-x-mobile); /* alias → same as content */
+  --studio-header-pad-x: var(--page-pad-x);          /* alias → same as content on desktop */
+  --studio-header-pad-x-mobile: 7px;                 /* (48px rail width - 34px button) / 2 = 7px for 1:1 vertical alignment */
   --studio-content-pad-x: 20px;
   --studio-content-pad-x-mobile: 16px;
 
@@ -255,7 +255,7 @@ code, pre, kbd {
     width: 100% !important;
   }
   .navbar-container {
-    padding: 0 var(--studio-header-pad-x-mobile, 16px) !important;
+    padding: 0 var(--studio-header-pad-x-mobile, 7px) !important;
   }
   /* On tablet/mobile: disable centered max-width so content left-edge
      aligns exactly with the navbar burger icon (no extra auto margin) */
