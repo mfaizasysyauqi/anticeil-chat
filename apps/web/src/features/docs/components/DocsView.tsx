@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   FileText,
@@ -118,6 +119,23 @@ export function DocsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const exportButtonRef = useRef<HTMLButtonElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const [exportMenuPos, setExportMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        exportButtonRef.current && !exportButtonRef.current.contains(target) &&
+        exportMenuRef.current && !exportMenuRef.current.contains(target)
+      ) {
+        setIsExportMenuOpen(false);
+      }
+    };
+    if (isExportMenuOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isExportMenuOpen]);
 
   // Subfile & Folder UI state
   const [isAddingSubFile, setIsAddingSubFile] = useState(false);
@@ -151,6 +169,14 @@ export function DocsView() {
     el.focus();
     el.setSelectionRange(charIndex, charIndex + (lines[lineNumber]?.length || 0));
     el.scrollTop = Math.max(0, lineNumber * 21 - 100);
+  };
+
+  // Scroll the preview iframe to a matching heading
+  const scrollPreviewToHeading = (headingText: string) => {
+    previewIframeRef.current?.contentWindow?.postMessage(
+      { type: 'DOCS_SCROLL_TO_HEADING', text: headingText },
+      '*'
+    );
   };
 
   // Generation state
@@ -707,6 +733,21 @@ export function DocsView() {
     window.addEventListener('load', autoFitWidth);
     setTimeout(autoFitWidth, 30);
     setTimeout(autoFitWidth, 150);
+
+    // Listen for scroll-to-heading from parent (Document Outline click)
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'DOCS_SCROLL_TO_HEADING') {
+        var text = (e.data.text || '').toLowerCase().trim();
+        var headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        for (var i = 0; i < headings.length; i++) {
+          var hText = (headings[i].textContent || '').toLowerCase().trim();
+          if (hText === text || hText.includes(text) || text.includes(hText)) {
+            headings[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            break;
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>
@@ -858,8 +899,8 @@ ${exportText}
             }}
           >
             <Link
-              href="/"
-              title="Anticeil Home"
+              href="/chat"
+              title="Anticeil Chat"
               style={{
                 width: '32px',
                 height: '32px',
@@ -881,6 +922,32 @@ ${exportText}
 
           {/* Quick App Tabs */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px', width: '100%' }}>
+            {/* Expand button (when sidebar is collapsed) */}
+            {!isSidebarOpen && (
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                className="hover-subtle"
+                title={language === 'id' ? 'Buka Sidebar / Drawer' : 'Expand Sidebar'}
+                aria-label="Expand sidebar"
+              >
+                <PanelLeftOpen size={16} />
+              </button>
+            )}
+
             {/* Tab: Files */}
             <button
               type="button"
@@ -1065,31 +1132,6 @@ ${exportText}
               <Sparkles size={16} />
             </button>
           </div>
-        </div>
-
-        {/* Bottom Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
-          <button
-            type="button"
-            onClick={() => setStudioPhase('landing')}
-            style={{
-              width: '34px',
-              height: '34px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '8px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            className="hover-subtle"
-            title={language === 'id' ? 'Kembali ke Beranda Dokumen' : 'Back to Docs Home'}
-          >
-            <ArrowLeft size={16} />
-          </button>
         </div>
       </div>
 
@@ -2136,7 +2178,7 @@ ${exportText}
                       documentHeadings.map((h, idx) => (
                         <div
                           key={idx}
-                          onClick={() => jumpToLine(h.line)}
+                          onClick={() => { jumpToLine(h.line); scrollPreviewToHeading(h.text); }}
                           className="clickable-pill"
                           style={{
                             padding: '6px 8px',
@@ -2241,24 +2283,6 @@ ${exportText}
               <Menu size={16} />
             </button>
 
-            {/* Desktop expand (only when collapsed) */}
-            {!isSidebarOpen && (
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className="hide-on-drawer hover-subtle"
-                title={language === 'id' ? 'Buka Sidebar' : 'Expand Sidebar'}
-                style={{
-                  background: 'transparent', border: 'none',
-                  color: 'var(--text-secondary)', cursor: 'pointer',
-                  width: '30px', height: '30px', borderRadius: '6px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}
-                aria-label="Expand sidebar"
-              >
-                <PanelLeftOpen size={15} />
-              </button>
-            )}
 
             {/* Back button */}
             <button
@@ -2406,8 +2430,24 @@ ${exportText}
             {/* Export Dropdown */}
             <div style={{ position: 'relative' }}>
               <button
+                ref={exportButtonRef}
                 type="button"
-                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isExportMenuOpen) {
+                    setIsExportMenuOpen(false);
+                  } else {
+                    if (exportButtonRef.current) {
+                      const rect = exportButtonRef.current.getBoundingClientRect();
+                      const menuWidth = 190;
+                      let left = rect.right - menuWidth;
+                      if (left < 10) left = 10;
+                      let top = rect.bottom + 6;
+                      setExportMenuPos({ top, left });
+                    }
+                    setIsExportMenuOpen(true);
+                  }
+                }}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: '5px',
                   height: '30px', padding: '0 12px',
@@ -2424,20 +2464,21 @@ ${exportText}
                 <ChevronDown size={11} />
               </button>
 
-              {isExportMenuOpen && (
+              {isExportMenuOpen && exportMenuPos && typeof document !== 'undefined' && createPortal(
                 <div
+                  ref={exportMenuRef}
+                  onClick={(e) => e.stopPropagation()}
                   style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '100%',
-                    marginTop: '6px',
-                    width: '180px',
+                    position: 'fixed',
+                    top: `${exportMenuPos.top}px`,
+                    left: `${exportMenuPos.left}px`,
+                    width: '190px',
                     backgroundColor: 'var(--bg-surface)',
                     borderRadius: '8px',
                     border: '1px solid var(--border-strong)',
-                    boxShadow: 'var(--shadow-lg)',
+                    boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.25))',
                     padding: '4px',
-                    zIndex: 999,
+                    zIndex: 999999999,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
@@ -2521,7 +2562,8 @@ ${exportText}
                     <Sigma size={13} color="#8B5CF6" />
                     <span>File LaTeX (.tex)</span>
                   </button>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           </div>

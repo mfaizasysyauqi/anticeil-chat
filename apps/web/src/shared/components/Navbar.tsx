@@ -258,9 +258,9 @@ export function Navbar({
             {pathname === '/image'
               ? t.nav.imagine
               : pathname === '/video'
-              ? (language === 'id' ? 'Studio Video AI' : 'AI Video Studio')
+              ? 'Video'
               : pathname === '/audio'
-              ? (language === 'id' ? 'Studio Audio AI' : 'AI Audio Studio')
+              ? 'Audio'
               : pathname === '/docs' || pathname.startsWith('/docs')
               ? (activeDoc?.title || (language === 'id' ? 'Studio Dokumen & LaTeX' : 'Docs & LaTeX Studio'))
               : pathname === '/settings'

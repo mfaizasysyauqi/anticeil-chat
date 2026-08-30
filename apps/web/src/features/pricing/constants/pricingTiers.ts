@@ -16,7 +16,8 @@ export interface PricingTier {
   subtitleId: string;
   isPopular?: boolean;
   features: {
-    aiCredits: LocalizedFeatureValue;
+    dailyAiCredits: LocalizedFeatureValue;
+    monthlyAiCredits: LocalizedFeatureValue;
     byok: LocalizedFeatureValue;
     omniRoute: LocalizedFeatureValue;
     databaseStorage: LocalizedFeatureValue;
@@ -32,7 +33,8 @@ export interface PricingTier {
 }
 
 export const FEATURE_KEYS = [
-  'aiCredits',
+  'dailyAiCredits',
+  'monthlyAiCredits',
   'byok',
   'omniRoute',
   'databaseStorage',
@@ -47,7 +49,8 @@ export type FeatureKey = typeof FEATURE_KEYS[number];
 
 export const FEATURE_LABELS: Record<'en' | 'id', Record<FeatureKey | 'mostPopular' | 'active', string>> = {
   en: {
-    aiCredits: 'AI Credits',
+    dailyAiCredits: 'Daily AI Credits',
+    monthlyAiCredits: 'Monthly AI Credits',
     byok: 'Personal Keys',
     omniRoute: 'OmniRoute',
     databaseStorage: 'Storage',
@@ -60,7 +63,8 @@ export const FEATURE_LABELS: Record<'en' | 'id', Record<FeatureKey | 'mostPopula
     active: 'Active Plan',
   },
   id: {
-    aiCredits: 'Kredit AI',
+    dailyAiCredits: 'Kredit AI Harian',
+    monthlyAiCredits: 'Kredit AI Bulanan',
     byok: 'Kunci Pribadi',
     omniRoute: 'OmniRoute',
     databaseStorage: 'Penyimpanan',
@@ -85,7 +89,8 @@ export const PRICING_TIERS: PricingTier[] = [
     subtitleEn: '100% Private in Browser',
     subtitleId: '100% Privat di Browser',
     features: {
-      aiCredits: { en: '50 / day', id: '50 / hari' },
+      dailyAiCredits: { en: '50 / day', id: '50 / hari' },
+      monthlyAiCredits: { en: '—', id: '—' },
       byok: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       omniRoute: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       databaseStorage: { en: '100 MB Local', id: '100 MB Lokal' },
@@ -109,7 +114,8 @@ export const PRICING_TIERS: PricingTier[] = [
     subtitleEn: '5 GB Supabase Cloud Sync',
     subtitleId: 'Sinkron 5 GB Supabase Cloud',
     features: {
-      aiCredits: { en: '100 / mo', id: '100 / bln' },
+      dailyAiCredits: { en: '50 / day', id: '50 / hari' },
+      monthlyAiCredits: { en: '100 / mo', id: '100 / bln' },
       byok: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       omniRoute: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       databaseStorage: { en: '5 GB Cloud', id: '5 GB Cloud' },
@@ -134,7 +140,8 @@ export const PRICING_TIERS: PricingTier[] = [
     subtitleId: '10 GB Cloud R2 + Supabase',
     isPopular: true,
     features: {
-      aiCredits: { en: '600 / mo', id: '600 / bln' },
+      dailyAiCredits: { en: '50 / day', id: '50 / hari' },
+      monthlyAiCredits: { en: '600 / mo', id: '600 / bln' },
       byok: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       omniRoute: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       databaseStorage: { en: '10 GB Cloud R2', id: '10 GB Cloud R2' },
@@ -158,7 +165,8 @@ export const PRICING_TIERS: PricingTier[] = [
     subtitleEn: 'Zero-Trust Private Database',
     subtitleId: 'Database Privat Zero-Trust',
     features: {
-      aiCredits: { en: 'Dedicated Pool', id: 'Dedicated Pool' },
+      dailyAiCredits: { en: '50 / day', id: '50 / hari' },
+      monthlyAiCredits: { en: 'Dedicated Pool', id: 'Dedicated Pool' },
       byok: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       omniRoute: { en: 'Unlimited *', id: 'Tanpa Batas *' },
       databaseStorage: { en: 'Unlimited (BYOD)', id: 'Unlimited (BYOD)' },

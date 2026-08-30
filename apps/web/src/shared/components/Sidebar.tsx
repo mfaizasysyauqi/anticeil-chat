@@ -551,20 +551,25 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
           }}
         >
           {/* Pin / Unpin */}
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); togglePin(item.id); setOpen(false); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-              borderRadius: '4px', border: 'none', background: 'transparent',
-              color: item.isPinned ? '#A25DDC' : 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Pin size={11} fill={item.isPinned ? '#A25DDC' : 'none'} />
-            <span>{item.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan' : 'Pin')}</span>
-          </button>
+          {(() => {
+            const pinColor = item.type === 'video' ? '#fb7185' : item.type === 'audio' ? '#60a5fa' : '#A25DDC';
+            return (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); togglePin(item.id); setOpen(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                  borderRadius: '4px', border: 'none', background: 'transparent',
+                  color: item.isPinned ? pinColor : 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Pin size={11} fill={item.isPinned ? pinColor : 'none'} color={item.isPinned ? pinColor : 'currentColor'} />
+                <span>{item.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan' : 'Pin')}</span>
+              </button>
+            );
+          })()}
 
           {/* Move to folder */}
           <div style={{ position: 'relative' }}>
@@ -1286,6 +1291,20 @@ export function Sidebar({
     isPinned: item.isPinned,
     type: item.type,
   }));
+
+  const mediaAccentColor = isVideo ? '#fb7185' : isAudio ? '#60a5fa' : '#A25DDC';
+  const mediaBadgeBg = isVideo ? 'rgba(251, 113, 133, 0.15)' : isAudio ? 'rgba(96, 165, 250, 0.15)' : 'rgba(162, 93, 220, 0.15)';
+  const mediaPinnedBg = isVideo ? 'rgba(251, 113, 133, 0.08)' : isAudio ? 'rgba(96, 165, 250, 0.08)' : 'rgba(162, 93, 220, 0.08)';
+
+  // Strictly isolate history by media type: video on /video, audio on /audio, image on /image
+  const currentMediaHistory = useMemo(() => {
+    return imagineHistory.filter((item) => {
+      if (isVideo) return item.type === 'video';
+      if (isAudio) return item.type === 'audio';
+      if (isImage) return item.type === 'image' || !item.type;
+      return true;
+    });
+  }, [imagineHistory, isVideo, isAudio, isImage]);
 
   // ── Project store (DB-backed via Supabase) ──────────────────────────────────
   const projects = useProjectStore((s) => s.folders);
@@ -2890,8 +2909,8 @@ export function Sidebar({
                           gap: '7px',
                           padding: '4px 8px',
                           borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeImageCollectionId === col.id ? 'rgba(162, 93, 220, 0.15)' : 'transparent',
-                          color: activeImageCollectionId === col.id ? '#A25DDC' : 'var(--text-secondary)',
+                          background: activeImageCollectionId === col.id ? mediaBadgeBg : 'transparent',
+                          color: activeImageCollectionId === col.id ? mediaAccentColor : 'var(--text-secondary)',
                           fontSize: '12px',
                           fontWeight: activeImageCollectionId === col.id ? 600 : 400,
                           cursor: 'pointer',
@@ -2903,10 +2922,10 @@ export function Sidebar({
                           style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
                           onClick={() => setActiveImageCollection(activeImageCollectionId === col.id ? null : col.id)}
                         >
-                          <Folder size={12} color={activeImageCollectionId === col.id ? '#A25DDC' : 'var(--text-muted)'} />
+                          <Folder size={12} color={activeImageCollectionId === col.id ? mediaAccentColor : 'var(--text-muted)'} />
                           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{col.name}</span>
                           {col.files.length > 0 && (
-                            <span style={{ fontSize: '10px', background: '#A25DDC', color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
+                            <span style={{ fontSize: '10px', background: mediaAccentColor, color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
                               {col.files.length}
                             </span>
                           )}
@@ -2930,7 +2949,13 @@ export function Sidebar({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px' }}>
                         <input
                           type="text"
-                          placeholder={language === 'id' ? 'Nama koleksi media...' : 'Media collection name...'}
+                          placeholder={
+                            isVideo
+                              ? (language === 'id' ? 'Nama koleksi video...' : 'Video collection name...')
+                              : isAudio
+                              ? (language === 'id' ? 'Nama koleksi audio...' : 'Audio collection name...')
+                              : (language === 'id' ? 'Nama koleksi gambar...' : 'Image collection name...')
+                          }
                           value={newImagineCollectionName}
                           onChange={(e) => setNewImagineCollectionName(e.target.value)}
                           onKeyDown={(e) => {
@@ -2999,14 +3024,20 @@ export function Sidebar({
                         }}
                       >
                         <Plus size={11} />
-                        <span>{language === 'id' ? 'Tambah koleksi media' : 'Add media collection'}</span>
+                        <span>
+                          {isVideo
+                            ? (language === 'id' ? 'Tambah koleksi video' : 'Add video collection')
+                            : isAudio
+                            ? (language === 'id' ? 'Tambah koleksi audio' : 'Add audio collection')
+                            : (language === 'id' ? 'Tambah koleksi gambar' : 'Add image collection')}
+                        </span>
                       </button>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Imagine History */}
+              {/* Media History (Filtered per mode: Video on /video, Audio on /audio, Image on /image) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div
                   onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
@@ -3020,7 +3051,11 @@ export function Sidebar({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {language === 'id' ? 'Riwayat Generasi' : 'Generation History'}
+                      {isVideo
+                        ? (language === 'id' ? 'Riwayat Video' : 'Video History')
+                        : isAudio
+                        ? (language === 'id' ? 'Riwayat Audio' : 'Audio History')
+                        : (language === 'id' ? 'Riwayat Gambar' : 'Image History')}
                     </span>
                     {isHistoryExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
                   </div>
@@ -3028,12 +3063,16 @@ export function Sidebar({
 
                 {isHistoryExpanded && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {imagineHistory.length === 0 ? (
+                    {currentMediaHistory.length === 0 ? (
                       <div style={{ padding: '8px 10px', fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                        {language === 'id' ? 'Belum ada media dibuat' : 'No media generated yet'}
+                        {isVideo
+                          ? (language === 'id' ? 'Belum ada video dibuat' : 'No videos generated yet')
+                          : isAudio
+                          ? (language === 'id' ? 'Belum ada audio dibuat' : 'No audios generated yet')
+                          : (language === 'id' ? 'Belum ada gambar dibuat' : 'No images generated yet')}
                       </div>
                     ) : (
-                      imagineHistory
+                      currentMediaHistory
                         .filter((item) => {
                           const matchSearch = item.prompt.toLowerCase().includes(searchQuery.toLowerCase()) || item.style.toLowerCase().includes(searchQuery.toLowerCase());
                           const matchCol = activeImageCollectionId ? item.collectionId === activeImageCollectionId : true;
@@ -3050,7 +3089,7 @@ export function Sidebar({
                               gap: '8px',
                               padding: '5px 8px',
                               borderRadius: 'var(--radius-sm, 6px)',
-                              background: item.isPinned ? 'rgba(162, 93, 220, 0.08)' : 'transparent',
+                              background: item.isPinned ? mediaPinnedBg : 'transparent',
                               color: 'var(--text-secondary)',
                               fontSize: '12px',
                               cursor: 'pointer',
@@ -3060,19 +3099,23 @@ export function Sidebar({
                           >
                             {/* Type icon & Title */}
                             <div
-                              onClick={() => { if (pathname !== '/image') router.push('/image'); if (onCloseMobile) onCloseMobile(); }}
+                              onClick={() => {
+                                const targetPath = item.type === 'video' ? '/video' : item.type === 'audio' ? '/audio' : '/image';
+                                if (pathname !== targetPath) router.push(targetPath);
+                                if (onCloseMobile) onCloseMobile();
+                              }}
                               style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
                             >
                               {item.type === 'video' ? (
-                                <Film size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
+                                <Film size={13} color="#fb7185" style={{ flexShrink: 0 }} />
                               ) : item.type === 'audio' ? (
-                                <Music size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
+                                <Music size={13} color="#60a5fa" style={{ flexShrink: 0 }} />
                               ) : (
                                 <ImageIcon size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
                               )}
                               <div style={{ minWidth: 0, flex: 1 }}>
                                 <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  {item.isPinned && <Pin size={9} color="#A25DDC" style={{ flexShrink: 0 }} />}
+                                  {item.isPinned && <Pin size={9} color={mediaAccentColor} style={{ flexShrink: 0 }} />}
                                   <span>{item.prompt}</span>
                                 </div>
                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -3080,7 +3123,7 @@ export function Sidebar({
                                   <span>•</span>
                                   <span>{item.time}</span>
                                   {item.collectionId && (
-                                    <span style={{ background: 'rgba(162,93,220,0.15)', color: '#A25DDC', padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
+                                    <span style={{ background: mediaBadgeBg, color: mediaAccentColor, padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
                                       {imageCollections.find((c) => c.id === item.collectionId)?.name || '📁'}
                                     </span>
                                   )}
@@ -3088,7 +3131,7 @@ export function Sidebar({
                               </div>
                             </div>
 
-                            {/* Three-dot menu for Media item (Same clean style as Chat) */}
+                            {/* Three-dot menu for Media item */}
                             <ImagineItemMenu
                               item={item}
                               language={language}

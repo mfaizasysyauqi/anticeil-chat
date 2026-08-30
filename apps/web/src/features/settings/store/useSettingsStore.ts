@@ -98,7 +98,16 @@ function getInitialLanguage(): Language {
 }
 
 function getInitialTheme(): 'dark' | 'light' {
-  return 'light'; // persist middleware rehydrates the real value after mount
+  // Server-safe: returns dark as the default (matches blocking script fallback).
+  // The blocking script in layout.tsx sets the correct data-theme before first paint.
+  if (typeof window === 'undefined') return 'dark';
+  try {
+    const stored = localStorage.getItem('anticeil_settings_storage');
+    const theme = stored ? JSON.parse(stored).state.theme : null;
+    return theme === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
 }
 
 export const useSettingsStore = create<SettingsState>()(

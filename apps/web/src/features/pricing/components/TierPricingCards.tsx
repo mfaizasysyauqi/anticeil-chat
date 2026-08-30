@@ -228,65 +228,70 @@ export function TierPricingCards({
 
                 {/* Feature rows */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                  {FEATURE_KEYS.map((key) => {
+                  {FEATURE_KEYS.map((key, keyIdx) => {
                     const label = labels[key];
                     const val = plan.features[key][lang];
 
                     return (
-                      <div
-                        key={key}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontSize: '12.5px',
-                          gap: '10px',
-                        }}
-                      >
-                        <span
-                          style={{
-                            color: 'var(--text-secondary, #6B7280)',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {label}
-                        </span>
-
+                      <React.Fragment key={key}>
+                        {/* Divider after the AI credit section (after monthlyAiCredits) */}
+                        {keyIdx === 2 && (
+                          <div style={{ height: '1px', background: 'var(--border-subtle, #E5E7EB)', margin: '2px 0' }} />
+                        )}
                         <div
                           style={{
                             display: 'flex',
+                            justifyContent: 'space-between',
                             alignItems: 'center',
-                            justifyContent: 'flex-end',
-                            flexShrink: 0,
+                            fontSize: '12.5px',
+                            gap: '10px',
                           }}
                         >
-                          {typeof val === 'boolean' ? (
-                            val ? (
-                              <Check size={16} color="#16A34A" strokeWidth={2.6} />
+                          <span
+                            style={{
+                              color: 'var(--text-secondary, #6B7280)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {label}
+                          </span>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {typeof val === 'boolean' ? (
+                              val ? (
+                                <Check size={16} color="#16A34A" strokeWidth={2.6} />
+                              ) : (
+                                <span
+                                  style={{
+                                    color: 'var(--text-muted, #9CA3AF)',
+                                    fontSize: '15px',
+                                    lineHeight: 1,
+                                  }}
+                                >
+                                  —
+                                </span>
+                              )
                             ) : (
                               <span
                                 style={{
-                                  color: 'var(--text-muted, #9CA3AF)',
-                                  fontSize: '15px',
-                                  lineHeight: 1,
+                                  fontWeight: 600,
+                                  color: 'var(--text-primary, #111827)',
+                                  textAlign: 'right',
                                 }}
                               >
-                                —
+                                {val}
                               </span>
-                            )
-                          ) : (
-                            <span
-                              style={{
-                                fontWeight: 600,
-                                color: 'var(--text-primary, #111827)',
-                                textAlign: 'right',
-                              }}
-                            >
-                              {val}
-                            </span>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </React.Fragment>
                     );
                   })}
                 </div>
