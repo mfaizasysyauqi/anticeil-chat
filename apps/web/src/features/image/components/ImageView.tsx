@@ -617,7 +617,7 @@ export function ImageView() {
           language={language}
           brandColor="var(--brand-primary)"
           additionalControls={
-            <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {/* Style selector (Image only) */}
               {mediaMode === 'image' && (
                 <div style={{ position: 'relative' }}>
@@ -646,19 +646,31 @@ export function ImageView() {
                 </div>
               )}
 
-              {/* Ratio buttons (Image only) */}
-              {ratios.map((r) => (
-                    <MediaControlButton
-                      key={r}
-                      label={r}
-                      isSelected={selectedRatio === r}
-                      onClick={() => setSelectedRatio(r)}
-                      brandColor="var(--brand-primary)"
-                    />
-                  ))}
+              {/* Distinct Vertical Separator */}
+              <div
+                style={{
+                  width: '1px',
+                  height: '18px',
+                  backgroundColor: 'var(--border-strong, rgba(0,0,0,0.15))',
+                  margin: '0 2px',
+                  flexShrink: 0,
+                }}
+              />
 
-              {/* Image mode only - no audio voice selector */}
-            </>
+              {/* Ratio buttons Group */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Ratio size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
+                {ratios.map((r) => (
+                  <MediaControlButton
+                    key={r}
+                    label={r}
+                    isSelected={selectedRatio === r}
+                    onClick={() => setSelectedRatio(r)}
+                    brandColor="var(--brand-primary)"
+                  />
+                ))}
+              </div>
+            </div>
           }
         />
 

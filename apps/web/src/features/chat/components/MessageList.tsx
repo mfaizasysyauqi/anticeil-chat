@@ -260,10 +260,6 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
     <div
       ref={scrollRef}
       className="page-scroll-container"
-      style={{
-        padding: '0 var(--page-pad-x)',
-        boxSizing: 'border-box',
-      }}
     >
       <div
         style={{

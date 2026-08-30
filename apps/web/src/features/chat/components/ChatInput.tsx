@@ -300,6 +300,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
   return (
     <div
+      className="chat-input-container"
       style={{
         padding: 'var(--space-sm) var(--page-pad-x) var(--space-xl) var(--page-pad-x)',
         background: 'transparent',

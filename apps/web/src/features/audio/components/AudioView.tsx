@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Music, Mic, Ear, Sparkles } from 'lucide-react';
+import { Music, Mic, Ear, Sparkles, Volume2, Gauge } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
 import { AudioModelSelectorModal, AUDIO_PROVIDERS } from './AudioModelSelectorModal';
@@ -222,20 +222,69 @@ export function AudioView() {
               language={language}
               brandColor="#60a5fa"
               additionalControls={
-                <>
-                  <select
-                    value={selectedVoice}
-                    onChange={(e) => setSelectedVoice(e.target.value)}
-                    style={{ padding: '4px 10px', borderRadius: 'var(--radius-md, 6px)', border: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', outline: 'none', transition: 'all 0.15s ease' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#60a5fa'; e.currentTarget.style.background = 'var(--bg-surface)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                  >
-                    {voices.map((voice) => (<option key={voice.id} value={voice.id}>{voice.label}</option>))}
-                  </select>
-                  {speeds.map((speed) => (
-                    <MediaControlButton key={speed.value} label={`${speed.label}x`} isSelected={audioSpeed === speed.value} onClick={() => setAudioSpeed(speed.value)} brandColor="#60a5fa" />
-                  ))}
-                </>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* Voice Selector Group */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Volume2 size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
+                    <select
+                      value={selectedVoice}
+                      onChange={(e) => setSelectedVoice(e.target.value)}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-md, 6px)',
+                        border: '1px solid var(--border-subtle)',
+                        background: 'var(--bg-subtle)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#60a5fa';
+                        e.currentTarget.style.background = 'var(--bg-surface)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                        e.currentTarget.style.background = 'var(--bg-subtle)';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }}
+                    >
+                      {voices.map((voice) => (
+                        <option key={voice.id} value={voice.id}>
+                          {voice.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Distinct Vertical Separator */}
+                  <div
+                    style={{
+                      width: '1px',
+                      height: '18px',
+                      backgroundColor: 'var(--border-strong, rgba(0,0,0,0.15))',
+                      margin: '0 2px',
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  {/* Speed Group */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Gauge size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
+                    {speeds.map((speed) => (
+                      <MediaControlButton
+                        key={speed.value}
+                        label={`${speed.label}x`}
+                        isSelected={audioSpeed === speed.value}
+                        onClick={() => setAudioSpeed(speed.value)}
+                        brandColor="#60a5fa"
+                      />
+                    ))}
+                  </div>
+                </div>
               }
             />
             <div style={{ marginTop: '32px' }}>
