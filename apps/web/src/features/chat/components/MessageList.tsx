@@ -83,18 +83,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
   if (!isMounted || messages.length === 0) {
     return (
       <div className="page-scroll-container" style={{ justifyContent: 'center' }}>
-        <div
-          style={{
-            maxWidth: '860px',
-            width: '100%',
-            margin: '0 auto',
-            padding: 'var(--space-2xl) 0',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-xl)',
-          }}
-        >
+        <div className="page-content-wrapper" style={{ gap: 'var(--space-xl)', padding: 'var(--space-2xl) 0' }}>
           {/* Only show starter cards when mounted and no messages */}
           {isMounted && messages.length === 0 && (
             <>
@@ -261,17 +250,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
       ref={scrollRef}
       className="page-scroll-container"
     >
-      <div
-        style={{
-          maxWidth: '860px',
-          width: '100%',
-          margin: '0 auto',
-          padding: 'var(--space-xl) 0',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-lg)',
-        }}
-      >
+      <div className="page-content-wrapper" style={{ gap: 'var(--space-lg)' }}>
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} sessionId={activeSession?.id ?? ''} />
         ))}

@@ -40,8 +40,8 @@
   /* Global Studio & Page Horizontal Spacing Tokens (Symmetric & DRY) */
   --page-pad-x: 24px;
   --page-pad-x-mobile: 16px;
-  --studio-header-pad-x: 16px;
-  --studio-header-pad-x-mobile: 16px;
+  --studio-header-pad-x: var(--page-pad-x);          /* alias → same as content */
+  --studio-header-pad-x-mobile: var(--page-pad-x-mobile); /* alias → same as content */
   --studio-content-pad-x: 20px;
   --studio-content-pad-x-mobile: 16px;
 
@@ -232,18 +232,6 @@ code, pre, kbd {
   box-sizing: border-box;
 }
 
-@media (max-width: 1024px) {
-  .page-scroll-container {
-    padding: 0 var(--page-pad-x-mobile, 16px);
-  }
-  .chat-input-container {
-    padding: var(--space-sm) var(--page-pad-x-mobile, 16px) var(--space-xl) var(--page-pad-x-mobile, 16px) !important;
-  }
-  .navbar-container {
-    padding: 0 var(--studio-header-pad-x-mobile, 16px) !important;
-  }
-}
-
 .page-content-wrapper {
   max-width: 860px;
   width: 100%;
@@ -252,6 +240,30 @@ code, pre, kbd {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+  .page-scroll-container {
+    padding: 0 var(--page-pad-x-mobile, 16px) !important;
+  }
+  .chat-input-container {
+    padding: var(--space-sm) var(--page-pad-x-mobile, 16px) var(--space-xl) var(--page-pad-x-mobile, 16px) !important;
+    align-items: stretch !important; /* stretch child full-width instead of centering */
+  }
+  .chat-input-wrapper {
+    max-width: 100% !important; /* override inline maxWidth:860px — padding from parent is enough */
+    width: 100% !important;
+  }
+  .navbar-container {
+    padding: 0 var(--studio-header-pad-x-mobile, 16px) !important;
+  }
+  /* On tablet/mobile: disable centered max-width so content left-edge
+     aligns exactly with the navbar burger icon (no extra auto margin) */
+  .page-content-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
 }
 
 /* Waterfall / Masonry Gallery Grid */
@@ -440,14 +452,6 @@ code, pre, kbd {
   /* Hide Desktop-only elements on Mobile & Tablet */
   .hide-on-drawer {
     display: none !important;
-  }
-
-  .navbar-container {
-    padding: 0 var(--space-md) !important;
-  }
-
-  .page-content-wrapper {
-    padding: var(--space-lg) var(--space-md);
   }
 }
 

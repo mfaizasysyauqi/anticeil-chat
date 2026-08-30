@@ -64,7 +64,6 @@ export function MediaPromptForm({
       onSubmit={handleFormSubmit}
       style={{
         width: '100%',
-        maxWidth: '860px',
         background: 'var(--bg-input, var(--bg-surface))',
         border: `1px solid ${
           isFocused ? 'var(--border-focus, ' + brandColor + ')' : 'var(--border-subtle)'

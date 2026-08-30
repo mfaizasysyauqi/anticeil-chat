@@ -312,6 +312,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
       }}
     >
       <div
+        className="chat-input-wrapper"
         style={{
           width: '100%',
           maxWidth: '860px',
