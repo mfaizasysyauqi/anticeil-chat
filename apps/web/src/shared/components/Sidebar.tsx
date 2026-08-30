@@ -2067,8 +2067,8 @@ export function Sidebar({
             }}
           >
             <Link
-              href="/"
-              title="Anticeil Home"
+              href="/chat"
+              title="Anticeil Chat"
               style={{
                 width: '32px',
                 height: '32px',
