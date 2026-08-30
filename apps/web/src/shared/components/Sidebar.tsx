@@ -2003,9 +2003,9 @@ export function Sidebar({
 
   const displayName =
     (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name) ||
-    (user?.email ? user.email.split('@')[0] : 'M Faiz asy syauqi');
+    (user?.email ? user.email.split('@')[0] : '');
 
-  const displayEmail = user?.email || 'm.faizasysyauqi@gmail.com';
+  const displayEmail = user?.email || '';
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!isMounted) {
@@ -3626,7 +3626,7 @@ export function Sidebar({
                 boxShadow: '0 2px 6px rgba(0, 115, 234, 0.3)',
               }}
             >
-              {displayName[0].toUpperCase()}
+              {(displayName[0] || '?').toUpperCase()}
             </div>
 
             <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
