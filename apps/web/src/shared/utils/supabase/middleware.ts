@@ -1,14 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Routes that require an authenticated session
-const PROTECTED_ROUTES = [
-  '/chat',
-  '/imagine',
-  '/gateway',
-  '/prompts',
-  '/settings',
-];
 
 export async function updateSession(request: NextRequest) {
   // Start with a response that passes the request through unchanged
@@ -44,23 +36,9 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(route + '/')
-  );
 
-  if (isProtected && !user) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    loginUrl.searchParams.set('next', pathname);
-    // Return a redirect — but STILL use supabaseResponse as the base so any
-    // refreshed-token cookies are forwarded (they update the redirect response).
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value);
-    });
-    return redirectResponse;
-  }
+  // Auth is handled client-side via AuthModal — no server-side redirect needed.
+
 
   // Always return supabaseResponse (not a plain NextResponse.next()) so the
   // potentially-refreshed access token cookie reaches the browser.

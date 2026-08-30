@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Sparkles,
   ArrowRight,
@@ -28,6 +28,20 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
   const selectedFormat = useDocsStore((s) => s.selectedFormat);
   const setSelectedFormat = useDocsStore((s) => s.setSelectedFormat);
   const createFromTemplate = useDocsStore((s) => s.createFromTemplate);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow: min 2 lines, max 7 lines (fontSize 14 * lineHeight 1.6 = 22.4px/line)
+  const autoGrow = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const lineH = 14 * 1.6;
+    const minH = lineH * 2;
+    const maxH = lineH * 7;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, minH), maxH)}px`;
+    el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
+  }, []);
   const documents = useDocsStore((s) => s.documents);
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const activeProjectId = useDocsStore((s) => s.activeProjectId);
@@ -183,8 +197,10 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
           onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
         >
           <textarea
+            ref={textareaRef}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            onInput={autoGrow}
             placeholder={
               activeProject
                 ? (language === 'id'
@@ -194,7 +210,7 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
                     ? 'Contoh: Buatkan paper riset tentang optimasi algoritma CNN dengan rumus matematika dan tabel perbandingan...'
                     : 'Example: Draft an academic paper on CNN optimization with mathematical formulas and metric tables...')
             }
-            rows={3}
+            rows={2}
             style={{
               width: '100%',
               background: 'transparent',
@@ -205,6 +221,8 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
               lineHeight: 1.6,
               resize: 'none',
               fontFamily: 'inherit',
+              overflowY: 'hidden',
+              minHeight: `${14 * 1.6 * 2}px`,
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -297,7 +315,7 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '12px',
               width: '100%',
             }}

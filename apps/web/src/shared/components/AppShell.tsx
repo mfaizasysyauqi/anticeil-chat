@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { ModelSelectorModal } from '../../features/chat/components/ModelSelectorModal';
@@ -9,10 +10,31 @@ import { CreditLimitModal } from '../../features/credits/components/CreditLimitM
 import { PricingModal } from '../../features/pricing/components/PricingModal';
 import { AuthModal } from '../../features/auth/components/AuthModal';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
+import { useAuthStore } from '../../features/auth/store/useAuthStore';
 
 interface AppShellProps {
   children: React.ReactNode;
   showSidebar?: boolean;
+}
+
+// Reads ?auth=login|register and opens the modal — must be inside Suspense for useSearchParams
+function AuthQueryHandler() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
+  useEffect(() => {
+    const mode = searchParams?.get('auth');
+    if (mode === 'login' || mode === 'register') {
+      openAuthModal(mode);
+      // Clean the query param from URL without re-navigating
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete('auth');
+      router.replace(clean.pathname + (clean.search !== '?' ? clean.search : ''));
+    }
+  }, [searchParams, openAuthModal, router]);
+
+  return null;
 }
 
 export function AppShell({ children, showSidebar = true }: AppShellProps) {
@@ -28,6 +50,7 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
       document.documentElement.setAttribute('data-theme', theme);
     }
   }, [theme]);
+
 
   return (
     <div className="app-container">
@@ -86,6 +109,9 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
       <CreditLimitModal />
       <PricingModal />
       <AuthModal />
+      <Suspense fallback={null}>
+        <AuthQueryHandler />
+      </Suspense>
     </div>
   );
 }
