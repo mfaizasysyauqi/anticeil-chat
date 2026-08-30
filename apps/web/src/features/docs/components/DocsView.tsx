@@ -2338,26 +2338,6 @@ ${exportText}
               ) : (
                 <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Docs Studio</span>
               )}
-
-              {/* Format badge — compact */}
-              {activeDoc && (() => {
-                const fmtMap: Record<string, { label: string; color: string; bg: string }> = {
-                  latex:    { label: 'LaTeX',    color: '#0073ea', bg: 'rgba(0,115,234,0.09)' },
-                  markdown: { label: 'Markdown', color: '#0073ea', bg: 'rgba(0,115,234,0.09)' },
-                  sheet:    { label: 'Sheets',   color: '#10B981', bg: 'rgba(16,185,129,0.09)' },
-                  slide:    { label: 'Slide',    color: '#8B5CF6', bg: 'rgba(139,92,246,0.09)' },
-                };
-                const m = fmtMap[activeDoc.format ?? 'latex'];
-                return (
-                  <span style={{
-                    fontSize: '10.5px', fontWeight: 600,
-                    color: m.color, backgroundColor: m.bg,
-                    padding: '1px 7px', borderRadius: '9999px',
-                    border: `1px solid ${m.color}30`,
-                    whiteSpace: 'nowrap', flexShrink: 0,
-                  }}>{m.label}</span>
-                );
-              })()}
             </div>
           </div>
 
