@@ -22,7 +22,7 @@ export function CreditLimitModal() {
   const attemptedAction = useCreditStore((s) => s.attemptedAction);
   const setLimitModalOpen = useCreditStore((s) => s.setLimitModalOpen);
   const setPricingModalOpen = useCreditStore((s) => s.setPricingModalOpen);
-  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const language = useSettingsStore((s) => s.language);
 
   const [mounted, setMounted] = useState(false);
@@ -206,7 +206,7 @@ export function CreditLimitModal() {
         <div
           onClick={() => {
             setLimitModalOpen(false);
-            setSettingsOpen(true);
+            openSettingsTab('keys');
           }}
           style={{
             display: 'flex',
@@ -253,7 +253,7 @@ export function CreditLimitModal() {
         <div
           onClick={() => {
             setLimitModalOpen(false);
-            setSettingsOpen(true);
+            openSettingsTab('keys');
           }}
           style={{
             display: 'flex',

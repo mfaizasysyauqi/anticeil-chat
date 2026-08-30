@@ -55,6 +55,8 @@ import {
   Sliders,
   Radar,
   GitFork,
+  Table,
+  Presentation,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -65,6 +67,7 @@ import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useImageStore } from '../../features/image/store/useImageStore';
+import { useDocsStore, DocItem } from '../../features/docs/store/useDocsStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { useCreditStore } from '../../features/credits/store/useCreditStore';
 import { createClient } from '../utils/supabase/client';
@@ -670,6 +673,552 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
   );
 }
 
+// ─── DocFolderMenu ───────────────────────────────────────────────────────────
+interface DocFolderMenuProps {
+  folder: { id: string; name: string };
+  language: string;
+  onRename: (id: string, name: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function DocFolderMenu({ folder, language, onRename, onDelete }: DocFolderMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const [isRenaming, setIsRenaming] = React.useState(false);
+  const [renameText, setRenameText] = React.useState(folder.name);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
+        setOpen(false);
+        setIsRenaming(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const handleRename = () => {
+    const name = renameText.trim();
+    if (name) {
+      onRename(folder.id, name);
+    }
+    setIsRenaming(false);
+    setOpen(false);
+  };
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const menuWidth = 140;
+      const menuHeight = 80;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      setMenuPosition({ top, left });
+      setOpen(true);
+    }
+  };
+
+  if (isRenaming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+        <input
+          type="text"
+          value={renameText}
+          onChange={(e) => setRenameText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleRename();
+            if (e.key === 'Escape') setIsRenaming(false);
+          }}
+          autoFocus
+          style={{
+            width: '90px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: '4px',
+            padding: '2px 4px',
+            fontSize: '11px',
+            color: 'var(--text-primary)',
+            outline: 'none',
+          }}
+        />
+        <button
+          type="button"
+          onClick={handleRename}
+          style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px' }}
+        >
+          <Check size={11} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsRenaming(false)}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px' }}
+        >
+          <X size={11} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="more-button"
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--text-muted)',
+          cursor: 'pointer',
+          padding: '2px 4px',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: open ? 1 : undefined,
+        }}
+      >
+        <MoreHorizontal size={12} />
+      </button>
+
+      {open && menuPosition && createPortal(
+        <div
+          ref={portalRef}
+          style={{
+            position: 'fixed',
+            top: menuPosition.top,
+            left: menuPosition.left,
+            zIndex: 99999,
+            backgroundColor: 'var(--bg-surface, #18181b)',
+            border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.35))',
+            padding: '4px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '130px',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIsRenaming(true); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Edit2 size={11} color="var(--text-secondary)" />
+            <span>{language === 'id' ? 'Ganti Nama' : 'Rename'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(folder.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Trash2 size={11} />
+            <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// ─── DocItemMenu ─────────────────────────────────────────────────────────────
+interface DocItemMenuProps {
+  doc: DocItem;
+  language: string;
+  folders: Array<{ id: string; name: string }>;
+  onRename: (id: string, title: string) => void;
+  onDelete: (id: string) => void;
+  onTogglePin: (id: string) => void;
+  onMove: (id: string, projectId: string | null) => void;
+}
+
+function DocItemMenu({ doc, language, folders, onRename, onDelete, onTogglePin, onMove }: DocItemMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const [showMoveSubmenu, setShowMoveSubmenu] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const [isRenaming, setIsRenaming] = React.useState(false);
+  const [renameText, setRenameText] = React.useState(doc.title);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const portalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
+        setOpen(false);
+        setShowMoveSubmenu(false);
+        setIsRenaming(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const handleRenameSubmit = () => {
+    const text = renameText.trim();
+    if (text) {
+      onRename(doc.id, text);
+    }
+    setIsRenaming(false);
+    setOpen(false);
+  };
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+      setShowMoveSubmenu(false);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const menuWidth = 160;
+      const menuHeight = 130;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      setMenuPosition({ top, left });
+      setOpen(true);
+      setShowMoveSubmenu(false);
+    }
+  };
+
+  if (isRenaming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+        <input
+          type="text"
+          value={renameText}
+          onChange={(e) => setRenameText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleRenameSubmit();
+            if (e.key === 'Escape') { setIsRenaming(false); setRenameText(doc.title); }
+          }}
+          autoFocus
+          style={{
+            width: '100px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: '4px',
+            padding: '2px 5px',
+            fontSize: '11px',
+            color: 'var(--text-primary)',
+            outline: 'none',
+          }}
+        />
+        <button
+          type="button"
+          onClick={handleRenameSubmit}
+          style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px' }}
+        >
+          <Check size={11} />
+        </button>
+        <button
+          type="button"
+          onClick={() => { setIsRenaming(false); setRenameText(doc.title); }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px' }}
+        >
+          <X size={11} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="more-button"
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--text-muted)',
+          cursor: 'pointer',
+          padding: '2px 4px',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: open ? 1 : undefined,
+        }}
+      >
+        <MoreHorizontal size={12} />
+      </button>
+
+      {open && menuPosition && createPortal(
+        <div
+          ref={portalRef}
+          data-docmenu-portal="true"
+          style={{
+            position: 'fixed',
+            top: menuPosition.top,
+            left: menuPosition.left,
+            zIndex: 99999,
+            backgroundColor: 'var(--bg-surface, #18181b)',
+            border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
+            borderRadius: 'var(--radius-md, 8px)',
+            boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.35))',
+            padding: '4px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            minWidth: '155px',
+            animation: 'fadeIn 0.1s ease-out',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Rename */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIsRenaming(true); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Edit2 size={11} color="var(--text-secondary)" />
+            <span>{language === 'id' ? 'Ganti Nama' : 'Rename'}</span>
+          </button>
+
+          {/* Pin */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onTogglePin(doc.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Pin size={11} color={doc.isPinned ? 'var(--brand-primary)' : 'var(--text-secondary)'} />
+            <span>{doc.isPinned ? (language === 'id' ? 'Lepas Sematan' : 'Unpin') : (language === 'id' ? 'Sematkan' : 'Pin')}</span>
+          </button>
+
+          {/* Move to project folder */}
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowMoveSubmenu(!showMoveSubmenu); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                padding: '5px 8px', borderRadius: '4px', border: 'none', background: 'transparent',
+                color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <FolderInput size={11} color="var(--text-secondary)" />
+                <span>{language === 'id' ? 'Pindah Folder' : 'Move Folder'}</span>
+              </div>
+              <ChevronRight size={10} color="var(--text-muted)" />
+            </button>
+
+            {showMoveSubmenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '100%',
+                  top: '-4px',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  boxShadow: 'var(--shadow-lg)',
+                  padding: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  minWidth: '140px',
+                  zIndex: 100000,
+                }}
+              >
+                {/* Remove from folder option */}
+                {doc.projectId && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onMove(doc.id, null); setOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                      borderRadius: '4px', border: 'none', background: 'transparent',
+                      color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <FolderMinus size={11} />
+                    <span>{language === 'id' ? 'Keluarkan dari Folder' : 'Remove from Folder'}</span>
+                  </button>
+                )}
+
+                {folders.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onMove(doc.id, p.id); setOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
+                      borderRadius: '4px', border: 'none',
+                      background: doc.projectId === p.id ? 'rgba(0,115,234,0.1)' : 'transparent',
+                      color: doc.projectId === p.id ? 'var(--brand-primary)' : 'var(--text-primary)',
+                      fontSize: '11px', cursor: 'pointer', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Folder size={11} />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '2px 0' }} />
+
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(doc.id); setOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 8px',
+              borderRadius: '4px', border: 'none', background: 'transparent',
+              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Trash2 size={11} />
+            <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// ─── DocSidebarItem ─────────────────────────────────────────────────────────
+interface DocSidebarItemProps {
+  doc: DocItem;
+  isActive: boolean;
+  language: string;
+  folders: Array<{ id: string; name: string }>;
+  onSelect: () => void;
+  onRename: (id: string, title: string) => void;
+  onDelete: (id: string) => void;
+  onTogglePin: (id: string) => void;
+  onMove: (id: string, projectId: string | null) => void;
+}
+
+function DocSidebarItem({
+  doc,
+  isActive,
+  language,
+  folders,
+  onSelect,
+  onRename,
+  onDelete,
+  onTogglePin,
+  onMove,
+}: DocSidebarItemProps) {
+  const getFormatIcon = () => {
+    if (doc.format === 'sheet') return <Table size={12} color="#10B981" style={{ flexShrink: 0 }} />;
+    if (doc.format === 'slide') return <Presentation size={12} color="#8B5CF6" style={{ flexShrink: 0 }} />;
+    return <FileText size={12} color="#0073EA" style={{ flexShrink: 0 }} />;
+  };
+
+  return (
+    <div
+      className="clickable-pill"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '7px',
+        padding: '4px 8px',
+        borderRadius: 'var(--radius-sm, 6px)',
+        background: isActive ? 'rgba(0, 115, 234, 0.12)' : doc.isPinned ? 'rgba(0, 115, 234, 0.05)' : 'transparent',
+        color: isActive ? 'var(--brand-primary)' : 'var(--text-secondary)',
+        fontSize: '12px',
+        fontWeight: isActive ? 600 : 400,
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        position: 'relative',
+      }}
+    >
+      <div
+        onClick={onSelect}
+        style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+      >
+        {getFormatIcon()}
+        <span
+          style={{
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            color: isActive ? 'var(--brand-primary)' : 'var(--text-primary)',
+            flex: 1,
+          }}
+        >
+          {doc.title || 'Untitled Doc'}
+        </span>
+        {doc.isPinned && <Pin size={9} color="var(--brand-primary)" style={{ flexShrink: 0 }} />}
+      </div>
+
+      <DocItemMenu
+        doc={doc}
+        language={language}
+        folders={folders}
+        onRename={onRename}
+        onDelete={onDelete}
+        onTogglePin={onTogglePin}
+        onMove={onMove}
+      />
+    </div>
+  );
+}
+
 export function Sidebar({
   isOpenMobile = false,
   onCloseMobile,
@@ -692,7 +1241,33 @@ export function Sidebar({
   const isImage = pathname === '/image';
   const isVideo = pathname === '/video';
   const isAudio = pathname === '/audio';
+  const isDocs = pathname === '/docs' || pathname.startsWith('/docs');
   const isMediaMode = isImage || isVideo || isAudio;
+
+  // Docs store state (isolated database & folders completely independent from Chat)
+  const docs = useDocsStore((s) => s.documents);
+  const docFolders = useDocsStore((s) => s.folders);
+  const createDocFolder = useDocsStore((s) => s.createFolder);
+  const renameDocFolder = useDocsStore((s) => s.renameFolder);
+  const deleteDocFolder = useDocsStore((s) => s.deleteFolder);
+  const activeDocId = useDocsStore((s) => s.activeDocId);
+  const activeProjectId = useDocsStore((s) => s.activeProjectId);
+  const setActiveDocId = useDocsStore((s) => s.setActiveDocId);
+  const setActiveProjectId = useDocsStore((s) => s.setActiveProjectId);
+  const createDocument = useDocsStore((s) => s.createDocument);
+  const updateDocumentTitle = useDocsStore((s) => s.updateDocumentTitle);
+  const deleteDocument = useDocsStore((s) => s.deleteDocument);
+  const togglePin = useDocsStore((s) => s.togglePin);
+  const moveDocumentToProject = useDocsStore((s) => s.moveDocumentToProject);
+  const [isUnassignedExpanded, setIsUnassignedExpanded] = useState(true);
+  const [isAddingDocFolder, setIsAddingDocFolder] = useState(false);
+  const [newDocFolderName, setNewDocFolderName] = useState('');
+
+  const unassignedDocs = useMemo(() => {
+    return docs
+      .filter((d) => !d.projectId && d.title.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || b.updatedAt - a.updatedAt);
+  }, [docs, searchQuery]);
 
   // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
@@ -1534,6 +2109,25 @@ export function Sidebar({
               <MessageSquare size={17} />
             </Link>
 
+            {/* Docs & LaTeX */}
+            <Link
+              href="/docs"
+              title={t.nav.docs || 'Docs & LaTeX'}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: pathname === '/docs' ? 'rgba(0, 115, 234, 0.15)' : 'transparent',
+                color: pathname === '/docs' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <FileText size={17} />
+            </Link>
+
             {/* Image */}
             <Link
               href="/image"
@@ -1771,6 +2365,36 @@ export function Sidebar({
               <Music size={15} color="#60a5fa" />
               <span>{language === 'id' ? 'Audio Baru' : 'New Audio'}</span>
             </button>
+          ) : isDocs ? (
+            <button
+              type="button"
+              onClick={() => {
+                const newId = createDocument('Dokumen Baru', undefined, 'latex', activeProjectId);
+                setActiveDocId(newId);
+                if (pathname !== '/docs') router.push('/docs');
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className="clickable-pill"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 10px',
+                borderRadius: 'var(--radius-md, 6px)',
+                background: 'rgba(0, 115, 234, 0.1)',
+                border: '1px solid rgba(0, 115, 234, 0.25)',
+                color: 'var(--brand-primary)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'background 0.15s ease',
+              }}
+            >
+              <Plus size={15} color="var(--brand-primary)" />
+              <span>{language === 'id' ? 'Dokumen Baru' : 'New Document'}</span>
+            </button>
           ) : (
             <button
               type="button"
@@ -1799,7 +2423,7 @@ export function Sidebar({
           )}
 
           {/* Connectors & Integrations Shortcut in Chat Mode */}
-          {!isMediaMode && (
+          {!isMediaMode && !isDocs && (
             <button
               type="button"
               onClick={() => setIsConnectorsModalOpen(true)}
@@ -1843,7 +2467,9 @@ export function Sidebar({
             <input
               type="text"
               placeholder={
-                isImage
+                isDocs
+                  ? (language === 'id' ? 'Cari dokumen & folder...' : 'Search docs & folders...')
+                  : isImage
                   ? language === 'id'
                     ? 'Cari prompt gambar...'
                     : 'Search image prompts...'
@@ -1885,7 +2511,319 @@ export function Sidebar({
           {/* ─────────────────────────────────────────────────────────────
            * A. MEDIA MODE SIDEBAR CONTENT (Image/Video/Audio)
            * ───────────────────────────────────────────────────────────── */}
-          {isMediaMode ? (
+          {isDocs ? (
+            /* ─────────────────────────────────────────────────────────────
+             * C. DOCS STUDIO MODE SIDEBAR CONTENT (Project Folders & Isolated Docs)
+             * ───────────────────────────────────────────────────────────── */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {/* Workspace Project Folders Header */}
+              <div
+                onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '4px 6px',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {language === 'id' ? 'Folder Proyek' : 'Project Folders'}
+                  </span>
+                  {isProjectsExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
+                </div>
+              </div>
+
+              {isProjectsExpanded && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
+                  {/* Loading indicator */}
+                  {projectsLoading && projects.length === 0 && (
+                    <div style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {language === 'id' ? 'Memuat folder...' : 'Loading folders...'}
+                    </div>
+                  )}
+
+                  {docFolders.map((folder) => {
+                    const isFolderOpen = expandedFolderIds.has(folder.id);
+                    const isSelected = activeProjectId === folder.id;
+                    const folderDocs = docs
+                      .filter(
+                        (d) => d.projectId === folder.id &&
+                          d.title.toLowerCase().includes(searchQuery.toLowerCase())
+                      )
+                      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || b.updatedAt - a.updatedAt);
+
+                    return (
+                      <div key={folder.id} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                        {/* Folder Row */}
+                        <div
+                          className="clickable-pill"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '7px',
+                            padding: '5px 8px',
+                            borderRadius: 'var(--radius-sm, 6px)',
+                            background: isSelected ? 'rgba(0, 115, 234, 0.12)' : isFolderOpen ? 'var(--bg-subtle)' : 'transparent',
+                            color: isSelected ? 'var(--brand-primary)' : isFolderOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            fontSize: '12px',
+                            fontWeight: isSelected || isFolderOpen ? 600 : 400,
+                            cursor: 'pointer',
+                            position: 'relative',
+                          }}
+                        >
+                          <div
+                            style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
+                            onClick={() => {
+                              setActiveProjectId(folder.id);
+                              setExpandedFolderIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(folder.id)) next.delete(folder.id);
+                                else next.add(folder.id);
+                                return next;
+                              });
+                            }}
+                          >
+                            {isFolderOpen ? (
+                              <FolderOpen size={13} color={isSelected ? 'var(--brand-primary)' : 'var(--text-secondary)'} style={{ flexShrink: 0 }} />
+                            ) : (
+                              <Folder size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                            )}
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                              {folder.name}
+                            </span>
+                            {folderDocs.length > 0 && (
+                              <span style={{
+                                fontSize: '10px',
+                                background: isSelected ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                                color: isSelected ? '#fff' : 'var(--text-muted)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '999px',
+                                padding: '0 5px',
+                                lineHeight: '15px',
+                                flexShrink: 0,
+                              }}>
+                                {folderDocs.length}
+                              </span>
+                            )}
+                            <span style={{ flexShrink: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                              {isFolderOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                            </span>
+                          </div>
+
+                          {/* Folder Menu */}
+                          <DocFolderMenu
+                            folder={folder}
+                            language={language}
+                            onRename={renameDocFolder}
+                            onDelete={deleteDocFolder}
+                          />
+                        </div>
+
+                        {/* Inline docs inside folder */}
+                        {isFolderOpen && (
+                          <div style={{ paddingLeft: '14px', display: 'flex', flexDirection: 'column', gap: '1px', marginTop: '1px' }}>
+                            {folderDocs.length === 0 ? (
+                              <div style={{
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                color: 'var(--text-muted)',
+                                fontStyle: 'italic',
+                              }}>
+                                {language === 'id' ? 'Belum ada dokumen di folder ini' : 'No docs in this folder'}
+                              </div>
+                            ) : (
+                              folderDocs.map((doc) => (
+                                <DocSidebarItem
+                                  key={doc.id}
+                                  doc={doc}
+                                  isActive={activeDocId === doc.id}
+                                  language={language}
+                                  folders={docFolders}
+                                  onSelect={() => {
+                                    setActiveProjectId(folder.id);
+                                    setActiveDocId(doc.id);
+                                    if (pathname !== '/docs') router.push('/docs');
+                                    if (onCloseMobile) onCloseMobile();
+                                  }}
+                                  onRename={(id, title) => updateDocumentTitle(id, title)}
+                                  onDelete={(id) => deleteDocument(id)}
+                                  onTogglePin={(id) => togglePin(id)}
+                                  onMove={(id, targetProjId) => moveDocumentToProject(id, targetProjId)}
+                                />
+                              ))
+                            )}
+
+                            {/* Shortcut: Create new doc in this folder */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveProjectId(folder.id);
+                                const newId = createDocument('Dokumen Baru', undefined, 'latex', folder.id);
+                                setActiveDocId(newId);
+                                if (pathname !== '/docs') router.push('/docs');
+                                if (onCloseMobile) onCloseMobile();
+                              }}
+                              className="clickable-pill"
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 8px',
+                                borderRadius: 'var(--radius-sm, 6px)',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--brand-primary)',
+                                fontSize: '11px',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                width: '100%',
+                                textAlign: 'left',
+                                marginTop: '2px',
+                              }}
+                            >
+                              <Plus size={10} />
+                              <span>{language === 'id' ? 'Buat dokumen di folder ini' : 'Add document to folder'}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Add Folder button for Docs */}
+                  {isAddingDocFolder ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px' }}>
+                      <input
+                        type="text"
+                        placeholder={language === 'id' ? 'Nama folder baru...' : 'New folder name...'}
+                        value={newDocFolderName}
+                        onChange={(e) => setNewDocFolderName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const trimmed = newDocFolderName.trim();
+                            if (trimmed) {
+                              const newId = createDocFolder(trimmed);
+                              setExpandedFolderIds((prev) => new Set(prev).add(newId));
+                              setNewDocFolderName('');
+                              setIsAddingDocFolder(false);
+                            }
+                          }
+                          if (e.key === 'Escape') setIsAddingDocFolder(false);
+                        }}
+                        autoFocus
+                        style={{
+                          flex: 1,
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--border-strong)',
+                          borderRadius: '4px',
+                          padding: '3px 6px',
+                          fontSize: '11px',
+                          color: 'var(--text-primary)',
+                          outline: 'none',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const trimmed = newDocFolderName.trim();
+                          if (trimmed) {
+                            const newId = createDocFolder(trimmed);
+                            setExpandedFolderIds((prev) => new Set(prev).add(newId));
+                            setNewDocFolderName('');
+                            setIsAddingDocFolder(false);
+                          }
+                        }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer' }}
+                      >
+                        <Check size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingDocFolder(false)}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingDocFolder(true)}
+                      className="clickable-pill"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '7px',
+                        padding: '4px 8px',
+                        borderRadius: 'var(--radius-sm, 6px)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        fontSize: '11.5px',
+                        cursor: 'pointer',
+                        width: '100%',
+                        textAlign: 'left',
+                        marginTop: '4px',
+                      }}
+                    >
+                      <Plus size={11} />
+                      <span>{language === 'id' ? 'Tambah folder dokumen' : 'Add doc folder'}</span>
+                    </button>
+                  )}
+
+                  {/* Unassigned Docs / Dokumen Mandiri section (if any exist) */}
+                  {unassignedDocs.length > 0 && (
+                    <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
+                      <div
+                        onClick={() => {
+                          setActiveProjectId(null);
+                          setIsUnassignedExpanded(!isUnassignedExpanded);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '4px 6px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span style={{ fontSize: '10.5px', fontWeight: 650, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          {language === 'id' ? 'Dokumen Lainnya' : 'Other Documents'} ({unassignedDocs.length})
+                        </span>
+                        {isUnassignedExpanded ? <ChevronDown size={10} color="var(--text-muted)" /> : <ChevronRight size={10} color="var(--text-muted)" />}
+                      </div>
+
+                      {isUnassignedExpanded && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', paddingLeft: '4px' }}>
+                          {unassignedDocs.map((doc) => (
+                            <DocSidebarItem
+                              key={doc.id}
+                              doc={doc}
+                              isActive={activeDocId === doc.id}
+                              language={language}
+                              folders={docFolders}
+                              onSelect={() => {
+                                setActiveProjectId(null);
+                                setActiveDocId(doc.id);
+                                if (pathname !== '/docs') router.push('/docs');
+                                if (onCloseMobile) onCloseMobile();
+                              }}
+                              onRename={(id, title) => updateDocumentTitle(id, title)}
+                              onDelete={(id) => deleteDocument(id)}
+                              onTogglePin={(id) => togglePin(id)}
+                              onMove={(id, targetProjId) => moveDocumentToProject(id, targetProjId)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : isMediaMode ? (
             <>
               {/* Imagine Media Collections */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>

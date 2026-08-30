@@ -620,29 +620,32 @@ export function ImageView() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {/* Style selector (Image only) */}
               {mediaMode === 'image' && (
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={selectedStyle}
-                    onChange={(e) => setSelectedStyle(e.target.value)}
-                    style={{
-                      appearance: 'none',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md, 6px)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      padding: '4px 26px 4px 10px',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {styles.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  <Palette size={12} color="var(--text-muted)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Palette size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={selectedStyle}
+                      onChange={(e) => setSelectedStyle(e.target.value)}
+                      style={{
+                        appearance: 'none',
+                        background: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md, 6px)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        padding: '4px 22px 4px 10px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {styles.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={11} color="var(--text-muted)" style={{ position: 'absolute', right: '7px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  </div>
                 </div>
               )}
 

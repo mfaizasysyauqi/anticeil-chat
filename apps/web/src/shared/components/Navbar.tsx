@@ -19,6 +19,7 @@ import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
+import { useDocsStore } from '../../features/docs/store/useDocsStore';
 import { getTranslation } from '@anticeil/core';
 
 interface NavbarProps {
@@ -67,6 +68,9 @@ export function Navbar({
   }, [sessions, user?.id]);
 
   const activeSession = userSessions.find((s) => s.id === activeSessionId) || userSessions[0];
+  const activeDocId = useDocsStore((s) => s.activeDocId);
+  const docs = useDocsStore((s) => s.documents);
+  const activeDoc = docs.find((d) => d.id === activeDocId);
   const t = getTranslation(language);
 
   useEffect(() => {
@@ -277,11 +281,20 @@ export function Navbar({
           >
             {pathname === '/image'
               ? t.nav.imagine
+              : pathname === '/video'
+              ? (language === 'id' ? 'Studio Video AI' : 'AI Video Studio')
+              : pathname === '/audio'
+              ? (language === 'id' ? 'Studio Audio AI' : 'AI Audio Studio')
+              : pathname === '/docs' || pathname.startsWith('/docs')
+              ? (activeDoc?.title || (language === 'id' ? 'Studio Dokumen & LaTeX' : 'Docs & LaTeX Studio'))
               : pathname === '/settings'
               ? t.nav.settings
               : activeSession?.title || 'Anticeil'}
           </span>
           {activeSession?.isPinned && pathname === '/chat' && (
+            <Pin size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+          )}
+          {activeDoc?.isPinned && (pathname === '/docs' || pathname.startsWith('/docs')) && (
             <Pin size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
           )}
         </div>

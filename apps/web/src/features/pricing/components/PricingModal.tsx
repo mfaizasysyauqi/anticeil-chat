@@ -30,7 +30,7 @@ export function PricingModal() {
   const tier = useAuthStore((s) => s.tier);
   const setTier = useAuthStore((s) => s.setTier);
 
-  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const language = useSettingsStore((s) => s.language);
 
   const [mounted, setMounted] = useState(false);
@@ -156,50 +156,101 @@ export function PricingModal() {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Absolute Top-Right Exit/Close Button (Always pinned in top-right corner on mobile, tablet & desktop) */}
+        <button
+          type="button"
+          onClick={() => setPricingModalOpen(false)}
+          aria-label={language === 'id' ? 'Tutup' : 'Close'}
+          title={language === 'id' ? 'Tutup' : 'Close'}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '18px',
+            zIndex: 30,
+            background: 'var(--bg-subtle, rgba(255,255,255,0.06))',
+            border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            padding: '7px',
+            borderRadius: '9px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-main, rgba(255,255,255,0.14))';
+            e.currentTarget.style.borderColor = 'var(--border-strong, rgba(255,255,255,0.25))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-subtle, rgba(255,255,255,0.06))';
+            e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255,255,255,0.1))';
+          }}
+        >
+          <X size={18} />
+        </button>
+
         {/* Header */}
-        <div style={{
-          padding: '18px 22px 14px',
-          borderBottom: '1px solid var(--border-subtle)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px',
-        }}>
+        <div
+          style={{
+            padding: '18px 60px 14px 22px',
+            borderBottom: '1px solid var(--border-subtle)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                color: '#000',
-                borderRadius: '8px',
-                padding: '5px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  color: '#000',
+                  borderRadius: '8px',
+                  padding: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
                 <Zap size={16} />
               </div>
               <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em' }}>
                 {language === 'id' ? 'Kredit AI & Paket Anticeil' : 'Anticeil AI Credits & Plans'}
               </h2>
             </div>
-            <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
               {language === 'id'
                 ? 'Kredit tambahan tanpa batas waktu expired · BYOK & OmniRoute selalu 100% tanpa batas.'
                 : 'Non-expiring stackable credits · BYOK & OmniRoute always 100% unlimited.'}
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* View Switcher: Top-up vs Tiers */}
-            <div style={{
+          {/* Controls: View Switcher & Currency Toggle */}
+          <div
+            style={{
               display: 'flex',
-              background: 'var(--bg-main)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '8px',
-              padding: '2px',
-              gap: '2px',
-            }}>
+              alignItems: 'center',
+              gap: '8px',
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* View Switcher: Top-up vs Tiers */}
+            <div
+              style={{
+                display: 'flex',
+                background: 'var(--bg-main)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '8px',
+                padding: '2px',
+                gap: '2px',
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setActiveTab('topup')}
@@ -216,6 +267,7 @@ export function PricingModal() {
                   alignItems: 'center',
                   gap: '5px',
                   boxShadow: activeTab === 'topup' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 <Zap size={12} />
@@ -237,6 +289,7 @@ export function PricingModal() {
                   alignItems: 'center',
                   gap: '5px',
                   boxShadow: activeTab === 'tiers' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 <Layers size={12} />
@@ -245,14 +298,16 @@ export function PricingModal() {
             </div>
 
             {/* Currency Toggle */}
-            <div style={{
-              display: 'flex',
-              background: 'var(--bg-main)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '8px',
-              padding: '2px',
-              gap: '2px',
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                background: 'var(--bg-main)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '8px',
+                padding: '2px',
+                gap: '2px',
+              }}
+            >
               {(['idr', 'usd'] as const).map((c) => (
                 <button
                   key={c}
@@ -274,23 +329,6 @@ export function PricingModal() {
                 </button>
               ))}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setPricingModalOpen(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '5px',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <X size={18} />
-            </button>
           </div>
         </div>
 
@@ -507,7 +545,7 @@ export function PricingModal() {
             type="button"
             onClick={() => {
               setPricingModalOpen(false);
-              setSettingsOpen(true);
+              openSettingsTab('keys');
             }}
             style={{
               background: 'transparent',

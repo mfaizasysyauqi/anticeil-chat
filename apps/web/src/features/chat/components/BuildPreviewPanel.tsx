@@ -1,9 +1,8 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   Eye,
   Code2,
-  Globe,
   RotateCw,
   ExternalLink,
   Download,
@@ -27,7 +26,6 @@ import {
 import { useBuildStore, ViewportMode, ViewMode, Artifact } from '../store/useBuildStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation } from '@anticeil/core';
-import { LiveBrowserRunner } from './LiveBrowserRunner';
 import { DocumentViewer, DocumentType } from './DocumentViewer';
 
 export function BuildPreviewPanel() {
@@ -52,11 +50,53 @@ export function BuildPreviewPanel() {
   const resetToHub = useBuildStore((s) => s.resetToHub);
 
   const language = useSettingsStore((s) => s.language);
+  const theme = useSettingsStore((s) => s.theme);
   const t = getTranslation(language);
   const tb = t.buildMode;
 
   const [copied, setCopied] = useState(false);
   const [showArtifactList, setShowArtifactList] = useState(false);
+  const [panelWidth, setPanelWidth] = useState(480);
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(480);
+  const asideRef = useRef<HTMLElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    startXRef.current = e.clientX;
+    startWidthRef.current = asideRef.current?.offsetWidth || panelWidth;
+
+    const parentWidth = asideRef.current?.parentElement?.getBoundingClientRect().width || window.innerWidth - 260;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      ev.preventDefault();
+      const delta = startXRef.current - ev.clientX;
+      const maxAllowed = Math.max(parentWidth - 340, 320);
+      const newWidth = Math.min(Math.max(startWidthRef.current + delta, 320), maxAllowed);
+      setPanelWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMouseMove, { passive: false });
+    window.addEventListener('mouseup', onMouseUp);
+  }, [panelWidth]);
 
   const isDocument = Boolean(
     activeArtifact && ['pdf', 'xlsx', 'docx', 'pptx', 'csv'].includes(activeArtifact.language.toLowerCase())
@@ -75,7 +115,292 @@ export function BuildPreviewPanel() {
     const raw = activeArtifact.code.trim();
     const lang = activeArtifact.language.toLowerCase();
 
-    // 1. Direct SVG
+    // 1. Mermaid diagram
+    if (lang === 'mermaid' || lang === 'mmd') {
+      const isLight = theme === 'light';
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"><\/script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: ${isLight ? '#f8fafc' : '#090d16'};
+      background-image: radial-gradient(${isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.08)'} 1.25px, transparent 1.25px);
+      background-size: 24px 24px;
+      padding: 40px 24px 80px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow: auto;
+      position: relative;
+    }
+    .mermaid-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 100%;
+    }
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+      filter: ${isLight ? 'drop-shadow(0 10px 25px rgba(0, 0, 0, 0.08))' : 'drop-shadow(0 12px 30px rgba(0, 0, 0, 0.55))'};
+    }
+    .mermaid .node rect {
+      rx: 8px;
+      ry: 8px;
+    }
+    .mermaid .edgePath path {
+      stroke: ${isLight ? '#475569' : '#60a5fa'} !important;
+      stroke-width: 2px !important;
+    }
+    .mermaid .edgeLabel rect {
+      fill: ${isLight ? '#ffffff' : '#0f172a'} !important;
+      stroke: ${isLight ? '#cbd5e1' : 'rgba(56, 189, 248, 0.3)'} !important;
+      stroke-width: 1px !important;
+      opacity: 0.95 !important;
+      rx: 4px;
+      ry: 4px;
+    }
+    .mermaid .edgeLabel span,
+    .mermaid .edgeLabel text {
+      color: ${isLight ? '#0284c7' : '#38bdf8'} !important;
+      fill: ${isLight ? '#0284c7' : '#38bdf8'} !important;
+      font-weight: 600 !important;
+      font-size: 11px !important;
+    }
+    /* Floating Export Pill */
+    .export-toolbar {
+      position: fixed;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: ${isLight ? 'rgba(255, 255, 255, 0.9)' : 'rgba(15, 23, 42, 0.85)'};
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid ${isLight ? 'rgba(0, 115, 234, 0.25)' : 'rgba(56, 189, 248, 0.25)'};
+      border-radius: 9999px;
+      padding: 6px 12px;
+      box-shadow: ${isLight ? '0 10px 25px rgba(0, 0, 0, 0.08)' : '0 10px 25px rgba(0, 0, 0, 0.5)'};
+      z-index: 99;
+    }
+    .export-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: ${isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)'};
+      border: 1px solid ${isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)'};
+      color: ${isLight ? '#0f172a' : '#f8fafc'};
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .export-btn:hover {
+      background: ${isLight ? 'rgba(0, 115, 234, 0.12)' : 'rgba(56, 189, 248, 0.2)'};
+      border-color: ${isLight ? '#0073ea' : '#38bdf8'};
+      color: ${isLight ? '#0073ea' : '#38bdf8'};
+      transform: translateY(-1px);
+    }
+    .export-btn:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="mermaid-container">
+    <div class="mermaid" id="diagram">${raw}</div>
+  </div>
+
+  <div class="export-toolbar">
+    <button class="export-btn" onclick="downloadSVG()" title="Unduh format Vector SVG tajam tanpa pecah">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Unduh SVG
+    </button>
+    <button class="export-btn" onclick="downloadPNG()" title="Unduh gambar PNG resolusi tinggi 2x">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Unduh PNG
+    </button>
+  </div>
+
+  <script>
+    const isLightMode = ${isLight};
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      darkMode: !isLightMode,
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: 13,
+      themeVariables: {
+        darkMode: !isLightMode,
+        background: isLightMode ? '#f8fafc' : '#090d16',
+        mainBkg: isLightMode ? '#f1f5f9' : '#1e293b',
+        primaryColor: isLightMode ? '#eff6ff' : '#1e3a8a',
+        primaryTextColor: isLightMode ? '#0f172a' : '#ffffff',
+        primaryBorderColor: isLightMode ? '#3b82f6' : '#60a5fa',
+        lineColor: isLightMode ? '#475569' : '#38bdf8',
+        secondaryColor: isLightMode ? '#eef2ff' : '#312e81',
+        secondaryTextColor: isLightMode ? '#0f172a' : '#ffffff',
+        secondaryBorderColor: isLightMode ? '#6366f1' : '#a78bfa',
+        tertiaryColor: isLightMode ? '#ecfdf5' : '#064e3b',
+        tertiaryTextColor: isLightMode ? '#0f172a' : '#ffffff',
+        tertiaryBorderColor: isLightMode ? '#10b981' : '#34d399',
+        nodeBorder: isLightMode ? '#3b82f6' : '#60a5fa',
+        clusterBkg: isLightMode ? '#f8fafc' : '#0f172a',
+        clusterBorder: isLightMode ? '#cbd5e1' : '#334155',
+        edgeLabelBackground: isLightMode ? '#ffffff' : '#0f172a',
+      }
+    });
+
+    function colorizeNodes() {
+      const nodes = document.querySelectorAll('.mermaid .node');
+      nodes.forEach((node, idx) => {
+        const text = (node.textContent || '').toLowerCase().trim();
+        const shape = node.querySelector('rect, circle, polygon, path, ellipse');
+        if (!shape) return;
+
+        if (isLightMode) {
+          // Light Mode Palettes (Pastel fills, crisp borders, dark readable text)
+          if (text.includes('mulai') || text.includes('start') || text.includes('selesai') || text.includes('end') || text.includes('finish')) {
+            shape.setAttribute('style', 'fill: #ecfdf5 !important; stroke: #10b981 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.2));');
+          } else if (node.querySelector('polygon') || text.includes('?') || text.includes('apakah') || text.includes('jenis')) {
+            shape.setAttribute('style', 'fill: #eef2ff !important; stroke: #6366f1 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(99, 102, 241, 0.2));');
+          } else if (text.includes('tidak') || text.includes('gagal') || text.includes('error') || text.includes('bahaya') || text.includes('kematian') || text.includes('positif')) {
+            shape.setAttribute('style', 'fill: #fff1f2 !important; stroke: #f43f5e !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(244, 63, 94, 0.2));');
+          } else if (text.includes('sembuh') || text.includes('berhasil') || text.includes('sukses') || text.includes('negatif') || text.includes('aman')) {
+            shape.setAttribute('style', 'fill: #f0fdf4 !important; stroke: #22c55e !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(34, 197, 94, 0.2));');
+          } else {
+            const lightPalettes = [
+              'fill: #eff6ff !important; stroke: #3b82f6 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.15));',
+              'fill: #f0fdfa !important; stroke: #0d9488 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(13, 148, 136, 0.15));',
+              'fill: #faf5ff !important; stroke: #a855f7 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(168, 85, 247, 0.15));',
+              'fill: #fffbeb !important; stroke: #d97706 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 2px 6px rgba(217, 119, 6, 0.15));',
+            ];
+            shape.setAttribute('style', lightPalettes[idx % lightPalettes.length]);
+          }
+          // Ensure dark legible text in light mode
+          node.querySelectorAll('text, span').forEach((t) => {
+            t.style.fill = '#0f172a';
+            t.style.color = '#0f172a';
+            t.style.fontWeight = '600';
+          });
+        } else {
+          // Dark Mode Palettes (Rich glowing fills, bright borders, white text)
+          if (text.includes('mulai') || text.includes('start') || text.includes('selesai') || text.includes('end') || text.includes('finish')) {
+            shape.setAttribute('style', 'fill: #064e3b !important; stroke: #34d399 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.35));');
+          } else if (node.querySelector('polygon') || text.includes('?') || text.includes('apakah') || text.includes('jenis')) {
+            shape.setAttribute('style', 'fill: #312e81 !important; stroke: #a78bfa !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.35));');
+          } else if (text.includes('tidak') || text.includes('gagal') || text.includes('error') || text.includes('bahaya') || text.includes('kematian') || text.includes('positif')) {
+            shape.setAttribute('style', 'fill: #4c0519 !important; stroke: #fb7185 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(251, 113, 133, 0.35));');
+          } else if (text.includes('sembuh') || text.includes('berhasil') || text.includes('sukses') || text.includes('negatif') || text.includes('aman')) {
+            shape.setAttribute('style', 'fill: #064e3b !important; stroke: #10b981 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.35));');
+          } else {
+            const darkPalettes = [
+              'fill: #1e3a8a !important; stroke: #60a5fa !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.3));',
+              'fill: #134e4a !important; stroke: #2dd4bf !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(45, 212, 191, 0.3));',
+              'fill: #4c1d95 !important; stroke: #c084fc !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.3));',
+              'fill: #78350f !important; stroke: #fbbf24 !important; stroke-width: 2.25px !important; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.3));',
+            ];
+            shape.setAttribute('style', darkPalettes[idx % darkPalettes.length]);
+          }
+          // Ensure white legible text in dark mode
+          node.querySelectorAll('text, span').forEach((t) => {
+            t.style.fill = '#ffffff';
+            t.style.color = '#ffffff';
+            t.style.fontWeight = '600';
+          });
+        }
+      });
+    }
+
+    mermaid.run().then(() => {
+      colorizeNodes();
+    }).catch((err) => {
+      console.warn('Mermaid render error:', err);
+    });
+
+    function getSVGElement() {
+      return document.querySelector('.mermaid svg') || document.querySelector('svg');
+    }
+
+    function downloadSVG() {
+      const svg = getSVGElement();
+      if (!svg) {
+        alert('Diagram masih dimuat, silakan coba sesaat lagi.');
+        return;
+      }
+      let source = new XMLSerializer().serializeToString(svg);
+      if (!source.match(/^<svg[^>]+xmlns="http\\:\\/\\/www\\.w3\\.org\\/2000\\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'flowchart_' + Date.now() + '.svg';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadPNG() {
+      const svg = getSVGElement();
+      if (!svg) {
+        alert('Diagram masih dimuat, silakan coba sesaat lagi.');
+        return;
+      }
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+
+      img.onload = function() {
+        const bbox = svg.getBoundingClientRect();
+        const scale = 2.5; // High definition
+        const canvas = document.createElement('canvas');
+        const w = Math.max(bbox.width, 600);
+        const h = Math.max(bbox.height, 400);
+        canvas.width = (w + 64) * scale;
+        canvas.height = (h + 64) * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+
+        // Background based on theme
+        ctx.fillStyle = isLightMode ? '#f8fafc' : '#090d16';
+        ctx.fillRect(0, 0, w + 64, h + 64);
+
+        ctx.drawImage(img, 32, 32, w, h);
+        const pngUrl = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = pngUrl;
+        a.download = 'flowchart_' + Date.now() + '.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    }
+  </script>
+</body>
+</html>
+      `;
+    }
+
+    // 2. Direct SVG
     if (lang === 'svg' || (raw.startsWith('<svg') && raw.endsWith('</svg>'))) {
       return `
 <!DOCTYPE html>
@@ -198,7 +523,7 @@ export function BuildPreviewPanel() {
 </body>
 </html>
     `;
-  }, [activeArtifact, reloadKey]);
+  }, [activeArtifact, reloadKey, theme]);
 
   if (!isOpen) return null;
 
@@ -211,12 +536,43 @@ export function BuildPreviewPanel() {
 
   const handleDownload = () => {
     if (!activeArtifact?.code) return;
+    const lang = activeArtifact.language.toLowerCase();
+
+    // 1. Mermaid Download as SVG Vector
+    if (lang === 'mermaid' || lang === 'mmd') {
+      const svgElement = iframeRef.current?.contentDocument?.querySelector('svg');
+      if (svgElement) {
+        let svgData = new XMLSerializer().serializeToString(svgElement);
+        if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {
+          svgData = svgData.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+        const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const safeTitle = (activeArtifact.title || 'flowchart').replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').toLowerCase();
+        a.href = url;
+        a.download = `${safeTitle}_${Date.now()}.svg`;
+        a.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+    }
+
+    // 2. Generic Code / HTML / TSX Download
     const blob = new Blob([activeArtifact.code], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const ext = activeArtifact.language === 'tsx' || activeArtifact.language === 'jsx' ? 'tsx' : 'html';
+    const ext =
+      lang === 'tsx' || lang === 'jsx'
+        ? 'tsx'
+        : lang === 'mermaid' || lang === 'mmd'
+        ? 'mmd'
+        : lang === 'svg'
+        ? 'svg'
+        : 'html';
+    const safeTitle = (activeArtifact.title || 'anticeil_build').replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').toLowerCase();
     a.href = url;
-    a.download = `anticeil_build_${Date.now()}.${ext}`;
+    a.download = `${safeTitle}_${Date.now()}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -478,14 +834,17 @@ export function BuildPreviewPanel() {
   const viewportWidth =
     viewport === 'mobile' ? '375px' : viewport === 'tablet' ? '768px' : '100%';
 
+  if (!isOpen) return null;
+
   return (
     <aside
+      ref={asideRef}
       aria-label={tb.title}
       className="build-preview-panel"
       style={{
-        width: isFullscreen ? '100%' : '50%',
-        minWidth: isFullscreen ? '100%' : '380px',
-        maxWidth: isFullscreen ? '100%' : '65%',
+        width: isFullscreen ? '100%' : `${panelWidth}px`,
+        minWidth: isFullscreen ? '100%' : '320px',
+        maxWidth: isFullscreen ? '100%' : 'calc(100% - 340px)',
         height: '100%',
         backgroundColor: 'var(--bg-surface)',
         borderLeft: '1px solid var(--border-strong)',
@@ -498,9 +857,60 @@ export function BuildPreviewPanel() {
         bottom: isFullscreen ? 0 : 'auto',
         zIndex: isFullscreen ? 999 : 20,
         boxShadow: 'var(--shadow-lg)',
-        transition: 'width 0.2s ease',
+        flexShrink: 0,
+        boxSizing: 'border-box',
       }}
     >
+      {/* Fullscreen transparent drag overlay to prevent iframe from capturing mouse events */}
+      {isDragging && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            cursor: 'col-resize',
+            userSelect: 'none',
+          }}
+        />
+      )}
+
+      {/* Drag-to-resize handle (Wide 12px grab area with glowing 2px center bar) */}
+      {!isFullscreen && (
+        <div
+          onMouseDown={handleDragStart}
+          title="Geser untuk mengatur lebar Canvas"
+          style={{
+            position: 'absolute',
+            left: '-6px',
+            top: 0,
+            bottom: 0,
+            width: '12px',
+            cursor: 'col-resize',
+            zIndex: 40,
+            backgroundColor: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            userSelect: 'none',
+          }}
+        >
+          <div
+            style={{
+              width: '2px',
+              height: '100%',
+              backgroundColor: isDragging ? 'var(--brand-primary)' : 'transparent',
+              transition: isDragging ? 'none' : 'background-color 0.15s ease',
+              boxShadow: isDragging ? '0 0 8px var(--brand-primary)' : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!isDragging) e.currentTarget.style.backgroundColor = 'var(--brand-primary)';
+            }}
+            onMouseLeave={(e) => {
+              if (!isDragging) e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          />
+        </div>
+      )}
       {/* 1. Header Toolbar */}
       <div
         style={{
@@ -587,27 +997,6 @@ export function BuildPreviewPanel() {
                 <span>{tb.codeTab}</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setViewMode('browser')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: 'none',
-                backgroundColor: viewMode === 'browser' ? 'var(--bg-surface)' : 'transparent',
-                color: viewMode === 'browser' ? 'var(--brand-primary)' : 'var(--text-muted)',
-                fontSize: '11.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: viewMode === 'browser' ? 'var(--shadow-sm)' : 'none',
-              }}
-            >
-              <Globe size={13} />
-              <span>{tb.browserTab || 'Agent Browser'}</span>
-            </button>
           </div>
         </div>
 
@@ -1007,9 +1396,7 @@ export function BuildPreviewPanel() {
           padding: viewport !== 'desktop' && viewMode === 'preview' && activeArtifact ? '16px' : '0',
         }}
       >
-        {viewMode === 'browser' ? (
-          <LiveBrowserRunner />
-        ) : activeArtifact ? (
+        {activeArtifact ? (
           ['pdf', 'xlsx', 'docx', 'pptx', 'csv'].includes(activeArtifact.language) ? (
             /* Multi-Format Document Viewer */
             <DocumentViewer
@@ -1035,6 +1422,7 @@ export function BuildPreviewPanel() {
               }}
             >
               <iframe
+                ref={iframeRef}
                 key={reloadKey}
                 srcDoc={iframeSrcDoc}
                 sandbox="allow-scripts allow-modals allow-downloads allow-same-origin"
@@ -1043,6 +1431,7 @@ export function BuildPreviewPanel() {
                   height: '100%',
                   border: 'none',
                   backgroundColor: '#FFFFFF',
+                  pointerEvents: isDragging ? 'none' : 'auto',
                 }}
                 title={activeArtifact.title || 'Interactive Preview'}
               />
@@ -1189,10 +1578,22 @@ export function BuildPreviewPanel() {
                 {tb.samplePrompt}
               </div>
 
-              {/* 1. Realtime Browser Runner */}
+              {/* 1. Mermaid Flowchart Demo */}
               <button
                 type="button"
-                onClick={() => setViewMode('browser')}
+                onClick={() => {
+                  const mermaidDemo = `flowchart TD
+    A([🚀 Start]) --> B{User Logged In?}
+    B -- Yes --> C[Load Dashboard]
+    B -- No --> D[Show Login Page]
+    D --> E[Enter Credentials]
+    E --> F{Valid?}
+    F -- Yes --> C
+    F -- No --> G[Show Error]
+    G --> D
+    C --> H([✅ Done])`;
+                  openArtifact(mermaidDemo, 'mermaid', 'Flowchart Demo');
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1210,8 +1611,7 @@ export function BuildPreviewPanel() {
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Globe size={14} color="var(--brand-primary)" />
-                  <span>🌐 Realtime Agent Browser Runner</span>
+                  <span>🔷 Mermaid Flowchart Demo</span>
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--brand-primary)', fontWeight: 700 }}>Launch →</span>
               </button>

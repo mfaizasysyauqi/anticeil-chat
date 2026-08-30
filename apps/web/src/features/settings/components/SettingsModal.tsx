@@ -186,14 +186,7 @@ CREATE POLICY "Users can manage own workspace data" ON public.workspace_data FOR
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [mounted, setMounted] = useState(false);
   const storeActiveTab = useSettingsStore((s) => s.activeSettingsTab);
-  const setStoreActiveTab = useSettingsStore((s) => s.setSettingsTab);
-  const [activeTab, setActiveTab] = useState<SettingsTab>(storeActiveTab || 'keys');
-
-  useEffect(() => {
-    if (storeActiveTab) {
-      setActiveTab(storeActiveTab);
-    }
-  }, [storeActiveTab, isOpen]);
+  const activeTab: SettingsTab = storeActiveTab || 'keys';
 
   const apiKeys = useSettingsStore((s) => s.apiKeys);
   const setApiKey = useSettingsStore((s) => s.setApiKey);
@@ -217,6 +210,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const dynamicModels = useSettingsStore((s) => s.dynamicModels);
   const isLoadingModels = useSettingsStore((s) => s.isLoadingModels);
   const refreshModels = useSettingsStore((s) => s.refreshModels);
+  const testConnectionStatus = useSettingsStore((s) => s.testConnectionStatus);
+  const testConnection = useSettingsStore((s) => s.testConnection);
 
   const sessions = useChatStore((s) => s.sessions);
   const messages = useChatStore((s) => s.messages);
@@ -1272,6 +1267,72 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                           </a>
                         )}
                       </div>
+
+                      {/* ── Uji Koneksi / Test Connection Row ── */}
+                      {(() => {
+                        const provId = prov.id;
+                        const ts = testConnectionStatus[provId];
+                        const isTesting = ts?.testing === true;
+                        const result = ts?.result;
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => testConnection(provId)}
+                              disabled={isTesting}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border-subtle)',
+                                background: isTesting ? 'var(--bg-surface)' : 'var(--bg-main)',
+                                color: 'var(--text-secondary)',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                cursor: isTesting ? 'not-allowed' : 'pointer',
+                                whiteSpace: 'nowrap',
+                                opacity: isTesting ? 0.7 : 1,
+                              }}
+                            >
+                              <RefreshCw
+                                size={11}
+                                style={{ animation: isTesting ? 'spin 1s linear infinite' : 'none' }}
+                              />
+                              <span>
+                                {isTesting
+                                  ? (language === 'id' ? 'Menguji...' : 'Testing...')
+                                  : (language === 'id' ? 'Uji Koneksi' : 'Test Connection')}
+                              </span>
+                            </button>
+
+                            {result && !isTesting && (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  color: result.success ? 'var(--accent-success)' : '#f87171',
+                                  padding: '3px 8px',
+                                  borderRadius: '12px',
+                                  background: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(248, 113, 113, 0.1)',
+                                  border: `1px solid ${result.success ? 'rgba(34, 197, 94, 0.3)' : 'rgba(248, 113, 113, 0.3)'}`,
+                                  maxWidth: '100%',
+                                }}
+                              >
+                                <span>{result.success ? '✓' : '✗'}</span>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '260px' }}>
+                                  {result.message}
+                                  {result.latencyMs !== undefined && result.success ? ` · ${result.latencyMs}ms` : ''}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Expanded Base URL field */}
                       {(isEndpointOpen || prov.id === 'omniroute' || prov.id === 'custom') && (

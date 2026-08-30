@@ -10,7 +10,7 @@ export interface Artifact {
 }
 
 export type ViewportMode = 'desktop' | 'tablet' | 'mobile';
-export type ViewMode = 'preview' | 'code' | 'browser';
+export type ViewMode = 'preview' | 'code';
 
 interface BuildState {
   isOpen: boolean;
@@ -24,7 +24,6 @@ interface BuildState {
 
   // Actions
   openArtifact: (code: string, language?: string, title?: string) => void;
-  openBrowserAgent: () => void;
   close: () => void;
   toggle: () => void;
   setViewMode: (mode: ViewMode) => void;
@@ -47,13 +46,6 @@ export const useBuildStore = create<BuildState>((set, get) => ({
   viewport: 'desktop',
   isFullscreen: false,
   reloadKey: 0,
-
-  openBrowserAgent: () => {
-    set({
-      isOpen: true,
-      viewMode: 'browser',
-    });
-  },
 
   openArtifact: (code, language = 'html', title = 'Interactive App') => {
     const state = get();

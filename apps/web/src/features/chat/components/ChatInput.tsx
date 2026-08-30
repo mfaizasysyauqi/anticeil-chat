@@ -752,7 +752,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
           </div>
 
           {/* Right Group (Grok Order: Model Selector -> Mic -> Send) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexShrink: 1 }}>
             {/* 1. Model Selector Dropdown Text (Grok style) */}
             <button
               type="button"
@@ -762,16 +762,18 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '4px',
                 background: 'transparent',
                 border: 'none',
                 color: 'var(--text-secondary)',
-                padding: '5px 8px',
+                padding: '4px 6px',
                 borderRadius: 'var(--radius-md)',
-                fontSize: '13px',
+                fontSize: '12.5px',
                 fontWeight: 500,
                 cursor: 'pointer',
-                maxWidth: '220px',
+                maxWidth: '180px',
+                minWidth: 0,
+                flexShrink: 1,
                 transition: 'color 0.15s ease, background 0.15s ease',
               }}
             >
@@ -782,12 +784,13 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                   whiteSpace: 'nowrap',
                   color: 'var(--text-primary)',
                   fontWeight: 500,
-                  fontSize: '13px',
+                  fontSize: '12.5px',
+                  minWidth: 0,
                 }}
               >
                 {modelDisplayName}
               </span>
-              <ChevronDown size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+              <ChevronDown size={13} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
             </button>
 
             {/* 2. Speech-to-Text Mic Icon */}

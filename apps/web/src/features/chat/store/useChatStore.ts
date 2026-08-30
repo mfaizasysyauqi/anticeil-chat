@@ -25,6 +25,7 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
+import { useBuildStore } from './useBuildStore';
 
 interface ChatState {
   sessions: ChatSession[];
@@ -572,6 +573,34 @@ export const useChatStore = create<ChatState>()(
               }
             },
           });
+
+          // Auto-open Canvas if the response contains a standalone previewable artifact
+          if (!controller.signal.aborted) {
+            const codeMatch = accumulatedText.match(/```(html|htm|javascript|js|jsx|tsx|svg|mermaid|mmd)\n([\s\S]*?)```/);
+            if (codeMatch && codeMatch[2].trim().length > 100) {
+              const lang = codeMatch[1];
+              const code = codeMatch[2].trim();
+              const isRunnableApp =
+                lang === 'html' ||
+                lang === 'htm' ||
+                lang === 'svg' ||
+                lang === 'mermaid' ||
+                lang === 'mmd' ||
+                code.includes('<!DOCTYPE') ||
+                code.includes('<html') ||
+                code.includes('<script') ||
+                code.includes('function ') ||
+                code.includes('<canvas') ||
+                code.includes('export default function') ||
+                code.includes('function App(');
+              if (isRunnableApp) {
+                // Slight delay so the message finishes rendering first
+                setTimeout(() => {
+                  useBuildStore.getState().openArtifact(code, lang === 'htm' ? 'html' : lang, 'Canvas Preview');
+                }, 300);
+              }
+            }
+          }
 
           // Check if tool calls were triggered in main text OR in reasoning/thinking stream
           let { toolCalls } = parseToolCallsFromLLM(accumulatedText);

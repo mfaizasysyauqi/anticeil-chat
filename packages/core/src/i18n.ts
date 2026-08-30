@@ -30,6 +30,7 @@ export const TRANSLATIONS = {
     nav: {
       chat: 'Chat',
       newChat: 'New Chat',
+      docs: 'Docs & LaTeX',
       imagine: 'Image',
       pdfTools: 'PDF',
       automations: 'Automations',
@@ -389,6 +390,7 @@ export const TRANSLATIONS = {
     nav: {
       chat: 'Percakapan',
       newChat: 'Percakapan Baru',
+      docs: 'Dokumen & LaTeX',
       imagine: 'Gambar',
       pdfTools: 'PDF',
       automations: 'Otomatisasi',

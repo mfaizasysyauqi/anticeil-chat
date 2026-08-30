@@ -102,6 +102,31 @@ CREATE TABLE IF NOT EXISTS public.workspace_data (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 8. Document Folders (Docs Studio Project Folders)
+CREATE TABLE IF NOT EXISTS public.doc_folders (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  doc_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 9. Documents (Docs Studio - Markdown, LaTeX, Spreadsheet, Slide & Overleaf Multi-Files)
+CREATE TABLE IF NOT EXISTS public.documents (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL DEFAULT 'Untitled Document',
+  content TEXT NOT NULL DEFAULT '',
+  format TEXT NOT NULL DEFAULT 'markdown', -- 'markdown' | 'latex' | 'spreadsheet' | 'slide'
+  is_pinned BOOLEAN DEFAULT FALSE,
+  folder_id TEXT,
+  files JSONB NOT NULL DEFAULT '[]'::jsonb, -- Overleaf-style subfiles [{id, name, content, isMain, ...}]
+  active_file_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- INDEXES FOR MAXIMUM QUERY PERFORMANCE
 -- ==============================================================================
@@ -114,6 +139,10 @@ CREATE INDEX IF NOT EXISTS idx_project_folders_user ON public.project_folders(us
 CREATE INDEX IF NOT EXISTS idx_user_prompts_user ON public.user_prompts(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_connectors_user ON public.user_connectors(user_id);
 CREATE INDEX IF NOT EXISTS idx_workspace_data_user ON public.workspace_data(user_id);
+CREATE INDEX IF NOT EXISTS idx_doc_folders_user ON public.doc_folders(user_id);
+CREATE INDEX IF NOT EXISTS idx_documents_user ON public.documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_documents_folder ON public.documents(folder_id);
+CREATE INDEX IF NOT EXISTS idx_documents_updated ON public.documents(updated_at DESC);
 
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -127,6 +156,8 @@ ALTER TABLE public.project_folders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_connectors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.doc_folders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
@@ -150,6 +181,16 @@ CREATE POLICY "Users can manage own messages" ON public.chat_messages
 -- Project Folders Policies
 DROP POLICY IF EXISTS "Users can manage own project folders" ON public.project_folders;
 CREATE POLICY "Users can manage own project folders" ON public.project_folders
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Document Folders Policies (Docs Studio)
+DROP POLICY IF EXISTS "Users can manage own doc folders" ON public.doc_folders;
+CREATE POLICY "Users can manage own doc folders" ON public.doc_folders
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Documents Policies (Docs Studio)
+DROP POLICY IF EXISTS "Users can manage own documents" ON public.documents;
+CREATE POLICY "Users can manage own documents" ON public.documents
   FOR ALL USING (auth.uid() = user_id);
 
 -- User Prompts Policies

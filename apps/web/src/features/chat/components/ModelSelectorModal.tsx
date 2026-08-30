@@ -18,6 +18,7 @@ import {
   Globe,
   Video,
   KeyRound,
+  Search,
 } from 'lucide-react';
 import {
   PROVIDER_DEFINITIONS,
@@ -29,12 +30,21 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useChatStore } from '../store/useChatStore';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
-interface ModelSelectorModalProps {
+export interface ModelSelectorModalProps {
   onClose: () => void;
   targetCapability?: 'text' | 'image' | 'audio' | 'video';
+  currentProviderId?: LLMProviderId;
+  currentModelId?: string;
+  onSelectModel?: (providerId: LLMProviderId, modelId: string) => void;
 }
 
-export function ModelSelectorModal({ onClose, targetCapability = 'text' }: ModelSelectorModalProps) {
+export function ModelSelectorModal({
+  onClose,
+  targetCapability = 'text',
+  currentProviderId: propProviderId,
+  currentModelId: propModelId,
+  onSelectModel,
+}: ModelSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -47,20 +57,23 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
   const activeProviderId = useSettingsStore((s) => s.activeProviderId);
   const activeModelId = useSettingsStore((s) => s.activeModelId);
 
-  const currentProviderId = activeSession?.providerId || activeProviderId || 'openai';
-  const currentModelId = activeSession?.modelId || activeModelId;
+  const currentProviderId = propProviderId || activeSession?.providerId || activeProviderId || 'openai';
+  const currentModelId = propModelId || activeSession?.modelId || activeModelId;
 
   // Filter providers to only those matching the target capability
   const filteredProviders = PROVIDER_DEFINITIONS.filter((provider) => {
     if (targetCapability === 'text' || !targetCapability) {
-      // Text generation / reasoning (Chat, PDF Studio, Automations): exclude pure audio/image providers
-      return provider.id !== 'elevenlabs' && provider.id !== 'stability';
+      // Chat: only show providers whose category is chat or custom (gateway/local)
+      return provider.category === 'chat' || provider.category === 'custom';
     }
     if (targetCapability === 'audio') {
-      return provider.id === 'elevenlabs';
+      return provider.category === 'audio';
     }
     if (targetCapability === 'image') {
-      return provider.id === 'stability';
+      return provider.category === 'image';
+    }
+    if (targetCapability === 'video') {
+      return provider.category === 'video';
     }
     return true;
   });
@@ -78,7 +91,7 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
   const refreshModels = useSettingsStore((s) => s.refreshModels);
   const isLoadingModels = useSettingsStore((s) => s.isLoadingModels);
   const dynamicModels = useSettingsStore((s) => s.dynamicModels);
-  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
 
   const isCurrentProviderLoading = Boolean(isLoadingModels[selectedProviderId]);
   const rawModels = getModelsForProvider(selectedProviderId);
@@ -88,12 +101,28 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
     seenModelIds.add(m.id);
 
     if (targetCapability === 'text' || !targetCapability) {
-      // Filter out pure video/image generation models
+      // Keep only models that can do text/chat; exclude pure media-gen models
+      if (m.capabilities?.text === false) return false;
       if (m.capabilities?.video && !m.capabilities?.text) return false;
       if (m.capabilities?.imageGen && !m.capabilities?.text) return false;
-      if (m.id.includes('video') || m.id.includes('flux') || m.id.includes('sdxl') || m.id.includes('suno') || m.id.includes('udio')) return false;
     }
     return true;
+  });
+
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
+
+  useEffect(() => {
+    setModelSearchQuery('');
+  }, [selectedProviderId]);
+
+  const filteredModels = models.filter((m) => {
+    if (!modelSearchQuery.trim()) return true;
+    const q = modelSearchQuery.toLowerCase().trim();
+    return (
+      m.id.toLowerCase().includes(q) ||
+      m.name.toLowerCase().includes(q) ||
+      (m.description && m.description.toLowerCase().includes(q))
+    );
   });
 
   const isLiveFetched = Boolean(dynamicModels[selectedProviderId] && dynamicModels[selectedProviderId]!.length > 0);
@@ -108,7 +137,9 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
   }, [selectedProviderId, hasKey, dynamicModels, refreshModels]);
 
   const handleSelectModel = (model: LLMModel) => {
-    if (activeSession) {
+    if (onSelectModel) {
+      onSelectModel(model.providerId, model.id);
+    } else if (activeSession) {
       updateSession(activeSession.id, {
         providerId: model.providerId,
         modelId: model.id,
@@ -169,7 +200,7 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
             <button
               onClick={() => {
                 onClose();
-                setSettingsOpen(true);
+                openSettingsTab('keys');
               }}
               title={language === 'id' ? 'Buka Pengaturan Kunci API' : 'Manage API Keys'}
               className="clickable-pill"
@@ -244,7 +275,21 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
             {filteredProviders.map((provider) => {
               const isSelected = provider.id === selectedProviderId;
               const providerHasKey = hasConfiguredKey(provider.id);
-              const isFreeProvider = provider.id === 'anticeil' || !provider.requiresApiKey;
+              const badgeInfo = (() => {
+                if (provider.id === 'anticeil') {
+                  return { text: 'FREE', color: 'var(--accent-success, #10b981)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
+                }
+                if (provider.id === 'ollama') {
+                  return { text: 'LOCAL', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)', border: 'rgba(96, 165, 250, 0.3)' };
+                }
+                if (provider.id === 'omniroute') {
+                  return { text: 'GATEWAY', color: '#818cf8', bg: 'rgba(129, 140, 248, 0.15)', border: 'rgba(129, 140, 248, 0.3)' };
+                }
+                if (provider.id === 'custom') {
+                  return { text: 'CUSTOM', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.3)' };
+                }
+                return null;
+              })();
 
               return (
                 <button
@@ -275,27 +320,27 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {provider.name}
                     </span>
-                    {isFreeProvider && (
+                    {badgeInfo && (
                       <span
                         style={{
                           fontSize: '9px',
                           fontWeight: 700,
                           padding: '1px 5px',
                           borderRadius: '3px',
-                          background: 'rgba(16, 185, 129, 0.15)',
-                          color: 'var(--accent-success, #10b981)',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          background: badgeInfo.bg,
+                          color: badgeInfo.color,
+                          border: `1px solid ${badgeInfo.border}`,
                           letterSpacing: '0.04em',
                           flexShrink: 0,
                         }}
                       >
-                        FREE
+                        {badgeInfo.text}
                       </span>
                     )}
                   </div>
                   {providerHasKey ? (
                     <span
-                      title={isFreeProvider ? 'Free & Ready' : 'API Key Configured'}
+                      title={provider.id === 'anticeil' ? 'Free Cloud Tier Ready' : 'API Key / Endpoint Active'}
                       style={{
                         width: '6px',
                         height: '6px',
@@ -305,7 +350,7 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
                       }}
                     />
                   ) : (
-                    <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                    <span title="Endpoint / API Key not configured" style={{ display: 'inline-flex', flexShrink: 0 }}>
                       <AlertCircle size={13} color="var(--accent-warning)" />
                     </span>
                   )}
@@ -363,16 +408,33 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <AlertCircle size={14} style={{ flexShrink: 0 }} />
                   <span>
-                    {language === 'id'
-                      ? `Kunci API ${PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId)?.name} belum diatur.`
-                      : `API Key for ${PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId)?.name} is missing.`}
+                    {(() => {
+                      if (selectedProviderId === 'ollama') {
+                        return language === 'id'
+                          ? 'Ollama belum aktif di localhost:11434 atau belum ada model terunduh.'
+                          : 'Ollama is not running on localhost:11434 or has no models installed.';
+                      }
+                      if (selectedProviderId === 'omniroute') {
+                        return language === 'id'
+                          ? 'OmniRoute Gateway belum aktif di port 20128 atau API Key belum diisi.'
+                          : 'OmniRoute Gateway is not active on port 20128 or API key missing.';
+                      }
+                      if (selectedProviderId === 'custom') {
+                        return language === 'id'
+                          ? 'Custom Endpoint belum terhubung di port lokal.'
+                          : 'Custom Endpoint is not connected or reachable.';
+                      }
+                      return language === 'id'
+                        ? `Kunci API ${PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId)?.name} belum diatur.`
+                        : `API Key for ${PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId)?.name} is missing.`;
+                    })()}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
                     onClose();
-                    setSettingsOpen(true);
+                    openSettingsTab('keys');
                   }}
                   style={{
                     backgroundColor: 'var(--accent-warning)',
@@ -391,6 +453,59 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
               </div>
             )}
 
+            {/* Model Search Bar */}
+            {models.length > 4 && (
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search
+                  size={13}
+                  style={{
+                    position: 'absolute',
+                    left: '10px',
+                    color: 'var(--text-muted)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={modelSearchQuery}
+                  onChange={(e) => setModelSearchQuery(e.target.value)}
+                  placeholder={
+                    language === 'id'
+                      ? `Cari dari ${models.length} model... (mis. gemini, groq, sonnet, r1, flash)`
+                      : `Search ${models.length} models... (e.g. gemini, groq, sonnet, r1, flash)`
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '7px 28px 7px 30px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-main)',
+                    color: 'var(--text-primary)',
+                    fontSize: '12px',
+                    outline: 'none',
+                  }}
+                />
+                {modelSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setModelSearchQuery('')}
+                    style={{
+                      position: 'absolute',
+                      right: '8px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      fontSize: '11px',
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Status bar for live sync */}
             <div
               style={{
@@ -404,7 +519,9 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
               }}
             >
               <span>
-                {models.length} {t.models.modelsAvailable}
+                {filteredModels.length !== models.length
+                  ? `${filteredModels.length} / ${models.length} ${t.models.modelsAvailable}`
+                  : `${models.length} ${t.models.modelsAvailable}`}
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span
@@ -419,7 +536,28 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
               </span>
             </div>
 
-            {models.map((model) => {
+            {filteredModels.length === 0 ? (
+              <div
+                style={{
+                  padding: '36px 16px',
+                  textAlign: 'center',
+                  color: 'var(--text-muted)',
+                  fontSize: '13px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Search size={22} style={{ opacity: 0.4 }} />
+                <span>
+                  {language === 'id'
+                    ? `Tidak ada model yang cocok dengan "${modelSearchQuery}"`
+                    : `No models match "${modelSearchQuery}"`}
+                </span>
+              </div>
+            ) : (
+              filteredModels.map((model) => {
               const isCurrent = currentModelId === model.id;
               const caps = model.capabilities;
               const hasVision = caps?.vision ?? model.supportsVision;
@@ -664,7 +802,7 @@ export function ModelSelectorModal({ onClose, targetCapability = 'text' }: Model
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       </div>

@@ -12,6 +12,8 @@ import {
   PROVIDER_DEFINITIONS,
   PROVIDER_MODELS,
   fetchProviderModels,
+  testProviderConnection,
+  ProviderConnectionTestResult,
 } from '@anticeil/core';
 
 import { FREE_GROQ_KEYS, FREE_GEMINI_KEYS } from '../../chat/data/byokApi';
@@ -20,6 +22,7 @@ interface SettingsState {
   apiKeys: ApiKeysState;
   dynamicModels: Partial<Record<LLMProviderId, LLMModel[]>>;
   isLoadingModels: Partial<Record<LLMProviderId, boolean>>;
+  testConnectionStatus: Partial<Record<LLMProviderId, { testing: boolean; result?: ProviderConnectionTestResult }>>;
   activeProviderId: LLMProviderId;
   activeModelId: string;
   theme: 'dark' | 'light';
@@ -50,6 +53,7 @@ interface SettingsState {
   hasConfiguredKey: (providerId: LLMProviderId) => boolean;
   refreshModels: (providerId?: LLMProviderId) => Promise<void>;
   getModelsForProvider: (providerId: LLMProviderId) => LLMModel[];
+  testConnection: (providerId: LLMProviderId) => Promise<void>;
   clearAllKeys: () => void;
   importApiKeys: (imported: Partial<ApiKeysState>) => void;
 }
@@ -103,6 +107,7 @@ export const useSettingsStore = create<SettingsState>()(
       apiKeys: initialApiKeys,
       dynamicModels: {},
       isLoadingModels: {},
+      testConnectionStatus: {},
       activeProviderId: DEFAULT_PROVIDER_ID,
       activeModelId: DEFAULT_MODEL_ID,
       theme: getInitialTheme(),
@@ -204,14 +209,20 @@ export const useSettingsStore = create<SettingsState>()(
       hasConfiguredKey: (providerId) => {
         // Built-in free tier key available only for Anticeil
         if (providerId === 'anticeil') return true;
+
         const config = get().apiKeys[providerId];
-        const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
-        // For local/keyless providers: ready only if models have been fetched
-        if (!providerDef?.requiresApiKey) {
-          const models = get().dynamicModels[providerId];
-          return Boolean(models && models.length > 0);
+        const apiKey = config?.apiKey?.trim() || '';
+        const liveModels = get().dynamicModels[providerId];
+        const hasLiveModels = Boolean(liveModels && liveModels.length > 0);
+
+        // For local / gateway / custom providers (ollama, omniroute, custom):
+        if (providerId === 'ollama' || providerId === 'omniroute' || providerId === 'custom') {
+          // Ready only if local server actually responded with live models OR user provided custom API key
+          return hasLiveModels || apiKey.length >= 4;
         }
-        return Boolean(config?.apiKey && config.apiKey.length > 5);
+
+        // For cloud providers:
+        return apiKey.length >= 4;
       },
 
       refreshModels: async (targetProviderId) => {
@@ -259,14 +270,36 @@ export const useSettingsStore = create<SettingsState>()(
           }));
 
           try {
-            const fetched = await fetchProviderModels(providerId, apiKey, baseUrl);
+            let fetched: LLMModel[] = [];
+            try {
+              const res = await fetch('/api/models/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ providerId, apiKey, baseUrl }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.models && Array.isArray(data.models) && data.models.length > 0) {
+                  fetched = data.models;
+                }
+              }
+            } catch {
+              fetched = await fetchProviderModels(providerId, apiKey, baseUrl);
+            }
+
             if (fetched && fetched.length > 0) {
               set((s) => ({
                 dynamicModels: { ...s.dynamicModels, [providerId]: fetched },
               }));
+            } else {
+              set((s) => ({
+                dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
+              }));
             }
           } catch (err) {
-            console.warn(`[Anticeil] Failed refreshing models for ${providerId}:`, err);
+            set((s) => ({
+              dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
+            }));
           } finally {
             set((s) => ({
               isLoadingModels: { ...s.isLoadingModels, [providerId]: false },
@@ -289,8 +322,60 @@ export const useSettingsStore = create<SettingsState>()(
         });
       },
 
+      testConnection: async (providerId) => {
+        const { apiKeys } = get();
+        const apiKey = apiKeys[providerId]?.apiKey || '';
+        let baseUrl = apiKeys[providerId]?.baseUrl;
+
+        if (providerId === 'omniroute' && (!baseUrl || baseUrl.includes('openrouter.ai'))) {
+          baseUrl = 'http://localhost:20128/v1';
+        } else if (providerId === 'custom' && baseUrl?.includes('openrouter.ai')) {
+          baseUrl = 'http://localhost:1234/v1';
+        }
+
+        set((s) => ({
+          testConnectionStatus: {
+            ...s.testConnectionStatus,
+            [providerId]: { testing: true, result: undefined },
+          },
+        }));
+        try {
+          let result: ProviderConnectionTestResult;
+          try {
+            const res = await fetch('/api/models/test', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ providerId, apiKey, baseUrl }),
+            });
+            result = await res.json();
+          } catch {
+            result = await testProviderConnection(providerId, apiKey, baseUrl);
+          }
+
+          set((s) => ({
+            testConnectionStatus: {
+              ...s.testConnectionStatus,
+              [providerId]: { testing: false, result },
+            },
+          }));
+          // On success, populate dynamic models from the test result
+          if (result.success && result.models && result.models.length > 0) {
+            set((s) => ({
+              dynamicModels: { ...s.dynamicModels, [providerId]: result.models },
+            }));
+          }
+        } catch {
+          set((s) => ({
+            testConnectionStatus: {
+              ...s.testConnectionStatus,
+              [providerId]: { testing: false, result: { success: false, message: 'Gagal terhubung' } },
+            },
+          }));
+        }
+      },
+
       clearAllKeys: () => {
-        set({ apiKeys: initialApiKeys, dynamicModels: {} });
+        set({ apiKeys: initialApiKeys, dynamicModels: {}, testConnectionStatus: {} });
       },
 
       importApiKeys: (imported) => {

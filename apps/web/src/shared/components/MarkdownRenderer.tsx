@@ -85,7 +85,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
 
   const normalizedLang = (language || '').toLowerCase().trim();
   const isPreviewable =
-    ['html', 'htm', 'jsx', 'tsx', 'javascript', 'js', 'react', 'svg', 'xml'].includes(normalizedLang) ||
+    ['html', 'htm', 'jsx', 'tsx', 'javascript', 'js', 'react', 'svg', 'xml', 'python', 'py', 'mermaid', 'mmd'].includes(normalizedLang) ||
     code.includes('<!DOCTYPE html>') ||
     code.includes('<html') ||
     code.includes('<svg') ||
@@ -117,19 +117,21 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '5px 12px',
+          padding: '6px 12px',
           background: 'var(--bg-subtle)',
           borderBottom: '1px solid var(--border-subtle)',
           fontSize: '11px',
           color: 'var(--text-muted)',
           fontFamily: 'JetBrains Mono, monospace',
+          gap: '8px',
+          whiteSpace: 'nowrap',
         }}
       >
-        <span style={{ textTransform: 'lowercase', fontWeight: 600 }}>
+        <span style={{ textTransform: 'lowercase', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
           {language || 'text'}
         </span>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, whiteSpace: 'nowrap' }}>
           {isPreviewable && (
             <button
               type="button"
@@ -147,6 +149,8 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
                 padding: '2px 8px',
                 borderRadius: '4px',
                 transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               <Play size={10} fill="currentColor" />
@@ -167,6 +171,8 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
               gap: '4px',
               fontSize: '11px',
               padding: '2px 4px',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {copied ? <Check size={12} /> : <Copy size={12} />}

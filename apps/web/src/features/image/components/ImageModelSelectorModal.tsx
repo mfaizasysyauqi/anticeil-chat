@@ -422,7 +422,7 @@ export function ImageModelSelectorModal({
   onSelectModel,
 }: ImageModelSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
-  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const language = useSettingsStore((s) => s.language);
   const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
 
@@ -611,7 +611,7 @@ export function ImageModelSelectorModal({
               type="button"
               onClick={() => {
                 onClose();
-                setSettingsOpen(true);
+                openSettingsTab('keys');
               }}
               style={{
                 display: 'flex',
