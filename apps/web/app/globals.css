@@ -13,10 +13,9 @@
   --bg-ai-bubble:      transparent;
   --border-subtle:     rgba(255, 255, 255, 0.07);
   --border-strong:     rgba(255, 255, 255, 0.13);
-  --border-focus:      rgba(0, 115, 234, 0.45);
-  --text-primary:      #f2f2f2;
-  --text-secondary:    #a0a0a0;
-  --text-muted:        #666666;
+  --text-primary:      #f5f5f5;
+  --text-secondary:    #b8b8b8;
+  --text-muted:        #8e8e8e;
 
   /* Brand & Accent — unchanged */
   --brand-primary:        #0073EA;
@@ -147,7 +146,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Theme-Aware Browser Autofill Styling */
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.95;
+}
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
