@@ -2,21 +2,22 @@
 
 import React from 'react';
 import { AppShell } from '../../src/shared/components/AppShell';
-import { DocsView } from '../../src/features/docs/components/DocsView';
-import { useDocsStore } from '../../src/features/docs/store/useDocsStore';
+import { DocsLandingView } from '../../src/features/docs/components/DocsLandingView';
+import { useDocsStore, DocFormat } from '../../src/features/docs/store/useDocsStore';
+import { useRouter } from 'next/navigation';
 
 export default function DocsPage() {
-  const studioPhase = useDocsStore((s) => s.studioPhase);
+  const router = useRouter();
+  const createDocument = useDocsStore((s) => s.createDocument);
 
-  // In full editor mode, use the full immersive screen
-  if (studioPhase === 'editor') {
-    return <DocsView />;
-  }
+  const handleStartGenerate = (prompt: string, format: DocFormat) => {
+    const newId = createDocument('Generated Document', '', format);
+    router.push(`/docs/${newId}`);
+  };
 
-  // In landing or generating phase, keep the standard AppShell with Sidebar & Navbar
   return (
     <AppShell showSidebar={true}>
-      <DocsView />
+      <DocsLandingView onStartGenerate={handleStartGenerate} />
     </AppShell>
   );
 }

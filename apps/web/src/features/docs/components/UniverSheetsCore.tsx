@@ -39,8 +39,21 @@ export default function UniverSheetsCore({
   const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current) {
+      console.warn('[UniverSheetsCore] containerRef is null, skipping init');
+      return;
+    }
+
+    // Create a dedicated inner container for this instance to prevent StrictMode race conditions
+    const wrapper = document.createElement('div');
+    wrapper.style.width = '100%';
+    wrapper.style.height = '100%';
+    wrapper.style.position = 'relative';
+    wrapper.style.overflow = 'hidden';
+    containerRef.current.appendChild(wrapper);
+
     let isCancelled = false;
+    let univerInstance: Univer | null = null;
 
     // Parse existing markdown table content into Univer cell data
     const cellData: Record<number, Record<number, { v: string | number; t?: number }>> = {};
@@ -115,17 +128,23 @@ export default function UniverSheetsCore({
       univer.registerPlugin(UniverRenderEnginePlugin);
       univer.registerPlugin(UniverFormulaEnginePlugin);
       univer.registerPlugin(UniverUIPlugin, {
-        container: containerRef.current,
+        container: wrapper,
         header: true,
+        toolbar: true,
+        ribbonType: 'simple',
         footer: true,
         contextMenu: true,
       });
-      univer.registerPlugin(UniverDocsPlugin);
+      univer.registerPlugin(UniverDocsPlugin, {
+        hasScroll: false,
+      });
       univer.registerPlugin(UniverDocsUIPlugin);
       univer.registerPlugin(UniverSheetsPlugin, {
         notExecuteFormula: false,
       });
-      univer.registerPlugin(UniverSheetsUIPlugin);
+      univer.registerPlugin(UniverSheetsUIPlugin, {
+        disableEdit: false,
+      });
       univer.registerPlugin(UniverSheetsFormulaPlugin);
 
       // Create workbook unit
@@ -157,9 +176,18 @@ export default function UniverSheetsCore({
       });
 
       if (!isCancelled) {
+        univerInstance = univer;
         univerRef.current = univer;
+        console.log('[UniverSheetsCore] ✅ Univer initialized and mounted in wrapper');
       } else {
-        univer.dispose();
+        setTimeout(() => {
+          try {
+            univer.dispose();
+          } catch {}
+          if (wrapper.parentNode) {
+            wrapper.parentNode.removeChild(wrapper);
+          }
+        }, 0);
       }
     } catch (err: any) {
       console.error('[UniverSheetsCore] Error initializing local Univer instance:', err);
@@ -170,14 +198,17 @@ export default function UniverSheetsCore({
 
     return () => {
       isCancelled = true;
-      const current = univerRef.current;
+      const targetUniver = univerInstance;
       setTimeout(() => {
-        if (current) {
-          try {
-            current.dispose();
-          } catch {}
+        try {
+          targetUniver?.dispose();
+        } catch (e) {
+          console.warn('[UniverSheetsCore] Error during async dispose:', e);
         }
-      }, 50);
+        if (wrapper.parentNode) {
+          wrapper.parentNode.removeChild(wrapper);
+        }
+      }, 0);
     };
   }, []);
 
@@ -198,7 +229,7 @@ export default function UniverSheetsCore({
       >
         <span style={{ fontSize: '28px' }}>⚠️</span>
         <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Gagal menginisialisasi Univer Sheets
+          Gagal menginisialisasi Anticeil Sheets
         </span>
         <code style={{ fontSize: '11px', color: '#ef4444', backgroundColor: 'var(--bg-subtle)', padding: '6px 12px', borderRadius: '6px' }}>
           {initError}
@@ -209,6 +240,7 @@ export default function UniverSheetsCore({
 
   return (
     <div
+      id="anticeil-univer-sheet-container"
       ref={containerRef}
       style={{
         position: 'absolute',

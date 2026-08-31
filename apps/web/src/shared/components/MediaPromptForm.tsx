@@ -110,64 +110,24 @@ export function MediaPromptForm({
       />
 
       {/* Bottom Toolbar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: '8px',
-          paddingTop: '6px',
-          gap: '8px',
-        }}
-      >
+      <div className="media-prompt-toolbar">
         {/* Left Side: Additional Controls (Style/Ratio/Voice etc) */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            flex: 1,
-            flexWrap: 'wrap',
-            minWidth: 0,
-          }}
-        >
-          {additionalControls}
-        </div>
+        {additionalControls && (
+          <div className="media-prompt-controls">
+            {additionalControls}
+          </div>
+        )}
 
         {/* Right Side: Model Selector + Submit Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <div className="media-prompt-actions">
           {/* Model Selector Dropdown Text (Grok style matching ChatInput) */}
           <button
             type="button"
             onClick={onModelSelectorOpen}
             title={language === 'id' ? 'Pilih Model' : 'Select Model'}
-            className="clickable-pill"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              padding: '5px 8px',
-              borderRadius: 'var(--radius-md, 8px)',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              maxWidth: '220px',
-              transition: 'color 0.15s ease, background 0.15s ease',
-            }}
+            className="clickable-pill media-prompt-model-btn"
           >
-            <span
-              style={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: 'var(--text-primary)',
-                fontWeight: 500,
-                fontSize: '13px',
-              }}
-            >
+            <span className="media-prompt-model-name">
               {modelDisplayName}
             </span>
             <ChevronDown size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
@@ -200,6 +160,7 @@ export function MediaPromptForm({
                   : 'none',
               cursor: prompt.trim() && !isGenerating ? 'pointer' : 'default',
               transition: 'all 0.15s ease',
+              flexShrink: 0,
             }}
           >
             {isGenerating ? (

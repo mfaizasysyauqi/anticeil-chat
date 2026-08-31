@@ -527,6 +527,7 @@ export function AudioModelSelectorModal({
       onClick={onClose}
     >
       <div
+        className="modal-responsive-container"
         style={{
           width: '100%',
           maxWidth: '920px',
@@ -551,9 +552,11 @@ export function AudioModelSelectorModal({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'var(--bg-surface)',
+            flexWrap: 'wrap',
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <div
               style={{
                 width: '32px',
@@ -564,12 +567,13 @@ export function AudioModelSelectorModal({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               {headerMeta.icon}
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <h3
                   style={{
                     fontSize: '16px',
@@ -594,13 +598,13 @@ export function AudioModelSelectorModal({
                   {headerMeta.badge}
                 </span>
               </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {headerMeta.subtitle}
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             <button
               type="button"
               onClick={() => {
@@ -658,9 +662,10 @@ export function AudioModelSelectorModal({
         </div>
 
         {/* Modal Body: Left Providers + Right Models */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="modal-responsive-body" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left: Providers List */}
           <div
+            className="modal-responsive-sidebar"
             style={{
               width: '240px',
               borderRight: '1px solid var(--border-subtle)',
@@ -669,135 +674,134 @@ export function AudioModelSelectorModal({
               padding: '10px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px',
+              gap: '4px',
               flexShrink: 0,
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  padding: '6px 8px 6px 8px',
-                }}
-              >
-                {headerMeta.sidebarTitle} ({filteredProviders.length})
-              </div>
+            <div
+              className="modal-responsive-sidebar-title"
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                padding: '6px 8px 6px 8px',
+              }}
+            >
+              {headerMeta.sidebarTitle} ({filteredProviders.length})
+            </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {filteredProviders.map((provider) => {
-                  const active = provider.id === activeProviderId;
-                  const hasActiveModel = provider.models.some((m) => m.id === selectedModelId);
+            {filteredProviders.map((provider) => {
+              const active = provider.id === activeProviderId;
+              const hasActiveModel = provider.models.some((m) => m.id === selectedModelId);
 
-                  return (
-                    <button
-                      key={provider.id}
-                      type="button"
-                      onClick={() => setActiveProviderId(provider.id)}
+              return (
+                <button
+                  key={provider.id}
+                  type="button"
+                  onClick={() => setActiveProviderId(provider.id)}
+                  className="modal-responsive-sidebar-item"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '9px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid',
+                    borderColor: active ? '#60a5fa' : 'transparent',
+                    background: active ? 'rgba(96, 165, 250, 0.08)' : 'transparent',
+                    color: active ? '#60a5fa' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease',
+                    position: 'relative',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
+                    <div
                       style={{
+                        width: '24px',
+                        height: '24px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '9px 12px',
-                        borderRadius: '10px',
-                        border: '1px solid',
-                        borderColor: active ? '#60a5fa' : 'transparent',
-                        background: active ? 'rgba(96, 165, 250, 0.08)' : 'transparent',
-                        color: active ? '#60a5fa' : 'var(--text-primary)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                        position: 'relative',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) e.currentTarget.style.backgroundColor = 'transparent';
+                        justifyContent: 'center',
+                        flexShrink: 0,
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
+                      <ProviderBrandLogo provider={provider.logoKey} size={18} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         <div
                           style={{
-                            width: '24px',
-                            height: '24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
+                            fontSize: '13px',
+                            fontWeight: active ? 700 : 500,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                           }}
                         >
-                          <ProviderBrandLogo provider={provider.logoKey} size={18} />
+                          {provider.id.startsWith('anticeil') ? 'Anticeil' : provider.name}
                         </div>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <div
-                              style={{
-                                fontSize: '13px',
-                                fontWeight: active ? 700 : 500,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
-                              {provider.id.startsWith('anticeil') ? 'Anticeil' : provider.name}
-                            </div>
-                            {(provider.badge === 'FREE' ||
-                              provider.models.every((m) => m.keyType === 'free' || m.keyType === 'microsoft')) && (
-                              <span
-                                style={{
-                                  fontSize: '9px',
-                                  fontWeight: 700,
-                                  padding: '1px 5px',
-                                  borderRadius: '4px',
-                                  background: 'rgba(16,185,129,0.15)',
-                                  color: '#10b981',
-                                  border: '1px solid rgba(16,185,129,0.3)',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                FREE
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                            {provider.models.length} {language === 'id' ? 'model' : 'models'}
-                          </div>
-                        </div>
+                        {(provider.badge === 'FREE' ||
+                          provider.models.every((m) => m.keyType === 'free' || m.keyType === 'microsoft')) && (
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              fontWeight: 700,
+                              background: 'rgba(0, 200, 117, 0.12)',
+                              color: 'var(--accent-success)',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              flexShrink: 0,
+                            }}
+                          >
+                            FREE
+                          </span>
+                        )}
                       </div>
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: 'var(--text-muted)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '140px',
+                        }}
+                      >
+                        {provider.models.length} {language === 'id' ? 'model' : 'models'}
+                      </div>
+                    </div>
+                  </div>
 
-                      {providerKeyMissing(provider) ? (
-                        <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
-                          <AlertCircle size={13} color="var(--accent-warning)" />
-                        </span>
-                      ) : (
-                        <span
-                          title={
-                            provider.models.every((m) => m.keyType === 'free' || m.keyType === 'microsoft')
-                              ? 'Free & Ready'
-                              : 'API Key Configured'
-                          }
-                          style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: 'var(--accent-success, #10b981)',
-                            flexShrink: 0,
-                          }}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                  {hasActiveModel && (
+                    <div
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#60a5fa',
+                        flexShrink: 0,
+                        marginLeft: '4px',
+                      }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Right: Models List for Current Provider */}
           <div
+            className="modal-responsive-content"
             style={{
               flex: 1,
               overflowY: 'auto',

@@ -635,10 +635,10 @@ export function ImageView() {
           language={language}
           brandColor="var(--brand-primary)"
           additionalControls={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
               {/* Style selector (Image only) */}
               {mediaMode === 'image' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                   <Palette size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                   <div style={{ position: 'relative' }}>
                     <select
@@ -679,7 +679,7 @@ export function ImageView() {
               />
 
               {/* Ratio buttons Group */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                 <Ratio size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
                 {ratios.map((r) => (
                   <MediaControlButton

@@ -81,6 +81,34 @@ interface DocsState {
 
 const STORAGE_KEY = 'anticeil_docs_v2';
 const FOLDERS_STORAGE_KEY = 'anticeil_doc_folders_v2';
+const PHASE_STORAGE_KEY = 'anticeil_doc_phase_v2';
+const ACTIVE_DOC_STORAGE_KEY = 'anticeil_doc_active_id_v2';
+
+function getInitialPhase(): StudioPhase {
+  if (typeof window === 'undefined') return 'landing';
+  try {
+    const saved = localStorage.getItem(PHASE_STORAGE_KEY);
+    if (saved === 'editor' || saved === 'landing' || saved === 'generating') {
+      return saved === 'generating' ? 'editor' : (saved as StudioPhase);
+    }
+  } catch (err) {
+    console.warn('[DocsStore] Failed to load studio phase:', err);
+  }
+  return 'landing';
+}
+
+function getInitialActiveDocId(initialDocs: DocItem[]): string | null {
+  if (typeof window === 'undefined') return initialDocs[0]?.id ?? null;
+  try {
+    const saved = localStorage.getItem(ACTIVE_DOC_STORAGE_KEY);
+    if (saved && initialDocs.some((d) => d.id === saved)) {
+      return saved;
+    }
+  } catch (err) {
+    console.warn('[DocsStore] Failed to load active doc id:', err);
+  }
+  return initialDocs.length > 0 ? initialDocs[0].id : null;
+}
 
 function getDefaultMainFileName(format: DocFormat): string {
   if (format === 'slide') return 'main.slide';
@@ -178,7 +206,8 @@ function getInitialDocuments(): DocItem[] {
 export const useDocsStore = create<DocsState>((set, get) => {
   const initialDocs = getInitialDocuments();
   const initialFolders = getInitialFolders();
-  const initialActiveId = initialDocs.length > 0 ? initialDocs[0].id : null;
+  const initialPhase = getInitialPhase();
+  const initialActiveId = getInitialActiveDocId(initialDocs);
 
   const saveToStorage = (docs: DocItem[]) => {
     if (typeof window === 'undefined') return;
@@ -198,12 +227,34 @@ export const useDocsStore = create<DocsState>((set, get) => {
     }
   };
 
+  const savePhaseToStorage = (phase: StudioPhase) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(PHASE_STORAGE_KEY, phase);
+    } catch (err) {
+      console.warn('[DocsStore] Failed to write studio phase to localStorage:', err);
+    }
+  };
+
+  const saveActiveDocIdToStorage = (id: string | null) => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (id) {
+        localStorage.setItem(ACTIVE_DOC_STORAGE_KEY, id);
+      } else {
+        localStorage.removeItem(ACTIVE_DOC_STORAGE_KEY);
+      }
+    } catch (err) {
+      console.warn('[DocsStore] Failed to write active doc id to localStorage:', err);
+    }
+  };
+
   return {
     documents: initialDocs,
     folders: initialFolders,
     activeDocId: initialActiveId,
     activeProjectId: null,
-    studioPhase: 'landing',
+    studioPhase: initialPhase,
     selectedFormat: 'latex',
     viewMode: 'split',
     editorFontSize: 13,
@@ -373,11 +424,18 @@ export const useDocsStore = create<DocsState>((set, get) => {
       saveToStorage(updated);
     },
 
-    setStudioPhase: (phase: StudioPhase) => set({ studioPhase: phase }),
+    setStudioPhase: (phase: StudioPhase) => {
+      set({ studioPhase: phase });
+      savePhaseToStorage(phase);
+    },
 
     setSelectedFormat: (format: DocFormat) => set({ selectedFormat: format }),
 
-    setActiveDocId: (id: string) => set({ activeDocId: id, studioPhase: 'editor' }),
+    setActiveDocId: (id: string) => {
+      set({ activeDocId: id, studioPhase: 'editor' });
+      saveActiveDocIdToStorage(id);
+      savePhaseToStorage('editor');
+    },
 
     setActiveProjectId: (projectId: string | null) => set({ activeProjectId: projectId }),
 
@@ -414,6 +472,8 @@ export const useDocsStore = create<DocsState>((set, get) => {
       const updated = [newDoc, ...get().documents];
       set({ documents: updated, activeDocId: newDoc.id, studioPhase: 'editor' });
       saveToStorage(updated);
+      saveActiveDocIdToStorage(newDoc.id);
+      savePhaseToStorage('editor');
       return newDoc.id;
     },
 
@@ -448,6 +508,8 @@ export const useDocsStore = create<DocsState>((set, get) => {
       const updated = [newDoc, ...get().documents];
       set({ documents: updated, activeDocId: newDoc.id, studioPhase: 'editor' });
       saveToStorage(updated);
+      saveActiveDocIdToStorage(newDoc.id);
+      savePhaseToStorage('editor');
       return newDoc.id;
     },
 
@@ -498,9 +560,12 @@ export const useDocsStore = create<DocsState>((set, get) => {
             ? remaining[0].id
             : null
           : get().activeDocId;
+      const nextPhase: StudioPhase = remaining.length === 0 ? 'landing' : get().studioPhase;
 
-      set({ documents: remaining, activeDocId: nextActiveId });
+      set({ documents: remaining, activeDocId: nextActiveId, studioPhase: nextPhase });
       saveToStorage(remaining);
+      saveActiveDocIdToStorage(nextActiveId);
+      savePhaseToStorage(nextPhase);
     },
 
     togglePin: (id: string) => {

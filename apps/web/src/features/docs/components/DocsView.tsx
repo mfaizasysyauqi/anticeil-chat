@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   FileText,
   Plus,
@@ -61,7 +62,12 @@ import { DocsSlideView } from './DocsSlideView';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, LLMProviderId } from '@anticeil/core';
 
-export function DocsView() {
+export interface DocsViewProps {
+  initialDocId?: string;
+}
+
+export function DocsView({ initialDocId }: DocsViewProps = {}) {
+  const router = useRouter();
   const documents = useDocsStore((s) => s.documents);
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const studioPhase = useDocsStore((s) => s.studioPhase);
@@ -100,6 +106,12 @@ export function DocsView() {
   const [activeLogTab, setActiveLogTab] = useState<'all' | 'errors' | 'warnings' | 'info'>('all');
   const [isRecompiling, setIsRecompiling] = useState(false);
   const [previewScale, setPreviewScale] = useState(100);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined' && theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [theme]);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -278,7 +290,8 @@ export function DocsView() {
     window.addEventListener('mouseup', onUp);
   }, [copilotWidth]);
 
-  const activeDoc = documents.find((d) => d.id === activeDocId) || documents[0];
+  const effectiveDocId = initialDocId || activeDocId;
+  const activeDoc = documents.find((d) => d.id === effectiveDocId) || documents[0];
 
   // Active sub-file in the Overleaf multi-file tree
   const docFiles = activeDoc?.files || [];
@@ -827,7 +840,7 @@ ${exportText}
   };
 
   // ── PHASE 1: LANDING VIEW ──
-  if (studioPhase === 'landing') {
+  if (!initialDocId && studioPhase === 'landing') {
     return <DocsLandingView onStartGenerate={handleStartGenerate} />;
   }
 
@@ -899,8 +912,8 @@ ${exportText}
             }}
           >
             <Link
-              href="/chat"
-              title="Anticeil Chat"
+              href="/docs"
+              title="Anticeil Docs"
               style={{
                 width: '32px',
                 height: '32px',
@@ -2284,37 +2297,7 @@ ${exportText}
             </button>
 
 
-            {/* Back button */}
-            <button
-              type="button"
-              onClick={() => setStudioPhase('landing')}
-              className="hover-subtle"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '4px',
-                height: '30px', padding: '0 10px',
-                borderRadius: '6px',
-                backgroundColor: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-secondary)',
-                fontSize: '11.5px', fontWeight: 600,
-                cursor: 'pointer', transition: 'all 0.15s ease', flexShrink: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-strong)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-              }}
-              title="Kembali ke Buat Baru"
-            >
-              <ArrowLeft size={12} />
-              <span>Buat Baru</span>
-            </button>
 
-            {/* Divider */}
-            <span style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-subtle)', flexShrink: 0 }} />
 
             {/* File icon + editable title + format badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
@@ -3185,7 +3168,10 @@ ${exportText}
       <DocsTemplateModal
         isOpen={isTemplateModalOpen}
         onClose={() => setIsTemplateModalOpen(false)}
-        onSelectTemplate={(tplId) => createFromTemplate(tplId)}
+        onSelectTemplate={(tplId) => {
+          const newId = createFromTemplate(tplId);
+          router.push('/docs/' + newId);
+        }}
       />
     </div>
   );

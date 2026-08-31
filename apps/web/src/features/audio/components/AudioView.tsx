@@ -394,7 +394,7 @@ export function AudioView() {
               </div>
 
               {/* Animated Waveform Visualizer when playing */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '20px', padding: '0 8px' }}>
+              <div className="audio-waveform-visualizer" style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '20px', padding: '0 8px' }}>
                 {[12, 18, 10, 22, 14, 20, 8, 16].map((h, idx) => (
                   <div
                     key={idx}
@@ -460,8 +460,9 @@ export function AudioView() {
           </p>
         </div>
 
-        {/* Sub-tab Switcher */}
+        {/* Mode Tabs (Music vs TTS vs STT) */}
         <div
+          className="audio-mode-tabs"
           style={{
             display: 'inline-flex',
             alignSelf: 'flex-start',
@@ -495,6 +496,8 @@ export function AudioView() {
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                   boxShadow: active ? 'var(--shadow-sm, 0 1px 4px rgba(0,0,0,0.12))' : 'none',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
                 }}
                 onMouseEnter={(e) => {
                   if (!active) e.currentTarget.style.color = 'var(--text-secondary)';
@@ -583,9 +586,9 @@ export function AudioView() {
               language={language}
               brandColor="#60a5fa"
               additionalControls={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
                   {/* Voice Selector Group */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                     <Volume2 size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                     <div style={{ position: 'relative' }}>
                       <select
@@ -637,7 +640,7 @@ export function AudioView() {
                   />
 
                   {/* Speed Group */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                     <Gauge size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
                     {speeds.map((speed) => (
                       <MediaControlButton

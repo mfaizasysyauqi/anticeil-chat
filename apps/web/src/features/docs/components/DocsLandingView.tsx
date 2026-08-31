@@ -14,6 +14,7 @@ import {
   FolderOpen,
   X,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useDocsStore, DocFormat } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { DOC_TEMPLATES } from '../data/docTemplates';
@@ -23,6 +24,7 @@ interface DocsLandingViewProps {
 }
 
 export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [prompt, setPrompt] = useState('');
   const selectedFormat = useDocsStore((s) => s.selectedFormat);
@@ -65,20 +67,20 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
   const formatOptions: { id: DocFormat; label: string; icon: React.ReactNode; badge?: string }[] = [
     {
       id: 'latex',
-      label: 'Markdown / LaTeX',
-      icon: <FileText size={15} color="#0073EA" />,
-      badge: 'Riset & KaTeX',
+      label: language === 'id' ? 'Dokumen' : 'Document',
+      icon: <FileText size={15} color="var(--brand-primary, #0073EA)" />,
+      badge: 'Markdown & LaTeX',
     },
     {
       id: 'sheet',
       label: 'Spreadsheet',
-      icon: <Table size={15} color="#10B981" />,
+      icon: <Table size={15} color="var(--accent-success, #10B981)" />,
       badge: 'Excel Formulas',
     },
     {
       id: 'slide',
-      label: 'Slide Presentasi',
-      icon: <Presentation size={15} color="#8B5CF6" />,
+      label: language === 'id' ? 'Slide Presentasi' : 'Presentation Slides',
+      icon: <Presentation size={15} color="var(--brand-accent, #8B5CF6)" />,
       badge: 'Deck',
     },
   ];
@@ -323,7 +325,10 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
             {DOC_TEMPLATES.map((tpl) => (
               <div
                 key={tpl.id}
-                onClick={() => createFromTemplate(tpl.id, activeProjectId)}
+                onClick={() => {
+                  const newId = createFromTemplate(tpl.id, activeProjectId);
+                  router.push('/docs/' + newId);
+                }}
                 className="clickable-card"
                 style={{
                   padding: '14px 16px',
@@ -428,6 +433,7 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
                         onClick={() => {
                           if (doc.projectId) setActiveProjectId(doc.projectId);
                           setActiveDocId(doc.id);
+                          router.push('/docs/' + doc.id);
                         }}
                         style={{
                           display: 'flex',

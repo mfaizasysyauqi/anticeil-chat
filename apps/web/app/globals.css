@@ -270,6 +270,112 @@ code, pre, kbd {
   }
 }
 
+/* Media Prompt Form Responsive Layout (Image, Video, Audio) */
+.media-prompt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 6px;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.media-prompt-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.media-prompt-controls::-webkit-scrollbar {
+  display: none;
+}
+
+.media-prompt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.media-prompt-model-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 5px 8px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  max-width: 220px;
+  min-width: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.media-prompt-model-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 13px;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .media-prompt-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .media-prompt-controls {
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px !important;
+  }
+
+  .media-prompt-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+    padding-top: 6px !important;
+    border-top: 1px solid var(--border-subtle) !important;
+  }
+
+  .media-prompt-model-btn {
+    max-width: calc(100% - 46px) !important;
+  }
+
+  .audio-waveform-visualizer {
+    display: none !important;
+  }
+}
+
+/* Audio Mode Tabs Responsive Scroll */
+.audio-mode-tabs {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+.audio-mode-tabs::-webkit-scrollbar {
+  display: none;
+}
+
 /* Waterfall / Masonry Gallery Grid */
 .waterfall-gallery-grid {
   column-count: 3; /* Desktop: 3 columns */

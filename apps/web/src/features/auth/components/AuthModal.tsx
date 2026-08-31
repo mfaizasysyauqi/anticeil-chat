@@ -13,10 +13,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Bot,
   Send,
   ExternalLink,
 } from 'lucide-react';
+import { getTranslation } from '@anticeil/core';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 
@@ -26,11 +26,11 @@ export function AuthModal() {
   const setAuthModalOpen = useAuthStore((s) => s.setAuthModalOpen);
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
 
-  const signInWithPassword = useAuthStore((s) => s.signInWithPassword);
   const signUpWithPassword = useAuthStore((s) => s.signUpWithPassword);
 
   const language = useSettingsStore((s) => s.language);
-  const isId = language === 'id';
+  const t = getTranslation(language);
+  const ta = t.auth;
 
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
@@ -42,6 +42,11 @@ export function AuthModal() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Email verification resend state
+  const [isEmailUnverified, setIsEmailUnverified] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
+
   // Telegram verification
   const [telegramToken, setTelegramToken] = useState<string | null>(null);
   const [telegramBotUrl, setTelegramBotUrl] = useState<string | null>(null);
@@ -49,7 +54,18 @@ export function AuthModal() {
   const [isTelegramVerified, setIsTelegramVerified] = useState(false);
   const [isTelegramLoading, setIsTelegramLoading] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Cooldown countdown timer for resend email
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // Reset all state when mode or open changes
   useEffect(() => {
@@ -64,6 +80,7 @@ export function AuthModal() {
       setTelegramBotUrl(null);
       setIsWaitingTelegram(false);
       setIsTelegramVerified(false);
+      setIsEmailUnverified(false);
     }
   }, [isOpen, mode]);
 
@@ -78,14 +95,16 @@ export function AuthModal() {
           setIsTelegramVerified(true);
           setIsWaitingTelegram(false);
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }, 3000);
     return () => clearInterval(interval);
   }, [telegramToken, isWaitingTelegram, isTelegramVerified]);
 
   const handleStartTelegramVerify = async () => {
     if (!phone.trim()) {
-      setLocalError(isId ? 'Masukkan nomor HP terlebih dahulu.' : 'Please enter your phone number first.');
+      setLocalError(ta.enterPhoneFirst);
       return;
     }
     setLocalError(null);
@@ -103,12 +122,44 @@ export function AuthModal() {
         setIsWaitingTelegram(true);
         if (data.botUrl) window.open(data.botUrl, '_blank');
       } else {
-        setLocalError(data.error || (isId ? 'Gagal memulai verifikasi.' : 'Failed to start verification.'));
+        setLocalError(data.error || ta.failedStartVerification);
       }
     } catch {
-      setLocalError(isId ? 'Terjadi kesalahan jaringan.' : 'Network error.');
+      setLocalError(ta.networkError);
     } finally {
       setIsTelegramLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const targetEmail = email.trim();
+    if (!targetEmail || resendCooldown > 0 || isResendingEmail) return;
+
+    setIsResendingEmail(true);
+    setLocalError(null);
+    setSuccessMessage(null);
+
+    try {
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: targetEmail }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setResendCooldown(60);
+        setSuccessMessage(ta.verificationEmailResent);
+      } else {
+        if (data.remainingSeconds) {
+          setResendCooldown(data.remainingSeconds);
+        }
+        setLocalError(data.error || ta.failedResendEmail);
+      }
+    } catch {
+      setLocalError(ta.networkError);
+    } finally {
+      setIsResendingEmail(false);
     }
   };
 
@@ -118,25 +169,25 @@ export function AuthModal() {
     setSuccessMessage(null);
 
     if (!email.trim() || !password.trim()) {
-      setLocalError(isId ? 'Silakan isi email dan kata sandi.' : 'Please enter both email and password.');
+      setLocalError(ta.enterEmailAndPassword);
       return;
     }
 
     if (mode === 'register') {
       if (!confirmPassword.trim()) {
-        setLocalError(isId ? 'Silakan konfirmasi kata sandi.' : 'Please confirm your password.');
+        setLocalError(ta.confirmPasswordReq);
         return;
       }
       if (password !== confirmPassword) {
-        setLocalError(isId ? 'Kata sandi tidak cocok.' : 'Passwords do not match.');
+        setLocalError(ta.passwordsDoNotMatch);
         return;
       }
       if (!phone.trim()) {
-        setLocalError(isId ? 'Masukkan nomor HP untuk verifikasi Telegram.' : 'Enter your phone number for Telegram verification.');
+        setLocalError(ta.phoneRequired);
         return;
       }
       if (!isTelegramVerified) {
-        setLocalError(isId ? 'Verifikasi Telegram diperlukan sebelum mendaftar.' : 'Telegram verification is required before registering.');
+        setLocalError(ta.telegramRequired);
         return;
       }
     }
@@ -155,13 +206,17 @@ export function AuthModal() {
         const msg: string = data.error ?? '';
         const lower = msg.toLowerCase();
         if (lower.includes('email not confirmed')) {
-          setLocalError(isId ? 'Email belum diverifikasi. Cek Inbox atau SPAM kamu.' : 'Email not confirmed. Check your Inbox or SPAM.');
+          setIsEmailUnverified(true);
+          setLocalError(ta.emailNotConfirmed);
         } else if (lower.includes('invalid login') || lower.includes('invalid credentials')) {
-          setLocalError(isId ? 'Email atau kata sandi tidak cocok.' : 'Invalid email or password.');
+          setIsEmailUnverified(false);
+          setLocalError(ta.invalidCredentials);
         } else {
-          setLocalError(msg || (isId ? 'Login gagal.' : 'Login failed.'));
+          setIsEmailUnverified(false);
+          setLocalError(msg || ta.loginFailed);
         }
       } else {
+        setIsEmailUnverified(false);
         setAuthModalOpen(false);
         window.location.reload();
       }
@@ -171,11 +226,7 @@ export function AuthModal() {
       if (error) {
         setLocalError(error.message);
       } else {
-        setSuccessMessage(
-          isId
-            ? 'Akun berhasil dibuat! Cek email Anda untuk tautan verifikasi.'
-            : 'Account created! Check your email for the verification link.'
-        );
+        setSuccessMessage(ta.accountCreatedCheckEmail);
       }
     }
   };
@@ -185,7 +236,7 @@ export function AuthModal() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '9px 12px 9px 36px',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-md, 8px)',
     border: '1px solid var(--border-subtle)',
     background: 'var(--bg-subtle)',
     color: 'var(--text-primary)',
@@ -209,14 +260,17 @@ export function AuthModal() {
         animation: 'fadeIn 0.2s ease-out',
         overflowY: 'auto',
       }}
-      onClick={(e) => { if (e.target === e.currentTarget) setAuthModalOpen(false); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) setAuthModalOpen(false);
+      }}
     >
       <div
+        className="modal-responsive-container"
         style={{
           width: '100%',
           maxWidth: '420px',
-          backgroundColor: 'var(--bg-surface, #1e1e1e)',
-          border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-strong)',
           borderRadius: 'var(--radius-xl, 16px)',
           boxShadow: 'var(--shadow-2xl, 0 25px 50px -12px rgba(0, 0, 0, 0.5))',
           overflow: 'hidden',
@@ -227,40 +281,134 @@ export function AuthModal() {
         }}
       >
         {/* Header */}
-        <div style={{ padding: '20px 24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div
+          style={{
+            padding: '20px 24px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, #0073EA, #A25DDC)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 2px 8px rgba(0,115,234,0.3)' }}>
-              <Bot size={18} />
-            </div>
+            <img
+              src="/anticeil-logo.png"
+              alt="Anticeil Logo"
+              style={{ width: '32px', height: '32px', objectFit: 'contain', flexShrink: 0 }}
+            />
             <div>
               <h2 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                {mode === 'login'
-                  ? (isId ? 'Masuk ke Anticeil' : 'Sign in to Anticeil')
-                  : (isId ? 'Daftar Akun Baru' : 'Create Anticeil Account')}
+                {mode === 'login' ? ta.signInTitle : ta.createAccountTitle}
               </h2>
               <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                {mode === 'login'
-                  ? (isId ? 'Masuk untuk chat & simpan riwayat' : 'Sign in to chat & sync your history')
-                  : (isId ? 'Gratis & 100% privat' : 'Free & 100% private data sovereignty')}
+                {mode === 'login' ? ta.signInSubtitle : ta.createAccountSubtitle}
               </p>
             </div>
           </div>
-          <button type="button" onClick={() => setAuthModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setAuthModalOpen(false)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '6px',
+              borderRadius: 'var(--radius-sm, 6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <X size={16} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}
+        >
           {localError && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: 'var(--accent-danger, #ef4444)', fontSize: '12.5px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 12px',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: 'var(--radius-md, 8px)',
+                color: 'var(--accent-danger, #ef4444)',
+                fontSize: '12.5px',
+              }}
+            >
               <AlertCircle size={15} style={{ flexShrink: 0 }} />
               <span>{localError}</span>
             </div>
           )}
 
+          {/* Conditional Resend Email Verification Button with 60s Cooldown */}
+          {isEmailUnverified && mode === 'login' && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '9px 12px',
+                backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md, 8px)',
+                fontSize: '12px',
+              }}
+            >
+              <span style={{ color: 'var(--text-secondary)' }}>{ta.didntGetEmail}</span>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={isResendingEmail || resendCooldown > 0}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: resendCooldown > 0 ? 'var(--text-muted)' : 'var(--brand-primary, #0073EA)',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  cursor: resendCooldown > 0 || isResendingEmail ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '2px 4px',
+                  transition: 'color 0.15s ease',
+                }}
+              >
+                {isResendingEmail ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin" />
+                    <span>{ta.sending}</span>
+                  </>
+                ) : resendCooldown > 0 ? (
+                  <span>{`${ta.resendCooldownPrefix} (${resendCooldown}s)`}</span>
+                ) : (
+                  <span>{ta.resendVerificationEmail}</span>
+                )}
+              </button>
+            </div>
+          )}
+
           {successMessage && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', color: 'var(--accent-success, #10b981)', fontSize: '12.5px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 12px',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: 'var(--radius-md, 8px)',
+                color: 'var(--accent-success, #10b981)',
+                fontSize: '12.5px',
+              }}
+            >
               <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
               <span>{successMessage}</span>
             </div>
@@ -268,22 +416,88 @@ export function AuthModal() {
 
           {/* Email */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Email</label>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              {ta.emailLabel}
+            </label>
             <div style={{ position: 'relative' }}>
-              <Mail size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@email.com" required style={inputStyle} />
+              <Mail
+                size={15}
+                color="var(--text-muted)"
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={ta.emailPlaceholder}
+                required
+                style={inputStyle}
+              />
             </div>
           </div>
 
           {/* Password */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-              {isId ? 'Kata Sandi' : 'Password'}
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              {ta.passwordLabel}
             </label>
             <div style={{ position: 'relative' }}>
-              <Lock size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required style={{ ...inputStyle, padding: '9px 36px 9px 36px' }} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
+              <Lock
+                size={15}
+                color="var(--text-muted)"
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={ta.passwordPlaceholder}
+                required
+                style={{ ...inputStyle, padding: '9px 36px 9px 36px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
@@ -292,12 +506,37 @@ export function AuthModal() {
           {/* Confirm Password — register only */}
           {mode === 'register' && (
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                {isId ? 'Konfirmasi Kata Sandi' : 'Confirm Password'}
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                {ta.confirmPasswordLabel}
               </label>
               <div style={{ position: 'relative' }}>
-                <Lock size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required style={inputStyle} />
+                <Lock
+                  size={15}
+                  color="var(--text-muted)"
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={ta.passwordPlaceholder}
+                  required
+                  style={inputStyle}
+                />
               </div>
             </div>
           )}
@@ -305,21 +544,41 @@ export function AuthModal() {
           {/* Phone + Telegram — register only */}
           {mode === 'register' && (
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                {isId ? 'Nomor HP (Telegram)' : 'Phone Number (Telegram)'}
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                {ta.phoneLabel}
               </label>
               {/* Phone Input */}
               <div style={{ position: 'relative', marginBottom: '8px' }}>
-                <Phone size={15} color={isTelegramVerified ? '#00C875' : 'var(--text-muted)'} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <Phone
+                  size={15}
+                  color={isTelegramVerified ? 'var(--accent-success, #00C875)' : 'var(--text-muted)'}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                  }}
+                />
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+62 812 xxxx xxxx"
+                  placeholder={ta.phonePlaceholder}
                   disabled={isTelegramVerified}
                   style={{
                     ...inputStyle,
-                    border: isTelegramVerified ? '1px solid #00C875' : '1px solid var(--border-subtle)',
+                    border: isTelegramVerified
+                      ? '1px solid var(--accent-success, #00C875)'
+                      : '1px solid var(--border-subtle)',
                     background: isTelegramVerified ? 'rgba(0, 200, 117, 0.06)' : 'var(--bg-subtle)',
                     opacity: isTelegramVerified ? 0.8 : 1,
                   }}
@@ -328,17 +587,25 @@ export function AuthModal() {
 
               {/* Telegram Verification Box */}
               {!isTelegramVerified ? (
-                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div
+                  style={{
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md, 10px)',
+                    padding: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Send size={14} color="#0088cc" style={{ flexShrink: 0 }} />
                     <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {isId ? 'Verifikasi via Telegram' : 'Verify via Telegram'}
+                      {ta.telegramVerifyTitle}
                     </span>
                   </div>
                   <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-                    {isId
-                      ? 'Klik tombol di bawah untuk membuka bot Telegram kami, lalu konfirmasi nomor HP kamu.'
-                      : 'Click the button below to open our Telegram bot and confirm your phone number.'}
+                    {ta.telegramVerifyDesc}
                   </p>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -353,7 +620,7 @@ export function AuthModal() {
                         justifyContent: 'center',
                         gap: '6px',
                         padding: '8px 12px',
-                        borderRadius: '8px',
+                        borderRadius: 'var(--radius-md, 8px)',
                         border: 'none',
                         background: '#0088cc',
                         color: '#fff',
@@ -368,12 +635,12 @@ export function AuthModal() {
                       ) : isWaitingTelegram ? (
                         <>
                           <Loader2 size={13} className="animate-spin" />
-                          <span>{isId ? 'Menunggu konfirmasi...' : 'Waiting for confirmation...'}</span>
+                          <span>{ta.waitingTelegram}</span>
                         </>
                       ) : (
                         <>
                           <ExternalLink size={13} />
-                          <span>{isId ? 'Buka Bot Telegram' : 'Open Telegram Bot'}</span>
+                          <span>{ta.openTelegramBot}</span>
                         </>
                       )}
                     </button>
@@ -383,7 +650,15 @@ export function AuthModal() {
                       <button
                         type="button"
                         onClick={() => window.open(telegramBotUrl, '_blank')}
-                        style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer' }}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 'var(--radius-md, 8px)',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'transparent',
+                          color: 'var(--text-secondary)',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
                       >
                         <ExternalLink size={13} />
                       </button>
@@ -392,15 +667,25 @@ export function AuthModal() {
 
                   {isWaitingTelegram && (
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, textAlign: 'center' }}>
-                      {isId ? 'Halaman ini akan otomatis lanjut setelah verifikasi.' : 'This page will automatically proceed after verification.'}
+                      {ta.telegramAutoProceed}
                     </p>
                   )}
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: 'rgba(0, 200, 117, 0.08)', border: '1px solid rgba(0, 200, 117, 0.3)', borderRadius: '8px' }}>
-                  <CheckCircle2 size={15} color="#00C875" style={{ flexShrink: 0 }} />
-                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#00C875' }}>
-                    {isId ? 'Nomor HP terverifikasi ✓' : 'Phone number verified ✓'}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 12px',
+                    background: 'rgba(0, 200, 117, 0.08)',
+                    border: '1px solid rgba(0, 200, 117, 0.3)',
+                    borderRadius: 'var(--radius-md, 8px)',
+                  }}
+                >
+                  <CheckCircle2 size={15} color="var(--accent-success, #00C875)" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-success, #00C875)' }}>
+                    {ta.phoneVerified}
                   </span>
                 </div>
               )}
@@ -418,27 +703,27 @@ export function AuthModal() {
               justifyContent: 'center',
               gap: '8px',
               padding: '10px 16px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md, 8px)',
               border: 'none',
-              background: (mode === 'register' && !isTelegramVerified) ? 'var(--text-muted)' : 'var(--brand-primary, #0073EA)',
+              background:
+                mode === 'register' && !isTelegramVerified
+                  ? 'var(--text-muted)'
+                  : 'var(--brand-primary, #0073EA)',
               color: '#ffffff',
               fontSize: '13.5px',
               fontWeight: 600,
-              cursor: (isSubmitting || (mode === 'register' && !isTelegramVerified)) ? 'not-allowed' : 'pointer',
+              cursor: isSubmitting || (mode === 'register' && !isTelegramVerified) ? 'not-allowed' : 'pointer',
               opacity: isSubmitting ? 0.7 : 1,
               transition: 'background 0.15s ease',
-              boxShadow: (mode === 'register' && !isTelegramVerified) ? 'none' : '0 2px 8px rgba(0, 115, 234, 0.3)',
+              boxShadow:
+                mode === 'register' && !isTelegramVerified ? 'none' : 'var(--shadow-sm)',
             }}
           >
             {isSubmitting ? (
               <Loader2 size={16} className="animate-spin" />
             ) : (
               <>
-                <span>
-                  {mode === 'login'
-                    ? (isId ? 'Masuk' : 'Sign In')
-                    : (isId ? 'Daftar Sekarang' : 'Create Account')}
-                </span>
+                <span>{mode === 'login' ? ta.signInBtn : ta.createAccountBtn}</span>
                 <ArrowRight size={15} />
               </>
             )}
@@ -448,16 +733,40 @@ export function AuthModal() {
           <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
             {mode === 'login' ? (
               <span>
-                {isId ? 'Belum punya akun?' : "Don't have an account?"}{' '}
-                <button type="button" onClick={() => openAuthModal('register')} style={{ background: 'transparent', border: 'none', color: 'var(--brand-primary)', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: '12px' }}>
-                  {isId ? 'Daftar gratis' : 'Sign up free'}
+                {ta.dontHaveAccount}{' '}
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('register')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--brand-primary)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontSize: '12px',
+                  }}
+                >
+                  {ta.signUpFree}
                 </button>
               </span>
             ) : (
               <span>
-                {isId ? 'Sudah punya akun?' : 'Already have an account?'}{' '}
-                <button type="button" onClick={() => openAuthModal('login')} style={{ background: 'transparent', border: 'none', color: 'var(--brand-primary)', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: '12px' }}>
-                  {isId ? 'Masuk' : 'Sign in'}
+                {ta.alreadyHaveAccount}{' '}
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('login')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--brand-primary)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontSize: '12px',
+                  }}
+                >
+                  {ta.signInLink}
                 </button>
               </span>
             )}

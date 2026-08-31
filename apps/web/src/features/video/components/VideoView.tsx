@@ -230,9 +230,9 @@ export function VideoView() {
           language={language}
           brandColor="#fb7185"
           additionalControls={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
               {/* Ratio Group */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                 <Ratio size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
                 {ratios.map((ratio) => (
                   <MediaControlButton
@@ -257,7 +257,7 @@ export function VideoView() {
               />
 
               {/* Duration Group */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                 <Clock size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
                 {durations.map((dur) => (
                   <MediaControlButton
@@ -299,7 +299,7 @@ export function VideoView() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
                 gap: '16px',
               }}
             >

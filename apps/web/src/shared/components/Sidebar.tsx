@@ -20,6 +20,7 @@ import {
   Trash2,
   Edit2,
   Check,
+  Copy,
   X,
   ShieldCheck,
   Bot,
@@ -2095,7 +2096,7 @@ export function Sidebar({
 
   const displayName =
     (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name) ||
-    (user?.email ? user.email.split('@')[0] : 'Guest');
+    (user?.email ? user.email.split('@')[0] : (t.common.guest || (language === 'id' ? 'Tamu' : 'Guest')));
 
   const displayEmail = user?.email || '-';
 
@@ -2237,8 +2238,8 @@ export function Sidebar({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: pathname === '/docs' ? 'rgba(0, 115, 234, 0.15)' : 'transparent',
-                color: pathname === '/docs' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                background: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'rgba(0, 115, 234, 0.15)' : 'transparent',
+                color: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'var(--brand-primary)' : 'var(--text-secondary)',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -2485,35 +2486,46 @@ export function Sidebar({
               <span>{language === 'id' ? 'Audio Baru' : 'New Audio'}</span>
             </button>
           ) : isDocs ? (
-            <button
-              type="button"
-              onClick={() => {
-                const newId = createDocument('Dokumen Baru', undefined, 'latex', activeProjectId);
-                setActiveDocId(newId);
-                if (pathname !== '/docs') router.push('/docs');
-                if (onCloseMobile) onCloseMobile();
-              }}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 10px',
-                borderRadius: 'var(--radius-md, 6px)',
-                background: 'rgba(0, 115, 234, 0.1)',
-                border: '1px solid rgba(0, 115, 234, 0.25)',
-                color: 'var(--brand-primary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'left',
-                transition: 'background 0.15s ease',
-              }}
-            >
-              <Plus size={15} color="var(--brand-primary)" />
-              <span>{language === 'id' ? 'Dokumen Baru' : 'New Document'}</span>
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+              {(
+                [
+                  { format: 'latex' as const, icon: <FileText size={13} color="var(--brand-primary)" />, label: language === 'id' ? 'Dokumen Baru' : 'New Document' },
+                  { format: 'sheet' as const, icon: <Table size={13} color="#22c55e" />, label: language === 'id' ? 'Spreadsheet Baru' : 'New Spreadsheet' },
+                  { format: 'slide' as const, icon: <Presentation size={13} color="#f59e0b" />, label: language === 'id' ? 'Slide Baru' : 'New Slide' },
+                ]
+              ).map(({ format, icon, label }) => (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => {
+                    const newId = createDocument(label, undefined, format, activeProjectId);
+                    setActiveDocId(newId);
+                    router.push('/docs/' + newId);
+                    if (onCloseMobile) onCloseMobile();
+                  }}
+                  className="clickable-pill"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-md, 6px)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                >
+                  {icon}
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
           ) : (
             <button
               type="button"
@@ -2763,7 +2775,7 @@ export function Sidebar({
                                   onSelect={() => {
                                     setActiveProjectId(folder.id);
                                     setActiveDocId(doc.id);
-                                    if (pathname !== '/docs') router.push('/docs');
+                                    router.push('/docs/' + doc.id);
                                     if (onCloseMobile) onCloseMobile();
                                   }}
                                   onRename={(id, title) => updateDocumentTitle(id, title)}
@@ -2781,7 +2793,7 @@ export function Sidebar({
                                 setActiveProjectId(folder.id);
                                 const newId = createDocument('Dokumen Baru', undefined, 'latex', folder.id);
                                 setActiveDocId(newId);
-                                if (pathname !== '/docs') router.push('/docs');
+                                router.push('/docs/' + newId);
                                 if (onCloseMobile) onCloseMobile();
                               }}
                               className="clickable-pill"
@@ -2926,7 +2938,7 @@ export function Sidebar({
                               onSelect={() => {
                                 setActiveProjectId(null);
                                 setActiveDocId(doc.id);
-                                if (pathname !== '/docs') router.push('/docs');
+                                router.push('/docs/' + doc.id);
                                 if (onCloseMobile) onCloseMobile();
                               }}
                               onRename={(id, title) => updateDocumentTitle(id, title)}

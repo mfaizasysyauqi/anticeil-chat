@@ -72,6 +72,9 @@ export function Navbar({
   const activeDoc = docs.find((d) => d.id === activeDocId);
   const t = getTranslation(language);
 
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => { setHasMounted(true); }, []);
+
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
@@ -245,6 +248,7 @@ export function Navbar({
         {/* Page / Session Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
           <span
+            suppressHydrationWarning
             style={{
               fontSize: '13.5px',
               fontWeight: 600,
@@ -267,10 +271,10 @@ export function Navbar({
               ? t.nav.settings
               : activeSession?.title || 'Anticeil'}
           </span>
-          {activeSession?.isPinned && pathname === '/chat' && (
+          {hasMounted && activeSession?.isPinned && pathname === '/chat' && (
             <Pin size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
           )}
-          {activeDoc?.isPinned && (pathname === '/docs' || pathname.startsWith('/docs')) && (
+          {hasMounted && activeDoc?.isPinned && (pathname === '/docs' || pathname.startsWith('/docs')) && (
             <Pin size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
           )}
         </div>

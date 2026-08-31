@@ -246,6 +246,7 @@ export function VideoModelSelectorModal({
       onClick={onClose}
     >
       <div
+        className="modal-responsive-container"
         style={{
           width: '100%',
           maxWidth: '920px',
@@ -270,9 +271,11 @@ export function VideoModelSelectorModal({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'var(--bg-surface)',
+            flexWrap: 'wrap',
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <div
               style={{
                 width: '32px',
@@ -283,12 +286,13 @@ export function VideoModelSelectorModal({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <Film size={18} />
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <h3
                   style={{
                     fontSize: '16px',
@@ -313,7 +317,7 @@ export function VideoModelSelectorModal({
                   🎬 {language === 'id' ? 'Mode Video' : 'Video Mode'}
                 </span>
               </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {language === 'id'
                   ? 'Pilih provider dan model generatif yang disesuaikan khusus untuk fitur ini.'
                   : 'Select a generative provider and model tailored for this generation type.'}
@@ -321,7 +325,7 @@ export function VideoModelSelectorModal({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             <button
               type="button"
               onClick={() => {
@@ -379,9 +383,10 @@ export function VideoModelSelectorModal({
         </div>
 
         {/* Modal Body: Left Providers + Right Models */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="modal-responsive-body" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left: Providers List */}
           <div
+            className="modal-responsive-sidebar"
             style={{
               width: '240px',
               borderRight: '1px solid var(--border-subtle)',
@@ -395,6 +400,7 @@ export function VideoModelSelectorModal({
             }}
           >
             <div
+              className="modal-responsive-sidebar-title"
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
@@ -416,6 +422,7 @@ export function VideoModelSelectorModal({
                   key={provider.id}
                   type="button"
                   onClick={() => setActiveProviderId(provider.id)}
+                  className="modal-responsive-sidebar-item"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -469,10 +476,10 @@ export function VideoModelSelectorModal({
                             style={{
                               fontSize: '9px',
                               fontWeight: 700,
+                              background: 'rgba(0, 200, 117, 0.12)',
+                              color: '#10b981',
                               padding: '1px 5px',
                               borderRadius: '4px',
-                              background: 'rgba(16,185,129,0.15)',
-                              color: '#10b981',
                               border: '1px solid rgba(16,185,129,0.3)',
                               flexShrink: 0,
                             }}
@@ -481,25 +488,30 @@ export function VideoModelSelectorModal({
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: 'var(--text-muted)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '140px',
+                        }}
+                      >
                         {provider.models.length} {language === 'id' ? 'model' : 'models'}
                       </div>
                     </div>
                   </div>
 
-                  {providerKeyMissing(provider) ? (
-                    <span title="API Key missing" style={{ display: 'inline-flex', flexShrink: 0 }}>
-                      <AlertCircle size={13} color="var(--accent-warning)" />
-                    </span>
-                  ) : (
-                    <span
-                      title={provider.models.every((m) => m.keyType === 'free') ? 'Free & Ready' : 'API Key Configured'}
+                  {hasActiveModel && (
+                    <div
                       style={{
                         width: '6px',
                         height: '6px',
                         borderRadius: '50%',
-                        background: 'var(--accent-success, #10b981)',
+                        background: '#fb7185',
                         flexShrink: 0,
+                        marginLeft: '4px',
                       }}
                     />
                   )}
@@ -510,13 +522,14 @@ export function VideoModelSelectorModal({
 
           {/* Right: Models List for Current Provider */}
           <div
+            className="modal-responsive-content"
             style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '16px 20px',
+              padding: '18px 20px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px',
+              gap: '16px',
               background: 'var(--bg-surface)',
             }}
           >
