@@ -509,6 +509,15 @@ code, pre, kbd {
   visibility: visible !important;
 }
 
+/* Drawer-only panel in Overleaf layout: collapses to 0 when sidebar is toggled */
+.app-sidebar-drawer.drawer-only-panel.collapsed:not(.drawer-open) {
+  width: 0px !important;
+  min-width: 0px !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  border: none !important;
+}
+
 .sidebar-responsive.collapsed:not(.open) {
   width: 0px !important;
   min-width: 0px !important;
@@ -544,9 +553,10 @@ code, pre, kbd {
     left: 0 !important;
     bottom: 0 !important;
     height: 100vh !important;
+    height: 100dvh !important;
     box-shadow: var(--shadow-2xl) !important;
     transform: translateX(-100%) !important;
-    z-index: 100 !important;
+    z-index: 1000 !important;
     visibility: hidden;
   }
 
@@ -573,8 +583,13 @@ code, pre, kbd {
     bottom: 0;
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(6px);
-    z-index: 90;
+    z-index: 990 !important;
     animation: fadeIn 0.2s ease forwards;
+  }
+
+  /* Hide Icon Rail on Mobile & Tablet */
+  .sidebar-icon-rail {
+    display: none !important;
   }
 
   /* Show Burger Menu on Mobile & Tablet */

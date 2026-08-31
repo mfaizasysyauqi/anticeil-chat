@@ -123,6 +123,39 @@ CREATE TABLE IF NOT EXISTS public.documents (
   folder_id TEXT,
   files JSONB NOT NULL DEFAULT '[]'::jsonb, -- Overleaf-style subfiles [{id, name, content, isMain, ...}]
   active_file_id TEXT,
+  is_link_sharing_on BOOLEAN NOT NULL DEFAULT TRUE,
+  view_token TEXT UNIQUE,
+  edit_token TEXT UNIQUE,
+  collaborators JSONB NOT NULL DEFAULT '[]'::jsonb, -- [{email, role, invitedAt}]
+  comments JSONB NOT NULL DEFAULT '[]'::jsonb, -- [{id, subFileId, selectedText, fromLine, toLine, authorName, authorEmail, content, createdAt, resolved, replies}]
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 10. Document Collaborators (Direct Email Collaborations)
+CREATE TABLE IF NOT EXISTS public.document_collaborators (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'viewer', -- 'viewer' | 'editor'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT doc_collab_unique UNIQUE (document_id, email)
+);
+
+-- 11. Document Review Comments (Overleaf Review Panel & Inline Annotations)
+CREATE TABLE IF NOT EXISTS public.document_comments (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
+  sub_file_id TEXT,
+  selected_text TEXT NOT NULL DEFAULT '',
+  from_line INTEGER DEFAULT 1,
+  to_line INTEGER DEFAULT 1,
+  author_name TEXT NOT NULL,
+  author_email TEXT,
+  content TEXT NOT NULL,
+  resolved BOOLEAN NOT NULL DEFAULT FALSE,
+  replies JSONB NOT NULL DEFAULT '[]'::jsonb, -- [{id, authorName, authorEmail, content, createdAt}]
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -158,6 +191,7 @@ ALTER TABLE public.user_connectors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.doc_folders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.document_collaborators ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
@@ -188,10 +222,96 @@ DROP POLICY IF EXISTS "Users can manage own doc folders" ON public.doc_folders;
 CREATE POLICY "Users can manage own doc folders" ON public.doc_folders
   FOR ALL USING (auth.uid() = user_id);
 
--- Documents Policies (Docs Studio)
+-- Documents Policies (Docs Studio - Owner & Collaborator Access)
 DROP POLICY IF EXISTS "Users can manage own documents" ON public.documents;
 CREATE POLICY "Users can manage own documents" ON public.documents
-  FOR ALL USING (auth.uid() = user_id);
+  FOR ALL USING (
+    auth.uid() = user_id OR
+    EXISTS (
+      SELECT 1 FROM public.document_collaborators dc
+      WHERE dc.document_id = public.documents.id
+      AND (dc.user_id = auth.uid() OR dc.email = (SELECT email FROM auth.users WHERE id = auth.uid()))
+      AND dc.role = 'editor'
+    )
+  );
+
+DROP POLICY IF EXISTS "Collaborators and public can view shared documents" ON public.documents;
+CREATE POLICY "Collaborators and public can view shared documents" ON public.documents
+  FOR SELECT USING (
+    auth.uid() = user_id OR
+    is_link_sharing_on = TRUE OR
+    EXISTS (
+      SELECT 1 FROM public.document_collaborators dc
+      WHERE dc.document_id = public.documents.id
+      AND (dc.user_id = auth.uid() OR dc.email = (SELECT email FROM auth.users WHERE id = auth.uid()))
+    )
+  );
+
+-- Document Collaborators Policies
+DROP POLICY IF EXISTS "Owners and collaborators can view collaborators" ON public.document_collaborators;
+CREATE POLICY "Owners and collaborators can view collaborators" ON public.document_collaborators
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.documents d
+      WHERE d.id = document_id
+      AND (
+        d.user_id = auth.uid() OR
+        EXISTS (
+          SELECT 1 FROM public.document_collaborators dc2
+          WHERE dc2.document_id = d.id
+          AND (dc2.user_id = auth.uid() OR dc2.email = (SELECT email FROM auth.users WHERE id = auth.uid()))
+        )
+      )
+    )
+  );
+
+DROP POLICY IF EXISTS "Document owners can manage collaborators" ON public.document_collaborators;
+CREATE POLICY "Document owners can manage collaborators" ON public.document_collaborators
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.documents d
+      WHERE d.id = document_id AND d.user_id = auth.uid()
+    )
+  );
+
+-- Document Review Comments Policies
+ALTER TABLE public.document_comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view doc comments" ON public.document_comments;
+CREATE POLICY "Users can view doc comments" ON public.document_comments
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.documents d
+      WHERE d.id = document_id
+      AND (
+        d.user_id = auth.uid() OR
+        d.is_link_sharing_on = TRUE OR
+        EXISTS (
+          SELECT 1 FROM public.document_collaborators dc
+          WHERE dc.document_id = d.id
+          AND (dc.user_id = auth.uid() OR dc.email = (SELECT email FROM auth.users WHERE id = auth.uid()))
+        )
+      )
+    )
+  );
+
+DROP POLICY IF EXISTS "Users can manage doc comments" ON public.document_comments;
+CREATE POLICY "Users can manage doc comments" ON public.document_comments
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.documents d
+      WHERE d.id = document_id
+      AND (
+        d.user_id = auth.uid() OR
+        EXISTS (
+          SELECT 1 FROM public.document_collaborators dc
+          WHERE dc.document_id = d.id
+          AND dc.role = 'editor'
+          AND (dc.user_id = auth.uid() OR dc.email = (SELECT email FROM auth.users WHERE id = auth.uid()))
+        )
+      )
+    )
+  );
 
 -- User Prompts Policies
 DROP POLICY IF EXISTS "Users can manage own prompts" ON public.user_prompts;

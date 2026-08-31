@@ -80,6 +80,8 @@ interface SidebarProps {
   isDesktopCollapsed?: boolean;
   onToggleDesktopCollapse?: () => void;
   onOpenModelSelector?: () => void;
+  railOnly?: boolean;
+  drawerOnly?: boolean;
 }
 
 interface ImagineHistoryItem {
@@ -1303,6 +1305,8 @@ export function Sidebar({
   isDesktopCollapsed = false,
   onToggleDesktopCollapse,
   onOpenModelSelector,
+  railOnly = false,
+  drawerOnly = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -1458,6 +1462,7 @@ export function Sidebar({
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
+  const [isStatsExpanded, setIsStatsExpanded] = useState(false);
 
   const sessions = useChatStore((s) => s.sessions);
   const activeSessionId = useChatStore((s) => s.activeSessionId);
@@ -2119,7 +2124,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`app-sidebar-drawer ${isOpenMobile ? 'drawer-open' : ''} ${isDesktopCollapsed ? 'collapsed' : ''}`}
+      className={`app-sidebar-drawer${drawerOnly ? ' drawer-only-panel' : ''} ${isOpenMobile ? 'drawer-open' : ''} ${isDesktopCollapsed ? 'collapsed' : ''}`}
       style={{
         height: '100%',
         display: 'flex',
@@ -2127,12 +2132,16 @@ export function Sidebar({
         flexShrink: 0,
         zIndex: 1000,
         overflow: 'visible',
+        // railOnly: fix the aside to exactly 48px (CSS class sets 288px otherwise)
+        ...(railOnly ? { width: '48px', minWidth: '48px' } : {}),
+        // drawerOnly: no rail means no left border on the aside itself
+        ...(drawerOnly ? { border: 'none' } : {}),
       }}
     >
       {/* ─────────────────────────────────────────────────────────────
        * 1. Slim Left Icon Rail (48px)
        * ───────────────────────────────────────────────────────────── */}
-      <div
+      {!drawerOnly && <div
         className="sidebar-icon-rail"
         style={{
           width: '48px',
@@ -2304,13 +2313,13 @@ export function Sidebar({
             </Link>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ─────────────────────────────────────────────────────────────
        * 2. Main Workspace & Navigation Panel (Grok / Monday style)
        * Hidden on desktop when sidebar is collapsed (mini-rail mode)
        * ───────────────────────────────────────────────────────────── */}
-      <div
+      {!railOnly && <div
         className={`sidebar-workspace-panel${isDesktopCollapsed ? ' desktop-collapsed-hidden' : ''}`}
         style={{
           flex: 1,
@@ -2322,7 +2331,8 @@ export function Sidebar({
           position: 'relative',
         }}
       >
-        {/* Workspace Title Header */}
+        {/* Workspace Title Header — hidden when drawerOnly (Navbar is above and shows title) */}
+        {!drawerOnly && (
         <div
           style={{
             height: '48px',
@@ -2397,6 +2407,155 @@ export function Sidebar({
               </button>
             )}
           </div>
+        </div>
+        )}
+
+        {/* Drawer-only top bar: feature title + collapse button (matching docs editor style) */}
+        {drawerOnly && (
+          <div
+            className="hide-on-drawer"
+            style={{
+              height: '48px',
+              boxSizing: 'border-box',
+              padding: '0 8px 0 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid var(--border-subtle)',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {isImage
+                  ? (t.nav.imagine || (language === 'id' ? 'Gambar' : 'Image'))
+                  : isVideo
+                  ? 'Video'
+                  : isAudio
+                  ? 'Audio'
+                  : isDocs
+                  ? (language === 'id' ? 'Dokumen' : 'Docs')
+                  : (language === 'id' ? 'Percakapan' : 'Chat')}
+              </span>
+            </div>
+
+            {onToggleDesktopCollapse && (
+              <button
+                onClick={onToggleDesktopCollapse}
+                title={t.sidebar.collapseSidebar}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                }}
+                aria-label={t.sidebar.collapseSidebar}
+              >
+                <PanelLeftClose size={15} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Mobile-only Drawer Top Bar: Brand Logo, Title & Close X button */}
+        <div
+          className="show-on-drawer"
+          style={{
+            height: '48px',
+            boxSizing: 'border-box',
+            padding: '0 10px',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid var(--border-subtle)',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img
+              src="/anticeil-logo.png"
+              alt="Anticeil Logo"
+              style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '6px', flexShrink: 0, marginLeft: '1px' }}
+            />
+            <span
+              style={{
+                fontSize: '13.5px',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Anticeil
+            </span>
+          </div>
+
+          <button
+            onClick={onCloseMobile}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            aria-label="Close drawer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Mobile-only Feature Subheader (e.g. PERCAKAPAN, DOKUMEN, VIDEO) */}
+        <div
+          className="show-on-drawer"
+          style={{
+            padding: '8px 12px 2px 12px',
+            display: 'none',
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {isImage
+              ? (t.nav.imagine || (language === 'id' ? 'Gambar' : 'Image'))
+              : isVideo
+              ? 'Video'
+              : isAudio
+              ? 'Audio'
+              : isDocs
+              ? (language === 'id' ? 'Dokumen' : 'Docs')
+              : (language === 'id' ? 'Percakapan' : 'Chat')}
+          </span>
         </div>
 
         {/* Primary Action Button (Mode-Aware) */}
@@ -3525,74 +3684,109 @@ export function Sidebar({
         >
           {/* Floating Profile Popover Menu (moved to be anchored at trigger button) */}
 
-          {/* AI Credits Meter (Matching StorageMeter design) */}
+          {/* Collapsible Stats Row: AI Credits + Storage */}
           <div style={{ marginBottom: '8px' }}>
-            <div
-              onClick={() => openPricingModal('topup')}
-              title={language === 'id' ? 'Kredit AI Harian & Saldo Tambahan — Klik untuk Top-up / Upgrade' : 'Daily AI Credits & Extra Balance — Click to Top-up / Upgrade'}
-              className="clickable-pill"
+            {/* Toggle Row */}
+            <button
+              type="button"
+              onClick={() => setIsStatsExpanded(prev => !prev)}
               style={{
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-md, 8px)',
-                backgroundColor: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                cursor: 'pointer',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                transition: 'all 0.15s ease',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '5px 2px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                borderRadius: '6px',
+                transition: 'color 0.15s ease',
               }}
+              title={isStatsExpanded ? (language === 'id' ? 'Sembunyikan statistik' : 'Hide stats') : (language === 'id' ? 'Tampilkan statistik' : 'Show stats')}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  <Zap size={12} color="#f59e0b" fill="#f59e0b" />
-                  <span>{language === 'id' ? 'Kredit AI' : 'AI Credits'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                <Zap size={11} color="#f59e0b" fill="#f59e0b" />
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '11px' }}>
+                  {dailyCredits}/{maxCredits}
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ fontWeight: 700, color: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : 'var(--text-primary)' }}>
-                    {dailyCredits}/{maxCredits}
-                  </span>
-                  {paidCredits > 0 && (
-                    <span style={{
-                      fontSize: '9.5px',
-                      fontWeight: 800,
-                      color: '#f59e0b',
-                      background: 'rgba(245, 158, 11, 0.18)',
-                      padding: '1px 5px',
-                      borderRadius: '4px',
-                    }}>
-                      +{paidCredits}
-                    </span>
-                  )}
-                </div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '10.5px', fontWeight: 500 }}>
+                  {language === 'id' ? 'kredit' : 'credits'}
+                </span>
               </div>
-
-              {/* Progress Track */}
-              <div
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
                 style={{
-                  width: '100%',
-                  height: '4px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'var(--border-subtle)',
-                  overflow: 'hidden',
+                  transform: isStatsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                  color: 'var(--text-muted)',
                 }}
               >
-                <div
-                  style={{
-                    width: `${Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100))}%`,
-                    height: '100%',
-                    backgroundColor: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : '#f59e0b',
-                    borderRadius: '9999px',
-                    transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+                <path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
 
-          {/* Storage Quota Progress Bar (Sleek Compact View) */}
-          <div style={{ marginBottom: '8px' }}>
-            <StorageMeter compact onManageClick={() => openPricingModal('tiers')} />
+            {/* Expandable Content */}
+            {isStatsExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px', animation: 'fadeIn 0.15s ease' }}>
+                {/* AI Credits Meter */}
+                <div
+                  onClick={() => openPricingModal('topup')}
+                  title={language === 'id' ? 'Kredit AI Harian & Saldo Tambahan — Klik untuk Top-up / Upgrade' : 'Daily AI Credits & Extra Balance — Click to Top-up / Upgrade'}
+                  className="clickable-pill"
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    backgroundColor: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      <Zap size={12} color="#f59e0b" fill="#f59e0b" />
+                      <span>{language === 'id' ? 'Kredit AI' : 'AI Credits'}</span>
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontWeight: 700, color: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : 'var(--text-primary)' }}>
+                        {dailyCredits}/{maxCredits}
+                      </span>
+                      {paidCredits > 0 && (
+                        <span style={{
+                          fontSize: '9.5px',
+                          fontWeight: 800,
+                          color: '#f59e0b',
+                          background: 'rgba(245, 158, 11, 0.18)',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                        }}>
+                          +{paidCredits}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ width: '100%', height: '4px', borderRadius: '9999px', backgroundColor: 'var(--border-subtle)', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100))}%`,
+                      height: '100%',
+                      backgroundColor: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : '#f59e0b',
+                      borderRadius: '9999px',
+                      transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    }} />
+                  </div>
+                </div>
+
+                {/* Storage Meter */}
+                <StorageMeter compact onManageClick={() => openPricingModal('tiers')} />
+              </div>
+            )}
           </div>
 
           {/* Profile Trigger Button (Avatar + Name) */}
@@ -3796,7 +3990,7 @@ export function Sidebar({
           </button>
           </div>{/* end position:relative wrapper */}
         </div>
-      </div>
+      </div>}
 
       <ConnectorsModal
         isOpen={isConnectorsModalOpen}

@@ -20,6 +20,35 @@ export interface DocSubFile {
   updatedAt: number;
 }
 
+export interface DocCollaborator {
+  email: string;
+  role: 'viewer' | 'editor';
+  invitedAt: number;
+}
+
+export interface DocCommentReply {
+  id: string;
+  authorName: string;
+  authorEmail?: string;
+  content: string;
+  createdAt: number;
+}
+
+export interface DocComment {
+  id: string;
+  docId: string;
+  subFileId?: string | null;
+  selectedText: string;
+  fromLine?: number;
+  toLine?: number;
+  authorName: string;
+  authorEmail?: string;
+  content: string;
+  createdAt: number;
+  resolved?: boolean;
+  replies?: DocCommentReply[];
+}
+
 export interface DocItem {
   id: string;
   title: string;
@@ -31,6 +60,14 @@ export interface DocItem {
   projectId?: string | null; // folder_id in docs database
   files?: DocSubFile[];
   activeFileId?: string | null;
+  // Overleaf-style Sharing & Collaboration
+  isLinkSharingOn?: boolean;
+  viewToken?: string;
+  editToken?: string;
+  collaborators?: DocCollaborator[];
+  ownerEmail?: string;
+  // Overleaf-style Comments & Review
+  comments?: DocComment[];
 }
 
 interface DocsState {
@@ -60,6 +97,20 @@ interface DocsState {
   setMainSubFile: (docId: string, fileId: string) => void;
   setActiveFileId: (docId: string, fileId: string | null) => void;
 
+  // Overleaf-style Sharing & Collaboration Actions
+  updateDocSharing: (docId: string, isLinkSharingOn: boolean) => void;
+  addDocCollaborator: (docId: string, email: string, role: 'viewer' | 'editor') => void;
+  removeDocCollaborator: (docId: string, email: string) => void;
+  updateDocCollaboratorRole: (docId: string, email: string, role: 'viewer' | 'editor') => void;
+
+  // Overleaf-style Comments & Review Panel Actions
+  addComment: (docId: string, comment: Omit<DocComment, 'id' | 'createdAt'>) => string;
+  updateComment: (docId: string, commentId: string, content: string) => void;
+  deleteComment: (docId: string, commentId: string) => void;
+  resolveComment: (docId: string, commentId: string, resolved?: boolean) => void;
+  addCommentReply: (docId: string, commentId: string, reply: Omit<DocCommentReply, 'id' | 'createdAt'>) => void;
+  deleteCommentReply: (docId: string, commentId: string, replyId: string) => void;
+
   // Actions
   setStudioPhase: (phase: StudioPhase) => void;
   setSelectedFormat: (format: DocFormat) => void;
@@ -67,6 +118,7 @@ interface DocsState {
   setActiveProjectId: (projectId: string | null) => void;
   createDocument: (title?: string, content?: string, format?: DocFormat, projectId?: string | null) => string;
   createFromTemplate: (templateId: string, projectId?: string | null) => string;
+  upsertDocument: (doc: DocItem) => void;
   updateDocumentContent: (id: string, content: string) => void;
   updateDocumentTitle: (id: string, title: string) => void;
   moveDocumentToProject: (id: string, projectId: string | null) => void;
@@ -117,28 +169,43 @@ function getDefaultMainFileName(format: DocFormat): string {
   return 'main.md';
 }
 
+function generateShareToken(prefix: 'v' | 'e'): string {
+  return `${prefix}_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
+}
+
+function ensureDocSharing(doc: DocItem): DocItem {
+  return {
+    ...doc,
+    isLinkSharingOn: doc.isLinkSharingOn ?? true,
+    viewToken: doc.viewToken || generateShareToken('v'),
+    editToken: doc.editToken || generateShareToken('e'),
+    collaborators: Array.isArray(doc.collaborators) ? doc.collaborators : [],
+  };
+}
+
 function ensureDocFiles(doc: DocItem): DocItem {
-  if (doc.files && doc.files.length > 0) {
-    const hasMain = doc.files.some((f) => f.isMain);
+  const withSharing = ensureDocSharing(doc);
+  if (withSharing.files && withSharing.files.length > 0) {
+    const hasMain = withSharing.files.some((f) => f.isMain);
     const files = hasMain
-      ? doc.files
-      : doc.files.map((f, i) => (i === 0 ? { ...f, isMain: true } : f));
-    const activeFileId = doc.activeFileId || (files.find((f) => f.isMain) || files[0]).id;
-    return { ...doc, files, activeFileId };
+      ? withSharing.files
+      : withSharing.files.map((f, i) => (i === 0 ? { ...f, isMain: true } : f));
+    const activeFileId = withSharing.activeFileId || (files.find((f) => f.isMain) || files[0]).id;
+    return { ...withSharing, files, activeFileId };
   }
 
-  const defaultName = getDefaultMainFileName(doc.format);
+  const defaultName = getDefaultMainFileName(withSharing.format);
   const mainSubFile: DocSubFile = {
     id: 'subfile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
     name: defaultName,
-    content: doc.content || '',
+    content: withSharing.content || '',
     isMain: true,
-    createdAt: doc.updatedAt || Date.now(),
-    updatedAt: doc.updatedAt || Date.now(),
+    createdAt: withSharing.updatedAt || Date.now(),
+    updatedAt: withSharing.updatedAt || Date.now(),
   };
 
   return {
-    ...doc,
+    ...withSharing,
     files: [mainSubFile],
     activeFileId: mainSubFile.id,
   };
@@ -513,6 +580,21 @@ export const useDocsStore = create<DocsState>((set, get) => {
       return newDoc.id;
     },
 
+    upsertDocument: (doc: DocItem) => {
+      const completeDoc = ensureDocFiles(doc);
+      const existingIdx = get().documents.findIndex((d) => d.id === completeDoc.id);
+      let updated: DocItem[];
+      if (existingIdx >= 0) {
+        updated = get().documents.map((d, i) => (i === existingIdx ? { ...d, ...completeDoc } : d));
+      } else {
+        updated = [completeDoc, ...get().documents];
+      }
+      set({ documents: updated, activeDocId: completeDoc.id, studioPhase: 'editor' });
+      saveToStorage(updated);
+      saveActiveDocIdToStorage(completeDoc.id);
+      savePhaseToStorage('editor');
+    },
+
     updateDocumentContent: (id: string, content: string) => {
       const updated = get().documents.map((d) => {
         if (d.id !== id) return d;
@@ -584,6 +666,357 @@ export const useDocsStore = create<DocsState>((set, get) => {
       );
       set({ documents: updated });
       saveToStorage(updated);
+    },
+
+    // Overleaf-style Sharing Actions Implementation
+    updateDocSharing: (docId: string, isLinkSharingOn: boolean) => {
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        return {
+          ...d,
+          isLinkSharingOn,
+          updatedAt: Date.now(),
+        };
+      });
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Backend / Supabase
+      const doc = updated.find((d) => d.id === docId);
+      if (doc) {
+        fetch(`/api/docs/${docId}/share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            isLinkSharingOn,
+            collaborators: doc.collaborators || [],
+            viewToken: doc.viewToken,
+            editToken: doc.editToken,
+          }),
+        }).catch((err) => console.warn('[DocShare] API sync failed:', err));
+      }
+    },
+
+    addDocCollaborator: (docId: string, email: string, role: 'viewer' | 'editor') => {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail) return;
+
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const currentCollabs = d.collaborators || [];
+        const existingIdx = currentCollabs.findIndex((c) => c.email.toLowerCase() === cleanEmail);
+        let newCollabs: DocCollaborator[];
+        if (existingIdx >= 0) {
+          newCollabs = currentCollabs.map((c, i) =>
+            i === existingIdx ? { ...c, role, invitedAt: Date.now() } : c
+          );
+        } else {
+          newCollabs = [
+            ...currentCollabs,
+            { email: cleanEmail, role, invitedAt: Date.now() },
+          ];
+        }
+        return {
+          ...d,
+          collaborators: newCollabs,
+          updatedAt: Date.now(),
+        };
+      });
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Backend / Supabase
+      const doc = updated.find((d) => d.id === docId);
+      if (doc) {
+        fetch(`/api/docs/${docId}/share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            isLinkSharingOn: doc.isLinkSharingOn ?? true,
+            collaborators: doc.collaborators,
+            viewToken: doc.viewToken,
+            editToken: doc.editToken,
+          }),
+        }).catch((err) => console.warn('[DocShare] API sync failed:', err));
+      }
+    },
+
+    removeDocCollaborator: (docId: string, email: string) => {
+      const cleanEmail = email.trim().toLowerCase();
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const newCollabs = (d.collaborators || []).filter(
+          (c) => c.email.toLowerCase() !== cleanEmail
+        );
+        return {
+          ...d,
+          collaborators: newCollabs,
+          updatedAt: Date.now(),
+        };
+      });
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Backend / Supabase
+      const doc = updated.find((d) => d.id === docId);
+      if (doc) {
+        fetch(`/api/docs/${docId}/share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            isLinkSharingOn: doc.isLinkSharingOn ?? true,
+            collaborators: doc.collaborators,
+            viewToken: doc.viewToken,
+            editToken: doc.editToken,
+          }),
+        }).catch((err) => console.warn('[DocShare] API sync failed:', err));
+      }
+    },
+
+    updateDocCollaboratorRole: (docId: string, email: string, role: 'viewer' | 'editor') => {
+      const cleanEmail = email.trim().toLowerCase();
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const newCollabs = (d.collaborators || []).map((c) =>
+          c.email.toLowerCase() === cleanEmail ? { ...c, role } : c
+        );
+        return {
+          ...d,
+          collaborators: newCollabs,
+          updatedAt: Date.now(),
+        };
+      });
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Backend / Supabase
+      const doc = updated.find((d) => d.id === docId);
+      if (doc) {
+        fetch(`/api/docs/${docId}/share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            isLinkSharingOn: doc.isLinkSharingOn ?? true,
+            collaborators: doc.collaborators,
+            viewToken: doc.viewToken,
+            editToken: doc.editToken,
+          }),
+        }).catch((err) => console.warn('[DocShare] API sync failed:', err));
+      }
+    },
+
+    // ── Overleaf Comments & Review Panel Implementations ────────────────────────
+    addComment: (docId: string, commentData: Omit<DocComment, 'id' | 'createdAt'>) => {
+      const commentId = 'cmt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      const newComment: DocComment = {
+        ...commentData,
+        id: commentId,
+        createdAt: Date.now(),
+        resolved: false,
+        replies: [],
+      };
+
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const currentComments = d.comments || [];
+        return {
+          ...d,
+          comments: [newComment, ...currentComments],
+          updatedAt: Date.now(),
+        };
+      });
+
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Supabase
+      (async () => {
+        try {
+          const { createClient } = await import('../../../shared/utils/supabase/client');
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            await supabase.from('document_comments').upsert({
+              id: newComment.id,
+              document_id: docId,
+              sub_file_id: newComment.subFileId || null,
+              selected_text: newComment.selectedText || '',
+              from_line: newComment.fromLine || 1,
+              to_line: newComment.toLine || 1,
+              author_name: newComment.authorName || 'Collaborator',
+              author_email: newComment.authorEmail || session.user.email,
+              content: newComment.content,
+              resolved: false,
+              replies: [],
+              updated_at: new Date().toISOString(),
+            });
+            // Update document comments jsonb
+            const doc = updated.find((d) => d.id === docId);
+            if (doc) {
+              await supabase.from('documents').update({ comments: doc.comments, updated_at: new Date().toISOString() }).eq('id', docId);
+            }
+          }
+        } catch (e) {
+          console.warn('[Comments] Supabase add comment sync failed:', e);
+        }
+      })();
+
+      return commentId;
+    },
+
+    updateComment: (docId: string, commentId: string, content: string) => {
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const newComments = (d.comments || []).map((c) =>
+          c.id === commentId ? { ...c, content, updatedAt: Date.now() } : c
+        );
+        return { ...d, comments: newComments, updatedAt: Date.now() };
+      });
+
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Supabase
+      (async () => {
+        try {
+          const { createClient } = await import('../../../shared/utils/supabase/client');
+          const supabase = createClient();
+          await supabase.from('document_comments').update({ content, updated_at: new Date().toISOString() }).eq('id', commentId);
+          const doc = updated.find((d) => d.id === docId);
+          if (doc) {
+            await supabase.from('documents').update({ comments: doc.comments, updated_at: new Date().toISOString() }).eq('id', docId);
+          }
+        } catch (e) {
+          console.warn('[Comments] Supabase update comment sync failed:', e);
+        }
+      })();
+    },
+
+    deleteComment: (docId: string, commentId: string) => {
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const newComments = (d.comments || []).filter((c) => c.id !== commentId);
+        return { ...d, comments: newComments, updatedAt: Date.now() };
+      });
+
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Supabase
+      (async () => {
+        try {
+          const { createClient } = await import('../../../shared/utils/supabase/client');
+          const supabase = createClient();
+          await supabase.from('document_comments').delete().eq('id', commentId);
+          const doc = updated.find((d) => d.id === docId);
+          if (doc) {
+            await supabase.from('documents').update({ comments: doc.comments, updated_at: new Date().toISOString() }).eq('id', docId);
+          }
+        } catch (e) {
+          console.warn('[Comments] Supabase delete comment sync failed:', e);
+        }
+      })();
+    },
+
+    resolveComment: (docId: string, commentId: string, resolved: boolean = true) => {
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const newComments = (d.comments || []).map((c) =>
+          c.id === commentId ? { ...c, resolved, updatedAt: Date.now() } : c
+        );
+        return { ...d, comments: newComments, updatedAt: Date.now() };
+      });
+
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Supabase
+      (async () => {
+        try {
+          const { createClient } = await import('../../../shared/utils/supabase/client');
+          const supabase = createClient();
+          await supabase.from('document_comments').update({ resolved, updated_at: new Date().toISOString() }).eq('id', commentId);
+          const doc = updated.find((d) => d.id === docId);
+          if (doc) {
+            await supabase.from('documents').update({ comments: doc.comments, updated_at: new Date().toISOString() }).eq('id', docId);
+          }
+        } catch (e) {
+          console.warn('[Comments] Supabase resolve comment sync failed:', e);
+        }
+      })();
+    },
+
+    addCommentReply: (docId: string, commentId: string, replyData: Omit<DocCommentReply, 'id' | 'createdAt'>) => {
+      const replyId = 'rpl_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      const newReply: DocCommentReply = {
+        ...replyData,
+        id: replyId,
+        createdAt: Date.now(),
+      };
+
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const newComments = (d.comments || []).map((c) => {
+          if (c.id !== commentId) return c;
+          const replies = [...(c.replies || []), newReply];
+          return { ...c, replies };
+        });
+        return { ...d, comments: newComments, updatedAt: Date.now() };
+      });
+
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Supabase
+      (async () => {
+        try {
+          const { createClient } = await import('../../../shared/utils/supabase/client');
+          const supabase = createClient();
+          const targetComment = updated.find((d) => d.id === docId)?.comments?.find((c) => c.id === commentId);
+          if (targetComment) {
+            await supabase.from('document_comments').update({ replies: targetComment.replies, updated_at: new Date().toISOString() }).eq('id', commentId);
+          }
+          const doc = updated.find((d) => d.id === docId);
+          if (doc) {
+            await supabase.from('documents').update({ comments: doc.comments, updated_at: new Date().toISOString() }).eq('id', docId);
+          }
+        } catch (e) {
+          console.warn('[Comments] Supabase add reply sync failed:', e);
+        }
+      })();
+    },
+
+    deleteCommentReply: (docId: string, commentId: string, replyId: string) => {
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const newComments = (d.comments || []).map((c) => {
+          if (c.id !== commentId) return c;
+          const replies = (c.replies || []).filter((r) => r.id !== replyId);
+          return { ...c, replies };
+        });
+        return { ...d, comments: newComments, updatedAt: Date.now() };
+      });
+
+      set({ documents: updated });
+      saveToStorage(updated);
+
+      // Async sync to Supabase
+      (async () => {
+        try {
+          const { createClient } = await import('../../../shared/utils/supabase/client');
+          const supabase = createClient();
+          const targetComment = updated.find((d) => d.id === docId)?.comments?.find((c) => c.id === commentId);
+          if (targetComment) {
+            await supabase.from('document_comments').update({ replies: targetComment.replies, updated_at: new Date().toISOString() }).eq('id', commentId);
+          }
+          const doc = updated.find((d) => d.id === docId);
+          if (doc) {
+            await supabase.from('documents').update({ comments: doc.comments, updated_at: new Date().toISOString() }).eq('id', docId);
+          }
+        } catch (e) {
+          console.warn('[Comments] Supabase delete reply sync failed:', e);
+        }
+      })();
     },
 
     setViewMode: (mode: DocsViewMode) => set({ viewMode: mode }),

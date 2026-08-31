@@ -62,9 +62,10 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
         />
       )}
 
-      {/* Sidebar (Drawer on < 1024px, Collapsible on Desktop >= 1024px) */}
+      {/* ── Slim Icon Rail (48px, full height, far left) ── */}
       {showSidebar && (
         <Sidebar
+          railOnly
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
           isDesktopCollapsed={isDesktopSidebarCollapsed}
@@ -76,24 +77,41 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
         />
       )}
 
-      <div className="main-content">
+      {/* ── Right Column: Navbar on top, then Drawer + Content ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', minWidth: 0 }}>
+        {/* App Bar spans full width of this column */}
         <Navbar
-          onToggleMobileSidebar={() => {
-            if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-              setIsDesktopSidebarCollapsed((prev) => !prev);
-              setIsMobileSidebarOpen(false);
-            } else {
-              setIsMobileSidebarOpen((prev) => !prev);
-            }
-          }}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
           isDesktopSidebarCollapsed={isDesktopSidebarCollapsed}
           onToggleDesktopSidebar={() => {
             setIsDesktopSidebarCollapsed((prev) => !prev);
             setIsMobileSidebarOpen(false);
           }}
         />
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          {children}
+
+        {/* Workspace row: Drawer + Main Content */}
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+          {/* Drawer panel (no rail) */}
+          {showSidebar && (
+            <Sidebar
+              drawerOnly
+              isOpenMobile={isMobileSidebarOpen}
+              onCloseMobile={() => setIsMobileSidebarOpen(false)}
+              isDesktopCollapsed={isDesktopSidebarCollapsed}
+              onToggleDesktopCollapse={() => {
+                setIsDesktopSidebarCollapsed((prev) => !prev);
+                setIsMobileSidebarOpen(false);
+              }}
+              onOpenModelSelector={() => setIsModelSelectorOpen(true)}
+            />
+          )}
+
+          {/* Main Content */}
+          <div className="main-content" style={{ height: '100%' }}>
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              {children}
+            </div>
+          </div>
         </div>
       </div>
 

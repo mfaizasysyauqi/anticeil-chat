@@ -12,6 +12,16 @@ import {
   ChevronRight,
   Check,
   Zap,
+  PanelLeftClose,
+  PanelLeftOpen,
+  MessageSquare,
+  Image as ImageIcon,
+  Video,
+  Headphones,
+  FileText,
+  Table as TableIcon,
+  Layers,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
@@ -70,7 +80,65 @@ export function Navbar({
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const docs = useDocsStore((s) => s.documents);
   const activeDoc = docs.find((d) => d.id === activeDocId);
+  const updateDocumentTitle = useDocsStore((s) => s.updateDocumentTitle);
   const t = getTranslation(language);
+
+  // Dynamic Route Breadcrumb Metadata
+  const routeMeta = React.useMemo(() => {
+    if (pathname?.startsWith('/image')) {
+      return {
+        icon: <ImageIcon size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />,
+        title: language === 'id' ? 'Image Studio' : 'Image Studio',
+        isEditable: false,
+      };
+    }
+    if (pathname?.startsWith('/video')) {
+      return {
+        icon: <Video size={13.5} color="#EC4899" style={{ flexShrink: 0 }} />,
+        title: language === 'id' ? 'Video Studio' : 'Video Studio',
+        isEditable: false,
+      };
+    }
+    if (pathname?.startsWith('/audio')) {
+      return {
+        icon: <Headphones size={13.5} color="#F59E0B" style={{ flexShrink: 0 }} />,
+        title: language === 'id' ? 'Audio Studio' : 'Audio Studio',
+        isEditable: false,
+      };
+    }
+    if (pathname?.startsWith('/docs')) {
+      return {
+        icon: activeDoc?.format === 'sheet' ? (
+          <TableIcon size={13.5} color="#10B981" style={{ flexShrink: 0 }} />
+        ) : activeDoc?.format === 'slide' ? (
+          <Layers size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />
+        ) : (
+          <FileText size={13.5} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+        ),
+        title: activeDoc?.title || (language === 'id' ? 'Dokumen Baru' : 'New Document'),
+        isEditable: true,
+        onUpdateTitle: (newTitle: string) => {
+          if (activeDoc) updateDocumentTitle(activeDoc.id, newTitle);
+        },
+      };
+    }
+    if (pathname?.startsWith('/settings')) {
+      return {
+        icon: <SettingsIcon size={13.5} color="var(--text-muted)" style={{ flexShrink: 0 }} />,
+        title: language === 'id' ? 'Pengaturan' : 'Settings',
+        isEditable: false,
+      };
+    }
+    // Default to /chat or root
+    return {
+      icon: <MessageSquare size={13.5} color="var(--brand-primary)" style={{ flexShrink: 0 }} />,
+      title: activeSession?.title || (language === 'id' ? 'Chat Baru' : 'New Chat'),
+      isEditable: true,
+      onUpdateTitle: (newTitle: string) => {
+        if (activeSession) updateSession(activeSession.id, { title: newTitle });
+      },
+    };
+  }, [pathname, activeDoc, activeSession, language, updateDocumentTitle, updateSession]);
 
   const [hasMounted, setHasMounted] = useState(false);
   useEffect(() => { setHasMounted(true); }, []);
@@ -214,12 +282,12 @@ export function Navbar({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 var(--page-pad-x, 24px)',
-        zIndex: 5000,
+        padding: '0 var(--page-pad-x, 16px) 0 12px',
+        zIndex: 20,
       }}
     >
-      {/* Left: Burger Menu (Drawer on < 1024px & Desktop Expand) + Current Route Title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', minWidth: 0, flexShrink: 1 }}>
+      {/* Left: Brand Title & Overleaf-Style Route Breadcrumb Pill */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexShrink: 1 }}>
         {/* Burger Button on Mobile & Tablet (< 1024px) */}
         {onToggleMobileSidebar && (
           <button
@@ -244,38 +312,88 @@ export function Navbar({
           </button>
         )}
 
+        {/* Brand Name */}
+        <Link
+          href="/chat"
+          style={{
+            fontSize: '13px',
+            fontWeight: 750,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.01em',
+            whiteSpace: 'nowrap',
+            textDecoration: 'none',
+          }}
+        >
+          Anticeil
+        </Link>
 
-        {/* Page / Session Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <span
-            suppressHydrationWarning
-            style={{
-              fontSize: '13.5px',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: '300px',
-            }}
-          >
-            {pathname === '/image'
-              ? t.nav.imagine
-              : pathname === '/video'
-              ? 'Video'
-              : pathname === '/audio'
-              ? 'Audio'
-              : pathname === '/docs' || pathname.startsWith('/docs')
-              ? (activeDoc?.title || (language === 'id' ? 'Studio Dokumen & LaTeX' : 'Docs & LaTeX Studio'))
-              : pathname === '/settings'
-              ? t.nav.settings
-              : activeSession?.title || 'Anticeil'}
-          </span>
-          {hasMounted && activeSession?.isPinned && pathname === '/chat' && (
-            <Pin size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
-          )}
-          {hasMounted && activeDoc?.isPinned && (pathname === '/docs' || pathname.startsWith('/docs')) && (
-            <Pin size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+        <span style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 3px', opacity: 0.7 }}>/</span>
+
+        {/* Overleaf-Style Feature / Session Pill */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            backgroundColor: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '6px',
+            padding: '2px 8px 2px 7px',
+            maxWidth: '360px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {routeMeta.icon}
+
+          {routeMeta.isEditable ? (
+            <input
+              type="text"
+              size={Math.max(1, (routeMeta.title || '').length)}
+              value={routeMeta.title}
+              onChange={(e) => routeMeta.onUpdateTitle?.(e.target.value)}
+              placeholder={language === 'id' ? 'Judul...' : 'Title...'}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                maxWidth: '300px',
+                minWidth: '32px',
+                width: 'auto',
+                // @ts-ignore
+                fieldSizing: 'content',
+                padding: 0,
+                margin: 0,
+                cursor: 'text',
+              }}
+              onFocus={(e) => {
+                if (e.currentTarget.parentElement) {
+                  e.currentTarget.parentElement.style.borderColor = 'var(--brand-primary)';
+                  e.currentTarget.parentElement.style.boxShadow = '0 0 0 1px var(--brand-primary)';
+                }
+              }}
+              onBlur={(e) => {
+                if (e.currentTarget.parentElement) {
+                  e.currentTarget.parentElement.style.borderColor = 'var(--border-subtle)';
+                  e.currentTarget.parentElement.style.boxShadow = 'none';
+                }
+              }}
+            />
+          ) : (
+            <span
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {routeMeta.title}
+            </span>
           )}
         </div>
       </div>
