@@ -1382,7 +1382,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     </div>
   </div>
 
-  {/* Hidden staging container for initial render and measurement */}
+  <!-- Hidden staging container for initial render and measurement -->
   <div id="rendered-content-raw" style="position: absolute; top: -99999px; left: -99999px; width: ${paperWidthPx - 128}px; visibility: hidden; pointer-events: none;"></div>
 
   <script>
