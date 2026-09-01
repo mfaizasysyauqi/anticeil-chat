@@ -83,6 +83,11 @@ export function Navbar({
   const updateDocumentTitle = useDocsStore((s) => s.updateDocumentTitle);
   const t = getTranslation(language);
 
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Dynamic Route Breadcrumb Metadata
   const routeMeta = React.useMemo(() => {
     if (pathname?.startsWith('/image')) {
@@ -108,14 +113,14 @@ export function Navbar({
     }
     if (pathname?.startsWith('/docs')) {
       return {
-        icon: activeDoc?.format === 'sheet' ? (
+        icon: mounted && activeDoc?.format === 'sheet' ? (
           <TableIcon size={13.5} color="#10B981" style={{ flexShrink: 0 }} />
-        ) : activeDoc?.format === 'slide' ? (
+        ) : mounted && activeDoc?.format === 'slide' ? (
           <Layers size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />
         ) : (
           <FileText size={13.5} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
         ),
-        title: activeDoc?.title || (language === 'id' ? 'Dokumen Baru' : 'New Document'),
+        title: (mounted && activeDoc?.title) || (language === 'id' ? 'Dokumen Baru' : 'New Document'),
         isEditable: true,
         onUpdateTitle: (newTitle: string) => {
           if (activeDoc) updateDocumentTitle(activeDoc.id, newTitle);
