@@ -84,6 +84,26 @@ import {
   HardDrive,
 } from 'lucide-react';
 import { useDocsStore, DocsViewMode, DocFormat, DocCollaborator, DocComment, DocCommentReply } from '../store/useDocsStore';
+
+export type PaperSizeId = 'a4' | 'letter' | 'legal' | 'a5' | 'b5' | 'custom';
+
+export interface PaperSizeConfig {
+  id: PaperSizeId;
+  name: string;
+  widthMm: number;
+  heightMm: number;
+  widthPx: number; // Standard 96 DPI: mm * 3.779528
+  heightPx: number;
+  description: string;
+}
+
+export const PAPER_SIZES: PaperSizeConfig[] = [
+  { id: 'a4', name: 'A4', widthMm: 210, heightMm: 297, widthPx: 794, heightPx: 1123, description: '210 × 297 mm (Standar Internasional)' },
+  { id: 'letter', name: 'US Letter', widthMm: 215.9, heightMm: 279.4, widthPx: 816, heightPx: 1056, description: '8.5 × 11 in (Standar US / IEEE)' },
+  { id: 'legal', name: 'US Legal', widthMm: 215.9, heightMm: 355.6, widthPx: 816, heightPx: 1344, description: '8.5 × 14 in (Dokumen Hukum)' },
+  { id: 'a5', name: 'A5', widthMm: 148, heightMm: 210, widthPx: 559, heightPx: 794, description: '148 × 210 mm (Buku / Booklet)' },
+  { id: 'b5', name: 'B5', widthMm: 176, heightMm: 250, widthPx: 665, heightPx: 945, description: '176 × 250 mm (Monograf / Tesis)' },
+];
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
@@ -213,6 +233,16 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [isAutoCompile, setIsAutoCompile] = useState(false);
   const [isRecompileDropdownOpen, setIsRecompileDropdownOpen] = useState(false);
   const [isZoomDropdownOpen, setIsZoomDropdownOpen] = useState(false);
+
+  // Paper Size & Custom Dimensions State
+  const [selectedPaperSize, setSelectedPaperSize] = useState<PaperSizeId>('a4');
+  const [customPaperWidthMm, setCustomPaperWidthMm] = useState(210);
+  const [customPaperHeightMm, setCustomPaperHeightMm] = useState(297);
+  const [isPaperSizeDropdownOpen, setIsPaperSizeDropdownOpen] = useState(false);
+  const [paperSizeDropdownPos, setPaperSizeDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const paperSizeButtonRef = useRef<HTMLButtonElement>(null);
+  const paperSizeDropdownRef = useRef<HTMLDivElement>(null);
+
   const recompileDropdownRef = useRef<HTMLDivElement>(null);
   const zoomDropdownRef = useRef<HTMLDivElement>(null);
   const recompileButtonRef = useRef<HTMLButtonElement>(null);
@@ -428,6 +458,20 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }
   };
 
+  const togglePaperSizeDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isPaperSizeDropdownOpen) {
+      setIsPaperSizeDropdownOpen(false);
+    } else if (paperSizeButtonRef.current) {
+      const rect = paperSizeButtonRef.current.getBoundingClientRect();
+      setPaperSizeDropdownPos({
+        top: rect.bottom + 4,
+        left: Math.max(10, rect.left - 30),
+      });
+      setIsPaperSizeDropdownOpen(true);
+    }
+  };
+
   const toggleZoomDropdown = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isZoomDropdownOpen) {
@@ -493,6 +537,12 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         recompileDropdownRef.current && !recompileDropdownRef.current.contains(target)
       ) {
         setIsRecompileDropdownOpen(false);
+      }
+      if (
+        paperSizeButtonRef.current && !paperSizeButtonRef.current.contains(target) &&
+        paperSizeDropdownRef.current && !paperSizeDropdownRef.current.contains(target)
+      ) {
+        setIsPaperSizeDropdownOpen(false);
       }
       if (
         zoomButtonRef.current && !zoomButtonRef.current.contains(target) &&
@@ -1087,11 +1137,31 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }, 350);
   };
 
+  // Current effective paper dimensions
+  const currentPaperConfig = useMemo(() => {
+    if (selectedPaperSize === 'custom') {
+      const wPx = Math.max(200, Math.round(customPaperWidthMm * 3.779528));
+      const hPx = Math.max(200, Math.round(customPaperHeightMm * 3.779528));
+      return {
+        id: 'custom' as PaperSizeId,
+        name: 'Custom',
+        widthMm: customPaperWidthMm,
+        heightMm: customPaperHeightMm,
+        widthPx: wPx,
+        heightPx: hPx,
+        description: `${customPaperWidthMm} × ${customPaperHeightMm} mm`,
+      };
+    }
+    return PAPER_SIZES.find((p) => p.id === selectedPaperSize) || PAPER_SIZES[0];
+  }, [selectedPaperSize, customPaperWidthMm, customPaperHeightMm]);
+
   // Markdown + KaTeX + Mermaid Sandboxed Compilation HTML using bundled content
   const previewHtml = useMemo(() => {
     const raw = bundledContent || activeDoc?.content || '';
     if (!raw) return '';
     const isLight = theme === 'light';
+    const paperWidthPx = currentPaperConfig.widthPx;
+    const paperHeightPx = currentPaperConfig.heightPx;
 
     return `
 <!DOCTYPE html>
@@ -1150,8 +1220,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       position: absolute;
       top: 0;
       left: 0;
-      width: 794px; /* Fixed Standard A4 Paper Width (210mm) */
-      min-height: 1123px; /* Fixed Standard A4 Paper Height (297mm) */
+      width: ${paperWidthPx}px; /* Dynamic Paper Width */
+      min-height: ${paperHeightPx}px; /* Dynamic Paper Height */
       background: #ffffff;
       padding: 64px 72px; /* Standard 1-inch Academic Paper Margins */
       border-radius: 2px;
@@ -1320,7 +1390,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       if (!paper || !wrapper) return;
 
       var clientWidth = document.documentElement.clientWidth || (window.innerWidth - 12);
-      var paperBaseWidth = 794;
+      var paperBaseWidth = ${paperWidthPx};
+      var paperBaseHeight = ${paperHeightPx};
       var safePadding = 24; // 12px safe margin on both sides
       var availableWidth = Math.max(16, clientWidth - safePadding);
 
@@ -1331,14 +1402,14 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       currentScale = scale;
       paper.style.transform = 'scale(' + scale + ')';
 
-      var paperHeight = paper.offsetHeight || 1123;
+      var paperHeight = paper.offsetHeight || paperBaseHeight;
       var scaledWidth = paperBaseWidth * scale;
       var scaledHeight = paperHeight * scale;
 
       wrapper.style.width = scaledWidth + 'px';
       wrapper.style.height = (scaledHeight + 32) + 'px';
 
-      totalPagesCount = Math.max(1, Math.ceil(paperHeight / 1123));
+      totalPagesCount = Math.max(1, Math.ceil(paperHeight / paperBaseHeight));
 
       // Post scale percentage and total pages to parent
       try {
@@ -1353,7 +1424,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     // Scroll tracking for current page in Overleaf page counter
     window.addEventListener('scroll', function() {
       var scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-      var pageHeightScaled = 1123 * currentScale;
+      var pageHeightScaled = ${paperHeightPx} * currentScale;
       var cur = Math.min(totalPagesCount, Math.max(1, Math.floor((scrollTop + 60) / pageHeightScaled) + 1));
       try {
         window.parent.postMessage({ type: 'DOCS_PAGE_SCROLLED', currentPage: cur }, '*');
@@ -1394,7 +1465,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       // 2. Go to specific page
       if (e.data.type === 'DOCS_GO_TO_PAGE') {
         var p = Math.max(1, Math.min(totalPagesCount, e.data.page || 1));
-        var targetTop = (p - 1) * (1123 * currentScale);
+        var targetTop = (p - 1) * (${paperHeightPx} * currentScale);
         window.scrollTo({ top: targetTop, behavior: 'smooth' });
       }
 
@@ -5304,6 +5375,166 @@ ${exportText}
                         }} />
                       ) : null}
                     </button>
+
+                    {/* Paper Size Selector Button & Popover */}
+                    <div style={{ position: 'relative', display: 'inline-flex' }}>
+                      <button
+                        ref={paperSizeButtonRef}
+                        type="button"
+                        onClick={togglePaperSizeDropdown}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          padding: '3px 7px',
+                          borderRadius: '5px',
+                          backgroundColor: isPaperSizeDropdownOpen ? 'var(--bg-subtle)' : 'transparent',
+                          border: isPaperSizeDropdownOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                          color: isPaperSizeDropdownOpen ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                          fontSize: '11px',
+                          fontWeight: 650,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        className="hover-subtle"
+                        title={language === 'id' ? `Ukuran Kertas: ${currentPaperConfig.name} (${currentPaperConfig.description})` : `Paper Size: ${currentPaperConfig.name}`}
+                      >
+                        <span>{currentPaperConfig.name}</span>
+                        <ChevronDown size={10} style={{ opacity: 0.7, transform: isPaperSizeDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                      </button>
+
+                      {/* Paper Size Popover */}
+                      {isPaperSizeDropdownOpen && paperSizeDropdownPos && typeof document !== 'undefined' && createPortal(
+                        <div
+                          ref={paperSizeDropdownRef}
+                          onClick={(e) => e.stopPropagation()}
+                          className="animate-fade-in"
+                          style={{
+                            position: 'fixed',
+                            top: `${paperSizeDropdownPos.top}px`,
+                            left: `${paperSizeDropdownPos.left}px`,
+                            width: '230px',
+                            backgroundColor: 'var(--bg-surface)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-strong)',
+                            boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.25))',
+                            padding: '6px',
+                            zIndex: 999999999,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                          }}
+                        >
+                          <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            {language === 'id' ? 'Ukuran Kertas Dokumen' : 'Document Paper Size'}
+                          </div>
+
+                          {PAPER_SIZES.map((paper) => {
+                            const isSelected = selectedPaperSize === paper.id;
+                            return (
+                              <button
+                                key={paper.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPaperSize(paper.id);
+                                  setIsPaperSizeDropdownOpen(false);
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '6px 8px',
+                                  borderRadius: '5px',
+                                  border: 'none',
+                                  backgroundColor: isSelected ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
+                                  color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
+                                  fontSize: '12px',
+                                  fontWeight: isSelected ? 650 : 500,
+                                  cursor: 'pointer',
+                                  width: '100%',
+                                  textAlign: 'left',
+                                  transition: 'background-color 0.12s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span>{paper.name}</span>
+                                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{paper.description}</span>
+                                </div>
+                                {isSelected && <Check size={13} strokeWidth={2.5} color="var(--brand-primary)" />}
+                              </button>
+                            );
+                          })}
+
+                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+
+                          {/* Custom Dimensions Option */}
+                          <div style={{ padding: '4px 8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                              <span style={{ fontSize: '11.5px', fontWeight: 650, color: selectedPaperSize === 'custom' ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
+                                Custom (mm)
+                              </span>
+                              {selectedPaperSize === 'custom' && <Check size={12} strokeWidth={2.5} color="var(--brand-primary)" />}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>W:</span>
+                                <input
+                                  type="number"
+                                  min={50}
+                                  max={1000}
+                                  value={customPaperWidthMm}
+                                  onChange={(e) => {
+                                    setCustomPaperWidthMm(Number(e.target.value) || 210);
+                                    setSelectedPaperSize('custom');
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '3px 5px',
+                                    fontSize: '11px',
+                                    backgroundColor: 'var(--bg-main)',
+                                    border: '1px solid var(--border-strong)',
+                                    borderRadius: '4px',
+                                    color: 'var(--text-primary)',
+                                    outline: 'none',
+                                  }}
+                                />
+                              </div>
+                              <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>×</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>H:</span>
+                                <input
+                                  type="number"
+                                  min={50}
+                                  max={1500}
+                                  value={customPaperHeightMm}
+                                  onChange={(e) => {
+                                    setCustomPaperHeightMm(Number(e.target.value) || 297);
+                                    setSelectedPaperSize('custom');
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '3px 5px',
+                                    fontSize: '11px',
+                                    backgroundColor: 'var(--bg-main)',
+                                    border: '1px solid var(--border-strong)',
+                                    borderRadius: '4px',
+                                    color: 'var(--text-primary)',
+                                    outline: 'none',
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>,
+                        document.body
+                      )}
+                    </div>
 
                     {/* Download / Export Options Button & Popover */}
                     <div style={{ position: 'relative', display: 'inline-flex' }}>
