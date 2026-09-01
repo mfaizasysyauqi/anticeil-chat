@@ -472,23 +472,28 @@ export const useChatStore = create<ChatState>()(
           }
         }
 
-        // Firecrawl URL scraping — auto-detects URLs in message and scrapes to clean Markdown
+        // Firecrawl URL scraping — auto-detects URLs in message, priority:
+        //   1. User BYOK Firecrawl key (direct, no credit cost)
+        //   2. Anticeil provider key via /api/scrape (deducts 1 credit per URL, anticeil session only)
+        //   3. Jina Reader fallback (free, no key)
         const urlMatches = cleanUserQuery.match(/https?:\/\/[^\s]+/g);
         if (urlMatches && urlMatches.length > 0) {
           const firecrawlCfg = settings.apiKeys['firecrawl' as keyof typeof settings.apiKeys];
-          const firecrawlKey = firecrawlCfg?.apiKey;
+          const byokKey = firecrawlCfg?.apiKey?.trim();
+          const isAnticeilSession = session.providerId === 'anticeil';
           const scrapedSections: string[] = [];
 
           for (const url of urlMatches.slice(0, 3)) {
             try {
               let markdown = '';
-              if (firecrawlKey) {
-                // BYOK Firecrawl scrape
+
+              if (byokKey) {
+                // 1. BYOK — user's own key, direct call, no credit deduction
                 const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${firecrawlKey}`,
+                    Authorization: `Bearer ${byokKey}`,
                   },
                   body: JSON.stringify({ url, formats: ['markdown'] }),
                   signal: controller.signal,
@@ -497,14 +502,30 @@ export const useChatStore = create<ChatState>()(
                   const data = await res.json();
                   markdown = data?.data?.markdown || '';
                 }
+              } else if (isAnticeilSession) {
+                // 2. Anticeil provider key — deduct 1 credit, proxy via server route
+                const allowed = useCreditStore.getState().deductCredits('scrape', 'anticeil');
+                if (allowed) {
+                  const res = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url }),
+                    signal: controller.signal,
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    markdown = data?.markdown || '';
+                  }
+                }
               } else {
-                // Fallback: Jina Reader (no key needed)
+                // 3. Fallback: Jina Reader (no key, rate-limited)
                 const jinaRes = await fetch(`https://r.jina.ai/${url}`, {
                   headers: { Accept: 'text/plain', 'X-Return-Format': 'text' },
                   signal: controller.signal,
                 });
                 if (jinaRes.ok) markdown = await jinaRes.text();
               }
+
               if (markdown && markdown.length > 50) {
                 webSearchReasoning += `Scraped ${url}\n`;
                 scrapedSections.push(`### Content from ${url}\n\n${markdown.slice(0, 6000)}`);

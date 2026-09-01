@@ -61,6 +61,7 @@ export const CREDIT_COSTS = {
   image: 5,
   audio: 5,
   video: 15,
+  scrape: 1,
 } as const;
 
 export type CreditActionType = keyof typeof CREDIT_COSTS;
