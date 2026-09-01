@@ -75,10 +75,19 @@ import {
   MessageSquare,
   CheckSquare,
   MessageCircle,
+  MoreHorizontal,
+  Zap,
+  KeyRound,
+  Palette,
+  Database,
+  LogOut,
+  HardDrive,
 } from 'lucide-react';
 import { useDocsStore, DocsViewMode, DocFormat, DocCollaborator, DocComment, DocCommentReply } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
+import { useCreditStore } from '../../credits/store/useCreditStore';
+import { StorageMeter } from '../../storage/components/StorageMeter';
 import { getBundledDocContent } from '../utils/docResolver';
 import { lintDocumentContent, DocDiagnostic } from '../utils/docLinter';
 import { DocsCopilotSidebar } from './DocsCopilotSidebar';
@@ -140,6 +149,29 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
   const language = useSettingsStore((s) => s.language);
   const theme = useSettingsStore((s) => s.theme);
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
+  const tier = useAuthStore((s) => s.tier) || 'free';
+  const signOut = useAuthStore((s) => s.signOut);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
+  // Credit Store & Stats
+  const dailyCredits = useCreditStore((s) => s.credits) || 0;
+  const maxCredits = useCreditStore((s) => s.maxDailyCredits) || 50;
+  const paidCredits = useCreditStore((s) => s.paidCredits) || 0;
+  const openPricingModal = useCreditStore((s) => s.openPricingModal);
+
+  // Bottom drawer footer widget state (Stats collapsed by default)
+  const [isStatsExpanded, setIsStatsExpanded] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+
+  const displayName =
+    (typeof user?.user_metadata?.full_name === 'string' && user.user_metadata.full_name) ||
+    (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name) ||
+    (user?.email ? user.email.split('@')[0] : (language === 'id' ? 'Tamu' : 'Guest'));
+
+  const displayEmail = user?.email || '-';
 
   // Mini Sidebar & Active Drawer Tab ('files' | 'search' | 'review' | 'ai')
   const [activeDrawerTab, setActiveDrawerTab] = useState<'files' | 'search' | 'review' | 'ai'>('files');
@@ -427,6 +459,12 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         zoomDropdownRef.current && !zoomDropdownRef.current.contains(target)
       ) {
         setIsZoomDropdownOpen(false);
+      }
+      if (
+        profileButtonRef.current && !profileButtonRef.current.contains(target) &&
+        profileMenuRef.current && !profileMenuRef.current.contains(target)
+      ) {
+        setIsProfileMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -1353,6 +1391,7 @@ ${exportText}
   // ── PHASE 3: DEDICATED FULL-SCREEN EDITOR VIEW ──
   return (
     <div
+      className={`docs-view-root${isSidebarOpen ? ' drawer-visible' : ''}`}
       style={{
         display: 'flex',
         height: '100vh',
@@ -1362,15 +1401,15 @@ ${exportText}
         position: 'relative',
       }}
     >
-      {/* Mobile & Tablet Backdrop Overlay (< 1024px) */}
+      {/* Mobile & Tablet Backdrop Overlay (< 1024px) — starts after the 48px pinned rail */}
       <div
-        className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`}
+        className={`docs-sidebar-overlay ${isSidebarOpen ? 'open' : ''}`}
         onClick={toggleSidebar}
       />
 
       {/* 0. Far-Left Mini Sidebar (Exact 48px width matching main Sidebar.tsx) */}
       <div
-        className="sidebar-icon-rail"
+        className={`sidebar-icon-rail${isSidebarOpen ? ' rail-open' : ''}`}
         style={{
           width: '48px',
           height: '100%',
@@ -2143,61 +2182,9 @@ ${exportText}
                   overflow: 'hidden',
                 }}
               >
-                {/* Mobile-only Drawer Top Bar: Brand Logo, Title & Close X button */}
-                <div
-                  className="show-on-drawer"
-                  style={{
-                    height: '48px',
-                    boxSizing: 'border-box',
-                    padding: '0 10px',
-                    display: 'none',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <img
-                      src="/anticeil-logo.png"
-                      alt="Anticeil Logo"
-                      style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '6px', flexShrink: 0, marginLeft: '1px' }}
-                    />
-                    <span
-                      style={{
-                        fontSize: '13.5px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
-                      Anticeil
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={toggleSidebar}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    aria-label="Close drawer"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
                 {/* TAB 1: FILES TREE */}
                 {activeDrawerTab === 'files' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
                     {/* Drawer Header: Title + New File, New Folder & Collapse Buttons (Exact 48px height) */}
                     <div
                       style={{
@@ -2978,6 +2965,7 @@ ${exportText}
                           userSelect: 'none',
                         }}
                         onClick={() => setIsOutlineCollapsed((c) => !c)}
+                        className="hover-subtle"
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <ChevronRight
@@ -3737,6 +3725,252 @@ ${exportText}
                     onClose={() => toggleSidebar()}
                   />
                 )}
+
+                {/* FOOTER: Collapsible Credits + Storage + Profile (mirrors main Sidebar) */}
+                <div
+                  style={{
+                    borderTop: '1px solid var(--border-subtle)',
+                    padding: '8px 10px',
+                    background: 'var(--bg-main)',
+                    position: 'relative',
+                    flexShrink: 0,
+                  }}
+                >
+                  {/* Collapsible Stats Row: AI Credits + Storage */}
+                  <div style={{ marginBottom: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsStatsExpanded(prev => !prev)}
+                      className="clickable-pill"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '6px 10px',
+                        backgroundColor: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        cursor: 'pointer',
+                        color: 'var(--text-muted)',
+                        transition: 'all 0.15s ease',
+                      }}
+                      title={isStatsExpanded ? (language === 'id' ? 'Sembunyikan statistik' : 'Hide stats') : (language === 'id' ? 'Tampilkan statistik' : 'Show stats')}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 600 }}>
+                        <Zap size={12} color="#f59e0b" fill="#f59e0b" style={{ flexShrink: 0 }} />
+                        <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '11.5px' }}>
+                          {dailyCredits}/{maxCredits}
+                        </span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500 }}>
+                          {language === 'id' ? 'kredit' : 'credits'}
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={12}
+                        style={{
+                          transform: isStatsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease',
+                          color: 'var(--text-muted)',
+                          flexShrink: 0,
+                        }}
+                      />
+                    </button>
+
+                    {isStatsExpanded && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px', animation: 'fadeIn 0.15s ease' }}>
+                        {/* AI Credits Meter */}
+                        <div
+                          onClick={() => openPricingModal('topup')}
+                          title={language === 'id' ? 'Kredit AI Harian — Klik untuk Top-up / Upgrade' : 'Daily AI Credits — Click to Top-up / Upgrade'}
+                          className="clickable-pill"
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: 'var(--radius-md, 8px)',
+                            backgroundColor: 'var(--bg-subtle)',
+                            border: '1px solid var(--border-subtle)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                              <Zap size={12} color="#f59e0b" fill="#f59e0b" />
+                              <span>{language === 'id' ? 'Kredit AI' : 'AI Credits'}</span>
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ fontWeight: 700, color: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : 'var(--text-primary)' }}>
+                                {dailyCredits}/{maxCredits}
+                              </span>
+                              {paidCredits > 0 && (
+                                <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#f59e0b', background: 'rgba(245,158,11,0.18)', padding: '1px 5px', borderRadius: '4px' }}>
+                                  +{paidCredits}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ width: '100%', height: '4px', borderRadius: '9999px', backgroundColor: 'var(--border-subtle)', overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100))}%`,
+                              height: '100%',
+                              backgroundColor: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : '#f59e0b',
+                              borderRadius: '9999px',
+                              transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                            }} />
+                          </div>
+                        </div>
+
+                        {/* Storage Meter */}
+                        <StorageMeter compact onManageClick={() => openPricingModal('tiers')} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Profile Trigger Button */}
+                  <div style={{ position: 'relative' }}>
+                    {isProfileMenuOpen && (
+                      <div
+                        ref={profileMenuRef}
+                        className="animate-fade-in"
+                        style={{
+                          position: 'absolute',
+                          bottom: 'calc(100% + 6px)',
+                          left: 0,
+                          right: 0,
+                          backgroundColor: 'var(--bg-surface)',
+                          border: '1px solid var(--border-strong)',
+                          borderRadius: 'var(--radius-lg, 12px)',
+                          boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
+                          padding: '6px',
+                          zIndex: 999999999,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                        }}
+                      >
+                        {/* User Header */}
+                        <div style={{ padding: '8px 10px 6px 10px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '3px' }}>
+                          <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {displayName}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {displayEmail}
+                          </div>
+                        </div>
+
+                        <div style={{ padding: '6px 10px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {language === 'id' ? 'Pengaturan' : 'Settings'}
+                        </div>
+
+                        <button type="button" onClick={() => { openSettingsTab('keys'); setIsProfileMenuOpen(false); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <KeyRound size={14} color="var(--text-secondary)" />
+                          <span>{language === 'id' ? 'Kunci API (BYOK)' : 'API Keys (BYOK)'}</span>
+                        </button>
+
+                        <button type="button" onClick={() => { openSettingsTab('appearance'); setIsProfileMenuOpen(false); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <Palette size={14} color="var(--text-secondary)" />
+                          <span>{language === 'id' ? 'Tampilan & Bahasa' : 'Appearance & Language'}</span>
+                        </button>
+
+                        <button type="button" onClick={() => { openSettingsTab('backup'); setIsProfileMenuOpen(false); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <Database size={14} color="var(--text-secondary)" />
+                          <span>{language === 'id' ? 'Database & Cadangan' : 'Database & Backup'}</span>
+                        </button>
+
+                        <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
+
+                        <button type="button" onClick={() => { openPricingModal('tiers'); setIsProfileMenuOpen(false); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,115,234,0.08)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <Zap size={14} color="var(--brand-primary)" />
+                          <span>{language === 'id' ? 'Tingkatkan Paket' : 'Upgrade Plan'}</span>
+                        </button>
+
+                        <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
+
+                        {user ? (
+                          <button type="button" onClick={() => { signOut(); setIsProfileMenuOpen(false); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--accent-danger)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <LogOut size={14} />
+                            <span>{language === 'id' ? 'Keluar' : 'Log Out'}</span>
+                          </button>
+                        ) : (
+                          <button type="button" onClick={() => { setIsProfileMenuOpen(false); openAuthModal('login'); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <LogOut size={14} />
+                            <span>{language === 'id' ? 'Masuk' : 'Log In'}</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      ref={profileButtonRef}
+                      type="button"
+                      onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                      className="clickable-pill"
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '6px 8px',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        background: isProfileMenuOpen ? 'var(--bg-subtle)' : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #0073EA, #A25DDC)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12.5px', fontWeight: 700, flexShrink: 0, boxShadow: '0 2px 6px rgba(0,115,234,0.3)' }}>
+                        {(displayName[0] || '?').toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {displayName}
+                          </span>
+                          <span style={{
+                            fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', flexShrink: 0,
+                            background: tier === 'enterprise' ? 'rgba(139,92,246,0.15)' : tier === 'pro' ? 'rgba(0,115,234,0.15)' : 'rgba(0,200,117,0.12)',
+                            color: tier === 'enterprise' ? '#a78bfa' : tier === 'pro' ? 'var(--brand-primary)' : 'var(--accent-success)',
+                            border: `1px solid ${tier === 'enterprise' ? 'rgba(139,92,246,0.4)' : tier === 'pro' ? 'rgba(0,115,234,0.3)' : 'rgba(0,200,117,0.3)'}`,
+                          }}>
+                            {tier === 'enterprise' ? 'ENTERPRISE' : tier === 'pro' ? 'PRO' : 'FREE'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {tier === 'enterprise' ? 'Custom Supabase' : tier === 'pro' ? 'Supabase Cloud' : (language === 'id' ? 'Penyimpanan Lokal' : 'Local Storage')}
+                        </div>
+                      </div>
+                      <MoreHorizontal size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                    </button>
+                  </div>{/* end position:relative wrapper */}
+                </div>{/* end FOOTER */}
               </aside>
 
               {/* Resize handle: Left Drawer ↔ Editor */}

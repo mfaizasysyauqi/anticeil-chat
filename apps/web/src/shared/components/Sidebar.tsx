@@ -3823,27 +3823,28 @@ export function Sidebar({
             <button
               type="button"
               onClick={() => setIsStatsExpanded(prev => !prev)}
+              className="clickable-pill"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 width: '100%',
-                padding: '5px 2px',
-                background: 'transparent',
-                border: 'none',
+                padding: '6px 10px',
+                backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md, 8px)',
                 cursor: 'pointer',
                 color: 'var(--text-muted)',
-                borderRadius: '6px',
-                transition: 'color 0.15s ease',
+                transition: 'all 0.15s ease',
               }}
               title={isStatsExpanded ? (language === 'id' ? 'Sembunyikan statistik' : 'Hide stats') : (language === 'id' ? 'Tampilkan statistik' : 'Show stats')}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                <Zap size={11} color="#f59e0b" fill="#f59e0b" />
-                <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '11px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 600 }}>
+                <Zap size={12} color="#f59e0b" fill="#f59e0b" style={{ flexShrink: 0 }} />
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '11.5px' }}>
                   {dailyCredits}/{maxCredits}
                 </span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '10.5px', fontWeight: 500 }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500 }}>
                   {language === 'id' ? 'kredit' : 'credits'}
                 </span>
               </div>
@@ -3856,6 +3857,7 @@ export function Sidebar({
                   transform: isStatsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                   transition: 'transform 0.2s ease',
                   color: 'var(--text-muted)',
+                  flexShrink: 0,
                 }}
               >
                 <path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
