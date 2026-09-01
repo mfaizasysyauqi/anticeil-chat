@@ -221,7 +221,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
       style={{
         width: isEmbedded ? '100%' : '320px',
         height: '100%',
-        backgroundColor: 'var(--bg-surface)',
+        backgroundColor: 'var(--bg-sidebar)',
         borderLeft: isEmbedded ? 'none' : '1px solid var(--border-subtle)',
         display: 'flex',
         flexDirection: 'column',
@@ -253,6 +253,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
+          backgroundColor: 'var(--bg-sidebar)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -261,7 +262,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
           </span>
           <span
             style={{
-              fontSize: '9.5px',
+              fontSize: '10px',
               background: 'rgba(0, 115, 234, 0.12)',
               color: 'var(--brand-primary)',
               border: '1px solid rgba(0, 115, 234, 0.25)',
@@ -271,7 +272,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
               lineHeight: '15px',
             }}
           >
-            Active
+            {language === 'id' ? 'Aktif' : 'Active'}
           </span>
         </div>
 
@@ -299,7 +300,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
       </div>
 
       {/* Integrated Model Selector Pill Bar */}
-      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-sidebar)' }}>
         <button
           type="button"
           onClick={() => setIsModelSelectorOpen(true)}
@@ -311,12 +312,13 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
             padding: '5px 8px',
             borderRadius: '6px',
             border: '1px solid var(--border-subtle)',
-            backgroundColor: 'var(--bg-subtle)',
+            backgroundColor: 'var(--bg-surface)',
             color: 'var(--text-primary)',
             fontSize: '11.5px',
             fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.15s ease',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
           }}
           className="hover-subtle"
           title="Pilih Model AI (Text Models Only)"
@@ -345,7 +347,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
           display: 'flex',
           gap: '5px',
           overflowX: 'auto',
-          backgroundColor: 'transparent',
+          backgroundColor: 'var(--bg-sidebar)',
           scrollbarWidth: 'none',
         }}
       >
@@ -362,7 +364,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
               padding: '4px 8px',
               borderRadius: '6px',
               border: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-subtle)',
+              backgroundColor: 'var(--bg-surface)',
               color: 'var(--text-secondary)',
               fontSize: '11px',
               fontWeight: 500,
@@ -370,6 +372,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
               whiteSpace: 'nowrap',
               flexShrink: 0,
               transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
             }}
             onMouseEnter={(e) => {
               if (!isGenerating) {
@@ -399,6 +402,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
           display: 'flex',
           flexDirection: 'column',
           gap: '12px',
+          backgroundColor: 'var(--bg-sidebar)',
         }}
       >
         {messages.map((m) => (
@@ -425,7 +429,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
             >
               {m.role === 'user' ? (
                 <>
-                  <span>Anda</span>
+                  <span>{language === 'id' ? 'Anda' : 'You'}</span>
                   <User size={10} />
                 </>
               ) : (
@@ -445,17 +449,18 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
                 backgroundColor:
                   m.role === 'user'
                     ? 'var(--brand-primary, #0073ea)'
-                    : 'var(--bg-subtle)',
+                    : 'var(--bg-surface)',
                 color: m.role === 'user' ? '#ffffff' : 'var(--text-primary)',
                 border:
                   m.role === 'user'
                     ? 'none'
                     : '1px solid var(--border-subtle)',
+                boxShadow: m.role === 'user' ? 'none' : '0 1px 2px rgba(0,0,0,0.03)',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
               }}
             >
-              {m.content || (isGenerating && m.role === 'assistant' ? 'Menulis...' : '')}
+              {m.content || (isGenerating && m.role === 'assistant' ? (language === 'id' ? 'Menulis...' : 'Writing...') : '')}
             </div>
 
             {/* Assistant Action Buttons */}
@@ -464,7 +469,7 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
                 <button
                   type="button"
                   onClick={() => handleInsert(m.content)}
-                  title="Sisipkan ke Dokumen"
+                  title={language === 'id' ? 'Sisipkan ke Dokumen' : 'Insert to Document'}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -472,22 +477,23 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
                     padding: '3px 8px',
                     borderRadius: '5px',
                     border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-subtle)',
+                    backgroundColor: 'var(--bg-surface)',
                     color: 'var(--brand-primary)',
                     fontSize: '10.5px',
                     fontWeight: 650,
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                   }}
                   className="hover-subtle"
                 >
                   <ArrowDownLeft size={11} />
-                  <span>Sisipkan</span>
+                  <span>{language === 'id' ? 'Sisipkan' : 'Insert'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCopy(m.content, m.id)}
-                  title="Salin Teks"
+                  title={language === 'id' ? 'Salin Teks' : 'Copy Text'}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -495,16 +501,17 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
                     padding: '3px 8px',
                     borderRadius: '5px',
                     border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-subtle)',
+                    backgroundColor: 'var(--bg-surface)',
                     color: copiedId === m.id ? '#10B981' : 'var(--text-muted)',
                     fontSize: '10.5px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                   }}
                   className="hover-subtle"
                 >
-                  {copiedId === m.id ? <Check size={11} /> : <Copy size={11} />}
-                  <span>{copiedId === m.id ? 'Tersalin' : 'Salin'}</span>
+                  {copiedId === m.id ? <Check size={11} color="#10B981" /> : <Copy size={11} />}
+                  <span>{copiedId === m.id ? (language === 'id' ? 'Tersalin' : 'Copied') : (language === 'id' ? 'Salin' : 'Copy')}</span>
                 </button>
               </div>
             )}
@@ -518,7 +525,8 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
         style={{
           padding: '10px 12px',
           borderTop: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-surface)',
+          backgroundColor: 'var(--bg-sidebar)',
+          flexShrink: 0,
         }}
       >
         <form
@@ -530,10 +538,11 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            backgroundColor: 'var(--bg-subtle)',
+            backgroundColor: 'var(--bg-surface)',
             borderRadius: '8px',
             padding: '4px 8px',
             border: '1px solid var(--border-subtle)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
             transition: 'border-color 0.15s ease',
           }}
         >

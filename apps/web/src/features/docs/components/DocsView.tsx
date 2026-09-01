@@ -154,6 +154,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [replyingCommentId, setReplyingCommentId] = useState<string | null>(null);
   const [replyDraftText, setReplyDraftText] = useState('');
   const [commentFilter, setCommentFilter] = useState<'all' | 'unresolved' | 'resolved'>('unresolved');
+  const [editorScrollTop, setEditorScrollTop] = useState(0);
 
   // Outline panel height inside Files tab (px) — draggable like Overleaf
   const [outlinePanelHeight, setOutlinePanelHeight] = useState(180);
@@ -3303,6 +3304,43 @@ ${exportText}
                     setReplyingCommentId(null);
                   };
 
+                  // Calculate vertical layout so comment cards and draft box sit beside the exact commented lines in the editor
+                  type LayoutItem = { type: 'comment'; data: typeof filteredComments[0] } | { type: 'draft'; line: number };
+                  const items: LayoutItem[] = filteredComments.map(c => ({ type: 'comment', data: c }));
+                  if (isAddingComment) {
+                    items.push({ type: 'draft', line: draftFromLine });
+                  }
+
+                  items.sort((a, b) => {
+                    const lineA = a.type === 'comment' ? (a.data.fromLine ?? 1) : a.line;
+                    const lineB = b.type === 'comment' ? (b.data.fromLine ?? 1) : b.line;
+                    return lineA - lineB;
+                  });
+
+                  let currentY = 8;
+                  const layoutMap = new Map<string, number>();
+                  let draftY = 8;
+
+                  for (const item of items) {
+                    if (item.type === 'draft') {
+                      const targetY = Math.max(8, (item.line - 1) * 20.8 - editorScrollTop);
+                      draftY = Math.max(currentY, targetY);
+                      currentY = draftY + 175; // draft box height
+                    } else {
+                      const fromLine = item.data.fromLine ?? 1;
+                      const targetY = Math.max(8, (fromLine - 1) * 20.8 - editorScrollTop);
+                      const actualY = Math.max(currentY, targetY);
+                      layoutMap.set(item.data.id, actualY);
+
+                      const repliesCount = (item.data.replies || []).length;
+                      const hasPreview = !!item.data.selectedText;
+                      const cardHeight = 90 + (hasPreview ? 26 : 0) + (repliesCount * 34) + 12;
+                      currentY = actualY + cardHeight;
+                    }
+                  }
+
+                  const minContainerHeight = Math.max(450, currentY + 80);
+
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0', overflow: 'hidden' }}>
                       {/* Review Panel Header */}
@@ -3310,6 +3348,7 @@ ${exportText}
                         padding: '10px 12px 8px',
                         borderBottom: '1px solid var(--border-subtle)',
                         flexShrink: 0,
+                        backgroundColor: 'var(--bg-sidebar)',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                           <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>
@@ -3372,115 +3411,124 @@ ${exportText}
                         </div>
                       </div>
 
-                      {/* New Comment Draft Form */}
-                      {isAddingComment && (
-                        <div style={{
-                          margin: '10px 10px 0',
-                          border: '1.5px solid var(--brand-primary)',
-                          borderRadius: '8px',
-                          backgroundColor: 'var(--bg-surface)',
-                          padding: '10px',
-                          flexShrink: 0,
-                          boxShadow: '0 2px 8px rgba(0,115,234,0.1)',
-                        }}>
-                          {draftSelectedText && (
+                      {/* Comment Container (Positions aligned with commented lines) */}
+                      <div style={{ flex: 1, overflowY: 'auto', position: 'relative', minHeight: 0, backgroundColor: 'var(--bg-sidebar)' }}>
+                        <div style={{ position: 'relative', width: '100%', minHeight: `${minContainerHeight}px` }}>
+                          {/* Empty State */}
+                          {!isAddingComment && filteredComments.length === 0 && (
                             <div style={{
-                              fontSize: '10.5px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              paddingTop: '40px',
+                              gap: '10px',
                               color: 'var(--text-muted)',
-                              backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                              border: '1px solid rgba(245, 158, 11, 0.25)',
-                              borderLeft: '3px solid #F59E0B',
-                              borderRadius: '4px',
-                              padding: '4px 6px',
-                              marginBottom: '8px',
-                              fontFamily: 'monospace',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
                             }}>
-                              "{draftSelectedText.substring(0, 60)}{draftSelectedText.length > 60 ? '…' : ''}"
+                              <MessageSquare size={28} style={{ opacity: 0.3 }} />
+                              <span style={{ fontSize: '11.5px', textAlign: 'center', opacity: 0.6 }}>
+                                {commentFilter === 'resolved'
+                                  ? (language === 'id' ? 'Belum ada komentar selesai' : 'No resolved comments')
+                                  : (language === 'id' ? 'Belum ada komentar\nKlik teks di editor lalu tekan Ctrl+Shift+C' : 'No comments yet\nSelect text in editor and press Ctrl+Shift+C')}
+                              </span>
                             </div>
                           )}
-                          {!draftSelectedText && (
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                              {language === 'id' ? `Baris ${draftFromLine}` : `Line ${draftFromLine}`}
-                            </div>
-                          )}
-                          <textarea
-                            autoFocus
-                            value={draftCommentText}
-                            onChange={e => setDraftCommentText(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleSubmitComment(); }
-                              if (e.key === 'Escape') { setIsAddingComment(false); setDraftCommentText(''); }
-                            }}
-                            placeholder={language === 'id' ? 'Tambah komentar atau @ mention...' : 'Add comment or @ mention...'}
-                            style={{
-                              width: '100%',
-                              minHeight: '60px',
-                              resize: 'vertical',
-                              backgroundColor: 'var(--bg-main)',
-                              color: 'var(--text-primary)',
-                              border: '1px solid var(--border-subtle)',
-                              borderRadius: '6px',
-                              padding: '6px 8px',
-                              fontSize: '11.5px',
-                              fontFamily: 'inherit',
-                              outline: 'none',
-                              boxSizing: 'border-box',
-                            }}
-                          />
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '7px' }}>
-                            <button
-                              type="button"
-                              onClick={() => { setIsAddingComment(false); setDraftCommentText(''); }}
-                              style={{ padding: '4px 10px', borderRadius: '5px', border: '1px solid var(--border-subtle)', backgroundColor: 'transparent', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer' }}
-                            >
-                              {language === 'id' ? 'Batal' : 'Cancel'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleSubmitComment}
-                              disabled={!draftCommentText.trim()}
-                              style={{
-                                padding: '4px 12px',
-                                borderRadius: '5px',
-                                border: 'none',
-                                backgroundColor: draftCommentText.trim() ? 'var(--brand-primary)' : 'var(--border-subtle)',
-                                color: draftCommentText.trim() ? '#fff' : 'var(--text-muted)',
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                cursor: draftCommentText.trim() ? 'pointer' : 'default',
-                                transition: 'all 0.15s',
-                              }}
-                            >
-                              {language === 'id' ? 'Kirim' : 'Comment'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
 
-                      {/* Comment List */}
-                      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 16px' }}>
-                        {filteredComments.length === 0 ? (
-                          <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            paddingTop: '40px',
-                            gap: '10px',
-                            color: 'var(--text-muted)',
-                          }}>
-                            <MessageSquare size={28} style={{ opacity: 0.3 }} />
-                            <span style={{ fontSize: '11.5px', textAlign: 'center', opacity: 0.6 }}>
-                              {commentFilter === 'resolved'
-                                ? (language === 'id' ? 'Belum ada komentar selesai' : 'No resolved comments')
-                                : (language === 'id' ? 'Belum ada komentar\nKlik teks di editor lalu tekan Ctrl+Shift+C' : 'No comments yet\nSelect text in editor and press Ctrl+Shift+C')}
-                            </span>
-                          </div>
-                        ) : (
-                          filteredComments.map((comment) => {
+                          {/* New Comment Draft Form */}
+                          {isAddingComment && (
+                            <div style={{
+                              position: 'absolute',
+                              top: `${draftY}px`,
+                              left: '8px',
+                              right: '8px',
+                              border: '1.5px solid var(--brand-primary)',
+                              borderRadius: '8px',
+                              backgroundColor: 'var(--bg-surface)',
+                              padding: '10px',
+                              zIndex: 5,
+                              boxShadow: '0 4px 16px rgba(0,115,234,0.15)',
+                              transition: 'top 0.15s ease',
+                            }}>
+                              {draftSelectedText && (
+                                <div style={{
+                                  fontSize: '10.5px',
+                                  color: 'var(--text-muted)',
+                                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                                  borderLeft: '3px solid #F59E0B',
+                                  borderRadius: '4px',
+                                  padding: '4px 6px',
+                                  marginBottom: '8px',
+                                  fontFamily: 'monospace',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}>
+                                  "{draftSelectedText.substring(0, 60)}{draftSelectedText.length > 60 ? '…' : ''}"
+                                </div>
+                              )}
+                              {!draftSelectedText && (
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                                  {language === 'id' ? `Baris ${draftFromLine}` : `Line ${draftFromLine}`}
+                                </div>
+                              )}
+                              <textarea
+                                autoFocus
+                                value={draftCommentText}
+                                onChange={e => setDraftCommentText(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleSubmitComment(); }
+                                  if (e.key === 'Escape') { setIsAddingComment(false); setDraftCommentText(''); }
+                                }}
+                                placeholder={language === 'id' ? 'Tambah komentar atau @ mention...' : 'Add comment or @ mention...'}
+                                style={{
+                                  width: '100%',
+                                  minHeight: '60px',
+                                  resize: 'vertical',
+                                  backgroundColor: 'var(--bg-main)',
+                                  color: 'var(--text-primary)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: '6px',
+                                  padding: '6px 8px',
+                                  fontSize: '11.5px',
+                                  fontFamily: 'inherit',
+                                  outline: 'none',
+                                  boxSizing: 'border-box',
+                                }}
+                              />
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '7px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => { setIsAddingComment(false); setDraftCommentText(''); }}
+                                  style={{ padding: '4px 10px', borderRadius: '5px', border: '1px solid var(--border-subtle)', backgroundColor: 'transparent', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer' }}
+                                >
+                                  {language === 'id' ? 'Batal' : 'Cancel'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleSubmitComment}
+                                  disabled={!draftCommentText.trim()}
+                                  style={{
+                                    padding: '4px 12px',
+                                    borderRadius: '5px',
+                                    border: 'none',
+                                    backgroundColor: draftCommentText.trim() ? 'var(--brand-primary)' : 'var(--border-subtle)',
+                                    color: draftCommentText.trim() ? '#fff' : 'var(--text-muted)',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: draftCommentText.trim() ? 'pointer' : 'default',
+                                    transition: 'all 0.15s',
+                                  }}
+                                >
+                                  {language === 'id' ? 'Kirim' : 'Comment'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Comment Cards */}
+                          {filteredComments.map((comment) => {
+                            const topPos = layoutMap.get(comment.id) ?? 8;
                             const isHighlighted = activeHighlightedCommentId === comment.id;
                             const isReplying = replyingCommentId === comment.id;
                             const timeAgo = (() => {
@@ -3501,14 +3549,19 @@ ${exportText}
                                   }
                                 }}
                                 style={{
-                                  marginBottom: '8px',
+                                  position: 'absolute',
+                                  top: `${topPos}px`,
+                                  left: '8px',
+                                  right: '8px',
                                   borderRadius: '8px',
-                                  border: `1.5px solid ${isHighlighted ? 'rgba(245, 158, 11, 0.6)' : (comment.resolved ? 'var(--border-subtle)' : 'var(--border-strong)')}`,
-                                  backgroundColor: isHighlighted ? 'rgba(245, 158, 11, 0.06)' : (comment.resolved ? 'var(--bg-subtle)' : 'var(--bg-surface)'),
+                                  border: `1.5px solid ${isHighlighted ? '#F59E0B' : (comment.resolved ? 'var(--border-subtle)' : 'var(--border-strong)')}`,
+                                  backgroundColor: isHighlighted ? 'rgba(245, 158, 11, 0.08)' : (comment.resolved ? 'var(--bg-subtle)' : 'var(--bg-surface)'),
                                   overflow: 'hidden',
                                   cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
+                                  transition: 'top 0.15s ease, border-color 0.15s, background-color 0.15s',
                                   opacity: comment.resolved ? 0.65 : 1,
+                                  boxShadow: isHighlighted ? '0 4px 12px rgba(245, 158, 11, 0.18)' : '0 1px 3px rgba(0,0,0,0.04)',
+                                  zIndex: isHighlighted ? 4 : 2,
                                 }}
                               >
                                 <div style={{ padding: '8px 10px' }}>
@@ -3669,8 +3722,8 @@ ${exportText}
                                 </div>
                               </div>
                             );
-                          })
-                        )}
+                          })}
+                        </div>
                       </div>
                     </div>
                   );
@@ -4332,41 +4385,62 @@ ${exportText}
 
                 {/* Code Textarea for Active Subfile with line wrapping */}
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                  {/* Overleaf-style comment highlight overlay: highlights commented lines in amber */}
-                  {(activeDoc?.comments ?? []).filter(c => !c.resolved && c.fromLine).map(comment => {
-                    const lineHeight = 20.8; // 13px * 1.6 lineHeight
-                    const topPx = ((comment.fromLine ?? 1) - 1) * lineHeight + 16; // 16px top padding
-                    const heightPx = Math.max(1, ((comment.toLine ?? comment.fromLine ?? 1) - (comment.fromLine ?? 1) + 1)) * lineHeight;
-                    return (
-                      <div
-                        key={comment.id}
-                        onClick={() => {
-                          setActiveHighlightedCommentId(comment.id);
-                          if (!isSidebarOpen) toggleSidebar();
-                          setActiveDrawerTab('review');
-                        }}
-                        title={comment.content}
-                        style={{
-                          position: 'absolute',
-                          left: 0,
-                          right: 0,
-                          top: `${topPx}px`,
-                          height: `${heightPx}px`,
-                          backgroundColor: activeHighlightedCommentId === comment.id
-                            ? 'rgba(245, 158, 11, 0.22)'
-                            : 'rgba(245, 158, 11, 0.10)',
-                          borderLeft: `3px solid ${activeHighlightedCommentId === comment.id ? '#F59E0B' : 'rgba(245,158,11,0.5)'}`,
-                          pointerEvents: 'auto',
-                          cursor: 'pointer',
-                          zIndex: 1,
-                          transition: 'background 0.15s',
-                        }}
-                      />
-                    );
-                  })}
+                  {/* Overleaf-style comment highlight overlay: highlights commented lines in amber, locked to text during scroll */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      overflow: 'hidden',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'relative',
+                        transform: `translateY(-${editorScrollTop}px)`,
+                        width: '100%',
+                      }}
+                    >
+                      {(activeDoc?.comments ?? []).filter(c => !c.resolved && c.fromLine).map(comment => {
+                        const lineHeight = 20.8; // 13px * 1.6 lineHeight
+                        const topPx = ((comment.fromLine ?? 1) - 1) * lineHeight + 16; // 16px top padding
+                        const heightPx = Math.max(1, ((comment.toLine ?? comment.fromLine ?? 1) - (comment.fromLine ?? 1) + 1)) * lineHeight;
+                        return (
+                          <div
+                            key={comment.id}
+                            onClick={() => {
+                              setActiveHighlightedCommentId(comment.id);
+                              if (!isSidebarOpen) toggleSidebar();
+                              setActiveDrawerTab('review');
+                            }}
+                            title={comment.content}
+                            style={{
+                              position: 'absolute',
+                              left: 0,
+                              right: 0,
+                              top: `${topPx}px`,
+                              height: `${heightPx}px`,
+                              backgroundColor: activeHighlightedCommentId === comment.id
+                                ? 'rgba(245, 158, 11, 0.22)'
+                                : 'rgba(245, 158, 11, 0.10)',
+                              borderLeft: `3px solid ${activeHighlightedCommentId === comment.id ? '#F59E0B' : 'rgba(245,158,11,0.5)'}`,
+                              pointerEvents: 'auto',
+                              cursor: 'pointer',
+                              zIndex: 1,
+                              transition: 'background 0.15s',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                   <textarea
                     ref={textareaRef}
                     value={activeSubFile?.content ?? activeDoc?.content ?? ''}
+                    onScroll={(e) => setEditorScrollTop(e.currentTarget.scrollTop)}
                     onChange={(e) => {
                       if (activeDoc && activeSubFile) {
                         updateSubFileContent(activeDoc.id, activeSubFile.id, e.target.value);
