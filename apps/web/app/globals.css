@@ -495,10 +495,16 @@ code, pre, kbd {
 
 .app-sidebar-drawer,
 .sidebar-responsive {
-  width: 288px;
-  min-width: 288px;
+  width: 300px;
+  min-width: 300px;
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-sidebar);
+}
+
+/* Drawer-only panel in desktop layout (rail is 48px outside): width is 252px so total desktop sidebar width = 48px + 252px = 300px matching mobile & tablet */
+.app-sidebar-drawer.drawer-only-panel {
+  width: 252px;
+  min-width: 252px;
 }
 
 /* Desktop collapsed state — keep 48px icon rail visible */
@@ -561,7 +567,8 @@ code, pre, kbd {
   }
 
   .app-sidebar-drawer,
-  .sidebar-responsive {
+  .sidebar-responsive,
+  .docs-sidebar-wrapper {
     width: 300px !important;
     min-width: 300px !important;
   }
@@ -587,12 +594,12 @@ code, pre, kbd {
     animation: fadeIn 0.2s ease forwards;
   }
 
-  /* Hide Icon Rail on Mobile & Tablet */
+  /* Keep Icon Rail visible on Mobile & Tablet like Desktop */
   .sidebar-icon-rail {
-    display: none !important;
+    display: flex !important;
   }
 
-  /* Show Burger Menu on Mobile & Tablet */
+  /* Show drawer icon rail only in mobile/tablet drawer mode */
   .show-on-drawer {
     display: flex !important;
   }
@@ -620,6 +627,11 @@ code, pre, kbd {
   /* Show icon rail on desktop */
   .sidebar-icon-rail {
     display: flex !important;
+  }
+  
+  /* Hide drawer icon rail on desktop */
+  .sidebar-icon-rail.show-on-drawer {
+    display: none !important;
   }
 }
 

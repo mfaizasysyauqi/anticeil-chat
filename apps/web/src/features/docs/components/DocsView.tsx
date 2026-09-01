@@ -600,7 +600,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [isGenerationFinished, setIsGenerationFinished] = useState(false);
 
   // Panel resize state (widths in px; 0 = flex auto)
-  const [leftWidth, setLeftWidth] = useState(250);
+  const [leftWidth, setLeftWidth] = useState(252);
   const [editorWidth, setEditorWidth] = useState(0); // 0 = flex:1
   const [copilotWidth, setCopilotWidth] = useState(320);
   const [isDragging, setIsDragging] = useState(false);

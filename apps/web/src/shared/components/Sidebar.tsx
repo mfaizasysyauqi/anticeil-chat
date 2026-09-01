@@ -2134,15 +2134,16 @@ export function Sidebar({
         overflow: 'visible',
         // railOnly: fix the aside to exactly 48px (CSS class sets 288px otherwise)
         ...(railOnly ? { width: '48px', minWidth: '48px' } : {}),
-        // drawerOnly: no rail means no left border on the aside itself
+        // drawerOnly: no rail means no left border on the aside itself (desktop only)
         ...(drawerOnly ? { border: 'none' } : {}),
       }}
     >
       {/* ─────────────────────────────────────────────────────────────
        * 1. Slim Left Icon Rail (48px)
+       * Show on desktop when not drawerOnly, or on mobile/tablet always
        * ───────────────────────────────────────────────────────────── */}
       {!drawerOnly && <div
-        className="sidebar-icon-rail"
+        className="sidebar-icon-rail hide-on-drawer"
         style={{
           width: '48px',
           height: '100%',
@@ -2323,14 +2324,175 @@ export function Sidebar({
         className={`sidebar-workspace-panel${isDesktopCollapsed ? ' desktop-collapsed-hidden' : ''}`}
         style={{
           flex: 1,
-          background: 'var(--bg-sidebar)',
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
+          background: 'var(--bg-sidebar)',
           height: '100%',
           overflow: 'hidden',
           position: 'relative',
         }}
       >
+        {/* Icon Rail for Drawer Mode (Mobile/Tablet only - shown when drawer is open) */}
+        {drawerOnly && (
+          <div
+            className="sidebar-icon-rail show-on-drawer"
+            style={{
+              width: '48px',
+              height: '100%',
+              background: 'var(--bg-main)',
+              borderRight: '1px solid var(--border-subtle)',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              padding: '0 0 12px 0',
+              flexShrink: 0,
+            }}
+          >
+            {/* Logo + Quick App Icons */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+              {/* Logo container */}
+              <div
+                style={{
+                  height: '48px',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Link
+                  href="/chat"
+                  title="Anticeil Chat"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textDecoration: 'none',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onClick={onCloseMobile}
+                >
+                  <img
+                    src="/anticeil-logo.png"
+                    alt="Anticeil Logo"
+                    style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
+                  />
+                </Link>
+              </div>
+
+              {/* Quick App Icons */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
+                <Link
+                  href="/chat"
+                  title={t.nav.chat}
+                  onClick={onCloseMobile}
+                  style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: pathname === '/chat' ? 'var(--brand-subtle, rgba(0, 115, 234, 0.15))' : 'transparent',
+                  color: pathname === '/chat' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <MessageSquare size={17} />
+              </Link>
+              
+              <Link
+                href="/docs"
+                title={t.nav.docs || 'Docs & LaTeX'}
+                onClick={onCloseMobile}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'rgba(0, 115, 234, 0.15)' : 'transparent',
+                  color: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <FileText size={17} />
+              </Link>
+              
+              <Link
+                href="/image"
+                title={t.nav.imagine}
+                onClick={onCloseMobile}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: pathname === '/image' ? 'rgba(162, 93, 220, 0.2)' : 'transparent',
+                  color: pathname === '/image' ? '#A25DDC' : 'var(--text-secondary)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <ImageIcon size={17} />
+              </Link>
+              
+              <Link
+                href="/video"
+                title={language === 'id' ? 'Video' : 'Video'}
+                onClick={onCloseMobile}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: pathname === '/video' ? 'rgba(251, 113, 133, 0.2)' : 'transparent',
+                  color: pathname === '/video' ? '#fb7185' : 'var(--text-secondary)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Film size={17} />
+              </Link>
+              
+              <Link
+                href="/audio"
+                title={language === 'id' ? 'Audio' : 'Audio'}
+                onClick={onCloseMobile}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: pathname === '/audio' ? 'rgba(96, 165, 250, 0.2)' : 'transparent',
+                  color: pathname === '/audio' ? '#60a5fa' : 'var(--text-secondary)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Music size={17} />
+              </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content Panel */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          minWidth: 0,
+        }}>
         {/* Workspace Title Header — hidden when drawerOnly (Navbar is above and shows title) */}
         {!drawerOnly && (
         <div
@@ -2475,66 +2637,17 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Mobile-only Drawer Top Bar: Brand Logo, Title & Close X button */}
+        {/* Mobile-only Feature Subheader (e.g. PERCAKAPAN, DOKUMEN, VIDEO) with Close Button */}
         <div
           className="show-on-drawer"
           style={{
             height: '48px',
-            boxSizing: 'border-box',
-            padding: '0 10px',
+            padding: '0 12px',
             display: 'none',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            flexShrink: 0,
             borderBottom: '1px solid var(--border-subtle)',
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img
-              src="/anticeil-logo.png"
-              alt="Anticeil Logo"
-              style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '6px', flexShrink: 0, marginLeft: '1px' }}
-            />
-            <span
-              style={{
-                fontSize: '13.5px',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              Anticeil
-            </span>
-          </div>
-
-          <button
-            onClick={onCloseMobile}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            aria-label="Close drawer"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Mobile-only Feature Subheader (e.g. PERCAKAPAN, DOKUMEN, VIDEO) */}
-        <div
-          className="show-on-drawer"
-          style={{
-            padding: '8px 12px 2px 12px',
-            display: 'none',
-            alignItems: 'center',
-            flexShrink: 0,
+            justifyContent: 'space-between',
           }}
         >
           <span
@@ -2556,6 +2669,26 @@ export function Sidebar({
               ? (language === 'id' ? 'Dokumen' : 'Docs')
               : (language === 'id' ? 'Percakapan' : 'Chat')}
           </span>
+
+          <button
+            onClick={onCloseMobile}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+            aria-label="Close drawer"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Primary Action Button (Mode-Aware) */}
@@ -3990,6 +4123,7 @@ export function Sidebar({
           </button>
           </div>{/* end position:relative wrapper */}
         </div>
+        </div>{/* end Main Content Panel */}
       </div>}
 
       <ConnectorsModal
