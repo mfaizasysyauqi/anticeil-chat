@@ -6,7 +6,15 @@ import '@univerjs/ui/lib/index.css';
 import '@univerjs/docs-ui/lib/index.css';
 import '@univerjs/sheets-ui/lib/index.css';
 
-import { Univer, UniverInstanceType, LocaleType, mergeLocales } from '@univerjs/core';
+import {
+  Univer,
+  UniverInstanceType,
+  LocaleType,
+  mergeLocales,
+  ICommandService,
+  IUniverInstanceService,
+  Workbook,
+} from '@univerjs/core';
 import { UniverRenderEnginePlugin } from '@univerjs/engine-render';
 import { UniverFormulaEnginePlugin } from '@univerjs/engine-formula';
 import { UniverUIPlugin } from '@univerjs/ui';
@@ -39,12 +47,9 @@ export default function UniverSheetsCore({
   const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) {
-      console.warn('[UniverSheetsCore] containerRef is null, skipping init');
-      return;
-    }
+    if (!containerRef.current) return;
 
-    // Create a dedicated inner container for this instance to prevent StrictMode race conditions
+    // Create a dedicated wrapper div inside container
     const wrapper = document.createElement('div');
     wrapper.style.width = '100%';
     wrapper.style.height = '100%';
@@ -54,9 +59,10 @@ export default function UniverSheetsCore({
 
     let isCancelled = false;
     let univerInstance: Univer | null = null;
+    let commandDisposable: { dispose: () => void } | null = null;
 
     // Parse existing markdown table content into Univer cell data
-    const cellData: Record<number, Record<number, { v: string | number; t?: number }>> = {};
+    const cellData: Record<number, Record<number, { v: string | number; t?: number; f?: string }>> = {};
     if (initialContent) {
       const lines = initialContent.trim().split('\n');
       let rowIdx = 0;
@@ -69,11 +75,19 @@ export default function UniverSheetsCore({
           if (parts.length > 0) {
             cellData[rowIdx] = {};
             parts.forEach((val, colIdx) => {
-              const num = parseFloat(val);
-              cellData[rowIdx][colIdx] = {
-                v: isNaN(num) ? val : num,
-                t: isNaN(num) ? 1 : 2,
-              };
+              if (val.startsWith('=')) {
+                cellData[rowIdx][colIdx] = {
+                  v: val,
+                  f: val,
+                  t: 1,
+                };
+              } else {
+                const num = parseFloat(val);
+                cellData[rowIdx][colIdx] = {
+                  v: isNaN(num) ? val : num,
+                  t: isNaN(num) ? 1 : 2,
+                };
+              }
             });
             rowIdx++;
           }
@@ -92,19 +106,19 @@ export default function UniverSheetsCore({
         0: { v: 'Pendapatan', t: 1 },
         1: { v: 1000000, t: 2 },
         2: { v: 1250000, t: 2 },
-        3: { v: '=C2/B2-1', t: 1 },
+        3: { v: '=C2/B2-1', f: '=C2/B2-1', t: 1 },
       },
       2: {
         0: { v: 'Biaya Operasional', t: 1 },
         1: { v: 400000, t: 2 },
         2: { v: 380000, t: 2 },
-        3: { v: '=C3/B3-1', t: 1 },
+        3: { v: '=C3/B3-1', f: '=C3/B3-1', t: 1 },
       },
       3: {
         0: { v: 'Laba Bersih', t: 1 },
-        1: { v: '=B2-B3', t: 1 },
-        2: { v: '=C2-C3', t: 1 },
-        3: { v: '=C4/B4-1', t: 1 },
+        1: { v: '=B2-B3', f: '=B2-B3', t: 1 },
+        2: { v: '=C2-C3', f: '=C2-C3', t: 1 },
+        3: { v: '=C4/B4-1', f: '=C4/B4-1', t: 1 },
       },
     };
 
@@ -124,7 +138,7 @@ export default function UniverSheetsCore({
         },
       });
 
-      // Register all core engines & UI plugins
+      // Register all core engines & UI plugins with full editing capabilities
       univer.registerPlugin(UniverRenderEnginePlugin);
       univer.registerPlugin(UniverFormulaEnginePlugin);
       univer.registerPlugin(UniverUIPlugin, {
@@ -135,16 +149,10 @@ export default function UniverSheetsCore({
         footer: true,
         contextMenu: true,
       });
-      univer.registerPlugin(UniverDocsPlugin, {
-        hasScroll: false,
-      });
+      univer.registerPlugin(UniverDocsPlugin);
       univer.registerPlugin(UniverDocsUIPlugin);
-      univer.registerPlugin(UniverSheetsPlugin, {
-        notExecuteFormula: false,
-      });
-      univer.registerPlugin(UniverSheetsUIPlugin, {
-        disableEdit: false,
-      });
+      univer.registerPlugin(UniverSheetsPlugin);
+      univer.registerPlugin(UniverSheetsUIPlugin);
       univer.registerPlugin(UniverSheetsFormulaPlugin);
 
       // Create workbook unit
@@ -178,16 +186,75 @@ export default function UniverSheetsCore({
       if (!isCancelled) {
         univerInstance = univer;
         univerRef.current = univer;
-        console.log('[UniverSheetsCore] ✅ Univer initialized and mounted in wrapper');
-      } else {
-        setTimeout(() => {
-          try {
-            univer.dispose();
-          } catch {}
-          if (wrapper.parentNode) {
-            wrapper.parentNode.removeChild(wrapper);
+
+        // Listen for spreadsheet edits and sync back to Markdown
+        try {
+          const injector = (univer as any).__getInjector?.() || (univer as any)._injector;
+          if (injector) {
+            const commandService = injector.get(ICommandService) as ICommandService;
+            const instanceService = injector.get(IUniverInstanceService) as IUniverInstanceService;
+
+            const syncToMarkdown = () => {
+              try {
+                const workbook = instanceService.getCurrentUnitOfType<Workbook>(UniverInstanceType.UNIVER_SHEET);
+                if (!workbook) return;
+                const worksheet = workbook.getActiveSheet();
+                if (!worksheet) return;
+                const matrix = worksheet.getCellMatrix();
+
+                let maxRow = 0;
+                let maxCol = 0;
+                matrix.forValue((row: number, col: number, cell: any) => {
+                  if (cell && (cell.v !== undefined && cell.v !== '')) {
+                    if (row > maxRow) maxRow = row;
+                    if (col > maxCol) maxCol = col;
+                  }
+                });
+
+                if (maxRow === 0 && maxCol === 0 && !matrix.getValue(0, 0)) return;
+
+                const rows: string[] = [];
+                for (let r = 0; r <= maxRow; r++) {
+                  const rowCells: string[] = [];
+                  for (let c = 0; c <= Math.max(3, maxCol); c++) {
+                    const cell = matrix.getValue(r, c);
+                    const val = cell?.f || (cell?.v !== undefined ? String(cell.v) : '');
+                    rowCells.push(val);
+                  }
+                  rows.push('| ' + rowCells.join(' | ') + ' |');
+                  if (r === 0) {
+                    rows.push('| ' + rowCells.map(() => '---').join(' | ') + ' |');
+                  }
+                }
+                const markdown = rows.join('\n');
+                onContentChange?.(markdown);
+              } catch (e) {
+                console.warn('[UniverSheetsCore] Error syncing matrix to markdown:', e);
+              }
+            };
+
+            commandDisposable = commandService.onCommandExecuted((cmd) => {
+              if (
+                cmd.id.includes('set-range-values') ||
+                cmd.id.includes('set-cell') ||
+                cmd.id.includes('sheet.mutation')
+              ) {
+                syncToMarkdown();
+              }
+            });
           }
-        }, 0);
+        } catch (syncErr) {
+          console.warn('[UniverSheetsCore] Sync listener init warning:', syncErr);
+        }
+
+        console.log('[UniverSheetsCore] ✅ Univer initialized with full cell editing');
+      } else {
+        try {
+          univer.dispose();
+        } catch {}
+        if (wrapper.parentNode) {
+          wrapper.parentNode.removeChild(wrapper);
+        }
       }
     } catch (err: any) {
       console.error('[UniverSheetsCore] Error initializing local Univer instance:', err);
@@ -198,17 +265,15 @@ export default function UniverSheetsCore({
 
     return () => {
       isCancelled = true;
-      const targetUniver = univerInstance;
-      setTimeout(() => {
-        try {
-          targetUniver?.dispose();
-        } catch (e) {
-          console.warn('[UniverSheetsCore] Error during async dispose:', e);
-        }
-        if (wrapper.parentNode) {
-          wrapper.parentNode.removeChild(wrapper);
-        }
-      }, 0);
+      try {
+        commandDisposable?.dispose();
+        univerInstance?.dispose();
+      } catch (e) {
+        console.warn('[UniverSheetsCore] Error during dispose:', e);
+      }
+      if (wrapper.parentNode) {
+        wrapper.parentNode.removeChild(wrapper);
+      }
     };
   }, []);
 
