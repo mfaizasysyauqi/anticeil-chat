@@ -472,6 +472,56 @@ export const useChatStore = create<ChatState>()(
           }
         }
 
+        // Firecrawl URL scraping — auto-detects URLs in message and scrapes to clean Markdown
+        const urlMatches = cleanUserQuery.match(/https?:\/\/[^\s]+/g);
+        if (urlMatches && urlMatches.length > 0) {
+          const firecrawlCfg = settings.apiKeys['firecrawl' as keyof typeof settings.apiKeys];
+          const firecrawlKey = firecrawlCfg?.apiKey;
+          const scrapedSections: string[] = [];
+
+          for (const url of urlMatches.slice(0, 3)) {
+            try {
+              let markdown = '';
+              if (firecrawlKey) {
+                // BYOK Firecrawl scrape
+                const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${firecrawlKey}`,
+                  },
+                  body: JSON.stringify({ url, formats: ['markdown'] }),
+                  signal: controller.signal,
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  markdown = data?.data?.markdown || '';
+                }
+              } else {
+                // Fallback: Jina Reader (no key needed)
+                const jinaRes = await fetch(`https://r.jina.ai/${url}`, {
+                  headers: { Accept: 'text/plain', 'X-Return-Format': 'text' },
+                  signal: controller.signal,
+                });
+                if (jinaRes.ok) markdown = await jinaRes.text();
+              }
+              if (markdown && markdown.length > 50) {
+                webSearchReasoning += `Scraped ${url}\n`;
+                scrapedSections.push(`### Content from ${url}\n\n${markdown.slice(0, 6000)}`);
+              }
+            } catch {
+              // non-fatal — ignore per-URL failures
+            }
+          }
+
+          if (scrapedSections.length > 0) {
+            const scrapedBlock = `<web_context>\n${scrapedSections.join('\n\n')}\n</web_context>`;
+            webSearchContext = webSearchContext
+              ? `${webSearchContext}\n\n${scrapedBlock}`
+              : scrapedBlock;
+          }
+        }
+
         // Connectors Setup
         const connectorsStore = useConnectorsStore.getState();
         const activeConnectorIds = connectorsStore.activeConnectorIds;
@@ -521,6 +571,7 @@ export const useChatStore = create<ChatState>()(
             messages: apiMessages,
             apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
             temperature: session.temperature,
+            enableWebSearch: shouldWebSearch,
             signal: controller.signal,
             onChunk: (chunk) => {
               if (chunk.delta) accumulatedText += chunk.delta;

@@ -28,6 +28,7 @@ export type LLMProviderId =
   | 'runway'
   | 'pika'
   | 'tavily'
+  | 'firecrawl'
   | 'brave'
   | 'omniroute'
   | 'custom';

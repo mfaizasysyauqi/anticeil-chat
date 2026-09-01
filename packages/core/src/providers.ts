@@ -676,6 +676,19 @@ export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
       capabilities: { text: false, webSearch: true },
     },
   ],
+  firecrawl: [
+    {
+      id: 'firecrawl-scrape',
+      name: 'Firecrawl Web Scraper & Crawler',
+      providerId: 'firecrawl',
+      contextWindow: 0,
+      description: 'Advanced LLM-ready website scraping, crawling, and clean Markdown extraction',
+      inputCostPer1M: 0,
+      outputCostPer1M: 0,
+      supportsStreaming: false,
+      capabilities: { text: false, webSearch: true, docAnalysis: true },
+    },
+  ],
   brave: [
     {
       id: 'brave-search',
@@ -1043,6 +1056,17 @@ export const PROVIDER_DEFINITIONS: ProviderDefinition[] = [
     requiresApiKey: true,
     category: 'search',
     description: 'Search engine berbasis AI yang dioptimalkan untuk LLM dan agen cerdas.',
+  },
+  {
+    id: 'firecrawl',
+    name: 'Firecrawl API',
+    icon: 'flame',
+    defaultBaseUrl: 'https://api.firecrawl.dev/v1',
+    docUrl: 'https://www.firecrawl.dev',
+    models: PROVIDER_MODELS.firecrawl,
+    requiresApiKey: true,
+    category: 'search',
+    description: 'Web scraper & crawler otomatis yang mengubah website atau link URL menjadi Clean Markdown untuk LLM.',
   },
   {
     id: 'brave',

@@ -15,6 +15,7 @@ export interface SendMessageOptions {
   messages: ChatMessage[];
   apiKeyConfig: ProviderApiKeyConfig;
   temperature?: number;
+  enableWebSearch?: boolean;
   onChunk: (chunk: ChatStreamChunk) => void;
   signal?: AbortSignal;
 }
@@ -55,6 +56,7 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
     messages,
     apiKeyConfig,
     temperature = 0.7,
+    enableWebSearch = false,
     onChunk,
     signal,
   } = options;
@@ -104,18 +106,18 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
         parts: [{ text: m.content }],
       }));
 
+      const anticeilBody: Record<string, unknown> = {
+        contents,
+        systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
+        generationConfig: { temperature },
+      };
+      // Native Google Search Grounding — no external API needed
+      if (enableWebSearch) anticeilBody.tools = [{ googleSearch: {} }];
+
       response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
-          generationConfig: {
-            temperature,
-          },
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(anticeilBody),
         signal,
       });
     } else {
@@ -213,18 +215,18 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
       parts: [{ text: m.content }],
     }));
 
+    const geminiBody: Record<string, unknown> = {
+      contents,
+      systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
+      generationConfig: { temperature },
+    };
+    // Native Google Search Grounding — no external API needed
+    if (enableWebSearch) geminiBody.tools = [{ googleSearch: {} }];
+
     response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
-        generationConfig: {
-          temperature,
-        },
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiBody),
       signal,
     });
   }
