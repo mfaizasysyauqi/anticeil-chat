@@ -38,7 +38,8 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
     return (
       <div
         onClick={onManageClick}
-        title={language === 'id' ? 'Kapasitas Penyimpanan Pribadi' : 'Personal Storage Quota'}
+        title={language === 'id' ? 'Kapasitas Penyimpanan — Klik untuk Upgrade / Kelola' : 'Personal Storage Quota — Click to Upgrade / Manage'}
+        className={onManageClick ? 'clickable-pill' : ''}
         style={{
           padding: '8px 12px',
           borderRadius: 'var(--radius-md, 8px)',

@@ -6,8 +6,8 @@ import { useDocsStore } from '../store/useDocsStore';
 
 import { SplashScreen } from '../../../shared/components/SplashScreen';
 
-// Load FortuneSheetsCore client-side only (0 network lag, pre-bundled by Next.js Webpack)
-const FortuneSheetsCore = dynamic(() => import('./FortuneSheetsCore'), {
+// Load UniverSheetsCore client-side only (0 network lag, pre-bundled by Next.js Webpack)
+const UniverSheetsCore = dynamic(() => import('./UniverSheetsCore'), {
   ssr: false,
   loading: () => (
     <SplashScreen
@@ -33,7 +33,7 @@ export function DocsSpreadsheetView() {
         overflow: 'hidden',
       }}
     >
-      <FortuneSheetsCore
+      <UniverSheetsCore
         key={activeDocId ?? 'default'}
         initialContent={activeDoc?.content ?? ''}
         onContentChange={(md) => {

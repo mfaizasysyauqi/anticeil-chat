@@ -665,6 +665,17 @@ code, pre, kbd {
   .hide-on-drawer {
     display: none !important;
   }
+
+  /* Docs App Bar — title truncates on small screens */
+  .docs-appbar-share-label {
+    display: none !important;
+  }
+
+  /* Share button — icon only, less padding */
+  .docs-appbar-share {
+    padding: 0 8px !important;
+    gap: 0 !important;
+  }
 }
 
 /* Desktop Only (>= 1024px) */
@@ -693,6 +704,16 @@ code, pre, kbd {
   /* Hide drawer icon rail on desktop */
   .sidebar-icon-rail.show-on-drawer {
     display: none !important;
+  }
+
+  /* Docs App Bar — restore Share label on desktop */
+  .docs-appbar-share-label {
+    display: inline !important;
+  }
+
+  .docs-appbar-share {
+    padding: 0 12px !important;
+    gap: 5px !important;
   }
 }
 
