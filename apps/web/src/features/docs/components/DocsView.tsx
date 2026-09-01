@@ -2036,17 +2036,14 @@ ${exportText}
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '16px',
+            gap: '8px',
             flexShrink: 0,
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            whiteSpace: 'nowrap',
-            scrollbarWidth: 'none',
+            overflow: 'hidden',
             zIndex: 20,
           }}
         >
           {/* Left: Drawer toggle (mobile), Brand name "Anticeil", and active Document title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 'max-content', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0, overflow: 'hidden' }}>
             {/* Mobile burger */}
             <button
               type="button"
@@ -2121,7 +2118,7 @@ ${exportText}
                     fontSize: '13px',
                     fontWeight: 600,
                     color: 'var(--text-primary)',
-                    maxWidth: '360px',
+                    maxWidth: '280px',
                     minWidth: '32px',
                     width: 'auto',
                     // @ts-ignore
@@ -2155,6 +2152,7 @@ ${exportText}
             <button
               type="button"
               onClick={() => setIsHotkeysModalOpen(true)}
+              className="hover-subtle"
               style={{
                 width: '32px',
                 height: '32px',
@@ -2168,36 +2166,9 @@ ${exportText}
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
-              className="hover-subtle"
               title={language === 'id' ? 'Pintasan Tombol (Hotkeys / F1)' : 'Keyboard Shortcuts (Hotkeys / F1)'}
             >
               <Keyboard size={16} />
-            </button>
-
-            {/* History / Revisions Icon Button (Overleaf Style) */}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveDrawerTab('files');
-                if (!isSidebarOpen) toggleSidebar();
-              }}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover-subtle"
-              title={language === 'id' ? 'Riwayat Revisi (History)' : 'History / Revisions'}
-            >
-              <History size={16} />
             </button>
 
             {/* Overleaf-Style Layout Options Button */}
@@ -2464,6 +2435,7 @@ ${exportText}
             <button
               type="button"
               onClick={() => setIsShareModalOpen(true)}
+              className="docs-appbar-share"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -2479,13 +2451,14 @@ ${exportText}
                 cursor: 'pointer',
                 boxShadow: '0 1px 3px rgba(22, 163, 74, 0.3)',
                 transition: 'all 0.15s ease',
+                flexShrink: 0,
               }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#15803d')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#16a34a')}
               title={language === 'id' ? 'Bagikan Proyek (Share)' : 'Share Project'}
             >
               <UserPlus size={13} strokeWidth={2.4} />
-              <span>Share</span>
+              <span className="docs-appbar-share-label">Share</span>
             </button>
           </div>
         </header>
@@ -4338,7 +4311,7 @@ ${exportText}
                 <div
                   ref={editorContainerRef}
                   style={{
-                    flex: editorWidth > 0 ? `0 0 ${editorWidth}px` : 1,
+                    flex: (viewMode === 'code' || editorWidth === 0) ? 1 : `0 0 ${editorWidth}px`,
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
