@@ -1211,47 +1211,69 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     #scaler-wrapper {
       position: relative;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
       margin: 0 auto;
       flex-shrink: 0;
+      transform-origin: top center;
     }
-    .paper-sheet {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: ${paperWidthPx}px; /* Dynamic Paper Width */
-      min-height: ${paperHeightPx}px; /* Dynamic Paper Height */
+    .paper-sheet-page {
+      position: relative;
+      width: ${paperWidthPx}px;
+      height: ${paperHeightPx}px;
+      min-height: ${paperHeightPx}px;
+      max-height: ${paperHeightPx}px;
+      margin-bottom: 24px;
       background: #ffffff;
-      padding: 64px 72px; /* Standard 1-inch Academic Paper Margins */
+      padding: 56px 64px 64px;
       border-radius: 2px;
+      box-sizing: border-box;
+      overflow: hidden;
       box-shadow: ${
         isLight
-          ? '0 4px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08)'
-          : '0 6px 20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08)'
+          ? '0 4px 18px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.08)'
+          : '0 6px 24px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08)'
       };
       line-height: 1.7;
       font-size: 14.5px;
       color: #1a202c;
-      transform-origin: 0 0;
-      box-sizing: border-box;
+    }
+    .paper-sheet-page:last-child {
+      margin-bottom: 0;
+    }
+    .paper-page-content {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+    .paper-page-footer {
+      position: absolute;
+      bottom: 24px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: #64748b;
+      font-family: 'Inter', system-ui, sans-serif;
+      user-select: none;
     }
     h1, h2, h3, h4, h5, h6 {
       font-family: 'Inter', system-ui, sans-serif;
       color: #0f172a;
       font-weight: 700;
       line-height: 1.3;
-      margin-top: 1.5em;
-      margin-bottom: 0.5em;
+      margin-top: 1.2em;
+      margin-bottom: 0.4em;
     }
-    h1 { font-size: 26px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-    h2 { font-size: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
-    h3 { font-size: 16px; }
-    p { margin-top: 0; margin-bottom: 1em; }
+    h1 { font-size: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+    h2 { font-size: 19px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
+    h3 { font-size: 15.5px; }
+    p { margin-top: 0; margin-bottom: 0.9em; }
     a { color: #0073ea; text-decoration: none; }
     a:hover { text-decoration: underline; }
     blockquote {
-      margin: 1.2em 0;
+      margin: 1.1em 0;
       padding: 8px 16px;
       border-left: 4px solid #0073ea;
       background: #f8fafc;
@@ -1261,12 +1283,12 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 1.5em 0;
-      font-size: 13.5px;
+      margin: 1.2em 0;
+      font-size: 13px;
     }
     th, td {
       border: 1px solid #cbd5e1;
-      padding: 8px 12px;
+      padding: 7px 11px;
       text-align: left;
     }
     th {
@@ -1277,7 +1299,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     tr:nth-child(even) { background-color: #f8fafc; }
     code {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12.5px;
+      font-size: 12px;
       background: #f1f5f9;
       padding: 2px 5px;
       border-radius: 4px;
@@ -1286,10 +1308,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     pre {
       background: #0f172a;
       color: #f8fafc;
-      padding: 16px;
-      border-radius: 8px;
+      padding: 14px;
+      border-radius: 6px;
       overflow-x: auto;
-      font-size: 13px;
+      font-size: 12.5px;
+      margin: 1em 0;
     }
     pre code {
       background: transparent;
@@ -1297,15 +1320,15 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       padding: 0;
     }
     .katex-display {
-      margin: 1.2em 0 !important;
+      margin: 1em 0 !important;
       overflow-x: auto;
       overflow-y: hidden;
-      padding: 6px 0;
+      padding: 4px 0;
     }
     .mermaid {
       display: flex;
       justify-content: center;
-      margin: 24px 0;
+      margin: 20px 0;
     }
     /* Slim and elegant preview scrollbar */
     html {
@@ -1331,13 +1354,23 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         background: transparent !important;
         padding: 0 !important;
       }
-      .paper-sheet {
-        position: static !important;
-        box-shadow: none !important;
+      #page-container {
         padding: 0 !important;
-        max-width: 100% !important;
-        min-height: auto !important;
+        width: 100% !important;
+      }
+      #scaler-wrapper {
         transform: none !important;
+        width: 100% !important;
+      }
+      .paper-sheet-page {
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        max-height: none !important;
       }
     }
   </style>
@@ -1345,9 +1378,12 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 <body>
   <div id="page-container">
     <div id="scaler-wrapper">
-      <div class="paper-sheet" id="rendered-content"></div>
+      <div id="rendered-pages-container"></div>
     </div>
   </div>
+
+  {/* Hidden staging container for initial render and measurement */}
+  <div id="rendered-content-raw" style="position: absolute; top: -99999px; left: -99999px; width: ${paperWidthPx - 128}px; visibility: hidden; pointer-events: none;"></div>
 
   <script>
     const rawMarkdown = ${JSON.stringify(raw)};
@@ -1357,12 +1393,16 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       breaks: true,
     });
 
-    const parsedHtml = marked.parse(rawMarkdown);
-    const container = document.getElementById('rendered-content');
-    container.innerHTML = parsedHtml;
+    const rawContainer = document.getElementById('rendered-content-raw');
+    const pagedContainer = document.getElementById('rendered-pages-container');
+    const isLight = ${isLight};
+    const paperWidthPx = ${paperWidthPx};
+    const paperHeightPx = ${paperHeightPx};
+
+    rawContainer.innerHTML = marked.parse(rawMarkdown);
 
     // Render KaTeX formulas
-    renderMathInElement(container, {
+    renderMathInElement(rawContainer, {
       delimiters: [
         {left: '$$', right: '$$', display: true},
         {left: '$', right: '$', display: false},
@@ -1379,44 +1419,103 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       fontFamily: 'Inter, system-ui, sans-serif',
     });
 
+    function createPageSheet(pageIndex) {
+      const sheet = document.createElement('div');
+      sheet.className = 'paper-sheet-page';
+      sheet.setAttribute('data-page-number', pageIndex);
+
+      const content = document.createElement('div');
+      content.className = 'paper-page-content';
+      sheet.appendChild(content);
+
+      const footer = document.createElement('div');
+      footer.className = 'paper-page-footer';
+      footer.textContent = pageIndex;
+      sheet.appendChild(footer);
+
+      return { sheet, content };
+    }
+
+    var totalPagesCount = 1;
+
+    function paginateAndRender() {
+      pagedContainer.innerHTML = '';
+      const childNodes = Array.from(rawContainer.children);
+      if (childNodes.length === 0) {
+        const { sheet } = createPageSheet(1);
+        pagedContainer.appendChild(sheet);
+        return 1;
+      }
+
+      const availableHeight = paperHeightPx - 130; // 56px top + 64px bottom + 10px buffer
+      let currentPageNum = 1;
+      let { sheet: currentSheet, content: currentContent } = createPageSheet(currentPageNum);
+      pagedContainer.appendChild(currentSheet);
+
+      childNodes.forEach(function(node) {
+        if (node.tagName === 'HR') {
+          // Explicit Page Break
+          currentPageNum++;
+          const next = createPageSheet(currentPageNum);
+          currentSheet = next.sheet;
+          currentContent = next.content;
+          pagedContainer.appendChild(currentSheet);
+          return;
+        }
+
+        const clone = node.cloneNode(true);
+        currentContent.appendChild(clone);
+
+        if (currentContent.scrollHeight > availableHeight && currentContent.children.length > 1) {
+          currentContent.removeChild(clone);
+          currentPageNum++;
+          const next = createPageSheet(currentPageNum);
+          currentSheet = next.sheet;
+          currentContent = next.content;
+          pagedContainer.appendChild(currentSheet);
+          currentContent.appendChild(clone);
+        }
+      });
+
+      totalPagesCount = currentPageNum;
+      return currentPageNum;
+    }
+
     // Overleaf Interactive Scaling, Zoom & Page Tracking
     var currentScale = 1.0;
     var userScaleMode = 'auto'; // 'auto' or fixed number
-    var totalPagesCount = 1;
 
     function updateScaleAndPages() {
-      var paper = document.getElementById('rendered-content');
       var wrapper = document.getElementById('scaler-wrapper');
-      if (!paper || !wrapper) return;
+      var container = document.getElementById('page-container');
+      if (!wrapper || !container) return;
+
+      var totalP = paginateAndRender();
 
       var clientWidth = document.documentElement.clientWidth || (window.innerWidth - 12);
-      var paperBaseWidth = ${paperWidthPx};
-      var paperBaseHeight = ${paperHeightPx};
-      var safePadding = 24; // 12px safe margin on both sides
+      var safePadding = 24;
       var availableWidth = Math.max(16, clientWidth - safePadding);
 
       var scale = userScaleMode === 'auto'
-        ? Math.min(1.0, availableWidth / paperBaseWidth)
+        ? Math.min(1.0, availableWidth / paperWidthPx)
         : (Number(userScaleMode) / 100);
 
       currentScale = scale;
-      paper.style.transform = 'scale(' + scale + ')';
+      wrapper.style.transform = 'scale(' + scale + ')';
 
-      var paperHeight = paper.offsetHeight || paperBaseHeight;
-      var scaledWidth = paperBaseWidth * scale;
-      var scaledHeight = paperHeight * scale;
+      var totalHeightUnscaled = (totalP * paperHeightPx) + ((totalP - 1) * 24);
+      var scaledWidth = paperWidthPx * scale;
+      var scaledHeight = totalHeightUnscaled * scale;
 
-      wrapper.style.width = scaledWidth + 'px';
-      wrapper.style.height = (scaledHeight + 32) + 'px';
-
-      totalPagesCount = Math.max(1, Math.ceil(paperHeight / paperBaseHeight));
+      wrapper.style.width = paperWidthPx + 'px';
+      container.style.minHeight = (scaledHeight + 48) + 'px';
 
       // Post scale percentage and total pages to parent
       try {
         window.parent.postMessage({
           type: 'DOCS_PREVIEW_SCALE',
           scale: Math.round(scale * 100),
-          totalPages: totalPagesCount
+          totalPages: totalP
         }, '*');
       } catch (e) {}
     }
@@ -1424,10 +1523,18 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     // Scroll tracking for current page in Overleaf page counter
     window.addEventListener('scroll', function() {
       var scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-      var pageHeightScaled = ${paperHeightPx} * currentScale;
-      var cur = Math.min(totalPagesCount, Math.max(1, Math.floor((scrollTop + 60) / pageHeightScaled) + 1));
+      var pages = document.querySelectorAll('.paper-sheet-page');
+      var cur = 1;
+      for (var i = 0; i < pages.length; i++) {
+        var pageTop = (pages[i].offsetTop - 40) * currentScale;
+        if (scrollTop >= pageTop) {
+          cur = i + 1;
+        }
+      }
       try {
         window.parent.postMessage({ type: 'DOCS_PAGE_SCROLLED', currentPage: cur }, '*');
+      } catch (e) {}
+    }, { passive: true });
       } catch (e) {}
     }, { passive: true });
 
