@@ -1202,20 +1202,28 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 16px 12px;
-      min-width: 100%;
-      width: max-content;
+      justify-content: flex-start;
+      padding: 24px 16px;
+      width: 100%;
       min-height: 100%;
       box-sizing: border-box;
+      overflow-x: auto;
+    }
+    #scaler-outer {
+      position: relative;
+      margin: 0 auto;
+      flex-shrink: 0;
+      overflow: visible;
     }
     #scaler-wrapper {
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: ${paperWidthPx}px;
+      transform-origin: 0 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: 0 auto;
-      flex-shrink: 0;
-      transform-origin: top center;
     }
     .paper-sheet-page {
       position: relative;
@@ -1358,7 +1366,13 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         padding: 0 !important;
         width: 100% !important;
       }
+      #scaler-outer {
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+      }
       #scaler-wrapper {
+        position: static !important;
         transform: none !important;
         width: 100% !important;
       }
@@ -1377,8 +1391,10 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 </head>
 <body>
   <div id="page-container">
-    <div id="scaler-wrapper">
-      <div id="rendered-pages-container"></div>
+    <div id="scaler-outer">
+      <div id="scaler-wrapper">
+        <div id="rendered-pages-container"></div>
+      </div>
     </div>
   </div>
 
@@ -1486,14 +1502,15 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     var userScaleMode = 'auto'; // 'auto' or fixed number
 
     function updateScaleAndPages() {
+      var outer = document.getElementById('scaler-outer');
       var wrapper = document.getElementById('scaler-wrapper');
       var container = document.getElementById('page-container');
-      if (!wrapper || !container) return;
+      if (!outer || !wrapper || !container) return;
 
       var totalP = paginateAndRender();
 
       var clientWidth = document.documentElement.clientWidth || (window.innerWidth - 12);
-      var safePadding = 24;
+      var safePadding = 32; // 16px padding on both sides
       var availableWidth = Math.max(16, clientWidth - safePadding);
 
       var scale = userScaleMode === 'auto'
@@ -1504,11 +1521,12 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       wrapper.style.transform = 'scale(' + scale + ')';
 
       var totalHeightUnscaled = (totalP * paperHeightPx) + ((totalP - 1) * 24);
-      var scaledWidth = paperWidthPx * scale;
-      var scaledHeight = totalHeightUnscaled * scale;
+      var scaledWidth = Math.round(paperWidthPx * scale);
+      var scaledHeight = Math.round(totalHeightUnscaled * scale);
 
+      outer.style.width = scaledWidth + 'px';
+      outer.style.height = scaledHeight + 'px';
       wrapper.style.width = paperWidthPx + 'px';
-      container.style.minHeight = (scaledHeight + 48) + 'px';
 
       // Post scale percentage and total pages to parent
       try {
