@@ -1535,8 +1535,9 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         window.parent.postMessage({ type: 'DOCS_PAGE_SCROLLED', currentPage: cur }, '*');
       } catch (e) {}
     }, { passive: true });
-      } catch (e) {}
-    }, { passive: true });
+
+    // Initial render
+    updateScaleAndPages();
 
     // Attach ResizeObserver to documentElement for auto scaling
     if (window.ResizeObserver) {
@@ -1550,7 +1551,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     });
     window.addEventListener('load', updateScaleAndPages);
     setTimeout(updateScaleAndPages, 30);
-    setTimeout(updateScaleAndPages, 150);
+    setTimeout(updateScaleAndPages, 100);
+    setTimeout(updateScaleAndPages, 300);
 
     // Listen for messages from parent (Overleaf preview actions)
     window.addEventListener('message', function(e) {
