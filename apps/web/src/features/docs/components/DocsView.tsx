@@ -186,6 +186,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const paidCredits = useCreditStore((s) => s.paidCredits) || 0;
   const openPricingModal = useCreditStore((s) => s.openPricingModal);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Bottom drawer footer widget state (Stats collapsed by default)
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -2310,7 +2315,7 @@ ${exportText}
             <span style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 3px', opacity: 0.7 }}>/</span>
 
             {/* Overleaf-Style Document Title Pill */}
-            {activeDoc ? (
+            {mounted && activeDoc ? (
               <div
                 style={{
                   display: 'inline-flex',
@@ -2727,19 +2732,21 @@ ${exportText}
                         <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           {language === 'id' ? 'Struktur File' : 'Project Files'}
                         </span>
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            background: 'var(--bg-subtle)',
-                            color: 'var(--text-muted)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '999px',
-                            padding: '0 5px',
-                            lineHeight: '15px',
-                          }}
-                        >
-                          {docFiles.length}
-                        </span>
+                        {mounted && (
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              background: 'var(--bg-subtle)',
+                              color: 'var(--text-muted)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: '999px',
+                              padding: '0 5px',
+                              lineHeight: '15px',
+                            }}
+                          >
+                            {docFiles.length}
+                          </span>
+                        )}
                       </div>
 
                       {/* New File, New Folder, Upload & Collapse Buttons */}

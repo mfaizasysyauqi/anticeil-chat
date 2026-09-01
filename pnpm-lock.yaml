@@ -11,6 +11,9 @@ importers:
 
   .:
     devDependencies:
+      '@turbo/windows-64':
+        specifier: ^2.10.12
+        version: 2.10.12
       prettier:
         specifier: ^3.5.2
         version: 3.9.6
@@ -178,10 +181,19 @@ importers:
       '@univerjs/engine-render':
         specifier: 0.25.1
         version: 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/icons':
+        specifier: 1.4.0
+        version: 1.4.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@univerjs/sheets':
         specifier: 0.25.1
         version: 0.25.1(react@19.2.8)(rxjs@7.8.2)
       '@univerjs/sheets-formula':
+        specifier: 0.25.1
+        version: 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui':
+        specifier: 0.25.1
+        version: 0.25.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt':
         specifier: 0.25.1
         version: 0.25.1(react@19.2.8)(rxjs@7.8.2)
       '@univerjs/sheets-ui':
@@ -241,21 +253,6 @@ importers:
         version: 5.9.3
       wrangler:
         specifier: ^3.114.17
-        version: 3.114.17(@cloudflare/workers-types@4.20260702.1)
-
-  packages/automation-worker:
-    devDependencies:
-      '@anticeil/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@cloudflare/workers-types':
-        specifier: ^4.20250224.0
-        version: 4.20260702.1
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-      wrangler:
-        specifier: ^3.114.0
         version: 3.114.17(@cloudflare/workers-types@4.20260702.1)
 
   packages/core:
@@ -3739,6 +3736,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@turbo/windows-64@2.10.12':
+    resolution: {integrity: sha512-SDOueJRjS/QcykWf2KCRtTLmIl5YMKsLbXkXQGhDwcTXvKXZiS5ih5lBl/gkwZIpYFjqA/rAlfMzlAFcVHNe0g==}
+    cpu: [x64]
+    os: [win32]
+
   '@turbo/windows-arm64@2.10.11':
     resolution: {integrity: sha512-m8tJkIrTrbQ9O1uHxV0GUq623Zg1678xGna8eMsy4KbygUX/wVFgdZDYV/AxyoyaW/U7nyKoBvaDVwm22p9xqA==}
     cpu: [arm64]
@@ -3905,8 +3907,19 @@ packages:
     peerDependencies:
       rxjs: '>=7.0.0'
 
+  '@univerjs/sheets-formula-ui@0.25.1':
+    resolution: {integrity: sha512-iMDZZutB5mcwBGn1kL2QfsQoiOJKJhyLtzp3oRv0bEhbScGDPyoADuAoOCQjDnnUKTp3cTAvc0ACn3Gj3vOvRQ==}
+    peerDependencies:
+      react: ^16.9.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+      rxjs: '>=7.0.0'
+
   '@univerjs/sheets-formula@0.25.1':
     resolution: {integrity: sha512-5zDcLfzAhO0H1gwYeCY0JYgZIxcKAhA02jS0wXRpOa+dVWs2/zcKy4CjDCbINIsA/aLrICAd9O8Q3VbU/G3rEg==}
+    peerDependencies:
+      rxjs: '>=7.0.0'
+
+  '@univerjs/sheets-numfmt@0.25.1':
+    resolution: {integrity: sha512-yLuOfgFa8t+uDnBvCs+PjCjYBq6iJ+tIUEj7ana5YCnxUdKmDed4M8woSffgDRaMXcV8sY9SOexA2iwMLo9ioQ==}
     peerDependencies:
       rxjs: '>=7.0.0'
 
@@ -9127,7 +9140,8 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20250718.0':
     optional: true
 
-  '@cloudflare/workers-types@4.20260702.1': {}
+  '@cloudflare/workers-types@4.20260702.1':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -11847,6 +11861,8 @@ snapshots:
   '@turbo/windows-64@2.10.11':
     optional: true
 
+  '@turbo/windows-64@2.10.12': {}
+
   '@turbo/windows-arm64@2.10.11':
     optional: true
 
@@ -12079,11 +12095,40 @@ snapshots:
     transitivePeerDependencies:
       - react
 
+  '@univerjs/sheets-formula-ui@0.25.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rxjs@7.8.2)':
+    dependencies:
+      '@univerjs/core': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@univerjs/docs': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@univerjs/sheets': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/sheets-formula': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rxjs@7.8.2)
+      react: 19.2.8
+      rxjs: 7.8.2
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - react-dom
+
   '@univerjs/sheets-formula@0.25.1(react@19.2.8)(rxjs@7.8.2)':
     dependencies:
       '@univerjs/core': 0.25.1(react@19.2.8)(rxjs@7.8.2)
       '@univerjs/engine-formula': 0.25.1(react@19.2.8)(rxjs@7.8.2)
       '@univerjs/rpc': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      rxjs: 7.8.2
+    transitivePeerDependencies:
+      - react
+
+  '@univerjs/sheets-numfmt@0.25.1(react@19.2.8)(rxjs@7.8.2)':
+    dependencies:
+      '@univerjs/core': 0.25.1(react@19.2.8)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@19.2.8)(rxjs@7.8.2)
       '@univerjs/sheets': 0.25.1(react@19.2.8)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
