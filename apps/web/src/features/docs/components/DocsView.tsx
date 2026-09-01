@@ -6056,57 +6056,6 @@ ${exportText}
 
             {/* Modal Body */}
             <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {/* Upgrade Banner */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '14px',
-                padding: '14px 16px',
-                backgroundColor: 'rgba(0, 115, 234, 0.05)',
-                border: '1px solid rgba(0, 115, 234, 0.15)',
-                borderRadius: '10px',
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(0, 115, 234, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--brand-primary)',
-                  flexShrink: 0,
-                }}>
-                  <Users size={20} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '3px' }}>
-                    Add more collaborators
-                  </div>
-                  <p style={{ margin: '0 0 10px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
-                    Upgrade to add more collaborators and access higher AI allowance, track changes, and full project history.
-                  </p>
-                  <Link
-                    href="/settings"
-                    onClick={() => setIsShareModalOpen(false)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      padding: '5px 14px',
-                      borderRadius: '20px',
-                      backgroundColor: 'var(--brand-primary)',
-                      color: '#ffffff',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      boxShadow: '0 1px 3px rgba(0, 115, 234, 0.3)',
-                    }}
-                  >
-                    Upgrade
-                  </Link>
-                </div>
-              </div>
-
               {/* Add Email Form */}
               <form onSubmit={handleSendInvite} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '12.5px', fontWeight: 650, color: 'var(--text-primary)' }}>
