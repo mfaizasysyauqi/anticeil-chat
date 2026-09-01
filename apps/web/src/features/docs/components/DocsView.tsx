@@ -88,6 +88,10 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { StorageMeter } from '../../storage/components/StorageMeter';
+import { SettingsModal } from '../../settings/components/SettingsModal';
+import { CreditLimitModal } from '../../credits/components/CreditLimitModal';
+import { PricingModal } from '../../pricing/components/PricingModal';
+import { AuthModal } from '../../auth/components/AuthModal';
 import { getBundledDocContent } from '../utils/docResolver';
 import { lintDocumentContent, DocDiagnostic } from '../utils/docLinter';
 import { DocsCopilotSidebar } from './DocsCopilotSidebar';
@@ -150,6 +154,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const language = useSettingsStore((s) => s.language);
   const theme = useSettingsStore((s) => s.theme);
   const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
+  const isSettingsOpen = useSettingsStore((s) => s.isSettingsOpen);
+  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const tier = useAuthStore((s) => s.tier) || 'free';
   const signOut = useAuthStore((s) => s.signOut);
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
@@ -1320,6 +1326,121 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       insertShortcut(before, after, defaultText);
     }
     setIsParagraphStyleMenuOpen(false);
+  };
+
+  // Render text segments with <mark> tags for active comments (Character-accurate text-flow backdrop)
+  const renderHighlightedBackdrop = () => {
+    const rawText = activeSubFile?.content ?? activeDoc?.content ?? '';
+    if (!rawText) return null;
+
+    const comments = (activeDoc?.comments ?? []).filter((c) => !c.resolved && c.fromLine);
+
+    // Convert line-based comments to character indices
+    const lines = rawText.split('\n');
+    const lineStartIndices: number[] = [0];
+    for (let i = 0; i < lines.length; i++) {
+      lineStartIndices.push(lineStartIndices[i] + lines[i].length + 1);
+    }
+
+    type SpanRange = {
+      start: number;
+      end: number;
+      commentId?: string;
+      isDraft?: boolean;
+    };
+
+    const ranges: SpanRange[] = [];
+
+    // 1. Active comments
+    for (const c of comments) {
+      const fromLine = Math.max(1, Math.min(lines.length, c.fromLine ?? 1));
+      const toLine = Math.max(fromLine, Math.min(lines.length, c.toLine ?? fromLine));
+      const charStart = lineStartIndices[fromLine - 1] ?? 0;
+      const charEnd = Math.min(rawText.length, lineStartIndices[toLine] ? lineStartIndices[toLine] - 1 : rawText.length);
+
+      if (charEnd > charStart) {
+        ranges.push({ start: charStart, end: charEnd, commentId: c.id });
+      }
+    }
+
+    // 2. Draft comment if active
+    if (isAddingComment && draftFromLine) {
+      const fromLine = Math.max(1, Math.min(lines.length, draftFromLine));
+      const toLine = Math.max(fromLine, Math.min(lines.length, draftToLine ?? fromLine));
+      const charStart = lineStartIndices[fromLine - 1] ?? 0;
+      const charEnd = Math.min(rawText.length, lineStartIndices[toLine] ? lineStartIndices[toLine] - 1 : rawText.length);
+
+      if (charEnd > charStart) {
+        ranges.push({ start: charStart, end: charEnd, isDraft: true });
+      }
+    }
+
+    if (ranges.length === 0) {
+      return <span>{rawText}</span>;
+    }
+
+    // Sort ranges
+    ranges.sort((a, b) => a.start - b.start);
+
+    // Merge non-overlapping segments
+    const elements: React.ReactNode[] = [];
+    let currIdx = 0;
+
+    for (let i = 0; i < ranges.length; i++) {
+      const r = ranges[i];
+      if (r.start > currIdx) {
+        elements.push(
+          <span key={`txt_${currIdx}`}>
+            {rawText.substring(currIdx, r.start)}
+          </span>
+        );
+      }
+
+      const segStart = Math.max(currIdx, r.start);
+      const segEnd = Math.min(rawText.length, Math.max(segStart, r.end));
+
+      if (segEnd > segStart) {
+        const isSelected = r.commentId && activeHighlightedCommentId === r.commentId;
+        const bg = r.isDraft
+          ? 'rgba(0, 115, 234, 0.22)'
+          : isSelected
+          ? 'rgba(245, 158, 11, 0.35)'
+          : 'rgba(245, 158, 11, 0.18)';
+        const borderB = r.isDraft
+          ? '2px solid var(--brand-primary)'
+          : isSelected
+          ? '2px solid #F59E0B'
+          : '1.5px dashed rgba(245, 158, 11, 0.6)';
+
+        elements.push(
+          <mark
+            key={`mark_${i}_${segStart}`}
+            style={{
+              backgroundColor: bg,
+              color: 'transparent',
+              borderRadius: '2px',
+              borderBottom: borderB,
+              boxDecorationBreak: 'clone',
+              WebkitBoxDecorationBreak: 'clone',
+              padding: '1px 0',
+            }}
+          >
+            {rawText.substring(segStart, segEnd)}
+          </mark>
+        );
+        currIdx = segEnd;
+      }
+    }
+
+    if (currIdx < rawText.length) {
+      elements.push(
+        <span key={`txt_end_${currIdx}`}>
+          {rawText.substring(currIdx)}
+        </span>
+      );
+    }
+
+    return elements;
   };
 
   // Export handlers
@@ -3305,21 +3426,20 @@ ${exportText}
                     return lineA - lineB;
                   });
 
-                  let currentY = 8;
+                  let currentY: number | null = null;
                   const layoutMap = new Map<string, number>();
-                  let draftY = 8;
+                  let draftY = 16;
 
                   for (const item of items) {
-                    if (item.type === 'draft') {
-                      const targetY = Math.max(8, (item.line - 1) * 20.8 - editorScrollTop);
-                      draftY = Math.max(currentY, targetY);
-                      currentY = draftY + 175; // draft box height
-                    } else {
-                      const fromLine = item.data.fromLine ?? 1;
-                      const targetY = Math.max(8, (fromLine - 1) * 20.8 - editorScrollTop);
-                      const actualY = Math.max(currentY, targetY);
-                      layoutMap.set(item.data.id, actualY);
+                    const lineNum = item.type === 'draft' ? item.line : (item.data.fromLine ?? 1);
+                    const targetY = (lineNum - 1) * 20.8 - editorScrollTop + 16;
+                    const actualY: number = currentY === null ? targetY : Math.max(currentY, targetY);
 
+                    if (item.type === 'draft') {
+                      draftY = actualY;
+                      currentY = draftY + 175;
+                    } else {
+                      layoutMap.set(item.data.id, actualY);
                       const repliesCount = (item.data.replies || []).length;
                       const hasPreview = !!item.data.selectedText;
                       const cardHeight = 90 + (hasPreview ? 26 : 0) + (repliesCount * 34) + 12;
@@ -3327,7 +3447,7 @@ ${exportText}
                     }
                   }
 
-                  const minContainerHeight = Math.max(450, currentY + 80);
+                  const minContainerHeight = Math.max(450, (currentY ?? 0) + 80);
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0', overflow: 'hidden' }}>
@@ -3400,7 +3520,7 @@ ${exportText}
                       </div>
 
                       {/* Comment Container (Positions aligned with commented lines) */}
-                      <div style={{ flex: 1, overflowY: 'auto', position: 'relative', minHeight: 0, backgroundColor: 'var(--bg-sidebar)' }}>
+                      <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0, backgroundColor: 'var(--bg-sidebar)' }}>
                         <div style={{ position: 'relative', width: '100%', minHeight: `${minContainerHeight}px` }}>
                           {/* Empty State */}
                           {!isAddingComment && filteredComments.length === 0 && (
@@ -3719,11 +3839,13 @@ ${exportText}
 
                 {/* TAB 5: AI ASSISTANT / CO-AUTHOR */}
                 {activeDrawerTab === 'ai' && (
-                  <DocsCopilotSidebar
-                    isEmbedded
-                    onInsertText={(text) => insertShortcut(text, '', '')}
-                    onClose={() => toggleSidebar()}
-                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                    <DocsCopilotSidebar
+                      isEmbedded
+                      onInsertText={(text) => insertShortcut(text, '', '')}
+                      onClose={() => toggleSidebar()}
+                    />
+                  </div>
                 )}
 
                 {/* FOOTER: Collapsible Credits + Storage + Profile (mirrors main Sidebar) */}
@@ -4413,16 +4535,14 @@ ${exportText}
                   <button type="button" onClick={() => insertShortcut('[', '](https://)', 'teks link')} style={toolbarBtnStyle} title={language === 'id' ? 'Sisipkan Tautan' : 'Insert Link'}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   </button>
-                  {/* Comment */}
-                  <button type="button"
-                    onClick={() => {
-                      const isLatex = activeDoc?.format === 'latex';
-                      insertShortcut(isLatex ? '% ' : '<!-- ', isLatex ? '' : ' -->', 'komentar');
-                    }}
+                  {/* Review & Comment */}
+                  <button
+                    type="button"
+                    onClick={handleTriggerAddComment}
                     style={toolbarBtnStyle}
-                    title={language === 'id' ? 'Tambah Komentar' : 'Add Comment'}
+                    title={language === 'id' ? 'Buka Review & Tambah Komentar (Ctrl+Shift+C)' : 'Add Comment (Review Panel)'}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>
+                    <MessageSquarePlus size={13} />
                   </button>
                   {/* Label / Tag Cross-Reference */}
                   <button type="button"
@@ -4617,60 +4737,37 @@ ${exportText}
                   </button>
                 </div>
 
-                {/* Code Textarea for Active Subfile with line wrapping */}
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                  {/* Overleaf-style comment highlight overlay: highlights commented lines in amber, locked to text during scroll */}
+                {/* Code Textarea with Synchronized Character-Accurate Text-Flow Backdrop */}
+                <div style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: 'var(--bg-main)' }}>
+                  {/* Layer 1: Synchronized Text-Flow Backdrop (Exact wrap & character highlights) */}
                   <div
+                    aria-hidden="true"
                     style={{
                       position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
+                      inset: 0,
+                      padding: '16px 20px',
+                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                      fontSize: '13px',
+                      lineHeight: '1.6',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
                       overflow: 'hidden',
                       pointerEvents: 'none',
+                      boxSizing: 'border-box',
+                      color: 'transparent',
                     }}
                   >
                     <div
                       style={{
-                        position: 'relative',
                         transform: `translateY(-${editorScrollTop}px)`,
                         width: '100%',
                       }}
                     >
-                      {(activeDoc?.comments ?? []).filter(c => !c.resolved && c.fromLine).map(comment => {
-                        const lineHeight = 20.8; // 13px * 1.6 lineHeight
-                        const topPx = ((comment.fromLine ?? 1) - 1) * lineHeight + 16; // 16px top padding
-                        const heightPx = Math.max(1, ((comment.toLine ?? comment.fromLine ?? 1) - (comment.fromLine ?? 1) + 1)) * lineHeight;
-                        return (
-                          <div
-                            key={comment.id}
-                            onClick={() => {
-                              setActiveHighlightedCommentId(comment.id);
-                              if (!isSidebarOpen) toggleSidebar();
-                              setActiveDrawerTab('review');
-                            }}
-                            title={comment.content}
-                            style={{
-                              position: 'absolute',
-                              left: 0,
-                              right: 0,
-                              top: `${topPx}px`,
-                              height: `${heightPx}px`,
-                              backgroundColor: activeHighlightedCommentId === comment.id
-                                ? 'rgba(245, 158, 11, 0.22)'
-                                : 'rgba(245, 158, 11, 0.10)',
-                              borderLeft: `3px solid ${activeHighlightedCommentId === comment.id ? '#F59E0B' : 'rgba(245,158,11,0.5)'}`,
-                              pointerEvents: 'auto',
-                              cursor: 'pointer',
-                              zIndex: 1,
-                              transition: 'background 0.15s',
-                            }}
-                          />
-                        );
-                      })}
+                      {renderHighlightedBackdrop()}
                     </div>
                   </div>
+
+                  {/* Layer 2: Interactive Transparent Textarea */}
                   <textarea
                     ref={textareaRef}
                     value={activeSubFile?.content ?? activeDoc?.content ?? ''}
@@ -4684,18 +4781,23 @@ ${exportText}
                     }}
                     placeholder={`Ketik isi file ${activeSubFile?.name || 'main.tex'} di sini...`}
                     style={{
+                      position: 'relative',
                       width: '100%',
                       height: '100%',
                       padding: '16px 20px',
-                      backgroundColor: 'var(--bg-main)',
+                      backgroundColor: 'transparent',
                       color: 'var(--text-primary)',
+                      caretColor: 'var(--brand-primary)',
                       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                       fontSize: '13px',
                       lineHeight: '1.6',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
                       border: 'none',
                       outline: 'none',
                       resize: 'none',
                       boxSizing: 'border-box',
+                      zIndex: 2,
                     }}
                   />
                 </div>
@@ -6518,6 +6620,15 @@ ${exportText}
         </div>,
         document.body
       )}
+
+      {/* Global Modals Mounted for Standalone /docs/[id] Route */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
+      <CreditLimitModal />
+      <PricingModal />
+      <AuthModal />
     </div>
   );
 }
