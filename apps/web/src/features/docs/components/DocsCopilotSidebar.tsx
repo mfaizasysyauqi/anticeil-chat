@@ -40,6 +40,11 @@ export function DocsCopilotSidebar({
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const documents = useDocsStore((s) => s.documents);
   const updateDocumentContent = useDocsStore((s) => s.updateDocumentContent);
+  const createSubFile = useDocsStore((s) => s.createSubFile);
+  const updateSubFileContent = useDocsStore((s) => s.updateSubFileContent);
+  const updateSubFileName = useDocsStore((s) => s.updateSubFileName);
+  const deleteSubFile = useDocsStore((s) => s.deleteSubFile);
+  const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
   const toggleCopilot = useDocsStore((s) => s.toggleCopilot);
 
   const language = useSettingsStore((s) => s.language);
@@ -62,15 +67,15 @@ export function DocsCopilotSidebar({
   const [inputPrompt, setInputPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ id: string; role: 'user' | 'assistant'; content: string }>
+    Array<{ id: string; role: 'user' | 'assistant'; content: string; actions?: Array<{ type: string; name: string }> }>
   >([
     {
       id: 'welcome',
       role: 'assistant',
       content:
         language === 'id'
-          ? 'Halo! Saya AI Co-Author Anda. Saya siap membantu menulis bab, merumuskan persamaan LaTeX, membuat tabel data, diagram, atau memperbaiki tata bahasa ilmiah paper Anda.'
-          : 'Hello! I am your AI Co-Author. I can help write sections, formulate LaTeX equations, generate data tables, diagrams, or polish academic prose.',
+          ? 'Halo! Saya AI Co-Author Anda. Saya memiliki akses penuh untuk membaca dan mengelola seluruh file di proyek ini (CRUD). Saya bisa membuat bab baru, menyusun referensi bib, mengedit bagian tertentu, atau merumuskan LaTeX matematika.'
+          : 'Hello! I am your AI Co-Author. I have full read and write access to all files in this project (CRUD). I can create chapters, manage bib references, edit sections, or formulate LaTeX equations.',
     },
   ]);
 
@@ -85,6 +90,88 @@ export function DocsCopilotSidebar({
   const currentProviderDef = PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId);
   const modelDisplayName = currentModelDef?.name || selectedModelId;
   const providerDisplayName = currentProviderDef?.name || selectedProviderId;
+
+  // Execute Agent CRUD operations parsed from model output
+  const executeDocAgentActions = (text: string): Array<{ type: string; name: string }> => {
+    if (!activeDoc) return [];
+    const executed: Array<{ type: string; name: string }> = [];
+
+    // 1. Create file: <create_file name="filename.ext">content</create_file>
+    const createRegex = /<create_file\s+name=["']([^"']+)["']>([\s\S]*?)<\/create_file>/gi;
+    let createMatch;
+    while ((createMatch = createRegex.exec(text)) !== null) {
+      const fileName = createMatch[1].trim();
+      const content = createMatch[2].trim();
+      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fileName.toLowerCase());
+      if (existing) {
+        updateSubFileContent(activeDoc.id, existing.id, content);
+        executed.push({ type: 'update', name: fileName });
+      } else {
+        createSubFile(activeDoc.id, fileName, content);
+        executed.push({ type: 'create', name: fileName });
+      }
+    }
+
+    // 2. Update file: <update_file name="filename.ext">content</update_file>
+    const updateRegex = /<update_file\s+name=["']([^"']+)["']>([\s\S]*?)<\/update_file>/gi;
+    let updateMatch;
+    while ((updateMatch = updateRegex.exec(text)) !== null) {
+      const fileName = updateMatch[1].trim();
+      const content = updateMatch[2].trim();
+      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fileName.toLowerCase());
+      if (existing) {
+        updateSubFileContent(activeDoc.id, existing.id, content);
+        executed.push({ type: 'update', name: fileName });
+      } else if (
+        fileName.toLowerCase() === 'main' ||
+        fileName.toLowerCase() === (activeDoc.title || '').toLowerCase() ||
+        fileName.toLowerCase() === 'main.tex' ||
+        fileName.toLowerCase() === 'main.md'
+      ) {
+        updateDocumentContent(activeDoc.id, content);
+        executed.push({ type: 'update', name: fileName });
+      } else {
+        createSubFile(activeDoc.id, fileName, content);
+        executed.push({ type: 'create', name: fileName });
+      }
+    }
+
+    // 3. Rename file: <rename_file from="old.ext" to="new.ext" />
+    const renameRegex = /<rename_file\s+from=["']([^"']+)["']\s+to=["']([^"']+)["']\s*\/?>/gi;
+    let renameMatch;
+    while ((renameMatch = renameRegex.exec(text)) !== null) {
+      const fromName = renameMatch[1].trim();
+      const toName = renameMatch[2].trim();
+      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fromName.toLowerCase());
+      if (existing) {
+        updateSubFileName(activeDoc.id, existing.id, toName);
+        executed.push({ type: 'rename', name: `${fromName} → ${toName}` });
+      }
+    }
+
+    // 4. Delete file: <delete_file name="filename.ext" />
+    const deleteRegex = /<delete_file\s+name=["']([^"']+)["']\s*\/?>/gi;
+    let deleteMatch;
+    while ((deleteMatch = deleteRegex.exec(text)) !== null) {
+      const fileName = deleteMatch[1].trim();
+      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fileName.toLowerCase());
+      if (existing) {
+        deleteSubFile(activeDoc.id, existing.id);
+        executed.push({ type: 'delete', name: fileName });
+      }
+    }
+
+    // 5. Rewrite main document: <rewrite_main>content</rewrite_main>
+    const rewriteMainRegex = /<rewrite_main>([\s\S]*?)<\/rewrite_main>/gi;
+    let rewriteMatch;
+    while ((rewriteMatch = rewriteMainRegex.exec(text)) !== null) {
+      const content = rewriteMatch[1].trim();
+      updateDocumentContent(activeDoc.id, content);
+      executed.push({ type: 'update', name: activeDoc.title || 'Main Document' });
+    }
+
+    return executed;
+  };
 
   const handleSend = async (customPrompt?: string) => {
     const promptToSend = customPrompt || inputPrompt.trim();
@@ -104,13 +191,58 @@ export function DocsCopilotSidebar({
     setMessages(newHistory);
     setIsGenerating(true);
 
-    const docContext = activeDoc?.content
-      ? `\n\nCURRENT DOCUMENT CONTENT:\n\`\`\`markdown\n${activeDoc.content.slice(0, 4000)}\n\`\`\``
+    // Multi-File Project Context Extraction
+    const subFiles = activeDoc?.files || [];
+    const activeSubFile = subFiles.find((f) => f.id === activeDoc?.activeFileId);
+    const subFilesTree = subFiles.map((f) => `- ${f.name} (${f.content.length} characters)`).join('\n');
+    const subFilesContent = subFiles
+      .map((f) => `--- File: ${f.name} ---\n\`\`\`\n${f.content.slice(0, 3000)}\n\`\`\``)
+      .join('\n\n');
+
+    const projectContext = activeDoc
+      ? `\n\nPROJECT FILES & ARCHITECTURE:
+- Project Title: "${activeDoc.title}"
+- Format: ${activeDoc.format}
+- Currently Open File: ${activeSubFile ? activeSubFile.name : 'Main Document'}
+- File Tree:
+${subFilesTree || '- Main document file (root)'}
+
+FULL PROJECT CONTENTS:
+--- Main Document Content ---
+\`\`\`
+${activeDoc.content.slice(0, 4000)}
+\`\`\`
+
+${subFilesContent}`
       : '';
 
     const systemPrompt = `You are an expert Academic & Technical AI Co-Author specializing in research writing, LaTeX/KaTeX mathematics, technical RFCs, and publication-grade Markdown.
-Always provide clean, accurate, and structured Markdown and LaTeX math equations (using $inline$ and $$block$$).
-Be concise, direct, and ready to be inserted into the document.${docContext}`;
+You have FULL READ and WRITE (CRUD) access to this document and all sub-files in the project.
+
+Available Agent Action Tags (use these tags when instructed to create, edit, rename, or delete files):
+1. Create a new sub-file (e.g. references.bib, chapter1.tex, appendix.tex):
+<create_file name="filename.ext">
+File content here...
+</create_file>
+
+2. Update / Rewrite an existing file:
+<update_file name="filename.ext">
+Complete updated file content...
+</update_file>
+
+3. Rename a file:
+<rename_file from="old_name.ext" to="new_name.ext" />
+
+4. Delete a file:
+<delete_file name="filename.ext" />
+
+5. Rewrite the main document:
+<rewrite_main>
+Updated main content here...
+</rewrite_main>
+
+When the user asks you to create, modify, or manage files, invoke the action tags and explain what you accomplished in clear, academic prose.
+Always provide clean, accurate, and structured Markdown and LaTeX math equations (using $inline$ and $$block$$).${projectContext}`;
 
     const apiMessages: ChatMessage[] = newHistory
       .filter((m) => m.id !== assistantMsgId)
@@ -145,6 +277,16 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
           }
         },
       });
+
+      // After streaming completes, parse and execute any autonomous file CRUD operations
+      const executedActions = executeDocAgentActions(fullResponse);
+      if (executedActions.length > 0) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId ? { ...msg, actions: executedActions } : msg
+          )
+        );
+      }
     } catch (err) {
       console.warn('[DocsCopilot] Streaming error:', err);
       setMessages((prev) =>
@@ -220,12 +362,14 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
     <div
       style={{
         width: isEmbedded ? '100%' : '320px',
-        height: '100%',
+        flex: 1,
+        minHeight: 0,
+        height: isEmbedded ? undefined : '100%',
         backgroundColor: 'var(--bg-sidebar)',
         borderLeft: isEmbedded ? 'none' : '1px solid var(--border-subtle)',
         display: 'flex',
         flexDirection: 'column',
-        flexShrink: 0,
+        overflow: 'hidden',
       }}
     >
       {/* Model Selector Modal (Strictly Text / Chat Models Only) */}
@@ -439,6 +583,40 @@ Be concise, direct, and ready to be inserted into the document.${docContext}`;
                 </>
               )}
             </div>
+
+            {/* Agent Actions Executed Badges */}
+            {m.actions && m.actions.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                {m.actions.map((act, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.25)',
+                      color: '#10B981',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Sparkles size={11} />
+                    <span>
+                      {act.type === 'create'
+                        ? (language === 'id' ? `File dibuat: ${act.name}` : `Created file: ${act.name}`)
+                        : act.type === 'update'
+                        ? (language === 'id' ? `File diperbarui: ${act.name}` : `Updated file: ${act.name}`)
+                        : act.type === 'rename'
+                        ? (language === 'id' ? `File diubah nama: ${act.name}` : `Renamed: ${act.name}`)
+                        : (language === 'id' ? `File dihapus: ${act.name}` : `Deleted file: ${act.name}`)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div
               style={{
