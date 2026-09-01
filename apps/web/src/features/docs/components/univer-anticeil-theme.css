@@ -1,44 +1,37 @@
 /**
  * Univer Sheets — Anticeil Theme Override
  *
- * Univer uses:
- *   - --univer-gray-{50,100,200,300,400,500,600,700,800,900}
- *   - --univer-primary-{50,100,200,300,400,500,600,700,800,900}
- *   - --univer-white, --univer-black
- *   - --univer-blue-{400,500,600}, --univer-green-{400,500,600}, --univer-red-{300,400,500,600}, --univer-yellow-500
+ * Comprehensive theming for Univer Spreadsheet to match Anticeil's design system.
+ * Ensures high contrast for text and icons in both light and dark modes.
  *
- * Dark mode: Univer adds `.univer-dark` class to its root element.
- * Light mode: [data-theme='light'] on <html>.
- *
- * Anticeil palette:
- *   Dark  bg:    #171717 → #0f0f0f
- *   Light bg:    #f7f7f5 → #ffffff
- *   Brand:       #0073EA (primary blue)
- *   Text dark:   #f5f5f5 / #b8b8b8 / #8e8e8e
- *   Text light:  #1a1a1a / #6e6e6e / #9a9a9a
+ * Anticeil Design Tokens:
+ *   Dark Mode:  bg: #171717 → #0f0f0f | text: #f5f5f5 → #b8b8b8 → #8e8e8e
+ *   Light Mode: bg: #f7f7f5 → #ffffff | text: #1a1a1a → #555555 → #909090
+ *   Brand:      #0073EA (Anticeil Blue)
  */
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   DARK MODE — .univer-dark applied by Univer API when dark theme is active
-   ───────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE — .univer-dark applied by Univer API
+   ═══════════════════════════════════════════════════════════════════════════ */
 .univer-dark,
 .univer-dark * {
+  /* Base colors with high contrast */
   --univer-white:      #f5f5f5;
   --univer-black:      #0f0f0f;
 
-  /* Gray scale mapped to Anticeil dark neutrals (warm charcoal) */
-  --univer-gray-50:    #1e1e1e;   /* card/panel surface */
-  --univer-gray-100:   #242424;   /* input / elevated */
-  --univer-gray-200:   #2e2e2e;   /* border/divider */
-  --univer-gray-300:   #3a3a3a;   /* strong divider */
-  --univer-gray-400:   #5a5a5a;   /* placeholder */
-  --univer-gray-500:   #8e8e8e;   /* text-muted */
-  --univer-gray-600:   #b8b8b8;   /* text-secondary */
-  --univer-gray-700:   #d4d4d4;   /* label */
-  --univer-gray-800:   #e8e8e8;   /* near-primary */
-  --univer-gray-900:   #f5f5f5;   /* text-primary */
+  /* Gray scale — mapped to Anticeil dark theme */
+  --univer-gray-50:    #1e1e1e;   /* surface/cards */
+  --univer-gray-100:   #242424;   /* input fields */
+  --univer-gray-200:   #2e2e2e;   /* subtle borders */
+  --univer-gray-300:   #3a3a3a;   /* dividers */
+  --univer-gray-400:   #5a5a5a;   /* disabled/placeholder */
+  --univer-gray-500:   #8e8e8e;   /* muted text */
+  --univer-gray-600:   #b8b8b8;   /* secondary text */
+  --univer-gray-700:   #d4d4d4;   /* labels */
+  --univer-gray-800:   #e8e8e8;   /* near-primary text */
+  --univer-gray-900:   #f5f5f5;   /* primary text */
 
-  /* Anticeil Brand Blue */
+  /* Brand colors — Anticeil Blue */
   --univer-primary-50:  #001a36;
   --univer-primary-100: #002952;
   --univer-primary-200: #003d7a;
@@ -50,45 +43,45 @@
   --univer-primary-800: #66b5f5;
   --univer-primary-900: #a8d4fb;
 
-  --univer-blue-400: #3399f0;
-  --univer-blue-500: #0073EA;
-  --univer-blue-600: #0060B9;
-
-  --univer-green-400: #00c875;
-  --univer-green-500: #00c875;
-  --univer-green-600: #009c5a;
-
-  --univer-red-300:   #f47a8a;
-  --univer-red-400:   #e2445c;
-  --univer-red-500:   #e2445c;
-  --univer-red-600:   #b83348;
-
+  /* Semantic colors */
+  --univer-blue-400:   #3399f0;
+  --univer-blue-500:   #0073EA;
+  --univer-blue-600:   #0060B9;
+  --univer-green-400:  #00c875;
+  --univer-green-500:  #00c875;
+  --univer-green-600:  #009c5a;
+  --univer-red-300:    #f47a8a;
+  --univer-red-400:    #e2445c;
+  --univer-red-500:    #e2445c;
+  --univer-red-600:    #b83348;
   --univer-yellow-500: #fdab3d;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   LIGHT MODE — no .univer-dark class (Univer light = default token values)
-   Override here using :not(.univer-dark) to target the light Univer shell.
-   Also use [data-theme='light'] on the document root for extra specificity.
-   ───────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE — [data-theme='light'] on document root
+   ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme='light'] .univer-workspace,
 [data-theme='light'] .univer-app-container,
 [data-theme='light'] .univerjs-app,
-[data-theme='light'] .univer-app-layout-wrapper {
+[data-theme='light'] .univer-app-layout-wrapper,
+[data-theme='light'] .univer-app-layout-wrapper * {
+  /* Base colors with high contrast */
   --univer-white:      #ffffff;
   --univer-black:      #1a1a1a;
 
-  --univer-gray-50:    #f7f7f5;
-  --univer-gray-100:   #f2f2ef;
-  --univer-gray-200:   #e8e8e5;
-  --univer-gray-300:   #d0d0cc;
-  --univer-gray-400:   #9a9a9a;
-  --univer-gray-500:   #6e6e6e;
-  --univer-gray-600:   #525252;
-  --univer-gray-700:   #333333;
-  --univer-gray-800:   #1f1f1f;
-  --univer-gray-900:   #1a1a1a;
+  /* Gray scale — mapped to Anticeil light theme */
+  --univer-gray-50:    #f7f7f5;   /* page background */
+  --univer-gray-100:   #f2f2ef;   /* sidebar */
+  --univer-gray-200:   #e8e8e5;   /* subtle borders */
+  --univer-gray-300:   #d0d0cc;   /* dividers */
+  --univer-gray-400:   #9a9a9a;   /* disabled/placeholder */
+  --univer-gray-500:   #6e6e6e;   /* muted text */
+  --univer-gray-600:   #555555;   /* secondary text */
+  --univer-gray-700:   #333333;   /* labels */
+  --univer-gray-800:   #1f1f1f;   /* near-primary */
+  --univer-gray-900:   #1a1a1a;   /* primary text */
 
+  /* Brand colors — Anticeil Blue */
   --univer-primary-50:  #e6f0ff;
   --univer-primary-100: #c2d9ff;
   --univer-primary-200: #94bcff;
@@ -100,98 +93,346 @@
   --univer-primary-800: #004c8f;
   --univer-primary-900: #003266;
 
-  --univer-blue-400: #2b7de8;
-  --univer-blue-500: #0073EA;
-  --univer-blue-600: #0060B9;
-
-  --univer-green-400: #00c875;
-  --univer-green-500: #00c875;
-  --univer-green-600: #009c5a;
-
-  --univer-red-300:   #f09aa6;
-  --univer-red-400:   #e2445c;
-  --univer-red-500:   #e2445c;
-  --univer-red-600:   #b83348;
-
+  /* Semantic colors */
+  --univer-blue-400:   #2b7de8;
+  --univer-blue-500:   #0073EA;
+  --univer-blue-600:   #0060B9;
+  --univer-green-400:  #00c875;
+  --univer-green-500:  #00c875;
+  --univer-green-600:  #009c5a;
+  --univer-red-300:    #f09aa6;
+  --univer-red-400:    #e2445c;
+  --univer-red-500:    #e2445c;
+  --univer-red-600:    #b83348;
   --univer-yellow-500: #fdab3d;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   STRUCTURAL OVERRIDES — apply to both themes
-   Target the Univer layout root which wraps everything inside the container.
-   ───────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRUCTURAL LAYOUT — Main container and layout components
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* App shell / toolbar ribbon */
-.univer-app-layout-wrapper {
-  background-color: var(--bg-surface) !important;
+/* App container — main background */
+.univer-app-layout-wrapper,
+.univer-app-container,
+.univer-workspace {
+  background-color: var(--bg-main) !important;
 }
 
-/* Toolbar / header bar */
+/* Toolbar / Header ribbon */
 .univer-app-layout-wrapper [class*="univer-menu-bar"],
 .univer-app-layout-wrapper [class*="univer-header"],
-.univer-app-layout-wrapper [class*="univer-toolbar"] {
+.univer-app-layout-wrapper [class*="univer-toolbar"],
+.univer-app-layout-wrapper [class*="toolbar"] {
   background-color: var(--bg-surface) !important;
   border-bottom: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
 }
 
-/* Sheet tabs / footer bar */
+/* Sheet tabs / Footer bar */
 .univer-app-layout-wrapper [class*="univer-footer"],
 .univer-app-layout-wrapper [class*="univer-sheet-bar"],
 .univer-app-layout-wrapper [class*="sheets-tab"],
-.univer-app-layout-wrapper [class*="sheet-tab"] {
+.univer-app-layout-wrapper [class*="sheet-tab"],
+.univer-app-layout-wrapper [class*="sheetbar"] {
   background-color: var(--bg-sidebar) !important;
   border-top: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
 }
 
 /* Formula bar */
 .univer-app-layout-wrapper [class*="univer-formula-bar"],
-.univer-app-layout-wrapper [class*="formula-bar"] {
+.univer-app-layout-wrapper [class*="formula-bar"],
+.univer-app-layout-wrapper [class*="formulaBar"] {
   background-color: var(--bg-input) !important;
   border-bottom: 1px solid var(--border-subtle) !important;
   color: var(--text-primary) !important;
 }
 
-/* Context menu / popup overlays */
-.univer-app-layout-wrapper [class*="univer-popup"],
-.univer-app-layout-wrapper [class*="univer-menu"],
-[class*="univer-context-menu"],
-[class*="univer-dropdown-menu"] {
-  background-color: var(--bg-surface) !important;
-  border: 1px solid var(--border-strong) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+.univer-app-layout-wrapper [class*="formula-bar"] input,
+.univer-app-layout-wrapper [class*="formulaBar"] input {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border: none !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPREADSHEET CANVAS — Cell grid and selection
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Canvas background */
+.univer-app-layout-wrapper canvas {
+  background-color: var(--bg-main) !important;
+}
+
+/* Cell content wrapper */
+.univer-app-layout-wrapper [class*="spreadsheet"],
+.univer-app-layout-wrapper [class*="sheet-content"],
+.univer-app-layout-wrapper [class*="sheet-container"] {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Cell borders and grid lines */
+.univer-app-layout-wrapper [class*="cell"],
+.univer-app-layout-wrapper [class*="grid"] {
+  border-color: var(--border-subtle) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UI COMPONENTS — Buttons, inputs, menus
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 /* Buttons in toolbar */
-.univer-app-layout-wrapper button:hover {
+.univer-app-layout-wrapper button,
+.univer-app-layout-wrapper [class*="button"],
+.univer-app-layout-wrapper [class*="btn"] {
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.univer-app-layout-wrapper button:hover,
+.univer-app-layout-wrapper [class*="button"]:hover,
+.univer-app-layout-wrapper [class*="btn"]:hover {
   background-color: var(--bg-surface-hover) !important;
 }
 
-/* Typography — match Anticeil Inter font */
+.univer-app-layout-wrapper button:active,
+.univer-app-layout-wrapper [class*="button"]:active {
+  background-color: var(--bg-subtle) !important;
+}
+
+/* Icon buttons — ensure high contrast */
+.univer-app-layout-wrapper [class*="icon"],
+.univer-app-layout-wrapper svg {
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+}
+
+.univer-app-layout-wrapper button [class*="icon"],
+.univer-app-layout-wrapper button svg {
+  opacity: 0.9;
+}
+
+.univer-app-layout-wrapper button:hover [class*="icon"],
+.univer-app-layout-wrapper button:hover svg {
+  opacity: 1;
+}
+
+/* Dropdown menus */
+.univer-app-layout-wrapper [class*="dropdown"],
+.univer-app-layout-wrapper [class*="select"],
+.univer-app-layout-wrapper select {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+/* Input fields */
+.univer-app-layout-wrapper input,
+.univer-app-layout-wrapper textarea {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+.univer-app-layout-wrapper input::placeholder,
+.univer-app-layout-wrapper textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.univer-app-layout-wrapper input:focus,
+.univer-app-layout-wrapper textarea:focus {
+  border-color: var(--accent-primary) !important;
+  outline: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTEXT MENUS & POPOVERS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.univer-app-layout-wrapper [class*="univer-popup"],
+.univer-app-layout-wrapper [class*="univer-menu"],
+.univer-app-layout-wrapper [class*="context-menu"],
+.univer-app-layout-wrapper [class*="dropdown-menu"],
+[class*="univer-context-menu"],
+[class*="univer-dropdown-menu"],
+[class*="univer-popup"] {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper [class*="univer-popup"],
+[data-theme='light'] .univer-app-layout-wrapper [class*="univer-menu"],
+[data-theme='light'] [class*="univer-context-menu"],
+[data-theme='light'] [class*="univer-dropdown-menu"] {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Menu items */
+.univer-app-layout-wrapper [class*="menu-item"],
+.univer-app-layout-wrapper [class*="menuItem"],
+[class*="univer-menu"] [class*="item"] {
+  color: var(--text-primary) !important;
+  background-color: transparent !important;
+}
+
+.univer-app-layout-wrapper [class*="menu-item"]:hover,
+.univer-app-layout-wrapper [class*="menuItem"]:hover,
+[class*="univer-menu"] [class*="item"]:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+/* Dividers in menus */
+.univer-app-layout-wrapper [class*="menu"] [class*="divider"],
+.univer-app-layout-wrapper [class*="separator"] {
+  background-color: var(--border-subtle) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABS & PANELS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Sheet tabs */
+.univer-app-layout-wrapper [class*="sheet-tab"],
+.univer-app-layout-wrapper [class*="tab"] {
+  color: var(--text-secondary) !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.univer-app-layout-wrapper [class*="sheet-tab"]:hover,
+.univer-app-layout-wrapper [class*="tab"]:hover {
+  background-color: var(--bg-surface-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.univer-app-layout-wrapper [class*="sheet-tab"][class*="active"],
+.univer-app-layout-wrapper [class*="tab"][class*="active"],
+.univer-app-layout-wrapper [class*="sheet-tab"][class*="selected"],
+.univer-app-layout-wrapper [class*="tab"][class*="selected"] {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid var(--accent-primary) !important;
+}
+
+/* Side panels */
+.univer-app-layout-wrapper [class*="panel"],
+.univer-app-layout-wrapper [class*="sidebar"],
+.univer-app-layout-wrapper [class*="side-bar"] {
+  background-color: var(--bg-sidebar) !important;
+  border-left: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TEXT & TYPOGRAPHY
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Match Anticeil Inter font family */
 .univer-app-layout-wrapper,
 .univer-app-layout-wrapper *,
 [class*="univer-context-menu"],
-[class*="univer-dropdown-menu"] {
+[class*="univer-dropdown-menu"],
+[class*="univer-popup"] {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
-/* Scrollbars inside Univer */
+/* Text elements with proper contrast */
+.univer-app-layout-wrapper [class*="text"],
+.univer-app-layout-wrapper [class*="label"],
+.univer-app-layout-wrapper span,
+.univer-app-layout-wrapper p {
+  color: var(--text-primary) !important;
+}
+
+.univer-app-layout-wrapper [class*="secondary"],
+.univer-app-layout-wrapper [class*="muted"],
+.univer-app-layout-wrapper [class*="hint"] {
+  color: var(--text-secondary) !important;
+}
+
+.univer-app-layout-wrapper [class*="disabled"] {
+  color: var(--text-muted) !important;
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBARS — Anticeil style
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .univer-app-layout-wrapper *::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 .univer-app-layout-wrapper *::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .univer-app-layout-wrapper *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-strong);
   border-radius: 3px;
 }
+
 .univer-app-layout-wrapper *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--text-muted);
 }
-[data-theme='light'] .univer-app-layout-wrapper *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SELECTION & HIGHLIGHTING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Cell selection */
+.univer-app-layout-wrapper [class*="selection"],
+.univer-app-layout-wrapper [class*="selected"] {
+  outline: 2px solid var(--accent-primary) !important;
+  outline-offset: -2px;
 }
-[data-theme='light'] .univer-app-layout-wrapper *::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+
+/* Text selection */
+.univer-app-layout-wrapper ::selection {
+  background-color: rgba(0, 115, 234, 0.3) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOOLTIPS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.univer-app-layout-wrapper [class*="tooltip"] {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  font-size: 12px !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPECIAL STATES & ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Loading states */
+.univer-app-layout-wrapper [class*="loading"],
+.univer-app-layout-wrapper [class*="spinner"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Focus states */
+.univer-app-layout-wrapper *:focus-visible {
+  outline: 2px solid var(--accent-primary) !important;
+  outline-offset: 2px;
+}
+
+/* Disabled states */
+.univer-app-layout-wrapper [disabled],
+.univer-app-layout-wrapper [class*="disabled"] {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
 }
