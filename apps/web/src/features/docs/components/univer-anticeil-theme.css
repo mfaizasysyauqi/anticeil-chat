@@ -114,7 +114,15 @@
 /* App container — main background */
 .univer-app-layout-wrapper,
 .univer-app-container,
-.univer-workspace {
+.univer-workspace,
+.univer,
+div[class*="univer"] {
+  background-color: var(--bg-main) !important;
+}
+
+/* Force background on all Univer divs */
+.univer-app-layout-wrapper > div,
+.univer-app-layout-wrapper > div > div {
   background-color: var(--bg-main) !important;
 }
 
@@ -436,3 +444,247 @@
   opacity: 0.4 !important;
   cursor: not-allowed !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AGGRESSIVE OVERRIDES — Force theme application
+   These rules use high specificity to ensure Univer internal styles are overridden
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Force ALL Univer backgrounds to use Anticeil colors */
+div[class*="univer"],
+section[class*="univer"],
+header[class*="univer"],
+footer[class*="univer"],
+nav[class*="univer"] {
+  background-color: var(--bg-main) !important;
+}
+
+/* Row and column headers */
+div[class*="row-header"],
+div[class*="col-header"],
+div[class*="column-header"],
+div[class*="header-cell"] {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Cell backgrounds - ensure they match theme */
+div[class*="cell"],
+div[class*="sheet-cell"] {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Toolbar buttons and icons - ensure visibility */
+button[class*="toolbar"],
+button[class*="menu"],
+div[class*="toolbar"] button,
+div[class*="menu"] button {
+  color: var(--text-primary) !important;
+}
+
+button[class*="toolbar"] svg,
+button[class*="menu"] svg,
+div[class*="toolbar"] button svg,
+div[class*="menu"] button svg {
+  color: var(--text-primary) !important;
+  fill: currentColor !important;
+}
+
+/* Formula bar - make text clearly visible */
+div[class*="formula"] input,
+div[class*="formula"] textarea,
+input[class*="formula"],
+textarea[class*="formula"] {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Sheet tabs - improve visibility */
+div[class*="sheet-tab"],
+button[class*="sheet-tab"] {
+  color: var(--text-secondary) !important;
+}
+
+div[class*="sheet-tab"][class*="active"],
+button[class*="sheet-tab"][class*="active"],
+div[class*="sheet-tab"][class*="selected"],
+button[class*="sheet-tab"][class*="selected"] {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-surface) !important;
+}
+
+/* Context menus - ensure proper contrast */
+div[role="menu"],
+div[role="menuitem"],
+ul[role="menu"],
+li[role="menuitem"] {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+}
+
+div[role="menuitem"]:hover,
+li[role="menuitem"]:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+/* Grid lines and borders */
+svg line,
+svg rect {
+  stroke: var(--border-subtle) !important;
+}
+
+/* Selection overlay */
+div[class*="selection"] {
+  border-color: var(--accent-primary) !important;
+}
+
+/* Ensure all text is visible with high contrast */
+.univer-app-layout-wrapper span,
+.univer-app-layout-wrapper p,
+.univer-app-layout-wrapper div:not([class*="icon"]) {
+  color: inherit;
+}
+
+/* Icon colors - force visibility */
+.univer-app-layout-wrapper svg:not([class*="logo"]) {
+  color: var(--text-primary) !important;
+  fill: currentColor !important;
+  opacity: 0.85;
+}
+
+.univer-app-layout-wrapper button:hover svg {
+  opacity: 1;
+}
+
+/* DARK MODE specific overrides */
+.univer-dark div[class*="univer"],
+.univer-dark section[class*="univer"],
+.univer-dark header[class*="univer"],
+.univer-dark footer[class*="univer"] {
+  background-color: #171717 !important;
+}
+
+.univer-dark div[class*="toolbar"],
+.univer-dark div[class*="header"] {
+  background-color: #1e1e1e !important;
+}
+
+.univer-dark div[class*="sheet-tab"],
+.univer-dark div[class*="footer"] {
+  background-color: #141414 !important;
+}
+
+/* Canvas container background - CRITICAL FIX */
+.univer-dark div[class*="canvas"],
+.univer-dark div[class*="sheet-container"],
+.univer-dark div[class*="render"],
+.univer-dark .univer-render-canvas-container {
+  background-color: #171717 !important;
+}
+
+/* LIGHT MODE specific overrides */
+[data-theme='light'] .univer-app-layout-wrapper div[class*="univer"],
+[data-theme='light'] .univer-app-layout-wrapper section[class*="univer"],
+[data-theme='light'] .univer-app-layout-wrapper header[class*="univer"],
+[data-theme='light'] .univer-app-layout-wrapper footer[class*="univer"] {
+  background-color: #f7f7f5 !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper div[class*="toolbar"],
+[data-theme='light'] .univer-app-layout-wrapper div[class*="header"] {
+  background-color: #ffffff !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper div[class*="sheet-tab"],
+[data-theme='light'] .univer-app-layout-wrapper div[class*="footer"] {
+  background-color: #f2f2ef !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper,
+[data-theme='light'] .univer-app-layout-wrapper * {
+  color: #1a1a1a !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper svg {
+  color: #1a1a1a !important;
+  fill: currentColor !important;
+}
+
+/* Canvas text rendering - ensure contrast */
+canvas {
+  background-color: transparent !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CRITICAL FIXES - Cell backgrounds and canvas rendering
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Force canvas wrapper to have proper background */
+.univer-render-canvas,
+.univer-render-canvas-container,
+div[class*="render-canvas"],
+div[class*="canvas-container"] {
+  background-color: var(--bg-main) !important;
+}
+
+/* Dark mode - lighter cells for visibility */
+.univer-dark .univer-render-canvas,
+.univer-dark .univer-render-canvas-container,
+.univer-dark div[class*="render-canvas"],
+.univer-dark div[class*="canvas-container"],
+.univer-dark canvas {
+  /* Use a lighter dark background so text is visible */
+  background-color: #1a1a1a !important;
+}
+
+/* Light mode - white/light cells */
+[data-theme='light'] .univer-app-layout-wrapper .univer-render-canvas,
+[data-theme='light'] .univer-app-layout-wrapper .univer-render-canvas-container,
+[data-theme='light'] .univer-app-layout-wrapper div[class*="render-canvas"],
+[data-theme='light'] .univer-app-layout-wrapper div[class*="canvas-container"],
+[data-theme='light'] .univer-app-layout-wrapper canvas {
+  background-color: #ffffff !important;
+}
+
+/* Fix toolbar icons contrast */
+.univer-dark button svg,
+.univer-dark [class*="icon"] svg {
+  filter: brightness(1.2) !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper button svg,
+[data-theme='light'] .univer-app-layout-wrapper [class*="icon"] svg {
+  filter: brightness(0.3) !important;
+}
+
+/* Ensure dropdown text is visible */
+.univer-dark select,
+.univer-dark [class*="select"],
+.univer-dark [class*="dropdown"] {
+  background-color: #242424 !important;
+  color: #f5f5f5 !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper select,
+[data-theme='light'] .univer-app-layout-wrapper [class*="select"],
+[data-theme='light'] .univer-app-layout-wrapper [class*="dropdown"] {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+/* Row/column numbers must be visible */
+.univer-dark [class*="row-header"],
+.univer-dark [class*="column-header"],
+.univer-dark [class*="col-header"] {
+  background-color: #1e1e1e !important;
+  color: #d4d4d4 !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper [class*="row-header"],
+[data-theme='light'] .univer-app-layout-wrapper [class*="column-header"],
+[data-theme='light'] .univer-app-layout-wrapper [class*="col-header"] {
+  background-color: #f2f2ef !important;
+  color: #333333 !important;
+}
+

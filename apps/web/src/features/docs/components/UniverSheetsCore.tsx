@@ -281,13 +281,17 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
     let rafId: number | null = null;
     let mountTimer: ReturnType<typeof setTimeout> | null = null;
     let themeObserver: MutationObserver | null = null;
+    let colorObserver: MutationObserver | null = null;
+    let canvasObserver: MutationObserver | null = null;
 
     const handleError = (reason?: string) => {
       if (cancelled || myRunId !== runIdRef.current || !isMountedRef.current) return;
       fallbackReasonRef.current = reason || 'unknown';
       console.error('[UniverSheetsCore] runId=', myRunId, '→ init error:', reason || 'unknown');
-      setInitError(reason || 'Unknown error');
-      setEngineStatus('error');
+      if (isMountedRef.current) {
+        setInitError(reason || 'Unknown error');
+        setEngineStatus('error');
+      }
     };
 
     console.debug('[UniverSheetsCore] runId=', myRunId, '→ mulai init Univer');
@@ -458,7 +462,17 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
         mountTimer = setTimeout(() => {
           if (cancelled || myRunId !== runIdRef.current || !isMountedRef.current) return;
           try {
-            const univerOpts: any = { locale, locales };
+            // Determine current theme
+            const isLightTheme = typeof document !== 'undefined' &&
+              document.documentElement.getAttribute('data-theme') === 'light';
+            
+            // Configure Univer with theme-aware options
+            const univerOpts: any = { 
+              locale, 
+              locales,
+              // Add theme configuration
+              theme: isLightTheme ? 'light' : 'default'
+            };
             const univer: any = new Univer(univerOpts);
             univer.registerPlugin(UniverRenderEnginePlugin);
             univer.registerPlugin(UniverFormulaEnginePlugin);
@@ -497,13 +511,24 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
 
             // Keep Univer in sync when user switches theme
             themeObserver = new MutationObserver(() => {
-              try { univerAPI.toggleDarkMode(!isLight()); } catch { /* ignore */ }
+              try { 
+                univerAPI.toggleDarkMode(!isLight());
+                // Force canvas repaint
+                setTimeout(() => {
+                  const canvases = finalContainer.querySelectorAll('canvas');
+                  canvases.forEach(canvas => {
+                    canvas.style.backgroundColor = isLight() ? '#ffffff' : '#1a1a1a';
+                  });
+                }, 100);
+              } catch { /* ignore */ }
             });
             themeObserver.observe(document.documentElement, {
               attributes: true,
               attributeFilter: ['data-theme'],
             });
 
+            // Set cell default background - don't modify initialWorkbook directly
+            // Just use it as-is and let Univer handle the theme internally
             const workbook = univerAPI.createWorkbook(initialWorkbook as any);
             workbookRef.current = workbook;
 
@@ -583,7 +608,71 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
             finalContainer.addEventListener('dblclick', handleDomDblClick);
             finalContainer.addEventListener('keydown', handleDomKeyDown);
 
-            finalContainer.style.setProperty('--univer-background-color', 'transparent');
+            // Force theme colors via CSS custom properties
+            const applyThemeColors = () => {
+              if (cancelled || !isMountedRef.current) return;
+              
+              const isDark = !isLight();
+              const bgColor = isDark ? '#1a1a1a' : '#ffffff';
+              const textColor = isDark ? '#f5f5f5' : '#1a1a1a';
+              
+              try {
+                finalContainer.style.setProperty('--univer-background-color', bgColor);
+                finalContainer.style.setProperty('color', textColor);
+                finalContainer.style.backgroundColor = isDark ? '#171717' : '#f7f7f5';
+                
+                // Force all canvas elements to have the correct background
+                const canvases = finalContainer.querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                  canvas.style.backgroundColor = bgColor;
+                });
+                
+                console.log('[UniverSheetsCore] Applied theme colors:', { isDark, bgColor, textColor, canvasCount: canvases.length });
+              } catch (err) {
+                console.warn('[UniverSheetsCore] Failed to apply theme colors:', err);
+              }
+            };
+            
+            // Initial application with delays to catch dynamically created canvases
+            requestAnimationFrame(() => {
+              if (cancelled || !isMountedRef.current) return;
+              applyThemeColors();
+            });
+            setTimeout(() => {
+              if (cancelled || !isMountedRef.current) return;
+              applyThemeColors();
+            }, 100);
+            setTimeout(() => {
+              if (cancelled || !isMountedRef.current) return;
+              applyThemeColors();
+            }, 500);
+            setTimeout(() => {
+              if (cancelled || !isMountedRef.current) return;
+              applyThemeColors();
+            }, 1000);
+            
+            // Reapply colors when theme changes
+            colorObserver = new MutationObserver(() => {
+              if (cancelled || !isMountedRef.current) return;
+              console.log('[UniverSheetsCore] Theme changed, reapplying colors...');
+              requestAnimationFrame(() => applyThemeColors());
+            });
+            colorObserver.observe(document.documentElement, {
+              attributes: true,
+              attributeFilter: ['data-theme'],
+            });
+            
+            // Watch for new canvas elements being added
+            canvasObserver = new MutationObserver(() => {
+              if (cancelled || !isMountedRef.current) return;
+              console.log('[UniverSheetsCore] DOM mutation detected, reapplying colors...');
+              requestAnimationFrame(() => applyThemeColors());
+            });
+            canvasObserver.observe(finalContainer, {
+              childList: true,
+              subtree: true,
+            });
+
             console.log('[UniverSheetsCore] runId=', myRunId, '✅ UNIVER BERHASIL MOUNT & READY ✅');
           } catch (innerErr: any) {
             console.error('[UniverSheetsCore] runId=', myRunId, '❌ Univer error saat mount (deferred):', innerErr?.message ?? innerErr);
@@ -608,6 +697,8 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
         changeTimerRef.current = null;
       }
       try { themeObserver?.disconnect(); themeObserver = null; } catch { /* noop */ }
+      try { colorObserver?.disconnect(); } catch { /* noop */ }
+      try { canvasObserver?.disconnect(); } catch { /* noop */ }
       try { eventSubRef.current?.dispose?.(); } catch { /* noop */ }
       eventSubRef.current = null;
       univerApiRef.current = null;
