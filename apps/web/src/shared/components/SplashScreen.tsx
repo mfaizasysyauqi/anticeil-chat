@@ -31,28 +31,18 @@ export function SplashScreen({
       }}
     >
       <style>{`
-        @keyframes anticeil-pulse-glow {
-          0%, 100% {
-            transform: scale(1);
-            filter: drop-shadow(0 0 16px rgba(0, 115, 234, 0.25));
-          }
-          50% {
-            transform: scale(1.04);
-            filter: drop-shadow(0 0 28px rgba(0, 115, 234, 0.45));
-          }
-        }
-        @keyframes anticeil-shimmer {
+        @keyframes anticeil-shimmer-flat {
           0% {
-            transform: translateX(-100%);
+            left: -40%;
           }
           100% {
-            transform: translateX(250%);
+            left: 120%;
           }
         }
         @keyframes anticeil-fade-in {
           from {
             opacity: 0;
-            transform: translateY(6px);
+            transform: translateY(4px);
           }
           to {
             opacity: 1;
@@ -61,64 +51,36 @@ export function SplashScreen({
         }
       `}</style>
 
-      {/* Ambient background glow */}
-      <div
-        style={{
-          position: 'absolute',
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0, 115, 234, 0.12) 0%, rgba(120, 75, 209, 0.04) 50%, transparent 70%)',
-          pointerEvents: 'none',
-          animation: 'anticeil-pulse-glow 3s ease-in-out infinite',
-        }}
-      />
-
       {/* Center Content */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '16px',
+          gap: '14px',
           position: 'relative',
           zIndex: 1,
-          animation: 'anticeil-fade-in 0.3s ease-out',
+          animation: 'anticeil-fade-in 0.25s ease-out',
         }}
       >
-        {/* Anticeil Logo Mark */}
-        <div
+        {/* Anticeil Logo Mark (No Container Box / Border) */}
+        <img
+          src="/anticeil-logo.png"
+          alt="Anticeil"
           style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '14px',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            animation: 'anticeil-pulse-glow 2.5s ease-in-out infinite',
+            width: '48px',
+            height: '48px',
+            objectFit: 'contain',
+            display: 'block',
           }}
-        >
-          <img
-            src="/anticeil-logo.png"
-            alt="Anticeil"
-            style={{
-              width: '38px',
-              height: '38px',
-              objectFit: 'contain',
-              borderRadius: '8px',
-            }}
-          />
-        </div>
+        />
 
         {/* Brand Name & Subtitle */}
-        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
           <span
             style={{
-              fontSize: '18px',
-              fontWeight: 800,
+              fontSize: '17px',
+              fontWeight: 750,
               letterSpacing: '-0.02em',
               color: 'var(--text-primary)',
             }}
@@ -137,16 +99,16 @@ export function SplashScreen({
           </span>
         </div>
 
-        {/* Animated Progress Bar */}
+        {/* Flat Solid Progress Bar (No Gradient) */}
         <div
           style={{
-            width: '180px',
-            height: '3.5px',
+            width: '160px',
+            height: '3px',
             borderRadius: '9999px',
             backgroundColor: 'var(--border-subtle)',
             overflow: 'hidden',
             position: 'relative',
-            marginTop: '8px',
+            marginTop: '6px',
           }}
         >
           {progress !== undefined ? (
@@ -154,7 +116,7 @@ export function SplashScreen({
               style={{
                 height: '100%',
                 width: `${Math.min(100, Math.max(0, progress))}%`,
-                background: 'linear-gradient(90deg, #0073EA 0%, #784BD1 100%)',
+                backgroundColor: 'var(--brand-primary, #0073ea)',
                 borderRadius: '9999px',
                 transition: 'width 0.2s ease',
               }}
@@ -162,11 +124,12 @@ export function SplashScreen({
           ) : (
             <div
               style={{
+                position: 'absolute',
                 height: '100%',
-                width: '50%',
-                background: 'linear-gradient(90deg, #0073EA 0%, #784BD1 50%, #00C875 100%)',
+                width: '40%',
+                backgroundColor: 'var(--brand-primary, #0073ea)',
                 borderRadius: '9999px',
-                animation: 'anticeil-shimmer 1.4s ease-in-out infinite',
+                animation: 'anticeil-shimmer-flat 1.2s ease-in-out infinite',
               }}
             />
           )}
