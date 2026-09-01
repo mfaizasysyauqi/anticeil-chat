@@ -733,12 +733,13 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [streamedText, setStreamedText] = useState('');
   const [isGenerationFinished, setIsGenerationFinished] = useState(false);
 
-  // Panel resize state (widths in px; 0 = flex auto)
+  // Panel resize state (widths in px or split ratio 0.2 to 0.8)
   const [leftWidth, setLeftWidth] = useState(252);
-  const [editorWidth, setEditorWidth] = useState(0); // 0 = flex:1
+  const [editorSplitRatio, setEditorSplitRatio] = useState(0.5); // 0.5 = 50% editor : 50% preview
   const [copilotWidth, setCopilotWidth] = useState(320);
   const [isDragging, setIsDragging] = useState(false);
 
+  const workspaceSplitRef = useRef<HTMLDivElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropContentRef = useRef<HTMLDivElement>(null);
@@ -800,18 +801,23 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     window.addEventListener('mouseup', onUp);
   }, [leftWidth]);
 
-  // 2. Drag Editor Width (1:1 Mouse Follow)
+  // 2. Drag Editor Width Ratio (Proportional Flex Resize)
   const handleEditorDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-    const startX = e.clientX;
-    const currentWidth = editorContainerRef.current?.offsetWidth || editorWidth || 450;
+    const container = workspaceSplitRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
 
     const onMove = (ev: MouseEvent) => {
       ev.preventDefault();
-      const newWidth = Math.max(200, Math.min(window.innerWidth - 300, currentWidth + (ev.clientX - startX)));
-      setEditorWidth(newWidth);
+      const relativeX = ev.clientX - containerRect.left;
+      const ratio = relativeX / containerRect.width;
+      // Clamp between 20% and 80% to guarantee safe min-widths
+      const clampedRatio = Math.max(0.2, Math.min(0.8, ratio));
+      setEditorSplitRatio(clampedRatio);
     };
 
     const onUp = () => {
@@ -826,7 +832,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     document.body.style.userSelect = 'none';
     window.addEventListener('mousemove', onMove, { passive: false });
     window.addEventListener('mouseup', onUp);
-  }, [editorWidth]);
+  }, []);
 
   // 3. Drag Copilot Width (1:1 Mouse Follow)
   const handleCopilotDragStart = useCallback((e: React.MouseEvent) => {
@@ -896,7 +902,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     draftFromLine,
     draftToLine,
     leftWidth,
-    editorWidth,
+    editorSplitRatio,
     textareaClientWidth,
   ]);
 
@@ -1423,27 +1429,49 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     `;
   }, [activeDoc?.content, activeDoc?.title, theme]);
 
-  // Insert markdown shortcut helpers
+  // Insert markdown shortcut helpers with native Undo/Redo (Ctrl+Z / Ctrl+Y) history support
   const insertShortcut = (before: string, after: string = '', defaultText: string = '') => {
     const el = textareaRef.current;
     if (!el || !activeDoc) return;
 
+    el.focus();
     const start = el.selectionStart;
     const end = el.selectionEnd;
     const text = el.value;
     const selected = text.substring(start, end) || defaultText;
+    const textToInsert = before + selected + after;
 
-    const updated = text.substring(0, start) + before + selected + after + text.substring(end);
-    if (activeSubFile) {
-      updateSubFileContent(activeDoc.id, activeSubFile.id, updated);
-    } else {
-      updateDocumentContent(activeDoc.id, updated);
+    let success = false;
+    try {
+      // document.execCommand('insertText') preserves browser native undo/redo history for textareas
+      success = document.execCommand('insertText', false, textToInsert);
+    } catch {
+      success = false;
     }
 
-    setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(start + before.length, start + before.length + selected.length);
-    }, 10);
+    if (success) {
+      // Trigger onChange to sync state with Zustand
+      const event = new Event('input', { bubbles: true });
+      el.dispatchEvent(event);
+
+      // Restore selection to the inner content
+      const newSelectionStart = start + before.length;
+      const newSelectionEnd = newSelectionStart + selected.length;
+      el.setSelectionRange(newSelectionStart, newSelectionEnd);
+    } else {
+      // Direct update fallback if execCommand is blocked
+      const updated = text.substring(0, start) + textToInsert + text.substring(end);
+      if (activeSubFile) {
+        updateSubFileContent(activeDoc.id, activeSubFile.id, updated);
+      } else {
+        updateDocumentContent(activeDoc.id, updated);
+      }
+
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + before.length, start + before.length + selected.length);
+      }, 10);
+    }
   };
 
   // Overleaf Paragraph Style handler
@@ -4294,7 +4322,7 @@ ${exportText}
           )}
 
           {/* 2. Right Main Workspace Area (Editor Area) */}
-          <div style={{ flex: 1, height: '100%', display: 'flex', overflow: 'hidden', minWidth: 0 }}>
+          <div ref={workspaceSplitRef} style={{ flex: 1, height: '100%', display: 'flex', overflow: 'hidden', minWidth: 0 }}>
           {/* 2. Main Editor Content: Spreadsheet vs Slide Deck vs Markdown/LaTeX Split */}
           {activeDoc?.format === 'sheet' ? (
             <div style={{ flex: 1, height: '100%', minWidth: 0 }}>
@@ -4311,13 +4339,13 @@ ${exportText}
                 <div
                   ref={editorContainerRef}
                   style={{
-                    flex: (viewMode === 'code' || editorWidth === 0) ? 1 : `0 0 ${editorWidth}px`,
+                    flex: viewMode === 'code' ? 1 : `${editorSplitRatio} 1 0%`,
+                    minWidth: viewMode === 'split' ? '240px' : 0,
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     backgroundColor: 'var(--bg-main)',
                     borderRight: 'none',
-                    minWidth: 0,
                   }}
                 >
                   {/* Overleaf-Style File Tabs */}
@@ -5039,12 +5067,12 @@ ${exportText}
             {(viewMode === 'split' || viewMode === 'preview') && (
               <div
                 style={{
-                  flex: viewMode === 'split' ? 1.15 : 1,
+                  flex: viewMode === 'preview' ? 1 : `${1 - editorSplitRatio} 1 0%`,
+                  minWidth: viewMode === 'split' ? '240px' : 0,
                   height: '100%',
                   backgroundColor: theme === 'light' ? '#e2e8f0' : '#090d16',
                   display: 'flex',
                   flexDirection: 'column',
-                  minWidth: 0,
                   position: 'relative',
                 }}
               >
