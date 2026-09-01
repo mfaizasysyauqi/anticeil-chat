@@ -186,6 +186,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [draftCommentText, setDraftCommentText] = useState('');
   const [draftSelectedText, setDraftSelectedText] = useState('');
+  const [draftCharStart, setDraftCharStart] = useState<number | null>(null);
+  const [draftCharEnd, setDraftCharEnd] = useState<number | null>(null);
   const [draftFromLine, setDraftFromLine] = useState(1);
   const [draftToLine, setDraftToLine] = useState(1);
   const [activeHighlightedCommentId, setActiveHighlightedCommentId] = useState<string | null>(null);
@@ -280,19 +282,51 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
   const handleTriggerAddComment = () => {
     const el = textareaRef.current;
-    if (!el || !activeDoc) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const text = el.value;
-    const selected = text.substring(start, end).trim();
+    if (!activeDoc) return;
+    const text = activeSubFile?.content ?? activeDoc.content ?? '';
 
-    // Calculate line numbers
-    const linesBeforeStart = text.substring(0, start).split('\n').length;
-    const linesBeforeEnd = text.substring(0, end).split('\n').length;
+    // Use current live textarea selection or fallback to last captured selection
+    let start = el ? el.selectionStart : lastEditorSelectionRef.current.start;
+    let end = el ? el.selectionEnd : lastEditorSelectionRef.current.end;
 
-    setDraftSelectedText(selected || (text.split('\n')[linesBeforeStart - 1]?.trim() || ''));
-    setDraftFromLine(linesBeforeStart);
-    setDraftToLine(Math.max(linesBeforeStart, linesBeforeEnd));
+    // If textarea selection is collapsed (0 or same) but last captured selection had text:
+    if (start === end && lastEditorSelectionRef.current.end > lastEditorSelectionRef.current.start) {
+      start = lastEditorSelectionRef.current.start;
+      end = lastEditorSelectionRef.current.end;
+    }
+
+    let selected = '';
+    let fromLine = 1;
+    let toLine = 1;
+    let charStart: number | null = null;
+    let charEnd: number | null = null;
+
+    if (start !== end && end > start) {
+      selected = text.substring(start, end);
+      charStart = start;
+      charEnd = end;
+      fromLine = text.substring(0, start).split('\n').length;
+      toLine = text.substring(0, end).split('\n').length;
+    } else {
+      const cursor = start ?? 0;
+      fromLine = text.substring(0, cursor).split('\n').length;
+      toLine = fromLine;
+      const lines = text.split('\n');
+      const lineText = lines[fromLine - 1] ?? '';
+      selected = lineText.trim();
+      let lineStart = 0;
+      for (let i = 0; i < fromLine - 1; i++) {
+        lineStart += lines[i].length + 1;
+      }
+      charStart = lineStart;
+      charEnd = lineStart + lineText.length;
+    }
+
+    setDraftSelectedText(selected);
+    setDraftCharStart(charStart);
+    setDraftCharEnd(charEnd);
+    setDraftFromLine(fromLine);
+    setDraftToLine(toLine);
     setDraftCommentText('');
     setIsAddingComment(true);
 
@@ -631,6 +665,61 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     el.scrollTop = Math.max(0, lineNumber * 21 - 100);
   };
 
+  // Select exact text or line range in textarea for a review comment
+  const selectCommentRange = (comment: DocComment) => {
+    const el = textareaRef.current;
+    if (!el || !activeDoc) return;
+    const text = activeSubFile?.content || activeDoc.content || '';
+    const lines = text.split('\n');
+
+    let startChar = -1;
+    let endChar = -1;
+
+    // 1. If comment has exact selectedText, locate it around fromLine
+    if (comment.selectedText && comment.selectedText.trim()) {
+      const trimmed = comment.selectedText.trim();
+      const fromLine = Math.max(1, Math.min(lines.length, comment.fromLine ?? 1));
+      let lineStart = 0;
+      for (let i = 0; i < fromLine - 1 && i < lines.length; i++) {
+        lineStart += lines[i].length + 1;
+      }
+      const searchForward = text.indexOf(trimmed, lineStart);
+      if (searchForward !== -1 && searchForward < lineStart + 400) {
+        startChar = searchForward;
+        endChar = searchForward + trimmed.length;
+      } else {
+        const searchBack = text.indexOf(trimmed, Math.max(0, lineStart - 80));
+        if (searchBack !== -1 && searchBack < lineStart + 400) {
+          startChar = searchBack;
+          endChar = searchBack + trimmed.length;
+        } else {
+          const globalIdx = text.indexOf(trimmed);
+          if (globalIdx !== -1) {
+            startChar = globalIdx;
+            endChar = globalIdx + trimmed.length;
+          }
+        }
+      }
+    }
+
+    // 2. Fallback to line range
+    if (startChar === -1 || endChar === -1) {
+      const fromLine = comment.fromLine ?? 1;
+      const toLine = comment.toLine ?? fromLine;
+      startChar = 0;
+      for (let i = 0; i < Math.max(0, fromLine - 1) && i < lines.length; i++) {
+        startChar += lines[i].length + 1;
+      }
+      endChar = startChar;
+      for (let i = Math.max(0, fromLine - 1); i < Math.min(lines.length, toLine); i++) {
+        endChar += lines[i].length + (i < toLine - 1 ? 1 : 0);
+      }
+    }
+
+    el.focus();
+    el.setSelectionRange(startChar, endChar);
+  };
+
   // Scroll the preview iframe to a matching heading
   const scrollPreviewToHeading = (headingText: string) => {
     previewIframeRef.current?.contentWindow?.postMessage(
@@ -652,7 +741,36 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const backdropContentRef = useRef<HTMLDivElement>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
+  const lastEditorSelectionRef = useRef<{ start: number; end: number; text: string }>({ start: 0, end: 0, text: '' });
+
+  // Exact measured clientWidth of textarea (excluding scrollbars) to guarantee identical word-wrapping
+  const [textareaClientWidth, setTextareaClientWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      if (el.clientWidth > 0) {
+        setTextareaClientWidth(el.clientWidth);
+      }
+    };
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    window.addEventListener('resize', updateWidth);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateWidth);
+    };
+  }, []);
+
+  // Exact measured physical Y positions of comment highlights in the editor backdrop
+  const [commentDomPositions, setCommentDomPositions] = useState<Record<string, number>>({});
 
   // 1. Drag Left Drawer (1:1 Mouse Follow)
   const handleLeftDrawerDragStart = useCallback((e: React.MouseEvent) => {
@@ -754,6 +872,33 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     if (!activeDoc) return '';
     return getBundledDocContent(activeDoc);
   }, [activeDoc]);
+
+  // Measure exact physical DOM offsetTop of highlighted comment marks in the editor backdrop
+  useEffect(() => {
+    const el = backdropContentRef.current;
+    if (!el) return;
+
+    const positions: Record<string, number> = {};
+    const marks = el.querySelectorAll<HTMLElement>('[data-comment-mark]');
+    marks.forEach((mark) => {
+      const id = mark.getAttribute('data-comment-mark');
+      if (id && positions[id] === undefined) {
+        positions[id] = mark.offsetTop;
+      }
+    });
+
+    setCommentDomPositions(positions);
+  }, [
+    activeSubFile?.content,
+    activeDoc?.content,
+    activeDoc?.comments,
+    isAddingComment,
+    draftFromLine,
+    draftToLine,
+    leftWidth,
+    editorWidth,
+    textareaClientWidth,
+  ]);
 
   // Start Agentic Generation
   const handleStartGenerate = async (promptText: string, format: DocFormat) => {
@@ -1351,26 +1496,84 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
     const ranges: SpanRange[] = [];
 
-    // 1. Active comments
+    // 1. Active comments (match exact selectedText characters first)
     for (const c of comments) {
-      const fromLine = Math.max(1, Math.min(lines.length, c.fromLine ?? 1));
-      const toLine = Math.max(fromLine, Math.min(lines.length, c.toLine ?? fromLine));
-      const charStart = lineStartIndices[fromLine - 1] ?? 0;
-      const charEnd = Math.min(rawText.length, lineStartIndices[toLine] ? lineStartIndices[toLine] - 1 : rawText.length);
+      let charStart = -1;
+      let charEnd = -1;
 
-      if (charEnd > charStart) {
+      if (c.selectedText && c.selectedText.trim()) {
+        const trimmed = c.selectedText.trim();
+        const fromLine = Math.max(1, Math.min(lines.length, c.fromLine ?? 1));
+        const lineStartPos = lineStartIndices[fromLine - 1] ?? 0;
+
+        // Search starting directly from lineStartPos (current line and forward) first!
+        const searchForward = rawText.indexOf(trimmed, lineStartPos);
+        if (searchForward !== -1 && searchForward < lineStartPos + 400) {
+          charStart = searchForward;
+          charEnd = searchForward + trimmed.length;
+        } else {
+          // If not found right after, check slightly before (up to 1 line back)
+          const searchBack = rawText.indexOf(trimmed, Math.max(0, lineStartPos - 80));
+          if (searchBack !== -1 && searchBack < lineStartPos + 400) {
+            charStart = searchBack;
+            charEnd = searchBack + trimmed.length;
+          } else {
+            // Global search
+            const globalIdx = rawText.indexOf(trimmed);
+            if (globalIdx !== -1) {
+              charStart = globalIdx;
+              charEnd = globalIdx + trimmed.length;
+            }
+          }
+        }
+      }
+
+      if (charStart === -1 || charEnd === -1) {
+        const fromLine = Math.max(1, Math.min(lines.length, c.fromLine ?? 1));
+        const toLine = Math.max(fromLine, Math.min(lines.length, c.toLine ?? fromLine));
+        charStart = lineStartIndices[fromLine - 1] ?? 0;
+        charEnd = Math.min(rawText.length, lineStartIndices[toLine] ? lineStartIndices[toLine] - 1 : rawText.length);
+      }
+
+      // STRICT: Never render highlight over pure empty whitespace lines
+      if (charEnd > charStart && rawText.substring(charStart, charEnd).trim().length > 0) {
         ranges.push({ start: charStart, end: charEnd, commentId: c.id });
       }
     }
 
     // 2. Draft comment if active
-    if (isAddingComment && draftFromLine) {
-      const fromLine = Math.max(1, Math.min(lines.length, draftFromLine));
-      const toLine = Math.max(fromLine, Math.min(lines.length, draftToLine ?? fromLine));
-      const charStart = lineStartIndices[fromLine - 1] ?? 0;
-      const charEnd = Math.min(rawText.length, lineStartIndices[toLine] ? lineStartIndices[toLine] - 1 : rawText.length);
+    if (isAddingComment) {
+      let charStart = -1;
+      let charEnd = -1;
 
-      if (charEnd > charStart) {
+      if (draftCharStart !== null && draftCharEnd !== null && draftCharEnd > draftCharStart) {
+        charStart = draftCharStart;
+        charEnd = draftCharEnd;
+      } else if (draftSelectedText && draftSelectedText.trim()) {
+        const trimmed = draftSelectedText.trim();
+        const fromLine = Math.max(1, Math.min(lines.length, draftFromLine));
+        const lineStartPos = lineStartIndices[fromLine - 1] ?? 0;
+        const searchIdx = rawText.indexOf(trimmed, lineStartPos);
+        if (searchIdx !== -1 && searchIdx < lineStartPos + 400) {
+          charStart = searchIdx;
+          charEnd = searchIdx + trimmed.length;
+        } else {
+          const searchBack = rawText.indexOf(trimmed, Math.max(0, lineStartPos - 80));
+          if (searchBack !== -1) {
+            charStart = searchBack;
+            charEnd = searchBack + trimmed.length;
+          }
+        }
+      }
+
+      if (charStart === -1 || charEnd === -1) {
+        const fromLine = Math.max(1, Math.min(lines.length, draftFromLine));
+        const toLine = Math.max(fromLine, Math.min(lines.length, draftToLine ?? fromLine));
+        charStart = lineStartIndices[fromLine - 1] ?? 0;
+        charEnd = Math.min(rawText.length, lineStartIndices[toLine] ? lineStartIndices[toLine] - 1 : rawText.length);
+      }
+
+      if (charEnd > charStart && rawText.substring(charStart, charEnd).trim().length > 0) {
         ranges.push({ start: charStart, end: charEnd, isDraft: true });
       }
     }
@@ -1415,14 +1618,16 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         elements.push(
           <mark
             key={`mark_${i}_${segStart}`}
+            data-comment-mark={r.commentId || (r.isDraft ? 'draft' : undefined)}
             style={{
               backgroundColor: bg,
               color: 'transparent',
-              borderRadius: '2px',
+              borderRadius: '3px',
               borderBottom: borderB,
               boxDecorationBreak: 'clone',
               WebkitBoxDecorationBreak: 'clone',
-              padding: '1px 0',
+              padding: '1px 2px',
+              margin: '0 -1px',
             }}
           >
             {rawText.substring(segStart, segEnd)}
@@ -3431,8 +3636,12 @@ ${exportText}
                   let draftY = 16;
 
                   for (const item of items) {
-                    const lineNum = item.type === 'draft' ? item.line : (item.data.fromLine ?? 1);
-                    const targetY = (lineNum - 1) * 20.8 - editorScrollTop + 16;
+                    const itemId = item.type === 'draft' ? 'draft' : item.data.id;
+                    const measuredTop = commentDomPositions[itemId];
+                    const fallbackTop = ((item.type === 'draft' ? item.line : (item.data.fromLine ?? 1)) - 1) * 20.8 + 16;
+                    const physicalTop = measuredTop !== undefined ? measuredTop : fallbackTop;
+
+                    const targetY = physicalTop - editorScrollTop;
                     const actualY: number = currentY === null ? targetY : Math.max(currentY, targetY);
 
                     if (item.type === 'draft') {
@@ -3464,6 +3673,7 @@ ${exportText}
                           </span>
                           <button
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={handleTriggerAddComment}
                             style={{
                               display: 'flex',
@@ -3653,7 +3863,7 @@ ${exportText}
                                 onClick={() => {
                                   setActiveHighlightedCommentId(isHighlighted ? null : comment.id);
                                   if (!isHighlighted && textareaRef.current) {
-                                    jumpToLine(comment.fromLine ? comment.fromLine - 1 : 0);
+                                    selectCommentRange(comment);
                                   }
                                 }}
                                 style={{
@@ -4725,6 +4935,7 @@ ${exportText}
                   {/* Add Review Comment Button (Overleaf-style) */}
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={handleTriggerAddComment}
                     style={{
                       ...toolbarBtnStyle,
@@ -4744,20 +4955,29 @@ ${exportText}
                     aria-hidden="true"
                     style={{
                       position: 'absolute',
-                      inset: 0,
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      width: textareaClientWidth ? `${textareaClientWidth}px` : '100%',
                       padding: '16px 20px',
                       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                       fontSize: '13px',
                       lineHeight: '1.6',
+                      letterSpacing: '0px',
+                      tabSize: 2,
                       whiteSpace: 'pre-wrap',
                       wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
                       overflow: 'hidden',
                       pointerEvents: 'none',
                       boxSizing: 'border-box',
                       color: 'transparent',
+                      margin: 0,
+                      border: 'none',
                     }}
                   >
                     <div
+                      ref={backdropContentRef}
                       style={{
                         transform: `translateY(-${editorScrollTop}px)`,
                         width: '100%',
@@ -4772,6 +4992,30 @@ ${exportText}
                     ref={textareaRef}
                     value={activeSubFile?.content ?? activeDoc?.content ?? ''}
                     onScroll={(e) => setEditorScrollTop(e.currentTarget.scrollTop)}
+                    onSelect={(e) => {
+                      const el = e.currentTarget;
+                      lastEditorSelectionRef.current = {
+                        start: el.selectionStart,
+                        end: el.selectionEnd,
+                        text: el.value.substring(el.selectionStart, el.selectionEnd),
+                      };
+                    }}
+                    onKeyUp={(e) => {
+                      const el = e.currentTarget;
+                      lastEditorSelectionRef.current = {
+                        start: el.selectionStart,
+                        end: el.selectionEnd,
+                        text: el.value.substring(el.selectionStart, el.selectionEnd),
+                      };
+                    }}
+                    onMouseUp={(e) => {
+                      const el = e.currentTarget;
+                      lastEditorSelectionRef.current = {
+                        start: el.selectionStart,
+                        end: el.selectionEnd,
+                        text: el.value.substring(el.selectionStart, el.selectionEnd),
+                      };
+                    }}
                     onChange={(e) => {
                       if (activeDoc && activeSubFile) {
                         updateSubFileContent(activeDoc.id, activeSubFile.id, e.target.value);
@@ -4780,19 +5024,27 @@ ${exportText}
                       }
                     }}
                     placeholder={`Ketik isi file ${activeSubFile?.name || 'main.tex'} di sini...`}
+                    spellCheck={false}
+                    autoCapitalize="off"
+                    autoComplete="off"
+                    autoCorrect="off"
                     style={{
                       position: 'relative',
                       width: '100%',
                       height: '100%',
                       padding: '16px 20px',
+                      margin: 0,
                       backgroundColor: 'transparent',
                       color: 'var(--text-primary)',
                       caretColor: 'var(--brand-primary)',
                       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                       fontSize: '13px',
                       lineHeight: '1.6',
+                      letterSpacing: '0px',
+                      tabSize: 2,
                       whiteSpace: 'pre-wrap',
                       wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
                       border: 'none',
                       outline: 'none',
                       resize: 'none',
