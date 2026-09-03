@@ -8,6 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: [
+    'antsheet',
     '@anticeil/core',
     '@univerjs/core',
     '@univerjs/design',
@@ -33,6 +34,21 @@ const nextConfig = {
     } : false,
   },
   webpack: (config, { isServer }) => {
+    // Monorepo ant-sheet path aliases resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'antsheet': path.resolve(__dirname, '../../antsheet/src/index.ts'),
+      'antsheet/formula': path.resolve(__dirname, '../../antsheet/src/formula.ts'),
+      'antsheet/xlsx': path.resolve(__dirname, '../../antsheet/src/xlsx.ts'),
+      'antsheet/csv': path.resolve(__dirname, '../../antsheet/src/csv.ts'),
+      'antsheet/parser': path.resolve(__dirname, '../../antsheet/src/parser.ts'),
+      'antsheet/converter': path.resolve(__dirname, '../../antsheet/src/converter.ts'),
+      'antsheet/serializer': path.resolve(__dirname, '../../antsheet/src/serializer.ts'),
+      'antsheet/types': path.resolve(__dirname, '../../antsheet/src/types.ts'),
+      'antsheet/chart': path.resolve(__dirname, '../../antsheet/src/chart.ts'),
+      'antsheet/validator': path.resolve(__dirname, '../../antsheet/src/validator.ts'),
+    };
+
     // Prioritaskan node_modules lokal apps/web (hindari resolve ke nested .pnpm/<pkg>/node_modules)
     const localNodeModules = path.resolve(__dirname, 'node_modules');
     const candidateModules = [localNodeModules];
