@@ -5,22 +5,74 @@
  * Uses CSS filters and overlays to improve visibility.
  */
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   CANVAS BACKGROUND FIX - Critical for contrast
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Dark mode - Add backdrop filter to lighten canvas */
+/* Dark mode - Canvas grid and layout */
 .univer-dark canvas,
-.univer-dark .univer-render-canvas-container {
-  background-color: #1a1a1a !important;
-  filter: brightness(1.1) !important;
+.univer-dark .univer-render-canvas-container canvas {
+  filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.1) !important;
+  background-color: var(--bg-main, #171717) !important;
 }
 
-/* Light mode - Ensure white background */
+.univer-dark,
+.univer-dark .univer-app-layout-wrapper,
+.univer-dark .univer-render-canvas-container,
+.univer-dark [class*="workbench-layout"] {
+  background-color: var(--bg-main, #171717) !important;
+  color: var(--text-primary, #f5f5f5) !important;
+}
+
+/* Light mode - Canvas grid and layout */
 [data-theme='light'] .univer-app-layout-wrapper canvas,
-[data-theme='light'] .univer-app-layout-wrapper .univer-render-canvas-container {
-  background-color: #ffffff !important;
-  filter: contrast(1.05) !important;
+[data-theme='light'] .univer-render-canvas-container canvas,
+[data-theme='light'] canvas {
+  filter: none !important;
+  background-color: var(--bg-surface, #ffffff) !important;
+}
+
+[data-theme='light'] .univer-app-layout-wrapper,
+[data-theme='light'] .univer-render-canvas-container,
+[data-theme='light'] [class*="workbench-layout"] {
+  background-color: var(--bg-main, #f7f7f5) !important;
+  color: var(--text-primary, #1a1a1a) !important;
+}
+
+/* Read-Only Preview Mode Overrides */
+.univer-readonly-preview [class*="formula-bar"],
+.univer-readonly-preview [class*="formula-ui"],
+.univer-readonly-preview [class*="formula-editor"],
+.univer-readonly-preview [class*="ribbon-header"],
+.univer-readonly-preview [class*="toolbar-container"],
+.univer-readonly-preview [class*="univer-toolbar"],
+.univer-readonly-preview [class*="cell-editor"],
+.univer-readonly-preview [class*="sheet-bar-add"],
+.univer-readonly-preview [class*="sheet-bar-btn-add"],
+.univer-readonly-preview [class*="add-sheet"],
+.univer-readonly-preview [class*="context-menu"],
+.univer-readonly-preview [class*="popup"],
+.univer-readonly-preview [class*="dropdown-menu"] {
+  display: none !important;
+}
+
+.univer-readonly-preview [class*="editor-container"] textarea,
+.univer-readonly-preview [class*="cell-editor"] textarea {
+  pointer-events: none !important;
+  user-select: none !important;
+  opacity: 0 !important;
+}
+
+.univer-dark .univer-readonly-preview [class*="sheet-tab-bar"],
+.univer-dark [class*="sheet-tab-bar"],
+.univer-dark [class*="sheet-bar"],
+.univer-dark [class*="footer"] {
+  background-color: var(--bg-surface, #1e1e1e) !important;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07)) !important;
+}
+
+[data-theme='light'] .univer-readonly-preview [class*="sheet-tab-bar"],
+[data-theme='light'] [class*="sheet-tab-bar"],
+[data-theme='light'] [class*="sheet-bar"],
+[data-theme='light'] [class*="footer"] {
+  background-color: var(--bg-surface, #ffffff) !important;
+  border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.07)) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -30,25 +82,147 @@
 /* Toolbar icons - improve visibility */
 .univer-dark button svg,
 .univer-dark [class*="icon"] svg,
-.univer-dark [class*="toolbar"] svg {
-  filter: brightness(1.3) !important;
+.univer-dark [class*="toolbar"] svg,
+.univer-dark [class*="footer"] svg,
+.univer-dark [class*="sheet-bar"] svg,
+.univer-dark [class*="zoom"] svg,
+.univer-dark [class*="slider"] svg {
+  color: #e5e7eb !important;
   opacity: 0.9 !important;
 }
 
-.univer-dark button:hover svg {
-  filter: brightness(1.5) !important;
+.univer-dark button:hover svg,
+.univer-dark [class*="zoom"] button:hover svg {
+  color: #ffffff !important;
   opacity: 1 !important;
 }
 
 [data-theme='light'] .univer-app-layout-wrapper button svg,
-[data-theme='light'] .univer-app-layout-wrapper [class*="icon"] svg {
-  filter: brightness(0.4) !important;
-  opacity: 0.85 !important;
+[data-theme='light'] .univer-app-layout-wrapper [class*="icon"] svg,
+[data-theme='light'] .univer-app-layout-wrapper [class*="footer"] svg,
+[data-theme='light'] .univer-app-layout-wrapper [class*="sheet-bar"] svg,
+[data-theme='light'] .univer-app-layout-wrapper [class*="zoom"] svg,
+[data-theme='light'] .univer-app-layout-wrapper [class*="slider"] svg,
+[data-theme='light'] [class*="sheet-bar"] svg,
+[data-theme='light'] [class*="zoom"] svg,
+[data-theme='light'] [class*="slider"] svg {
+  color: #1f2937 !important;
+  opacity: 0.9 !important;
 }
 
-[data-theme='light'] .univer-app-layout-wrapper button:hover svg {
-  filter: brightness(0.2) !important;
+[data-theme='light'] .univer-app-layout-wrapper button:hover svg,
+[data-theme='light'] .univer-app-layout-wrapper [class*="zoom"] button:hover svg {
+  color: #000000 !important;
   opacity: 1 !important;
+}
+
+/* Zoom Slider Specific Styles */
+[class*="zoom-slider"],
+[class*="sheet-bar-zoom"] {
+  display: flex !important;
+  align-items: center !important;
+}
+
+[class*="zoom-slider"] button,
+[class*="sheet-bar-zoom"] button,
+[class*="zoom-slider"] [role="button"],
+[class*="sheet-bar-zoom"] [role="button"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+[data-theme='light'] [class*="zoom-slider"] svg,
+[data-theme='light'] [class*="sheet-bar-zoom"] svg {
+  color: #1f2937 !important;
+  stroke: #1f2937 !important;
+  fill: #1f2937 !important;
+}
+
+.univer-dark [class*="zoom-slider"] svg,
+.univer-dark [class*="sheet-bar-zoom"] svg {
+  color: #e5e7eb !important;
+  stroke: #e5e7eb !important;
+  fill: #e5e7eb !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOOTER & SHEET TABS HORIZONTAL SCROLL & OVERFLOW
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ensure the footer container flex layout never crushes elements and allows horizontal scrolling */
+.univer-app-layout-wrapper [class*="footer"],
+[class*="workbench-layout-footer"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  scrollbar-width: thin !important;
+  gap: 8px !important;
+}
+
+/* Sheet bar container */
+[class*="sheet-bar"],
+[class*="sheet-tab-bar"] {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+[class*="sheet-bar"]::-webkit-scrollbar,
+[class*="sheet-tab-bar"]::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Tabs list container */
+[data-u-comp="slide-tab-bar"],
+[class*="slide-tab-bar"],
+div:has(> [data-u-comp="slide-tab-bar"]) {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin !important;
+}
+
+/* Prevent sheet tab items from being squished */
+[data-u-comp="slide-tab-item"],
+[class*="slide-tab-item"] {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Prevent right-side controls (zoom slider, count bar) from shrinking */
+[class*="sheet-slider"],
+[class*="zoom-slider"],
+[class*="sheet-bar-zoom"],
+section:has([class*="zoom-slider"]),
+[class*="footer"] > section,
+[class*="footer"] > div:last-child {
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Left-side controls (sheet list menu, scroll buttons) */
+[class*="sheet-bar"] > div:first-child {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -186,3 +360,49 @@
 [data-theme='light'] .univer-app-layout-wrapper *::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.25);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   READ-ONLY PREVIEW - Hide + (Add Sheet) button from footer
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.univer-readonly-preview .univer-mr-2,
+.univer-readonly-preview [class*="univer-mr-2"],
+.univer-readonly-preview [class*="sheet-bar-add"],
+.univer-readonly-preview [class*="sheet-tab-add"],
+.univer-readonly-preview [class*="add-sheet"],
+.univer-readonly-preview [class*="sheet-add"],
+.univer-readonly-preview [class*="sheet-bar"] > div:first-child > button:first-child,
+.univer-readonly-preview [class*="sheet-bar-btn"]:first-child:not([class*="zoom"] *):not([class*="slider"] *) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  max-width: 0 !important;
+}
+
+/* Explicitly ensure zoom slider buttons & icons are ALWAYS visible */
+.univer-readonly-preview [class*="zoom"] svg,
+.univer-readonly-preview [class*="slider"] svg,
+.univer-readonly-preview [class*="zoom-slider"] svg,
+.univer-readonly-preview [class*="sheet-bar-zoom"] svg,
+.univer-readonly-preview [class*="zoom"] button,
+.univer-readonly-preview [class*="slider"] button,
+.univer-readonly-preview [class*="zoom-slider"] button,
+.univer-readonly-preview [class*="sheet-bar-zoom"] button,
+.univer-readonly-preview [class*="zoom"] [class*="icon"],
+.univer-readonly-preview [class*="slider"] [class*="icon"],
+.univer-readonly-preview [class*="zoom-slider"] [class*="icon"] {
+  display: inline-flex !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+}
+
+

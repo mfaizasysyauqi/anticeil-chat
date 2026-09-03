@@ -10,7 +10,8 @@ import {
   BookOpen,
   Check,
   Copy,
-  ArrowDownLeft,
+  RotateCcw,
+  History,
   RefreshCw,
   X,
   Bot,
@@ -46,6 +47,10 @@ export function DocsCopilotSidebar({
   const deleteSubFile = useDocsStore((s) => s.deleteSubFile);
   const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
   const toggleCopilot = useDocsStore((s) => s.toggleCopilot);
+  const copilotPendingPrompt = useDocsStore((s) => s.copilotPendingPrompt);
+  const setCopilotPendingPrompt = useDocsStore((s) => s.setCopilotPendingPrompt);
+  const createDocSnapshot = useDocsStore((s) => s.createDocSnapshot);
+  const restoreDocSnapshot = useDocsStore((s) => s.restoreDocSnapshot);
 
   const language = useSettingsStore((s) => s.language);
   const globalProviderId = useSettingsStore((s) => s.activeProviderId);
@@ -67,15 +72,22 @@ export function DocsCopilotSidebar({
   const [inputPrompt, setInputPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ id: string; role: 'user' | 'assistant'; content: string; actions?: Array<{ type: string; name: string }> }>
+    Array<{
+      id: string;
+      role: 'user' | 'assistant';
+      content: string;
+      actions?: Array<{ type: string; name: string }>;
+      snapshotId?: string;
+      reverted?: boolean;
+    }>
   >([
     {
       id: 'welcome',
       role: 'assistant',
       content:
         language === 'id'
-          ? 'Halo! Saya AI Co-Author Anda. Saya memiliki akses penuh untuk membaca dan mengelola seluruh file di proyek ini (CRUD). Saya bisa membuat bab baru, menyusun referensi bib, mengedit bagian tertentu, atau merumuskan LaTeX matematika.'
-          : 'Hello! I am your AI Co-Author. I have full read and write access to all files in this project (CRUD). I can create chapters, manage bib references, edit sections, or formulate LaTeX equations.',
+          ? 'Halo! Saya AI Co-Author Anda. Semua instruksi yang Anda berikan akan otomatis diedit langsung ke dokumen Anda (Full Auto). Anda juga dapat membatalkan perubahan (Undo) kapan saja.'
+          : 'Hello! I am your AI Co-Author. All instructions will be automatically applied directly to your document (Full Auto). You can undo changes up to any point at any time.',
     },
   ]);
 
@@ -84,6 +96,14 @@ export function DocsCopilotSidebar({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isGenerating]);
+
+  // Auto-send pending prompt injected from outside (e.g. "Perbaiki AI" button)
+  useEffect(() => {
+    if (!copilotPendingPrompt) return;
+    setCopilotPendingPrompt(null); // clear first to avoid double-fire
+    handleSend(copilotPendingPrompt);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [copilotPendingPrompt]);
 
   // Derive model and provider metadata
   const currentModelDef = getModelById(selectedModelId);
@@ -179,13 +199,16 @@ export function DocsCopilotSidebar({
 
     if (!customPrompt) setInputPrompt('');
 
+    // Capture checkpoint snapshot before AI modifies document
+    const snapshotId = activeDoc ? createDocSnapshot(activeDoc.id, promptToSend.slice(0, 35)) : undefined;
+
     const userMsgId = 'u_' + Date.now();
     const assistantMsgId = 'a_' + Date.now();
 
     const newHistory = [
       ...messages,
       { id: userMsgId, role: 'user' as const, content: promptToSend },
-      { id: assistantMsgId, role: 'assistant' as const, content: '' },
+      { id: assistantMsgId, role: 'assistant' as const, content: '', snapshotId },
     ];
 
     setMessages(newHistory);
@@ -216,7 +239,10 @@ ${activeDoc.content.slice(0, 4000)}
 ${subFilesContent}`
       : '';
 
-    const systemPrompt = `You are an expert Academic & Technical AI Co-Author specializing in research writing, LaTeX/KaTeX mathematics, technical RFCs, and publication-grade Markdown.
+    const systemPrompt = `You are an expert Academic & Scientific AI Co-Author specializing in LaTeX document composition, IEEE/Nature/ACM journal papers, thesis writing, and mathematical research.
+The document workspace is a pure LaTeX environment (.tex, .bib, .cls, .sty).
+Always output clean, standard, and compilable LaTeX syntax (e.g. \\section{}, \\subsection{}, \\begin{equation}, \\begin{table}, \\begin{tabular}, \\cite{}, \\begin{figure}, \\begin{thebibliography}) rather than Markdown syntax.
+
 You have FULL READ and WRITE (CRUD) access to this document and all sub-files in the project.
 
 Available Agent Action Tags (use these tags when instructed to create, edit, rename, or delete files):
@@ -241,8 +267,7 @@ Complete updated file content...
 Updated main content here...
 </rewrite_main>
 
-When the user asks you to create, modify, or manage files, invoke the action tags and explain what you accomplished in clear, academic prose.
-Always provide clean, accurate, and structured Markdown and LaTeX math equations (using $inline$ and $$block$$).${projectContext}`;
+When the user asks you to create, modify, or manage files, invoke the action tags and explain what you accomplished in clear, concise academic prose.${projectContext}`;
 
     const apiMessages: ChatMessage[] = newHistory
       .filter((m) => m.id !== assistantMsgId)
@@ -278,8 +303,25 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
         },
       });
 
-      // After streaming completes, parse and execute any autonomous file CRUD operations
-      const executedActions = executeDocAgentActions(fullResponse);
+      // After streaming completes, parse and execute autonomous file CRUD operations
+      let executedActions = executeDocAgentActions(fullResponse);
+
+      // If no XML action tags were used, but model provided code changes, automatically apply them (Full Auto)
+      if (executedActions.length === 0 && activeDoc) {
+        const cleanCode = extractCleanCodeToInsert(fullResponse);
+        if (cleanCode && cleanCode.length > 10 && cleanCode !== fullResponse.trim()) {
+          const subFilesList = activeDoc.files || [];
+          const curSubFile = subFilesList.find((f) => f.id === activeDoc.activeFileId);
+          if (curSubFile) {
+            updateSubFileContent(activeDoc.id, curSubFile.id, cleanCode);
+            executedActions.push({ type: 'update', name: curSubFile.name });
+          } else {
+            updateDocumentContent(activeDoc.id, cleanCode);
+            executedActions.push({ type: 'update', name: activeDoc.title || 'Dokumen' });
+          }
+        }
+      }
+
       if (executedActions.length > 0) {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -307,14 +349,35 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
     }
   };
 
-  const handleInsert = (textToInsert: string) => {
-    if (onInsertText) {
-      onInsertText(textToInsert);
-      return;
+  /**
+   * Extracts clean code / LaTeX markup without XML tags or conversational headers
+   */
+  const extractCleanCodeToInsert = (rawText: string): string => {
+    if (!rawText) return '';
+
+    // 1. If wrapped in <update_file...> or <create_file...> or <rewrite_main>
+    const fileTagMatch = rawText.match(/<(?:update_file|create_file|rewrite_main)[^>]*>([\s\S]*?)<\/(?:update_file|create_file|rewrite_main)>/i);
+    if (fileTagMatch && fileTagMatch[1].trim()) {
+      return fileTagMatch[1].trim();
     }
-    if (!activeDoc) return;
-    const updated = activeDoc.content + '\n\n' + textToInsert;
-    updateDocumentContent(activeDoc.id, updated);
+
+    // 2. If wrapped in markdown code fence ```latex ... ``` or ``` ... ```
+    const codeFenceMatch = rawText.match(/```(?:latex|tex|markdown|md|bib|json)?\s*([\s\S]*?)```/i);
+    if (codeFenceMatch && codeFenceMatch[1].trim()) {
+      return codeFenceMatch[1].trim();
+    }
+
+    // 3. If there are trailing explanations, strip them
+    let cleaned = rawText
+      .replace(/<(?:update_file|create_file|rewrite_main|rename_file|delete_file)[^>]*>[\s\S]*?<\/(?:update_file|create_file|rewrite_main)>/gi, '')
+      .replace(/<(?:rename_file|delete_file)[^>]*\/?>/gi, '');
+
+    const explanationHeaderIdx = cleaned.search(/\n\s*#{1,4}\s*(?:Perubahan|Penjelasan|Catatan|Explanation|Summary|Changes|Changelog)/i);
+    if (explanationHeaderIdx !== -1) {
+      cleaned = cleaned.substring(0, explanationHeaderIdx).trim();
+    }
+
+    return cleaned.trim();
   };
 
   const handleCopy = (content: string, msgId: string) => {
@@ -450,34 +513,35 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
           onClick={() => setIsModelSelectorOpen(true)}
           style={{
             width: '100%',
+            height: '32px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '5px 8px',
+            padding: '0 10px',
             borderRadius: '6px',
             border: '1px solid var(--border-subtle)',
-            backgroundColor: 'var(--bg-surface)',
+            backgroundColor: 'var(--bg-subtle)',
             color: 'var(--text-primary)',
-            fontSize: '11.5px',
+            fontSize: '12px',
             fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.15s ease',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+            boxSizing: 'border-box',
           }}
           className="hover-subtle"
           title="Pilih Model AI (Text Models Only)"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
             <ProviderBrandLogo provider={selectedProviderId} size={13} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11.5px', color: 'var(--text-primary)' }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px', color: 'var(--text-primary)' }}>
               {modelDisplayName}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>
+            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 500 }}>
               {providerDisplayName}
             </span>
-            <ChevronDown size={11} color="var(--text-muted)" />
+            <ChevronDown size={12} color="var(--text-muted)" />
           </div>
         </button>
       </div>
@@ -508,7 +572,7 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
               padding: '4px 8px',
               borderRadius: '6px',
               border: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-surface)',
+              backgroundColor: 'var(--bg-subtle)',
               color: 'var(--text-secondary)',
               fontSize: '11px',
               fontWeight: 500,
@@ -516,7 +580,6 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
               whiteSpace: 'nowrap',
               flexShrink: 0,
               transition: 'all 0.15s ease',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
             }}
             onMouseEnter={(e) => {
               if (!isGenerating) {
@@ -641,33 +704,55 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
               {m.content || (isGenerating && m.role === 'assistant' ? (language === 'id' ? 'Menulis...' : 'Writing...') : '')}
             </div>
 
-            {/* Assistant Action Buttons */}
+            {/* Assistant Action Buttons: Auto-Applied Badge + Undo Changes Button */}
             {m.role === 'assistant' && m.content && !isGenerating && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleInsert(m.content)}
-                  title={language === 'id' ? 'Sisipkan ke Dokumen' : 'Insert to Document'}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '3px 8px',
-                    borderRadius: '5px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--brand-primary)',
-                    fontSize: '10.5px',
-                    fontWeight: 650,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-                  }}
-                  className="hover-subtle"
-                >
-                  <ArrowDownLeft size={11} />
-                  <span>{language === 'id' ? 'Sisipkan' : 'Insert'}</span>
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                  {m.snapshotId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeDoc && m.snapshotId && !m.reverted) {
+                          const success = restoreDocSnapshot(activeDoc.id, m.snapshotId);
+                          if (success) {
+                            setMessages((prev) =>
+                              prev.map((msg) => (msg.id === m.id ? { ...msg, reverted: true } : msg))
+                            );
+                          }
+                        }
+                      }}
+                      disabled={m.reverted}
+                      title={
+                        m.reverted
+                          ? (language === 'id' ? 'Perubahan telah dibatalkan' : 'Changes already undone')
+                          : (language === 'id' ? 'Kembalikan dokumen ke kondisi sebelum AI mengedit' : 'Revert document to state before AI edits')
+                      }
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        borderRadius: '5px',
+                        border: m.reverted ? '1px solid var(--border-subtle)' : '1px solid rgba(239, 68, 68, 0.35)',
+                        backgroundColor: m.reverted ? 'var(--bg-subtle)' : 'rgba(239, 68, 68, 0.08)',
+                        color: m.reverted ? 'var(--text-muted)' : '#EF4444',
+                        fontSize: '10.5px',
+                        fontWeight: 650,
+                        cursor: m.reverted ? 'default' : 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      className={m.reverted ? '' : 'hover-subtle'}
+                    >
+                      <RotateCcw size={11} />
+                      <span>
+                        {m.reverted
+                          ? (language === 'id' ? '✓ Dibatalkan' : '✓ Undone')
+                          : (language === 'id' ? 'Batalkan Perubahan (Undo)' : 'Undo changes')}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
                 <button
                   type="button"
                   onClick={() => handleCopy(m.content, m.id)}
@@ -698,10 +783,10 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Form at Bottom (Modern sleek bar) */}
+      {/* Input Form at Bottom (Unified sleek bar) */}
       <div
         style={{
-          padding: '10px 12px',
+          padding: '8px 10px',
           borderTop: '1px solid var(--border-subtle)',
           backgroundColor: 'var(--bg-sidebar)',
           flexShrink: 0,
@@ -716,12 +801,13 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            backgroundColor: 'var(--bg-surface)',
-            borderRadius: '8px',
-            padding: '4px 8px',
+            backgroundColor: 'var(--bg-subtle)',
+            borderRadius: '6px',
+            padding: '0 4px 0 10px',
+            height: '32px',
             border: '1px solid var(--border-subtle)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            transition: 'border-color 0.15s ease',
+            boxSizing: 'border-box',
+            transition: 'all 0.15s ease',
           }}
         >
           <input
@@ -739,6 +825,8 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
               background: 'transparent',
               border: 'none',
               outline: 'none',
+              padding: 0,
+              lineHeight: 1,
               fontSize: '12px',
               color: 'var(--text-primary)',
             }}
@@ -747,9 +835,9 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
             type="submit"
             disabled={!inputPrompt.trim() || isGenerating}
             style={{
-              width: '26px',
-              height: '26px',
-              borderRadius: '6px',
+              width: '24px',
+              height: '24px',
+              borderRadius: '5px',
               border: 'none',
               backgroundColor: inputPrompt.trim() && !isGenerating ? 'var(--brand-primary)' : 'transparent',
               color: inputPrompt.trim() && !isGenerating ? '#ffffff' : 'var(--text-muted)',
@@ -761,7 +849,7 @@ Always provide clean, accurate, and structured Markdown and LaTeX math equations
               transition: 'all 0.15s ease',
             }}
           >
-            {isGenerating ? <RefreshCw size={13} className="spin" /> : <Send size={13} />}
+            {isGenerating ? <RefreshCw size={12} className="spin" /> : <Send size={12} />}
           </button>
         </form>
       </div>

@@ -49,6 +49,14 @@ export interface DocComment {
   replies?: DocCommentReply[];
 }
 
+export interface DocHistorySnapshot {
+  id: string;
+  docId: string;
+  timestamp: number;
+  description: string;
+  doc: DocItem;
+}
+
 export interface DocItem {
   id: string;
   title: string;
@@ -129,6 +137,11 @@ interface DocsState {
   toggleCopilot: () => void;
   toggleSidebar: () => void;
   setGeneratingStatus: (progress: number, step: string) => void;
+  copilotPendingPrompt: string | null;
+  setCopilotPendingPrompt: (prompt: string | null) => void;
+  docSnapshots: Record<string, DocHistorySnapshot[]>;
+  createDocSnapshot: (docId: string, description?: string) => string;
+  restoreDocSnapshot: (docId: string, snapshotId: string) => boolean;
 }
 
 const STORAGE_KEY = 'anticeil_docs_v2';
@@ -164,7 +177,7 @@ function getInitialActiveDocId(initialDocs: DocItem[]): string | null {
 
 function getDefaultMainFileName(format: DocFormat): string {
   if (format === 'slide') return 'main.slide';
-  if (format === 'sheet') return 'sheet1.csv';
+  if (format === 'sheet') return 'sheet1.antsheet';
   if (format === 'latex') return 'main.tex';
   return 'main.md';
 }
@@ -185,11 +198,20 @@ function ensureDocSharing(doc: DocItem): DocItem {
 
 function ensureDocFiles(doc: DocItem): DocItem {
   const withSharing = ensureDocSharing(doc);
-  if (withSharing.files && withSharing.files.length > 0) {
-    const hasMain = withSharing.files.some((f) => f.isMain);
-    const files = hasMain
-      ? withSharing.files
-      : withSharing.files.map((f, i) => (i === 0 ? { ...f, isMain: true } : f));
+  const rawFiles = withSharing.files;
+  if (rawFiles && rawFiles.length > 0) {
+    const hasMain = rawFiles.some((x) => x.isMain);
+    const files = rawFiles.map((f, i) => {
+      // Auto-migrate legacy .csv to .antsheet for spreadsheet documents
+      if (withSharing.format === 'sheet' && f.name.endsWith('.csv')) {
+        return {
+          ...f,
+          name: f.name.replace(/\.csv$/i, '.antsheet'),
+          isMain: f.isMain || (!hasMain && i === 0),
+        };
+      }
+      return !hasMain && i === 0 ? { ...f, isMain: true } : f;
+    });
     const activeFileId = withSharing.activeFileId || (files.find((f) => f.isMain) || files[0]).id;
     return { ...withSharing, files, activeFileId };
   }
@@ -329,6 +351,41 @@ export const useDocsStore = create<DocsState>((set, get) => {
     isSidebarOpen: true,
     generatingProgress: 0,
     generatingStep: '',
+    copilotPendingPrompt: null,
+    docSnapshots: {},
+
+    setCopilotPendingPrompt: (prompt) => set({ copilotPendingPrompt: prompt }),
+
+    createDocSnapshot: (docId: string, description = 'AI Checkpoint') => {
+      const doc = get().documents.find((d) => d.id === docId);
+      if (!doc) return '';
+      const snapshotId = 'snap_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      const snapshot: DocHistorySnapshot = {
+        id: snapshotId,
+        docId,
+        timestamp: Date.now(),
+        description,
+        doc: JSON.parse(JSON.stringify(doc)),
+      };
+      const currentList = get().docSnapshots[docId] || [];
+      const updatedSnapshots = {
+        ...get().docSnapshots,
+        [docId]: [snapshot, ...currentList.slice(0, 19)],
+      };
+      set({ docSnapshots: updatedSnapshots });
+      return snapshotId;
+    },
+
+    restoreDocSnapshot: (docId: string, snapshotId: string) => {
+      const list = get().docSnapshots[docId] || [];
+      const target = list.find((s) => s.id === snapshotId);
+      if (!target) return false;
+      const restoredDoc = JSON.parse(JSON.stringify(target.doc));
+      const updatedDocs = get().documents.map((d) => (d.id === docId ? restoredDoc : d));
+      set({ documents: updatedDocs });
+      saveToStorage(updatedDocs);
+      return true;
+    },
 
     createFolder: (name: string) => {
       const trimmed = name.trim() || 'Folder Baru';
@@ -508,7 +565,30 @@ export const useDocsStore = create<DocsState>((set, get) => {
 
     createDocument: (
       title = 'Dokumen Baru',
-      content = '# Dokumen Baru\n\nKetik di sini dengan format Markdown dan KaTeX $E = mc^2$...\n',
+      content = `\\documentclass[11pt,a4paper]{article}
+
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{graphicx}
+\\usepackage{hyperref}
+
+\\title{Dokumen Baru}
+\\author{Penulis}
+\\date{\\today}
+
+\\begin{document}
+
+\\maketitle
+
+\\begin{abstract}
+Tulis abstrak atau ringkasan dokumen Anda di sini...
+\\end{abstract}
+
+\\section{Pendahuluan}
+Mulai menulis dokumen LaTeX Anda di sini. Gunakan formula matematika $E = mc^2$, gambar, tabel, dan sitasi dengan mudah.
+
+\\end{document}
+`,
       format: DocFormat = 'latex',
       projectId?: string | null
     ) => {

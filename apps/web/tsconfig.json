@@ -27,6 +27,12 @@
       "@/*": [
         "./src/*",
         "./*"
+      ],
+      "antsheet": [
+        "../../antsheet/src/index.ts"
+      ],
+      "antsheet/*": [
+        "../../antsheet/src/*.ts"
       ]
     }
   },

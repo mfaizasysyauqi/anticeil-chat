@@ -20,6 +20,7 @@ import {
   Heading,
   Sigma,
   Table as TableIcon,
+  Grid,
   BookOpen,
   PanelLeftClose,
   PanelLeftOpen,
@@ -104,6 +105,101 @@ export const PAPER_SIZES: PaperSizeConfig[] = [
   { id: 'a5', name: 'A5', widthMm: 148, heightMm: 210, widthPx: 559, heightPx: 794, description: '148 × 210 mm (Buku / Booklet)' },
   { id: 'b5', name: 'B5', widthMm: 176, heightMm: 250, widthPx: 665, heightPx: 945, description: '176 × 250 mm (Monograf / Tesis)' },
 ];
+
+/**
+ * Detects paper size directly from code (Single Source of Truth)
+ */
+export function detectPaperSizeFromCode(code: string): PaperSizeId {
+  if (!code) return 'a4';
+
+  // 1. LaTeX paper options
+  if (/\b(?:a4paper|paper=a4)\b/i.test(code)) return 'a4';
+  if (/\b(?:letterpaper|paper=letter)\b/i.test(code)) return 'letter';
+  if (/\b(?:legalpaper|paper=legal)\b/i.test(code)) return 'legal';
+  if (/\b(?:a5paper|paper=a5)\b/i.test(code)) return 'a5';
+  if (/\b(?:b5paper|paper=b5)\b/i.test(code)) return 'b5';
+
+  // 2. Markdown frontmatter
+  const frontmatterMatch = code.match(/^---\s*\n([\s\S]*?)\n---/);
+  if (frontmatterMatch) {
+    const yaml = frontmatterMatch[1];
+    const paperMatch = yaml.match(/^\s*paper\s*:\s*([a-zA-Z0-9_-]+)/mi);
+    if (paperMatch) {
+      const p = paperMatch[1].toLowerCase().replace(/paper$/, '');
+      if (['a4', 'letter', 'legal', 'a5', 'b5', 'custom'].includes(p)) {
+        return p as PaperSizeId;
+      }
+    }
+  }
+
+  return 'a4';
+}
+
+/**
+ * Updates code source with new paper size token
+ */
+export function applyPaperSizeToCode(
+  currentCode: string,
+  newPaperSize: PaperSizeId,
+  format: DocFormat = 'latex'
+): string {
+  if (!currentCode) currentCode = '';
+  const paperToken = `${newPaperSize}paper`;
+
+  // 1. LaTeX document
+  if (
+    format === 'latex' ||
+    currentCode.includes('\\documentclass') ||
+    currentCode.includes('\\begin{document}')
+  ) {
+    if (/\\documentclass\s*\[([^\]]*)\]/i.test(currentCode)) {
+      return currentCode.replace(/\\documentclass\s*\[([^\]]*)\]/i, (_match, options) => {
+        const opts = options
+          .split(',')
+          .map((o: string) => o.trim())
+          .filter((o: string) => !/^(a4paper|letterpaper|legalpaper|a5paper|b5paper|paper=\w+)$/i.test(o));
+        opts.push(paperToken);
+        return `\\documentclass[${opts.join(',')}]`;
+      });
+    }
+
+    if (/\\documentclass\s*\{([^}]+)\}/i.test(currentCode)) {
+      return currentCode.replace(
+        /\\documentclass\s*\{([^}]+)\}/i,
+        `\\documentclass[${paperToken}]{$1}`
+      );
+    }
+
+    if (/\\usepackage\s*\[([^\]]*)\]\s*\{geometry\}/i.test(currentCode)) {
+      return currentCode.replace(/\\usepackage\s*\[([^\]]*)\]\s*\{geometry\}/i, (_match, options) => {
+        const opts = options
+          .split(',')
+          .map((o: string) => o.trim())
+          .filter((o: string) => !/^(a4paper|letterpaper|legalpaper|a5paper|b5paper)$/i.test(o));
+        opts.push(paperToken);
+        return `\\usepackage[${opts.join(',')}]\{geometry\}`;
+      });
+    }
+
+    return `\\documentclass[${paperToken}]{article}\n` + currentCode;
+  }
+
+  // 2. Markdown document
+  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---/;
+  const match = currentCode.match(frontmatterRegex);
+  if (match) {
+    let yaml = match[1];
+    if (/^\s*paper\s*:/m.test(yaml)) {
+      yaml = yaml.replace(/^\s*paper\s*:.*$/m, `paper: ${newPaperSize}`);
+    } else {
+      yaml += `\npaper: ${newPaperSize}`;
+    }
+    return currentCode.replace(frontmatterRegex, `---\n${yaml.trim()}\n---`);
+  } else {
+    return `---\npaper: ${newPaperSize}\n---\n\n` + currentCode;
+  }
+}
+
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
@@ -114,6 +210,7 @@ import { PricingModal } from '../../pricing/components/PricingModal';
 import { AuthModal } from '../../auth/components/AuthModal';
 import { getBundledDocContent } from '../utils/docResolver';
 import { lintDocumentContent, DocDiagnostic } from '../utils/docLinter';
+import { compileLatexToHtml } from '../utils/latexCompiler';
 import { DocsCopilotSidebar } from './DocsCopilotSidebar';
 import { DocsTemplateModal } from './DocsTemplateModal';
 import { DocsLandingView } from './DocsLandingView';
@@ -147,6 +244,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const setViewMode = useDocsStore((s) => s.setViewMode);
   const toggleCopilot = useDocsStore((s) => s.toggleCopilot);
   const toggleSidebar = useDocsStore((s) => s.toggleSidebar);
+  const setCopilotPendingPrompt = useDocsStore((s) => s.setCopilotPendingPrompt);
 
   // Overleaf-style Sub-file Store Actions
   const createSubFile = useDocsStore((s) => s.createSubFile);
@@ -220,6 +318,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [replyDraftText, setReplyDraftText] = useState('');
   const [commentFilter, setCommentFilter] = useState<'all' | 'unresolved' | 'resolved'>('unresolved');
   const [editorScrollTop, setEditorScrollTop] = useState(0);
+  const [editorScrollLeft, setEditorScrollLeft] = useState(0);
 
   // Outline panel height inside Files tab (px) — draggable like Overleaf
   const [outlinePanelHeight, setOutlinePanelHeight] = useState(180);
@@ -236,6 +335,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [totalPages, setTotalPages] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [isAutoCompile, setIsAutoCompile] = useState(false);
+  const [compileMode, setCompileMode] = useState<'normal' | 'draft'>('normal');
+  const [syntaxCheckMode, setSyntaxCheckMode] = useState<'check' | 'none'>('check');
+  const [errorHandlingMode, setErrorHandlingMode] = useState<'stop' | 'continue'>('continue');
+  const [compiledContent, setCompiledContent] = useState('');
+  const [compileVersion, setCompileVersion] = useState(0);
   const [isRecompileDropdownOpen, setIsRecompileDropdownOpen] = useState(false);
   const [isZoomDropdownOpen, setIsZoomDropdownOpen] = useState(false);
 
@@ -674,20 +778,34 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; status: 'done' | 'error' }>>([]);
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
+  const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+  const imageReplaceInputRef = useRef<HTMLInputElement>(null);
+
   const handleUploadFiles = useCallback(async (files: FileList | File[]) => {
     if (!activeDocId) return;
     const arr = Array.from(files);
     for (const file of arr) {
       try {
+        const isImage = file.type.startsWith('image/') ||
+          /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(file.name);
         const isText = file.type.startsWith('text/') ||
           /\.(tex|bib|md|txt|csv|json|js|ts|py|html|css|xml|yaml|yml)$/i.test(file.name);
-        if (isText) {
+
+        if (isImage) {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          createSubFile(activeDocId, file.name, dataUrl);
+        } else if (isText) {
           const content = await file.text();
           createSubFile(activeDocId, file.name, content);
         } else {
-          // For binary (images etc), store as a placeholder reference comment
+          // For other binary, store reference
           const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-          const placeholder = `% [Uploaded file: ${file.name}]\n% Binary files (${ext}) are referenced here.\n% Use \\includegraphics{${file.name}} to embed images in LaTeX.`;
+          const placeholder = `% [Uploaded file: ${file.name}]\n% Binary file (${ext}) referenced.`;
           createSubFile(activeDocId, file.name, placeholder);
         }
         setUploadedFiles(prev => [...prev, { name: file.name, status: 'done' }]);
@@ -934,6 +1052,22 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     return getBundledDocContent(activeDoc);
   }, [activeDoc]);
 
+  // Initial sync for compiled content
+  useEffect(() => {
+    if (activeDoc) {
+      setCompiledContent(getBundledDocContent(activeDoc) || activeDoc.content || '');
+    }
+  }, [activeDoc?.id]);
+
+  // Live Auto Compile Sync (Debounced 200ms when Auto Compile is ON)
+  useEffect(() => {
+    if (!isAutoCompile) return;
+    const timer = setTimeout(() => {
+      setCompiledContent(bundledContent || activeDoc?.content || '');
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [bundledContent, activeDoc?.content, isAutoCompile]);
+
   // Measure exact physical DOM offsetTop of highlighted comment marks in the editor backdrop
   useEffect(() => {
     const el = backdropContentRef.current;
@@ -1137,14 +1271,48 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
   const handleRecompile = () => {
     setIsRecompiling(true);
+    const storeDocs = useDocsStore.getState().documents;
+    const curDoc = storeDocs.find((d) => d.id === effectiveDocId) || activeDoc;
+    if (curDoc) {
+      const latest = getBundledDocContent(curDoc) || curDoc.content || '';
+      setCompiledContent(latest);
+    }
+    setCompileVersion((v) => v + 1);
     setTimeout(() => {
       setIsRecompiling(false);
     }, 350);
   };
 
+  // Active code text
+  const activeEditorCode = activeSubFile?.content ?? activeDoc?.content ?? '';
+
+  // Derive paper size directly from code (Single Source of Truth)
+  const effectivePaperSizeId = useMemo(() => {
+    if (selectedPaperSize === 'custom') return 'custom';
+    return detectPaperSizeFromCode(activeEditorCode);
+  }, [activeEditorCode, selectedPaperSize]);
+
+  // Paper Size selection that modifies the code editor
+  const handleSelectPaperSize = (paperId: PaperSizeId) => {
+    setSelectedPaperSize(paperId);
+    setIsPaperSizeDropdownOpen(false);
+
+    if (paperId === 'custom') return;
+
+    if (activeDoc) {
+      const currentText = activeSubFile?.content ?? activeDoc.content ?? '';
+      const updatedCode = applyPaperSizeToCode(currentText, paperId, activeDoc.format);
+      if (activeSubFile) {
+        updateSubFileContent(activeDoc.id, activeSubFile.id, updatedCode);
+      } else {
+        updateDocumentContent(activeDoc.id, updatedCode);
+      }
+    }
+  };
+
   // Current effective paper dimensions
   const currentPaperConfig = useMemo(() => {
-    if (selectedPaperSize === 'custom') {
+    if (effectivePaperSizeId === 'custom') {
       const wPx = Math.max(200, Math.round(customPaperWidthMm * 3.779528));
       const hPx = Math.max(200, Math.round(customPaperHeightMm * 3.779528));
       return {
@@ -1157,16 +1325,17 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         description: `${customPaperWidthMm} × ${customPaperHeightMm} mm`,
       };
     }
-    return PAPER_SIZES.find((p) => p.id === selectedPaperSize) || PAPER_SIZES[0];
-  }, [selectedPaperSize, customPaperWidthMm, customPaperHeightMm]);
+    return PAPER_SIZES.find((p) => p.id === effectivePaperSizeId) || PAPER_SIZES[0];
+  }, [effectivePaperSizeId, customPaperWidthMm, customPaperHeightMm]);
 
-  // Markdown + KaTeX + Mermaid Sandboxed Compilation HTML using bundled content
+  // Markdown + KaTeX + LaTeX Compilation HTML using bundled content (respects Auto Compile ON/OFF)
   const previewHtml = useMemo(() => {
-    const raw = bundledContent || activeDoc?.content || '';
+    const raw = (isAutoCompile ? (bundledContent || activeDoc?.content) : compiledContent) || activeDoc?.content || '';
     if (!raw) return '';
     const isLight = theme === 'light';
     const paperWidthPx = currentPaperConfig.widthPx;
     const paperHeightPx = currentPaperConfig.heightPx;
+    const compiledLatexHtml = compileLatexToHtml(raw, activeDoc?.title, activeDoc?.files);
 
     return `
 <!DOCTYPE html>
@@ -1174,21 +1343,20 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${activeDoc.title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
   <!-- KaTeX CSS & JS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   
   <!-- Marked Markdown Parser -->
-  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
   
   <!-- Mermaid Diagrams -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 
   <style>
     * { box-sizing: border-box; }
@@ -1256,8 +1424,6 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }
     .paper-page-content {
       width: 100%;
-      height: 100%;
-      overflow: hidden;
       position: relative;
     }
     .paper-page-footer {
@@ -1362,6 +1528,219 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(148, 163, 184, 0.75);
     }
+    /* Academic Paper Styling (IEEE / Nature Style) */
+    .academic-paper-wrapper {
+      width: 100%;
+    }
+    .academic-paper-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .academic-paper-title {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.25;
+      color: #0f172a;
+      margin: 0 0 10px 0;
+      border-bottom: none;
+      padding-bottom: 0;
+      text-align: center;
+    }
+    .academic-paper-author {
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .academic-paper-date {
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+    }
+    .academic-paper-abstract-card {
+      margin: 16px 0 24px;
+      padding: 12px 18px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 3px solid #0073ea;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .academic-paper-abstract-text {
+      text-align: justify;
+      color: #334155;
+    }
+    .abstract-badge {
+      font-weight: 700;
+      font-style: italic;
+      color: #0f172a;
+    }
+    .academic-paper-keywords {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #475569;
+    }
+    .paper-sec-title {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-align: center;
+      margin: 22px 0 10px;
+      text-transform: uppercase;
+      color: #0f172a;
+      border-bottom: none;
+    }
+    .paper-subsec-title {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      font-style: italic;
+      margin: 16px 0 6px;
+      color: #1e293b;
+      border-bottom: none;
+    }
+    .paper-subsubsec-title {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin: 12px 0 4px;
+      color: #334155;
+    }
+    .paper-para {
+      text-align: justify;
+      text-justify: inter-word;
+      text-indent: 1.5em;
+      margin-bottom: 0.7em;
+      line-height: 1.65;
+      font-size: 14px;
+      color: #1e293b;
+    }
+    .paper-cite {
+      color: #0073ea;
+      font-weight: 600;
+      font-size: 12.5px;
+    }
+    .paper-references {
+      margin-top: 28px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
+    }
+    .paper-ref-list {
+      padding-left: 24px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #334155;
+    }
+    .paper-ref-list li {
+      margin-bottom: 6px;
+    }
+    /* Academic Tables (IEEE Style) */
+    .academic-table-card {
+      margin: 20px auto;
+      width: 100%;
+      text-align: center;
+      display: block;
+    }
+    .academic-table-caption {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-align: center;
+      margin-bottom: 8px;
+      color: #0f172a;
+      text-transform: uppercase;
+    }
+    .tab-label {
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .academic-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 auto;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #1e293b;
+      border-top: 2px solid #0f172a;
+      border-bottom: 2px solid #0f172a;
+    }
+    .academic-table th {
+      border-bottom: 1px solid #0f172a;
+      padding: 6px 10px;
+      font-weight: 700;
+      text-align: center;
+      background-color: transparent;
+      color: #0f172a;
+    }
+    .academic-table td {
+      border: none;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 6px 10px;
+      text-align: center;
+    }
+    .academic-table tr:last-child td {
+      border-bottom: none;
+    }
+    .paper-list {
+      padding-left: 24px;
+      margin: 8px 0 14px 0;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: #1e293b;
+    }
+    .paper-list li {
+      margin-bottom: 4px;
+    }
+    .paper-quote {
+      margin: 14px 0;
+      padding: 8px 16px;
+      border-left: 3px solid #0073ea;
+      background: #f8fafc;
+      color: #334155;
+      font-style: italic;
+      font-size: 13px;
+    }
+    .paper-code {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin: 14px 0;
+      overflow-x: auto;
+    }
+    .academic-callout {
+      margin: 14px 0;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .academic-theorem, .academic-lemma {
+      border-left: 3px solid #0284c7;
+      background-color: #f0f9ff;
+    }
+    .academic-proof {
+      border-left: 3px solid #64748b;
+      background-color: #f8fafc;
+    }
+    .proof-label {
+      font-weight: 700;
+      font-style: italic;
+    }
+    .qed {
+      float: right;
+      font-size: 11px;
+      color: #0f172a;
+    }
+    .academic-definition {
+      border-left: 3px solid #10b981;
+      background-color: #f0fdf4;
+    }
     @media print {
       body {
         background: transparent !important;
@@ -1408,6 +1787,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
   <script>
     const rawMarkdown = ${JSON.stringify(raw)};
+    const precompiledHtml = ${JSON.stringify(compiledLatexHtml)};
     
     marked.setOptions({
       gfm: true,
@@ -1420,7 +1800,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     const paperWidthPx = ${paperWidthPx};
     const paperHeightPx = ${paperHeightPx};
 
-    rawContainer.innerHTML = marked.parse(rawMarkdown);
+    if (precompiledHtml) {
+      rawContainer.innerHTML = precompiledHtml;
+    } else {
+      rawContainer.innerHTML = marked.parse(rawMarkdown);
+    }
 
     // Render KaTeX formulas
     renderMathInElement(rawContainer, {
@@ -1459,9 +1843,30 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
     var totalPagesCount = 1;
 
+    function getFlattenedChildNodes(container) {
+      var result = [];
+      function traverse(node) {
+        if (!node) return;
+        if (
+          node.tagName === 'DIV' &&
+          node.children &&
+          node.children.length > 0 &&
+          (node.classList.contains('academic-paper-wrapper') ||
+            node.classList.contains('academic-paper-body') ||
+            node.id === 'rendered-content-raw')
+        ) {
+          Array.from(node.children).forEach(traverse);
+        } else {
+          result.push(node);
+        }
+      }
+      Array.from(container.children).forEach(traverse);
+      return result;
+    }
+
     function paginateAndRender() {
       pagedContainer.innerHTML = '';
-      const childNodes = Array.from(rawContainer.children);
+      const childNodes = getFlattenedChildNodes(rawContainer);
       if (childNodes.length === 0) {
         const { sheet } = createPageSheet(1);
         pagedContainer.appendChild(sheet);
@@ -1487,7 +1892,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         const clone = node.cloneNode(true);
         currentContent.appendChild(clone);
 
-        if (currentContent.scrollHeight > availableHeight && currentContent.children.length > 1) {
+        if (currentContent.offsetHeight > availableHeight && currentContent.children.length > 1) {
           currentContent.removeChild(clone);
           currentPageNum++;
           const next = createPageSheet(currentPageNum);
@@ -1607,17 +2012,13 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         updateScaleAndPages();
       }
 
-      // 4. Invert Preview Colors
+      // 4. Invert Preview Colors — apply only to paper pages, not outer background
       if (e.data.type === 'DOCS_SET_INVERTED') {
-        var paperEl = document.getElementById('rendered-content');
-        if (paperEl) {
-          if (e.data.inverted) {
-            paperEl.style.filter = 'invert(0.92) hue-rotate(180deg) contrast(1.1)';
-            document.body.style.backgroundColor = '#0f172a';
-          } else {
-            paperEl.style.filter = 'none';
-            document.body.style.backgroundColor = '${isLight ? '#cbd5e1' : '#070a10'}';
-          }
+        var pages = document.querySelectorAll('.paper-sheet-page');
+        for (var i = 0; i < pages.length; i++) {
+          pages[i].style.filter = e.data.inverted
+            ? 'invert(0.92) hue-rotate(180deg) contrast(1.05)'
+            : 'none';
         }
       }
 
@@ -1630,7 +2031,17 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 </body>
 </html>
     `;
-  }, [activeDoc?.content, activeDoc?.title, theme]);
+  }, [
+    bundledContent,
+    activeDoc?.content,
+    compiledContent,
+    isAutoCompile,
+    compileVersion,
+    theme,
+    currentPaperConfig,
+    activeDoc?.title,
+    activeDoc?.files,
+  ]);
 
   // Insert markdown shortcut helpers with native Undo/Redo (Ctrl+Z / Ctrl+Y) history support
   const insertShortcut = (before: string, after: string = '', defaultText: string = '') => {
@@ -2924,9 +3335,10 @@ ${exportText}
                           backgroundColor: 'var(--bg-subtle)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          padding: '4px 8px',
-                          height: '30px',
+                          padding: '0 8px',
+                          height: '32px',
                           boxSizing: 'border-box',
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         <Search size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
@@ -2940,7 +3352,9 @@ ${exportText}
                             background: 'transparent',
                             border: 'none',
                             outline: 'none',
-                            fontSize: '11.5px',
+                            padding: 0,
+                            lineHeight: 1,
+                            fontSize: '12px',
                             color: 'var(--text-primary)',
                           }}
                         />
@@ -3118,7 +3532,7 @@ ${exportText}
                                           const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
                                           if (ext === '.tex') return <Sigma size={12} color="#8B5CF6" style={{ flexShrink: 0 }} />;
                                           if (ext === '.bib') return <BookOpen size={12} color="#F59E0B" style={{ flexShrink: 0 }} />;
-                                          if (ext === '.csv') return <TableIcon size={12} color="#10B981" style={{ flexShrink: 0 }} />;
+                                          if (ext === '.csv' || ext === '.antsheet') return <TableIcon size={12} color="#10B981" style={{ flexShrink: 0 }} />;
                                           if (ext === '.slide') return <Presentation size={12} color="#8B5CF6" style={{ flexShrink: 0 }} />;
                                           return <FileText size={12} color="#0073EA" style={{ flexShrink: 0 }} />;
                                         };
@@ -3275,7 +3689,7 @@ ${exportText}
                               const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
                               if (ext === '.tex') return <Sigma size={12} color="#8B5CF6" style={{ flexShrink: 0 }} />;
                               if (ext === '.bib') return <BookOpen size={12} color="#F59E0B" style={{ flexShrink: 0 }} />;
-                              if (ext === '.csv') return <TableIcon size={12} color="#10B981" style={{ flexShrink: 0 }} />;
+                              if (ext === '.csv' || ext === '.antsheet') return <TableIcon size={12} color="#10B981" style={{ flexShrink: 0 }} />;
                               if (ext === '.slide') return <Presentation size={12} color="#8B5CF6" style={{ flexShrink: 0 }} />;
                               return <FileText size={12} color="#0073EA" style={{ flexShrink: 0 }} />;
                             };
@@ -3625,10 +4039,11 @@ ${exportText}
                           backgroundColor: 'var(--bg-subtle)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          padding: '4px 8px',
-                          height: '30px',
+                          padding: '0 8px',
+                          height: '32px',
                           boxSizing: 'border-box',
                           marginBottom: '6px',
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         <Search size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
@@ -3642,7 +4057,9 @@ ${exportText}
                             background: 'transparent',
                             border: 'none',
                             outline: 'none',
-                            fontSize: '11.5px',
+                            padding: 0,
+                            lineHeight: 1,
+                            fontSize: '12px',
                             color: 'var(--text-primary)',
                           }}
                         />
@@ -3676,10 +4093,11 @@ ${exportText}
                           backgroundColor: 'var(--bg-subtle)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          padding: '4px 8px',
-                          height: '30px',
+                          padding: '0 8px',
+                          height: '32px',
                           boxSizing: 'border-box',
                           marginBottom: '8px',
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         <Replace size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
@@ -3693,7 +4111,9 @@ ${exportText}
                             background: 'transparent',
                             border: 'none',
                             outline: 'none',
-                            fontSize: '11.5px',
+                            padding: 0,
+                            lineHeight: 1,
+                            fontSize: '12px',
                             color: 'var(--text-primary)',
                           }}
                         />
@@ -3720,11 +4140,18 @@ ${exportText}
 
                       {/* Search Options & Action */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
                           <input
                             type="checkbox"
                             checked={isCaseSensitive}
                             onChange={(e) => setIsCaseSensitive(e.target.checked)}
+                            style={{
+                              accentColor: 'var(--brand-primary)',
+                              width: '14px',
+                              height: '14px',
+                              cursor: 'pointer',
+                              margin: 0,
+                            }}
                           />
                           <span>Case Sensitive</span>
                         </label>
@@ -3837,17 +4264,26 @@ ${exportText}
                     return lineA - lineB;
                   });
 
+                  // Total lines in current document (to detect orphaned comments)
+                  const currentTotalLines = (activeSubFile?.content ?? activeDoc?.content ?? '').split('\n').length;
+
                   let currentY: number | null = null;
                   const layoutMap = new Map<string, number>();
                   let draftY = 16;
 
                   for (const item of items) {
                     const itemId = item.type === 'draft' ? 'draft' : item.data.id;
+                    const itemLine = item.type === 'draft' ? item.line : (item.data.fromLine ?? 1);
                     const measuredTop = commentDomPositions[itemId];
-                    const fallbackTop = ((item.type === 'draft' ? item.line : (item.data.fromLine ?? 1)) - 1) * 20.8 + 16;
+
+                    // If the commented line no longer exists (text deleted), fall back to line 1 position
+                    const isOrphaned = itemLine > currentTotalLines;
+                    const effectiveLine = isOrphaned ? 1 : itemLine;
+                    const fallbackTop = (effectiveLine - 1) * 20.8 + 16;
                     const physicalTop = measuredTop !== undefined ? measuredTop : fallbackTop;
 
-                    const targetY = physicalTop - editorScrollTop;
+                    // Clamp to min 8 so cards never render off-screen above the visible area
+                    const targetY = Math.max(8, physicalTop - editorScrollTop);
                     const actualY: number = currentY === null ? targetY : Math.max(currentY, targetY);
 
                     if (item.type === 'draft') {
@@ -3874,7 +4310,7 @@ ${exportText}
                         backgroundColor: 'var(--bg-sidebar)',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                             {language === 'id' ? 'Review & Komentar' : 'Review & Comments'}
                           </span>
                           <button
@@ -3882,27 +4318,28 @@ ${exportText}
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={handleTriggerAddComment}
                             style={{
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              padding: '3px 8px',
+                              padding: '0 8px',
+                              height: '24px',
                               borderRadius: '6px',
                               backgroundColor: 'var(--brand-primary)',
                               color: '#fff',
                               border: 'none',
-                              fontSize: '10.5px',
+                              fontSize: '11px',
                               fontWeight: 600,
                               cursor: 'pointer',
                               transition: 'opacity 0.15s',
                             }}
                             title={language === 'id' ? 'Tambah Komentar (Ctrl+Shift+C)' : 'Add Comment (Ctrl+Shift+C)'}
                           >
-                            <MessageSquarePlus size={11} />
-                            {language === 'id' ? 'Komentar' : 'Comment'}
+                            <MessageSquarePlus size={12} />
+                            <span>{language === 'id' ? 'Komentar' : 'Comment'}</span>
                           </button>
                         </div>
                         {/* Filter tabs */}
-                        <div style={{ display: 'flex', gap: '2px', backgroundColor: 'var(--bg-subtle)', borderRadius: '6px', padding: '2px' }}>
+                        <div style={{ display: 'flex', gap: '2px', backgroundColor: 'var(--bg-subtle)', borderRadius: '6px', padding: '2px', height: '28px', boxSizing: 'border-box' }}>
                           {(['unresolved', 'resolved', 'all'] as const).map(f => (
                             <button
                               key={f}
@@ -3910,16 +4347,20 @@ ${exportText}
                               onClick={() => setCommentFilter(f)}
                               style={{
                                 flex: 1,
-                                padding: '3px 6px',
+                                padding: '0 6px',
+                                height: '24px',
                                 borderRadius: '4px',
                                 border: 'none',
-                                fontSize: '10px',
-                                fontWeight: commentFilter === f ? 700 : 400,
+                                fontSize: '11px',
+                                fontWeight: commentFilter === f ? 650 : 450,
                                 backgroundColor: commentFilter === f ? 'var(--bg-surface)' : 'transparent',
                                 color: commentFilter === f ? 'var(--text-primary)' : 'var(--text-muted)',
                                 cursor: 'pointer',
-                                transition: 'all 0.1s',
-                                boxShadow: commentFilter === f ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                                transition: 'all 0.12s ease',
+                                boxShadow: commentFilter === f ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                               }}
                             >
                               {f === 'unresolved' ? (language === 'id' ? 'Aktif' : 'Open') :
@@ -3936,7 +4377,7 @@ ${exportText}
                       </div>
 
                       {/* Comment Container (Positions aligned with commented lines) */}
-                      <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0, backgroundColor: 'var(--bg-sidebar)' }}>
+                      <div style={{ flex: 1, overflowY: 'auto', position: 'relative', minHeight: 0, backgroundColor: 'var(--bg-sidebar)' }}>
                         <div style={{ position: 'relative', width: '100%', minHeight: `${minContainerHeight}px` }}>
                           {/* Empty State */}
                           {!isAddingComment && filteredComments.length === 0 && (
@@ -3965,25 +4406,26 @@ ${exportText}
                               top: `${draftY}px`,
                               left: '8px',
                               right: '8px',
-                              border: '1.5px solid var(--brand-primary)',
+                              border: '1px solid var(--brand-primary)',
                               borderRadius: '8px',
                               backgroundColor: 'var(--bg-surface)',
                               padding: '10px',
                               zIndex: 5,
-                              boxShadow: '0 4px 16px rgba(0,115,234,0.15)',
+                              boxShadow: '0 4px 16px rgba(0, 115, 234, 0.15)',
                               transition: 'top 0.15s ease',
+                              boxSizing: 'border-box',
                             }}>
                               {draftSelectedText && (
                                 <div style={{
-                                  fontSize: '10.5px',
-                                  color: 'var(--text-muted)',
-                                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                                  border: '1px solid rgba(245, 158, 11, 0.25)',
-                                  borderLeft: '3px solid #F59E0B',
+                                  fontSize: '11px',
+                                  color: 'var(--text-secondary)',
+                                  backgroundColor: 'var(--bg-subtle)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderLeft: '3px solid var(--brand-primary)',
                                   borderRadius: '4px',
-                                  padding: '4px 6px',
+                                  padding: '5px 8px',
                                   marginBottom: '8px',
-                                  fontFamily: 'monospace',
+                                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -3992,7 +4434,7 @@ ${exportText}
                                 </div>
                               )}
                               {!draftSelectedText && (
-                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>
                                   {language === 'id' ? `Baris ${draftFromLine}` : `Line ${draftFromLine}`}
                                 </div>
                               )}
@@ -4007,24 +4449,36 @@ ${exportText}
                                 placeholder={language === 'id' ? 'Tambah komentar atau @ mention...' : 'Add comment or @ mention...'}
                                 style={{
                                   width: '100%',
-                                  minHeight: '60px',
+                                  minHeight: '64px',
                                   resize: 'vertical',
-                                  backgroundColor: 'var(--bg-main)',
+                                  backgroundColor: 'var(--bg-subtle)',
                                   color: 'var(--text-primary)',
                                   border: '1px solid var(--border-subtle)',
                                   borderRadius: '6px',
-                                  padding: '6px 8px',
-                                  fontSize: '11.5px',
+                                  padding: '8px 10px',
+                                  fontSize: '12px',
                                   fontFamily: 'inherit',
                                   outline: 'none',
                                   boxSizing: 'border-box',
+                                  transition: 'border-color 0.15s ease',
                                 }}
                               />
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '7px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '8px' }}>
                                 <button
                                   type="button"
                                   onClick={() => { setIsAddingComment(false); setDraftCommentText(''); }}
-                                  style={{ padding: '4px 10px', borderRadius: '5px', border: '1px solid var(--border-subtle)', backgroundColor: 'transparent', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer' }}
+                                  style={{
+                                    padding: '4px 10px',
+                                    height: '28px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border-subtle)',
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '11.5px',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
                                 >
                                   {language === 'id' ? 'Batal' : 'Cancel'}
                                 </button>
@@ -4034,14 +4488,15 @@ ${exportText}
                                   disabled={!draftCommentText.trim()}
                                   style={{
                                     padding: '4px 12px',
-                                    borderRadius: '5px',
+                                    height: '28px',
+                                    borderRadius: '6px',
                                     border: 'none',
                                     backgroundColor: draftCommentText.trim() ? 'var(--brand-primary)' : 'var(--border-subtle)',
                                     color: draftCommentText.trim() ? '#fff' : 'var(--text-muted)',
-                                    fontSize: '11px',
+                                    fontSize: '11.5px',
                                     fontWeight: 600,
                                     cursor: draftCommentText.trim() ? 'pointer' : 'default',
-                                    transition: 'all 0.15s',
+                                    transition: 'all 0.15s ease',
                                   }}
                                 >
                                   {language === 'id' ? 'Kirim' : 'Comment'}
@@ -4055,6 +4510,7 @@ ${exportText}
                             const topPos = layoutMap.get(comment.id) ?? 8;
                             const isHighlighted = activeHighlightedCommentId === comment.id;
                             const isReplying = replyingCommentId === comment.id;
+                            const isOrphanedComment = (comment.fromLine ?? 1) > currentTotalLines;
                             const timeAgo = (() => {
                               const diff = Date.now() - comment.createdAt;
                               if (diff < 60000) return language === 'id' ? 'Baru saja' : 'Just now';
@@ -4078,30 +4534,47 @@ ${exportText}
                                   left: '8px',
                                   right: '8px',
                                   borderRadius: '8px',
-                                  border: `1.5px solid ${isHighlighted ? '#F59E0B' : (comment.resolved ? 'var(--border-subtle)' : 'var(--border-strong)')}`,
-                                  backgroundColor: isHighlighted ? 'rgba(245, 158, 11, 0.08)' : (comment.resolved ? 'var(--bg-subtle)' : 'var(--bg-surface)'),
+                                  border: `1px solid ${isHighlighted ? 'var(--brand-primary)' : isOrphanedComment ? 'var(--border-subtle)' : (comment.resolved ? 'var(--border-subtle)' : 'var(--border-strong)')}`,
+                                  backgroundColor: isHighlighted ? 'rgba(0, 115, 234, 0.06)' : (comment.resolved || isOrphanedComment ? 'var(--bg-subtle)' : 'var(--bg-surface)'),
                                   overflow: 'hidden',
                                   cursor: 'pointer',
                                   transition: 'top 0.15s ease, border-color 0.15s, background-color 0.15s',
-                                  opacity: comment.resolved ? 0.65 : 1,
-                                  boxShadow: isHighlighted ? '0 4px 12px rgba(245, 158, 11, 0.18)' : '0 1px 3px rgba(0,0,0,0.04)',
+                                  opacity: comment.resolved ? 0.65 : isOrphanedComment ? 0.75 : 1,
+                                  boxShadow: isHighlighted ? '0 4px 12px rgba(0, 115, 234, 0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
                                   zIndex: isHighlighted ? 4 : 2,
                                 }}
                               >
+                                {/* Orphaned banner */}
+                                {isOrphanedComment && (
+                                  <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '3px 10px',
+                                    backgroundColor: 'rgba(245, 158, 11, 0.10)',
+                                    borderBottom: '1px solid rgba(245, 158, 11, 0.2)',
+                                    fontSize: '10px',
+                                    color: '#92400E',
+                                    fontWeight: 500,
+                                  }}>
+                                    <AlertTriangle size={10} color="#B45309" />
+                                    <span>{language === 'id' ? 'Teks asal telah dihapus' : 'Source text was deleted'}</span>
+                                  </div>
+                                )}
                                 <div style={{ padding: '8px 10px' }}>
                                   {/* Comment header */}
-                                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '5px', gap: '6px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '6px', gap: '6px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
                                       <div style={{
                                         width: '20px', height: '20px', borderRadius: '50%',
                                         backgroundColor: 'var(--brand-primary)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '9px', fontWeight: 700, color: '#fff', flexShrink: 0,
+                                        fontSize: '9.5px', fontWeight: 700, color: '#fff', flexShrink: 0,
                                       }}>
                                         {(comment.authorName || 'U').charAt(0).toUpperCase()}
                                       </div>
                                       <div style={{ minWidth: 0 }}>
-                                        <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 650, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                           {comment.authorName}
                                         </div>
                                         <div style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>{timeAgo}{comment.fromLine ? ` · L${comment.fromLine}` : ''}</div>
@@ -4132,24 +4605,26 @@ ${exportText}
                                   {/* Selected text preview */}
                                   {comment.selectedText && (
                                     <div style={{
-                                      fontSize: '10.5px',
-                                      fontFamily: 'monospace',
-                                      color: 'var(--text-muted)',
-                                      backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                      borderLeft: '2px solid #F59E0B',
-                                      padding: '3px 6px',
-                                      borderRadius: '3px',
-                                      marginBottom: '5px',
+                                      fontSize: '11px',
+                                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                      color: isOrphanedComment ? 'var(--text-muted)' : 'var(--text-secondary)',
+                                      backgroundColor: 'var(--bg-subtle)',
+                                      border: '1px solid var(--border-subtle)',
+                                      borderLeft: `3px solid ${isOrphanedComment ? '#B45309' : 'var(--brand-primary)'}`,
+                                      padding: '4px 6px',
+                                      borderRadius: '4px',
+                                      marginBottom: '6px',
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
                                       whiteSpace: 'nowrap',
+                                      textDecoration: isOrphanedComment ? 'line-through' : 'none',
                                     }}>
                                       "{comment.selectedText.substring(0, 50)}{comment.selectedText.length > 50 ? '…' : ''}"
                                     </div>
                                   )}
 
                                   {/* Comment body */}
-                                  <div style={{ fontSize: '11.5px', color: 'var(--text-primary)', lineHeight: '1.5', wordBreak: 'break-word' }}>
+                                  <div style={{ fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.5', wordBreak: 'break-word' }}>
                                     {comment.content}
                                   </div>
                                 </div>
@@ -4197,18 +4672,19 @@ ${exportText}
                                         }}
                                         placeholder={language === 'id' ? 'Balas...' : 'Reply...'}
                                         style={{
-                                          width: '100%', minHeight: '44px', resize: 'vertical',
-                                          backgroundColor: 'var(--bg-main)', color: 'var(--text-primary)',
-                                          border: '1px solid var(--border-subtle)', borderRadius: '5px',
-                                          padding: '5px 7px', fontSize: '11px', fontFamily: 'inherit',
-                                          outline: 'none', boxSizing: 'border-box', marginBottom: '5px',
+                                          width: '100%', minHeight: '48px', resize: 'vertical',
+                                          backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)',
+                                          border: '1px solid var(--border-subtle)', borderRadius: '6px',
+                                          padding: '6px 8px', fontSize: '11.5px', fontFamily: 'inherit',
+                                          outline: 'none', boxSizing: 'border-box', marginBottom: '6px',
+                                          transition: 'border-color 0.15s ease',
                                         }}
                                       />
                                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px' }}>
                                         <button
                                           type="button"
                                           onClick={() => { setReplyingCommentId(null); setReplyDraftText(''); }}
-                                          style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border-subtle)', backgroundColor: 'transparent', color: 'var(--text-muted)', fontSize: '10px', cursor: 'pointer' }}
+                                          style={{ padding: '3px 8px', height: '24px', borderRadius: '5px', border: '1px solid var(--border-subtle)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer' }}
                                         >
                                           {language === 'id' ? 'Batal' : 'Cancel'}
                                         </button>
@@ -4217,11 +4693,11 @@ ${exportText}
                                           onClick={() => handleSubmitReply(comment.id)}
                                           disabled={!replyDraftText.trim()}
                                           style={{
-                                            padding: '3px 10px', borderRadius: '4px', border: 'none',
+                                            padding: '3px 10px', height: '24px', borderRadius: '5px', border: 'none',
                                             backgroundColor: replyDraftText.trim() ? 'var(--brand-primary)' : 'var(--border-subtle)',
                                             color: replyDraftText.trim() ? '#fff' : 'var(--text-muted)',
-                                            fontSize: '10px', fontWeight: 600,
-                                            cursor: replyDraftText.trim() ? 'pointer' : 'default',
+                                            fontSize: '11px', fontWeight: 600, cursor: replyDraftText.trim() ? 'pointer' : 'default',
+                                            transition: 'all 0.15s ease',
                                           }}
                                         >
                                           {language === 'id' ? 'Balas' : 'Reply'}
@@ -4531,7 +5007,12 @@ ${exportText}
           {/* 2. Main Editor Content: Spreadsheet vs Slide Deck vs Markdown/LaTeX Split */}
           {activeDoc?.format === 'sheet' ? (
             <div style={{ flex: 1, height: '100%', minWidth: 0 }}>
-              <DocsSpreadsheetView />
+              <DocsSpreadsheetView
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                isFocusMode={isFocusMode}
+                setIsFocusMode={setIsFocusMode}
+              />
             </div>
           ) : activeDoc?.format === 'slide' ? (
             <div style={{ flex: 1, height: '100%', minWidth: 0 }}>
@@ -4801,6 +5282,163 @@ ${exportText}
 
                   <div style={separatorStyle} />
 
+                  {/* GROUP 1: Block Structure — List, Blockquote, Code Block, HR */}
+                  {/* Overleaf List Selector Button with Horizontal Popover */}
+                  <div style={{ position: 'relative', display: 'inline-flex' }}>
+                    <button
+                      ref={listButtonRef}
+                      type="button"
+                      onClick={toggleListMenu}
+                      style={{
+                        ...toolbarBtnStyle,
+                        backgroundColor: isListMenuOpen ? 'var(--bg-subtle)' : 'transparent',
+                        borderColor: isListMenuOpen ? 'var(--border-subtle)' : 'transparent',
+                      }}
+                      title={language === 'id' ? 'Daftar Poin & Bernomor' : 'Bullet & Numbered Lists'}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>
+                    </button>
+
+                    {isListMenuOpen && listMenuPos && typeof document !== 'undefined' && createPortal(
+                      <div
+                        ref={listMenuRef}
+                        className="animate-fade-in"
+                        style={{
+                          position: 'fixed',
+                          top: `${listMenuPos.top}px`,
+                          left: `${listMenuPos.left - 20}px`,
+                          zIndex: 99999999,
+                          backgroundColor: 'var(--bg-surface)',
+                          border: '1px solid var(--border-strong)',
+                          borderRadius: '8px',
+                          boxShadow: 'var(--shadow-xl, 0 12px 32px rgba(0,0,0,0.3))',
+                          padding: '6px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                      >
+                        {/* Bullet List Option */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isLatex = activeDoc?.format === 'latex';
+                            if (isLatex) {
+                              insertShortcut('\\begin{itemize}\n  \\item ', '\n\\end{itemize}\n', 'item poin');
+                            } else {
+                              insertShortcut('\n- ', '', 'item poin');
+                            }
+                            setIsListMenuOpen(false);
+                          }}
+                          style={{
+                            width: '32px',
+                            height: '30px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '5px',
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'background 0.12s ease',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                          title={language === 'id' ? 'Daftar Poin (Bullet)' : 'Bullet List'}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>
+                        </button>
+
+                        {/* Numbered List Option */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isLatex = activeDoc?.format === 'latex';
+                            if (isLatex) {
+                              insertShortcut('\\begin{enumerate}\n  \\item ', '\n\\end{enumerate}\n', 'item pertama');
+                            } else {
+                              insertShortcut('\n1. ', '', 'item pertama');
+                            }
+                            setIsListMenuOpen(false);
+                          }}
+                          style={{
+                            width: '32px',
+                            height: '30px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '5px',
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'background 0.12s ease',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                          title={language === 'id' ? 'Daftar Bernomor (Numbered)' : 'Numbered List'}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+                        </button>
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+                  {/* Blockquote */}
+                  <button type="button" onClick={() => insertShortcut('\n> ', '', 'kutipan')} style={toolbarBtnStyle} title="Blockquote / Kutipan">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+                  </button>
+                  {/* Code Block */}
+                  <button type="button" onClick={() => insertShortcut('\n```\n', '\n```\n', 'kode di sini')} style={toolbarBtnStyle} title={language === 'id' ? 'Blok Kode' : 'Code Block'}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  </button>
+                  {/* Horizontal Rule */}
+                  <button type="button" onClick={() => insertShortcut('\n---\n')} style={toolbarBtnStyle} title={language === 'id' ? 'Garis Horizontal' : 'Horizontal Rule'}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                  </button>
+
+                  <div style={separatorStyle} />
+
+                  {/* GROUP 2: Insert Content — Link, Image, Table */}
+                  {/* Link */}
+                  <button type="button" onClick={() => insertShortcut('[', '](https://)', 'teks link')} style={toolbarBtnStyle} title={language === 'id' ? 'Sisipkan Tautan' : 'Insert Link'}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </button>
+                  {/* Image */}
+                  <button type="button"
+                    onClick={() => {
+                      const isLatex = activeDoc?.format === 'latex';
+                      if (isLatex) {
+                        insertShortcut('\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{', '}\n  \\caption{Deskripsi gambar}\n  \\label{fig:contoh}\n\\end{figure}\n', 'gambar.png');
+                      } else {
+                        insertShortcut('![', '](url-gambar)', 'alt text');
+                      }
+                    }}
+                    style={toolbarBtnStyle}
+                    title={language === 'id' ? 'Sisipkan Gambar / Figure' : 'Insert Image / Figure'}
+                  >
+                    <ImageIcon size={12} />
+                  </button>
+                  {/* Table */}
+                  <button type="button"
+                    onClick={() => {
+                      const isLatex = activeDoc?.format === 'latex';
+                      if (isLatex) {
+                        insertShortcut('\\begin{table}[htbp]\n  \\centering\n  \\begin{tabular}{|c|c|c|}\n    \\hline\n    Kolom 1 & Kolom 2 & Kolom 3 \\\\\n    \\hline\n    Data 1 & Data 2 & Data 3 \\\\\n    \\hline\n  \\end{tabular}\n  \\caption{Tabel contoh}\n  \\label{tab:contoh}\n\\end{table}\n');
+                      } else {
+                        insertShortcut('\n| Kolom 1 | Kolom 2 | Kolom 3 |\n| :--- | :--- | :--- |\n| Baris 1 | Data A | Data B |\n');
+                      }
+                    }}
+                    style={toolbarBtnStyle}
+                    title={language === 'id' ? 'Sisipkan Tabel' : 'Insert Table'}
+                  >
+                    <TableIcon size={12} color="#10B981" />
+                  </button>
+
+                  <div style={separatorStyle} />
+
+                  {/* GROUP 3: Math & Symbols — $x$, Σ, Ω */}
                   {/* Math inline */}
                   <button type="button" onClick={() => insertShortcut('$', '$', 'E = mc^2')} style={toolbarBtnStyle} title="Rumus Matematika Inline ($...$)">
                     <span style={{ fontSize: '10.5px', fontWeight: 700 }}>$x$</span>
@@ -4947,10 +5585,7 @@ ${exportText}
 
                   <div style={separatorStyle} />
 
-                  {/* Link */}
-                  <button type="button" onClick={() => insertShortcut('[', '](https://)', 'teks link')} style={toolbarBtnStyle} title={language === 'id' ? 'Sisipkan Tautan' : 'Insert Link'}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  </button>
+                  {/* GROUP 4: Academic References — Label, Citation, Mermaid */}
                   {/* Label / Tag Cross-Reference */}
                   <button type="button"
                     onClick={() => {
@@ -4973,158 +5608,11 @@ ${exportText}
                   >
                     <BookMarked size={12} color="#F59E0B" />
                   </button>
-                  {/* Image */}
-                  <button type="button"
-                    onClick={() => {
-                      const isLatex = activeDoc?.format === 'latex';
-                      if (isLatex) {
-                        insertShortcut('\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{', '}\n  \\caption{Deskripsi gambar}\n  \\label{fig:contoh}\n\\end{figure}\n', 'gambar.png');
-                      } else {
-                        insertShortcut('![', '](url-gambar)', 'alt text');
-                      }
-                    }}
-                    style={toolbarBtnStyle}
-                    title={language === 'id' ? 'Sisipkan Gambar / Figure' : 'Insert Image / Figure'}
-                  >
-                    <ImageIcon size={12} />
-                  </button>
-                  {/* Table */}
-                  <button type="button"
-                    onClick={() => {
-                      const isLatex = activeDoc?.format === 'latex';
-                      if (isLatex) {
-                        insertShortcut('\\begin{table}[htbp]\n  \\centering\n  \\begin{tabular}{|c|c|c|}\n    \\hline\n    Kolom 1 & Kolom 2 & Kolom 3 \\\\\n    \\hline\n    Data 1 & Data 2 & Data 3 \\\\\n    \\hline\n  \\end{tabular}\n  \\caption{Tabel contoh}\n  \\label{tab:contoh}\n\\end{table}\n');
-                      } else {
-                        insertShortcut('\n| Kolom 1 | Kolom 2 | Kolom 3 |\n| :--- | :--- | :--- |\n| Baris 1 | Data A | Data B |\n');
-                      }
-                    }}
-                    style={toolbarBtnStyle}
-                    title={language === 'id' ? 'Sisipkan Tabel' : 'Insert Table'}
-                  >
-                    <TableIcon size={12} color="#10B981" />
-                  </button>
                   {/* Mermaid */}
                   <button type="button"
                     onClick={() => insertShortcut('\n```mermaid\ngraph TD\n    A[Mulai] --> B[Proses]\n    B --> C{Keputusan?}\n```\n')}
                     style={toolbarBtnStyle} title="Diagram Mermaid">
                     <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#0073ea' }}>~</span>
-                  </button>
-
-                  <div style={separatorStyle} />
-
-                  {/* Overleaf List Selector Button with Horizontal Popover */}
-                  <div style={{ position: 'relative', display: 'inline-flex' }}>
-                    <button
-                      ref={listButtonRef}
-                      type="button"
-                      onClick={toggleListMenu}
-                      style={{
-                        ...toolbarBtnStyle,
-                        backgroundColor: isListMenuOpen ? 'var(--bg-subtle)' : 'transparent',
-                        borderColor: isListMenuOpen ? 'var(--border-subtle)' : 'transparent',
-                      }}
-                      title={language === 'id' ? 'Daftar Poin & Bernomor' : 'Bullet & Numbered Lists'}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>
-                    </button>
-
-                    {isListMenuOpen && listMenuPos && typeof document !== 'undefined' && createPortal(
-                      <div
-                        ref={listMenuRef}
-                        className="animate-fade-in"
-                        style={{
-                          position: 'fixed',
-                          top: `${listMenuPos.top}px`,
-                          left: `${listMenuPos.left - 20}px`,
-                          zIndex: 99999999,
-                          backgroundColor: 'var(--bg-surface)',
-                          border: '1px solid var(--border-strong)',
-                          borderRadius: '8px',
-                          boxShadow: 'var(--shadow-xl, 0 12px 32px rgba(0,0,0,0.3))',
-                          padding: '6px 8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                        }}
-                      >
-                        {/* Bullet List Option */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const isLatex = activeDoc?.format === 'latex';
-                            if (isLatex) {
-                              insertShortcut('\\begin{itemize}\n  \\item ', '\n\\end{itemize}\n', 'item poin');
-                            } else {
-                              insertShortcut('\n- ', '', 'item poin');
-                            }
-                            setIsListMenuOpen(false);
-                          }}
-                          style={{
-                            width: '32px',
-                            height: '30px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '5px',
-                            border: 'none',
-                            backgroundColor: 'transparent',
-                            color: 'var(--text-primary)',
-                            cursor: 'pointer',
-                            transition: 'background 0.12s ease',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                          title={language === 'id' ? 'Daftar Poin (Bullet)' : 'Bullet List'}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>
-                        </button>
-
-                        {/* Numbered List Option */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const isLatex = activeDoc?.format === 'latex';
-                            if (isLatex) {
-                              insertShortcut('\\begin{enumerate}\n  \\item ', '\n\\end{enumerate}\n', 'item pertama');
-                            } else {
-                              insertShortcut('\n1. ', '', 'item pertama');
-                            }
-                            setIsListMenuOpen(false);
-                          }}
-                          style={{
-                            width: '32px',
-                            height: '30px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '5px',
-                            border: 'none',
-                            backgroundColor: 'transparent',
-                            color: 'var(--text-primary)',
-                            cursor: 'pointer',
-                            transition: 'background 0.12s ease',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                          title={language === 'id' ? 'Daftar Bernomor (Numbered)' : 'Numbered List'}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
-                        </button>
-                      </div>,
-                      document.body
-                    )}
-                  </div>
-                  {/* Blockquote */}
-                  <button type="button" onClick={() => insertShortcut('\n> ', '', 'kutipan')} style={toolbarBtnStyle} title="Blockquote / Kutipan">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
-                  </button>
-                  {/* Horizontal Rule */}
-                  <button type="button" onClick={() => insertShortcut('\n---\n')} style={toolbarBtnStyle} title={language === 'id' ? 'Garis Horizontal' : 'Horizontal Rule'}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="2" y1="12" x2="22" y2="12"/></svg>
-                  </button>
-                  {/* Code Block */}
-                  <button type="button" onClick={() => insertShortcut('\n```\n', '\n```\n', 'kode di sini')} style={toolbarBtnStyle} title={language === 'id' ? 'Blok Kode' : 'Code Block'}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                   </button>
 
                   <div style={separatorStyle} />
@@ -5143,115 +5631,500 @@ ${exportText}
                   >
                     <MessageSquarePlus size={12} />
                   </button>
+
+                  <div style={separatorStyle} />
+
+                  {/* Paper Size Selector Button & Popover (Moved to Code Editor Toolbar) */}
+                  <div style={{ position: 'relative', display: 'inline-flex' }}>
+                    <button
+                      ref={paperSizeButtonRef}
+                      type="button"
+                      onClick={togglePaperSizeDropdown}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        padding: '2px 6px',
+                        height: '24px',
+                        borderRadius: '4px',
+                        backgroundColor: isPaperSizeDropdownOpen ? 'var(--bg-subtle)' : 'transparent',
+                        border: isPaperSizeDropdownOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                        color: isPaperSizeDropdownOpen ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                        fontSize: '11px',
+                        fontWeight: 650,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      className="hover-subtle"
+                      title={language === 'id' ? `Ukuran Kertas: ${currentPaperConfig.name} (${currentPaperConfig.description})` : `Paper Size: ${currentPaperConfig.name}`}
+                    >
+                      <span>{currentPaperConfig.name}</span>
+                      <ChevronDown size={10} style={{ opacity: 0.7, transform: isPaperSizeDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                    </button>
+
+                    {/* Paper Size Popover */}
+                    {isPaperSizeDropdownOpen && paperSizeDropdownPos && typeof document !== 'undefined' && createPortal(
+                      <div
+                        ref={paperSizeDropdownRef}
+                        onClick={(e) => e.stopPropagation()}
+                        className="animate-fade-in"
+                        style={{
+                          position: 'fixed',
+                          top: `${paperSizeDropdownPos.top}px`,
+                          left: `${paperSizeDropdownPos.left}px`,
+                          width: '230px',
+                          backgroundColor: 'var(--bg-surface)',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-strong)',
+                          boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.25))',
+                          padding: '6px',
+                          zIndex: 999999999,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                        }}
+                      >
+                        <div style={{ padding: '4px 8px 6px', fontSize: '11px', fontWeight: 650, color: 'var(--text-muted)' }}>
+                          {language === 'id' ? 'Ukuran Halaman / Kertas' : 'Page & Paper Size'}
+                        </div>
+
+                        {PAPER_SIZES.map((paper) => {
+                          const isSelected = effectivePaperSizeId === paper.id;
+                          return (
+                            <button
+                              key={paper.id}
+                              type="button"
+                              onClick={() => {
+                                handleSelectPaperSize(paper.id);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '5px',
+                                border: 'none',
+                                backgroundColor: isSelected ? 'var(--bg-subtle)' : 'transparent',
+                                color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
+                                fontSize: '12px',
+                                fontWeight: isSelected ? 650 : 500,
+                                cursor: 'pointer',
+                                width: '100%',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span>{paper.name}</span>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{paper.description}</span>
+                              </div>
+                              {isSelected && <Check size={13} strokeWidth={2.5} color="var(--brand-primary)" />}
+                            </button>
+                          );
+                        })}
+
+                        <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+
+                        {/* Custom Dimensions Option */}
+                        <div style={{ padding: '4px 8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '11.5px', fontWeight: 650, color: selectedPaperSize === 'custom' ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
+                              Custom (mm)
+                            </span>
+                            {selectedPaperSize === 'custom' && <Check size={12} strokeWidth={2.5} color="var(--brand-primary)" />}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
+                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>W:</span>
+                              <input
+                                type="number"
+                                min={50}
+                                max={1000}
+                                value={customPaperWidthMm}
+                                onChange={(e) => {
+                                  setCustomPaperWidthMm(Number(e.target.value) || 210);
+                                  setSelectedPaperSize('custom');
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '3px 5px',
+                                  fontSize: '11px',
+                                  backgroundColor: 'var(--bg-main)',
+                                  border: '1px solid var(--border-strong)',
+                                  borderRadius: '4px',
+                                  color: 'var(--text-primary)',
+                                  outline: 'none',
+                                }}
+                              />
+                            </div>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>×</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
+                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>H:</span>
+                              <input
+                                type="number"
+                                min={50}
+                                max={1500}
+                                value={customPaperHeightMm}
+                                onChange={(e) => {
+                                  setCustomPaperHeightMm(Number(e.target.value) || 297);
+                                  setSelectedPaperSize('custom');
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '3px 5px',
+                                  fontSize: '11px',
+                                  backgroundColor: 'var(--bg-main)',
+                                  border: '1px solid var(--border-strong)',
+                                  borderRadius: '4px',
+                                  color: 'var(--text-primary)',
+                                  outline: 'none',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                  </div>
                 </div>
 
-                {/* Code Textarea with Synchronized Character-Accurate Text-Flow Backdrop */}
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: 'var(--bg-main)' }}>
-                  {/* Layer 1: Synchronized Text-Flow Backdrop (Exact wrap & character highlights) */}
+                {/* Central Pane: Check if Active File is an Image or Code */}
+                {activeSubFile && (/\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(activeSubFile.name) || activeSubFile.content.startsWith('data:image/')) ? (
+                  /* Dedicated Overleaf-Style Image & Media Viewer */
                   <div
-                    aria-hidden="true"
                     style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      bottom: 0,
-                      width: textareaClientWidth ? `${textareaClientWidth}px` : '100%',
-                      padding: '16px 20px',
-                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                      fontSize: '13px',
-                      lineHeight: '1.6',
-                      letterSpacing: '0px',
-                      tabSize: 2,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      overflowWrap: 'break-word',
-                      overflow: 'hidden',
-                      pointerEvents: 'none',
-                      boxSizing: 'border-box',
-                      color: 'transparent',
-                      margin: 0,
-                      border: 'none',
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '32px 24px',
+                      backgroundColor: 'var(--bg-main)',
+                      overflow: 'auto',
+                      position: 'relative',
                     }}
                   >
+                    <input
+                      type="file"
+                      ref={imageReplaceInputRef}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        if (f && activeDoc && activeSubFile) {
+                          const dataUrl = await new Promise<string>((res, rej) => {
+                            const r = new FileReader();
+                            r.onload = () => res(r.result as string);
+                            r.onerror = rej;
+                            r.readAsDataURL(f);
+                          });
+                          updateSubFileContent(activeDoc.id, activeSubFile.id, dataUrl);
+                        }
+                      }}
+                    />
+
+                    {/* Image Preview Card */}
                     <div
-                      ref={backdropContentRef}
                       style={{
-                        transform: `translateY(-${editorScrollTop}px)`,
+                        maxWidth: '90%',
+                        maxHeight: '65vh',
+                        minWidth: '240px',
+                        minHeight: '180px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border-subtle)',
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                        backgroundColor: 'var(--bg-surface)',
+                        padding: '12px',
+                        backgroundImage:
+                          theme === 'dark'
+                            ? 'radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)'
+                            : 'radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px)',
+                        backgroundSize: '16px 16px',
+                      }}
+                    >
+                      {activeSubFile.content.startsWith('data:image/') || activeSubFile.content.startsWith('http') ? (
+                        <img
+                          src={activeSubFile.content}
+                          alt={activeSubFile.name}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '60vh',
+                            objectFit: 'contain',
+                            display: 'block',
+                            borderRadius: '4px',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: 'var(--text-muted)' }}>
+                          <ImageIcon size={40} style={{ opacity: 0.5 }} />
+                          <span style={{ fontSize: '12px' }}>File gambar belum dimuat sepenuhnya</span>
+                          <button
+                            type="button"
+                            onClick={() => imageReplaceInputRef.current?.click()}
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: '5px',
+                              border: '1px solid var(--brand-primary)',
+                              backgroundColor: 'var(--brand-primary)',
+                              color: '#fff',
+                              fontSize: '11.5px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Pilih File Gambar dari Komputer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metadata & Actions */}
+                    <div
+                      style={{
+                        marginTop: '18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px',
+                        maxWidth: '560px',
                         width: '100%',
                       }}
                     >
-                      {renderHighlightedBackdrop()}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 650, color: 'var(--text-primary)' }}>
+                        <ImageIcon size={16} color="var(--brand-primary)" />
+                        <span>{activeSubFile.name}</span>
+                      </div>
+
+                      {/* Snippet copy buttons */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const latexSnippet = `\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{${activeSubFile.name}}\n  \\caption{Deskripsi gambar}\n  \\label{fig:${activeSubFile.name.split('.')[0]}}\n\\end{figure}`;
+                            navigator.clipboard.writeText(latexSnippet);
+                            setCopiedSnippet(activeSubFile.name + '_latex');
+                            setTimeout(() => setCopiedSnippet(null), 2000);
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)',
+                            backgroundColor: 'var(--bg-surface)',
+                            color: 'var(--brand-primary)',
+                            fontSize: '11.5px',
+                            fontWeight: 650,
+                            cursor: 'pointer',
+                          }}
+                          className="hover-subtle"
+                        >
+                          {copiedSnippet === activeSubFile.name + '_latex' ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
+                          <span>{copiedSnippet === activeSubFile.name + '_latex' ? 'Tersalin' : 'Salin Snippet LaTeX (\\includegraphics)'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const mdSnippet = `![${activeSubFile.name}](${activeSubFile.name})`;
+                            navigator.clipboard.writeText(mdSnippet);
+                            setCopiedSnippet(activeSubFile.name + '_md');
+                            setTimeout(() => setCopiedSnippet(null), 2000);
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)',
+                            backgroundColor: 'var(--bg-surface)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '11.5px',
+                            fontWeight: 650,
+                            cursor: 'pointer',
+                          }}
+                          className="hover-subtle"
+                        >
+                          {copiedSnippet === activeSubFile.name + '_md' ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
+                          <span>{copiedSnippet === activeSubFile.name + '_md' ? 'Tersalin' : 'Salin Snippet Markdown (![])'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => imageReplaceInputRef.current?.click()}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)',
+                            backgroundColor: 'var(--bg-surface)',
+                            color: 'var(--text-muted)',
+                            fontSize: '11.5px',
+                            cursor: 'pointer',
+                          }}
+                          className="hover-subtle"
+                        >
+                          <Upload size={12} />
+                          <span>Ganti Gambar</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Layer 2: Interactive Transparent Textarea */}
-                  <textarea
-                    ref={textareaRef}
-                    value={activeSubFile?.content ?? activeDoc?.content ?? ''}
-                    onScroll={(e) => setEditorScrollTop(e.currentTarget.scrollTop)}
-                    onSelect={(e) => {
-                      const el = e.currentTarget;
-                      lastEditorSelectionRef.current = {
-                        start: el.selectionStart,
-                        end: el.selectionEnd,
-                        text: el.value.substring(el.selectionStart, el.selectionEnd),
-                      };
-                    }}
-                    onKeyUp={(e) => {
-                      const el = e.currentTarget;
-                      lastEditorSelectionRef.current = {
-                        start: el.selectionStart,
-                        end: el.selectionEnd,
-                        text: el.value.substring(el.selectionStart, el.selectionEnd),
-                      };
-                    }}
-                    onMouseUp={(e) => {
-                      const el = e.currentTarget;
-                      lastEditorSelectionRef.current = {
-                        start: el.selectionStart,
-                        end: el.selectionEnd,
-                        text: el.value.substring(el.selectionStart, el.selectionEnd),
-                      };
-                    }}
-                    onChange={(e) => {
-                      if (activeDoc && activeSubFile) {
-                        updateSubFileContent(activeDoc.id, activeSubFile.id, e.target.value);
-                      } else if (activeDoc) {
-                        updateDocumentContent(activeDoc.id, e.target.value);
-                      }
-                    }}
-                    placeholder={`Ketik isi file ${activeSubFile?.name || 'main.tex'} di sini...`}
-                    spellCheck={false}
-                    autoCapitalize="off"
-                    autoComplete="off"
-                    autoCorrect="off"
+                ) : (
+                <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', backgroundColor: 'var(--bg-main)' }}>
+                  {/* Line numbers gutter */}
+                  <div
+                    aria-hidden="true"
                     style={{
-                      position: 'relative',
-                      width: '100%',
-                      height: '100%',
-                      padding: '16px 20px',
-                      margin: 0,
-                      backgroundColor: 'transparent',
-                      color: 'var(--text-primary)',
-                      caretColor: 'var(--brand-primary)',
+                      width: '46px',
+                      paddingTop: '16px',
+                      paddingBottom: '16px',
+                      paddingRight: '10px',
+                      textAlign: 'right',
+                      color: 'var(--text-muted)',
                       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                       fontSize: '13px',
                       lineHeight: '1.6',
-                      letterSpacing: '0px',
-                      tabSize: 2,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      overflowWrap: 'break-word',
-                      border: 'none',
-                      outline: 'none',
-                      resize: 'none',
+                      userSelect: 'none',
+                      overflow: 'hidden',
+                      borderRight: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-main)',
+                      flexShrink: 0,
                       boxSizing: 'border-box',
-                      zIndex: 2,
                     }}
-                  />
+                  >
+                    <div style={{ transform: `translateY(-${editorScrollTop}px)` }}>
+                      {Array.from({ length: Math.max(1, (activeSubFile?.content ?? activeDoc?.content ?? '').split('\n').length) }).map((_, i) => (
+                        <div key={i} style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                          {i + 1}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Code Textarea with Synchronized Character-Accurate Text-Flow Backdrop */}
+                  <div style={{ flex: 1, position: 'relative', overflow: 'hidden', height: '100%', minWidth: 0 }}>
+                    {/* Layer 1: Synchronized Text-Flow Backdrop (Exact wrap & character highlights) */}
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        bottom: 0,
+                        right: 0,
+                        padding: '16px 20px',
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontSize: '13px',
+                        lineHeight: '1.6',
+                        letterSpacing: '0px',
+                        tabSize: 2,
+                        whiteSpace: 'pre',
+                        overflow: 'hidden',
+                        pointerEvents: 'none',
+                        boxSizing: 'border-box',
+                        color: 'transparent',
+                        margin: 0,
+                        border: 'none',
+                      }}
+                    >
+                      <div
+                        ref={backdropContentRef}
+                        style={{
+                          transform: `translate(-${editorScrollLeft}px, -${editorScrollTop}px)`,
+                          width: '100%',
+                        }}
+                      >
+                        {renderHighlightedBackdrop()}
+                      </div>
+                    </div>
+
+                    {/* Layer 2: Interactive Transparent Textarea */}
+                    <textarea
+                      ref={textareaRef}
+                      value={activeSubFile?.content ?? activeDoc?.content ?? ''}
+                      onScroll={(e) => {
+                        setEditorScrollTop(e.currentTarget.scrollTop);
+                        setEditorScrollLeft(e.currentTarget.scrollLeft);
+                      }}
+                      onSelect={(e) => {
+                        const el = e.currentTarget;
+                        lastEditorSelectionRef.current = {
+                          start: el.selectionStart,
+                          end: el.selectionEnd,
+                          text: el.value.substring(el.selectionStart, el.selectionEnd),
+                        };
+                      }}
+                      onKeyUp={(e) => {
+                        const el = e.currentTarget;
+                        lastEditorSelectionRef.current = {
+                          start: el.selectionStart,
+                          end: el.selectionEnd,
+                          text: el.value.substring(el.selectionStart, el.selectionEnd),
+                        };
+                      }}
+                      onMouseUp={(e) => {
+                        const el = e.currentTarget;
+                        lastEditorSelectionRef.current = {
+                          start: el.selectionStart,
+                          end: el.selectionEnd,
+                          text: el.value.substring(el.selectionStart, el.selectionEnd),
+                        };
+                      }}
+                      onChange={(e) => {
+                        if (activeDoc && activeSubFile) {
+                          updateSubFileContent(activeDoc.id, activeSubFile.id, e.target.value);
+                        } else if (activeDoc) {
+                          updateDocumentContent(activeDoc.id, e.target.value);
+                        }
+                      }}
+                      placeholder={`Ketik isi file ${activeSubFile?.name || 'main.tex'} di sini...`}
+                      spellCheck={false}
+                      autoCapitalize="off"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        height: '100%',
+                        margin: 0,
+                        padding: '16px 20px',
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontSize: '13px',
+                        lineHeight: '1.6',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-primary)',
+                        caretColor: 'var(--brand-primary)',
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        resize: 'none',
+                        boxSizing: 'border-box',
+                        overflow: 'auto',
+                        whiteSpace: 'pre',
+                        zIndex: 1,
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
             {/* Resize handle: Editor ↔ Preview */}
             {viewMode === 'split' && (
@@ -5357,7 +6230,7 @@ ${exportText}
                         <ChevronDown size={12} style={{ transform: isRecompileDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                       </button>
 
-                      {/* Recompile Dropdown Popover (Portal to prevent clipping) */}
+                      {/* Recompile Dropdown Popover (Overleaf-Identical Complete Menu) */}
                       {isRecompileDropdownOpen && recompileDropdownPos && typeof document !== 'undefined' && createPortal(
                         <div
                           ref={recompileDropdownRef}
@@ -5368,86 +6241,209 @@ ${exportText}
                             top: `${recompileDropdownPos.top}px`,
                             left: `${recompileDropdownPos.left}px`,
                             zIndex: 999999999,
-                            minWidth: '220px',
+                            minWidth: '240px',
                             backgroundColor: 'var(--bg-surface)',
                             border: '1px solid var(--border-strong)',
-                            borderRadius: '8px',
-                            boxShadow: 'var(--shadow-xl, 0 12px 32px rgba(0,0,0,0.3))',
-                            padding: '6px',
+                            borderRadius: '6px',
+                            boxShadow: 'var(--shadow-xl, 0 12px 32px rgba(0,0,0,0.35))',
+                            padding: '6px 0',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '2px',
                           }}
                         >
+                          {/* 1. Auto compile */}
+                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                            Auto compile
+                          </div>
                           <div
-                            onClick={() => setIsAutoCompile(!isAutoCompile)}
+                            onClick={() => {
+                              setIsAutoCompile(true);
+                              setCompiledContent(bundledContent || activeDoc?.content || '');
+                            }}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
-                              padding: '6px 8px',
-                              borderRadius: '5px',
+                              padding: '6px 14px',
                               cursor: 'pointer',
-                              fontSize: '12px',
+                              fontSize: '12.5px',
                               color: 'var(--text-primary)',
                             }}
                             className="hover-subtle"
                           >
-                            <span style={{ fontWeight: 600 }}>Auto Compile</span>
-                            <span style={{
-                              fontSize: '10.5px',
-                              padding: '1px 6px',
-                              borderRadius: '999px',
-                              fontWeight: 700,
-                              backgroundColor: isAutoCompile ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-subtle)',
-                              color: isAutoCompile ? '#10B981' : 'var(--text-muted)',
-                            }}>
-                              {isAutoCompile ? 'ON' : 'OFF'}
-                            </span>
+                            <span>On</span>
+                            {isAutoCompile && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
                           </div>
-
                           <div
-                            onClick={() => {
-                              handleRecompile();
-                              setIsRecompileDropdownOpen(false);
-                            }}
+                            onClick={() => setIsAutoCompile(false)}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 8px',
-                              borderRadius: '5px',
+                              justifyContent: 'space-between',
+                              padding: '6px 14px',
                               cursor: 'pointer',
-                              fontSize: '12px',
+                              fontSize: '12.5px',
                               color: 'var(--text-primary)',
                             }}
                             className="hover-subtle"
                           >
-                            <Sparkles size={12} color="var(--brand-primary)" />
-                            <span>Fast [draft] compile</span>
+                            <span>Off</span>
+                            {!isAutoCompile && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
                           </div>
 
                           <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
 
+                          {/* 2. Compile mode */}
+                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                            Compile mode
+                          </div>
+                          <div
+                            onClick={() => setCompileMode('normal')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 14px',
+                              cursor: 'pointer',
+                              fontSize: '12.5px',
+                              color: 'var(--text-primary)',
+                            }}
+                            className="hover-subtle"
+                          >
+                            <span>Normal</span>
+                            {compileMode === 'normal' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
+                          </div>
+                          <div
+                            onClick={() => setCompileMode('draft')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 14px',
+                              cursor: 'pointer',
+                              fontSize: '12.5px',
+                              color: 'var(--text-primary)',
+                            }}
+                            className="hover-subtle"
+                          >
+                            <span>Fast [draft]</span>
+                            {compileMode === 'draft' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
+                          </div>
+
+                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+
+                          {/* 3. Syntax checks */}
+                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                            Syntax checks
+                          </div>
+                          <div
+                            onClick={() => setSyntaxCheckMode('check')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 14px',
+                              cursor: 'pointer',
+                              fontSize: '12.5px',
+                              color: 'var(--text-primary)',
+                            }}
+                            className="hover-subtle"
+                          >
+                            <span>Check syntax before compile</span>
+                            {syntaxCheckMode === 'check' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
+                          </div>
+                          <div
+                            onClick={() => setSyntaxCheckMode('none')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 14px',
+                              cursor: 'pointer',
+                              fontSize: '12.5px',
+                              color: 'var(--text-primary)',
+                            }}
+                            className="hover-subtle"
+                          >
+                            <span>Don&apos;t check syntax</span>
+                            {syntaxCheckMode === 'none' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
+                          </div>
+
+                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+
+                          {/* 4. Compile error handling */}
+                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                            Compile error handling
+                          </div>
+                          <div
+                            onClick={() => setErrorHandlingMode('stop')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 14px',
+                              cursor: 'pointer',
+                              fontSize: '12.5px',
+                              color: 'var(--text-primary)',
+                            }}
+                            className="hover-subtle"
+                          >
+                            <span>Stop on first error</span>
+                            {errorHandlingMode === 'stop' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
+                          </div>
+                          <div
+                            onClick={() => setErrorHandlingMode('continue')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 14px',
+                              cursor: 'pointer',
+                              fontSize: '12.5px',
+                              color: 'var(--text-primary)',
+                            }}
+                            className="hover-subtle"
+                          >
+                            <span>Try to compile despite errors</span>
+                            {errorHandlingMode === 'continue' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
+                          </div>
+
+                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+
+                          {/* 5. Stop compilation / Recompile from scratch */}
+                          <div
+                            onClick={() => {
+                              if (isRecompiling) {
+                                setIsRecompiling(false);
+                                setIsRecompileDropdownOpen(false);
+                              }
+                            }}
+                            style={{
+                              padding: '6px 14px',
+                              fontSize: '12.5px',
+                              color: isRecompiling ? '#EF4444' : 'var(--text-muted)',
+                              cursor: isRecompiling ? 'pointer' : 'default',
+                              opacity: isRecompiling ? 1 : 0.6,
+                            }}
+                            className={isRecompiling ? 'hover-subtle' : ''}
+                          >
+                            Stop compilation
+                          </div>
                           <div
                             onClick={() => {
                               handleRecompile();
                               setIsRecompileDropdownOpen(false);
                             }}
                             style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 8px',
-                              borderRadius: '5px',
+                              padding: '6px 14px',
+                              fontSize: '12.5px',
+                              color: '#0073ea',
+                              fontWeight: 500,
                               cursor: 'pointer',
-                              fontSize: '11.5px',
-                              color: 'var(--text-muted)',
                             }}
                             className="hover-subtle"
                           >
-                            <Trash2 size={12} />
-                            <span>Clear cached files</span>
+                            Recompile from scratch
                           </div>
                         </div>,
                         document.body
@@ -5509,166 +6505,6 @@ ${exportText}
                         }} />
                       ) : null}
                     </button>
-
-                    {/* Paper Size Selector Button & Popover */}
-                    <div style={{ position: 'relative', display: 'inline-flex' }}>
-                      <button
-                        ref={paperSizeButtonRef}
-                        type="button"
-                        onClick={togglePaperSizeDropdown}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '3px',
-                          padding: '3px 7px',
-                          borderRadius: '5px',
-                          backgroundColor: isPaperSizeDropdownOpen ? 'var(--bg-subtle)' : 'transparent',
-                          border: isPaperSizeDropdownOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
-                          color: isPaperSizeDropdownOpen ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                          fontSize: '11px',
-                          fontWeight: 650,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                        className="hover-subtle"
-                        title={language === 'id' ? `Ukuran Kertas: ${currentPaperConfig.name} (${currentPaperConfig.description})` : `Paper Size: ${currentPaperConfig.name}`}
-                      >
-                        <span>{currentPaperConfig.name}</span>
-                        <ChevronDown size={10} style={{ opacity: 0.7, transform: isPaperSizeDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-                      </button>
-
-                      {/* Paper Size Popover */}
-                      {isPaperSizeDropdownOpen && paperSizeDropdownPos && typeof document !== 'undefined' && createPortal(
-                        <div
-                          ref={paperSizeDropdownRef}
-                          onClick={(e) => e.stopPropagation()}
-                          className="animate-fade-in"
-                          style={{
-                            position: 'fixed',
-                            top: `${paperSizeDropdownPos.top}px`,
-                            left: `${paperSizeDropdownPos.left}px`,
-                            width: '230px',
-                            backgroundColor: 'var(--bg-surface)',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border-strong)',
-                            boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.25))',
-                            padding: '6px',
-                            zIndex: 999999999,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '2px',
-                          }}
-                        >
-                          <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            {language === 'id' ? 'Ukuran Kertas Dokumen' : 'Document Paper Size'}
-                          </div>
-
-                          {PAPER_SIZES.map((paper) => {
-                            const isSelected = selectedPaperSize === paper.id;
-                            return (
-                              <button
-                                key={paper.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedPaperSize(paper.id);
-                                  setIsPaperSizeDropdownOpen(false);
-                                }}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '6px 8px',
-                                  borderRadius: '5px',
-                                  border: 'none',
-                                  backgroundColor: isSelected ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
-                                  color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
-                                  fontSize: '12px',
-                                  fontWeight: isSelected ? 650 : 500,
-                                  cursor: 'pointer',
-                                  width: '100%',
-                                  textAlign: 'left',
-                                  transition: 'background-color 0.12s ease',
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
-                                }}
-                              >
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <span>{paper.name}</span>
-                                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{paper.description}</span>
-                                </div>
-                                {isSelected && <Check size={13} strokeWidth={2.5} color="var(--brand-primary)" />}
-                              </button>
-                            );
-                          })}
-
-                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-
-                          {/* Custom Dimensions Option */}
-                          <div style={{ padding: '4px 8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                              <span style={{ fontSize: '11.5px', fontWeight: 650, color: selectedPaperSize === 'custom' ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
-                                Custom (mm)
-                              </span>
-                              {selectedPaperSize === 'custom' && <Check size={12} strokeWidth={2.5} color="var(--brand-primary)" />}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
-                                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>W:</span>
-                                <input
-                                  type="number"
-                                  min={50}
-                                  max={1000}
-                                  value={customPaperWidthMm}
-                                  onChange={(e) => {
-                                    setCustomPaperWidthMm(Number(e.target.value) || 210);
-                                    setSelectedPaperSize('custom');
-                                  }}
-                                  style={{
-                                    width: '100%',
-                                    padding: '3px 5px',
-                                    fontSize: '11px',
-                                    backgroundColor: 'var(--bg-main)',
-                                    border: '1px solid var(--border-strong)',
-                                    borderRadius: '4px',
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
-                                  }}
-                                />
-                              </div>
-                              <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>×</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
-                                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>H:</span>
-                                <input
-                                  type="number"
-                                  min={50}
-                                  max={1500}
-                                  value={customPaperHeightMm}
-                                  onChange={(e) => {
-                                    setCustomPaperHeightMm(Number(e.target.value) || 297);
-                                    setSelectedPaperSize('custom');
-                                  }}
-                                  style={{
-                                    width: '100%',
-                                    padding: '3px 5px',
-                                    fontSize: '11px',
-                                    backgroundColor: 'var(--bg-main)',
-                                    border: '1px solid var(--border-strong)',
-                                    borderRadius: '4px',
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>,
-                        document.body
-                      )}
-                    </div>
 
                     {/* Download / Export Options Button & Popover */}
                     <div style={{ position: 'relative', display: 'inline-flex' }}>
@@ -5938,16 +6774,19 @@ ${exportText}
                         justifyContent: 'center',
                         width: '24px',
                         height: '24px',
+                        padding: 0,
+                        flexShrink: 0,
                         borderRadius: '4px',
                         backgroundColor: 'transparent',
                         border: '1px solid transparent',
                         color: 'var(--text-muted)',
                         cursor: 'pointer',
+                        transition: 'all 0.12s ease',
                       }}
                       className="hover-subtle"
-                      title="Zoom Out"
+                      title="Zoom Out (-10%)"
                     >
-                      <Minus size={13} />
+                      <Minus size={13} strokeWidth={2.2} />
                     </button>
 
                     {/* Zoom Plus Button */}
@@ -5960,16 +6799,19 @@ ${exportText}
                         justifyContent: 'center',
                         width: '24px',
                         height: '24px',
+                        padding: 0,
+                        flexShrink: 0,
                         borderRadius: '4px',
                         backgroundColor: 'transparent',
                         border: '1px solid transparent',
                         color: 'var(--text-muted)',
                         cursor: 'pointer',
+                        transition: 'all 0.12s ease',
                       }}
                       className="hover-subtle"
-                      title="Zoom In"
+                      title="Zoom In (+10%)"
                     >
-                      <Plus size={13} />
+                      <Plus size={13} strokeWidth={2.2} />
                     </button>
 
                     {/* Zoom Dropdown Button */}
@@ -6077,17 +6919,96 @@ ${exportText}
                 {isLogDrawerOpen && (
                   <div
                     style={{
-                      maxHeight: '220px',
+                      maxHeight: '260px',
                       backgroundColor: 'var(--bg-surface)',
                       borderBottom: '1px solid var(--border-subtle)',
                       boxShadow: 'var(--shadow-md)',
                       display: 'flex',
                       flexDirection: 'column',
+                      overflowX: 'hidden',
                       overflowY: 'auto',
-                      padding: '10px 14px',
+                      padding: '10px 12px',
                       zIndex: 20,
+                      boxSizing: 'border-box',
+                      width: '100%',
                     }}
                   >
+                    {/* Filter Tabs Header */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '6px',
+                        marginBottom: '8px',
+                        flexWrap: 'wrap',
+                        borderBottom: '1px solid var(--border-subtle)',
+                        paddingBottom: '6px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                        {[
+                          { id: 'all', label: language === 'id' ? 'Semua' : 'All', count: lintResults.totalLogs },
+                          { id: 'errors', label: 'Errors', count: lintResults.errors.length, color: '#EF4444' },
+                          { id: 'warnings', label: 'Warnings', count: lintResults.warnings.length, color: '#F59E0B' },
+                          { id: 'info', label: 'Info', count: lintResults.infos.length, color: 'var(--brand-primary)' },
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveLogTab(tab.id as any)}
+                            style={{
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: activeLogTab === tab.id ? 700 : 500,
+                              backgroundColor: activeLogTab === tab.id ? 'var(--bg-subtle)' : 'transparent',
+                              border: `1px solid ${activeLogTab === tab.id ? 'var(--border-strong)' : 'transparent'}`,
+                              color: activeLogTab === tab.id ? (tab.color || 'var(--text-primary)') : 'var(--text-muted)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <span>{tab.label}</span>
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                padding: '0 4px',
+                                borderRadius: '10px',
+                                backgroundColor: activeLogTab === tab.id ? 'var(--border-subtle)' : 'rgba(0,0,0,0.05)',
+                                color: tab.color || 'inherit',
+                                fontWeight: 650,
+                              }}
+                            >
+                              {tab.count}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsLogDrawerOpen(false)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: '2px 4px',
+                          fontSize: '11px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                        }}
+                        title={language === 'id' ? 'Tutup Panel' : 'Close Panel'}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+
                     {(() => {
                       const displayed =
                         activeLogTab === 'errors'
@@ -6112,8 +7033,7 @@ ${exportText}
                           key={d.id}
                           style={{
                             display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'space-between',
+                            flexDirection: 'column',
                             padding: '8px 10px',
                             borderRadius: '6px',
                             backgroundColor:
@@ -6125,81 +7045,141 @@ ${exportText}
                             borderLeft: `3px solid ${
                               d.type === 'error' ? '#EF4444' : d.type === 'warning' ? '#F59E0B' : 'var(--brand-primary)'
                             }`,
+                            border: `1px solid ${
+                              d.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : d.type === 'warning' ? 'rgba(245, 158, 11, 0.2)' : 'var(--border-subtle)'
+                            }`,
+                            borderLeftWidth: '3px',
                             marginBottom: '6px',
-                            gap: '8px',
+                            gap: '6px',
+                            boxSizing: 'border-box',
+                            width: '100%',
+                            minWidth: 0,
                           }}
                         >
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          {/* Card Top Row: Badge + Location + Quick Actions */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              flexWrap: 'wrap',
+                              gap: '6px',
+                              width: '100%',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
                               <span
                                 style={{
                                   fontSize: '10px',
                                   fontWeight: 700,
                                   textTransform: 'uppercase',
+                                  letterSpacing: '0.4px',
                                   color: d.type === 'error' ? '#EF4444' : d.type === 'warning' ? '#F59E0B' : 'var(--brand-primary)',
+                                  backgroundColor:
+                                    d.type === 'error'
+                                      ? 'rgba(239, 68, 68, 0.12)'
+                                      : d.type === 'warning'
+                                      ? 'rgba(245, 158, 11, 0.12)'
+                                      : 'rgba(0, 115, 234, 0.12)',
+                                  padding: '1px 5px',
+                                  borderRadius: '3px',
+                                  flexShrink: 0,
                                 }}
                               >
                                 {d.type}
                               </span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
                                 Baris {d.line} ({d.fileName || 'main.tex'})
                               </span>
                             </div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500 }}>
-                              {d.message}
-                            </div>
-                            {d.suggestion && (
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                💡 {d.suggestion}
-                              </div>
-                            )}
-                          </div>
 
-                          {/* Quick Actions: Jump to Line & Fix with AI */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                jumpToLine(d.line - 1);
-                              }}
-                              style={{
-                                padding: '3px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: 'var(--bg-surface)',
-                                border: '1px solid var(--border-subtle)',
-                                color: 'var(--text-primary)',
-                                fontSize: '11px',
-                                fontWeight: 500,
-                                cursor: 'pointer',
-                              }}
-                              className="hover-subtle"
-                            >
-                              Lompat ke Baris
-                            </button>
-                            {d.type === 'error' && (
+                            {/* Actions */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0, flexWrap: 'wrap' }}>
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setActiveDrawerTab('ai');
-                                  if (!isSidebarOpen) toggleSidebar();
+                                  jumpToLine(d.line - 1);
                                 }}
                                 style={{
                                   padding: '3px 8px',
                                   borderRadius: '4px',
-                                  backgroundColor: 'rgba(0, 115, 234, 0.12)',
-                                  border: '1px solid rgba(0, 115, 234, 0.3)',
-                                  color: 'var(--brand-primary)',
+                                  backgroundColor: 'var(--bg-surface)',
+                                  border: '1px solid var(--border-subtle)',
+                                  color: 'var(--text-primary)',
                                   fontSize: '11px',
-                                  fontWeight: 600,
+                                  fontWeight: 500,
                                   cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
+                                  whiteSpace: 'nowrap',
+                                }}
+                                className="hover-subtle"
+                              >
+                                Lompat ke Baris
+                              </button>
+                              {d.type === 'error' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const errorMsg = d.message || '';
+                                    const suggestion = d.suggestion ? `\nSaran: ${d.suggestion}` : '';
+                                    const fileCtx = d.fileName ? ` di file ${d.fileName}` : '';
+                                    const prompt = `Tolong perbaiki error LaTeX berikut${fileCtx} (baris ${d.line}):\n\n${errorMsg}${suggestion}\n\nTampilkan kode yang sudah diperbaiki.`;
+                                    setCopilotPendingPrompt(prompt);
+                                    setActiveDrawerTab('ai');
+                                    if (!isSidebarOpen) toggleSidebar();
+                                  }}
+                                  style={{
+                                    padding: '3px 8px',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'rgba(0, 115, 234, 0.12)',
+                                    border: '1px solid rgba(0, 115, 234, 0.3)',
+                                    color: 'var(--brand-primary)',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  <Sparkles size={11} />
+                                  <span>Perbaiki AI</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Body: Full width message and suggestion */}
+                          <div style={{ width: '100%', minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontSize: '12px',
+                                color: 'var(--text-primary)',
+                                fontWeight: 500,
+                                lineHeight: '1.45',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'anywhere',
+                              }}
+                            >
+                              {d.message}
+                            </div>
+                            {d.suggestion && (
+                              <div
+                                style={{
+                                  fontSize: '11px',
+                                  color: 'var(--text-muted)',
+                                  marginTop: '4px',
+                                  lineHeight: '1.4',
+                                  wordBreak: 'break-word',
+                                  overflowWrap: 'anywhere',
+                                  backgroundColor: 'rgba(0,0,0,0.02)',
+                                  padding: '4px 6px',
+                                  borderRadius: '4px',
+                                  border: '1px dashed var(--border-subtle)',
                                 }}
                               >
-                                <Sparkles size={11} />
-                                <span>Perbaiki AI</span>
-                              </button>
+                                💡 {d.suggestion}
+                              </div>
                             )}
                           </div>
                         </div>

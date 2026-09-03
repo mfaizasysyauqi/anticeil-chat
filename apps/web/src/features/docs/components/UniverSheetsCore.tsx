@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { LocaleType, IWorkbookData, IDisposable } from '@univerjs/core';
 import type { FUniver } from '@univerjs/core/facade';
 import type { FWorkbook } from '@univerjs/sheets/facade';
+import { parseWorkbook, convertToUniverWorkbook } from 'antsheet';
+
 
 import '@univerjs/design/lib/index.css';
 import '@univerjs/ui/lib/index.css';
@@ -15,6 +17,7 @@ import './univer-anticeil-theme.css';
 export interface UniverSheetsCoreProps {
   initialContent?: string;
   onContentChange?: (serialized: string) => void;
+  readOnly?: boolean;
 }
 
 const DEFAULT_ROWS = 80;
@@ -92,12 +95,35 @@ function jsonWorkbookFromMatrix(matrix: string[][]): IWorkbookData {
 function tryParseWorkbook(raw: string): IWorkbookData | null {
   if (!raw || !raw.trim()) return null;
 
+  // 1. AntSheet format detection
+  const isAntsheet =
+    raw.startsWith('#') ||
+    raw.includes('## Cells') ||
+    raw.includes('## Meta') ||
+    raw.includes('## Merges') ||
+    raw.includes('## Charts') ||
+    raw.includes('## DataValidation') ||
+    raw.includes('## ConditionalFormatting') ||
+    /^[A-Z]+\d+\s*=/m.test(raw);
+
+  if (isAntsheet) {
+    try {
+      const wb = parseWorkbook(raw);
+      if (wb.sheets.length > 0) {
+        return convertToUniverWorkbook(wb) as unknown as IWorkbookData;
+      }
+    } catch (e) {
+      console.warn('[UniverSheetsCore] Failed to parse as AntSheet:', e);
+    }
+  }
+
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object') {
       if ('sheets' in parsed && 'sheetOrder' in parsed) {
         return parsed as IWorkbookData;
       }
+
       if (Array.isArray((parsed as any).rawMatrix)) {
         return jsonWorkbookFromMatrix((parsed as any).rawMatrix);
       }
@@ -188,6 +214,7 @@ function tryParseWorkbook(raw: string): IWorkbookData | null {
 const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
   initialContent = '',
   onContentChange,
+  readOnly = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const univerInstanceRef = useRef<any>(null);
@@ -281,6 +308,7 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
     let rafId: number | null = null;
     let mountTimer: ReturnType<typeof setTimeout> | null = null;
     let themeObserver: MutationObserver | null = null;
+    let contextMenuObserver: MutationObserver | null = null;
 
     const handleError = (reason?: string) => {
       if (cancelled || myRunId !== runIdRef.current || !isMountedRef.current) return;
@@ -332,6 +360,19 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
         ]);
         const out: Record<string, any> = {};
         for (const p of parts) if (p) deepMerge(out, p);
+        deepMerge(out, {
+          'sheets-ui': {
+            info: {
+              error: 'Error: Nilai tidak valid (#VALUE!)',
+              detail: 'Formula menghasilkan kesalahan kalkulasi.',
+              tip: 'Pastikan sel referensi berisi angka dan bukan teks acak.',
+              forceStringInfo: 'Sel ini disimpan sebagai teks.',
+              formulaError: 'Formula menghasilkan error.',
+              notSupport: 'Fitur ini tidak didukung.',
+              rangeError: 'Rentang sel tidak valid.',
+            },
+          },
+        });
         return out;
       }
       const parts = await Promise.all([
@@ -350,6 +391,13 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
       ]);
       const out: Record<string, any> = {};
       for (const p of parts) if (p) deepMerge(out, p);
+      deepMerge(out, {
+        'sheets-ui': {
+          info: {
+            error: 'Formula Error',
+          },
+        },
+      });
       return out;
     };
 
@@ -458,24 +506,45 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
         mountTimer = setTimeout(() => {
           if (cancelled || myRunId !== runIdRef.current || !isMountedRef.current) return;
           try {
+            const isLight = () =>
+              typeof document !== 'undefined' &&
+              document.documentElement.getAttribute('data-theme') === 'light';
+
+            if (!isLight()) {
+              finalContainer.classList.add('univer-dark');
+            } else {
+              finalContainer.classList.remove('univer-dark');
+            }
+
+            if (readOnly) {
+              finalContainer.classList.add('univer-readonly-preview');
+            }
+
             const univerOpts: any = { locale, locales };
             const univer: any = new Univer(univerOpts);
             univer.registerPlugin(UniverRenderEnginePlugin);
             univer.registerPlugin(UniverFormulaEnginePlugin);
             univer.registerPlugin(UniverUIPlugin, {
               container: finalContainer,
-              header: true,
+              header: !readOnly,
               footer: true,
             });
             univer.registerPlugin(UniverDocsPlugin, {
               hasScroll: false,
             });
             univer.registerPlugin(UniverDocsUIPlugin);
-            univer.registerPlugin(UniverSheetsPlugin);
-            univer.registerPlugin(UniverSheetsUIPlugin);
+            univer.registerPlugin(UniverSheetsUIPlugin, readOnly ? {
+              footer: {
+                addSheetButtonConfig: {
+                  show: false,
+                },
+              },
+            } : undefined);
             univer.registerPlugin(UniverSheetsNumfmtPlugin);
             univer.registerPlugin(UniverSheetsFormulaPlugin);
-            univer.registerPlugin(UniverSheetsFormulaUIPlugin);
+            if (!readOnly) {
+              univer.registerPlugin(UniverSheetsFormulaUIPlugin);
+            }
 
             univerInstanceRef.current = univer;
             const univerAPI: FUniver = FUniver.newAPI(univer);
@@ -489,15 +558,16 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
 
             // TAHAP 5: Buat workbook
             console.log('[UniverSheetsCore] runId=', myRunId, '→ tahap 5/6: create workbook + register listeners');
-            // Anticeil uses data-theme='light' for light; default (no attr / 'dark') = dark
-            const isLight = () =>
-              typeof document !== 'undefined' &&
-              document.documentElement.getAttribute('data-theme') === 'light';
             try { univerAPI.toggleDarkMode(!isLight()); } catch { /* ignore */ }
 
             // Keep Univer in sync when user switches theme
             themeObserver = new MutationObserver(() => {
-              try { univerAPI.toggleDarkMode(!isLight()); } catch { /* ignore */ }
+              const dark = !isLight();
+              try { univerAPI.toggleDarkMode(dark); } catch { /* ignore */ }
+              if (finalContainer) {
+                if (dark) finalContainer.classList.add('univer-dark');
+                else finalContainer.classList.remove('univer-dark');
+              }
             });
             themeObserver.observe(document.documentElement, {
               attributes: true,
@@ -506,6 +576,28 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
 
             const workbook = univerAPI.createWorkbook(initialWorkbook as any);
             workbookRef.current = workbook;
+
+            // In read-only preview mode: enforce hiding the + (add sheet) button from the sheet tabs area only
+            if (readOnly && finalContainer) {
+              const hideAddSheetButtons = () => {
+                const addButtons = finalContainer.querySelectorAll(
+                  '.univer-mr-2, [class*="univer-mr-2"], [class*="sheet-bar-add"], [class*="sheet-tab-add"], [class*="add-sheet"], [class*="sheet-add"]'
+                );
+                addButtons.forEach((el) => {
+                  if (!el.closest('[class*="zoom"], [class*="slider"]')) {
+                    (el as HTMLElement).style.setProperty('display', 'none', 'important');
+                    (el as HTMLElement).style.setProperty('visibility', 'hidden', 'important');
+                    (el as HTMLElement).style.setProperty('width', '0px', 'important');
+                    (el as HTMLElement).style.setProperty('pointer-events', 'none', 'important');
+                  }
+                });
+              };
+
+              hideAddSheetButtons();
+              const footerObserver = new MutationObserver(hideAddSheetButtons);
+              footerObserver.observe(finalContainer, { childList: true, subtree: true });
+            }
+
 
             // Register comprehensive event logs
             try {
@@ -550,38 +642,106 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
               console.warn('[UniverSheetsCore] gagal register listener:', e);
             }
 
-            // DOM Event Listeners for diagnostics
-            const handleDomClick = (e: MouseEvent) => {
-              const target = e.target as HTMLElement;
-              console.log('[Univer:DOM:click]', {
-                targetTag: target?.tagName,
-                targetClass: target?.className,
-                x: e.clientX,
-                y: e.clientY,
-              });
-            };
+            // Read-Only Enforcement Event Handlers (Capture phase)
             const handleDomDblClick = (e: MouseEvent) => {
-              const target = e.target as HTMLElement;
-              console.log('[Univer:DOM:dblclick]', {
-                targetTag: target?.tagName,
-                targetClass: target?.className,
-                x: e.clientX,
-                y: e.clientY,
-              });
-            };
-            const handleDomKeyDown = (e: KeyboardEvent) => {
-              const target = e.target as HTMLElement;
-              console.log('[Univer:DOM:keydown]', {
-                key: e.key,
-                code: e.code,
-                targetTag: target?.tagName,
-                targetClass: target?.className,
-              });
+              if (readOnly) {
+                // Prevent activating inline cell editor
+                e.preventDefault();
+                e.stopPropagation();
+              }
             };
 
-            finalContainer.addEventListener('click', handleDomClick);
-            finalContainer.addEventListener('dblclick', handleDomDblClick);
-            finalContainer.addEventListener('keydown', handleDomKeyDown);
+            const handleDomKeyDown = (e: KeyboardEvent) => {
+              if (readOnly) {
+                // Allow clipboard copy (Ctrl+C / Cmd+C)
+                const isCopy = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c';
+                // Allow navigation keys (Arrow keys, PageUp/Down, Home, End, Tab, Esc)
+                const isNav = [
+                  'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+                  'PageUp', 'PageDown', 'Home', 'End', 'Tab', 'Escape',
+                ].includes(e.key);
+                // Allow Ctrl+A / Cmd+A (select all)
+                const isSelectAll = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a';
+
+                if (!isCopy && !isNav && !isSelectAll) {
+                  // Block Enter, Backspace, Delete, F2, typing characters, Ctrl+V (paste), Ctrl+X (cut), Ctrl+Z (undo)
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }
+            };
+
+            const handleDomPaste = (e: ClipboardEvent) => {
+              if (readOnly) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            };
+
+            const handleDomCut = (e: ClipboardEvent) => {
+              if (readOnly) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            };
+
+            const handleDomContextMenu = (e: MouseEvent) => {
+              if (readOnly) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            };
+
+            const handleDomPointerDown = (e: MouseEvent | PointerEvent) => {
+              if (readOnly && (e.button === 2 || (e as MouseEvent).buttons === 2)) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            };
+
+            // Global MutationObserver to completely block Univer context menu popups in read-only mode
+            if (readOnly && typeof document !== 'undefined') {
+              contextMenuObserver = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                  for (const node of Array.from(mutation.addedNodes)) {
+                    if (node instanceof HTMLElement) {
+                      const popups = node.matches('[class*="context-menu"], [class*="popup"], [class*="dropdown"], [class*="univer-popup"], [class*="univer-context-menu"]')
+                        ? [node]
+                        : Array.from(node.querySelectorAll<HTMLElement>('[class*="context-menu"], [class*="popup"], [class*="dropdown"], [class*="univer-popup"], [class*="univer-context-menu"]'));
+
+                      for (const popup of popups) {
+                        popup.style.setProperty('display', 'none', 'important');
+                        popup.style.setProperty('pointer-events', 'none', 'important');
+                        popup.style.setProperty('visibility', 'hidden', 'important');
+                        popup.style.setProperty('opacity', '0', 'important');
+                      }
+                    }
+                  }
+                }
+              });
+
+              contextMenuObserver.observe(document.body, { childList: true, subtree: true });
+            }
+
+            const handleFooterWheel = (e: WheelEvent) => {
+              const footer = (e.target as HTMLElement)?.closest?.('[class*="sheet-bar"], [class*="footer"], [data-u-comp="slide-tab-bar"]');
+              if (footer && (e.deltaY !== 0 || e.deltaX !== 0)) {
+                const scrollable = footer.querySelector<HTMLElement>('[data-u-comp="slide-tab-bar"]') || (footer as HTMLElement);
+                if (scrollable && scrollable.scrollWidth > scrollable.clientWidth) {
+                  scrollable.scrollLeft += e.deltaY || e.deltaX;
+                }
+              }
+            };
+
+            finalContainer.addEventListener('dblclick', handleDomDblClick, { capture: true });
+            finalContainer.addEventListener('keydown', handleDomKeyDown, { capture: true });
+            finalContainer.addEventListener('paste', handleDomPaste as any, { capture: true });
+            finalContainer.addEventListener('cut', handleDomCut as any, { capture: true });
+            finalContainer.addEventListener('contextmenu', handleDomContextMenu, { capture: true });
+            finalContainer.addEventListener('pointerdown', handleDomPointerDown as any, { capture: true });
+            finalContainer.addEventListener('mousedown', handleDomPointerDown as any, { capture: true });
+            finalContainer.addEventListener('mouseup', handleDomPointerDown as any, { capture: true });
+            finalContainer.addEventListener('wheel', handleFooterWheel, { passive: true });
 
             finalContainer.style.setProperty('--univer-background-color', 'transparent');
             console.log('[UniverSheetsCore] runId=', myRunId, '✅ UNIVER BERHASIL MOUNT & READY ✅');
@@ -608,12 +768,19 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
         changeTimerRef.current = null;
       }
       try { themeObserver?.disconnect(); themeObserver = null; } catch { /* noop */ }
+      try { contextMenuObserver?.disconnect(); contextMenuObserver = null; } catch { /* noop */ }
+      try { (window as any)?.__univerReadonlyObserver?.disconnect?.(); } catch { /* noop */ }
       try { eventSubRef.current?.dispose?.(); } catch { /* noop */ }
       eventSubRef.current = null;
       univerApiRef.current = null;
       workbookRef.current = null;
-      try { univerInstanceRef.current?.dispose?.(); } catch { /* noop */ }
+      const instanceToDispose = univerInstanceRef.current;
       univerInstanceRef.current = null;
+      if (instanceToDispose) {
+        setTimeout(() => {
+          try { instanceToDispose.dispose?.(); } catch { /* noop */ }
+        }, 0);
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -705,8 +872,8 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
             borderRadius: '50%',
             animation: 'spin 0.9s linear infinite',
           }} />
-          <div>
-            Memuat Univer Spreadsheet Engine...
+          <div style={{ textAlign: 'center' }}>
+            Memuat Anticeil Spreadsheet Engine...
             <span style={{ opacity: 0.55, fontSize: '11.5px', display: 'block', marginTop: 4 }}>
               (mode dev mungkin agak lama karena compile modules)
             </span>
@@ -738,15 +905,16 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
             borderRadius: 10,
             border: '1px solid #ef444433',
             backgroundColor: '#ef444410',
+            textAlign: 'center',
           }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#ef4444', marginBottom: 8 }}>
-              ❌ Univer Spreadsheet gagal dimuat
+              ❌ Anticeil Spreadsheet gagal dimuat
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginBottom: 10, fontFamily: "'JetBrains Mono', monospace", wordBreak: 'break-all' }}>
               {initError || 'Unknown error'}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              Pastikan semua package <code style={{ background: 'var(--bg-subtle)', padding: '1px 6px', borderRadius: 4, fontSize: 11 }}>@univerjs/*</code> versi 0.25.1 sudah terinstall dengan benar.
+              Pastikan engine Anticeil Spreadsheet terkonfigurasi dengan benar.
               Refresh halaman (F5) atau restart dev server jika perlu.
             </div>
           </div>

@@ -42,6 +42,7 @@ export function DocsSlideView() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [slideScrollTop, setSlideScrollTop] = useState(0);
 
   // Split raw markdown into individual slide chunks using '---' delimiter
   const rawContent = activeDoc?.content || '';
@@ -405,28 +406,63 @@ export function DocsSlideView() {
             <span>{slides.length} Slide Terdeteksi</span>
           </div>
 
-          <textarea
-            ref={textareaRef}
-            value={rawContent}
-            onChange={(e) => {
-              if (activeDoc) updateDocumentContent(activeDoc.id, e.target.value);
-            }}
-            placeholder="Tulis konten slide dengan Markdown...\nGunakan --- untuk slide berikutnya."
-            style={{
-              width: '100%',
-              height: '100%',
-              padding: '16px 20px',
-              backgroundColor: 'var(--bg-main)',
-              color: 'var(--text-primary)',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '13px',
-              lineHeight: '1.6',
-              border: 'none',
-              outline: 'none',
-              resize: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
+          <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', height: '100%', minHeight: 0 }}>
+            {/* Line numbers gutter */}
+            <div
+              aria-hidden="true"
+              style={{
+                width: '46px',
+                paddingTop: '16px',
+                paddingBottom: '16px',
+                paddingRight: '10px',
+                textAlign: 'right',
+                color: 'var(--text-muted)',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '13px',
+                lineHeight: '1.6',
+                userSelect: 'none',
+                overflow: 'hidden',
+                borderRight: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-main)',
+                flexShrink: 0,
+                boxSizing: 'border-box',
+              }}
+            >
+              <div style={{ transform: `translateY(-${slideScrollTop}px)` }}>
+                {Array.from({ length: Math.max(1, rawContent.split('\n').length) }).map((_, i) => (
+                  <div key={i} style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              ref={textareaRef}
+              value={rawContent}
+              onScroll={(e) => setSlideScrollTop(e.currentTarget.scrollTop)}
+              onChange={(e) => {
+                if (activeDoc) updateDocumentContent(activeDoc.id, e.target.value);
+              }}
+              placeholder="Tulis konten slide dengan Markdown...\nGunakan --- untuk slide berikutnya."
+              style={{
+                width: '100%',
+                height: '100%',
+                padding: '16px 20px',
+                backgroundColor: 'var(--bg-main)',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '13px',
+                lineHeight: '1.6',
+                whiteSpace: 'pre',
+                overflow: 'auto',
+                border: 'none',
+                outline: 'none',
+                resize: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
         </div>
 
         {/* Right: Live 16:9 Slide Canvas Preview */}
