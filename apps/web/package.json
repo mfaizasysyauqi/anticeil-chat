@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
+    "prebuild": "pnpm --filter antsheet build",
     "build": "NODE_OPTIONS=--max-old-space-size=6144 next build",
-    "build:worker": "NODE_OPTIONS=--max-old-space-size=6144 opennextjs-cloudflare build",
-    "deploy": "opennextjs-cloudflare build && wrangler deploy",
+    "build:worker": "pnpm --filter antsheet build && NODE_OPTIONS=--max-old-space-size=6144 opennextjs-cloudflare build",
+    "deploy": "pnpm --filter antsheet build && opennextjs-cloudflare build && wrangler deploy",
     "start": "next start",
     "lint": "next lint",
     "check-types": "next typegen && tsc --noEmit"
