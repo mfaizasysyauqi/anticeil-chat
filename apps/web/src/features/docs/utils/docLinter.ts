@@ -481,8 +481,119 @@ function lintCsv(content: string, activeFileName: string): LintResult {
 }
 
 /**
+ * Linter for Anticeil Spreadsheet files (.antsheet)
+ */
+function lintAntsheet(content: string, activeFileName: string): LintResult {
+  const errors: DocDiagnostic[] = [];
+  const warnings: DocDiagnostic[] = [];
+  const infos: DocDiagnostic[] = [];
+  const lines = content.split('\n');
+
+  lines.forEach((line, idx) => {
+    const lineNum = idx + 1;
+    const trimmed = line.trim();
+
+    // Formula validation
+    if (trimmed.includes('=')) {
+      const formulaPart = trimmed.substring(trimmed.indexOf('='));
+      let openParen = 0;
+      for (const char of formulaPart) {
+        if (char === '(') openParen++;
+        if (char === ')') openParen--;
+      }
+      if (openParen !== 0) {
+        errors.push({
+          id: `antsheet_paren_${lineNum}`,
+          type: 'error',
+          message: `Formula spreadsheet pada baris ${lineNum} memiliki kurung () yang tidak seimbang.`,
+          line: lineNum,
+          fileName: activeFileName,
+          snippet: trimmed,
+          suggestion: 'Pastikan setiap kurung buka "(" memiliki kurung tutup ")".',
+        });
+      }
+    }
+  });
+
+  if (errors.length === 0) {
+    infos.push({
+      id: 'antsheet_ok',
+      type: 'info',
+      message: `Formulir & struktur Anticeil Sheet valid (${lines.length} baris).`,
+      line: 1,
+      fileName: activeFileName,
+    });
+  }
+
+  return { errors, warnings, infos, totalLogs: errors.length + warnings.length + infos.length };
+}
+
+/**
+ * Linter for Anticeil Presentation files (.slide)
+ */
+function lintSlide(content: string, activeFileName: string): LintResult {
+  const errors: DocDiagnostic[] = [];
+  const warnings: DocDiagnostic[] = [];
+  const infos: DocDiagnostic[] = [];
+  const lines = content.split('\n');
+
+  let codeBlockOpen = false;
+  let mathBlockOpen = false;
+  let slideCount = 1;
+
+  lines.forEach((line, idx) => {
+    const lineNum = idx + 1;
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('```')) {
+      codeBlockOpen = !codeBlockOpen;
+    }
+
+    if (trimmed === '$$') {
+      mathBlockOpen = !mathBlockOpen;
+    }
+
+    if (trimmed === '---') {
+      slideCount++;
+    }
+  });
+
+  if (codeBlockOpen) {
+    errors.push({
+      id: 'slide_codeblock_unclosed',
+      type: 'error',
+      message: 'Blok kode (```) belum ditutup.',
+      line: lines.length,
+      fileName: activeFileName,
+      suggestion: 'Tambahkan ``` di akhir blok kode.',
+    });
+  }
+
+  if (mathBlockOpen) {
+    errors.push({
+      id: 'slide_mathblock_unclosed',
+      type: 'error',
+      message: 'Blok rumus matematika ($$) belum ditutup.',
+      line: lines.length,
+      fileName: activeFileName,
+      suggestion: 'Tambahkan $$ untuk menutup rumus matematika.',
+    });
+  }
+
+  infos.push({
+    id: 'slide_info',
+    type: 'info',
+    message: `Presentasi Anticeil Slide valid dengan ${slideCount} slide.`,
+    line: 1,
+    fileName: activeFileName,
+  });
+
+  return { errors, warnings, infos, totalLogs: errors.length + warnings.length + infos.length };
+}
+
+/**
  * Main linter dispatcher — automatically applies the correct validation rules
- * based on file extension (.tex, .md, .bib, .json, .csv, etc.)
+ * based on file extension (.tex, .md, .bib, .json, .csv, .antsheet, .slide)
  */
 export function lintDocumentContent(
   content: string,
@@ -518,6 +629,10 @@ export function lintDocumentContent(
       return lintJson(content, activeFileName);
     case 'csv':
       return lintCsv(content, activeFileName);
+    case 'antsheet':
+      return lintAntsheet(content, activeFileName);
+    case 'slide':
+      return lintSlide(content, activeFileName);
     case 'tex':
     case 'sty':
     case 'cls':

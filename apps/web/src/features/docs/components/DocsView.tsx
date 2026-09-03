@@ -211,7 +211,7 @@ import { AuthModal } from '../../auth/components/AuthModal';
 import { getBundledDocContent } from '../utils/docResolver';
 import { lintDocumentContent, DocDiagnostic } from '../utils/docLinter';
 import { compileLatexToHtml } from '../utils/latexCompiler';
-import { DocsCopilotSidebar } from './DocsCopilotSidebar';
+import { DocsCoAuthorSidebar } from './DocsCoAuthorSidebar';
 import { DocsTemplateModal } from './DocsTemplateModal';
 import { DocsLandingView } from './DocsLandingView';
 import { DocsGeneratingView } from './DocsGeneratingView';
@@ -230,7 +230,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const studioPhase = useDocsStore((s) => s.studioPhase);
   const viewMode = useDocsStore((s) => s.viewMode);
-  const isCopilotOpen = useDocsStore((s) => s.isCopilotOpen);
+  const isCoAuthorOpen = useDocsStore((s) => s.isCopilotOpen);
   const isSidebarOpen = useDocsStore((s) => s.isSidebarOpen);
 
   const setStudioPhase = useDocsStore((s) => s.setStudioPhase);
@@ -242,9 +242,9 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const deleteDocument = useDocsStore((s) => s.deleteDocument);
   const togglePin = useDocsStore((s) => s.togglePin);
   const setViewMode = useDocsStore((s) => s.setViewMode);
-  const toggleCopilot = useDocsStore((s) => s.toggleCopilot);
+  const toggleCoAuthor = useDocsStore((s) => s.toggleCopilot);
   const toggleSidebar = useDocsStore((s) => s.toggleSidebar);
-  const setCopilotPendingPrompt = useDocsStore((s) => s.setCopilotPendingPrompt);
+  const setCoAuthorPendingPrompt = useDocsStore((s) => s.setCopilotPendingPrompt);
 
   // Overleaf-style Sub-file Store Actions
   const createSubFile = useDocsStore((s) => s.createSubFile);
@@ -303,20 +303,30 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const displayEmail = user?.email || '-';
 
   // Mini Sidebar & Active Drawer Tab ('files' | 'search' | 'review' | 'ai')
-  const [activeDrawerTab, setActiveDrawerTab] = useState<'files' | 'search' | 'review' | 'ai'>('files');
+  const activeDrawerTab = useDocsStore((s) => s.activeDrawerTab);
+  const setActiveDrawerTab = useDocsStore((s) => s.setActiveDrawerTab);
 
-  // Overleaf-style Review & Comments State
-  const [isAddingComment, setIsAddingComment] = useState(false);
+  // Overleaf-style Review & Comments State (from shared useDocsStore)
+  const isAddingComment = useDocsStore((s) => s.isAddingComment);
+  const setIsAddingComment = useDocsStore((s) => s.setIsAddingComment);
+  const draftSelectedText = useDocsStore((s) => s.draftSelectedText);
+  const draftCharStart = useDocsStore((s) => s.draftCharStart);
+  const draftCharEnd = useDocsStore((s) => s.draftCharEnd);
+  const draftFromLine = useDocsStore((s) => s.draftFromLine);
+  const draftToLine = useDocsStore((s) => s.draftToLine);
+  const activeHighlightedCommentId = useDocsStore((s) => s.activeHighlightedCommentId);
+  const setActiveHighlightedCommentId = useDocsStore((s) => s.setActiveHighlightedCommentId);
+  const commentFilter = useDocsStore((s) => s.commentFilter);
+  const setCommentFilter = useDocsStore((s) => s.setCommentFilter);
+  const commentDomPositions = useDocsStore((s) => s.commentDomPositions);
+  const setCommentDomPositions = useDocsStore((s) => s.setCommentDomPositions);
+  const setDraftCommentInfo = useDocsStore((s) => s.setDraftCommentInfo);
+  const triggerAddCommentFromSelection = useDocsStore((s) => s.triggerAddCommentFromSelection);
+  const registerActiveTextarea = useDocsStore((s) => s.registerActiveTextarea);
+
   const [draftCommentText, setDraftCommentText] = useState('');
-  const [draftSelectedText, setDraftSelectedText] = useState('');
-  const [draftCharStart, setDraftCharStart] = useState<number | null>(null);
-  const [draftCharEnd, setDraftCharEnd] = useState<number | null>(null);
-  const [draftFromLine, setDraftFromLine] = useState(1);
-  const [draftToLine, setDraftToLine] = useState(1);
-  const [activeHighlightedCommentId, setActiveHighlightedCommentId] = useState<string | null>(null);
   const [replyingCommentId, setReplyingCommentId] = useState<string | null>(null);
   const [replyDraftText, setReplyDraftText] = useState('');
-  const [commentFilter, setCommentFilter] = useState<'all' | 'unresolved' | 'resolved'>('unresolved');
   const [editorScrollTop, setEditorScrollTop] = useState(0);
   const [editorScrollLeft, setEditorScrollLeft] = useState(0);
 
@@ -419,58 +429,15 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const symbolButtonRef = useRef<HTMLButtonElement>(null);
   const symbolMenuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (textareaRef.current) {
+      registerActiveTextarea(textareaRef.current);
+    }
+  });
+
   const handleTriggerAddComment = () => {
-    const el = textareaRef.current;
-    if (!activeDoc) return;
-    const text = activeSubFile?.content ?? activeDoc.content ?? '';
-
-    // Use current live textarea selection or fallback to last captured selection
-    let start = el ? el.selectionStart : lastEditorSelectionRef.current.start;
-    let end = el ? el.selectionEnd : lastEditorSelectionRef.current.end;
-
-    // If textarea selection is collapsed (0 or same) but last captured selection had text:
-    if (start === end && lastEditorSelectionRef.current.end > lastEditorSelectionRef.current.start) {
-      start = lastEditorSelectionRef.current.start;
-      end = lastEditorSelectionRef.current.end;
-    }
-
-    let selected = '';
-    let fromLine = 1;
-    let toLine = 1;
-    let charStart: number | null = null;
-    let charEnd: number | null = null;
-
-    if (start !== end && end > start) {
-      selected = text.substring(start, end);
-      charStart = start;
-      charEnd = end;
-      fromLine = text.substring(0, start).split('\n').length;
-      toLine = text.substring(0, end).split('\n').length;
-    } else {
-      const cursor = start ?? 0;
-      fromLine = text.substring(0, cursor).split('\n').length;
-      toLine = fromLine;
-      const lines = text.split('\n');
-      const lineText = lines[fromLine - 1] ?? '';
-      selected = lineText.trim();
-      let lineStart = 0;
-      for (let i = 0; i < fromLine - 1; i++) {
-        lineStart += lines[i].length + 1;
-      }
-      charStart = lineStart;
-      charEnd = lineStart + lineText.length;
-    }
-
-    setDraftSelectedText(selected);
-    setDraftCharStart(charStart);
-    setDraftCharEnd(charEnd);
-    setDraftFromLine(fromLine);
-    setDraftToLine(toLine);
-    setDraftCommentText('');
-    setIsAddingComment(true);
-
-    if (!isSidebarOpen) toggleSidebar();
-    setActiveDrawerTab('review');
+    const text = activeSubFile?.content ?? activeDoc?.content ?? '';
+    triggerAddCommentFromSelection(textareaRef.current, text);
   };
 
   // Global Keyboard Shortcuts (Focus Mode, Hotkeys Modal, Review Panel, Add Comment, Recompile)
@@ -763,7 +730,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   // Subfile & Folder UI state
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
   const [newSubFileName, setNewSubFileName] = useState('');
-  const [newSubFileExt, setNewSubFileExt] = useState('.md');
+  const [newSubFileExt, setNewSubFileExt] = useState('.tex');
   const [isAddingSubFolder, setIsAddingSubFolder] = useState(false);
   const [newSubFolderName, setNewSubFolderName] = useState('');
   const [addingInFolder, setAddingInFolder] = useState<string | null>(null);
@@ -909,7 +876,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   // Panel resize state (widths in px or split ratio 0.2 to 0.8)
   const [leftWidth, setLeftWidth] = useState(252);
   const [editorSplitRatio, setEditorSplitRatio] = useState(0.5); // 0.5 = 50% editor : 50% preview
-  const [copilotWidth, setCopilotWidth] = useState(320);
+  const [coAuthorWidth, setCoAuthorWidth] = useState(320);
   const [isDragging, setIsDragging] = useState(false);
 
   const workspaceSplitRef = useRef<HTMLDivElement>(null);
@@ -943,8 +910,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     };
   }, []);
 
-  // Exact measured physical Y positions of comment highlights in the editor backdrop
-  const [commentDomPositions, setCommentDomPositions] = useState<Record<string, number>>({});
+
 
   // 1. Drag Left Drawer (1:1 Mouse Follow)
   const handleLeftDrawerDragStart = useCallback((e: React.MouseEvent) => {
@@ -1007,18 +973,18 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     window.addEventListener('mouseup', onUp);
   }, []);
 
-  // 3. Drag Copilot Width (1:1 Mouse Follow)
-  const handleCopilotDragStart = useCallback((e: React.MouseEvent) => {
+  // 3. Drag CoAuthor Width (1:1 Mouse Follow)
+  const handleCoAuthorDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
     const startX = e.clientX;
-    const startWidth = copilotWidth;
+    const startWidth = coAuthorWidth;
 
     const onMove = (ev: MouseEvent) => {
       ev.preventDefault();
       const newWidth = Math.max(220, Math.min(650, startWidth - (ev.clientX - startX)));
-      setCopilotWidth(newWidth);
+      setCoAuthorWidth(newWidth);
     };
 
     const onUp = () => {
@@ -1033,7 +999,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     document.body.style.userSelect = 'none';
     window.addEventListener('mousemove', onMove, { passive: false });
     window.addEventListener('mouseup', onUp);
-  }, [copilotWidth]);
+  }, [coAuthorWidth]);
 
   const effectiveDocId = initialDocId || activeDocId;
   const activeDoc = documents.find((d) => d.id === effectiveDocId) || documents[0];
@@ -2720,7 +2686,11 @@ ${exportText}
                 whiteSpace: 'nowrap',
               }}
             >
-              Anticeil
+              {activeDoc?.format === 'slide'
+                ? 'Anticeil Slide'
+                : activeDoc?.format === 'sheet'
+                ? 'Anticeil Sheet'
+                : 'Anticeil Document'}
             </span>
 
             <span style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 3px', opacity: 0.7 }}>/</span>
@@ -3029,7 +2999,7 @@ ${exportText}
                       setIsFocusMode(!isFocusMode);
                       if (!isFocusMode) {
                         if (isSidebarOpen) toggleSidebar();
-                        if (isCopilotOpen) toggleCopilot();
+                        if (isCoAuthorOpen) toggleCoAuthor();
                       }
                       setIsLayoutMenuOpen(false);
                     }}
@@ -3166,7 +3136,7 @@ ${exportText}
                           type="button"
                           onClick={() => {
                             setNewSubFileName('');
-                            setNewSubFileExt('.md');
+                            setNewSubFileExt('.tex');
                             setIsAddingSubFolder(false);
                             setAddingInFolder(null);
                             setIsNewFileModalOpen(true);
@@ -4732,7 +4702,7 @@ ${exportText}
                 {/* TAB 5: AI ASSISTANT / CO-AUTHOR */}
                 {activeDrawerTab === 'ai' && (
                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                    <DocsCopilotSidebar
+                    <DocsCoAuthorSidebar
                       isEmbedded
                       onInsertText={(text) => insertShortcut(text, '', '')}
                       onClose={() => toggleSidebar()}
@@ -5016,7 +4986,12 @@ ${exportText}
             </div>
           ) : activeDoc?.format === 'slide' ? (
             <div style={{ flex: 1, height: '100%', minWidth: 0 }}>
-              <DocsSlideView />
+              <DocsSlideView
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                isFocusMode={isFocusMode}
+                setIsFocusMode={setIsFocusMode}
+              />
             </div>
           ) : (
             <>
@@ -6069,6 +6044,7 @@ ${exportText}
                           end: el.selectionEnd,
                           text: el.value.substring(el.selectionStart, el.selectionEnd),
                         };
+                        (el as any)._lastSelection = { start: el.selectionStart, end: el.selectionEnd };
                       }}
                       onKeyUp={(e) => {
                         const el = e.currentTarget;
@@ -6077,6 +6053,7 @@ ${exportText}
                           end: el.selectionEnd,
                           text: el.value.substring(el.selectionStart, el.selectionEnd),
                         };
+                        (el as any)._lastSelection = { start: el.selectionStart, end: el.selectionEnd };
                       }}
                       onMouseUp={(e) => {
                         const el = e.currentTarget;
@@ -6085,6 +6062,7 @@ ${exportText}
                           end: el.selectionEnd,
                           text: el.value.substring(el.selectionStart, el.selectionEnd),
                         };
+                        (el as any)._lastSelection = { start: el.selectionStart, end: el.selectionEnd };
                       }}
                       onChange={(e) => {
                         if (activeDoc && activeSubFile) {
@@ -7123,7 +7101,7 @@ ${exportText}
                                     const suggestion = d.suggestion ? `\nSaran: ${d.suggestion}` : '';
                                     const fileCtx = d.fileName ? ` di file ${d.fileName}` : '';
                                     const prompt = `Tolong perbaiki error LaTeX berikut${fileCtx} (baris ${d.line}):\n\n${errorMsg}${suggestion}\n\nTampilkan kode yang sudah diperbaiki.`;
-                                    setCopilotPendingPrompt(prompt);
+                                    setCoAuthorPendingPrompt(prompt);
                                     setActiveDrawerTab('ai');
                                     if (!isSidebarOpen) toggleSidebar();
                                   }}
@@ -7831,15 +7809,6 @@ ${exportText}
             <div style={{ padding: '20px' }}>
               {/* Format sections */}
               {([
-                {
-                  label: 'Markdown',
-                  formats: [
-                    { ext: '.md', desc: 'Markdown document', color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
-                    { ext: '.txt', desc: 'Plain text / notes', color: '#6B7280', bg: 'rgba(107,114,128,0.1)' },
-                    { ext: '.yaml', desc: 'Metadata / front-matter', color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
-                    { ext: '.csv', desc: 'Data table', color: '#06B6D4', bg: 'rgba(6,182,212,0.1)' },
-                  ],
-                },
                 {
                   label: 'LaTeX',
                   formats: [

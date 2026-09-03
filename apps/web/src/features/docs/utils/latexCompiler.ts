@@ -469,7 +469,40 @@ function parseLatexTabular(raw: string): string {
     return `\n<h4 class="paper-subsubsec-title"><span class="paper-num">${subSubSecIdx})</span> ${title}</h4>\n`;
   });
 
-  // Basic styling macros
+  // Parse Markdown headers if present (#, ##, ###, ####)
+  body = body.replace(/^#\s+(.+)$/gm, (_m, title) => {
+    if (!meta.title || meta.title === 'Untitled Paper' || meta.title === docTitle) {
+      meta.title = title.trim();
+      return '';
+    }
+    return `\n<h1 class="academic-paper-title">${title.trim()}</h1>\n`;
+  });
+
+  body = body.replace(/^##\s+(.+)$/gm, (_m, title) => {
+    secIdx++;
+    subSecIdx = 0;
+    subSubSecIdx = 0;
+    return `\n<h2 class="paper-sec-title">${title.trim()}</h2>\n`;
+  });
+
+  body = body.replace(/^###\s+(.+)$/gm, (_m, title) => {
+    subSecIdx++;
+    subSubSecIdx = 0;
+    return `\n<h3 class="paper-subsec-title">${title.trim()}</h3>\n`;
+  });
+
+  body = body.replace(/^####\s+(.+)$/gm, (_m, title) => {
+    subSubSecIdx++;
+    return `\n<h4 class="paper-subsubsec-title">${title.trim()}</h4>\n`;
+  });
+
+  // Parse Markdown horizontal rules (--- or ***)
+  body = body.replace(/^---$/gm, '<hr class="paper-divider" style="border: none; border-top: 1px solid var(--border-subtle, #e2e8f0); margin: 18px 0;"/>');
+  body = body.replace(/^\*\*\*$/gm, '<hr class="paper-divider" style="border: none; border-top: 1px solid var(--border-subtle, #e2e8f0); margin: 18px 0;"/>');
+
+  // Basic styling macros & Markdown bold/italic
+  body = body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  body = body.replace(/\*(.*?)\*/g, '<em>$1</em>');
   body = replaceLatexMacro(body, 'textbf', (arg) => `<strong>${arg}</strong>`);
   body = replaceLatexMacro(body, 'textit', (arg) => `<em>${arg}</em>`);
   body = replaceLatexMacro(body, 'emph', (arg) => `<em>${arg}</em>`);

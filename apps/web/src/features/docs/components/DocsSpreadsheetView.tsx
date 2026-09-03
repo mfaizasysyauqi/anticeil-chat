@@ -36,9 +36,17 @@ import {
   ExternalLink,
   Maximize2,
   Minimize2,
+  MessageSquarePlus,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { SplashScreen } from '../../../shared/components/SplashScreen';
+import { CommentBackdrop } from './CommentBackdrop';
+import { selectCommentRange, measureCommentDomPositions } from '../utils/commentUtils';
+import {
+  toolbarBtnStyle,
+  separatorStyle,
+  popoverItemStyle,
+} from '../styles/editorSharedStyles';
 import {
   parseWorkbook,
   parseAntsheet,
@@ -55,7 +63,7 @@ import { evaluateWorkbook } from 'antsheet/formula';
 const UniverSheetsCore = dynamic(() => import('./UniverSheetsCore'), {
   ssr: false,
   loading: () => (
-    <SplashScreen title="Anticeil Sheets" subtitle="Memuat Grid & Spreadsheet Engine..." />
+    <SplashScreen title="Anticeil Sheet" subtitle="Memuat Grid & Spreadsheet Engine..." />
   ),
 });
 
@@ -167,6 +175,18 @@ export function DocsSpreadsheetView({
   const updateDocumentContent = useDocsStore((s) => s.updateDocumentContent);
   const setActiveFileId       = useDocsStore((s) => s.setActiveFileId);
 
+  // Active Comment UI state from store
+  const activeHighlightedCommentId = useDocsStore((s) => s.activeHighlightedCommentId);
+  const isAddingComment = useDocsStore((s) => s.isAddingComment);
+  const draftSelectedText = useDocsStore((s) => s.draftSelectedText);
+  const draftFromLine = useDocsStore((s) => s.draftFromLine);
+  const draftToLine = useDocsStore((s) => s.draftToLine);
+  const draftCharStart = useDocsStore((s) => s.draftCharStart);
+  const draftCharEnd = useDocsStore((s) => s.draftCharEnd);
+  const triggerAddCommentFromSelection = useDocsStore((s) => s.triggerAddCommentFromSelection);
+  const setCommentDomPositions = useDocsStore((s) => s.setCommentDomPositions);
+  const registerActiveTextarea = useDocsStore((s) => s.registerActiveTextarea);
+
   const activeDoc = documents.find((d) => d.id === activeDocId);
   const docFiles = activeDoc?.files || [];
   const activeSubFile = docFiles.find((f) => f.id === activeDoc?.activeFileId) || docFiles[0];
@@ -247,8 +267,46 @@ export function DocsSpreadsheetView({
   const [layoutMenuPos, setLayoutMenuPos] = useState<{ top: number; right: number } | null>(null);
 
   const textareaRef    = useRef<HTMLTextAreaElement>(null);
+  const backdropContainerRef = useRef<HTMLDivElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
   const containerRef   = useRef<HTMLDivElement>(null);
+
+  const [editorScrollTop, setEditorScrollTop] = useState(0);
+  const [editorScrollLeft, setEditorScrollLeft] = useState(0);
+
+  const handleEditorScroll = () => {
+    if (textareaRef.current) {
+      const top = textareaRef.current.scrollTop;
+      const left = textareaRef.current.scrollLeft;
+      setEditorScrollTop(top);
+      setEditorScrollLeft(left);
+      if (lineNumbersRef.current) {
+        lineNumbersRef.current.scrollTop = top;
+      }
+    }
+  };
+
+  // Register active textarea for comment trigger from global/sidebar buttons
+  useEffect(() => {
+    registerActiveTextarea(textareaRef.current);
+  });
+
+  // Sync comment selection when clicked in review panel
+  useEffect(() => {
+    if (activeHighlightedCommentId && activeDoc?.comments) {
+      const comment = activeDoc.comments.find((c) => c.id === activeHighlightedCommentId);
+      if (comment) {
+        selectCommentRange(comment, code, textareaRef.current);
+      }
+    }
+  }, [activeHighlightedCommentId, activeDoc?.comments, code]);
+
+  // Measure comment backdrop DOM positions
+  useEffect(() => {
+    if (!backdropContainerRef.current) return;
+    const map = measureCommentDomPositions(backdropContainerRef.current);
+    setCommentDomPositions(map);
+  }, [code, activeDoc?.comments, isAddingComment, draftFromLine, setCommentDomPositions]);
 
   // Sync initial content on document change
   useEffect(() => {
@@ -987,6 +1045,19 @@ export function DocsSpreadsheetView({
             >
               <Wand2 size={12} />
             </button>
+
+            <div style={separatorStyle} />
+
+            {/* Comment Trigger */}
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => triggerAddCommentFromSelection(textareaRef.current, code)}
+              style={{ ...toolbarBtnStyle, flexShrink: 0 }}
+              title="Tambah Komentar Review (Ctrl+Shift+C)"
+            >
+              <MessageSquarePlus size={12} />
+            </button>
           </div>
 
           {/* 3. Code Editor Textarea Area */}
@@ -1027,43 +1098,92 @@ export function DocsSpreadsheetView({
               ))}
             </div>
 
-            {/* Textarea */}
-            <textarea
-              ref={textareaRef}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onScroll={handleScroll}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              placeholder={`# Sheet Name\n\n## Cells\nA1 = "Hello AntSheet"`}
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                paddingTop: '16px',
-                paddingBottom: '16px',
-                paddingLeft: '16px',
-                paddingRight: '16px',
-                margin: 0,
-                backgroundColor: 'var(--bg-main)',
-                color: 'var(--text-primary)',
-                caretColor: 'var(--brand-primary)',
-                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                fontSize: '12.5px',
-                lineHeight: '21px',
-                tabSize: 2,
-                whiteSpace: 'pre',
-                border: 'none',
-                outline: 'none',
-                resize: 'none',
-                boxSizing: 'border-box',
-                overflowX: 'auto',
-                overflowY: 'auto',
-              }}
-            />
+            {/* Textarea with Comment Backdrop */}
+            <div style={{ position: 'relative', flex: 1, height: '100%', overflow: 'hidden' }}>
+              <CommentBackdrop
+                backdropRef={backdropContainerRef}
+                rawText={code}
+                comments={activeDoc?.comments || []}
+                activeHighlightedCommentId={activeHighlightedCommentId}
+                isAddingComment={isAddingComment}
+                draftSelectedText={draftSelectedText}
+                draftFromLine={draftFromLine}
+                draftToLine={draftToLine}
+                draftCharStart={draftCharStart}
+                draftCharEnd={draftCharEnd}
+                scrollTop={editorScrollTop}
+                scrollLeft={editorScrollLeft}
+                fontStyle={{
+                  fontSize: '12.5px',
+                  lineHeight: '21px',
+                  paddingTop: '16px',
+                  paddingBottom: '16px',
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                }}
+              />
+              <textarea
+                ref={textareaRef}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                onScroll={handleEditorScroll}
+                onSelect={(e) => {
+                  (e.currentTarget as any)._lastSelection = {
+                    start: e.currentTarget.selectionStart,
+                    end: e.currentTarget.selectionEnd,
+                  };
+                }}
+                onKeyUp={(e) => {
+                  (e.currentTarget as any)._lastSelection = {
+                    start: e.currentTarget.selectionStart,
+                    end: e.currentTarget.selectionEnd,
+                  };
+                }}
+                onMouseUp={(e) => {
+                  (e.currentTarget as any)._lastSelection = {
+                    start: e.currentTarget.selectionStart,
+                    end: e.currentTarget.selectionEnd,
+                  };
+                }}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
+                    e.preventDefault();
+                    triggerAddCommentFromSelection(textareaRef.current, code);
+                    return;
+                  }
+                  handleKeyDown(e);
+                }}
+                spellCheck={false}
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                placeholder={`# Sheet Name\n\n## Cells\nA1 = "Hello AntSheet"`}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  paddingTop: '16px',
+                  paddingBottom: '16px',
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                  margin: 0,
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-primary)',
+                  caretColor: 'var(--brand-primary)',
+                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                  fontSize: '12.5px',
+                  lineHeight: '21px',
+                  tabSize: 2,
+                  whiteSpace: 'pre',
+                  border: 'none',
+                  outline: 'none',
+                  resize: 'none',
+                  boxSizing: 'border-box',
+                  overflowX: 'auto',
+                  overflowY: 'auto',
+                }}
+              />
+            </div>
           </div>
         </div>
       ) : null}
@@ -1685,46 +1805,3 @@ export function DocsSpreadsheetView({
     </div>
   );
 }
-
-// ── Overleaf Design Tokens & Shared Styles (exact match to DocsView.tsx) ──────
-const toolbarBtnStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '2px 4px',
-  minWidth: '22px',
-  height: '24px',
-  borderRadius: '4px',
-  border: '1px solid transparent',
-  backgroundColor: 'transparent',
-  color: 'var(--text-secondary)',
-  cursor: 'pointer',
-  fontSize: '11px',
-  transition: 'all 0.15s ease',
-  flexShrink: 0,
-};
-
-const separatorStyle: React.CSSProperties = {
-  width: '1px',
-  height: '14px',
-  backgroundColor: 'var(--border-subtle)',
-  margin: '0 2px',
-  flexShrink: 0,
-};
-
-const popoverItemStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  padding: '6px 8px',
-  borderRadius: '5px',
-  border: 'none',
-  backgroundColor: 'transparent',
-  color: 'var(--text-primary)',
-  fontSize: '12px',
-  fontWeight: 500,
-  cursor: 'pointer',
-  width: '100%',
-  textAlign: 'left',
-  transition: 'background-color 0.12s ease',
-};

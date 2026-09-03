@@ -119,6 +119,30 @@ interface DocsState {
   addCommentReply: (docId: string, commentId: string, reply: Omit<DocCommentReply, 'id' | 'createdAt'>) => void;
   deleteCommentReply: (docId: string, commentId: string, replyId: string) => void;
 
+  // Active comment UI state (Shared across Docs, Slide, Spreadsheet views)
+  activeHighlightedCommentId: string | null;
+  isAddingComment: boolean;
+  draftSelectedText: string;
+  draftFromLine: number;
+  draftToLine: number;
+  draftCharStart: number | null;
+  draftCharEnd: number | null;
+  commentFilter: 'all' | 'unresolved' | 'resolved';
+  commentDomPositions: Record<string, number>;
+
+  // Active sidebar drawer tab state ('files' | 'search' | 'review' | 'ai')
+  activeDrawerTab: 'files' | 'search' | 'review' | 'ai';
+  setActiveDrawerTab: (tab: 'files' | 'search' | 'review' | 'ai') => void;
+
+  activeTextareaElement: HTMLTextAreaElement | null;
+  registerActiveTextarea: (el: HTMLTextAreaElement | null) => void;
+  setActiveHighlightedCommentId: (id: string | null) => void;
+  setIsAddingComment: (isAdding: boolean) => void;
+  setDraftCommentInfo: (info: { selectedText?: string; fromLine?: number; toLine?: number; charStart?: number | null; charEnd?: number | null }) => void;
+  setCommentFilter: (filter: 'all' | 'unresolved' | 'resolved') => void;
+  setCommentDomPositions: (positions: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => void;
+  triggerAddCommentFromSelection: (textareaEl?: HTMLTextAreaElement | null, codeText?: string) => void;
+
   // Actions
   setStudioPhase: (phase: StudioPhase) => void;
   setSelectedFormat: (format: DocFormat) => void;
@@ -351,6 +375,104 @@ export const useDocsStore = create<DocsState>((set, get) => {
     isSidebarOpen: true,
     generatingProgress: 0,
     generatingStep: '',
+
+    // Active comment UI state
+    activeHighlightedCommentId: null,
+    isAddingComment: false,
+    draftSelectedText: '',
+    draftFromLine: 1,
+    draftToLine: 1,
+    draftCharStart: null,
+    draftCharEnd: null,
+    commentFilter: 'unresolved',
+    commentDomPositions: {},
+    // Active sidebar drawer tab state
+    activeDrawerTab: 'files',
+    setActiveDrawerTab: (tab) => set({ activeDrawerTab: tab }),
+
+    activeTextareaElement: null,
+    registerActiveTextarea: (el) => set({ activeTextareaElement: el }),
+    setActiveHighlightedCommentId: (id) => set({ activeHighlightedCommentId: id }),
+    setIsAddingComment: (isAdding) => set({ isAddingComment: isAdding }),
+    setDraftCommentInfo: (info) =>
+      set((s) => ({
+        draftSelectedText: info.selectedText !== undefined ? info.selectedText : s.draftSelectedText,
+        draftFromLine: info.fromLine !== undefined ? info.fromLine : s.draftFromLine,
+        draftToLine: info.toLine !== undefined ? info.toLine : s.draftToLine,
+        draftCharStart: info.charStart !== undefined ? info.charStart : s.draftCharStart,
+        draftCharEnd: info.charEnd !== undefined ? info.charEnd : s.draftCharEnd,
+      })),
+    setCommentFilter: (filter) => set({ commentFilter: filter }),
+    setCommentDomPositions: (positions) =>
+      set((s) => ({
+        commentDomPositions: typeof positions === 'function' ? positions(s.commentDomPositions) : positions,
+      })),
+    triggerAddCommentFromSelection: (textareaEl, codeText) => {
+      const targetEl = textareaEl || get().activeTextareaElement;
+      let selText = '';
+      let fromLine = 1;
+      let toLine = 1;
+      let charStart: number | null = null;
+      let charEnd: number | null = null;
+
+      if (targetEl) {
+        const rawVal = targetEl.value;
+        const lines = rawVal.split('\n');
+
+        let start = targetEl.selectionStart;
+        let end = targetEl.selectionEnd;
+
+        // Fallback to last recorded selection if selection collapsed to (0, 0) on blur
+        const lastSel = (targetEl as any)._lastSelection;
+        if (start === 0 && end === 0 && lastSel && (lastSel.start > 0 || lastSel.end > 0)) {
+          start = lastSel.start;
+          end = lastSel.end;
+        }
+
+        if (end > start) {
+          selText = rawVal.substring(start, end);
+          const textUpToStart = rawVal.substring(0, start);
+          const textUpToEnd = rawVal.substring(0, end);
+          fromLine = textUpToStart.split('\n').length;
+          toLine = textUpToEnd.split('\n').length;
+          charStart = start;
+          charEnd = end;
+        } else {
+          // If no multi-character selection, comment on current cursor line
+          const cursor = start ?? 0;
+          const textUpToCursor = rawVal.substring(0, cursor);
+          fromLine = Math.max(1, Math.min(lines.length, textUpToCursor.split('\n').length));
+          toLine = fromLine;
+          const lineText = lines[fromLine - 1] ?? '';
+          selText = lineText.trim();
+
+          let lineStart = 0;
+          for (let i = 0; i < fromLine - 1 && i < lines.length; i++) {
+            lineStart += lines[i].length + 1;
+          }
+          charStart = lineStart;
+          charEnd = lineStart + lineText.length;
+        }
+      } else if (codeText) {
+        const lines = codeText.split('\n');
+        fromLine = 1;
+        toLine = 1;
+        selText = (lines[0] || '').trim();
+        charStart = 0;
+        charEnd = (lines[0] || '').length;
+      }
+
+      set({
+        isAddingComment: true,
+        draftSelectedText: selText,
+        draftFromLine: fromLine,
+        draftToLine: toLine,
+        draftCharStart: charStart,
+        draftCharEnd: charEnd,
+        isSidebarOpen: true,
+        activeDrawerTab: 'review',
+      });
+    },
     copilotPendingPrompt: null,
     docSnapshots: {},
 
