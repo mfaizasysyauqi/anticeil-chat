@@ -39,15 +39,15 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { CommentBackdrop } from './CommentBackdrop';
 import { selectCommentRange, measureCommentDomPositions } from '../utils/commentUtils';
 import { SplashScreen } from '../../../shared/components/SplashScreen';
+import { DocFileTabsBar, SplitResizeDivider, RecompileSplitButton, FocusModeOverlay } from './shared';
+import { useSplitResize } from '../hooks/useSplitResize';
+import { handleStandardEditorKeyDown } from '../utils/editorKeyUtils';
 import {
-  fileTabsBarStyle,
   editorToolbarStyle,
   toolbarBtnStyle,
   separatorStyle,
   popoverItemStyle,
   previewActionBarStyle,
-  recompileBtnStyle,
-  recompileDropdownArrowStyle,
 } from '../styles/editorSharedStyles';
 
 export interface DocsSlideViewProps {
@@ -109,29 +109,24 @@ export function DocsSlideView({
   const isFocusMode = propFocusMode ?? internalFocusMode;
   const setIsFocusMode = propSetFocusMode ?? setInternalFocusMode;
 
-  const [splitRatio, setSplitRatio] = useState(0.48);
-  const [isResizing, setIsResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { splitRatio, isResizing, startResize } = useSplitResize(containerRef, { defaultRatio: 0.48 });
   const [isCompiling, setIsCompiling] = useState(false);
   const [isAutoCompile, setIsAutoCompile] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(100);
 
   // Popover menus
-  const [isRecompileDropdownOpen, setIsRecompileDropdownOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const [isStructureMenuOpen, setIsStructureMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
-  const recompileButtonRef = useRef<HTMLButtonElement>(null);
   const downloadButtonRef = useRef<HTMLButtonElement>(null);
   const structureButtonRef = useRef<HTMLButtonElement>(null);
   const themeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const [recompileDropdownPos, setRecompileDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const [downloadMenuPos, setDownloadMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [structureMenuPos, setStructureMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [themeMenuPos, setThemeMenuPos] = useState<{ top: number; left: number } | null>(null);
-
-  const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropContainerRef = useRef<HTMLDivElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -213,7 +208,6 @@ export function DocsSlideView({
   // stopPropagation on the button click doesn't race with this handler)
   useEffect(() => {
     const onOutside = () => {
-      setIsRecompileDropdownOpen(false);
       setIsDownloadMenuOpen(false);
       setIsStructureMenuOpen(false);
       setIsThemeMenuOpen(false);
@@ -310,48 +304,10 @@ export function DocsSlideView({
     }, 100);
   };
 
-  // Split-resizer mouse drag handlers (1:1 with Docs and Sheet)
-  const startResize = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-    const startX = e.clientX;
-    const startRatio = splitRatio;
-
-    const onMove = (moveEv: MouseEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const deltaX = moveEv.clientX - startX;
-      const newRatio = Math.max(0.2, Math.min(0.8, startRatio + deltaX / rect.width));
-      setSplitRatio(newRatio);
-    };
-
-    const onUp = () => {
-      setIsResizing(false);
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [splitRatio]);
-
-
-
-  // Tab key indent handler
+  // Tab key indent & compile shortcut handler (DRY utility)
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const ta = e.currentTarget;
-      const { selectionStart: s, selectionEnd: en } = ta;
-      const val = ta.value;
-      const next = val.substring(0, s) + '  ' + val.substring(en);
-      setCode(next);
-      setTimeout(() => {
-        ta.selectionStart = ta.selectionEnd = s + 2;
-      }, 0);
-    } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      handleRecompile();
+    if (handleStandardEditorKeyDown(e, code, setCode, handleRecompile)) {
+      return;
     }
   };
 
@@ -735,90 +691,13 @@ export function DocsSlideView({
             overflow: 'hidden',
           }}
         >
-          {/* 1.1 Overleaf-Style File Tabs (34px) */}
-          <div style={fileTabsBarStyle} className="hide-scrollbar">
-            {docFiles.length > 0 ? (
-              docFiles.map((file) => {
-                const isActive = file.id === activeSubFile?.id;
-                return (
-                  <button
-                    key={file.id}
-                    type="button"
-                    onClick={() => setActiveFileId(activeDoc!.id, file.id)}
-                    title={file.name}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      padding: '0 12px',
-                      height: isActive ? '33px' : '30px',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                      cursor: 'pointer',
-                      border: 'none',
-                      borderRight: '1px solid var(--border-subtle)',
-                      borderTop: isActive ? '2px solid var(--brand-primary)' : '2px solid transparent',
-                      backgroundColor: isActive ? 'var(--bg-main)' : 'transparent',
-                      color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
-                      fontSize: '11.5px',
-                      fontWeight: isActive ? 650 : 400,
-                      transition: 'all 0.1s ease',
-                      position: 'relative',
-                    }}
-                  >
-                    <Layers size={11} color={isActive ? 'var(--brand-primary)' : 'var(--text-muted)'} />
-                    <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {file.name}
-                    </span>
-                    {file.isMain && (
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: '5px',
-                          height: '5px',
-                          borderRadius: '50%',
-                          backgroundColor: '#10B981',
-                          flexShrink: 0,
-                        }}
-                        title="Main Slide Deck"
-                      />
-                    )}
-                  </button>
-                );
-              })
-            ) : (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '0 12px',
-                  height: '33px',
-                  borderTop: '2px solid var(--brand-primary)',
-                  backgroundColor: 'var(--bg-main)',
-                  borderRight: '1px solid var(--border-subtle)',
-                  fontSize: '11.5px',
-                  color: 'var(--text-primary)',
-                  fontWeight: 650,
-                  flexShrink: 0,
-                }}
-              >
-                <Layers size={11} color="var(--brand-primary)" />
-                <span>{activeFileName}</span>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: '5px',
-                    height: '5px',
-                    borderRadius: '50%',
-                    backgroundColor: '#10B981',
-                    flexShrink: 0,
-                  }}
-                  title="Main Slide Deck"
-                />
-              </div>
-            )}
-          </div>
+          {/* 1.1 Overleaf-Style File Tabs (34px) - DRY Shared Component */}
+          <DocFileTabsBar
+            activeDoc={activeDoc}
+            activeFileId={activeSubFile?.id}
+            onSelectFile={setActiveFileId}
+            formatIcon="slide"
+          />
 
           {/* 1.2 Overleaf-Style Formatting Toolbar — icon-only, no text labels */}
           <div
@@ -1305,92 +1184,23 @@ export function DocsSlideView({
       )}
 
       {/* Focus Mode: full-screen editor overlay */}
-      {isFocusMode && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            backgroundColor: 'var(--bg-main)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <div
-            style={{
-              height: '36px',
-              flexShrink: 0,
-              backgroundColor: 'var(--bg-surface)',
-              borderBottom: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '0 12px',
-              gap: '8px',
-            }}
-          >
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {activeFileName}
-            </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', flex: 1 }}>
-              Focus Mode — tekan Ctrl+Shift+M atau klik tombol untuk keluar
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsFocusMode(false)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '3px 9px',
-                borderRadius: '5px',
-                backgroundColor: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-muted)',
-                fontSize: '11.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <Minimize2 size={12} /> Keluar Focus Mode
-            </button>
-          </div>
-          <textarea
-            autoFocus
-            value={code}
-            onChange={(e) => {
-              setCode(e.target.value);
-              if (activeDoc) updateDocumentContent(activeDoc.id, e.target.value);
-            }}
-            onKeyDown={handleEditorKeyDown}
-            style={{
-              flex: 1,
-              resize: 'none',
-              border: 'none',
-              outline: 'none',
-              backgroundColor: 'var(--bg-main)',
-              color: 'var(--text-primary)',
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-              fontSize: '13px',
-              lineHeight: '1.7',
-              padding: '24px 40px',
-              boxSizing: 'border-box',
-            }}
-          />
-        </div>
-      )}
+      <FocusModeOverlay
+        isOpen={isFocusMode}
+        onClose={() => setIsFocusMode(false)}
+        activeFileName={activeFileName}
+        value={code}
+        onChange={(val) => {
+          setCode(val);
+          if (activeDoc) updateDocumentContent(activeDoc.id, val);
+        }}
+        onKeyDown={handleEditorKeyDown}
+      />
 
       {/* ── 2. Resize Handle Divider (1:1 Mouse Follow) ───────────────────── */}
       {!isFocusMode && viewMode === 'split' && (
-        <div
+        <SplitResizeDivider
+          isResizing={isResizing}
           onMouseDown={startResize}
-          style={{
-            width: '5px',
-            cursor: 'col-resize',
-            flexShrink: 0,
-            backgroundColor: isResizing ? 'var(--brand-primary)' : 'var(--border-subtle)',
-            transition: isResizing ? 'none' : 'background 0.15s',
-          }}
-          className="resize-divider"
         />
       )}
 
@@ -1412,99 +1222,14 @@ export function DocsSlideView({
           <div style={previewActionBarStyle} className="hide-scrollbar">
             {/* Left: Recompile Split Button + Download + Theme Selector */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-              {/* Recompile Split Button */}
-              <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'stretch' }}>
-                <button
-                  type="button"
-                  onClick={handleRecompile}
-                  style={recompileBtnStyle}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#007033')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#00843D')}
-                  title="Kompilasi Ulang Slide (Ctrl+Enter)"
-                >
-                  <RefreshCw size={11} style={{ animation: isCompiling ? 'spin 0.5s linear infinite' : 'none' }} />
-                  <span>Recompile</span>
-                </button>
-
-                <button
-                  ref={recompileButtonRef}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (recompileButtonRef.current) {
-                      const rect = recompileButtonRef.current.getBoundingClientRect();
-                      setRecompileDropdownPos({ top: rect.bottom + 4, left: rect.left - 100 });
-                    }
-                    setIsRecompileDropdownOpen((v) => !v);
-                  }}
-                  style={recompileDropdownArrowStyle}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#007033')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#00843D')}
-                  title="Opsi Kompilasi"
-                >
-                  <ChevronDown size={11} style={{ transform: isRecompileDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
-                </button>
-
-                {/* Recompile Popover */}
-                {isRecompileDropdownOpen && recompileDropdownPos && typeof document !== 'undefined' && createPortal(
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="animate-fade-in"
-                    style={{
-                      position: 'fixed',
-                      top: `${recompileDropdownPos.top}px`,
-                      left: `${recompileDropdownPos.left}px`,
-                      zIndex: 999999999,
-                      minWidth: '220px',
-                      backgroundColor: 'var(--bg-surface)',
-                      border: '1px solid var(--border-strong)',
-                      borderRadius: '6px',
-                      boxShadow: 'var(--shadow-xl, 0 12px 32px rgba(0,0,0,0.35))',
-                      padding: '6px 0',
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}
-                  >
-                    <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
-                      Auto-Compile
-                    </div>
-                    <div
-                      onClick={() => setIsAutoCompile(!isAutoCompile)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 14px',
-                        cursor: 'pointer',
-                        fontSize: '12.5px',
-                        color: 'var(--text-primary)',
-                      }}
-                      className="hover-subtle"
-                    >
-                      <span>Auto-compile saat mengetik</span>
-                      {isAutoCompile && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                    </div>
-                    <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-                    <div
-                      onClick={() => {
-                        handleRecompile();
-                        setIsRecompileDropdownOpen(false);
-                      }}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '12.5px',
-                        color: '#0073ea',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                      }}
-                      className="hover-subtle"
-                    >
-                      Kompilasi dari awal (Reset)
-                    </div>
-                  </div>,
-                  document.body
-                )}
-              </div>
+              {/* Recompile Split Button - DRY Shared Component */}
+              <RecompileSplitButton
+                isCompiling={isCompiling}
+                isAutoCompile={isAutoCompile}
+                onRecompile={handleRecompile}
+                onToggleAutoCompile={setIsAutoCompile}
+                title="Kompilasi Ulang Slide (Ctrl+Enter)"
+              />
 
               {/* Present (F5) Button (Between Recompile and Download) */}
               <button

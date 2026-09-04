@@ -85,6 +85,9 @@ import {
   HardDrive,
 } from 'lucide-react';
 import { useDocsStore, DocsViewMode, DocFormat, DocCollaborator, DocComment, DocCommentReply } from '../store/useDocsStore';
+import { DocFileTabsBar } from './shared/DocFileTabsBar';
+import { SplitResizeDivider } from './shared/SplitResizeDivider';
+
 
 export type PaperSizeId = 'a4' | 'letter' | 'legal' | 'a5' | 'b5' | 'custom';
 
@@ -5009,73 +5012,13 @@ ${exportText}
                     borderRight: 'none',
                   }}
                 >
-                  {/* Overleaf-Style File Tabs */}
-                <div
-                  style={{
-                    height: '34px',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-subtle)',
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    overflowX: 'auto',
-                    overflowY: 'hidden',
-                    flexShrink: 0,
-                    scrollbarWidth: 'none',
-                  }}
-                  className="hide-scrollbar"
-                >
-                  {docFiles.length > 0 ? docFiles.map((file) => {
-                    const isActive = file.id === activeSubFile?.id;
-                    return (
-                      <button
-                        key={file.id}
-                        type="button"
-                        onClick={() => setActiveFileId(activeDoc!.id, file.id)}
-                        title={file.name}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '0 12px',
-                          height: isActive ? '33px' : '30px',
-                          whiteSpace: 'nowrap',
-                          flexShrink: 0,
-                          cursor: 'pointer',
-                          border: 'none',
-                          borderRight: '1px solid var(--border-subtle)',
-                          borderTop: isActive ? '2px solid var(--brand-primary)' : '2px solid transparent',
-                          backgroundColor: isActive ? 'var(--bg-main)' : 'transparent',
-                          color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
-                          fontSize: '11.5px',
-                          fontWeight: isActive ? 650 : 400,
-                          transition: 'all 0.1s ease',
-                          position: 'relative',
-                          marginBottom: isActive ? 0 : undefined,
-                        }}
-                      >
-                        <FileText size={11} color={isActive ? 'var(--brand-primary)' : 'var(--text-muted)'} />
-                        <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {file.name}
-                        </span>
-                        {file.isMain && (
-                          <span style={{
-                            display: 'inline-block',
-                            width: '5px',
-                            height: '5px',
-                            borderRadius: '50%',
-                            backgroundColor: '#10B981',
-                            flexShrink: 0,
-                          }} title="Entrypoint" />
-                        )}
-                      </button>
-                    );
-                  }) : (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '0 12px', height: '33px', borderTop: '2px solid var(--brand-primary)', backgroundColor: 'var(--bg-main)', borderRight: '1px solid var(--border-subtle)', fontSize: '11.5px', color: 'var(--text-primary)', fontWeight: 650, flexShrink: 0 }}>
-                      <FileText size={11} color="var(--brand-primary)" />
-                      <span>{activeDoc?.title || 'main.md'}</span>
-                    </div>
-                  )}
-                </div>
+                  {/* Overleaf-Style File Tabs - DRY Shared Component */}
+                  <DocFileTabsBar
+                    activeDoc={activeDoc}
+                    activeFileId={activeSubFile?.id}
+                    onSelectFile={setActiveFileId}
+                    formatIcon="doc"
+                  />
 
                 {/* Editor Toolbar (Overleaf-style) */}
                 <div
@@ -6104,18 +6047,10 @@ ${exportText}
             </div>
           )}
 
-            {/* Resize handle: Editor ↔ Preview */}
+            {/* Resize handle: Editor ↔ Preview - DRY Shared Component */}
             {viewMode === 'split' && (
-              <div
+              <SplitResizeDivider
                 onMouseDown={handleEditorDragStart}
-                style={{
-                  width: '5px',
-                  cursor: 'col-resize',
-                  flexShrink: 0,
-                  backgroundColor: 'var(--border-subtle)',
-                  transition: 'background 0.15s',
-                }}
-                className="resize-divider"
               />
             )}
 
