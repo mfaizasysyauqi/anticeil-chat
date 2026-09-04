@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { UserTier } from '@anticeil/core';
+import { UserTier, isCloudTier } from '@anticeil/core';
 import { createClient } from '../../../shared/utils/supabase/client';
 
 interface AuthState {
@@ -99,8 +99,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.warn('[AuthStore] Failed to update tier in Supabase:', e);
       }
 
-      // If user upgraded to Pro, sync data
-      if (tier === 'pro') {
+      // If user upgraded to a cloud tier (starter, pro, enterprise), sync data
+      if (isCloudTier(tier)) {
         import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
           useStorageStore.getState().syncFromSupabase(session.access_token, true);
         });

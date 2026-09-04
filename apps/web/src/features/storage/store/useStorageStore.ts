@@ -2,7 +2,15 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { MAX_FREE_STORAGE_BYTES } from '@anticeil/core';
+import {
+  MAX_FREE_STORAGE_BYTES,
+  FREE_STORAGE_LIMIT_BYTES,
+  STARTER_STORAGE_LIMIT_BYTES,
+  PRO_STORAGE_LIMIT_BYTES,
+  ENTERPRISE_STORAGE_LIMIT_BYTES,
+  getTierStorageLimitBytes,
+  isCloudTier,
+} from '@anticeil/core';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 
@@ -69,12 +77,18 @@ interface StorageState {
   resetStorage: () => void;
   syncFromSupabase: (accessToken?: string, force?: boolean) => Promise<void>;
   getEffectiveLimit: () => number;
-  getFormattedUsage: () => { usedFormatted: string; limitFormatted: string; percentage: number; isPro: boolean; isEnterprise: boolean };
+  getFormattedUsage: () => {
+    usedFormatted: string;
+    limitFormatted: string;
+    percentage: number;
+    isCloud: boolean;
+    isStarter: boolean;
+    isPro: boolean;
+    isEnterprise: boolean;
+  };
 }
 
-export const PRO_STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024; // 1 GB for Pro
-export const FREE_STORAGE_LIMIT_BYTES = MAX_FREE_STORAGE_BYTES; // 100 MB for Free
-export const ENTERPRISE_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB for Enterprise
+export { FREE_STORAGE_LIMIT_BYTES, STARTER_STORAGE_LIMIT_BYTES, PRO_STORAGE_LIMIT_BYTES, ENTERPRISE_STORAGE_LIMIT_BYTES };
 
 export function formatStorageBytes(bytes: number, decimals = 1): string {
   if (!bytes || bytes <= 0) return '0 B';
@@ -313,9 +327,7 @@ export const useStorageStore = create<StorageState>()(
 
       getEffectiveLimit: () => {
         const tier = useAuthStore.getState().tier;
-        if (tier === 'enterprise') return ENTERPRISE_STORAGE_LIMIT_BYTES;
-        if (tier === 'pro') return PRO_STORAGE_LIMIT_BYTES;
-        return FREE_STORAGE_LIMIT_BYTES;
+        return getTierStorageLimitBytes(tier);
       },
 
       refreshLocalUsage: () => {
@@ -543,6 +555,8 @@ export const useStorageStore = create<StorageState>()(
           usedFormatted: formatStorageBytes(usedBytes),
           limitFormatted: formatStorageBytes(limitBytes),
           percentage,
+          isCloud: isCloudTier(tier),
+          isStarter: tier === 'starter',
           isPro: tier === 'pro',
           isEnterprise: tier === 'enterprise',
         };

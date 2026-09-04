@@ -297,37 +297,22 @@ export function PricingModal() {
               </button>
             </div>
 
-            {/* Currency Toggle */}
+            {/* Currency Indicator (Fixed IDR for Midtrans Verification) */}
             <div
               style={{
                 display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
                 background: 'var(--bg-main)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '8px',
-                padding: '2px',
-                gap: '2px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--accent-success, #10b981)',
               }}
             >
-              {(['idr', 'usd'] as const).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCurrency(c)}
-                  style={{
-                    padding: '4px 9px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    background: currency === c ? 'var(--bg-surface)' : 'transparent',
-                    color: currency === c ? 'var(--text-primary)' : 'var(--text-muted)',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: currency === c ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  }}
-                >
-                  {c === 'idr' ? 'Rp IDR' : '$ USD'}
-                </button>
-              ))}
+              <span>🇮🇩 Rp IDR</span>
             </div>
           </div>
         </div>
@@ -360,7 +345,7 @@ export function PricingModal() {
               <div className="anticeil-pricing-grid-4">
                 {CREDIT_PACKS.map((pack) => {
                   const isBusy = actionId === pack.id;
-                  const priceStr = currency === 'usd' ? `$${pack.priceUsd}` : `Rp ${pack.priceIdr.toLocaleString('id-ID')}`;
+                  const priceStr = `Rp ${pack.priceIdr.toLocaleString('id-ID')}`;
 
                   return (
                     <div

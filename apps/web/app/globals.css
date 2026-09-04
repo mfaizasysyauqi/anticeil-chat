@@ -27,6 +27,23 @@
   --accent-info:          #579BFC;
   --accent-reasoning:     #A25DDC;
 
+  /* Tier Badge Tokens (DRY UI Badges) */
+  --tier-free-bg:          rgba(0, 200, 117, 0.12);
+  --tier-free-color:       var(--accent-success);
+  --tier-free-border:      rgba(0, 200, 117, 0.3);
+
+  --tier-starter-bg:       rgba(245, 158, 11, 0.15);
+  --tier-starter-color:    #f59e0b;
+  --tier-starter-border:   rgba(245, 158, 11, 0.4);
+
+  --tier-pro-bg:           rgba(0, 115, 234, 0.15);
+  --tier-pro-color:        var(--brand-primary);
+  --tier-pro-border:       rgba(0, 115, 234, 0.3);
+
+  --tier-enterprise-bg:    rgba(139, 92, 246, 0.15);
+  --tier-enterprise-color: #a78bfa;
+  --tier-enterprise-border: rgba(139, 92, 246, 0.4);
+
   /* Global Spacing Scale */
   --space-xs: 4px;
   --space-sm: 8px;

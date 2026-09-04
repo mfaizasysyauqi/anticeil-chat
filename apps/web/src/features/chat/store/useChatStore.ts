@@ -19,6 +19,7 @@ import {
   parseToolCallsFromLLM,
   executeConnectorTool,
   ToolCallResult,
+  isCloudTier,
 } from '@anticeil/core';
 import { streamBYOKChat } from '../data/byokApi';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -1112,7 +1113,7 @@ export const useChatStore = create<ChatState>()(
 
       pushSessionToCloud: async (sessionId: string) => {
         const auth = useAuthStore.getState();
-        if (auth.tier !== 'pro' || !auth.session?.access_token) return;
+        if (!isCloudTier(auth.tier) || !auth.session?.access_token) return;
 
         const session = get().sessions.find((s) => s.id === sessionId);
         const messages = get().messages[sessionId] || [];

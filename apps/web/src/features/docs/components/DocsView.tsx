@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { getTierStorageName, getTierBadgeStyle } from '@anticeil/core';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -4941,17 +4942,22 @@ ${exportText}
                           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {displayName}
                           </span>
-                          <span style={{
-                            fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', flexShrink: 0,
-                            background: tier === 'enterprise' ? 'rgba(139,92,246,0.15)' : tier === 'pro' ? 'rgba(0,115,234,0.15)' : 'rgba(0,200,117,0.12)',
-                            color: tier === 'enterprise' ? '#a78bfa' : tier === 'pro' ? 'var(--brand-primary)' : 'var(--accent-success)',
-                            border: `1px solid ${tier === 'enterprise' ? 'rgba(139,92,246,0.4)' : tier === 'pro' ? 'rgba(0,115,234,0.3)' : 'rgba(0,200,117,0.3)'}`,
-                          }}>
-                            {tier === 'enterprise' ? 'ENTERPRISE' : tier === 'pro' ? 'PRO' : 'FREE'}
-                          </span>
+                          {(() => {
+                            const badge = getTierBadgeStyle(tier);
+                            return (
+                              <span style={{
+                                fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', flexShrink: 0,
+                                background: badge.background,
+                                color: badge.color,
+                                border: badge.border,
+                              }}>
+                                {badge.label}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {tier === 'enterprise' ? 'Custom Supabase' : tier === 'pro' ? 'Supabase Cloud' : (language === 'id' ? 'Penyimpanan Lokal' : 'Local Storage')}
+                          {getTierStorageName(tier, language as 'en' | 'id')}
                         </div>
                       </div>
                       <MoreHorizontal size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />

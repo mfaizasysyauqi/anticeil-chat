@@ -68,15 +68,13 @@ export function TierPricingCards({
           const isBusy = actionLoadingId === plan.id;
 
           const priceStr =
-            plan.priceUsd === null
-              ? lang === 'id' ? 'Dedicated' : 'Dedicated'
-              : plan.priceUsd === 0
-              ? lang === 'id' ? 'Rp 0' : '$0'
-              : currency === 'usd'
-              ? `$${plan.priceUsd}`
-              : `Rp ${plan.priceIdr!.toLocaleString('id-ID')}`;
+            plan.priceIdr === null || plan.priceIdr === undefined
+              ? 'Dedicated'
+              : plan.priceIdr === 0
+              ? 'Rp 0'
+              : `Rp ${plan.priceIdr.toLocaleString('id-ID')}`;
 
-          const period = lang === 'id' ? plan.periodIdr : plan.periodUsd;
+          const period = plan.periodIdr;
           const subtitle = lang === 'id' ? plan.subtitleId : plan.subtitleEn;
           const ctaLabel = lang === 'id' ? plan.ctaLabelId : plan.ctaLabelEn;
 

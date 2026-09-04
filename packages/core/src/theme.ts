@@ -104,6 +104,47 @@ export function getThemeColors(mode: 'light' | 'dark'): ThemeColors {
   return mode === 'dark' ? THEME_DARK_COLORS : THEME_LIGHT_COLORS;
 }
 
+export interface TierBadgeStyle {
+  background: string;
+  color: string;
+  border: string;
+  label: string;
+}
+
+export function getTierBadgeStyle(tier: import('./types').UserTier = 'free'): TierBadgeStyle {
+  switch (tier) {
+    case 'enterprise':
+      return {
+        background: 'var(--tier-enterprise-bg, rgba(139, 92, 246, 0.15))',
+        color: 'var(--tier-enterprise-color, #a78bfa)',
+        border: '1px solid var(--tier-enterprise-border, rgba(139, 92, 246, 0.4))',
+        label: 'ENTERPRISE',
+      };
+    case 'pro':
+      return {
+        background: 'var(--tier-pro-bg, rgba(0, 115, 234, 0.15))',
+        color: 'var(--tier-pro-color, var(--brand-primary))',
+        border: '1px solid var(--tier-pro-border, rgba(0, 115, 234, 0.3))',
+        label: 'PRO',
+      };
+    case 'starter':
+      return {
+        background: 'var(--tier-starter-bg, rgba(245, 158, 11, 0.15))',
+        color: 'var(--tier-starter-color, #f59e0b)',
+        border: '1px solid var(--tier-starter-border, rgba(245, 158, 11, 0.4))',
+        label: 'STARTER',
+      };
+    case 'free':
+    default:
+      return {
+        background: 'var(--tier-free-bg, rgba(0, 200, 117, 0.12))',
+        color: 'var(--tier-free-color, var(--accent-success))',
+        border: '1px solid var(--tier-free-border, rgba(0, 200, 117, 0.3))',
+        label: 'FREE',
+      };
+  }
+}
+
 export const THEME = {
   spacing: {
     xs: '4px',

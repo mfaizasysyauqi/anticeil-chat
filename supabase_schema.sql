@@ -10,8 +10,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
-  tier TEXT NOT NULL DEFAULT 'free', -- 'free' | 'pro' | 'enterprise'
-  storage_quota_bytes BIGINT DEFAULT 1073741824, -- 1 GB for Pro / Custom for Enterprise
+  tier TEXT NOT NULL DEFAULT 'free', -- 'free' | 'starter' | 'pro' | 'enterprise'
+  storage_quota_bytes BIGINT DEFAULT 10737418240, -- 100 MB (Free) | 5 GB (Starter) | 10 GB (Pro) | 100 GB (Enterprise)
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -160,6 +160,82 @@ CREATE TABLE IF NOT EXISTS public.document_comments (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 12. Co-Author Sessions (Docs Studio AI Assistant History)
+CREATE TABLE IF NOT EXISTS public.coauthor_sessions (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  doc_id TEXT NOT NULL,
+  doc_title TEXT NOT NULL DEFAULT 'Untitled Doc',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 13. Co-Author Messages (Docs Studio AI Chat Messages)
+CREATE TABLE IF NOT EXISTS public.coauthor_messages (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES public.coauthor_sessions(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+  content TEXT NOT NULL DEFAULT '',
+  reasoning_content TEXT,
+  actions JSONB,
+  snapshot_id TEXT,
+  reverted BOOLEAN DEFAULT FALSE,
+  timestamp BIGINT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 14. Imagine Generations (AI Media Studio: Image, Audio, Video Prompt History & Metadata)
+CREATE TABLE IF NOT EXISTS public.imagine_generations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  prompt TEXT NOT NULL,
+  negative_prompt TEXT,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 15. PDF Documents (OCR & Extracted Summary Data)
+CREATE TABLE IF NOT EXISTS public.pdf_documents (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  filename TEXT NOT NULL,
+  file_size BIGINT DEFAULT 0,
+  extracted_text TEXT,
+  summary TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 16. Automation Workflows
+CREATE TABLE IF NOT EXISTS public.automation_workflows (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  nodes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  edges JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 17. Automation Runs (Execution Logs & Results)
+CREATE TABLE IF NOT EXISTS public.automation_runs (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  workflow_id TEXT REFERENCES public.automation_workflows(id) ON DELETE CASCADE,
+  logs JSONB DEFAULT '[]'::jsonb,
+  result JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 18. Omnichannel Messages (Telegram & Connector Inbound Messages)
+CREATE TABLE IF NOT EXISTS public.omnichannel_messages (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL DEFAULT '',
+  media_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- INDEXES FOR MAXIMUM QUERY PERFORMANCE
 -- ==============================================================================
@@ -176,6 +252,14 @@ CREATE INDEX IF NOT EXISTS idx_doc_folders_user ON public.doc_folders(user_id);
 CREATE INDEX IF NOT EXISTS idx_documents_user ON public.documents(user_id);
 CREATE INDEX IF NOT EXISTS idx_documents_folder ON public.documents(folder_id);
 CREATE INDEX IF NOT EXISTS idx_documents_updated ON public.documents(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_coauthor_sessions_user ON public.coauthor_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_coauthor_sessions_doc ON public.coauthor_sessions(doc_id);
+CREATE INDEX IF NOT EXISTS idx_coauthor_messages_session ON public.coauthor_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_imagine_generations_user ON public.imagine_generations(user_id);
+CREATE INDEX IF NOT EXISTS idx_pdf_documents_user ON public.pdf_documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_automation_workflows_user ON public.automation_workflows(user_id);
+CREATE INDEX IF NOT EXISTS idx_automation_runs_user ON public.automation_runs(user_id);
+CREATE INDEX IF NOT EXISTS idx_omnichannel_messages_user ON public.omnichannel_messages(user_id);
 
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -192,6 +276,48 @@ ALTER TABLE public.workspace_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.doc_folders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document_collaborators ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coauthor_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coauthor_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.imagine_generations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pdf_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automation_workflows ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automation_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.omnichannel_messages ENABLE ROW LEVEL SECURITY;
+
+-- Co-Author Sessions Policies
+DROP POLICY IF EXISTS "Users can manage own coauthor sessions" ON public.coauthor_sessions;
+CREATE POLICY "Users can manage own coauthor sessions" ON public.coauthor_sessions
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Co-Author Messages Policies
+DROP POLICY IF EXISTS "Users can manage own coauthor messages" ON public.coauthor_messages;
+CREATE POLICY "Users can manage own coauthor messages" ON public.coauthor_messages
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Imagine Generations Policies
+DROP POLICY IF EXISTS "Users can manage own imagine generations" ON public.imagine_generations;
+CREATE POLICY "Users can manage own imagine generations" ON public.imagine_generations
+  FOR ALL USING (auth.uid() = user_id);
+
+-- PDF Documents Policies
+DROP POLICY IF EXISTS "Users can manage own pdf documents" ON public.pdf_documents;
+CREATE POLICY "Users can manage own pdf documents" ON public.pdf_documents
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Automation Workflows Policies
+DROP POLICY IF EXISTS "Users can manage own automation workflows" ON public.automation_workflows;
+CREATE POLICY "Users can manage own automation workflows" ON public.automation_workflows
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Automation Runs Policies
+DROP POLICY IF EXISTS "Users can manage own automation runs" ON public.automation_runs;
+CREATE POLICY "Users can manage own automation runs" ON public.automation_runs
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Omnichannel Messages Policies
+DROP POLICY IF EXISTS "Users can manage own omnichannel messages" ON public.omnichannel_messages;
+CREATE POLICY "Users can manage own omnichannel messages" ON public.omnichannel_messages
+  FOR ALL USING (auth.uid() = user_id);
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
@@ -378,4 +504,5 @@ CREATE POLICY "Authenticated users can delete own media"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (bucket_id = 'anticeil-media' AND (auth.uid() = owner OR auth.uid()::text = (storage.foldername(name))[1]));
+
 

@@ -268,12 +268,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   // Database Tab View Mode Switcher ('local' | 'pro' | 'enterprise')
   const [dbViewMode, setDbViewMode] = useState<'local' | 'pro' | 'enterprise'>(
-    tier === 'enterprise' ? 'enterprise' : tier === 'pro' ? 'pro' : 'local'
+    tier === 'enterprise' ? 'enterprise' : (tier === 'pro' || tier === 'starter') ? 'pro' : 'local'
   );
 
   useEffect(() => {
     if (tier === 'enterprise') setDbViewMode('enterprise');
-    else if (tier === 'pro') setDbViewMode('pro');
+    else if (tier === 'pro' || tier === 'starter') setDbViewMode('pro');
     else setDbViewMode('local');
   }, [tier]);
 

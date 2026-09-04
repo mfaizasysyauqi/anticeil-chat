@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { isCloudTier } from '@anticeil/core';
 import {
   Sparkles,
   Send,
@@ -62,7 +63,7 @@ export function DocsCoAuthorSidebar({
 
   const authSession = useAuthStore((s) => s.session);
   const tier = useAuthStore((s) => s.tier);
-  const isCloudUser = tier === 'starter' || tier === 'pro' || tier === 'enterprise';
+  const isCloudUser = isCloudTier(tier);
 
   const historyStore = useCoAuthorHistoryStore();
 

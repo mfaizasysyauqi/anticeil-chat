@@ -34,10 +34,12 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     const userMetaTier = user.user_metadata?.tier;
-    const tier = profile?.tier || userMetaTier || 'free';
+    const rawTier = profile?.tier || userMetaTier || 'free';
+    const validTiers = ['free', 'starter', 'pro', 'enterprise'];
+    const tier = validTiers.includes(rawTier) ? rawTier : 'free';
 
     return NextResponse.json({
-      tier: tier === 'pro' ? 'pro' : 'free',
+      tier,
       userId: user.id,
       email: user.email,
     });
@@ -46,7 +48,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/user/tier — Update user tier ('free' | 'pro')
+// POST /api/user/tier — Update user tier ('free' | 'starter' | 'pro' | 'enterprise')
 export async function POST(req: NextRequest) {
   try {
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
@@ -65,7 +67,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const targetTier: 'free' | 'pro' = body.tier === 'pro' ? 'pro' : 'free';
+    const validTiers = ['free', 'starter', 'pro', 'enterprise'];
+    const targetTier = validTiers.includes(body.tier) ? body.tier : 'free';
 
     // Update in profiles table
     await supabase.from('profiles').upsert(

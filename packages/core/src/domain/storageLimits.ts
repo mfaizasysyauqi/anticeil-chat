@@ -1,10 +1,56 @@
+import { UserTier } from '../types';
+
 /**
- * Storage & Security Configuration for Free Tier and Client-Side Protection
+ * Storage & Security Configuration across Tiers and Client-Side Protection
  */
 
-// Free Tier Hard Limits
-export const MAX_FREE_STORAGE_BYTES = 100 * 1024 * 1024; // 100 MB per user
+// Tier Storage Hard Limits (Bytes)
+export const FREE_STORAGE_LIMIT_BYTES = 100 * 1024 * 1024; // 100 MB per user
+export const STARTER_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB per user
+export const PRO_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB per user
+export const ENTERPRISE_STORAGE_LIMIT_BYTES = 100 * 1024 * 1024 * 1024; // 100 GB (BYOD Zero-Trust)
+
+export const MAX_FREE_STORAGE_BYTES = FREE_STORAGE_LIMIT_BYTES;
 export const MAX_FREE_FILE_BYTES = 10 * 1024 * 1024; // 10 MB per file
+
+export const TIER_STORAGE_LIMITS: Record<UserTier, number> = {
+  free: FREE_STORAGE_LIMIT_BYTES,
+  starter: STARTER_STORAGE_LIMIT_BYTES,
+  pro: PRO_STORAGE_LIMIT_BYTES,
+  enterprise: ENTERPRISE_STORAGE_LIMIT_BYTES,
+};
+
+/**
+ * Returns effective storage limit in bytes for a given user tier.
+ */
+export function getTierStorageLimitBytes(tier: UserTier = 'free'): number {
+  return TIER_STORAGE_LIMITS[tier] ?? FREE_STORAGE_LIMIT_BYTES;
+}
+
+/**
+ * Checks whether a tier uses Supabase / Cloud database sync.
+ * Starter, Pro, and Enterprise all sync to cloud.
+ */
+export function isCloudTier(tier: UserTier = 'free'): boolean {
+  return tier === 'starter' || tier === 'pro' || tier === 'enterprise';
+}
+
+/**
+ * Returns human-readable storage label per tier.
+ */
+export function getTierStorageName(tier: UserTier = 'free', lang: 'en' | 'id' = 'en'): string {
+  switch (tier) {
+    case 'enterprise':
+      return 'Custom Supabase / BYOD';
+    case 'pro':
+      return 'Supabase Cloud R2 (10GB)';
+    case 'starter':
+      return 'Supabase Cloud (5GB)';
+    case 'free':
+    default:
+      return lang === 'id' ? 'Penyimpanan Lokal (100MB)' : 'Local Storage (100MB)';
+  }
+}
 
 // Dangerous / Executable file extensions blocked from processing & storage
 export const BLOCKED_EXTENSIONS = new Set([
@@ -47,16 +93,17 @@ export function validateFileUpload(
   if (file.size > maxFileLimit) {
     return {
       valid: false,
-      error: `Ukuran berkas melebihi batas free tier (Maks 10 MB per berkas).`,
+      error: `Ukuran berkas melebihi batas (Maks ${Math.round(maxFileLimit / (1024 * 1024))} MB per berkas).`,
     };
   }
 
   if (currentUsedStorageBytes + file.size > maxTotalStorageLimit) {
     return {
       valid: false,
-      error: `Kapasitas penyimpanan gratis Anda hampir habis (Maks 100 MB).`,
+      error: `Kapasitas penyimpanan Anda hampir habis.`,
     };
   }
 
   return { valid: true };
 }
+

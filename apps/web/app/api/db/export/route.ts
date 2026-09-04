@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       .eq('id', userId)
       .maybeSingle();
 
-    const tier = (profile?.tier as 'free' | 'pro') || 'free';
+    const tier = (profile?.tier as import('@anticeil/core').UserTier) || 'free';
 
     // Fetch all user database tables in parallel
     const [
