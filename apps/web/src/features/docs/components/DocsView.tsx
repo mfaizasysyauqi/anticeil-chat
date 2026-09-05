@@ -221,6 +221,7 @@ import { DocsLandingView } from './DocsLandingView';
 import { DocsGeneratingView } from './DocsGeneratingView';
 import { DocsSpreadsheetView } from './DocsSpreadsheetView';
 import { DocsSlideView } from './DocsSlideView';
+import { DocsVersionHistoryModal } from './DocsVersionHistoryModal';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, LLMProviderId } from '@anticeil/core';
 
@@ -271,6 +272,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const resolveComment = useDocsStore((s) => s.resolveComment);
   const addCommentReply = useDocsStore((s) => s.addCommentReply);
   const deleteCommentReply = useDocsStore((s) => s.deleteCommentReply);
+  const docSnapshots = useDocsStore((s) => s.docSnapshots);
   const user = useAuthStore((s) => s.user);
 
   const language = useSettingsStore((s) => s.language);
@@ -425,6 +427,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const layoutMenuRef = useRef<HTMLDivElement>(null);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isHotkeysModalOpen, setIsHotkeysModalOpen] = useState(false);
+  const [isVersionHistoryModalOpen, setIsVersionHistoryModalOpen] = useState(false);
 
   // Symbol Popover State (Overleaf Omega)
   const [isSymbolMenuOpen, setIsSymbolMenuOpen] = useState(false);
@@ -468,6 +471,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
         e.preventDefault();
         handleTriggerAddComment();
+      }
+      // Version History Modal: Ctrl+Shift+H / Cmd+Shift+H
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        setIsVersionHistoryModalOpen((prev) => !prev);
       }
       // Hotkeys Modal: F1 or Ctrl+Shift+? or Ctrl+?
       if (e.key === 'F1' || ((e.ctrlKey || e.metaKey) && (e.key === '?' || (e.shiftKey && (e.key === '?' || e.key === '/'))))) {
@@ -2791,6 +2799,43 @@ ${exportText}
               title={language === 'id' ? 'Pintasan Tombol (Hotkeys / F1)' : 'Keyboard Shortcuts (Hotkeys / F1)'}
             >
               <Keyboard size={16} />
+            </button>
+
+            {/* Overleaf-Style History & Versioning Button */}
+            <button
+              type="button"
+              onClick={() => setIsVersionHistoryModalOpen(true)}
+              className="hover-subtle"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: isVersionHistoryModalOpen ? 'var(--bg-subtle)' : 'transparent',
+                border: isVersionHistoryModalOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                color: isVersionHistoryModalOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                position: 'relative',
+              }}
+              title={language === 'id' ? 'Riwayat & Versi (History / Ctrl+Shift+H)' : 'History & Versions (Ctrl+Shift+H)'}
+            >
+              <History size={16} />
+              {activeDoc && (docSnapshots[activeDoc.id]?.length || 0) > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--brand-primary)',
+                  }}
+                />
+              )}
             </button>
 
             {/* Overleaf-Style Layout Options Button */}
@@ -7988,6 +8033,7 @@ ${exportText}
                     { keys: 'Ctrl + Shift + M', label: 'Toggle Focus mode' },
                     { keys: 'Ctrl + Shift + A', label: 'Toggle track changes' },
                     { keys: 'Ctrl + Shift + C', label: 'Add a comment' },
+                    { keys: 'Ctrl + Shift + H', label: 'Version history & diff' },
                   ],
                 },
               ].map((section) => (
@@ -8076,6 +8122,13 @@ ${exportText}
       )}
 
       {/* Global Modals Mounted for Standalone /docs/[id] Route */}
+      <DocsVersionHistoryModal
+        isOpen={isVersionHistoryModalOpen}
+        onClose={() => setIsVersionHistoryModalOpen(false)}
+        activeDoc={activeDoc}
+        language={language}
+        isCloudUser={tier === 'starter' || tier === 'pro'}
+      />
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setSettingsOpen(false)}

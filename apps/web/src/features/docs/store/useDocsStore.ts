@@ -55,6 +55,12 @@ export interface DocHistorySnapshot {
   timestamp: number;
   description: string;
   doc: DocItem;
+  label?: string;
+  isNamed?: boolean;
+  authorEmail?: string;
+  authorName?: string;
+  totalWords?: number;
+  totalChars?: number;
 }
 
 export interface DocItem {
@@ -164,14 +170,39 @@ interface DocsState {
   copilotPendingPrompt: string | null;
   setCopilotPendingPrompt: (prompt: string | null) => void;
   docSnapshots: Record<string, DocHistorySnapshot[]>;
-  createDocSnapshot: (docId: string, description?: string) => string;
+  createDocSnapshot: (
+    docId: string,
+    description?: string,
+    label?: string,
+    isNamed?: boolean,
+    author?: { name?: string; email?: string }
+  ) => string;
+  updateDocSnapshotLabel: (docId: string, snapshotId: string, label: string) => void;
+  deleteDocSnapshot: (docId: string, snapshotId: string) => void;
   restoreDocSnapshot: (docId: string, snapshotId: string) => boolean;
+  syncSnapshotsToCloud: (docId: string, token: string) => Promise<void>;
+  loadSnapshotsFromCloud: (docId: string, token: string) => Promise<void>;
 }
 
 const STORAGE_KEY = 'anticeil_docs_v2';
 const FOLDERS_STORAGE_KEY = 'anticeil_doc_folders_v2';
 const PHASE_STORAGE_KEY = 'anticeil_doc_phase_v2';
 const ACTIVE_DOC_STORAGE_KEY = 'anticeil_doc_active_id_v2';
+const SNAPSHOTS_STORAGE_KEY = 'anticeil_doc_snapshots_v2';
+
+function getInitialSnapshots(): Record<string, DocHistorySnapshot[]> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const saved = localStorage.getItem(SNAPSHOTS_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+  } catch (err) {
+    console.warn('[DocsStore] Failed to load doc snapshots from localStorage:', err);
+  }
+  return {};
+}
 
 function getInitialPhase(): StudioPhase {
   if (typeof window === 'undefined') return 'landing';
@@ -321,6 +352,7 @@ export const useDocsStore = create<DocsState>((set, get) => {
   const initialFolders = getInitialFolders();
   const initialPhase = getInitialPhase();
   const initialActiveId = getInitialActiveDocId(initialDocs);
+  const initialSnapshots = getInitialSnapshots();
 
   const saveToStorage = (docs: DocItem[]) => {
     if (typeof window === 'undefined') return;
@@ -337,6 +369,15 @@ export const useDocsStore = create<DocsState>((set, get) => {
       localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
     } catch (err) {
       console.warn('[DocsStore] Failed to write doc folders to localStorage:', err);
+    }
+  };
+
+  const saveSnapshotsToStorage = (snapshots: Record<string, DocHistorySnapshot[]>) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(snapshots));
+    } catch (err) {
+      console.warn('[DocsStore] Failed to write snapshots to localStorage:', err);
     }
   };
 
@@ -474,39 +515,155 @@ export const useDocsStore = create<DocsState>((set, get) => {
       });
     },
     copilotPendingPrompt: null,
-    docSnapshots: {},
+    docSnapshots: initialSnapshots,
 
     setCopilotPendingPrompt: (prompt) => set({ copilotPendingPrompt: prompt }),
 
-    createDocSnapshot: (docId: string, description = 'AI Checkpoint') => {
+    createDocSnapshot: (
+      docId: string,
+      description = 'Checkpoint',
+      label?: string,
+      isNamed = false,
+      author?: { name?: string; email?: string }
+    ) => {
       const doc = get().documents.find((d) => d.id === docId);
       if (!doc) return '';
       const snapshotId = 'snap_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+
+      // Calculate total words and chars across all subfiles
+      const allText =
+        doc.files && doc.files.length > 0
+          ? doc.files.map((f) => f.content || '').join('\n')
+          : doc.content || '';
+      const totalWords = allText.trim() ? allText.trim().split(/\s+/).length : 0;
+      const totalChars = allText.length;
+
       const snapshot: DocHistorySnapshot = {
         id: snapshotId,
         docId,
         timestamp: Date.now(),
         description,
+        label: label?.trim() || undefined,
+        isNamed: Boolean(isNamed || label?.trim()),
+        authorName: author?.name || 'You',
+        authorEmail: author?.email || undefined,
+        totalWords,
+        totalChars,
         doc: JSON.parse(JSON.stringify(doc)),
       };
       const currentList = get().docSnapshots[docId] || [];
       const updatedSnapshots = {
         ...get().docSnapshots,
-        [docId]: [snapshot, ...currentList.slice(0, 19)],
+        [docId]: [snapshot, ...currentList.filter((s) => s.id !== snapshotId).slice(0, 49)],
       };
       set({ docSnapshots: updatedSnapshots });
+      saveSnapshotsToStorage(updatedSnapshots);
       return snapshotId;
+    },
+
+    updateDocSnapshotLabel: (docId: string, snapshotId: string, label: string) => {
+      const list = get().docSnapshots[docId] || [];
+      const trimmed = label.trim();
+      const updatedList = list.map((s) =>
+        s.id === snapshotId
+          ? {
+              ...s,
+              label: trimmed || undefined,
+              isNamed: Boolean(trimmed),
+            }
+          : s
+      );
+      const updatedSnapshots = {
+        ...get().docSnapshots,
+        [docId]: updatedList,
+      };
+      set({ docSnapshots: updatedSnapshots });
+      saveSnapshotsToStorage(updatedSnapshots);
+    },
+
+    deleteDocSnapshot: (docId: string, snapshotId: string) => {
+      const list = get().docSnapshots[docId] || [];
+      const updatedList = list.filter((s) => s.id !== snapshotId);
+      const updatedSnapshots = {
+        ...get().docSnapshots,
+        [docId]: updatedList,
+      };
+      set({ docSnapshots: updatedSnapshots });
+      saveSnapshotsToStorage(updatedSnapshots);
     },
 
     restoreDocSnapshot: (docId: string, snapshotId: string) => {
       const list = get().docSnapshots[docId] || [];
       const target = list.find((s) => s.id === snapshotId);
       if (!target) return false;
+
+      // Auto-save a safety checkpoint of current state before restoring
+      const currentDoc = get().documents.find((d) => d.id === docId);
+      if (currentDoc) {
+        const autoCheckpointId = 'snap_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+        const allText =
+          currentDoc.files && currentDoc.files.length > 0
+            ? currentDoc.files.map((f) => f.content || '').join('\n')
+            : currentDoc.content || '';
+        const autoSnap: DocHistorySnapshot = {
+          id: autoCheckpointId,
+          docId,
+          timestamp: Date.now(),
+          description: `Auto backup before restoring ${target.label || 'snapshot'}`,
+          doc: JSON.parse(JSON.stringify(currentDoc)),
+          totalWords: allText.trim() ? allText.trim().split(/\s+/).length : 0,
+          totalChars: allText.length,
+        };
+        const updatedList = [autoSnap, ...list.slice(0, 48)];
+        const updatedSnapshots = { ...get().docSnapshots, [docId]: updatedList };
+        set({ docSnapshots: updatedSnapshots });
+        saveSnapshotsToStorage(updatedSnapshots);
+      }
+
       const restoredDoc = JSON.parse(JSON.stringify(target.doc));
+      restoredDoc.updatedAt = Date.now();
       const updatedDocs = get().documents.map((d) => (d.id === docId ? restoredDoc : d));
       set({ documents: updatedDocs });
       saveToStorage(updatedDocs);
       return true;
+    },
+
+    syncSnapshotsToCloud: async (docId: string, token: string) => {
+      try {
+        const snapshots = get().docSnapshots[docId] || [];
+        if (snapshots.length === 0) return;
+        await fetch('/api/docs/versions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ docId, snapshots }),
+        });
+      } catch (err) {
+        console.warn('[DocsStore] Cloud snapshot sync failed:', err);
+      }
+    },
+
+    loadSnapshotsFromCloud: async (docId: string, token: string) => {
+      try {
+        const res = await fetch(`/api/docs/versions?docId=${encodeURIComponent(docId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data?.snapshots) && data.snapshots.length > 0) {
+          const localList = get().docSnapshots[docId] || [];
+          const map = new Map<string, DocHistorySnapshot>();
+          [...data.snapshots, ...localList].forEach((s) => map.set(s.id, s));
+          const merged = Array.from(map.values()).sort((a, b) => b.timestamp - a.timestamp);
+          const updatedSnapshots = { ...get().docSnapshots, [docId]: merged };
+          set({ docSnapshots: updatedSnapshots });
+          saveSnapshotsToStorage(updatedSnapshots);
+        }
+      } catch (err) {
+        console.warn('[DocsStore] Cloud snapshot load failed:', err);
+      }
     },
 
     createFolder: (name: string) => {

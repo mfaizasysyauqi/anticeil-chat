@@ -32,7 +32,6 @@ export const CREDIT_PACKS: CreditPack[] = [
     credits: 100,
     priceUsd: 1,
     priceIdr: 15000,
-    tag: 'Paling Hemat',
   },
   {
     id: 'pack_350',
@@ -51,7 +50,7 @@ export const CREDIT_PACKS: CreditPack[] = [
     priceIdr: 75000,
     bonusPercent: 20,
     popular: true,
-    tag: '⭐ Paling Populer',
+    tag: '★ Paling Populer',
   },
   {
     id: 'pack_1500',
