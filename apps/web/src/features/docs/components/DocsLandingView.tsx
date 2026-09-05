@@ -13,11 +13,14 @@ import {
   Folder,
   FolderOpen,
   X,
+  ChevronDown,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDocsStore, DocFormat } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { DOC_TEMPLATES } from '../data/docTemplates';
+import { getModelById } from '@anticeil/core';
+import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
 
 interface DocsLandingViewProps {
   onStartGenerate: (prompt: string, format: DocFormat) => void;
@@ -27,9 +30,13 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const selectedFormat = useDocsStore((s) => s.selectedFormat);
   const setSelectedFormat = useDocsStore((s) => s.setSelectedFormat);
   const createFromTemplate = useDocsStore((s) => s.createFromTemplate);
+  const activeModelId = useSettingsStore((s) => s.activeModelId);
+  const currentModel = getModelById(activeModelId);
+  const modelDisplayName = currentModel?.name || activeModelId || 'Auto Router';
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -279,29 +286,61 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
               })}
             </div>
 
-            {/* Submit / Generate Button */}
-            <button
-              type="submit"
-              disabled={!prompt.trim()}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '7px',
-                padding: '8px 18px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: prompt.trim() ? 'var(--brand-primary)' : 'var(--border-subtle)',
-                color: '#fff',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: prompt.trim() ? 'pointer' : 'not-allowed',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>{language === 'id' ? 'Buat Dokumen' : 'Generate Document'}</span>
-              <ArrowRight size={14} />
-            </button>
+            {/* Right Actions: Model Selector + Submit / Generate Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Model Selector Dropdown Button */}
+              <button
+                type="button"
+                onClick={() => setIsModelSelectorOpen(true)}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 11px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: 'var(--bg-subtle)',
+                  color: 'var(--text-primary)',
+                  fontSize: '12px',
+                  fontWeight: 550,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  maxWidth: '200px',
+                }}
+                title={language === 'id' ? 'Pilih Model AI' : 'Select AI Model'}
+              >
+                <Sparkles size={13} color="var(--brand-primary, #0073EA)" style={{ flexShrink: 0 }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {modelDisplayName}
+                </span>
+                <ChevronDown size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+              </button>
+
+              {/* Submit / Generate Button */}
+              <button
+                type="submit"
+                disabled={!prompt.trim()}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: prompt.trim() ? 'var(--brand-primary)' : 'var(--border-subtle)',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: prompt.trim() ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>{language === 'id' ? 'Buat Dokumen' : 'Generate Document'}</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
           </div>
         </form>
 
@@ -497,6 +536,10 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
           </div>
         )}
       </div>
+
+      {isModelSelectorOpen && (
+        <ModelSelectorModal onClose={() => setIsModelSelectorOpen(false)} />
+      )}
     </div>
   );
 }

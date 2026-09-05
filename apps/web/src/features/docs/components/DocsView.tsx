@@ -1075,8 +1075,13 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
   // Start Agentic Generation
   const handleStartGenerate = async (promptText: string, format: DocFormat) => {
+    const activeProviderId = useSettingsStore.getState().activeProviderId || 'anticeil';
+    const activeModelId = useSettingsStore.getState().activeModelId || 'llama-3.3-70b-versatile';
+    const apiKeys = useSettingsStore.getState().apiKeys;
+    const activeApiKeyConfig = (apiKeys as Record<string, any>)[activeProviderId] || { apiKey: '', isEnabled: false };
+
     // Credit check & deduction for Anticeil Docs AI generation (1 credit per request)
-    const allowed = useCreditStore.getState().deductCredits('docs', 'anticeil');
+    const allowed = useCreditStore.getState().deductCredits('docs', activeProviderId);
     if (!allowed) return;
 
     setCurrentPrompt(promptText);
@@ -1111,11 +1116,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     let accumulated = '';
     try {
       await streamBYOKChat({
-        providerId: 'anticeil',
-        modelId: 'llama-3.3-70b-versatile',
+        providerId: activeProviderId,
+        modelId: activeModelId,
         systemPrompt: systemInstruction,
         messages,
-        apiKeyConfig: { apiKey: '', isEnabled: true },
+        apiKeyConfig: activeApiKeyConfig,
         temperature: 0.6,
         tier: userTier,
         onChunk: (chunk) => {
