@@ -80,6 +80,7 @@ interface CreditState {
   addPaidCredits: (amount: number) => void;
   canAfford: (actionType: CreditActionType, providerId: string) => boolean;
   deductCredits: (actionType: CreditActionType, providerId: string) => boolean;
+  refundCredits: (actionType: CreditActionType, providerId: string) => void;
   setLimitModalOpen: (open: boolean, actionType?: CreditActionType) => void;
   setPricingModalOpen: (open: boolean) => void;
   openPricingModal: (tab: 'topup' | 'tiers') => void;
@@ -156,6 +157,27 @@ export const useCreditStore = create<CreditState>()(
           });
         }
         return true;
+      },
+
+      refundCredits: (actionType, providerId) => {
+        if (isBYOKProvider(providerId)) return;
+        const cost = getActionCreditCost(actionType);
+        set((state) => {
+          const maxFree = state.maxDailyCredits || MAX_DAILY_CREDITS;
+          const currentFree = state.credits || 0;
+          if (currentFree < maxFree) {
+            const addedToFree = Math.min(maxFree - currentFree, cost);
+            const remainingPaid = cost - addedToFree;
+            return {
+              credits: currentFree + addedToFree,
+              paidCredits: (state.paidCredits || 0) + remainingPaid,
+            };
+          } else {
+            return {
+              paidCredits: (state.paidCredits || 0) + cost,
+            };
+          }
+        });
       },
 
       setLimitModalOpen: (open, actionType) => {

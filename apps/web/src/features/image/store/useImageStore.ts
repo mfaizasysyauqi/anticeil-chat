@@ -22,6 +22,7 @@ export interface ImageMediaItem {
   // audio-specific
   title?: string;
   voice?: string;
+  speed?: number;
   category?: 'speech' | 'music' | 'sfx';
   durationSec?: number;
   // common

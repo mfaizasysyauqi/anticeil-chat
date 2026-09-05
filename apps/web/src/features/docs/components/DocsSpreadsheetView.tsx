@@ -45,12 +45,14 @@ import { selectCommentRange, measureCommentDomPositions } from '../utils/comment
 import { DocFileTabsBar, SplitResizeDivider, RecompileSplitButton, FocusModeOverlay } from './shared';
 import { useSplitResize } from '../hooks/useSplitResize';
 import { handleStandardEditorKeyDown } from '../utils/editorKeyUtils';
+import { downloadDocAsZip } from '../utils/zipUtils';
 
 import {
   toolbarBtnStyle,
   separatorStyle,
   popoverItemStyle,
 } from '../styles/editorSharedStyles';
+import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import {
   parseWorkbook,
   parseAntsheet,
@@ -64,11 +66,23 @@ import { exportToXLSX } from 'antsheet/xlsx';
 import { exportToCSV } from 'antsheet/csv';
 import { evaluateWorkbook } from 'antsheet/formula';
 
+const SpreadsheetLoading = () => {
+  const language = useSettingsStore((s) => s.language);
+  return (
+    <SplashScreen
+      title="Anticeil Sheet"
+      subtitle={
+        language === 'id'
+          ? 'Memuat Grid & Spreadsheet Engine...'
+          : 'Loading Grid & Spreadsheet Engine...'
+      }
+    />
+  );
+};
+
 const UniverSheetsCore = dynamic(() => import('./UniverSheetsCore'), {
   ssr: false,
-  loading: () => (
-    <SplashScreen title="Anticeil Sheet" subtitle="Memuat Grid & Spreadsheet Engine..." />
-  ),
+  loading: () => <SpreadsheetLoading />,
 });
 
 const DEFAULT_STARTER_ANTSHEET = `# Financial Overview
@@ -177,7 +191,10 @@ export function DocsSpreadsheetView({
   const activeDocId           = useDocsStore((s) => s.activeDocId);
   const documents             = useDocsStore((s) => s.documents);
   const updateDocumentContent = useDocsStore((s) => s.updateDocumentContent);
+  const updateSubFileContent  = useDocsStore((s) => s.updateSubFileContent);
   const setActiveFileId       = useDocsStore((s) => s.setActiveFileId);
+
+  const language = useSettingsStore((s) => s.language);
 
   // Active Comment UI state from store
   const activeHighlightedCommentId = useDocsStore((s) => s.activeHighlightedCommentId);
@@ -308,15 +325,16 @@ export function DocsSpreadsheetView({
     setCommentDomPositions(map);
   }, [code, activeDoc?.comments, isAddingComment, draftFromLine, setCommentDomPositions]);
 
-  // Sync initial content on document change
+  // Sync initial content on document or active subfile change
   useEffect(() => {
     if (!activeDoc) return;
-    const n = normalizeToAntsheet(activeDoc.content);
+    const targetContent = activeSubFile?.content ?? activeDoc.content ?? '';
+    const isMarkdownFile = activeSubFile?.name?.endsWith('.md') || activeSubFile?.name?.endsWith('.txt');
+    const n = isMarkdownFile ? targetContent : normalizeToAntsheet(targetContent);
     setCode(n);
     setPreviewContent(n);
-    if (activeDoc.content !== n) updateDocumentContent(activeDoc.id, n);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDocId]);
+  }, [activeDocId, activeDoc?.activeFileId]);
 
   // Debounced sync code -> preview & store
   useEffect(() => {
@@ -324,12 +342,14 @@ export function DocsSpreadsheetView({
       if (isAutoCompile) {
         setPreviewContent(code);
       }
-      if (activeDoc && activeDoc.content !== code) {
+      if (activeDoc && activeSubFile && activeSubFile.content !== code) {
+        updateSubFileContent(activeDoc.id, activeSubFile.id, code);
+      } else if (activeDoc && activeDoc.content !== code) {
         updateDocumentContent(activeDoc.id, code);
       }
     }, 200);
     return () => clearTimeout(t);
-  }, [code, activeDoc, updateDocumentContent, isAutoCompile]);
+  }, [code, activeDoc, activeSubFile, updateSubFileContent, updateDocumentContent, isAutoCompile]);
 
   // Theme observer
   useEffect(() => {
@@ -470,7 +490,7 @@ export function DocsSpreadsheetView({
         `${activeDoc?.title || 'spreadsheet'}.xlsx`
       );
     } catch (err) {
-      alert('Gagal export Excel: ' + String(err));
+      alert((language === 'id' ? 'Gagal ekspor Excel: ' : 'Failed to export Excel: ') + String(err));
     }
   };
 
@@ -481,7 +501,7 @@ export function DocsSpreadsheetView({
         `${activeDoc?.title || 'spreadsheet'}.csv`
       );
     } catch (err) {
-      alert('Gagal export CSV: ' + String(err));
+      alert((language === 'id' ? 'Gagal ekspor CSV: ' : 'Failed to export CSV: ') + String(err));
     }
   };
 
@@ -611,7 +631,7 @@ export function DocsSpreadsheetView({
                   backgroundColor: isSectionMenuOpen ? 'var(--bg-subtle)' : 'transparent',
                   borderColor: isSectionMenuOpen ? 'var(--border-subtle)' : 'transparent',
                 }}
-                title="Gaya Blok / Section AntSheet"
+                title={language === 'id' ? 'Gaya Blok / Bagian AntSheet' : 'AntSheet Block / Section Styles'}
               >
                 <span style={{ fontFamily: 'serif', fontWeight: 800, fontSize: '12px', lineHeight: 1, letterSpacing: '-0.5px' }}>
                   T<span style={{ fontSize: '9.5px' }}>T</span>
@@ -641,7 +661,7 @@ export function DocsSpreadsheetView({
                   }}
                 >
                   <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Blok / Bagian AntSheet
+                    {language === 'id' ? 'Blok / Bagian AntSheet' : 'AntSheet Block / Section'}
                   </div>
                   <button
                     type="button"
@@ -650,7 +670,7 @@ export function DocsSpreadsheetView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '14px', width: '20px' }}>#</span>
-                    <span>Judul Sheet (# Sheet)</span>
+                    <span>{language === 'id' ? 'Judul Sheet (# Sheet)' : 'Sheet Title (# Sheet)'}</span>
                   </button>
                   <button
                     type="button"
@@ -659,7 +679,7 @@ export function DocsSpreadsheetView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '13px', width: '20px', color: '#60a5fa' }}>##</span>
-                    <span>Data Sel (## Cells)</span>
+                    <span>{language === 'id' ? 'Data Sel (## Cells)' : 'Cell Data (## Cells)'}</span>
                   </button>
                   <button
                     type="button"
@@ -668,7 +688,7 @@ export function DocsSpreadsheetView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '13px', width: '20px', color: '#f59e0b' }}>##</span>
-                    <span>Pengaturan Grid (## Meta)</span>
+                    <span>{language === 'id' ? 'Pengaturan Grid (## Meta)' : 'Grid Settings (## Meta)'}</span>
                   </button>
                   <button
                     type="button"
@@ -677,7 +697,7 @@ export function DocsSpreadsheetView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '13px', width: '20px', color: '#a78bfa' }}>##</span>
-                    <span>Grafik (## Charts)</span>
+                    <span>{language === 'id' ? 'Grafik (## Charts)' : 'Charts (## Charts)'}</span>
                   </button>
                   <button
                     type="button"
@@ -686,7 +706,7 @@ export function DocsSpreadsheetView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '13px', width: '20px', color: '#10b981' }}>##</span>
-                    <span>Validasi (## DataValidation)</span>
+                    <span>{language === 'id' ? 'Validasi (## DataValidation)' : 'Validation (## DataValidation)'}</span>
                   </button>
                 </div>,
                 document.body
@@ -698,7 +718,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet(' | fontWeight: bold')}
               style={{ ...toolbarBtnStyle, fontWeight: 700 }}
-              title="Tebal (fontWeight: bold)"
+              title={language === 'id' ? 'Tebal (fontWeight: bold)' : 'Bold (fontWeight: bold)'}
             >
               B
             </button>
@@ -706,7 +726,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet(' | fontStyle: italic')}
               style={{ ...toolbarBtnStyle, fontStyle: 'italic', fontFamily: 'serif' }}
-              title="Miring (fontStyle: italic)"
+              title={language === 'id' ? 'Miring (fontStyle: italic)' : 'Italic (fontStyle: italic)'}
             >
               I
             </button>
@@ -714,7 +734,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet(' | textDecoration: line-through')}
               style={{ ...toolbarBtnStyle, textDecoration: 'line-through' }}
-              title="Coret (textDecoration: line-through)"
+              title={language === 'id' ? 'Coret (textDecoration: line-through)' : 'Strikethrough (textDecoration: line-through)'}
             >
               S
             </button>
@@ -722,7 +742,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet(' | textDecoration: underline')}
               style={{ ...toolbarBtnStyle, textDecoration: 'underline' }}
-              title="Garis Bawah (textDecoration: underline)"
+              title={language === 'id' ? 'Garis Bawah (textDecoration: underline)' : 'Underline (textDecoration: underline)'}
             >
               U
             </button>
@@ -730,7 +750,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet(' | fontFamily: monospace')}
               style={toolbarBtnStyle}
-              title="Font Kode / Monospace"
+              title={language === 'id' ? 'Font Kode / Monospace' : 'Code / Monospace Font'}
             >
               <Code2 size={12} />
             </button>
@@ -742,7 +762,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('="=SUM(B2:B5)" | fontWeight: bold')}
               style={{ ...toolbarBtnStyle, fontWeight: 700, color: '#f59e0b', fontSize: '10.5px' }}
-              title="Sisipkan Rumus Formula (=SUM, dll)"
+              title={language === 'id' ? 'Sisipkan Rumus Formula (=SUM, dll)' : 'Insert Formula (=SUM, etc.)'}
             >
               $x$
             </button>
@@ -750,7 +770,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={handleEvaluateFormulas}
               style={{ ...toolbarBtnStyle, color: '#38bdf8' }}
-              title="Hitung / Evaluasi Formula In-Place (Σ)"
+              title={language === 'id' ? 'Hitung / Evaluasi Formula In-Place (Σ)' : 'Evaluate Formulas In-Place (Σ)'}
             >
               <Sigma size={12} />
             </button>
@@ -769,7 +789,7 @@ export function DocsSpreadsheetView({
                   backgroundColor: isFunctionsMenuOpen ? 'var(--bg-subtle)' : 'transparent',
                   borderColor: isFunctionsMenuOpen ? 'var(--border-subtle)' : 'transparent',
                 }}
-                title="Daftar Fungsi Formula (Ω)"
+                title={language === 'id' ? 'Daftar Fungsi Formula (Ω)' : 'Formula Functions (Ω)'}
               >
                 <span style={{ fontSize: '11.5px', fontWeight: 700 }}>Ω</span>
                 <ChevronDown size={10} style={{ opacity: 0.7, transform: isFunctionsMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
@@ -797,16 +817,16 @@ export function DocsSpreadsheetView({
                   }}
                 >
                   <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Fungsi Formula Spreadsheet
+                    {language === 'id' ? 'Fungsi Formula Spreadsheet' : 'Spreadsheet Formula Functions'}
                   </div>
                   {[
-                    { label: '=SUM(range)', desc: 'Penjumlahan total', code: '="=SUM(A1:A10)"' },
-                    { label: '=AVERAGE(range)', desc: 'Rata-rata nilai', code: '="=AVERAGE(A1:A10)"' },
-                    { label: '=IF(cond, then, else)', desc: 'Kondisi logika', code: '="=IF(A1>100, \\"High\\", \\"Low\\")"' },
-                    { label: '=COUNT(range)', desc: 'Hitung jumlah sel berisi angka', code: '="=COUNT(A1:A10)"' },
-                    { label: '=MAX(range) / MIN(range)', desc: 'Nilai tertinggi / terendah', code: '="=MAX(A1:A10)"' },
-                    { label: '=CONCAT(a, b)', desc: 'Gabungkan teks string', code: '="=CONCAT(A1, \\" - \\", B1)"' },
-                    { label: '=VLOOKUP(val, range, col, false)', desc: 'Cari data dalam tabel', code: '="=VLOOKUP(A1, B1:D20, 2, FALSE)"' },
+                    { label: '=SUM(range)', desc: language === 'id' ? 'Penjumlahan total' : 'Sum of numbers', code: '="=SUM(A1:A10)"' },
+                    { label: '=AVERAGE(range)', desc: language === 'id' ? 'Rata-rata nilai' : 'Average value', code: '="=AVERAGE(A1:A10)"' },
+                    { label: '=IF(cond, then, else)', desc: language === 'id' ? 'Kondisi logika' : 'Logical condition', code: '="=IF(A1>100, \\"High\\", \\"Low\\")"' },
+                    { label: '=COUNT(range)', desc: language === 'id' ? 'Hitung jumlah sel berisi angka' : 'Count numeric cells', code: '="=COUNT(A1:A10)"' },
+                    { label: '=MAX(range) / MIN(range)', desc: language === 'id' ? 'Nilai tertinggi / terendah' : 'Maximum / minimum value', code: '="=MAX(A1:A10)"' },
+                    { label: '=CONCAT(a, b)', desc: language === 'id' ? 'Gabungkan teks string' : 'Concatenate text', code: '="=CONCAT(A1, \\" - \\", B1)"' },
+                    { label: '=VLOOKUP(val, range, col, false)', desc: language === 'id' ? 'Cari data dalam tabel' : 'Lookup value in table', code: '="=VLOOKUP(A1, B1:D20, 2, FALSE)"' },
                   ].map((fn) => (
                     <button
                       key={fn.label}
@@ -833,7 +853,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet(' | link: "https://example.com"')}
               style={toolbarBtnStyle}
-              title="Sisipkan Link Tautan (link: ...)"
+              title={language === 'id' ? 'Sisipkan Link Tautan (link: ...)' : 'Insert Link (link: ...)'}
             >
               <Link size={12} />
             </button>
@@ -841,7 +861,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('\nA1 = "Item"')}
               style={toolbarBtnStyle}
-              title="Sisipkan Sel Koordinat (A1 = ...)"
+              title={language === 'id' ? 'Sisipkan Sel Koordinat (A1 = ...)' : 'Insert Cell Coordinate (A1 = ...)'}
             >
               <Tag size={12} />
             </button>
@@ -849,7 +869,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('\n## DataValidation\nrule1 = list | range: D2:D50, options: ["Pending", "In Progress", "Done"]\n')}
               style={{ ...toolbarBtnStyle, color: '#f59e0b' }}
-              title="Dropdown List Validation"
+              title={language === 'id' ? 'Validasi Daftar Dropdown' : 'Dropdown List Validation'}
             >
               <Filter size={12} />
             </button>
@@ -857,7 +877,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('\n## ConditionalFormatting\ncf1 = highlight | range: C2:C20, operator: ">=", value: 90, backgroundColor: #dcfce7, color: #15803d\n')}
               style={{ ...toolbarBtnStyle, color: '#10b981' }}
-              title="Aturan Warna Bersyarat (Conditional Formatting)"
+              title={language === 'id' ? 'Aturan Warna Bersyarat (Conditional Formatting)' : 'Conditional Formatting Rules'}
             >
               <Sparkles size={12} />
             </button>
@@ -865,7 +885,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('\nA1 = "Header 1"\nB1 = "Header 2"\nA2 = "Data 1"\nB2 = 100\n')}
               style={{ ...toolbarBtnStyle, color: '#10b981' }}
-              title="Sisipkan Contoh Tabel 2x2"
+              title={language === 'id' ? 'Sisipkan Contoh Tabel 2x2' : 'Insert 2x2 Sample Table'}
             >
               <Grid size={12} />
             </button>
@@ -873,7 +893,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('\n## Charts\nchart1 = bar | title: "Revenue", x: A, series: [B], position: E2:K12\n')}
               style={{ ...toolbarBtnStyle, color: '#a78bfa' }}
-              title="Sisipkan Grafik Bar / Kolom"
+              title={language === 'id' ? 'Sisipkan Grafik Bar / Kolom' : 'Insert Bar / Column Chart'}
             >
               <BarChart3 size={12} />
             </button>
@@ -881,7 +901,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('\n## Charts\nchart1 = pie | title: "Distribution", x: A, series: [B], position: E2:K12\n')}
               style={{ ...toolbarBtnStyle, color: '#0073ea' }}
-              title="Sisipkan Grafik Pie / Donat (~)"
+              title={language === 'id' ? 'Sisipkan Grafik Pie / Donat (~)' : 'Insert Pie / Donut Chart (~)'}
             >
               <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#0073ea' }}>~</span>
             </button>
@@ -893,7 +913,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={() => insertSnippet('\n---\n\n# Sheet 2: Summary\n\n## Cells\nA1 = "=Sheet1!A1"\n')}
               style={{ ...toolbarBtnStyle, color: '#ec4899' }}
-              title="Tambah Sheet Baru (Multi-Sheet)"
+              title={language === 'id' ? 'Tambah Sheet Baru (Multi-Sheet)' : 'Add New Sheet (Multi-Sheet)'}
             >
               <Layers size={12} />
             </button>
@@ -901,7 +921,7 @@ export function DocsSpreadsheetView({
               type="button"
               onClick={handleFormatCode}
               style={{ ...toolbarBtnStyle, color: '#a78bfa' }}
-              title="Rapikan & Auto-Format Kode AntSheet"
+              title={language === 'id' ? 'Rapikan & Auto-Format Kode AntSheet' : 'Format AntSheet Code'}
             >
               <Wand2 size={12} />
             </button>
@@ -914,7 +934,7 @@ export function DocsSpreadsheetView({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => triggerAddCommentFromSelection(textareaRef.current, code)}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Tambah Komentar Review (Ctrl+Shift+C)"
+              title={language === 'id' ? 'Tambah Komentar Review (Ctrl+Shift+C)' : 'Add Review Comment (Ctrl+Shift+C)'}
             >
               <MessageSquarePlus size={12} />
             </button>
@@ -1109,7 +1129,7 @@ export function DocsSpreadsheetView({
                 onRecompile={handleRecompile}
                 onToggleAutoCompile={setIsAutoCompile}
                 onResetRecompile={handleRecompile}
-                title="Kompilasi Ulang Spreadsheet (Ctrl+Enter)"
+                title={language === 'id' ? 'Kompilasi Ulang Spreadsheet (Ctrl+Enter)' : 'Recompile Spreadsheet (Ctrl+Enter)'}
               />
 
               {/* Logs / Issues Icon Button (Matches Overleaf Diagnostics in Docs Editor) */}
@@ -1131,7 +1151,11 @@ export function DocsSpreadsheetView({
                   transition: 'all 0.15s ease',
                 }}
                 className="hover-subtle"
-                title={validation.valid ? 'Logs & Kompilasi Status (Lihat log)' : `${validation.errors.length} Issue(s) found`}
+                title={
+                  validation.valid
+                    ? (language === 'id' ? 'Logs & Kompilasi Status (Lihat log)' : 'Logs & Compilation Status (View log)')
+                    : (language === 'id' ? `${validation.errors.length} Masalah ditemukan` : `${validation.errors.length} Issue(s) found`)
+                }
               >
                 <FileText size={14} />
                 {!validation.valid ? (
@@ -1143,7 +1167,7 @@ export function DocsSpreadsheetView({
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
-                      backgroundColor: '#EF4444',
+                      backgroundColor: 'var(--accent-danger, #EF4444)',
                     }}
                   />
                 ) : validation.warnings?.length ? (
@@ -1155,7 +1179,7 @@ export function DocsSpreadsheetView({
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
-                      backgroundColor: '#F59E0B',
+                      backgroundColor: 'var(--accent-warning, #F59E0B)',
                     }}
                   />
                 ) : null}
@@ -1181,7 +1205,7 @@ export function DocsSpreadsheetView({
                     transition: 'all 0.15s ease',
                   }}
                   className="hover-subtle"
-                  title="Unduh / Ekspor Spreadsheet (Download Options)"
+                  title={language === 'id' ? 'Unduh / Ekspor Spreadsheet (Opsi Download)' : 'Download / Export Spreadsheet (Download Options)'}
                 >
                   <Download size={14} />
                 </button>
@@ -1208,8 +1232,20 @@ export function DocsSpreadsheetView({
                     }}
                   >
                     <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Download Options
+                      {language === 'id' ? 'Opsi Unduhan' : 'Download Options'}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeDoc) downloadDocAsZip(activeDoc);
+                        setIsDownloadMenuOpen(false);
+                      }}
+                      className="clickable-pill"
+                      style={popoverItemStyle}
+                    >
+                      <Download size={13} color="#3b82f6" />
+                      <span>{language === 'id' ? 'Unduh ZIP AntSheet (.zip)' : 'Download AntSheet ZIP (.zip)'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -1220,7 +1256,7 @@ export function DocsSpreadsheetView({
                       style={popoverItemStyle}
                     >
                       <FileSpreadsheet size={13} color="#10b981" />
-                      <span>File Excel (.xlsx)</span>
+                      <span>{language === 'id' ? 'File Excel (.xlsx)' : 'Excel File (.xlsx)'}</span>
                     </button>
                     <button
                       type="button"
@@ -1232,7 +1268,7 @@ export function DocsSpreadsheetView({
                       style={popoverItemStyle}
                     >
                       <FileText size={13} color="#0073ea" />
-                      <span>File CSV (.csv)</span>
+                      <span>{language === 'id' ? 'File CSV (.csv)' : 'CSV File (.csv)'}</span>
                     </button>
                     <button
                       type="button"
@@ -1244,7 +1280,7 @@ export function DocsSpreadsheetView({
                       style={popoverItemStyle}
                     >
                       <Code2 size={13} color="#8b5cf6" />
-                      <span>File AntSheet (.antsheet)</span>
+                      <span>{language === 'id' ? 'File AntSheet (.antsheet)' : 'AntSheet File (.antsheet)'}</span>
                     </button>
                     <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 0' }} />
                     <button
@@ -1257,7 +1293,7 @@ export function DocsSpreadsheetView({
                       style={popoverItemStyle}
                     >
                       {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} color="#f59e0b" />}
-                      <span>{copied ? 'Tersalin ke Clipboard' : 'Salin Kode AntSheet'}</span>
+                      <span>{copied ? (language === 'id' ? 'Tersalin ke Clipboard' : 'Copied to Clipboard') : (language === 'id' ? 'Salin Kode AntSheet' : 'Copy AntSheet Code')}</span>
                     </button>
                   </div>,
                   document.body
@@ -1322,8 +1358,8 @@ export function DocsSpreadsheetView({
                       id: `err_${idx}`,
                       type: 'error',
                       line,
-                      message: typeof err === 'string' ? err : 'Format sintaks tidak valid',
-                      suggestion: 'Periksa kembali tanda kutip atau pemisah pipa (|) pada sel.',
+                      message: typeof err === 'string' ? err : (language === 'id' ? 'Format sintaks tidak valid' : 'Invalid syntax format'),
+                      suggestion: language === 'id' ? 'Periksa kembali tanda kutip atau pemisah pipa (|) pada sel.' : 'Check quotation marks or pipe (|) delimiters on the cell.',
                     });
                   });
                 }
@@ -1337,7 +1373,7 @@ export function DocsSpreadsheetView({
                       id: `warn_${idx}`,
                       type: 'warning',
                       line,
-                      message: typeof warn === 'string' ? warn : 'Peringatan pada data sel',
+                      message: typeof warn === 'string' ? warn : (language === 'id' ? 'Peringatan pada data sel' : 'Warning in cell data'),
                     });
                   });
                 }
@@ -1348,15 +1384,15 @@ export function DocsSpreadsheetView({
                     id: `formula_err_${idx}`,
                     type: 'warning',
                     line: ec.line,
-                    message: `Sel ${ec.ref} menghasilkan error formula: ${ec.error}`,
+                    message: language === 'id' ? `Sel ${ec.ref} menghasilkan error formula: ${ec.error}` : `Cell ${ec.ref} returned formula error: ${ec.error}`,
                     suggestion:
                       ec.error === '#VALUE!'
-                        ? 'Pastikan semua sel yang direferensi berisi angka, bukan teks.'
+                        ? (language === 'id' ? 'Pastikan semua sel yang direferensi berisi angka, bukan teks.' : 'Ensure all referenced cells contain numbers, not text.')
                         : ec.error === '#DIV/0!'
-                        ? 'Pembagian dengan nol — pastikan sel pembagi tidak kosong atau bernilai 0.'
+                        ? (language === 'id' ? 'Pembagian dengan nol — pastikan sel pembagi tidak kosong atau bernilai 0.' : 'Division by zero — ensure divisor cell is not empty or 0.')
                         : ec.error === '#REF!'
-                        ? 'Referensi sel tidak ditemukan atau di luar jangkauan sheet.'
-                        : 'Periksa kembali referensi sel dan tipe datanya.',
+                        ? (language === 'id' ? 'Referensi sel tidak ditemukan atau di luar jangkauan sheet.' : 'Cell reference not found or out of sheet bounds.')
+                        : (language === 'id' ? 'Periksa kembali referensi sel dan tipe datanya.' : 'Check cell reference and data type.'),
                   });
                 });
 
@@ -1366,10 +1402,14 @@ export function DocsSpreadsheetView({
                     id: 'info_success',
                     type: 'info',
                     line: 1,
-                    message: `Kompilasi sukses. Terdeteksi ${sheetsCount} sheet, ${cellsCount} sel data, ${formulasCount} formula, dan ${lines.length} baris kode.${
-                      errorCells.length > 0 ? ` ⚠ ${errorCells.length} sel mengandung error formula.` : ''
-                    }`,
-                    suggestion: chartsCount > 0 ? `Termasuk ${chartsCount} visualisasi grafik aktif.` : undefined,
+                    message: language === 'id'
+                      ? `Kompilasi sukses. Terdeteksi ${sheetsCount} sheet, ${cellsCount} sel data, ${formulasCount} formula, dan ${lines.length} baris kode.${
+                          errorCells.length > 0 ? ` ⚠ ${errorCells.length} sel mengandung error formula.` : ''
+                        }`
+                      : `Compilation successful. Detected ${sheetsCount} sheet(s), ${cellsCount} data cells, ${formulasCount} formulas, and ${lines.length} lines of code.${
+                          errorCells.length > 0 ? ` ⚠ ${errorCells.length} cells contain formula errors.` : ''
+                        }`,
+                    suggestion: chartsCount > 0 ? (language === 'id' ? `Termasuk ${chartsCount} visualisasi grafik aktif.` : `Includes ${chartsCount} active chart visualizations.`) : undefined,
                   });
                 }
 
@@ -1404,7 +1444,7 @@ export function DocsSpreadsheetView({
                           ? 'rgba(245, 158, 11, 0.08)'
                           : 'var(--bg-subtle)',
                       borderLeft: `3px solid ${
-                        d.type === 'error' ? '#EF4444' : d.type === 'warning' ? '#F59E0B' : 'var(--brand-primary)'
+                        d.type === 'error' ? 'var(--accent-danger, #EF4444)' : d.type === 'warning' ? 'var(--accent-warning, #F59E0B)' : 'var(--brand-primary)'
                       }`,
                       marginBottom: '6px',
                       gap: '8px',
@@ -1417,13 +1457,13 @@ export function DocsSpreadsheetView({
                             fontSize: '10px',
                             fontWeight: 700,
                             textTransform: 'uppercase',
-                            color: d.type === 'error' ? '#EF4444' : d.type === 'warning' ? '#F59E0B' : 'var(--brand-primary)',
+                            color: d.type === 'error' ? 'var(--accent-danger, #EF4444)' : d.type === 'warning' ? 'var(--accent-warning, #F59E0B)' : 'var(--brand-primary)',
                           }}
                         >
                           {d.type}
                         </span>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          Baris {d.line} ({activeFileName})
+                          {language === 'id' ? `Baris ${d.line}` : `Line ${d.line}`} ({activeFileName})
                         </span>
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500 }}>
@@ -1453,7 +1493,7 @@ export function DocsSpreadsheetView({
                         }}
                         className="hover-subtle"
                       >
-                        Lompat ke Baris
+                        {language === 'id' ? 'Lompat ke Baris' : 'Jump to Line'}
                       </button>
                     </div>
                   </div>

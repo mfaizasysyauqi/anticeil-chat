@@ -321,15 +321,11 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
             isListening
               ? 'var(--accent-danger)'
               : isFocused
-              ? 'var(--border-focus)'
+              ? 'var(--border-strong)'
               : 'var(--border-subtle)'
           }`,
           borderRadius: 'var(--radius-xl)',
-          boxShadow: isListening
-            ? '0 0 16px rgba(239, 68, 68, 0.25)'
-            : isFocused
-            ? 'var(--shadow-lg)'
-            : 'var(--shadow-md)',
+          boxShadow: isListening ? '0 0 16px rgba(239, 68, 68, 0.25)' : 'none',
           display: 'flex',
           flexDirection: 'column',
           padding: '10px 14px',
@@ -440,16 +436,31 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
         {/* Bottom Toolbar inside input (Grok Alignment & Ordering) */}
         <div
+          className="chat-input-toolbar"
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             marginTop: '8px',
             paddingTop: '6px',
+            gap: '8px',
+            flexWrap: 'wrap',
+            width: '100%',
           }}
         >
           {/* Left: Plus (+) Attach Button & Popup Menu */}
-          <div ref={plusMenuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div
+            ref={plusMenuRef}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              flexWrap: 'wrap',
+              minWidth: 0,
+              flex: '1 1 auto',
+            }}
+          >
             {/* File Upload / Plus Menu Toggle Button */}
             <button
               type="button"
@@ -563,6 +574,10 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                   type="button"
                   onClick={() => {
                     setIsPlusMenuOpen(false);
+                    if (!user) {
+                      openAuthModal('login');
+                      return;
+                    }
                     setIsModelSelectorOpen(true);
                   }}
                   style={{
@@ -752,11 +767,17 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
           </div>
 
           {/* Right Group (Grok Order: Model Selector -> Mic -> Send) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexShrink: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, marginLeft: 'auto' }}>
             {/* 1. Model Selector Dropdown Text (Grok style) */}
             <button
               type="button"
-              onClick={() => setIsModelSelectorOpen(true)}
+              onClick={() => {
+                if (!user) {
+                  openAuthModal('login');
+                  return;
+                }
+                setIsModelSelectorOpen(true);
+              }}
               title={t.models.title}
               className="clickable-pill"
               style={{
@@ -771,7 +792,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                 fontSize: '12.5px',
                 fontWeight: 500,
                 cursor: 'pointer',
-                maxWidth: '180px',
+                maxWidth: '160px',
                 minWidth: 0,
                 flexShrink: 1,
                 transition: 'color 0.15s ease, background 0.15s ease',

@@ -377,15 +377,21 @@ export const useStorageStore = create<StorageState>()(
       },
 
       canFit: (incomingBytes: number) => {
-        const { usedBytes } = get();
+        const tier = useAuthStore.getState().tier;
         const limitBytes = get().getEffectiveLimit();
+        // Free tier has Unlimited Local Browser Storage (limitBytes === 0)
+        if (tier === 'free' || limitBytes === 0 || limitBytes === Infinity) {
+          return true;
+        }
+        const { usedBytes } = get();
         return usedBytes + incomingBytes <= limitBytes;
       },
 
       addUsage: (bytes: number, category: keyof StorageBreakdown = 'other') => {
+        const tier = useAuthStore.getState().tier;
         const { usedBytes, breakdown, fileCount, sources, r2Details } = get();
         const limitBytes = get().getEffectiveLimit();
-        if (usedBytes + bytes > limitBytes) return false;
+        if (tier !== 'free' && limitBytes > 0 && usedBytes + bytes > limitBytes) return false;
         set({
           usedBytes: usedBytes + bytes,
           limitBytes,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Sparkles, GraduationCap, Cpu, Sigma, FileText, Check } from 'lucide-react';
 import { DOC_TEMPLATES, DocTemplate } from '../data/docTemplates';
+import { useSettingsStore } from '../../settings/store/useSettingsStore';
 
 interface DocsTemplateModalProps {
   isOpen: boolean;
@@ -9,21 +10,29 @@ interface DocsTemplateModalProps {
 }
 
 export function DocsTemplateModal({ isOpen, onClose, onSelectTemplate }: DocsTemplateModalProps) {
+  const language = useSettingsStore((s) => s.language);
   if (!isOpen) return null;
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'GraduationCap':
-        return <GraduationCap size={20} color="#0073EA" />;
+        return <GraduationCap size={20} color="var(--brand-primary, #0073EA)" />;
       case 'Cpu':
-        return <Cpu size={20} color="#10B981" />;
+        return <Cpu size={20} color="var(--accent-success, #10B981)" />;
       case 'Sigma':
-        return <Sigma size={20} color="#8B5CF6" />;
+        return <Sigma size={20} color="var(--brand-secondary, #8B5CF6)" />;
       case 'FileText':
         return <FileText size={20} color="#EC4899" />;
       default:
-        return <Sparkles size={20} color="#0073EA" />;
+        return <Sparkles size={20} color="var(--brand-primary, #0073EA)" />;
     }
+  };
+
+  const catMap: Record<string, string> = {
+    academic: language === 'id' ? 'Akademik' : 'Academic',
+    technical: language === 'id' ? 'Teknis' : 'Technical',
+    business: language === 'id' ? 'Bisnis' : 'Business',
+    notes: language === 'id' ? 'Catatan' : 'Notes',
   };
 
   return (
@@ -85,10 +94,12 @@ export function DocsTemplateModal({ isOpen, onClose, onSelectTemplate }: DocsTem
             </div>
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                Galeri Template Akademik & Dokumen
+                {language === 'id' ? 'Galeri Template Akademik & Dokumen' : 'Academic & Document Template Gallery'}
               </h2>
               <p style={{ fontSize: '12px', margin: 0, color: 'var(--text-muted)' }}>
-                Pilih template Markdown & LaTeX ilmiah siap pakai
+                {language === 'id'
+                  ? 'Pilih template Markdown, Typst & LaTeX ilmiah siap pakai'
+                  : 'Choose ready-to-use scientific Markdown, Typst & LaTeX templates'}
               </p>
             </div>
           </div>
@@ -177,7 +188,7 @@ export function DocsTemplateModal({ isOpen, onClose, onSelectTemplate }: DocsTem
                     color: 'var(--text-muted)',
                   }}
                 >
-                  {tpl.category}
+                  {catMap[tpl.category] || tpl.category}
                 </span>
               </div>
               <div>
@@ -185,7 +196,7 @@ export function DocsTemplateModal({ isOpen, onClose, onSelectTemplate }: DocsTem
                   {tpl.title}
                 </h3>
                 <p style={{ fontSize: '12px', margin: 0, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                  {tpl.description}
+                  {language === 'id' ? tpl.description : (tpl.descriptionEn || tpl.description)}
                 </p>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { DocSubFile } from '../store/useDocsStore';
+import { DocSubFile, DocFormat } from '../store/useDocsStore';
 
 export interface DocDiagnostic {
   id: string;
@@ -163,6 +163,98 @@ function lintLatex(content: string, files: DocSubFile[], activeFileName: string)
     // 5. Check Math Syntax
     if (line.includes('$$') || line.includes('$')) {
       totalEquations++;
+    }
+
+    // 6. Check unescaped '&' in normal text (outside tables and alignments)
+    if (/(?<!\\)&/.test(line)) {
+      const inTable = envStack.some((e) =>
+        ['tabular', 'table', 'align', 'matrix', 'pmatrix', 'bmatrix', 'split', 'cases'].includes(e.name)
+      );
+      if (!inTable) {
+        warnings.push({
+          id: `unescaped_ampersand_${lineNum}`,
+          type: 'warning',
+          message: `Karakter '&' ditemukan tanpa escape. Gunakan '\\&' untuk menulis simbol ampersand dalam teks LaTeX.`,
+          line: lineNum,
+          fileName: activeFileName,
+          snippet: line.trim(),
+          suggestion: `Ganti '&' menjadi '\\&' agar tidak dianggap sebagai pemisah kolom tabel.`,
+        });
+      }
+    }
+
+    // 7. Check for Markdown syntax leaking into .tex documents
+    if (/^#{1,6}\s+/.test(line.trim())) {
+      warnings.push({
+        id: `markdown_header_in_tex_${lineNum}`,
+        type: 'warning',
+        message: `Heading Markdown (${line.trim().split(' ')[0]}) terdeteksi di dalam file LaTeX.`,
+        line: lineNum,
+        fileName: activeFileName,
+        snippet: line.trim(),
+        suggestion: `Gunakan '\\section{...}', '\\subsection{...}', atau '\\subsubsection{...}'.`,
+      });
+    } else if (/\*\*[^*]+\*\*/.test(line)) {
+      warnings.push({
+        id: `markdown_bold_in_tex_${lineNum}`,
+        type: 'warning',
+        message: `Format cetak tebal Markdown (**teks**) terdeteksi di dalam file LaTeX.`,
+        line: lineNum,
+        fileName: activeFileName,
+        snippet: line.trim(),
+        suggestion: `Gunakan '\\textbf{...}' untuk cetak tebal di LaTeX.`,
+      });
+    }
+
+    // 8. Check for unrecognized / unrendered LaTeX commands
+    const cleanLineForCmds = line.replace(/%.*$/, ''); // ignore inline comments
+    const cmdMatches = [...cleanLineForCmds.matchAll(/\\([a-zA-Z]{3,25})/g)];
+    const KNOWN_COMMANDS = new Set([
+      'documentclass', 'usepackage', 'input', 'include', 'begin', 'end',
+      'section', 'subsection', 'subsubsection', 'paragraph', 'subparagraph',
+      'title', 'author', 'date', 'maketitle', 'tableofcontents', 'listoffigures', 'listoftables',
+      'textbf', 'textit', 'emph', 'underline', 'texttt', 'textsc', 'textsl', 'textup', 'textmd',
+      'textsf', 'sffamily', 'ttfamily', 'scshape', 'bfseries', 'itshape', 'normalfont', 'familydefault', 'sfdefault', 'rmdefault', 'ttdefault',
+      'textsuperscript', 'textsubscript', 'sout', 'st', 'label', 'ref', 'pageref', 'cite', 'bibitem',
+      'href', 'url', 'includegraphics', 'caption', 'vspace', 'hspace', 'vfill', 'hfill', 'fill',
+      'textwidth', 'textheight', 'linewidth', 'columnsep', 'columnseprule', 'topmargin', 'oddsidemargin',
+      'centering', 'raggedright', 'raggedleft', 'noindent', 'newpage', 'clearpage', 'pagebreak', 'cleardoublepage',
+      'footnote', 'rule', 'hrule', 'titlerule', 'color', 'textcolor', 'definecolor', 'colorlet',
+      'titleformat', 'titlespacing', 'geometry', 'pagestyle', 'thispagestyle', 'pagenumbering', 'setcounter', 'addtocounter', 'stepcounter',
+      'fancyhf', 'fancyhead', 'fancyfoot', 'renewenvironment', 'newenvironment',
+      'renewcommand', 'newcommand', 'setlength', 'addtolength', 'arraystretch', 'baselineskip', 'parindent', 'parskip', 'markboth', 'markright', 'hypersetup',
+      'today', 'smallskip', 'medskip', 'bigskip', 'newline', 'linebreak', 'break',
+      'item', 'ieeeparstart', 'ieeedropcase', 'thanks', 'fbox', 'framebox', 'minipage',
+      'tcolorbox', 'abstract', 'keywords', 'ieeekeywords', 'thebibliography', 'printbibliography', 'addbibresource', 'bibliographystyle', 'bibliography',
+      'headrulewidth', 'footrulewidth', 'thepage', 'thesection', 'thesubsection',
+      'large', 'huge', 'small', 'footnotesize', 'scriptsize', 'tiny', 'normalsize',
+      'frac', 'sqrt', 'sum', 'prod', 'int', 'alpha', 'beta', 'gamma', 'delta', 'epsilon',
+      'theta', 'lambda', 'mu', 'pi', 'sigma', 'tau', 'phi', 'omega', 'infty', 'partial',
+      'nabla', 'pm', 'times', 'div', 'cdot', 'leq', 'geq', 'neq', 'approx', 'equiv',
+      'forall', 'exists', 'subset', 'cup', 'cap', 'leftarrow', 'rightarrow', 'Rightarrow',
+      'leftrightarrow', 'mathbf', 'mathit', 'mathbb', 'mathcal', 'sin', 'cos', 'tan',
+      'log', 'ln', 'lim', 'max', 'min', 'left', 'right', 'text', 'quad', 'qquad', 'enspace',
+      'toprule', 'midrule', 'bottomrule', 'hline', 'cline', 'multicolumn', 'multirow',
+      'rowcolor', 'columncolor', 'cellcolor', 'arraybackslash', 'centerline', 'leftline', 'rightline',
+      'mbox', 'hbox', 'vbox', 'parbox', 'makebox', 'raisebox', 'resizebox', 'scalebox',
+      'colorbox', 'fcolorbox', 'par', 'eqref', 'dotfill', 'hrulefill', 'dots', 'ldots',
+      'multicols', 'appendix', 'bullet', 'circ', 'degree', 'textdegree', 'textcelsius',
+      'copyright', 'textregistered', 'texttrademark', 'babel', 'helvet', 'enumitem', 'booktabs',
+      'xcolor', 'hyperref', 'titlesec', 'array', 'setlist'
+    ]);
+    for (const cm of cmdMatches) {
+      const cmdName = cm[1].toLowerCase();
+      if (!KNOWN_COMMANDS.has(cmdName)) {
+        warnings.push({
+          id: `unknown_cmd_${lineNum}_${cmdName}`,
+          type: 'warning',
+          message: `Perintah LaTeX '\\${cm[1]}' mungkin belum didukung atau salah ketik.`,
+          line: lineNum,
+          fileName: activeFileName,
+          snippet: line.trim(),
+          suggestion: `Periksa ejaan perintah LaTeX atau gunakan perintah alternatif yang didukung.`,
+        });
+      }
     }
   }
 
@@ -592,8 +684,98 @@ function lintSlide(content: string, activeFileName: string): LintResult {
 }
 
 /**
+ * Specialized linter for Typst documents (.typ)
+ */
+function lintTypst(content: string, activeFileName: string): LintResult {
+  const errors: DocDiagnostic[] = [];
+  const warnings: DocDiagnostic[] = [];
+  const infos: DocDiagnostic[] = [];
+
+  const lines = content.split('\n');
+  let totalHeadings = 0;
+  let totalMath = 0;
+  let inCodeBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineNum = i + 1;
+    const line = lines[i];
+
+    if (line.trim().startsWith('```')) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+
+    // Check headings (= Heading)
+    if (/^={1,6}\s+/.test(line.trim())) {
+      totalHeadings++;
+    }
+
+    // Check math delimiters ($ ... $)
+    if (line.includes('$')) {
+      totalMath++;
+    }
+
+    // Check parens & bracket balance in #set/#show/#let rules
+    if (line.trim().startsWith('#set ') || line.trim().startsWith('#show ') || line.trim().startsWith('#let ')) {
+      let openParen = 0;
+      let openBracket = 0;
+      for (const char of line) {
+        if (char === '(') openParen++;
+        if (char === ')') openParen--;
+        if (char === '[') openBracket++;
+        if (char === ']') openBracket--;
+      }
+      if (openParen > 0) {
+        warnings.push({
+          id: `unclosed_typst_paren_${lineNum}`,
+          type: 'warning',
+          message: `Aturan Typst '${line.trim().split(' ')[0]}' memiliki tanda kurung '(' yang belum ditutup.`,
+          line: lineNum,
+          fileName: activeFileName,
+          snippet: line.trim(),
+          suggestion: `Periksa tanda penutup ')' pada aturan Typst ini.`,
+        });
+      }
+      if (openBracket > 0) {
+        warnings.push({
+          id: `unclosed_typst_bracket_${lineNum}`,
+          type: 'warning',
+          message: `Blok Typst '${line.trim().split(' ')[0]}' memiliki kurung siku '[' yang belum ditutup.`,
+          line: lineNum,
+          fileName: activeFileName,
+          snippet: line.trim(),
+          suggestion: `Periksa tanda penutup ']' pada blok ini.`,
+        });
+      }
+    }
+  }
+
+  if (inCodeBlock) {
+    errors.push({
+      id: 'typst_unclosed_code',
+      type: 'error',
+      message: 'Blok kode ``` Typst belum ditutup.',
+      line: lines.length,
+      fileName: activeFileName,
+      suggestion: 'Tambahkan penutup ``` di akhir blok kode.',
+    });
+  }
+
+  infos.push({
+    id: 'info_typst_valid',
+    type: 'info',
+    message: `Dokumen Typst (.typ) terstruktur. Ditemukan ${totalHeadings} heading, ${totalMath} formula math, dan ${lines.length} baris kode.`,
+    line: 1,
+    fileName: activeFileName,
+  });
+
+  return { errors, warnings, infos, totalLogs: errors.length + warnings.length + infos.length };
+}
+
+/**
  * Main linter dispatcher — automatically applies the correct validation rules
- * based on file extension (.tex, .md, .bib, .json, .csv, .antsheet, .slide)
+ * based on file extension (.tex, .md, .bib, .json, .csv, .antsheet, .slide, .typ)
  */
 export function lintDocumentContent(
   content: string,
@@ -625,6 +807,9 @@ export function lintDocumentContent(
     case 'md':
     case 'markdown':
       return lintMarkdown(content, activeFileName);
+    case 'typ':
+    case 'typst':
+      return lintTypst(content, activeFileName);
     case 'json':
       return lintJson(content, activeFileName);
     case 'csv':
@@ -639,4 +824,119 @@ export function lintDocumentContent(
     default:
       return lintLatex(content, files, activeFileName);
   }
+}
+
+export interface AutoFixResult {
+  fixedCode: string;
+  wasRepaired: boolean;
+  remainingErrors: DocDiagnostic[];
+}
+
+/**
+ * Deterministic Auto-Fixer for AI-generated code.
+ * Fixes unclosed LaTeX environments, missing \end{document}, unclosed code fences,
+ * unclosed math delimiters, and unbalanced HTML tags.
+ */
+export function autoFixDocCode(
+  content: string,
+  format: DocFormat = 'latex',
+  files: DocSubFile[] = []
+): AutoFixResult {
+  if (!content) {
+    return { fixedCode: content, wasRepaired: false, remainingErrors: [] };
+  }
+
+  let code = content;
+  let wasRepaired = false;
+
+  // 1. Balance Code Fences ```
+  const fenceMatches = code.match(/^```/gm);
+  if (fenceMatches && fenceMatches.length % 2 !== 0) {
+    code = code.trimEnd() + '\n```\n';
+    wasRepaired = true;
+  }
+
+  // 2. Fix LaTeX Environments & Structure
+  if (format === 'latex' || code.includes('\\documentclass') || code.includes('\\begin{')) {
+    const lines = code.split('\n');
+    const envStack: string[] = [];
+    let hasBeginDoc = false;
+    let hasEndDoc = false;
+    let inVerbatim = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('%')) continue;
+
+      if (line.startsWith('```') || line.startsWith('\\begin{verbatim}') || line.startsWith('\\begin{lstlisting}')) {
+        inVerbatim = !inVerbatim;
+        continue;
+      }
+      if (inVerbatim) continue;
+
+      if (line.includes('\\begin{document}')) hasBeginDoc = true;
+      if (line.includes('\\end{document}')) hasEndDoc = true;
+
+      const beginMatches = [...line.matchAll(/\\begin\{([a-zA-Z0-9*]+)\}/g)];
+      for (const m of beginMatches) {
+        envStack.push(m[1]);
+      }
+
+      const endMatches = [...line.matchAll(/\\end\{([a-zA-Z0-9*]+)\}/g)];
+      for (const m of endMatches) {
+        const envName = m[1];
+        if (envStack.length > 0 && envStack[envStack.length - 1] === envName) {
+          envStack.pop();
+        } else {
+          // Mismatched or orphan end tag, prune matching stack item if present
+          const idx = envStack.lastIndexOf(envName);
+          if (idx !== -1) {
+            envStack.splice(idx, 1);
+          }
+        }
+      }
+    }
+
+    // Auto-close unclosed LaTeX environments
+    if (envStack.length > 0) {
+      const remainingEnvs = [...envStack].reverse();
+      let closers = '';
+      for (const env of remainingEnvs) {
+        if (env === 'document' && hasEndDoc) continue;
+        closers += `\n\\end{${env}}`;
+      }
+      if (closers) {
+        code = code.trimEnd() + closers + '\n';
+        wasRepaired = true;
+      }
+    }
+
+    // Ensure \end{document} exists if \begin{document} is declared
+    if (hasBeginDoc && !hasEndDoc && !code.includes('\\end{document}')) {
+      code = code.trimEnd() + '\n\\end{document}\n';
+      wasRepaired = true;
+    }
+  }
+
+  // 3. Balance Inline Math Delimiters $$ or $
+  if (format === 'latex' || format === 'markdown' || format === 'slide' || format === 'typst') {
+    const doubleDollarCount = (code.match(/\$\$/g) || []).length;
+    if (doubleDollarCount % 2 !== 0) {
+      code = code.trimEnd() + '\n$$\n';
+      wasRepaired = true;
+    }
+  }
+
+  // Run linter to get remaining diagnostic logs
+  const lintResult = lintDocumentContent(
+    code,
+    files,
+    format === 'latex' ? 'main.tex' : format === 'slide' ? 'main.slide' : format === 'typst' ? 'main.typ' : 'sheet1.antsheet'
+  );
+
+  return {
+    fixedCode: code,
+    wasRepaired,
+    remainingErrors: lintResult.errors,
+  };
 }

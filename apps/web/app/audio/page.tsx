@@ -1,13 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { AppShell } from '../../src/shared/components/AppShell';
-import { AudioView } from '../../src/features/audio/components/AudioView';
+import { MediaStudioView } from '../../src/features/media/components/MediaStudioView';
 
 export default function AudioPage() {
   return (
     <AppShell showSidebar={true}>
-      <AudioView />
+      <Suspense fallback={<div style={{ padding: '24px', color: 'var(--text-muted)' }}>Loading...</div>}>
+        <MediaStudioView />
+      </Suspense>
     </AppShell>
   );
 }

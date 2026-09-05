@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
-  Phone,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -14,9 +13,16 @@ import {
   LogOut,
   Sparkles,
   Zap,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import {
+  PhoneInputWithCountry,
+  COUNTRIES,
+  CountryInfo,
+} from '@/shared/components/PhoneInputWithCountry';
+import { TurnstileWidget } from '@/shared/components/TurnstileWidget';
 
 export function AuthModal() {
   const isOpen = useAuthStore((s) => s.isAuthModalOpen);
@@ -37,12 +43,16 @@ export function AuthModal() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   // Phone & Telegram Verification State
+  const [selectedCountry, setSelectedCountry] = useState<CountryInfo>(COUNTRIES[0]);
   const [phone, setPhone] = useState('');
+  const [fullPhone, setFullPhone] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [telegramToken, setTelegramToken] = useState<string | null>(null);
   const [telegramBotUrl, setTelegramBotUrl] = useState<string | null>(null);
   const [isWaitingTelegram, setIsWaitingTelegram] = useState(false);
   const [isTelegramVerified, setIsTelegramVerified] = useState(false);
   const [isTelegramLoading, setIsTelegramLoading] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [telegramCooldown, setTelegramCooldown] = useState(0);
 
   useEffect(() => {
@@ -66,6 +76,7 @@ export function AuthModal() {
       setIsGoogleLoading(false);
       if (!needsPhoneVerification) {
         setPhone('');
+        setFullPhone('');
         setTelegramToken(null);
         setTelegramBotUrl(null);
         setIsWaitingTelegram(false);
@@ -74,7 +85,7 @@ export function AuthModal() {
     }
   }, [isOpen, mode, needsPhoneVerification]);
 
-  // Poll Telegram verification status every 2.5s while waiting
+  // Poll Telegram verification status every 1.8s while waiting
   useEffect(() => {
     if (!telegramToken || !isWaitingTelegram || isTelegramVerified) return;
     const interval = setInterval(async () => {
@@ -96,18 +107,55 @@ export function AuthModal() {
           setTimeout(() => {
             setAuthModalOpen(false);
             window.location.reload();
-          }, 1200);
+          }, 1000);
         }
       } catch {
         // Silent poll error
       }
-    }, 2500);
+    }, 1800);
 
     return () => clearInterval(interval);
   }, [telegramToken, isWaitingTelegram, isTelegramVerified, saveVerifiedPhone, setAuthModalOpen, isId]);
 
+  const handleManualCheckStatus = async () => {
+    if (!telegramToken) return;
+    setIsCheckingStatus(true);
+    setLocalError(null);
+    try {
+      const res = await fetch(`/api/auth/telegram-verify?token=${telegramToken}`);
+      const data = await res.json();
+      if (data.verified) {
+        setIsTelegramVerified(true);
+        setIsWaitingTelegram(false);
+        setSuccessMessage(
+          isId ? 'Nomor HP Berhasil Diverifikasi!' : 'Phone Number Verified Successfully!'
+        );
+
+        if (data.phone) {
+          await saveVerifiedPhone(data.phone, data.telegramUserId);
+        }
+
+        setTimeout(() => {
+          setAuthModalOpen(false);
+          window.location.reload();
+        }, 1000);
+      } else {
+        setLocalError(
+          isId
+            ? 'Belum mendeteksi verifikasi. Pastikan Anda sudah membuka bot Telegram dan menekan tombol "Start".'
+            : 'Verification not detected yet. Please make sure you have opened the Telegram bot and pressed "Start".'
+        );
+      }
+    } catch {
+      setLocalError(isId ? 'Gagal memeriksa status verifikasi' : 'Failed to check verification status');
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  };
+
   const handleStartTelegramVerify = async () => {
-    if (!phone.trim()) {
+    const targetPhone = fullPhone.trim() || (phone.trim() ? `${selectedCountry.dialCode}${phone.trim()}` : '');
+    if (!targetPhone || !phone.trim()) {
       setLocalError(
         isId ? 'Harap masukkan nomor WhatsApp/HP Anda' : 'Please enter your phone number'
       );
@@ -119,7 +167,7 @@ export function AuthModal() {
       const res = await fetch('/api/auth/telegram-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create-session', phone: phone.trim() }),
+        body: JSON.stringify({ action: 'create-session', phone: targetPhone, turnstileToken }),
       });
       const data = await res.json();
       if (data.token) {
@@ -157,18 +205,6 @@ export function AuthModal() {
   if (!isOpen || !mounted) return null;
 
   const isPhoneGateMode = mode === 'verify_phone' || needsPhoneVerification;
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '9px 12px 9px 36px',
-    borderRadius: 'var(--radius-md, 8px)',
-    border: '1px solid var(--border-subtle)',
-    background: 'var(--bg-subtle)',
-    color: 'var(--text-primary)',
-    fontSize: '13px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  };
 
   return createPortal(
     <div
@@ -304,33 +340,18 @@ export function AuthModal() {
               >
                 {isId ? 'Nomor HP / WhatsApp' : 'Phone Number'}
               </label>
-              <div style={{ position: 'relative' }}>
-                <Phone
-                  size={15}
-                  color={isTelegramVerified ? 'var(--accent-success, #00C875)' : 'var(--text-muted)'}
-                  style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder={isId ? '+62 812-3456-7890' : '+1 234 567 8900'}
-                  disabled={isTelegramVerified || isWaitingTelegram}
-                  style={{
-                    ...inputStyle,
-                    border: isTelegramVerified
-                      ? '1px solid var(--accent-success, #00C875)'
-                      : '1px solid var(--border-subtle)',
-                    background: isTelegramVerified ? 'rgba(0, 200, 117, 0.06)' : 'var(--bg-subtle)',
-                  }}
-                />
-              </div>
+              <PhoneInputWithCountry
+                value={phone}
+                selectedCountry={selectedCountry}
+                onCountryChange={setSelectedCountry}
+                onChange={(cleanDigits, fullE164, country) => {
+                  setPhone(cleanDigits);
+                  setFullPhone(fullE164);
+                }}
+                disabled={isTelegramLoading || isWaitingTelegram}
+                isVerified={isTelegramVerified}
+                language={isId ? 'id' : 'en'}
+              />
             </div>
 
             {/* Telegram Action Box */}
@@ -358,60 +379,111 @@ export function AuthModal() {
                     : 'Click below to open Anticeil Telegram Bot, then press Start and Share Contact to verify automatically.'}
                 </p>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={handleStartTelegramVerify}
-                    disabled={isTelegramLoading || telegramCooldown > 0}
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      padding: '10px 14px',
-                      borderRadius: 'var(--radius-md, 8px)',
-                      border: 'none',
-                      background: '#0088cc',
-                      color: '#fff',
-                      fontSize: '12.5px',
-                      fontWeight: 600,
-                      cursor: isTelegramLoading || telegramCooldown > 0 ? 'not-allowed' : 'pointer',
-                      opacity: isTelegramLoading || telegramCooldown > 0 ? 0.7 : 1,
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {isTelegramLoading ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : telegramCooldown > 0 ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        <span>{isId ? `Tunggu ${telegramCooldown}s` : `Wait ${telegramCooldown}s`}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ExternalLink size={14} />
-                        <span>{isId ? 'Buka Bot Telegram' : 'Open Telegram Bot'}</span>
-                      </>
-                    )}
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {isWaitingTelegram ? (
+                    <>
+                      {/* Manual Check Status Button (Primary) */}
+                      <button
+                        type="button"
+                        onClick={handleManualCheckStatus}
+                        disabled={isCheckingStatus}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          padding: '10px 16px',
+                          borderRadius: 'var(--radius-md, 8px)',
+                          border: 'none',
+                          background: 'var(--brand-primary, #0073ea)',
+                          color: '#fff',
+                          fontSize: '13px',
+                          fontWeight: 650,
+                          cursor: isCheckingStatus ? 'not-allowed' : 'pointer',
+                          opacity: isCheckingStatus ? 0.75 : 1,
+                          transition: 'all 0.15s ease',
+                          boxShadow: '0 2px 8px rgba(0, 115, 234, 0.3)',
+                        }}
+                      >
+                        {isCheckingStatus ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <RefreshCw size={14} />
+                        )}
+                        <span>
+                          {isCheckingStatus
+                            ? isId
+                              ? 'Memeriksa Status...'
+                              : 'Checking Status...'
+                            : isId
+                            ? 'Saya Sudah Start / Cek Status'
+                            : "I've Started / Check Status"}
+                        </span>
+                      </button>
 
-                  {isWaitingTelegram && telegramBotUrl && (
+                      {/* Re-open Bot Link (Secondary) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (telegramBotUrl) window.open(telegramBotUrl, '_blank');
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          padding: '8px 12px',
+                          borderRadius: 'var(--radius-md, 8px)',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'transparent',
+                          color: 'var(--text-secondary)',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <ExternalLink size={13} />
+                        <span>{isId ? 'Buka Ulang Bot Telegram' : 'Re-open Telegram Bot'}</span>
+                      </button>
+                    </>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => window.open(telegramBotUrl, '_blank')}
+                      onClick={handleStartTelegramVerify}
+                      disabled={isTelegramLoading || telegramCooldown > 0}
                       style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
                         padding: '10px 14px',
                         borderRadius: 'var(--radius-md, 8px)',
-                        border: '1px solid var(--border-subtle)',
-                        background: 'transparent',
-                        color: 'var(--text-secondary)',
+                        border: 'none',
+                        background: '#0088cc',
+                        color: '#fff',
                         fontSize: '12.5px',
-                        cursor: 'pointer',
+                        fontWeight: 600,
+                        cursor: isTelegramLoading || telegramCooldown > 0 ? 'not-allowed' : 'pointer',
+                        opacity: isTelegramLoading || telegramCooldown > 0 ? 0.7 : 1,
+                        transition: 'all 0.15s ease',
                       }}
-                      title={isId ? 'Buka Ulang Link Bot' : 'Re-open Bot Link'}
                     >
-                      <ExternalLink size={14} />
+                      {isTelegramLoading ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : telegramCooldown > 0 ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>{isId ? `Tunggu ${telegramCooldown}s` : `Wait ${telegramCooldown}s`}</span>
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink size={14} />
+                          <span>{isId ? 'Buka Bot Telegram' : 'Open Telegram Bot'}</span>
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
@@ -440,6 +512,34 @@ export function AuthModal() {
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent-success, #00C875)' }}>
                   {isId ? 'Nomor HP Terverifikasi' : 'Phone Number Verified'}
                 </span>
+              </div>
+            )}
+
+            {/* Cloudflare Turnstile Bot Protection (Placed cleanly at bottom) */}
+            {!isTelegramVerified && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  width: '100%',
+                  minHeight: '70px',
+                  overflow: 'visible',
+                  margin: '2px 0',
+                }}
+              >
+                <TurnstileWidget
+                  theme="dark"
+                  size="normal"
+                  onVerify={(token) => {
+                    setTurnstileToken(token);
+                    setLocalError(null);
+                  }}
+                  onError={(err) => {
+                    console.warn('Turnstile check notice:', err);
+                  }}
+                  onExpire={() => setTurnstileToken(null)}
+                />
               </div>
             )}
 

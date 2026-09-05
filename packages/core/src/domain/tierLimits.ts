@@ -28,29 +28,29 @@ export const TIER_AI_LIMITS: Record<UserTier, TierAiLimitConfig> = {
   free: {
     dailyCredits: 50,
     monthlyCredits: 0,
-    maxInputChars: 6000,       // ~1,500 tokens input
-    maxOutputTokens: 2048,     // Realistic output budget
-    maxHistoryMessages: 10,
+    maxInputChars: 12000,       // ~3,000 tokens input
+    maxOutputTokens: 8192,      // Full comprehensive document generation budget
+    maxHistoryMessages: 15,
   },
   starter: {
     dailyCredits: 50,
     monthlyCredits: 100,
-    maxInputChars: 12000,      // ~3,000 tokens input
-    maxOutputTokens: 3072,
-    maxHistoryMessages: 20,
+    maxInputChars: 24000,       // ~6,000 tokens input
+    maxOutputTokens: 8192,
+    maxHistoryMessages: 30,
   },
   pro: {
     dailyCredits: 50,
     monthlyCredits: 600,
-    maxInputChars: 24000,      // ~6,000 tokens input
-    maxOutputTokens: 4096,
-    maxHistoryMessages: 40,
+    maxInputChars: 48000,       // ~12,000 tokens input
+    maxOutputTokens: 8192,
+    maxHistoryMessages: 50,
   },
   enterprise: {
     dailyCredits: 50,
     monthlyCredits: 999999,
-    maxInputChars: 64000,      // ~16,000 tokens input
-    maxOutputTokens: 8192,
+    maxInputChars: 128000,      // ~32,000 tokens input
+    maxOutputTokens: 16384,
     maxHistoryMessages: 100,
   },
 };

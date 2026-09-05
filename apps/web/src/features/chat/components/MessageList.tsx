@@ -79,25 +79,22 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
     },
   ];
 
-  // Always render empty state during SSR to prevent hydration mismatch
+  // Always render empty state during SSR or when there are no messages
   if (!isMounted || messages.length === 0) {
     return (
       <div className="page-scroll-container" style={{ justifyContent: 'center' }}>
         <div className="page-content-wrapper" style={{ gap: 'var(--space-xl)', padding: 'var(--space-2xl) 0' }}>
-          {/* Only show starter cards when mounted and no messages */}
-          {isMounted && messages.length === 0 && (
-            <>
-              {/* Minimalist Editorial Hero Greeting */}
-              <div style={{ textAlign: 'center' }}>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '4px 10px',
-                    borderRadius: 'var(--radius-full)',
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-subtle)',
+          {/* Minimalist Editorial Hero Greeting */}
+          <div style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
                 fontSize: 'var(--font-xs)',
                 fontWeight: 600,
                 color: 'var(--text-secondary)',
@@ -138,7 +135,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
           </div>
 
           {/* Missing API Key Sleek Card */}
-          {!isKeyConfigured && (
+          {isMounted && !isKeyConfigured && (
             <div
               style={{
                 padding: 'var(--space-md) var(--space-lg)',
@@ -238,8 +235,6 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
               );
             })}
           </div>
-            </>
-          )}
         </div>
       </div>
     );

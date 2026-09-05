@@ -89,7 +89,7 @@ export function MediaDetailModal({
   const isImage = currentItem.type === 'image';
   const isVideo = currentItem.type === 'video';
   const isAudio = currentItem.type === 'audio';
-  const accentColor = isVideo ? '#fb7185' : isAudio ? '#60a5fa' : '#A25DDC';
+  const accentColor = isVideo ? '#fb7185' : isAudio ? '#60a5fa' : 'var(--rail-media-color)';
 
   const handleCopyPrompt = async () => {
     try {

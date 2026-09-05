@@ -21,6 +21,7 @@ import {
   FileText,
   Table as TableIcon,
   Layers,
+  Sparkles,
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -29,6 +30,7 @@ import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useDocsStore } from '../../features/docs/store/useDocsStore';
+import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { getTranslation } from '@anticeil/core';
 
 interface NavbarProps {
@@ -80,7 +82,11 @@ export function Navbar({
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const docs = useDocsStore((s) => s.documents);
   const activeDoc = docs.find((d) => d.id === activeDocId);
+  const selectedDocFormat = useDocsStore((s) => s.selectedFormat);
   const updateDocumentTitle = useDocsStore((s) => s.updateDocumentTitle);
+  const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
+  const imageCollections = useWorkspaceStore((s) => s.imageCollections);
+  const activeCollection = imageCollections.find((c) => c.id === activeImageCollectionId);
   const t = getTranslation(language);
 
   const [mounted, setMounted] = React.useState(false);
@@ -93,35 +99,51 @@ export function Navbar({
     if (pathname?.startsWith('/image')) {
       return {
         icon: <ImageIcon size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />,
-        title: language === 'id' ? 'Image Studio' : 'Image Studio',
+        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Gambar Baru' : 'New Image'),
         isEditable: false,
       };
     }
     if (pathname?.startsWith('/video')) {
       return {
         icon: <Video size={13.5} color="#EC4899" style={{ flexShrink: 0 }} />,
-        title: language === 'id' ? 'Video Studio' : 'Video Studio',
+        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Video Baru' : 'New Video'),
         isEditable: false,
       };
     }
     if (pathname?.startsWith('/audio')) {
       return {
         icon: <Headphones size={13.5} color="#F59E0B" style={{ flexShrink: 0 }} />,
-        title: language === 'id' ? 'Audio Studio' : 'Audio Studio',
+        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Audio Baru' : 'New Audio'),
+        isEditable: false,
+      };
+    }
+    if (pathname?.startsWith('/media')) {
+      return {
+        icon: <Sparkles size={13.5} color="var(--rail-media-color)" style={{ flexShrink: 0 }} />,
+        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Media Baru' : 'New Media'),
         isEditable: false,
       };
     }
     if (pathname?.startsWith('/docs')) {
+      const format = activeDoc?.format || selectedDocFormat || 'latex';
+      const defaultTitle = format === 'sheet'
+        ? (language === 'id' ? 'Spreadsheet Baru' : 'New Spreadsheet')
+        : format === 'slide'
+        ? (language === 'id' ? 'Slide Baru' : 'New Slide')
+        : (language === 'id' ? 'Dokumen Baru' : 'New Document');
+
+      const formatIcon = format === 'sheet' ? (
+        <TableIcon size={13.5} color="#10B981" style={{ flexShrink: 0 }} />
+      ) : format === 'slide' ? (
+        <Layers size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />
+      ) : (
+        <FileText size={13.5} color="var(--rail-docs-color)" style={{ flexShrink: 0 }} />
+      );
+
       return {
-        icon: mounted && activeDoc?.format === 'sheet' ? (
-          <TableIcon size={13.5} color="#10B981" style={{ flexShrink: 0 }} />
-        ) : mounted && activeDoc?.format === 'slide' ? (
-          <Layers size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />
-        ) : (
-          <FileText size={13.5} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
-        ),
-        title: (mounted && activeDoc?.title) || (language === 'id' ? 'Dokumen Baru' : 'New Document'),
-        isEditable: true,
+        icon: formatIcon,
+        title: (mounted && activeDoc?.title) || defaultTitle,
+        isEditable: !!activeDoc,
         onUpdateTitle: (newTitle: string) => {
           if (activeDoc) updateDocumentTitle(activeDoc.id, newTitle);
         },
@@ -136,14 +158,14 @@ export function Navbar({
     }
     // Default to /chat or root
     return {
-      icon: <MessageSquare size={13.5} color="var(--brand-primary)" style={{ flexShrink: 0 }} />,
-      title: activeSession?.title || (language === 'id' ? 'Chat Baru' : 'New Chat'),
+      icon: <MessageSquare size={13.5} color="var(--rail-chat-color)" style={{ flexShrink: 0 }} />,
+      title: activeSession?.title || (language === 'id' ? 'Percakapan Baru' : 'New Conversation'),
       isEditable: true,
       onUpdateTitle: (newTitle: string) => {
         if (activeSession) updateSession(activeSession.id, { title: newTitle });
       },
     };
-  }, [pathname, activeDoc, activeSession, language, updateDocumentTitle, updateSession]);
+  }, [pathname, activeDoc, activeSession, activeCollection, mounted, language, updateDocumentTitle, updateSession]);
 
   const [hasMounted, setHasMounted] = useState(false);
   useEffect(() => { setHasMounted(true); }, []);

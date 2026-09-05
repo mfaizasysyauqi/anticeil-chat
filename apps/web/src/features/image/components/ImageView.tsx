@@ -26,6 +26,7 @@ import {
   FolderMinus,
   ChevronRight,
   Trash2,
+  ArrowUpRight,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { ImageModelSelectorModal, IMAGE_PROVIDERS } from './ImageModelSelectorModal';
@@ -37,7 +38,7 @@ import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { getTranslation } from '@anticeil/core';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
-import { MediaControlButton } from '../../../shared/components/MediaControlButton';
+import { DropdownSelect } from '../../../shared/components/DropdownSelect';
 import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
 
 type MediaMode = 'image' | 'video' | 'audio';
@@ -101,7 +102,7 @@ export function MediaCardMenu({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
 
-  const accentColor = type === 'video' ? '#fb7185' : type === 'audio' ? '#60a5fa' : '#A25DDC';
+  const accentColor = type === 'video' ? '#fb7185' : type === 'audio' ? '#60a5fa' : 'var(--rail-media-color)';
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -406,6 +407,8 @@ export function ImageView() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showKeyGuide, setShowKeyGuide] = useState(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
 
   const imageModels: ModelInfo[] = [
     {
@@ -503,15 +506,18 @@ export function ImageView() {
     }
   }, [session?.access_token]);
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!prompt.trim()) return;
 
-    // Credit check & deduction for Anticeil Free models
+    // Credit check for Anticeil Free models (do not deduct if unable to afford)
     const isAnticeilFree = currentModelInfo?.keyType === 'free';
     if (isAnticeilFree) {
-      const allowed = useCreditStore.getState().deductCredits(mediaMode, 'anticeil');
-      if (!allowed) return;
+      const allowed = useCreditStore.getState().canAfford(mediaMode, 'anticeil');
+      if (!allowed) {
+        useCreditStore.getState().setLimitModalOpen(true, mediaMode);
+        return;
+      }
     }
 
     if (mediaMode === 'image') {
@@ -521,61 +527,81 @@ export function ImageView() {
         return;
       }
 
+      let creditDeducted = false;
       setIsGenerating(true);
-      const encodedPrompt = encodeURIComponent(`${prompt}, ${selectedStyle} style, highly detailed, masterwork`);
-      const width = selectedRatio === '16:9' ? 1280 : selectedRatio === '9:16' ? 720 : 1024;
-      const height = selectedRatio === '16:9' ? 720 : selectedRatio === '9:16' ? 1280 : 1024;
-      const modelParam = selectedModel === 'dalle3' ? 'flux' : selectedModel === 'imagen3' ? 'flux-realism' : selectedModel;
-      const directUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=${modelParam}&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
 
-      let finalUrl = directUrl;
-
-      // Save to Cloudflare R2 via save-media API
       try {
-        const res = await fetch('/api/image/save-media', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-          },
-          body: JSON.stringify({
-            type: 'image',
-            prompt: prompt.trim(),
-            mediaUrl: directUrl,
-            metadata: {
-              style: selectedStyle,
-              ratio: selectedRatio,
-              model: currentModelInfo.name,
-            },
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.url) finalUrl = data.url;
+        if (isAnticeilFree) {
+          useCreditStore.getState().deductCredits(mediaMode, 'anticeil');
+          creditDeducted = true;
         }
-      } catch (err) {
-        console.warn('[Image] Failed to upload image to R2, using direct url:', err);
-      }
 
-      const nowIso = new Date().toISOString();
-      addImageItem({
-        id: String(Date.now()),
-        type: 'image',
-        url: finalUrl,
-        prompt: prompt.trim(),
-        style: selectedStyle,
-        ratio: selectedRatio,
-        model: currentModelInfo.name,
-        createdAt: nowIso,
-        createdAtLabel: 'Just now',
-      });
+        const encodedPrompt = encodeURIComponent(`${prompt}, ${selectedStyle} style, highly detailed, masterwork`);
+        const width = selectedRatio === '16:9' ? 1280 : selectedRatio === '9:16' ? 720 : 1024;
+        const height = selectedRatio === '16:9' ? 720 : selectedRatio === '9:16' ? 1280 : 1024;
+        const modelParam = selectedModel === 'dalle3' ? 'flux' : selectedModel === 'imagen3' ? 'flux-realism' : selectedModel;
+        const directUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=${modelParam}&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
 
-      addUsage(estimatedBytes, 'images');
-      if (session?.access_token) {
-        syncFromSupabase(session.access_token, true);
+        let finalUrl = directUrl;
+
+        // Save to Cloudflare R2 via save-media API
+        try {
+          const res = await fetch('/api/image/save-media', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+            },
+            body: JSON.stringify({
+              type: 'image',
+              prompt: prompt.trim(),
+              mediaUrl: directUrl,
+              metadata: {
+                style: selectedStyle,
+                ratio: selectedRatio,
+                model: currentModelInfo.name,
+              },
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) finalUrl = data.url;
+          }
+        } catch (err) {
+          console.warn('[Image] Failed to upload image to R2, using direct url:', err);
+        }
+
+        const nowIso = new Date().toISOString();
+        const newItem = {
+          id: String(Date.now()),
+          type: 'image' as const,
+          url: finalUrl,
+          prompt: prompt.trim(),
+          style: selectedStyle,
+          ratio: selectedRatio,
+          model: currentModelInfo.name,
+          createdAt: nowIso,
+          createdAtLabel: 'Just now',
+          isPinned: false,
+          collectionId: null,
+        };
+        addImageItem(newItem);
+        setSelectedMediaItem(newItem);
+
+        addUsage(estimatedBytes, 'images');
+        if (session?.access_token) {
+          syncFromSupabase(session.access_token, true);
+        }
+        setPrompt('');
+      } catch (err: unknown) {
+        console.error('[Image Generation Error]', err);
+        if (creditDeducted && isAnticeilFree) {
+          useCreditStore.getState().refundCredits(mediaMode, 'anticeil');
+        }
+        alert(language === 'id' ? 'Gagal memproses gambar. Silakan coba lagi.' : 'Failed to generate image.');
+      } finally {
+        setIsGenerating(false);
       }
-      setIsGenerating(false);
-      setPrompt('');
     }
     // Video and audio generation removed - ImageView is image-only
   };
@@ -591,349 +617,273 @@ export function ImageView() {
     a.click();
   };
 
+  const imageStarters = [
+    {
+      category: 'Cyberpunk',
+      icon: Palette,
+      color: '#A25DDC',
+      badgeBg: 'rgba(162, 93, 220, 0.12)',
+      title: language === 'id' ? 'Kota Cyberpunk Hujan Neon' : 'Rainy Cyberpunk Neon City',
+      prompt:
+        language === 'id'
+          ? 'Pemandangan kota cyberpunk futuristik di malam hari dengan genangan air memantulkan lampu neon ungu dan mobil terbang melayang.'
+          : 'Futuristic cyberpunk cityscape at night with wet streets reflecting purple neon lights and flying cars.',
+      style: 'Cyberpunk',
+      ratio: '16:9',
+    },
+    {
+      category: 'Photorealistic',
+      icon: Sparkles,
+      color: '#0073EA',
+      badgeBg: 'rgba(0, 115, 234, 0.12)',
+      title: language === 'id' ? 'Potret Studio 8K Sinematik' : '8K Cinematic Studio Portrait',
+      prompt:
+        language === 'id'
+          ? 'Foto potret close-up studio 8K ultra realistis dengan pencahayaan dramatis, detail tekstur kulit sempurna, dan kedalaman fokus bokeh.'
+          : 'Ultra-realistic 8K close-up studio portrait with dramatic rim lighting, sharp facial details, and smooth bokeh depth.',
+      style: 'Photorealistic',
+      ratio: '1:1',
+    },
+    {
+      category: '3D Render',
+      icon: Wand2,
+      color: '#10B981',
+      badgeBg: 'rgba(16, 185, 129, 0.12)',
+      title: language === 'id' ? 'Kamar Gamer Isometrik 3D' : '3D Isometric Cozy Room',
+      prompt:
+        language === 'id'
+          ? 'Desain kamar tidur gamer isometrik 3D estetik dengan setup monitor ultrawide, tanaman hias, rak buku, dan lampu warm cozy.'
+          : 'Charming 3D isometric cozy gamer bedroom setup with ultrawide monitors, indoor plants, bookshelves, and warm ambient lighting.',
+      style: '3D Render',
+      ratio: '16:9',
+    },
+    {
+      category: 'Anime / Fantasy',
+      icon: Ratio,
+      color: '#EC4899',
+      badgeBg: 'rgba(236, 72, 153, 0.12)',
+      title: language === 'id' ? 'Kuil Fantasi Mengambang di Langit' : 'Floating Fantasy Sky Temple',
+      prompt:
+        language === 'id'
+          ? 'Kuil kuno megah mengambang di atas awan saat matahari terbenam dengan pohon sakura bercahaya dan efek cahaya mistis keemasan.'
+          : 'Majestic ancient temple floating above clouds during sunset with glowing sakura petals and mystical golden hour rays.',
+      style: 'Anime / Manga',
+      ratio: '16:9',
+    },
+  ];
+
   return (
-    <div className="page-scroll-container">
-      <div className="page-content-wrapper">
-        {/* Header */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '24px' }}>🎨</span>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <ImageModelSelectorModal
+        isOpen={isModelSelectorOpen}
+        onClose={() => setIsModelSelectorOpen(false)}
+        selectedModelId={selectedModel}
+        onSelectModel={(id) => setSelectedModel(id)}
+        mediaMode="image"
+      />
+
+      {/* ── Scrollable Upper Area (Hero + Starters) ── */}
+      <div className="page-scroll-container" style={{ flex: 1, overflowY: 'auto', justifyContent: 'center' }}>
+        <div className="page-content-wrapper" style={{ gap: 'var(--space-xl)', padding: 'var(--space-2xl) 0' }}>
+          {/* Minimalist Editorial Hero Greeting */}
+          <div style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
+                fontSize: 'var(--font-xs)',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-lg)',
+              }}
+            >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#A25DDC',
+                }}
+              />
+              <span>
+                {language === 'id'
+                  ? '100% Neural Generation • Multi-Model Image Studio'
+                  : '100% Neural Generation • Multi-Model Image Studio'}
+              </span>
+            </div>
+
             <h1
               style={{
-                fontSize: '22px',
+                fontSize: 'var(--font-3xl)',
                 fontWeight: 700,
-                letterSpacing: '-0.02em',
+                letterSpacing: '-0.03em',
                 color: 'var(--text-primary)',
+                marginBottom: 'var(--space-sm)',
+              }}
+            >
+              {language === 'id' ? 'Where should we begin?' : 'Where should we begin?'}
+            </h1>
+            <p
+              style={{
+                fontSize: 'var(--font-md)',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.5,
                 margin: 0,
               }}
             >
-              {language === 'id' ? 'Image — Studio Visual AI' : 'Image — AI Visual Studio'}
-            </h1>
+              {ti.subtitle}
+            </p>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-            {ti.subtitle}
-          </p>
-        </div>
 
-        {/* ── Prompt Card (Chat-style elegant floating input) ── */}
-        <ImageModelSelectorModal
-          isOpen={isModelSelectorOpen}
-          onClose={() => setIsModelSelectorOpen(false)}
-          mediaMode={mediaMode}
-          selectedModelId={selectedModel}
-          onSelectModel={(id) => setSelectedModel(id)}
-        />
-
-        <MediaPromptForm
-          prompt={prompt}
-          onPromptChange={setPrompt}
-          onSubmit={handleGenerate}
-          isGenerating={isGenerating}
-          placeholder={ti.promptPlaceholder}
-          modelDisplayName={modelDisplayName}
-          onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
-          language={language}
-          brandColor="var(--brand-primary)"
-          additionalControls={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
-              {/* Style selector (Image only) */}
-              {mediaMode === 'image' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                  <Palette size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                  <div style={{ position: 'relative' }}>
-                    <select
-                      value={selectedStyle}
-                      onChange={(e) => setSelectedStyle(e.target.value)}
-                      style={{
-                        appearance: 'none',
-                        background: 'var(--bg-subtle)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-md, 6px)',
-                        color: 'var(--text-secondary)',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        padding: '4px 22px 4px 10px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      {styles.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={11} color="var(--text-muted)" style={{ position: 'absolute', right: '7px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                  </div>
-                </div>
-              )}
-
-              {/* Distinct Vertical Separator */}
-              <div
-                style={{
-                  width: '1px',
-                  height: '18px',
-                  backgroundColor: 'var(--border-strong, rgba(0,0,0,0.15))',
-                  margin: '0 2px',
-                  flexShrink: 0,
-                }}
-              />
-
-              {/* Ratio buttons Group */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                <Ratio size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
-                {ratios.map((r) => (
-                  <MediaControlButton
-                    key={r}
-                    label={r}
-                    isSelected={selectedRatio === r}
-                    onClick={() => setSelectedRatio(r)}
-                    brandColor="var(--brand-primary)"
-                  />
-                ))}
-              </div>
-            </div>
-          }
-        />
-
-        {/* ── Model & Key Guide Box (Collapsible) ── */}
-        {showKeyGuide && (
+          {/* Curated Bento Starter Cards (2x2 grid) */}
           <div
             style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '12px',
-              padding: '16px 20px',
-              marginBottom: '28px',
-              boxShadow: 'var(--shadow-sm)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 'var(--space-sm)',
+              width: '100%',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <ShieldCheck size={16} color="var(--brand-primary)" />
-              <h3 style={{ fontSize: '13.5px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                {language === 'id' ? 'Panduan Model & Kebutuhan API Key Anticeil Studio' : 'Anticeil Studio Models & API Key Guide'}
-              </h3>
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.5 }}>
-              {language === 'id'
-                ? 'Anticeil mendukung model gratis tanpa API key (FLUX, Pollinations, Luma, Edge TTS, Suno stream) serta BYOK (Bring Your Own Key) untuk provider premium kelas industri.'
-                : 'Anticeil supports zero-setup free models as well as BYOK (Bring Your Own Key) for industry-grade premium models.'}
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
-              {activeModels.map((model) => (
-                <div
-                  key={model.id}
+            {imageStarters.map((card, i) => {
+              const Icon = card.icon;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setPrompt(card.prompt);
+                    setSelectedStyle(card.style);
+                    setSelectedRatio(card.ratio);
+                  }}
+                  className="hover-card"
                   style={{
-                    background: 'var(--bg-main)',
+                    padding: 'var(--space-md) var(--space-lg)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--bg-surface)',
                     border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    padding: '10px 12px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '4px',
+                    justifyContent: 'space-between',
+                    gap: 'var(--space-sm)',
+                    boxShadow: 'var(--inner-glow)',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {model.name.split('(')[0]}
-                    </span>
                     <span
                       style={{
-                        fontSize: '10px',
+                        fontSize: '11px',
                         fontWeight: 700,
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: model.keyType === 'free' ? 'rgba(0, 200, 117, 0.15)' : 'rgba(253, 171, 61, 0.15)',
-                        color: model.keyType === 'free' ? 'var(--accent-success)' : '#FDAB3D',
+                        color: card.color,
+                        background: card.badgeBg,
+                        padding: '3px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
                       }}
                     >
-                      {model.keyType === 'free' ? 'GRATIS' : 'BYOK KEY'}
+                      <Icon size={12} color={card.color} />
+                      {card.category}
+                    </span>
+                    <ArrowUpRight size={13} color="var(--text-muted)" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
+                      {card.title}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.4,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {card.prompt}
                     </span>
                   </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    {model.description}
-                  </p>
-                  <div style={{ marginTop: '4px', fontSize: '10.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span>{model.keyRequirement}</span>
-                    {model.keyType !== 'free' && (
-                      <Link
-                        href="/settings"
-                        style={{
-                          marginLeft: 'auto',
-                          color: 'var(--brand-primary)',
-                          fontSize: '10.5px',
-                          fontWeight: 700,
-                          textDecoration: 'none',
-                        }}
-                      >
-                        {language === 'id' ? 'Pasang Kunci ↗' : 'Add Key ↗'}
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Recent Generations Section ── */}
-        <div style={{ marginTop: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ImageIcon size={18} color="var(--brand-primary)" />
-              <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                {ti.recentGenerations}
-              </h2>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  background: 'var(--bg-subtle)',
-                  color: 'var(--text-muted)',
-                  padding: '2px 7px',
-                  borderRadius: '10px',
-                }}
-              >
-                {generatedImages.length}
-              </span>
-            </div>
+                </button>
+              );
+            })}
           </div>
         </div>
-
-        {/* ── Image Gallery (Image mode only) ── */}
-        {generatedImages.length === 0 ? (
-          /* Empty State */
-          <div
-            style={{
-              padding: '48px 24px',
-              textAlign: 'center',
-              borderRadius: '12px',
-              border: '1px dashed var(--border-subtle)',
-              background: 'var(--bg-card)',
-              marginBottom: '40px',
-            }}
-          >
-            <ImageIcon size={40} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 4px 0' }}>
-              {language === 'id' ? 'Belum ada gambar yang dibuat' : 'No images generated yet'}
-            </p>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-              {language === 'id' ? 'Ketik prompt di atas untuk memulai generasi gambar' : 'Type a prompt above to start generating images'}
-            </p>
-          </div>
-        ) : (
-          <div
-            className="waterfall-gallery-grid"
-            style={{
-              marginBottom: '40px',
-            }}
-          >
-            {generatedImages.map((img) => (
-              <div
-                key={img.id}
-                style={{
-                  breakInside: 'avoid',
-                  marginBottom: '16px',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-lg, 12px)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: 'var(--shadow-sm)',
-                  cursor: 'pointer',
-                }}
-                onClick={() => {
-                  const fullItem = imageItems.find((i) => i.id === img.id);
-                  if (fullItem) setSelectedMediaItem(fullItem);
-                }}
-              >
-                {/* Image */}
-                <div style={{ position: 'relative', width: '100%', aspectRatio: img.ratio.replace(':', '/') }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.url}
-                    alt={img.prompt}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block',
-                    }}
-                  />
-                </div>
-
-                {/* Card Footer Info & Actions */}
-                <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <h4
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: 700,
-                          color: 'var(--text-primary)',
-                          margin: 0,
-                          lineHeight: 1.3,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                        }}
-                      >
-                        {img.prompt}
-                      </h4>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span
-                          style={{
-                            fontSize: '10.5px',
-                            color: 'var(--text-muted)',
-                            background: 'var(--bg-subtle)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {img.style}
-                        </span>
-                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>•</span>
-                        <span
-                          style={{
-                            fontSize: '10.5px',
-                            color: 'var(--text-muted)',
-                            background: 'var(--bg-subtle)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {img.ratio}
-                        </span>
-                      </div>
-                    </div>
-
-                    <MediaCardMenu
-                      id={img.id}
-                      isPinned={(imageItems.find((i) => i.id === img.id) as any)?.isPinned}
-                      prompt={img.prompt}
-                      url={img.url}
-                      type="image"
-                      collectionId={(imageItems.find((i) => i.id === img.id) as any)?.collectionId || null}
-                      collections={imageCollections}
-                      language={language}
-                      onTogglePin={() => toggleImagePin(img.id)}
-                      onMoveToCollection={(colId) => moveImageToCollection(img.id, colId)}
-                      onCopyPrompt={() => handleCopyPrompt(img.prompt, img.id)}
-                      onDownload={() => handleDownloadImage(img.url, img.id)}
-                      onDelete={() => removeImageItem(img.id)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* ── Docked Bottom Prompt Bar ── */}
+      <MediaPromptForm
+        prompt={prompt}
+        onPromptChange={setPrompt}
+        onSubmit={handleGenerate}
+        isGenerating={isGenerating}
+        placeholder={
+          language === 'id'
+            ? 'Deskripsikan gambar yang ingin dibuat...'
+            : 'Describe the image you want to generate...'
+        }
+        modelDisplayName={modelDisplayName}
+        onModelSelectorOpen={() => {
+          if (!user) {
+            openAuthModal('login');
+            return;
+          }
+          setIsModelSelectorOpen(true);
+        }}
+        language={language as 'en' | 'id'}
+        brandColor="var(--rail-media-color)"
+        additionalControls={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Style Selector */}
+            <DropdownSelect
+              value={selectedStyle}
+              options={styles}
+              onChange={setSelectedStyle}
+              icon={<Palette size={13} color="var(--text-muted)" />}
+              brandColor="var(--rail-media-color)"
+            />
+
+            {/* Distinct Vertical Separator */}
+            <div
+              style={{
+                width: '1px',
+                height: '16px',
+                backgroundColor: 'var(--border-subtle)',
+                margin: '0 2px',
+                flexShrink: 0,
+              }}
+            />
+
+            {/* Ratio Dropdown Selector */}
+            <DropdownSelect
+              value={selectedRatio}
+              options={ratios}
+              onChange={setSelectedRatio}
+              icon={<Ratio size={13} color="var(--text-muted)" />}
+              brandColor="var(--rail-media-color)"
+            />
+          </div>
+        }
+      />
 
       {/* Media Detail Modal */}
       <MediaDetailModal

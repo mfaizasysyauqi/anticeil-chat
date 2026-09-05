@@ -184,7 +184,7 @@ export interface AnticeilDatabaseBackup {
     };
     settings?: {
       apiKeys?: Partial<ApiKeysState>;
-      theme?: 'dark' | 'light';
+      theme?: 'system' | 'dark' | 'light';
       language?: string;
     };
   };

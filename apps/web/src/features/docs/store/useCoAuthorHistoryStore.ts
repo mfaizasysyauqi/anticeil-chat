@@ -39,6 +39,7 @@ interface CoAuthorHistoryState {
   getSession: (docId: string) => CoAuthorSession | null;
   saveMessage: (docId: string, docTitle: string, msg: CoAuthorMessage) => void;
   updateLastMessage: (docId: string, partial: Partial<CoAuthorMessage>) => void;
+  removeMessages: (docId: string, messageIds: string[]) => void;
   clearSession: (docId: string) => void;
 
   // Cloud sync (starter+)
@@ -61,15 +62,24 @@ export const useCoAuthorHistoryStore = create<CoAuthorHistoryState>()(
         set((s) => {
           const existing = s.sessions[docId];
           const prev = existing?.messages ?? [];
-          // Cap local storage at MAX_LOCAL_MSGS — drop oldest
-          const trimmed = prev.length >= MAX_LOCAL_MSGS ? prev.slice(-MAX_LOCAL_MSGS + 1) : prev;
+          // Upsert message if same ID already exists
+          const existingIdx = prev.findIndex((m) => m.id === msg.id);
+          let updated: CoAuthorMessage[];
+          if (existingIdx !== -1) {
+            updated = [...prev];
+            updated[existingIdx] = { ...updated[existingIdx], ...msg };
+          } else {
+            updated = [...prev, msg];
+          }
+          // Cap local storage at MAX_LOCAL_MSGS
+          const trimmed = updated.length > MAX_LOCAL_MSGS ? updated.slice(-MAX_LOCAL_MSGS) : updated;
           return {
             sessions: {
               ...s.sessions,
               [docId]: {
                 docId,
                 docTitle,
-                messages: [...trimmed, msg],
+                messages: trimmed,
                 createdAt: existing?.createdAt ?? Date.now(),
                 updatedAt: Date.now(),
               },
@@ -90,6 +100,25 @@ export const useCoAuthorHistoryStore = create<CoAuthorHistoryState>()(
             sessions: {
               ...s.sessions,
               [docId]: { ...session, messages: msgs, updatedAt: Date.now() },
+            },
+          };
+        });
+      },
+
+      removeMessages: (docId, messageIds) => {
+        set((s) => {
+          const existing = s.sessions[docId];
+          if (!existing) return s;
+          const idSet = new Set(messageIds);
+          const updated = existing.messages.filter((m) => !idSet.has(m.id));
+          return {
+            sessions: {
+              ...s.sessions,
+              [docId]: {
+                ...existing,
+                messages: updated,
+                updatedAt: Date.now(),
+              },
             },
           };
         });

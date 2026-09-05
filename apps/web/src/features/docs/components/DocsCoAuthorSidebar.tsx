@@ -20,6 +20,11 @@ import {
   Globe,
   History,
   Trash2,
+  Plus,
+  Image as ImageIcon,
+  FileText,
+  FileCode,
+  X,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -27,10 +32,105 @@ import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { useCoAuthorHistoryStore, CoAuthorMessage } from '../store/useCoAuthorHistoryStore';
 import { streamBYOKChat } from '../../chat/data/byokApi';
-import { ChatMessage, LLMProviderId, getModelById, PROVIDER_DEFINITIONS } from '@anticeil/core';
+import {
+  ChatMessage,
+  LLMProviderId,
+  getModelById,
+  PROVIDER_DEFINITIONS,
+  FileAttachment,
+  parseUploadedFile,
+} from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
-import { ThinkingTimeline } from '../../chat/components/ThinkingTimeline';
+import { StudioChatMessage } from '../../../shared/components/StudioChatMessage';
+import { InteractiveDocCard } from './shared/InteractiveDocCard';
+import { DocsVersionHistoryModal } from './DocsVersionHistoryModal';
+import {
+  executeDocAgentActions,
+  extractCleanContent,
+  stripAgentActionTags,
+  ExecutedAgentAction,
+} from '../utils/docAgentUtils';
+
+function FileActionChip({
+  action,
+  docId,
+}: {
+  action: { type: string; name: string };
+  docId: string;
+}) {
+  const documents = useDocsStore((s) => s.documents);
+  const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
+
+  const doc = documents.find((d) => d.id === docId);
+  const subFiles = doc?.files || [];
+  const targetFile = subFiles.find(
+    (f) => f.name.toLowerCase() === action.name.toLowerCase() || f.id === action.name
+  );
+
+  const actionText =
+    action.type === 'create'
+      ? 'Created'
+      : action.type === 'rename'
+      ? 'Renamed'
+      : action.type === 'delete'
+      ? 'Deleted'
+      : 'Edited';
+
+  const actionColor = action.type === 'delete' ? '#EF4444' : '#10B981';
+
+  const handleClick = () => {
+    if (targetFile) {
+      setActiveFileId(docId, targetFile.id);
+    } else if (docId) {
+      const mainSubFile = subFiles.find(
+        (f) =>
+          f.name.toLowerCase().startsWith('main.') ||
+          f.name.toLowerCase() === 'main'
+      );
+      if (mainSubFile) {
+        setActiveFileId(docId, mainSubFile.id);
+      }
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title={`Buka ${action.name} di editor`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '3px 8px 3px 6px',
+        borderRadius: '6px',
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        color: 'var(--text-secondary)',
+        fontSize: '12px',
+        fontFamily: 'inherit',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        userSelect: 'none',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.16)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+      }}
+    >
+      <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{actionText}</span>
+      <FileCode size={13} style={{ color: '#3B82F6' }} />
+      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{action.name}</span>
+      <span style={{ color: actionColor, fontWeight: 600, fontSize: '11px' }}>+1</span>
+    </button>
+  );
+}
+
 
 export interface DocsCoAuthorSidebarProps {
   onInsertText?: (text: string) => void;
@@ -76,13 +176,70 @@ export function DocsCoAuthorSidebar({
   const [selectedModelId, setSelectedModelId] = useState<string>(
     globalModelId || 'llama-3.3-70b-versatile'
   );
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [enableWebSearch, setEnableWebSearch] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
 
   const [inputPrompt, setInputPrompt] = useState('');
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newAttachments: FileAttachment[] = [];
+    const currentTotalBytes = attachments.reduce((acc, a) => acc + (a.size || 0), 0);
+
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const parsed = await parseUploadedFile(files[i], currentTotalBytes);
+        newAttachments.push(parsed);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Gagal memproses berkas';
+        alert(message);
+      }
+    }
+
+    setAttachments((prev) => [...prev, ...newAttachments]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const newAttachments: FileAttachment[] = [];
+    const currentTotalBytes = attachments.reduce((acc, a) => acc + (a.size || 0), 0);
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          try {
+            const parsed = await parseUploadedFile(file, currentTotalBytes);
+            newAttachments.push(parsed);
+          } catch (err) {
+            console.warn('Failed to parse pasted screenshot file:', err);
+          }
+        }
+      }
+    }
+
+    if (newAttachments.length > 0) {
+      setAttachments((prev) => [...prev, ...newAttachments]);
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
   const [messages, setMessages] = useState<
     Array<{
       id: string;
@@ -92,6 +249,7 @@ export function DocsCoAuthorSidebar({
       actions?: Array<{ type: string; name: string }>;
       snapshotId?: string;
       reverted?: boolean;
+      timestamp?: number;
     }>
   >([
     {
@@ -169,123 +327,44 @@ export function DocsCoAuthorSidebar({
   const modelDisplayName = currentModelDef?.name || selectedModelId;
   const providerDisplayName = currentProviderDef?.name || selectedProviderId;
 
-  // ── Agent CRUD + Patch Action Executor ────────────────────────────────────
-  const executeDocAgentActions = (text: string): Array<{ type: string; name: string }> => {
+  // ── Agent Action Execution Wrapper ────────────────────────────────────
+  const runDocAgentActions = (text: string): Array<{ type: string; name: string }> => {
     if (!activeDoc) return [];
-    const executed: Array<{ type: string; name: string }> = [];
-
-    // 1. Create file
-    const createRegex = /<create_file\s+name=["']([^"']+)["']>([\s\S]*?)<\/create_file>/gi;
-    let m;
-    while ((m = createRegex.exec(text)) !== null) {
-      const fileName = m[1].trim();
-      const content = m[2].trim();
-      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fileName.toLowerCase());
-      if (existing) {
-        updateSubFileContent(activeDoc.id, existing.id, content);
-        executed.push({ type: 'update', name: fileName });
-      } else {
-        createSubFile(activeDoc.id, fileName, content);
-        executed.push({ type: 'create', name: fileName });
-      }
-    }
-
-    // 2. Update / rewrite file
-    const updateRegex = /<update_file\s+name=["']([^"']+)["']>([\s\S]*?)<\/update_file>/gi;
-    while ((m = updateRegex.exec(text)) !== null) {
-      const fileName = m[1].trim();
-      const content = m[2].trim();
-      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fileName.toLowerCase());
-      if (existing) {
-        updateSubFileContent(activeDoc.id, existing.id, content);
-        executed.push({ type: 'update', name: fileName });
-      } else if (
-        fileName.toLowerCase() === 'main' ||
-        fileName.toLowerCase() === (activeDoc.title || '').toLowerCase() ||
-        fileName.toLowerCase() === 'main.tex' ||
-        fileName.toLowerCase() === 'main.md'
-      ) {
-        updateDocumentContent(activeDoc.id, content);
-        executed.push({ type: 'update', name: fileName });
-      } else {
-        createSubFile(activeDoc.id, fileName, content);
-        executed.push({ type: 'create', name: fileName });
-      }
-    }
-
-    // 3. Targeted patch — only replace a specific block, leaving the rest untouched
-    //    Syntax: <patch_file name="file.tex" find="exact text to find">replacement text</patch_file>
-    const patchRegex = /<patch_file\s+name=["']([^"']+)["']\s+find=["']([\s\S]*?)["']>([\s\S]*?)<\/patch_file>/gi;
-    while ((m = patchRegex.exec(text)) !== null) {
-      const fileName = m[1].trim();
-      const findStr = m[2]; // do NOT trim — must match exactly
-      const replacement = m[3].trim();
-      let target = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fileName.toLowerCase());
-      if (!target && (fileName.toLowerCase() === 'main.tex' || fileName.toLowerCase() === 'main')) {
-        // fall back to active file
-        target = (activeDoc.files || []).find((f) => f.id === activeDoc.activeFileId);
-      }
-      if (target) {
-        if (target.content.includes(findStr)) {
-          const patched = target.content.replace(findStr, replacement);
-          updateSubFileContent(activeDoc.id, target.id, patched);
-          executed.push({ type: 'patch', name: fileName });
-        }
-      } else {
-        // patch on main document content
-        if (activeDoc.content.includes(findStr)) {
-          const patched = activeDoc.content.replace(findStr, replacement);
-          updateDocumentContent(activeDoc.id, patched);
-          executed.push({ type: 'patch', name: activeDoc.title || 'Main' });
-        }
-      }
-    }
-
-    // 4. Rename file
-    const renameRegex = /<rename_file\s+from=["']([^"']+)["']\s+to=["']([^"']+)["']\s*\/?>/gi;
-    while ((m = renameRegex.exec(text)) !== null) {
-      const fromName = m[1].trim();
-      const toName = m[2].trim();
-      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fromName.toLowerCase());
-      if (existing) {
-        updateSubFileName(activeDoc.id, existing.id, toName);
-        executed.push({ type: 'rename', name: `${fromName} → ${toName}` });
-      }
-    }
-
-    // 5. Delete file
-    const deleteRegex = /<delete_file\s+name=["']([^"']+)["']\s*\/?>/gi;
-    while ((m = deleteRegex.exec(text)) !== null) {
-      const fileName = m[1].trim();
-      const existing = (activeDoc.files || []).find((f) => f.name.toLowerCase() === fileName.toLowerCase());
-      if (existing) {
-        deleteSubFile(activeDoc.id, existing.id);
-        executed.push({ type: 'delete', name: fileName });
-      }
-    }
-
-    // 6. Rewrite main document
-    const rewriteMainRegex = /<rewrite_main>([\s\S]*?)<\/rewrite_main>/gi;
-    while ((m = rewriteMainRegex.exec(text)) !== null) {
-      const content = m[1].trim();
-      updateDocumentContent(activeDoc.id, content);
-      executed.push({ type: 'update', name: activeDoc.title || 'Main Document' });
-    }
-
-    return executed;
+    return executeDocAgentActions(activeDoc.id, text);
   };
 
   const handleSend = async (customPrompt?: string) => {
-    const promptToSend = customPrompt || inputPrompt.trim();
-    if (!promptToSend || isGenerating) return;
+    let rawPrompt = customPrompt || inputPrompt.trim();
+    if ((!rawPrompt && attachments.length === 0) || isGenerating) return;
 
-    // Credit check & deduction for Anticeil Docs AI (1 credit per request)
-    if (selectedProviderId === 'anticeil') {
-      const allowed = useCreditStore.getState().deductCredits('docs', 'anticeil');
-      if (!allowed) return;
+    let promptToSend = rawPrompt;
+    if (attachments.length > 0) {
+      const attSummary = attachments
+        .map((att) => {
+          if (att.isImage) {
+            return `[Gambar/Media Terlampir: ${att.name} (${att.type || 'image'}) - Content: ${att.content.substring(0, 150)}]`;
+          }
+          return `[Lampiran Berkas: ${att.name}]:\n${att.content}`;
+        })
+        .join('\n\n');
+      promptToSend = promptToSend
+        ? `${promptToSend}\n\n--- MEDIA/BERKAS TERLAMPIR ---\n${attSummary}`
+        : `--- MEDIA/BERKAS TERLAMPIR ---\n${attSummary}`;
     }
 
-    if (!customPrompt) setInputPrompt('');
+    // Credit check for Anticeil Docs AI (1 credit per request) — do not deduct until response arrives
+    if (selectedProviderId === 'anticeil') {
+      const allowed = useCreditStore.getState().canAfford('docs', 'anticeil');
+      if (!allowed) {
+        useCreditStore.getState().setLimitModalOpen(true, 'docs');
+        return;
+      }
+    }
+
+    if (!customPrompt) {
+      setInputPrompt('');
+      setAttachments([]);
+    }
 
     const snapshotId = activeDoc ? createDocSnapshot(activeDoc.id, promptToSend.slice(0, 35)) : undefined;
 
@@ -330,17 +409,68 @@ ${activeDoc.content.slice(0, 4000)}
 ${subFilesContent}`
       : '';
 
-    const systemPrompt = `You are an expert Academic & Scientific AI Co-Author specializing in LaTeX document composition, IEEE/Nature/ACM journal papers, thesis writing, and mathematical research.
+    const docFormat = activeDoc?.format || 'latex';
+    let formatPreamble = '';
+    if (docFormat === 'sheet') {
+      formatPreamble = `You are an expert financial and data spreadsheet AI Co-Author specializing in AntSheet workbooks.
+The project workspace is a Feature-First spreadsheet environment (.antsheet, .csv, .md).
+Always output clean AntSheet syntax with ## Meta, ## Cells, formulas, and charts.`;
+    } else if (docFormat === 'slide') {
+      formatPreamble = `You are an elite presentation designer and AI Co-Author specializing in modular slide decks.
+The project workspace is a Feature-First slide presentation environment (.slide, .md) using '---' slide delimiters or @[include] sub-slide modules.`;
+    } else if (docFormat === 'markdown') {
+      formatPreamble = `You are an expert technical documentation AI Co-Author specializing in modular Markdown documentation.`;
+    } else {
+      formatPreamble = `You are an elite, publication-grade AI Document Architect & Co-Author specializing in LaTeX (.tex) and Markdown document composition.
+You excel at writing Software Documentation, REST API Specifications, Product Requirement Documents (PRDs), System RFCs, Executive Business Reports, Whitepapers, as well as Academic Papers, Thesis/Skripsi, and mathematical research.
 The document workspace is a pure LaTeX environment (.tex, .bib, .cls, .sty).
-Always output clean, standard, and compilable LaTeX syntax (e.g. \\section{}, \\subsection{}, \\begin{equation}, \\begin{table}, \\begin{tabular}, \\cite{}, \\begin{figure}, \\begin{thebibliography}) rather than Markdown syntax.
+
+STRICT PUBLICATION, COVER & PAGINATION STANDARDS:
+- When creating or refining cover pages, use a publication-grade \\begin{titlepage} that is centered horizontally and vertically:
+  * Structure:
+    \\begin{titlepage}
+    \\thispagestyle{empty}
+    \\centering
+    \\vspace*{\\fill}
+    {\\small \\scshape \\color{darkgray} DOKUMEN RESMI / LAPORAN / SKRIPSI}\\\\[1cm]
+    {\\Huge \\bfseries \\color{primaryblue} JUDUL UTAMA}\\\\[0.4cm]
+    {\\color{accentgold}\\hrule height 1.5pt}\\\\[0.6cm]
+    \\begin{tcolorbox}[colback=lightgray,colframe=primaryblue,arc=3mm,width=0.92\\textwidth]
+    \\centering
+    {\\Large \\textbf{Subjudul atau Fokus Dokumen}}\\\\[0.25cm]
+    {\\small Deskripsi ringkas mengenai ruang lingkup, metodologi, dan tujuan dokumen.}
+    \\end{tcolorbox}\\\\[1cm]
+    \\begin{tabular}{r l}
+    \\textbf{Penyusun} & : Nama \\\\
+    \\textbf{Institusi} & : Nama Instansi \\\\
+    \\textbf{Kategori} & : Laporan Teknis / Biografi / Skripsi \\\\
+    \\textbf{Versi} & : 1.0 (Dokumen Lengkap) \\\\
+    \\end{tabular}
+    \\vspace*{\\fill}
+    {\\small \\today \\quad | \\quad Lokasi / Institusi}
+    \\end{titlepage}
+- PAGINATION & CHAPTER FLOW:
+  * Cover page (\\begin{titlepage}): NO page number (\\thispagestyle{empty}).
+  * Preliminary pages before main body (Ringkasan Eksekutif, Kata Pengantar, Table of Contents): Roman numerals (\\newpage \\pagenumbering{roman} \\setcounter{page}{1}) -> i, ii, iii...
+  * Main content (from Chapter 1 / Section 1 onwards): Arabic numerals (\\newpage \\pagenumbering{arabic} \\setcounter{page}{1}) -> 1, 2, 3...
+  * EVERY chapter or section in main.tex MUST start with \\newpage so each bab begins on a fresh page!
+- Always output clean, standard, and compilable LaTeX syntax:
+  * Use \\& for ampersand, \\% for percent, \\_ for underscore, \\$ for dollar, \\# for hash in normal text.
+  * Use \\begin{description} \\item[Label:] Keterangan \\end{description} for definition lists (DO NOT use [leftmargin=*]).
+  * Use \\begin{tcolorbox}[colback=lightgray,colframe=primaryblue,arc=2mm,width=\\textwidth] for callouts.
+  * For tables, ALWAYS write complete rows with actual data inside \\begin{tabular}{...} ... \\end{tabular}. End every row with \\\\ or \\\\ \\hline. Never place multiple rows on one line without \\\\.
+  * NEVER output raw Markdown (such as '###' or '**bold**') inside .tex files.`;
+    }
+
+    const systemPrompt = `${formatPreamble}
 
 You have FULL READ and WRITE (CRUD) access to this document and all sub-files in the project.
 
 Available Agent Action Tags — use these when instructed to create, edit, rename, or delete files:
 
 1. **Targeted patch** (PREFERRED for small edits — only replaces the specified block, leaving the rest untouched):
-<patch_file name="filename.tex" find="exact LaTeX text to find and replace">
-replacement LaTeX text here
+<patch_file name="filename.ext" find="exact text to find and replace">
+replacement text here
 </patch_file>
 
 2. Create a new sub-file:
@@ -366,7 +496,7 @@ Updated main content here...
 
 IMPORTANT — prefer patch_file over update_file / rewrite_main whenever the change is localized (e.g. editing a single equation, table, section, or paragraph). Only rewrite the full file when the user explicitly requests a full rewrite or when the change affects more than 40% of the file.
 
-When the user asks you to create, modify, or manage files, invoke the action tags and explain what you accomplished in clear, concise academic prose.${projectContext}`;
+When the user asks you to create, modify, or manage files, invoke the action tags and explain what you accomplished in clear, concise prose.${projectContext}`;
 
     const apiMessages: ChatMessage[] = newHistory
       .filter((m) => m.id !== assistantMsgId)
@@ -385,6 +515,8 @@ When the user asks you to create, modify, or manage files, invoke the action tag
     try {
       let fullResponse = '';
       let fullReasoning = '';
+      let creditDeducted = false;
+
       await streamBYOKChat({
         providerId: selectedProviderId,
         modelId: selectedModelId,
@@ -401,6 +533,12 @@ When the user asks you to create, modify, or manage files, invoke the action tag
           if (chunk.reasoningDelta) {
             fullReasoning += chunk.reasoningDelta;
           }
+
+          if (!creditDeducted && (chunk.delta || chunk.reasoningDelta) && selectedProviderId === 'anticeil') {
+            useCreditStore.getState().deductCredits('docs', 'anticeil');
+            creditDeducted = true;
+          }
+
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantMsgId
@@ -412,11 +550,11 @@ When the user asks you to create, modify, or manage files, invoke the action tag
       });
 
       // After streaming completes, parse and execute agent actions
-      let executedActions = executeDocAgentActions(fullResponse);
+      let executedActions = activeDoc ? executeDocAgentActions(activeDoc.id, fullResponse) : [];
 
       // Full Auto fallback — if no XML tags but clean code was returned, apply it
       if (executedActions.length === 0 && activeDoc) {
-        const cleanCode = extractCleanCodeToInsert(fullResponse);
+        const cleanCode = extractCleanContent(fullResponse);
         if (cleanCode && cleanCode.length > 10 && cleanCode !== fullResponse.trim()) {
           const subFilesList = activeDoc.files || [];
           const curSubFile = subFilesList.find((f) => f.id === activeDoc.activeFileId);
@@ -443,7 +581,7 @@ When the user asks you to create, modify, or manage files, invoke the action tag
         const finalMsg: CoAuthorMessage = {
           id: assistantMsgId,
           role: 'assistant',
-          content: fullResponse,
+          content: stripAgentActionTags(fullResponse),
           reasoningContent: fullReasoning || undefined,
           actions: executedActions.length > 0 ? executedActions : undefined,
           snapshotId,
@@ -458,6 +596,10 @@ When the user asks you to create, modify, or manage files, invoke the action tag
       }
     } catch (err) {
       console.warn('[DocsCoAuthor] Streaming error:', err);
+      if (selectedProviderId === 'anticeil') {
+        useCreditStore.getState().refundCredits('docs', 'anticeil');
+      }
+
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMsgId
@@ -477,60 +619,13 @@ When the user asks you to create, modify, or manage files, invoke the action tag
     }
   };
 
-  const extractCleanCodeToInsert = (rawText: string): string => {
-    if (!rawText) return '';
-    const fileTagMatch = rawText.match(/<(?:update_file|create_file|rewrite_main|patch_file)[^>]*>([\s\S]*?)<\/(?:update_file|create_file|rewrite_main|patch_file)>/i);
-    if (fileTagMatch && fileTagMatch[1].trim()) return fileTagMatch[1].trim();
-    const codeFenceMatch = rawText.match(/```(?:latex|tex|markdown|md|bib|json)?\s*([\s\S]*?)```/i);
-    if (codeFenceMatch && codeFenceMatch[1].trim()) return codeFenceMatch[1].trim();
-    let cleaned = rawText
-      .replace(/<(?:update_file|create_file|rewrite_main|patch_file)[^>]*>[\s\S]*?<\/(?:update_file|create_file|rewrite_main|patch_file)>/gi, '')
-      .replace(/<(?:rename_file|delete_file)[^>]*\/?>/gi, '');
-    const explanationHeaderIdx = cleaned.search(/\n\s*#{1,4}\s*(?:Perubahan|Penjelasan|Catatan|Explanation|Summary|Changes|Changelog)/i);
-    if (explanationHeaderIdx !== -1) cleaned = cleaned.substring(0, explanationHeaderIdx).trim();
-    return cleaned.trim();
-  };
-
   const handleCopy = (content: string, msgId: string) => {
     navigator.clipboard.writeText(content);
     setCopiedId(msgId);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const quickActions = [
-    {
-      label: language === 'id' ? 'Lanjutkan Paragraf' : 'Continue Writing',
-      icon: <Wand2 size={12} />,
-      prompt:
-        language === 'id'
-          ? 'Lanjutkan penulisan dari bagian terakhir dokumen ini dengan gaya akademis yang mengalir.'
-          : 'Continue writing from the last section with rigorous academic prose.',
-    },
-    {
-      label: language === 'id' ? 'Rumus LaTeX' : 'LaTeX Equation',
-      icon: <Sigma size={12} />,
-      prompt:
-        language === 'id'
-          ? 'Buatkan formulasi persamaan matematika LaTeX lengkap dengan penjelasan variabelnya.'
-          : 'Generate a comprehensive LaTeX math formula block with variable explanations.',
-    },
-    {
-      label: language === 'id' ? 'Tabel Data' : 'Data Table',
-      icon: <Table size={12} />,
-      prompt:
-        language === 'id'
-          ? 'Buatkan tabel perbandingan metrik performa dalam format LaTeX tabular.'
-          : 'Generate a neat LaTeX tabular performance comparison table.',
-    },
-    {
-      label: language === 'id' ? 'Sitasi BibTeX' : 'BibTeX Citations',
-      icon: <BookOpen size={12} />,
-      prompt:
-        language === 'id'
-          ? 'Berikan 3 referensi literatur ilmiah standar IEEE / Nature terkait topik dokumen ini.'
-          : 'Provide 3 high-impact scientific references in standard academic format.',
-    },
-  ];
+
 
   return (
     <div
@@ -650,7 +745,13 @@ When the user asks you to create, modify, or manage files, invoke the action tag
       <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-sidebar)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <button
           type="button"
-          onClick={() => setIsModelSelectorOpen(true)}
+          onClick={() => {
+            if (!user) {
+              openAuthModal('login');
+              return;
+            }
+            setIsModelSelectorOpen(true);
+          }}
           style={{
             width: '100%',
             height: '32px',
@@ -723,65 +824,12 @@ When the user asks you to create, modify, or manage files, invoke the action tag
         </button>
       </div>
 
-      {/* Quick Action Chips */}
-      <div
-        className="hide-scrollbar"
-        style={{
-          padding: '8px 10px',
-          borderBottom: '1px solid var(--border-subtle)',
-          display: 'flex',
-          gap: '5px',
-          overflowX: 'auto',
-          backgroundColor: 'var(--bg-sidebar)',
-          scrollbarWidth: 'none',
-        }}
-      >
-        {quickActions.map((qa) => (
-          <button
-            key={qa.label}
-            type="button"
-            onClick={() => handleSend(qa.prompt)}
-            disabled={isGenerating}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              border: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-subtle)',
-              color: 'var(--text-secondary)',
-              fontSize: '11px',
-              fontWeight: 500,
-              cursor: isGenerating ? 'not-allowed' : 'pointer',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (!isGenerating) {
-                e.currentTarget.style.borderColor = 'var(--brand-primary)';
-                e.currentTarget.style.color = 'var(--brand-primary)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isGenerating) {
-                e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-              }
-            }}
-          >
-            {qa.icon}
-            <span>{qa.label}</span>
-          </button>
-        ))}
-      </div>
-
       {/* Messages Feed */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           padding: '12px',
           display: 'flex',
           flexDirection: 'column',
@@ -789,182 +837,97 @@ When the user asks you to create, modify, or manage files, invoke the action tag
           backgroundColor: 'var(--bg-sidebar)',
         }}
       >
-        {messages.map((msg) => {
-          const isStreamingThis = isGenerating && msg.id === streamingMsgIdRef.current;
+        {messages.map((msg, index) => {
+          // If this is an assistant message following a user message, skip standalone rendering (rendered inside Turn container)
+          if (msg.role === 'assistant' && index > 0 && messages[index - 1]?.role === 'user') {
+            return null;
+          }
+
+          const assistantMsg = msg.role === 'user' && messages[index + 1]?.role === 'assistant' ? messages[index + 1] : undefined;
+          const isAssistantStreaming = isGenerating && assistantMsg && assistantMsg.id === streamingMsgIdRef.current;
+          const isWelcomeMsg = msg.role === 'assistant' && index === 0;
+
+          if (isWelcomeMsg) {
+            return (
+              <StudioChatMessage
+                key={msg.id}
+                id={msg.id}
+                role="assistant"
+                content={msg.content}
+                assistantName="AI Co-Author"
+                assistantColor="var(--brand-primary)"
+                language={language === 'id' ? 'id' : 'en'}
+              />
+            );
+          }
+
+          const turnSnapshotId = msg.snapshotId || (assistantMsg && assistantMsg.snapshotId);
+          const isTurnReverted = msg.reverted || (assistantMsg && assistantMsg.reverted);
+
+          const handleUndoTurn =
+            msg.role === 'user' && activeDoc
+              ? () => {
+                  if (turnSnapshotId) {
+                    restoreDocSnapshot(activeDoc.id, turnSnapshotId);
+                  }
+                  setInputPrompt(msg.content);
+                  const idsToRemove = [msg.id];
+                  if (assistantMsg) idsToRemove.push(assistantMsg.id);
+                  setMessages((prev) => prev.filter((m2) => !idsToRemove.includes(m2.id)));
+                  historyStore.removeMessages(activeDoc.id, idsToRemove);
+                }
+              : undefined;
+
           return (
             <div
-              key={msg.id}
+              key={`turn_${msg.id}`}
               style={{
+                position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px',
-                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: msg.role === 'user' ? '88%' : '100%',
-                width: msg.role === 'assistant' ? '100%' : 'auto',
+                gap: '12px',
+                width: '100%',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                }}
-              >
-                {msg.role === 'user' ? (
-                  <>
-                    <span>{language === 'id' ? 'Anda' : 'You'}</span>
-                    <User size={10} />
-                  </>
-                ) : (
-                  <>
-                    <Bot size={10} color="var(--brand-primary)" />
-                    <span>AI Co-Author</span>
-                  </>
-                )}
-              </div>
+              {/* User Prompt (Sticky scoped to this turn container) */}
+              <StudioChatMessage
+                id={msg.id}
+                role="user"
+                content={msg.content}
+                timestamp={msg.timestamp}
+                isSticky={true}
+                onUndo={handleUndoTurn}
+                isReverted={isTurnReverted}
+                language={language === 'id' ? 'id' : 'en'}
+              />
 
-              {/* Thinking Timeline — shown for assistant messages that have reasoning */}
-              {msg.role === 'assistant' && (msg.reasoningContent || isStreamingThis) && (
-                <ThinkingTimeline
-                  reasoningContent={msg.reasoningContent || ''}
-                  isStreaming={isStreamingThis}
+              {/* Assistant Output Response for this Turn */}
+              {assistantMsg && (
+                <StudioChatMessage
+                  id={assistantMsg.id}
+                  role="assistant"
+                  content={stripAgentActionTags(assistantMsg.content)}
+                  reasoningContent={assistantMsg.reasoningContent}
+                  actions={assistantMsg.actions}
+                  docId={activeDoc?.id}
+                  onOpenVersionHistory={() => setIsVersionModalOpen(true)}
+                  isStreaming={isAssistantStreaming}
+                  assistantName="AI Co-Author"
+                  assistantColor="var(--brand-primary)"
+                  language={language === 'id' ? 'id' : 'en'}
+                  extraContent={
+                    activeDoc && (index >= messages.length - 2 || assistantMsg.content.length > 80) ? (
+                      <InteractiveDocCard
+                        doc={activeDoc}
+                        onOpenEditor={() => {
+                          if (onClose) onClose();
+                        }}
+                        language={language === 'id' ? 'id' : 'en'}
+                        isGenerating={isAssistantStreaming}
+                      />
+                    ) : undefined
+                  }
                 />
-              )}
-
-              {/* Agent Actions Executed Badges */}
-              {msg.actions && msg.actions.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-                  {msg.actions.map((act, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        backgroundColor:
-                          act.type === 'patch' ? 'rgba(59,130,246,0.1)' : 'rgba(16, 185, 129, 0.1)',
-                        border:
-                          act.type === 'patch'
-                            ? '1px solid rgba(59,130,246,0.25)'
-                            : '1px solid rgba(16, 185, 129, 0.25)',
-                        color: act.type === 'patch' ? '#3B82F6' : '#10B981',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <Sparkles size={11} />
-                      <span>
-                        {act.type === 'create'
-                          ? (language === 'id' ? `File dibuat: ${act.name}` : `Created: ${act.name}`)
-                          : act.type === 'patch'
-                          ? (language === 'id' ? `Patched: ${act.name}` : `Patched: ${act.name}`)
-                          : act.type === 'update'
-                          ? (language === 'id' ? `File diperbarui: ${act.name}` : `Updated: ${act.name}`)
-                          : act.type === 'rename'
-                          ? (language === 'id' ? `Diubah nama: ${act.name}` : `Renamed: ${act.name}`)
-                          : (language === 'id' ? `File dihapus: ${act.name}` : `Deleted: ${act.name}`)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div
-                style={{
-                  padding: '9px 12px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  lineHeight: 1.5,
-                  backgroundColor:
-                    msg.role === 'user'
-                      ? 'var(--brand-primary, #0073ea)'
-                      : 'var(--bg-surface)',
-                  color: msg.role === 'user' ? '#ffffff' : 'var(--text-primary)',
-                  border:
-                    msg.role === 'user'
-                      ? 'none'
-                      : '1px solid var(--border-subtle)',
-                  boxShadow: msg.role === 'user' ? 'none' : '0 1px 2px rgba(0,0,0,0.03)',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {msg.content || (isStreamingThis ? (language === 'id' ? 'Menulis...' : 'Writing...') : '')}
-              </div>
-
-              {/* Undo + Copy buttons */}
-              {msg.role === 'assistant' && msg.content && !isGenerating && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                    {msg.snapshotId && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (activeDoc && msg.snapshotId && !msg.reverted) {
-                            const success = restoreDocSnapshot(activeDoc.id, msg.snapshotId);
-                            if (success) {
-                              setMessages((prev) =>
-                                prev.map((m2) => (m2.id === msg.id ? { ...m2, reverted: true } : m2))
-                              );
-                            }
-                          }
-                        }}
-                        disabled={msg.reverted}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '3px 8px',
-                          borderRadius: '5px',
-                          border: msg.reverted ? '1px solid var(--border-subtle)' : '1px solid rgba(239, 68, 68, 0.35)',
-                          backgroundColor: msg.reverted ? 'var(--bg-subtle)' : 'rgba(239, 68, 68, 0.08)',
-                          color: msg.reverted ? 'var(--text-muted)' : '#EF4444',
-                          fontSize: '10.5px',
-                          fontWeight: 650,
-                          cursor: msg.reverted ? 'default' : 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                        className={msg.reverted ? '' : 'hover-subtle'}
-                      >
-                        <RotateCcw size={11} />
-                        <span>
-                          {msg.reverted
-                            ? (language === 'id' ? '✓ Dibatalkan' : '✓ Undone')
-                            : (language === 'id' ? 'Batalkan Perubahan (Undo)' : 'Undo changes')}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(msg.content, msg.id)}
-                    title={language === 'id' ? 'Salin Teks' : 'Copy Text'}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '3px 8px',
-                      borderRadius: '5px',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'var(--bg-surface)',
-                      color: copiedId === msg.id ? '#10B981' : 'var(--text-muted)',
-                      fontSize: '10.5px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-                    }}
-                    className="hover-subtle"
-                  >
-                    {copiedId === msg.id ? <Check size={11} color="#10B981" /> : <Copy size={11} />}
-                    <span>{copiedId === msg.id ? (language === 'id' ? 'Tersalin' : 'Copied') : (language === 'id' ? 'Salin' : 'Copy')}</span>
-                  </button>
-                </div>
               )}
             </div>
           );
@@ -981,32 +944,112 @@ When the user asks you to create, modify, or manage files, invoke the action tag
           flexShrink: 0,
         }}
       >
+        {/* Attachments preview list */}
+        {attachments.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+            {attachments.map((att) => (
+              <div
+                key={att.id}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                {att.isImage ? <ImageIcon size={12} color="var(--brand-primary)" /> : <FileText size={12} />}
+                <span style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {att.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(att.id)}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
+          onPaste={handlePaste}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
             backgroundColor: 'var(--bg-subtle)',
             borderRadius: '6px',
-            padding: '0 4px 0 10px',
-            height: '32px',
+            padding: '0 4px 0 6px',
+            minHeight: '36px',
             border: '1px solid var(--border-subtle)',
             boxSizing: 'border-box',
             transition: 'all 0.15s ease',
           }}
         >
           <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            multiple
+            accept="image/*,.pdf,.txt,.csv,.json,.md,.tex,.typ"
+            style={{ display: 'none' }}
+          />
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title={
+              language === 'id'
+                ? 'Lampirkan media / gambar (atau Paste screenshot)'
+                : 'Attach media / image (or paste screenshot)'
+            }
+            disabled={isGenerating}
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '5px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: isGenerating ? 'default' : 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Plus size={15} />
+          </button>
+
+          <input
             type="text"
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
+            onPaste={handlePaste}
             placeholder={
               language === 'id'
-                ? 'Minta AI tulis bab, rumus TeX, atau tabel...'
-                : 'Ask AI to write section, TeX formula, or table...'
+                ? 'Minta AI tulis bab, rumus TeX... (Paste screenshot)'
+                : 'Ask AI to write section, TeX... (Paste screenshot)'
             }
             disabled={isGenerating}
             style={{
@@ -1020,20 +1063,24 @@ When the user asks you to create, modify, or manage files, invoke the action tag
               color: 'var(--text-primary)',
             }}
           />
+
           <button
             type="submit"
-            disabled={!inputPrompt.trim() || isGenerating}
+            disabled={(!inputPrompt.trim() && attachments.length === 0) || isGenerating}
             style={{
               width: '24px',
               height: '24px',
               borderRadius: '5px',
               border: 'none',
-              backgroundColor: inputPrompt.trim() && !isGenerating ? 'var(--brand-primary)' : 'transparent',
-              color: inputPrompt.trim() && !isGenerating ? '#ffffff' : 'var(--text-muted)',
+              backgroundColor:
+                (inputPrompt.trim() || attachments.length > 0) && !isGenerating
+                  ? 'var(--brand-primary)'
+                  : 'transparent',
+              color: (inputPrompt.trim() || attachments.length > 0) && !isGenerating ? '#ffffff' : 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: inputPrompt.trim() && !isGenerating ? 'pointer' : 'default',
+              cursor: (inputPrompt.trim() || attachments.length > 0) && !isGenerating ? 'pointer' : 'default',
               flexShrink: 0,
               transition: 'all 0.15s ease',
             }}
@@ -1042,6 +1089,15 @@ When the user asks you to create, modify, or manage files, invoke the action tag
           </button>
         </form>
       </div>
+
+      {/* Version History Modal Dialog */}
+      <DocsVersionHistoryModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+        activeDoc={activeDoc || null}
+        language={language === 'id' ? 'id' : 'en'}
+        isCloudUser={isCloudUser}
+      />
     </div>
   );
 }

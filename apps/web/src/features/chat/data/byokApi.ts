@@ -52,10 +52,22 @@ export function getNextFreeKey(providerId: 'groq' | 'gemini'): string {
   return '';
 }
 
+export function normalizeGeminiModel(modelId: string): string {
+  if (!modelId) return 'gemini-2.0-flash';
+  const clean = modelId.trim().toLowerCase();
+  if (clean.includes('3.5') || clean.includes('3.0') || clean === 'gemini-flash' || clean === 'gemini-2.0-flash-exp') {
+    return 'gemini-2.0-flash';
+  }
+  if (clean === 'gemini-pro') {
+    return 'gemini-1.5-pro';
+  }
+  return modelId;
+}
+
 export async function streamBYOKChat(options: SendMessageOptions): Promise<void> {
   const {
     providerId,
-    modelId,
+    modelId: rawModelId,
     systemPrompt,
     messages,
     apiKeyConfig,
@@ -66,6 +78,8 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
     onChunk,
     signal,
   } = options;
+
+  const modelId = rawModelId.includes('gemini') ? normalizeGeminiModel(rawModelId) : rawModelId;
 
   const providerDef = getProviderById(providerId);
   const baseUrl = apiKeyConfig.baseUrl || providerDef?.defaultBaseUrl || '';
@@ -144,12 +158,62 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
       // Native Google Search Grounding — no external API needed
       if (enableWebSearch) anticeilBody.tools = [{ googleSearch: {} }];
 
-      response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(anticeilBody),
-        signal,
-      });
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(anticeilBody),
+          signal,
+        });
+
+        if (!response.ok) {
+          console.warn('[byokApi] Gemini returned non-200, falling back to Groq Cloud LPU:', response.status);
+          const groqKey = getNextFreeKey('groq');
+          const groqEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
+          const payloadMessages = [
+            { role: 'system', content: effectiveSystemPrompt },
+            ...formattedMessages,
+          ];
+          response = await fetch(groqEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${groqKey}`,
+            },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: payloadMessages,
+              temperature,
+              max_tokens: maxTokens || tierAiLimits.maxOutputTokens,
+              stream: true,
+            }),
+            signal,
+          });
+        }
+      } catch (geminiErr) {
+        console.warn('[byokApi] Gemini fetch failed, falling back to Groq LPU:', geminiErr);
+        const groqKey = getNextFreeKey('groq');
+        const groqEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
+        const payloadMessages = [
+          { role: 'system', content: effectiveSystemPrompt },
+          ...formattedMessages,
+        ];
+        response = await fetch(groqEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: payloadMessages,
+            temperature,
+            max_tokens: maxTokens || tierAiLimits.maxOutputTokens,
+            stream: true,
+          }),
+          signal,
+        });
+      }
     } else {
       // Groq Models
       const groqKey = apiKey || getNextFreeKey('groq');

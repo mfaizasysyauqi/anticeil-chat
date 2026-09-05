@@ -28,6 +28,7 @@ import {
 } from '@anticeil/core';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useChatStore } from '../store/useChatStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
 export interface ModelSelectorModalProps {
@@ -136,7 +137,15 @@ export function ModelSelectorModal({
     }
   }, [selectedProviderId, hasKey, dynamicModels, refreshModels]);
 
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
   const handleSelectModel = (model: LLMModel) => {
+    if (!user) {
+      onClose();
+      openAuthModal('login');
+      return;
+    }
     if (onSelectModel) {
       onSelectModel(model.providerId, model.id);
     } else if (activeSession) {
@@ -434,7 +443,11 @@ export function ModelSelectorModal({
                   type="button"
                   onClick={() => {
                     onClose();
-                    openSettingsTab('keys');
+                    if (!user) {
+                      openAuthModal('login');
+                    } else {
+                      openSettingsTab('keys');
+                    }
                   }}
                   style={{
                     backgroundColor: 'var(--accent-warning)',

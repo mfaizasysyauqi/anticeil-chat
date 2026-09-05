@@ -26,8 +26,15 @@ export default function RootLayout({
               (function() {
                 try {
                   var stored = localStorage.getItem('anticeil_settings_storage');
-                  var theme = stored ? JSON.parse(stored).state.theme : null;
-                  document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+                  var theme = stored ? JSON.parse(stored).state.theme : 'system';
+                  if (theme === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  } else if (theme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  } else {
+                    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+                    document.documentElement.setAttribute('data-theme', prefersLight ? 'light' : 'dark');
+                  }
                 } catch (e) {
                   document.documentElement.setAttribute('data-theme', 'dark');
                 }

@@ -8,13 +8,17 @@ interface TurnstileWidgetProps {
   onError?: (error?: any) => void;
   onExpire?: () => void;
   theme?: 'light' | 'dark' | 'auto';
+  size?: 'normal' | 'compact' | 'flexible' | 'invisible';
+  style?: React.CSSProperties;
 }
 
 export function TurnstileWidget({
   onVerify,
   onError,
   onExpire,
-  theme = 'light',
+  theme = 'dark',
+  size = 'normal',
+  style,
 }: TurnstileWidgetProps) {
   const [useFallbackKey, setUseFallbackKey] = useState(false);
 
@@ -29,16 +33,17 @@ export function TurnstileWidget({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '65px',
         width: '100%',
-        margin: '6px 0',
+        minHeight: '70px',
+        overflow: 'visible',
+        ...style,
       }}
     >
       <Turnstile
         siteKey={siteKey}
         options={{
           theme: theme === 'auto' ? 'auto' : theme,
-          size: 'normal',
+          size,
         }}
         onSuccess={(token) => {
           onVerify(token);

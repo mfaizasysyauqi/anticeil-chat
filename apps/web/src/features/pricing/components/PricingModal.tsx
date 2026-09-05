@@ -145,10 +145,10 @@ export function PricingModal() {
           width: '100%',
           maxWidth: '1080px',
           maxHeight: '92vh',
-          backgroundColor: 'var(--bg-surface, #18181b)',
-          border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-strong)',
           borderRadius: '20px',
-          boxShadow: '0 32px 64px -12px rgba(0, 0, 0, 0.7)',
+          boxShadow: 'var(--shadow-2xl, 0 32px 64px -12px rgba(0, 0, 0, 0.7))',
           display: 'flex',
           flexDirection: 'column',
           color: 'var(--text-primary)',
@@ -168,8 +168,8 @@ export function PricingModal() {
             top: '16px',
             right: '18px',
             zIndex: 30,
-            background: 'var(--bg-subtle, rgba(255,255,255,0.06))',
-            border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
             color: 'var(--text-secondary)',
             cursor: 'pointer',
             padding: '7px',
@@ -181,13 +181,13 @@ export function PricingModal() {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.backgroundColor = 'var(--bg-main, rgba(255,255,255,0.14))';
-            e.currentTarget.style.borderColor = 'var(--border-strong, rgba(255,255,255,0.25))';
+            e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)';
+            e.currentTarget.style.borderColor = 'var(--border-strong)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.color = 'var(--text-secondary)';
-            e.currentTarget.style.backgroundColor = 'var(--bg-subtle, rgba(255,255,255,0.06))';
-            e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255,255,255,0.1))';
+            e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+            e.currentTarget.style.borderColor = 'var(--border-subtle)';
           }}
         >
           <X size={18} />
@@ -260,14 +260,14 @@ export function PricingModal() {
                   borderRadius: '6px',
                   border: 'none',
                   background: activeTab === 'topup' ? 'var(--bg-surface)' : 'transparent',
-                  color: activeTab === 'topup' ? '#f59e0b' : 'var(--text-muted)',
+                  color: activeTab === 'topup' ? 'var(--accent-warning, #f59e0b)' : 'var(--text-muted)',
                   fontSize: '11.5px',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  boxShadow: activeTab === 'topup' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  boxShadow: activeTab === 'topup' ? 'var(--shadow-sm)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -282,14 +282,14 @@ export function PricingModal() {
                   borderRadius: '6px',
                   border: 'none',
                   background: activeTab === 'tiers' ? 'var(--bg-surface)' : 'transparent',
-                  color: activeTab === 'tiers' ? 'var(--brand-primary, #3b82f6)' : 'var(--text-muted)',
+                  color: activeTab === 'tiers' ? 'var(--brand-primary)' : 'var(--text-muted)',
                   fontSize: '11.5px',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  boxShadow: activeTab === 'tiers' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  boxShadow: activeTab === 'tiers' ? 'var(--shadow-sm)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -306,9 +306,9 @@ export function PricingModal() {
             margin: '12px 22px 0',
             padding: '10px 14px',
             borderRadius: '8px',
-            background: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid rgba(16, 185, 129, 0.4)',
-            color: '#10b981',
+            background: 'rgba(0, 200, 117, 0.15)',
+            border: '1px solid rgba(0, 200, 117, 0.4)',
+            color: 'var(--accent-success)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
@@ -324,8 +324,15 @@ export function PricingModal() {
         <div style={{ overflowY: 'auto', flex: 1, padding: '18px 22px' }}>
           {/* ── TAB 1: TOP-UP PACKS (Chatwoot Captain AI Style) ── */}
           {activeTab === 'topup' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              <div className="anticeil-pricing-grid-4">
+            <div>
+              <div
+                className="anticeil-pricing-grid-4"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '12px',
+                }}
+              >
                 {CREDIT_PACKS.map((pack) => {
                   const isBusy = actionId === pack.id;
                   const priceStr = `Rp ${pack.priceIdr.toLocaleString('id-ID')}`;
@@ -336,11 +343,11 @@ export function PricingModal() {
                       style={{
                         position: 'relative',
                         borderRadius: '16px',
-                        border: pack.popular ? '2px solid #f59e0b' : '1px solid var(--border-subtle)',
+                        border: pack.popular ? '2px solid var(--accent-warning, #f59e0b)' : '1px solid var(--border-subtle)',
                         background: pack.popular
                           ? 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, var(--bg-surface) 100%)'
-                          : 'var(--bg-card, rgba(255,255,255,0.02))',
-                        boxShadow: pack.popular ? '0 12px 32px -4px rgba(245, 158, 11, 0.16)' : '0 2px 8px rgba(0, 0, 0, 0.04)',
+                          : 'var(--bg-surface)',
+                        boxShadow: pack.popular ? '0 12px 32px -4px rgba(245, 158, 11, 0.16)' : 'var(--shadow-sm)',
                         padding: '20px 16px 16px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -353,7 +360,7 @@ export function PricingModal() {
                           position: 'absolute',
                           top: '-10px',
                           right: '12px',
-                          background: pack.popular ? '#f59e0b' : 'var(--bg-main)',
+                          background: pack.popular ? 'var(--accent-warning, #f59e0b)' : 'var(--bg-main)',
                           border: pack.popular ? 'none' : '1px solid var(--border-subtle)',
                           color: pack.popular ? '#000' : 'var(--text-secondary)',
                           fontSize: '9.5px',
@@ -372,15 +379,17 @@ export function PricingModal() {
                           {pack.name} Pack
                         </div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '4px' }}>
-                          <span style={{ fontSize: '26px', fontWeight: 800, color: '#f59e0b' }}>
+                          <span style={{ fontSize: '26px', fontWeight: 800, color: 'var(--accent-warning, #f59e0b)' }}>
                             {pack.credits.toLocaleString()}
                           </span>
-                          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>kredit</span>
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            {language === 'id' ? 'kredit' : 'credits'}
+                          </span>
                         </div>
                       </div>
 
                       <div>
-                        <div style={{ fontSize: '18px', fontWeight: 800 }}>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
                           {priceStr}
                         </div>
                         <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -416,7 +425,7 @@ export function PricingModal() {
                           border: 'none',
                           background: pack.popular
                             ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-                            : '#1E6BEB',
+                            : 'var(--brand-primary)',
                           color: pack.popular ? '#000' : '#fff',
                           fontSize: '12px',
                           fontWeight: 700,
@@ -427,7 +436,7 @@ export function PricingModal() {
                           gap: '4px',
                         }}
                       >
-                        {isBusy ? 'Memproses...' : (language === 'id' ? 'Top-up Sekarang' : 'Top-up Now')}
+                        {isBusy ? (language === 'id' ? 'Memproses...' : 'Processing...') : (language === 'id' ? 'Top-up Sekarang' : 'Top-up Now')}
                         {!isBusy && <ChevronRight size={13} />}
                       </button>
                     </div>
@@ -438,6 +447,7 @@ export function PricingModal() {
               {/* Rate Matrix */}
               <div style={{
                 padding: '14px 16px',
+                marginTop: '18px',
                 borderRadius: '12px',
                 background: 'var(--bg-main)',
                 border: '1px solid var(--border-subtle)',
@@ -501,7 +511,7 @@ export function PricingModal() {
           background: 'var(--bg-main)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Sparkles size={13} color="#10b981" />
+            <Sparkles size={13} color="var(--accent-success, #10b981)" />
             <span>
               {language === 'id'
                 ? 'Jatah gratis 50 kredit/hari tetap aktif tiap pukul 00:00.'
@@ -518,7 +528,7 @@ export function PricingModal() {
             style={{
               background: 'transparent',
               border: 'none',
-              color: 'var(--brand-primary, #60a5fa)',
+              color: 'var(--brand-primary)',
               fontSize: '11px',
               fontWeight: 650,
               cursor: 'pointer',

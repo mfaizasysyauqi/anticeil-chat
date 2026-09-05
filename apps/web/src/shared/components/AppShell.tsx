@@ -45,6 +45,16 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
   const theme = useSettingsStore((s) => s.theme);
   const isSettingsOpen = useSettingsStore((s) => s.isSettingsOpen);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
+  const handleOpenModelSelector = () => {
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
+    setIsModelSelectorOpen(true);
+  };
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -54,14 +64,19 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
 
 
   return (
-    <div className="app-container">
-      {/* Mobile & Tablet Backdrop Overlay (< 1024px) */}
-      {showSidebar && (
-        <div
-          className={`sidebar-overlay ${isMobileSidebarOpen ? 'open' : ''}`}
-          onClick={() => setIsMobileSidebarOpen(false)}
-        />
-      )}
+    <div
+      style={{
+        display: 'flex',
+        height: '100dvh',
+        width: '100vw',
+        overflow: 'hidden',
+        backgroundColor: 'var(--bg-main)',
+        color: 'var(--text-primary)',
+      }}
+    >
+      <Suspense fallback={null}>
+        <AuthQueryHandler />
+      </Suspense>
 
       {/* ── Slim Icon Rail (48px, full height, far left) ── */}
       {showSidebar && (
@@ -74,7 +89,7 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
             setIsDesktopSidebarCollapsed((prev) => !prev);
             setIsMobileSidebarOpen(false);
           }}
-          onOpenModelSelector={() => setIsModelSelectorOpen(true)}
+          onOpenModelSelector={handleOpenModelSelector}
         />
       )}
 
@@ -106,7 +121,7 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
                 setIsDesktopSidebarCollapsed((prev) => !prev);
                 setIsMobileSidebarOpen(false);
               }}
-              onOpenModelSelector={() => setIsModelSelectorOpen(true)}
+              onOpenModelSelector={handleOpenModelSelector}
             />
           )}
 

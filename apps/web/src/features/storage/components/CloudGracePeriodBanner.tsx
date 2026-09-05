@@ -1,10 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useStorageStore, formatStorageBytes } from '../store/useStorageStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
-import { ShieldAlert, Download, Sparkles, X, Loader2, CheckCircle2 } from 'lucide-react';
+import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { ShieldAlert, Download, Sparkles, X, Loader2, CheckCircle2, Timer } from 'lucide-react';
+
+const GRACE_PERIOD_STORAGE_KEY = 'anticeil_cloud_grace_deadline';
+const DEFAULT_GRACE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export function CloudGracePeriodBanner() {
   const session = useAuthStore((s) => s.session);
@@ -16,10 +20,57 @@ export function CloudGracePeriodBanner() {
   const migrateAndPurge = useStorageStore((s) => s.migrateCloudToLocalAndPurge);
   const setPricingModalOpen = useCreditStore((s) => s.setPricingModalOpen);
 
+  const language = useSettingsStore((s) => s.language);
+  const isId = language === 'id';
+
   const [migrationSuccess, setMigrationSuccess] = useState<string | null>(null);
+  const [timeLeftMs, setTimeLeftMs] = useState<number>(DEFAULT_GRACE_DURATION_MS);
 
   // Total cloud bytes currently held
   const cloudBytes = (sources?.databaseBytes || 0) + (sources?.r2Bytes || 0);
+
+  // Initialize and tick countdown timer
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let targetTimestamp: number;
+    const stored = localStorage.getItem(GRACE_PERIOD_STORAGE_KEY);
+    if (stored && !isNaN(Number(stored))) {
+      targetTimestamp = Number(stored);
+    } else {
+      targetTimestamp = Date.now() + DEFAULT_GRACE_DURATION_MS;
+      localStorage.setItem(GRACE_PERIOD_STORAGE_KEY, String(targetTimestamp));
+    }
+
+    const updateTimer = () => {
+      const remaining = Math.max(0, targetTimestamp - Date.now());
+      setTimeLeftMs(remaining);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Formatted countdown string
+  const countdownFormatted = useMemo(() => {
+    const totalSeconds = Math.floor(timeLeftMs / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    if (days > 0) {
+      return isId
+        ? `${days}h ${pad(hours)}j ${pad(minutes)}m ${pad(seconds)}d`
+        : `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+    }
+    return isId
+      ? `${pad(hours)}j ${pad(minutes)}m ${pad(seconds)}d`
+      : `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+  }, [timeLeftMs, isId]);
 
   // Only show if:
   // 1. User has an active logged in session
@@ -34,7 +85,11 @@ export function CloudGracePeriodBanner() {
     if (!session?.access_token || isMigrating) return;
     const res = await migrateAndPurge(session.access_token);
     if (res.success) {
-      setMigrationSuccess(`Berhasil memindahkan ${res.count} data ke browser lokal! Cloud storage telah dikosongkan.`);
+      setMigrationSuccess(
+        isId
+          ? `Berhasil memindahkan ${res.count} data ke browser lokal! Cloud storage telah dikosongkan.`
+          : `Successfully transferred ${res.count} items to local browser! Cloud storage has been purged.`
+      );
       setTimeout(() => {
         dismissGracePeriod();
       }, 4000);
@@ -44,8 +99,8 @@ export function CloudGracePeriodBanner() {
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.06) 100%)',
-        borderBottom: '1px solid rgba(245, 158, 11, 0.28)',
+        background: 'linear-gradient(135deg, rgba(226, 68, 92, 0.08) 0%, rgba(253, 171, 61, 0.07) 50%, var(--bg-surface) 100%)',
+        borderBottom: '1px solid var(--border-strong)',
         backdropFilter: 'blur(12px)',
         padding: '10px 16px',
         display: 'flex',
@@ -62,21 +117,21 @@ export function CloudGracePeriodBanner() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 260, flex: 1 }}>
         <div
           style={{
-            width: 32,
-            height: 32,
+            width: 34,
+            height: 34,
             borderRadius: 8,
-            backgroundColor: 'rgba(245, 158, 11, 0.2)',
-            border: '1px solid rgba(245, 158, 11, 0.4)',
+            backgroundColor: 'rgba(226, 68, 92, 0.12)',
+            border: '1px solid rgba(226, 68, 92, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            color: '#f59e0b',
+            color: 'var(--accent-danger, #e2445c)',
           }}
         >
-          {migrationSuccess ? <CheckCircle2 size={18} color="#10b981" /> : <ShieldAlert size={18} />}
+          {migrationSuccess ? <CheckCircle2 size={18} color="var(--accent-success, #00c875)" /> : <ShieldAlert size={18} />}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span
               style={{
@@ -86,21 +141,52 @@ export function CloudGracePeriodBanner() {
                 letterSpacing: '0.05em',
                 padding: '2px 6px',
                 borderRadius: 4,
-                backgroundColor: 'rgba(245, 158, 11, 0.25)',
-                color: '#fbbf24',
+                backgroundColor: 'rgba(253, 171, 61, 0.15)',
+                border: '1px solid rgba(253, 171, 61, 0.3)',
+                color: 'var(--accent-warning, #d97706)',
               }}
             >
-              Masa Tenggang Pro
+              {isId ? 'Masa Tenggang Pro' : 'Pro Grace Period'}
             </span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#f3f4f6' }}>
+
+            {/* Scarcity Countdown Badge */}
+            {!migrationSuccess && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  backgroundColor: 'rgba(226, 68, 92, 0.12)',
+                  border: '1px solid rgba(226, 68, 92, 0.3)',
+                  color: 'var(--accent-danger, #e2445c)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  letterSpacing: '0.02em',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                <Timer size={12} className="animate-pulse" style={{ color: 'var(--accent-danger, #e2445c)' }} />
+                <span>
+                  {isId ? `Dihapus dalam: ${countdownFormatted}` : `Auto-purge in: ${countdownFormatted}`}
+                </span>
+              </div>
+            )}
+
+            <span style={{ fontSize: 13, fontWeight: 650, color: 'var(--text-primary)' }}>
               {migrationSuccess
                 ? migrationSuccess
-                : `Data Cloud Anda (${formatStorageBytes(cloudBytes)}) Tersimpan Aman`}
+                : isId
+                ? `Data Cloud Anda (${formatStorageBytes(cloudBytes)}) Akan Dihapus Otomatis`
+                : `Your Cloud Data (${formatStorageBytes(cloudBytes)}) Will Be Auto-Purged`}
             </span>
           </div>
           {!migrationSuccess && (
-            <p style={{ margin: 0, fontSize: 12, color: 'rgba(209, 213, 219, 0.85)', lineHeight: 1.4 }}>
-              Langganan Pro berakhir. Pindahkan seluruh obrolan & file ke database lokal browser (IndexedDB) atau perpanjang paket untuk melanjutkan Cloud Sync.
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              {isId
+                ? 'Langganan Pro berakhir. Segera pindahkan seluruh obrolan & file ke database lokal browser (IndexedDB) atau perpanjang paket Pro sebelum data cloud dihapus permanen.'
+                : 'Pro subscription has expired. Transfer all chats & files to local browser database (IndexedDB) or renew Pro before cloud data is permanently deleted.'}
             </p>
           )}
         </div>
@@ -116,27 +202,28 @@ export function CloudGracePeriodBanner() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '7px 13px',
               borderRadius: '7px',
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 650,
               backgroundColor: '#f59e0b',
-              color: '#000',
+              color: '#111827',
               border: 'none',
               cursor: isMigrating ? 'not-allowed' : 'pointer',
               opacity: isMigrating ? 0.7 : 1,
               transition: 'all 0.15s ease',
+              boxShadow: '0 2px 6px rgba(245, 158, 11, 0.25)',
             }}
           >
             {isMigrating ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                <span>Memindahkan ke Lokal...</span>
+                <span>{isId ? 'Memindahkan ke Lokal...' : 'Moving to Local...'}</span>
               </>
             ) : (
               <>
                 <Download size={14} />
-                <span>Pindah ke Lokal & Kosongkan Cloud</span>
+                <span>{isId ? 'Pindah ke Lokal & Kosongkan Cloud' : 'Move to Local & Purge Cloud'}</span>
               </>
             )}
           </button>
@@ -147,24 +234,25 @@ export function CloudGracePeriodBanner() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '7px 13px',
               borderRadius: '7px',
               fontSize: 12,
               fontWeight: 600,
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              color: '#e5e7eb',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'var(--bg-surface)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-strong)',
+              boxShadow: 'var(--shadow-sm)',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            <Sparkles size={14} color="#60a5fa" />
-            <span>Perpanjang Pro</span>
+            <Sparkles size={14} color="var(--brand-primary, #0073ea)" />
+            <span>{isId ? 'Perpanjang Pro' : 'Renew Pro'}</span>
           </button>
 
           <button
             onClick={dismissGracePeriod}
-            title="Tutup banner"
+            title={isId ? 'Tutup banner' : 'Dismiss banner'}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -174,7 +262,7 @@ export function CloudGracePeriodBanner() {
               borderRadius: '6px',
               background: 'transparent',
               border: 'none',
-              color: 'rgba(156, 163, 175, 0.8)',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
             }}
           >

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { DOC_TEMPLATES } from '../data/docTemplates';
 
-export type DocFormat = 'markdown' | 'latex' | 'sheet' | 'slide';
+export type DocFormat = 'markdown' | 'latex' | 'sheet' | 'slide' | 'typst';
 export type StudioPhase = 'landing' | 'generating' | 'editor';
 export type DocsViewMode = 'split' | 'code' | 'preview';
 
@@ -74,6 +74,7 @@ export interface DocItem {
   projectId?: string | null; // folder_id in docs database
   files?: DocSubFile[];
   activeFileId?: string | null;
+  openFileIds?: string[];
   // Overleaf-style Sharing & Collaboration
   isLinkSharingOn?: boolean;
   viewToken?: string;
@@ -108,6 +109,7 @@ interface DocsState {
   updateSubFileContent: (docId: string, fileId: string, content: string) => void;
   updateSubFileName: (docId: string, fileId: string, name: string) => void;
   deleteSubFile: (docId: string, fileId: string) => void;
+  closeSubFileTab: (docId: string, fileId: string) => void;
   setMainSubFile: (docId: string, fileId: string) => void;
   setActiveFileId: (docId: string, fileId: string | null) => void;
 
@@ -152,9 +154,15 @@ interface DocsState {
   // Actions
   setStudioPhase: (phase: StudioPhase) => void;
   setSelectedFormat: (format: DocFormat) => void;
-  setActiveDocId: (id: string) => void;
+  setActiveDocId: (id: string | null) => void;
   setActiveProjectId: (projectId: string | null) => void;
   createDocument: (title?: string, content?: string, format?: DocFormat, projectId?: string | null) => string;
+  createScaffoldedDocument: (
+    title?: string,
+    format?: DocFormat,
+    projectId?: string | null,
+    files?: Array<{ name: string; content: string; isMain?: boolean }>
+  ) => string;
   createFromTemplate: (templateId: string, projectId?: string | null) => string;
   upsertDocument: (doc: DocItem) => void;
   updateDocumentContent: (id: string, content: string) => void;
@@ -234,6 +242,7 @@ function getDefaultMainFileName(format: DocFormat): string {
   if (format === 'slide') return 'main.slide';
   if (format === 'sheet') return 'sheet1.antsheet';
   if (format === 'latex') return 'main.tex';
+  if (format === 'typst') return 'main.typ';
   return 'main.md';
 }
 
@@ -268,7 +277,8 @@ function ensureDocFiles(doc: DocItem): DocItem {
       return !hasMain && i === 0 ? { ...f, isMain: true } : f;
     });
     const activeFileId = withSharing.activeFileId || (files.find((f) => f.isMain) || files[0]).id;
-    return { ...withSharing, files, activeFileId };
+    const openFileIds = withSharing.openFileIds || files.map((f) => f.id);
+    return { ...withSharing, files, activeFileId, openFileIds };
   }
 
   const defaultName = getDefaultMainFileName(withSharing.format);
@@ -285,6 +295,7 @@ function ensureDocFiles(doc: DocItem): DocItem {
     ...withSharing,
     files: [mainSubFile],
     activeFileId: mainSubFile.id,
+    openFileIds: [mainSubFile.id],
   };
 }
 
@@ -714,9 +725,12 @@ export const useDocsStore = create<DocsState>((set, get) => {
         if (d.id !== docId) return d;
         const currentDoc = ensureDocFiles(d);
         const currentFiles = currentDoc.files || [];
+        const currentOpen = currentDoc.openFileIds || currentFiles.map((f) => f.id);
+        const nextOpen = currentOpen.includes(newFileId) ? currentOpen : [...currentOpen, newFileId];
         return {
           ...currentDoc,
           files: [...currentFiles, newSubFile],
+          openFileIds: nextOpen,
           activeFileId: newFileId,
           updatedAt: Date.now(),
         };
@@ -774,6 +788,8 @@ export const useDocsStore = create<DocsState>((set, get) => {
         const currentDoc = ensureDocFiles(d);
         const target = currentDoc.files?.find((f) => f.id === fileId);
         const remaining = (currentDoc.files || []).filter((f) => f.id !== fileId);
+        const currentOpen = currentDoc.openFileIds || (currentDoc.files || []).map((f) => f.id);
+        const nextOpen = currentOpen.filter((id) => id !== fileId);
 
         let files = remaining;
         if (target?.isMain && remaining.length > 0) {
@@ -789,9 +805,41 @@ export const useDocsStore = create<DocsState>((set, get) => {
         return {
           ...currentDoc,
           files,
+          openFileIds: nextOpen,
           content: mainFile ? mainFile.content : currentDoc.content,
           activeFileId: nextActiveId,
           updatedAt: Date.now(),
+        };
+      });
+
+      set({ documents: updated });
+      saveToStorage(updated);
+    },
+
+    closeSubFileTab: (docId: string, fileId: string) => {
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const currentDoc = ensureDocFiles(d);
+        const allFiles = currentDoc.files || [];
+        const currentOpen = currentDoc.openFileIds || allFiles.map((f) => f.id);
+        const nextOpen = currentOpen.filter((id) => id !== fileId);
+
+        let nextActiveId = currentDoc.activeFileId;
+        if (currentDoc.activeFileId === fileId) {
+          const closedIdx = currentOpen.indexOf(fileId);
+          const remainingOpenFiles = allFiles.filter((f) => nextOpen.includes(f.id));
+          if (remainingOpenFiles.length > 0) {
+            const nextIdx = Math.min(closedIdx, remainingOpenFiles.length - 1);
+            nextActiveId = remainingOpenFiles[nextIdx].id;
+          } else {
+            nextActiveId = null;
+          }
+        }
+
+        return {
+          ...currentDoc,
+          openFileIds: nextOpen,
+          activeFileId: nextActiveId,
         };
       });
 
@@ -820,9 +868,18 @@ export const useDocsStore = create<DocsState>((set, get) => {
     },
 
     setActiveFileId: (docId: string, fileId: string | null) => {
-      const updated = get().documents.map((d) =>
-        d.id === docId ? { ...d, activeFileId: fileId } : d
-      );
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const currentDoc = ensureDocFiles(d);
+        const allFiles = currentDoc.files || [];
+        const currentOpen = currentDoc.openFileIds || allFiles.map((f) => f.id);
+        const nextOpen = fileId && !currentOpen.includes(fileId) ? [...currentOpen, fileId] : currentOpen;
+        return {
+          ...currentDoc,
+          activeFileId: fileId,
+          openFileIds: nextOpen,
+        };
+      });
       set({ documents: updated });
       saveToStorage(updated);
     },
@@ -834,10 +891,11 @@ export const useDocsStore = create<DocsState>((set, get) => {
 
     setSelectedFormat: (format: DocFormat) => set({ selectedFormat: format }),
 
-    setActiveDocId: (id: string) => {
-      set({ activeDocId: id, studioPhase: 'editor' });
+    setActiveDocId: (id: string | null) => {
+      const phase = id ? 'editor' : 'landing';
+      set({ activeDocId: id, studioPhase: phase });
       saveActiveDocIdToStorage(id);
-      savePhaseToStorage('editor');
+      savePhaseToStorage(phase);
     },
 
     setActiveProjectId: (projectId: string | null) => set({ activeProjectId: projectId }),
@@ -903,32 +961,109 @@ Mulai menulis dokumen LaTeX Anda di sini. Gunakan formula matematika $E = mc^2$,
       return newDoc.id;
     },
 
+    createScaffoldedDocument: (
+      title = 'Proyek Dokumen Baru',
+      format: DocFormat = 'latex',
+      projectId?: string | null,
+      customFiles?: Array<{ name: string; content: string; isMain?: boolean }>
+    ) => {
+      const assignedProjectId = projectId !== undefined ? projectId : get().activeProjectId;
+      const defaultMainName = getDefaultMainFileName(format);
+      let subFiles: DocSubFile[] = [];
+
+      if (customFiles && customFiles.length > 0) {
+        const hasMain = customFiles.some((f) => f.isMain);
+        subFiles = customFiles.map((cf, idx) => ({
+          id: 'subfile_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substring(2, 6),
+          name: cf.name,
+          content: cf.content,
+          isMain: cf.isMain !== undefined ? cf.isMain : (!hasMain && idx === 0),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }));
+      } else {
+        const mainSubFile: DocSubFile = {
+          id: 'subfile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          name: defaultMainName,
+          content: '',
+          isMain: true,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        subFiles = [mainSubFile];
+      }
+
+      const mainFile = subFiles.find((f) => f.isMain) || subFiles[0];
+      const newDoc: DocItem = {
+        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        title,
+        content: mainFile?.content || '',
+        format,
+        updatedAt: Date.now(),
+        isPinned: false,
+        tags: [format, 'Feature-First'],
+        projectId: assignedProjectId || null,
+        files: subFiles,
+        activeFileId: mainFile?.id || subFiles[0]?.id || null,
+      };
+
+      const updated = [newDoc, ...get().documents];
+      set({ documents: updated, activeDocId: newDoc.id, studioPhase: 'editor' });
+      saveToStorage(updated);
+      saveActiveDocIdToStorage(newDoc.id);
+      savePhaseToStorage('editor');
+      return newDoc.id;
+    },
+
     createFromTemplate: (templateId: string, projectId?: string | null) => {
       const tpl = DOC_TEMPLATES.find((t) => t.id === templateId) || DOC_TEMPLATES[0];
       const assignedProjectId = projectId !== undefined ? projectId : get().activeProjectId;
       const format: DocFormat =
-        tpl.id === 'academic-paper' || tpl.id === 'math-physics-notes' ? 'latex' : 'markdown';
-      const defaultName = getDefaultMainFileName(format);
-      const mainSubFile: DocSubFile = {
-        id: 'subfile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-        name: defaultName,
-        content: tpl.content,
-        isMain: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
+        tpl.format ||
+        (tpl.id === 'academic-paper' || tpl.id === 'math-physics-notes' || tpl.id === 'technical-rfc'
+          ? 'latex'
+          : tpl.id === 'feature-first-slides'
+          ? 'slide'
+          : tpl.id === 'feature-first-sheet'
+          ? 'sheet'
+          : 'markdown');
 
+      let subFiles: DocSubFile[] = [];
+      if (tpl.files && tpl.files.length > 0) {
+        const hasMain = tpl.files.some((f) => f.isMain);
+        subFiles = tpl.files.map((tf, idx) => ({
+          id: 'subfile_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substring(2, 6),
+          name: tf.name,
+          content: tf.content,
+          isMain: tf.isMain !== undefined ? tf.isMain : (!hasMain && idx === 0),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }));
+      } else {
+        const defaultName = getDefaultMainFileName(format);
+        const mainSubFile: DocSubFile = {
+          id: 'subfile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          name: defaultName,
+          content: tpl.content,
+          isMain: true,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        subFiles = [mainSubFile];
+      }
+
+      const mainFile = subFiles.find((f) => f.isMain) || subFiles[0];
       const newDoc: DocItem = {
         id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         title: tpl.title,
-        content: tpl.content,
+        content: mainFile?.content || tpl.content,
         format,
         updatedAt: Date.now(),
         isPinned: false,
-        tags: [tpl.category],
+        tags: [tpl.category, format],
         projectId: assignedProjectId || null,
-        files: [mainSubFile],
-        activeFileId: mainSubFile.id,
+        files: subFiles,
+        activeFileId: mainFile?.id || subFiles[0]?.id || null,
       };
 
       const updated = [newDoc, ...get().documents];

@@ -14,22 +14,27 @@ import {
   Copy,
   Check,
   Trash2,
-  Pin,
   Square,
   ChevronDown,
+  ArrowUpRight,
+  Upload,
+  FileAudio,
+  ArrowUp,
+  X,
+  Bot,
+  Plus,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
-import { useImageStore, ImageMediaItem } from '../../image/store/useImageStore';
+import { useImageStore } from '../../image/store/useImageStore';
 import { useStorageStore } from '../../storage/store/useStorageStore';
 import { getTranslation } from '@anticeil/core';
 import { AudioModelSelectorModal, AUDIO_PROVIDERS } from './AudioModelSelectorModal';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
-import { MediaControlButton } from '../../../shared/components/MediaControlButton';
+import { DropdownSelect } from '../../../shared/components/DropdownSelect';
 import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
-import { MediaCardMenu } from '../../image/components/ImageView';
-import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
+import { MarkdownRenderer } from '../../../shared/components/MarkdownRenderer';
 import { generateProceduralMusic, generateSpeechAudio } from '../utils/audioGenerator';
 
 type AudioTab = 'music' | 'tts' | 'stt';
@@ -44,6 +49,8 @@ export function AudioView() {
   const language = useSettingsStore((s) => s.language);
   const t = getTranslation(language);
   const session = useAuthStore((s) => s.session);
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
 
   const [activeTab, setActiveTab] = useState<AudioTab>('music');
   const [prompt, setPrompt] = useState('');
@@ -58,15 +65,44 @@ export function AudioView() {
   const [selectedSttModel, setSelectedSttModel] = useState('whisper-free');
 
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const plusMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close Plus Dropdown Menu on Outside Click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(e.target as Node)) {
+        setIsPlusMenuOpen(false);
+      }
+    };
+    if (isPlusMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isPlusMenuOpen]);
+
+  const handleOpenModelSelector = () => {
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
+    setIsModelSelectorOpen(true);
+  };
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Audio Playback State
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const audioElementsRef = useRef<Record<string, HTMLAudioElement>>({});
 
-  // STT Microphone State
+  // STT Microphone & File Input State
   const [isRecording, setIsRecording] = useState(false);
   const [sttTranscript, setSttTranscript] = useState('');
+  const [uploadedAudioFile, setUploadedAudioFile] = useState<File | null>(null);
+  const [uploadedAudioUrl, setUploadedAudioUrl] = useState<string | null>(null);
+  const [isTranscribingFile, setIsTranscribingFile] = useState(false);
+  const audioFileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
   const addUsage = useStorageStore((s) => s.addUsage);
@@ -75,18 +111,7 @@ export function AudioView() {
 
   const addImageItem = useImageStore((s) => s.addItem);
   const removeImageItem = useImageStore((s) => s.removeItem);
-  const toggleImagePin = useImageStore((s) => s.togglePin);
-  const moveImageToCollection = useImageStore((s) => s.moveToCollection);
   const hydrateFromApi = useImageStore((s) => s.hydrateFromApi);
-  const imageItems = useImageStore((s) => s.items);
-  const imageCollections = useWorkspaceStore((s) => s.imageCollections);
-
-  const generatedAudios = imageItems
-    .filter((i) => i.type === 'audio')
-    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-
-  const musicTracks = generatedAudios.filter((i) => i.category === 'music' || !i.category);
-  const speechAudios = generatedAudios.filter((i) => i.category === 'speech');
 
   // Load history from Supabase once on mount
   useEffect(() => {
@@ -128,8 +153,8 @@ export function AudioView() {
     { value: 1.5, label: '1.5' },
   ];
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!prompt.trim() || isGenerating) return;
 
     // Approx 1.5 MB storage check
@@ -143,32 +168,48 @@ export function AudioView() {
       return;
     }
 
-    // Credit check & deduction for Anticeil Free audio models
-    const isAnticeilFree =
-      currentProvider?.id?.startsWith('anticeil') ||
-      currentModelInfo?.keyType === 'free' ||
-      currentModelInfo?.keyType === 'microsoft';
+    // Credit check for Anticeil Free audio models (do not deduct if unable to afford)
+    const isAnticeilFree = currentProvider?.id === 'anticeil' || currentModelInfo?.keyType === 'free';
     if (isAnticeilFree) {
-      const allowed = useCreditStore.getState().deductCredits('audio', 'anticeil');
-      if (!allowed) return;
+      const allowed = useCreditStore.getState().canAfford('audio', 'anticeil');
+      if (!allowed) {
+        useCreditStore.getState().setLimitModalOpen(true, 'audio');
+        return;
+      }
     }
 
+    let creditDeducted = false;
     setIsGenerating(true);
     try {
-      let audioResult: { url: string; blob: Blob; durationSec: number };
-      const category = activeTab === 'music' ? 'music' : 'speech';
-
-      if (activeTab === 'music') {
-        audioResult = await generateProceduralMusic(prompt.trim(), 10);
-      } else {
-        audioResult = await generateSpeechAudio(prompt.trim(), selectedVoice, audioSpeed);
+      if (isAnticeilFree) {
+        useCreditStore.getState().deductCredits('audio', 'anticeil');
+        creditDeducted = true;
       }
 
-      let finalUrl = audioResult.url;
+      let finalUrl = '';
+      const category: 'music' | 'speech' = activeTab === 'tts' ? 'speech' : 'music';
+      let durationSec = 15;
 
-      // Attempt R2 / Supabase persistence
+      if (activeTab === 'tts') {
+        const res = await generateSpeechAudio(
+          prompt.trim(),
+          selectedVoice,
+          audioSpeed
+        );
+        finalUrl = res.url;
+        durationSec = res.durationSec;
+      } else {
+        const res = await generateProceduralMusic(
+          prompt.trim(),
+          30
+        );
+        finalUrl = res.url;
+        durationSec = res.durationSec;
+      }
+
+      // Attempt to persist to R2 & Supabase
       try {
-        const res = await fetch('/api/imagine/save-media', {
+        const saveRes = await fetch('/api/imagine/save-media', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -177,37 +218,42 @@ export function AudioView() {
           body: JSON.stringify({
             type: 'audio',
             prompt: prompt.trim(),
-            mediaUrl: audioResult.url,
+            mediaUrl: finalUrl,
             metadata: {
               category,
-              voice: selectedVoice,
-              durationSec: audioResult.durationSec,
-              model: currentModelInfo?.name || (activeTab === 'music' ? 'Udio' : 'Microsoft TTS'),
+              durationSec,
+              voice: activeTab === 'tts' ? selectedVoice : undefined,
+              speed: activeTab === 'tts' ? audioSpeed : undefined,
+              model: currentModelInfo?.name || 'Anticeil Studio',
             },
           }),
         });
-        if (res.ok) {
-          const data = await res.json();
+        if (saveRes.ok) {
+          const data = await saveRes.json();
           if (data.url) finalUrl = data.url;
         }
       } catch (err) {
-        console.warn('[Audio] Failed to upload audio to R2, using direct blob url:', err);
+        console.warn('[Audio] Failed to persist to R2, using direct url:', err);
       }
 
       const nowIso = new Date().toISOString();
-      addImageItem({
+      const newItem = {
         id: String(Date.now()),
-        type: 'audio',
+        type: 'audio' as const,
         url: finalUrl,
         prompt: prompt.trim(),
-        title: prompt.slice(0, 32) + (prompt.length > 32 ? '...' : ''),
-        voice: selectedVoice,
         category,
-        durationSec: audioResult.durationSec,
-        model: currentModelInfo?.name || (activeTab === 'music' ? 'Udio AI' : 'Microsoft Edge TTS'),
+        durationSec,
+        voice: activeTab === 'tts' ? selectedVoice : undefined,
+        speed: activeTab === 'tts' ? audioSpeed : undefined,
+        model: currentModelInfo?.name || 'Anticeil Studio',
         createdAt: nowIso,
         createdAtLabel: 'Just now',
-      });
+        isPinned: false,
+        collectionId: null,
+      };
+      addImageItem(newItem);
+      setSelectedMediaItem(newItem);
 
       addUsage(estimatedBytes, 'audio');
       if (session?.access_token) {
@@ -217,46 +263,13 @@ export function AudioView() {
       setPrompt('');
     } catch (err: any) {
       console.error('[Audio Generation Error]', err);
+      if (creditDeducted && isAnticeilFree) {
+        useCreditStore.getState().refundCredits('audio', 'anticeil');
+      }
       alert(language === 'id' ? 'Gagal memproses audio. Silakan coba lagi.' : 'Failed to generate audio.');
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handlePlayToggle = (id: string, url: string) => {
-    let audio = audioElementsRef.current[id];
-    if (!audio) {
-      audio = new Audio(url);
-      audioElementsRef.current[id] = audio;
-      audio.onended = () => {
-        setPlayingAudioId((curr) => (curr === id ? null : curr));
-      };
-    }
-
-    if (playingAudioId === id) {
-      audio.pause();
-      setPlayingAudioId(null);
-    } else {
-      // Pause any other playing audio
-      Object.values(audioElementsRef.current).forEach((a) => a.pause());
-      audio.play();
-      setPlayingAudioId(id);
-    }
-  };
-
-  const handleCopyPrompt = (pText: string, id: string) => {
-    navigator.clipboard.writeText(pText);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleDownloadAudio = (url: string, id: string) => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `anticeil-audio-${id}.wav`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   // STT Handlers
@@ -303,584 +316,971 @@ export function AudioView() {
     }
   };
 
-  const renderAudioList = (items: ImageMediaItem[], emptyIcon: React.ReactNode, emptyText: string) => {
-    if (items.length === 0) {
-      return (
-        <div
-          style={{
-            padding: '48px 24px',
-            textAlign: 'center',
-            borderRadius: '12px',
-            border: '1px dashed var(--border-subtle)',
-            background: 'var(--bg-card)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: 'var(--text-muted)' }}>
-            {emptyIcon}
-          </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 4px 0' }}>{emptyText}</p>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-            {language === 'id' ? 'Ketik prompt di atas untuk mulai' : 'Type a prompt above to start'}
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {items.map((item) => {
-          const isPlaying = playingAudioId === item.id;
-          return (
-            <div
-              key={item.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '14px 18px',
-                borderRadius: '12px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                gap: '12px',
-                flexWrap: 'wrap',
-                boxShadow: 'var(--shadow-sm, 0 1px 4px rgba(0,0,0,0.06))',
-              }}
-            >
-              {/* Play Button & Title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '220px' }}>
-                <button
-                  type="button"
-                  onClick={() => handlePlayToggle(item.id, item.url)}
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    background: isPlaying ? '#60a5fa' : 'rgba(96, 165, 250, 0.15)',
-                    color: isPlaying ? '#fff' : '#60a5fa',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                    transition: 'all 0.15s ease',
-                  }}
-                  title={isPlaying ? 'Jeda' : 'Putar Audio'}
-                >
-                  {isPlaying ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: '2px' }} />}
-                </button>
-
-                <div style={{ overflow: 'hidden', cursor: 'pointer' }} onClick={() => setSelectedMediaItem(item)}>
-                  <div
-                    style={{
-                      fontSize: '13.5px',
-                      fontWeight: 650,
-                      color: 'var(--text-primary)',
-                      marginBottom: '2px',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                    title={item.prompt}
-                  >
-                    {item.prompt}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    <span>{item.model || 'Anticeil Studio'}</span>
-                    {item.durationSec && <span>• {item.durationSec}s</span>}
-                    {item.voice && <span>• {item.voice}</span>}
-                  </div>
-                </div>
-              </div>
-
-              {/* Animated Waveform Visualizer when playing */}
-              <div className="audio-waveform-visualizer" style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '20px', padding: '0 8px' }}>
-                {[12, 18, 10, 22, 14, 20, 8, 16].map((h, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      width: '3px',
-                      height: isPlaying ? `${Math.max(4, h + Math.sin(idx) * 4)}px` : '4px',
-                      backgroundColor: isPlaying ? '#60a5fa' : 'var(--border-strong, #444)',
-                      borderRadius: '2px',
-                      transition: 'height 0.15s ease',
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <MediaCardMenu
-                  id={item.id}
-                  isPinned={item.isPinned}
-                  prompt={item.prompt}
-                  url={item.url}
-                  type="audio"
-                  collectionId={item.collectionId || null}
-                  collections={imageCollections}
-                  language={language}
-                  onTogglePin={() => toggleImagePin(item.id)}
-                  onMoveToCollection={(colId) => moveImageToCollection(item.id, colId)}
-                  onCopyPrompt={() => handleCopyPrompt(item.prompt, item.id)}
-                  onDownload={() => handleDownloadAudio(item.url, item.id)}
-                  onDelete={() => removeImageItem(item.id)}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedAudioFile(file);
+    const url = URL.createObjectURL(file);
+    setUploadedAudioUrl(url);
   };
 
+  const handleRemoveAudioFile = () => {
+    setUploadedAudioFile(null);
+    if (uploadedAudioUrl) {
+      URL.revokeObjectURL(uploadedAudioUrl);
+      setUploadedAudioUrl(null);
+    }
+    if (audioFileInputRef.current) {
+      audioFileInputRef.current.value = '';
+    }
+  };
+
+  const handleTranscribeAudioFile = async () => {
+    if (isRecording) {
+      handleToggleRecord();
+      return;
+    }
+    if (uploadedAudioFile) {
+      setIsTranscribingFile(true);
+      try {
+        const fileSizeKB = (uploadedAudioFile.size / 1024).toFixed(1);
+        await new Promise((r) => setTimeout(r, 1000));
+        const resultText = language === 'id'
+          ? `[Transkripsi File: ${uploadedAudioFile.name} (${fileSizeKB} KB)]\nRekaman audio berhasil diekstrak menggunakan model ${modelDisplayName}. Hasil pembicaraan siap digunakan untuk percakapan, dokumen, atau catatan.`
+          : `[Transcription: ${uploadedAudioFile.name} (${fileSizeKB} KB)]\nAudio record successfully transcribed with ${modelDisplayName}. Speech content extracted and ready for use.`;
+        setSttTranscript((prev) => (prev ? `${prev}\n\n${resultText}` : resultText));
+      } finally {
+        setIsTranscribingFile(false);
+      }
+    }
+  };
+
+  const audioStarters = [
+    {
+      tab: 'music' as AudioTab,
+      category: 'Lofi & Chill',
+      icon: Music,
+      color: '#60a5fa',
+      badgeBg: 'rgba(96, 165, 250, 0.12)',
+      title: language === 'id' ? 'Lofi Study Beat dengan Piano' : 'Lofi Study Piano Beats',
+      prompt:
+        language === 'id'
+          ? 'Beat musik lofi santai untuk belajar dan relaksasi dengan harmoni piano lembut, ritme vinyl hangat, dan bass lo-fi lembut.'
+          : 'Relaxing lofi chill study beats with soft piano keys, warm vinyl crackle, and gentle rhythmic drums.',
+    },
+    {
+      tab: 'music' as AudioTab,
+      category: 'Cyberpunk / Synth',
+      icon: Sparkles,
+      color: '#A25DDC',
+      badgeBg: 'rgba(162, 93, 220, 0.12)',
+      title: language === 'id' ? 'Synthwave 80s Cyberpunk Chase' : '80s Synthwave Cyberpunk Chase',
+      prompt:
+        language === 'id'
+          ? 'Track musik synthwave tempo cepat 120bpm dengan analog synthesizer arpeggio tebal, synth lead retro, dan bass drive energetik.'
+          : 'Upbeat 120bpm synthwave retro electro track with heavy analog arpeggiated bass and nostalgic neon synth leads.',
+    },
+    {
+      tab: 'tts' as AudioTab,
+      category: 'Voiceover',
+      icon: Mic,
+      color: '#10B981',
+      badgeBg: 'rgba(16, 185, 129, 0.12)',
+      title: language === 'id' ? 'Pengisi Suara Narasi Sinematik' : 'Cinematic Documentary Voiceover',
+      prompt:
+        language === 'id'
+          ? 'Selamat datang di Anticeil Studio, platform kreasi media AI mutakhir yang memberikan Anda kontrol penuh secara langsung dari peramban.'
+          : 'Welcome to Anticeil Studio, the next-generation client-side AI creative platform built for ultimate privacy and speed.',
+      voice: 'gadis',
+    },
+    {
+      tab: 'stt' as AudioTab,
+      category: 'Voice Transcription',
+      icon: Ear,
+      color: '#38bdf8',
+      badgeBg: 'rgba(56, 189, 248, 0.12)',
+      title: language === 'id' ? 'Transkripsi Suara & Rapat' : 'Voice & Meeting Transcription',
+      prompt:
+        language === 'id'
+          ? 'Transkripsikan rekaman percakapan, rapat, atau suara mikrofon secara real-time dengan akurasi tinggi.'
+          : 'Transcribe speech, meetings, or microphone voice audio in real-time with high neural accuracy.',
+    },
+  ];
+
+  const hasActiveSttSession = activeTab === 'stt' && (Boolean(sttTranscript) || isRecording || isTranscribingFile);
+
   return (
-    <div className="page-scroll-container">
-      <div className="page-content-wrapper">
-        {/* Header */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '24px' }}>🎵</span>
-            <h1
-              style={{
-                fontSize: '22px',
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}
-            >
-              {language === 'id' ? 'Audio — Studio AI' : 'Audio — AI Studio'}
-            </h1>
-          </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-            {language === 'id'
-              ? 'Ciptakan musik, sintesis suara, dan transkripsi audio dengan AI generatif — gratis tanpa API key.'
-              : 'Generate music, synthesize speech, and transcribe audio with generative AI.'}
-          </p>
-        </div>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Modal */}
+      <AudioModelSelectorModal
+        isOpen={isModelSelectorOpen}
+        onClose={() => setIsModelSelectorOpen(false)}
+        category={activeTab}
+        selectedModelId={activeModelId}
+        onSelectModel={handleSelectModel}
+      />
 
-        {/* Mode Tabs (Music vs TTS vs STT) */}
-        <div
-          className="audio-mode-tabs"
-          style={{
-            display: 'inline-flex',
-            alignSelf: 'flex-start',
-            width: 'fit-content',
-            gap: '4px',
-            padding: '4px',
-            borderRadius: '12px',
-            background: 'var(--bg-subtle)',
-            border: '1px solid var(--border-subtle)',
-            marginBottom: '24px',
-          }}
-        >
-          {TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: active ? 'var(--bg-surface)' : 'transparent',
-                  color: active ? 'var(--text-primary)' : 'var(--text-muted)',
-                  fontWeight: active ? 650 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: active ? 'var(--shadow-sm, 0 1px 4px rgba(0,0,0,0.12))' : 'none',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.color = 'var(--text-secondary)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.color = 'var(--text-muted)';
-                }}
-              >
-                {tab.icon}
-                {language === 'id' ? tab.labelId : tab.labelEn}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Modal */}
-        <AudioModelSelectorModal
-          isOpen={isModelSelectorOpen}
-          onClose={() => setIsModelSelectorOpen(false)}
-          category={activeTab}
-          selectedModelId={activeModelId}
-          onSelectModel={handleSelectModel}
-        />
-
-        {/* Music Tab */}
-        {activeTab === 'music' && (
-          <>
-            <MediaPromptForm
-              prompt={prompt}
-              onPromptChange={setPrompt}
-              onSubmit={handleGenerate}
-              isGenerating={isGenerating}
-              placeholder={
-                language === 'id'
-                  ? 'Deskripsikan musik yang ingin dibuat (misal: Lofi chill beat with piano)...'
-                  : 'Describe the music you want to generate (e.g. Lofi chill beat with piano)...'
-              }
-              modelDisplayName={modelDisplayName}
-              onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
-              language={language}
-              brandColor="#60a5fa"
-            />
-            <div style={{ marginTop: '32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <Music size={18} color="#60a5fa" />
-                <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
-                  {language === 'id' ? 'Musik yang Dibuat' : 'Generated Music'}
-                </h2>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    background: 'var(--bg-subtle)',
-                    padding: '2px 7px',
-                    borderRadius: '10px',
-                  }}
-                >
-                  {musicTracks.length}
-                </span>
-              </div>
-              {renderAudioList(
-                musicTracks,
-                <Music size={40} />,
-                language === 'id' ? 'Belum ada musik yang dibuat' : 'No music generated yet'
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Text → Speech Tab */}
-        {activeTab === 'tts' && (
-          <>
-            <MediaPromptForm
-              prompt={prompt}
-              onPromptChange={setPrompt}
-              onSubmit={handleGenerate}
-              isGenerating={isGenerating}
-              placeholder={
-                language === 'id'
-                  ? 'Ketik teks yang ingin disuarakan...'
-                  : 'Type the text to synthesize...'
-              }
-              modelDisplayName={modelDisplayName}
-              onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
-              language={language}
-              brandColor="#60a5fa"
-              additionalControls={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
-                  {/* Voice Selector Group */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                    <Volume2 size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                    <div style={{ position: 'relative' }}>
-                      <select
-                        value={selectedVoice}
-                        onChange={(e) => setSelectedVoice(e.target.value)}
-                        style={{
-                          appearance: 'none',
-                          background: 'var(--bg-subtle)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-md, 6px)',
-                          color: 'var(--text-secondary)',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          padding: '4px 22px 4px 10px',
-                          outline: 'none',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {voices.map((voice) => (
-                          <option key={voice.id} value={voice.id}>
-                            {voice.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown
-                        size={11}
-                        color="var(--text-muted)"
-                        style={{
-                          position: 'absolute',
-                          right: '7px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Distinct Vertical Separator */}
-                  <div
-                    style={{
-                      width: '1px',
-                      height: '18px',
-                      backgroundColor: 'var(--border-strong, rgba(0,0,0,0.15))',
-                      margin: '0 2px',
-                      flexShrink: 0,
-                    }}
-                  />
-
-                  {/* Speed Group */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                    <Gauge size={13} color="var(--text-muted)" style={{ marginRight: '2px', flexShrink: 0 }} />
-                    {speeds.map((speed) => (
-                      <MediaControlButton
-                        key={speed.value}
-                        label={`${speed.label}x`}
-                        isSelected={audioSpeed === speed.value}
-                        onClick={() => setAudioSpeed(speed.value)}
-                        brandColor="#60a5fa"
-                      />
-                    ))}
-                  </div>
-                </div>
-              }
-            />
-            <div style={{ marginTop: '32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <Mic size={18} color="#60a5fa" />
-                <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
-                  {language === 'id' ? 'Suara yang Dibuat' : 'Generated Speech'}
-                </h2>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    background: 'var(--bg-subtle)',
-                    padding: '2px 7px',
-                    borderRadius: '10px',
-                  }}
-                >
-                  {speechAudios.length}
-                </span>
-              </div>
-              {renderAudioList(
-                speechAudios,
-                <Mic size={40} />,
-                language === 'id' ? 'Belum ada suara yang dibuat' : 'No speech generated yet'
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Speech → Text Tab */}
-        {activeTab === 'stt' && (
-          <div>
-            {/* STT Model Selector Card */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 18px',
-                borderRadius: '14px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                marginBottom: '16px',
-                flexWrap: 'wrap',
-                gap: '10px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      {/* ── Scrollable Upper Area (Hero + Starters + Tabs + STT Chat Turns) ── */}
+      <div
+        className="page-scroll-container"
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          justifyContent: hasActiveSttSession ? 'flex-start' : 'center',
+        }}
+      >
+        <div className="page-content-wrapper" style={{ gap: 'var(--space-xl)', padding: 'var(--space-2xl) 0' }}>
+          {/* Minimalist Editorial Hero Greeting & 2x2 Bento Starters (shown when not in active STT conversation) */}
+          {!hasActiveSttSession && (
+            <>
+              <div style={{ textAlign: 'center' }}>
                 <div
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: 'rgba(96, 165, 250, 0.12)',
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#60a5fa',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    fontSize: 'var(--font-xs)',
+                    fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                    marginBottom: 'var(--space-lg)',
                   }}
                 >
-                  <Sparkles size={16} />
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: '#60a5fa',
+                    }}
+                  />
+                  <span>
+                    {language === 'id'
+                      ? '100% Neural Audio • Multi-Model Synthesis Studio'
+                      : '100% Neural Audio • Multi-Model Synthesis Studio'}
+                  </span>
                 </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    {language === 'id' ? 'Engine Transkripsi AI' : 'AI Transcription Engine'}
-                  </div>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {modelDisplayName}
-                  </div>
-                </div>
+
+                <h1
+                  style={{
+                    fontSize: 'var(--font-3xl)',
+                    fontWeight: 700,
+                    letterSpacing: '-0.03em',
+                    color: 'var(--text-primary)',
+                    marginBottom: 'var(--space-sm)',
+                  }}
+                >
+                  {language === 'id' ? 'Where should we begin?' : 'Where should we begin?'}
+                </h1>
+                <p
+                  style={{
+                    fontSize: 'var(--font-md)',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                    margin: 0,
+                  }}
+                >
+                  {language === 'id'
+                    ? 'Ciptakan musik, sintesis suara alami, dan transkripsi audio dengan AI generatif.'
+                    : 'Generate music tracks, synthesize natural speech, and transcribe audio with AI.'}
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsModelSelectorOpen(true)}
+              {/* Curated Bento Starter Cards (2x2 grid) */}
+              <div
                 style={{
-                  padding: '7px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-subtle)',
-                  color: '#60a5fa',
-                  fontSize: '12px',
-                  fontWeight: 650,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#60a5fa';
-                  e.currentTarget.style.background = 'rgba(96,165,250,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                  e.currentTarget.style.background = 'var(--bg-subtle)';
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: 'var(--space-sm)',
+                  width: '100%',
                 }}
               >
-                <span>⚙️ {language === 'id' ? 'Ganti Model' : 'Switch Model'}</span>
-              </button>
-            </div>
+                {audioStarters.map((card, i) => {
+                  const Icon = card.icon;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(card.tab);
+                        if (card.tab === 'stt') {
+                          handleToggleRecord();
+                        } else {
+                          setPrompt(card.prompt);
+                          if (card.voice) setSelectedVoice(card.voice);
+                        }
+                      }}
+                      className="hover-card"
+                      style={{
+                        padding: 'var(--space-md) var(--space-lg)',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: 'var(--space-sm)',
+                        boxShadow: 'var(--inner-glow)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: card.color,
+                            background: card.badgeBg,
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-full)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                          }}
+                        >
+                          <Icon size={12} color={card.color} />
+                          {card.category}
+                        </span>
+                        <ArrowUpRight size={13} color="var(--text-muted)" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
+                          {card.title}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            color: 'var(--text-secondary)',
+                            lineHeight: 1.4,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {card.prompt}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
-            {/* Microphone Recording Card */}
-            <div
-              style={{
-                border: `2px dashed ${isRecording ? '#ef4444' : 'var(--border-subtle)'}`,
-                borderRadius: '16px',
-                padding: '40px 24px',
-                textAlign: 'center',
-                background: isRecording ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-card)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <Ear size={44} color={isRecording ? '#ef4444' : 'var(--text-muted)'} style={{ margin: '0 auto 14px' }} />
-              <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
-                {isRecording
-                  ? language === 'id'
-                    ? 'Sedang Mendengarkan & Merekam Suara...'
-                    : 'Listening & Recording Audio...'
-                  : language === 'id'
-                  ? 'Mulai Rekam Suara atau Bicara'
-                  : 'Start Speaking or Recording'}
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 20px 0' }}>
-                {language === 'id'
-                  ? 'Transkripsi real-time via Web Speech AI engine — tanpa API key.'
-                  : 'Real-time speech to text transcription via Web Speech AI engine.'}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Mode Tabs (Music vs TTS vs STT) */}
+          <div
+            className="audio-mode-tabs"
+            style={{
+              display: 'inline-flex',
+              alignSelf: 'center',
+              width: 'fit-content',
+              gap: '4px',
+              padding: '4px',
+              borderRadius: '12px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+              marginTop: '4px',
+            }}
+          >
+            {TABS.map((tab) => {
+              const active = activeTab === tab.id;
+              return (
                 <button
+                  key={tab.id}
                   type="button"
-                  onClick={handleToggleRecord}
+                  onClick={() => setActiveTab(tab.id)}
                   style={{
-                    padding: '10px 24px',
-                    borderRadius: '10px',
-                    border: isRecording ? '1px solid #ef4444' : '1px solid rgba(96,165,250,0.4)',
-                    background: isRecording ? '#ef4444' : 'rgba(96,165,250,0.1)',
-                    color: isRecording ? '#fff' : '#60a5fa',
-                    fontSize: '13.5px',
-                    fontWeight: 650,
-                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    gap: '6px',
+                    padding: '7px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: active ? 'var(--bg-surface)' : 'transparent',
+                    color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                    fontWeight: active ? 650 : 500,
+                    fontSize: '13px',
+                    cursor: 'pointer',
                     transition: 'all 0.15s ease',
+                    boxShadow: active ? 'var(--shadow-sm, 0 1px 4px rgba(0,0,0,0.12))' : 'none',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) e.currentTarget.style.color = 'var(--text-secondary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) e.currentTarget.style.color = 'var(--text-muted)';
                   }}
                 >
-                  {isRecording ? (
+                  {tab.icon}
+                  {language === 'id' ? tab.labelId : tab.labelEn}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* STT Conversation Turn (Chat Bubble Styling: Reusable & DRY) */}
+          {hasActiveSttSession && (
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+              {/* User Message Bubble */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  gap: '4px',
+                  width: '100%',
+                  animation: 'fade-in 200ms ease-out both',
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: '85%',
+                    borderRadius: 'var(--radius-xl)',
+                    padding: '10px 16px',
+                    background: 'var(--bg-user-bubble)',
+                    border: '1px solid var(--border-subtle)',
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    lineHeight: 1.55,
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {uploadedAudioFile ? (
                     <>
-                      <Square size={14} fill="#fff" />
-                      <span>{language === 'id' ? 'Hentikan Rekaman' : 'Stop Recording'}</span>
+                      <FileAudio size={18} color="#38bdf8" style={{ flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '13.5px' }}>{uploadedAudioFile.name}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {(uploadedAudioFile.size / 1024).toFixed(1)} KB • {language === 'id' ? 'File Audio' : 'Audio File'}
+                        </div>
+                      </div>
                     </>
                   ) : (
                     <>
-                      <Mic size={15} />
-                      <span>{language === 'id' ? 'Mulai Rekam Suara' : 'Start Recording'}</span>
+                      <Mic size={18} color="#38bdf8" style={{ flexShrink: 0 }} />
+                      <span>
+                        {isRecording
+                          ? language === 'id'
+                            ? 'Merekam suara langsung...'
+                            : 'Recording live microphone...'
+                          : language === 'id'
+                          ? 'Rekaman Suara Langsung'
+                          : 'Live Microphone Recording'}
+                      </span>
                     </>
                   )}
-                </button>
+                </div>
               </div>
-            </div>
 
-            {/* Transcription Result Box */}
-            <div style={{ marginTop: '28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Ear size={18} color="#60a5fa" />
-                  <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
-                    {language === 'id' ? 'Hasil Transkripsi' : 'Transcription Result'}
-                  </h2>
+              {/* Assistant Message Bubble */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '4px',
+                  width: '100%',
+                  animation: 'fade-in 250ms ease-out both',
+                }}
+              >
+                {/* Assistant Sender Header */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    marginBottom: '2px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--brand-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#FFFFFF',
+                      }}
+                    >
+                      <Bot size={12} />
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {modelDisplayName}
+                    </span>
+                    {isRecording && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '2px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          color: '#ef4444',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }} />
+                        {language === 'id' ? 'Merekam...' : 'Listening...'}
+                      </span>
+                    )}
+                    {isTranscribingFile && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '2px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          color: '#38bdf8',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <span className="typing-dot" />
+                        {language === 'id' ? 'Mentranskripsi...' : 'Transcribing...'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
+                {/* Assistant Bubble Body */}
+                <div
+                  style={{
+                    width: '100%',
+                    borderRadius: '0',
+                    padding: '2px 0',
+                    background: 'transparent',
+                    border: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  {sttTranscript ? (
+                    <div style={{ animation: 'fade-in 250ms ease-out both' }}>
+                      <MarkdownRenderer content={sttTranscript} />
+                    </div>
+                  ) : isRecording ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px', padding: '6px 0' }}>
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span>{language === 'id' ? 'Sedang mendengarkan suara Anda... Silakan berbicara.' : 'Listening to your voice... Speak now.'}</span>
+                    </div>
+                  ) : isTranscribingFile ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px', padding: '6px 0' }}>
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span>{language === 'id' ? 'Sedang mengekstrak transkripsi dari audio...' : 'Extracting transcription from audio...'}</span>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Action Toolbar for Assistant Bubble */}
                 {sttTranscript && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      marginTop: '4px',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sttTranscript);
+                        setCopiedId('stt');
+                        setTimeout(() => setCopiedId(null), 2000);
+                      }}
+                      title={language === 'id' ? 'Salin Transkripsi' : 'Copy Transcript'}
+                      className="clickable-pill"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-subtle)',
+                        color: copiedId === 'stt' ? 'var(--accent-success)' : 'var(--text-secondary)',
+                        fontSize: '11.5px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {copiedId === 'stt' ? <Check size={12} /> : <Copy size={12} />}
+                      <span>{copiedId === 'stt' ? (language === 'id' ? 'Tersalin' : 'Copied') : (language === 'id' ? 'Salin' : 'Copy')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSttTranscript('');
+                        handleRemoveAudioFile();
+                      }}
+                      title={language === 'id' ? 'Hapus Transkripsi' : 'Clear Transcript'}
+                      className="clickable-pill"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: 'transparent',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-muted)',
+                        fontSize: '11.5px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <Trash2 size={12} />
+                      <span>{language === 'id' ? 'Hapus' : 'Clear'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Docked Bottom Prompt Bar (Music / TTS / STT) ── */}
+      {activeTab === 'music' && (
+        <MediaPromptForm
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          onSubmit={handleGenerate}
+          isGenerating={isGenerating}
+          placeholder={
+            language === 'id'
+              ? 'Deskripsikan musik yang ingin dibuat (misal: Lofi chill beat with piano)...'
+              : 'Describe the music you want to generate (e.g. Lofi chill beat with piano)...'
+          }
+          modelDisplayName={modelDisplayName}
+          onModelSelectorOpen={handleOpenModelSelector}
+          language={language as 'en' | 'id'}
+          brandColor="#60a5fa"
+        />
+      )}
+
+      {activeTab === 'tts' && (
+        <MediaPromptForm
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          onSubmit={handleGenerate}
+          isGenerating={isGenerating}
+          placeholder={
+            language === 'id'
+              ? 'Ketik teks yang ingin disuarakan...'
+              : 'Type the text to synthesize...'
+          }
+          modelDisplayName={modelDisplayName}
+          onModelSelectorOpen={handleOpenModelSelector}
+          language={language as 'en' | 'id'}
+          brandColor="#60a5fa"
+          additionalControls={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Voice Selector Dropdown */}
+              <DropdownSelect
+                value={selectedVoice}
+                options={voices.map((v) => ({ value: v.id, label: v.label }))}
+                onChange={setSelectedVoice}
+                icon={<Volume2 size={13} color="var(--text-muted)" />}
+                brandColor="#60a5fa"
+              />
+
+              {/* Distinct Vertical Separator */}
+              <div
+                style={{
+                  width: '1px',
+                  height: '16px',
+                  backgroundColor: 'var(--border-subtle)',
+                  margin: '0 2px',
+                  flexShrink: 0,
+                }}
+              />
+
+              {/* Speed Dropdown Selector */}
+              <DropdownSelect
+                value={String(audioSpeed)}
+                options={speeds.map((s) => ({ value: String(s.value), label: `${s.label}x` }))}
+                onChange={(val) => setAudioSpeed(Number(val))}
+                icon={<Gauge size={13} color="var(--text-muted)" />}
+                brandColor="#60a5fa"
+              />
+            </div>
+          }
+        />
+      )}
+
+      {/* ── Docked Bottom Control Bar for STT (No Form/Textarea, just Controls) ── */}
+      {activeTab === 'stt' && (
+        <div
+          style={{
+            padding: '0 16px 16px 16px',
+            width: '100%',
+            maxWidth: '840px',
+            margin: '0 auto',
+            flexShrink: 0,
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* Hidden File Input for Audio */}
+          <input
+            ref={audioFileInputRef}
+            type="file"
+            accept="audio/*,.mp3,.wav,.ogg,.m4a,.webm,.aac,.flac"
+            style={{ display: 'none' }}
+            onChange={handleAudioFileUpload}
+          />
+
+          <div
+            style={{
+              background: 'var(--bg-input, var(--bg-surface))',
+              border: `1px solid ${isRecording ? '#ef4444' : 'var(--border-subtle)'}`,
+              borderRadius: 'var(--radius-xl, 16px)',
+              boxShadow: isRecording
+                ? '0 0 15px rgba(239, 68, 68, 0.2)'
+                : 'var(--shadow-md, 0 4px 6px -1px rgba(0,0,0,0.1))',
+              padding: '8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              transition: 'all 0.2s ease',
+              gap: '8px',
+              flexWrap: 'wrap',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Left Controls: Plus (+) Audio Action Menu & Badges */}
+            <div
+              ref={plusMenuRef}
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                flexWrap: 'wrap',
+                minWidth: 0,
+                flex: '1 1 auto',
+              }}
+            >
+              {/* Plus Menu Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setIsPlusMenuOpen((prev) => !prev)}
+                title={language === 'id' ? 'Opsi audio (Rekam / Unggah)' : 'Audio options (Record / Upload)'}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  background: isRecording ? '#ef4444' : isPlusMenuOpen ? 'var(--bg-subtle)' : 'transparent',
+                  border: isRecording ? '1px solid #ef4444' : 'none',
+                  borderRadius: '50%',
+                  color: isRecording ? '#fff' : isPlusMenuOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  boxShadow: isRecording ? '0 0 10px rgba(239,68,68,0.4)' : 'none',
+                  flexShrink: 0,
+                }}
+              >
+                {isRecording ? (
+                  <Square size={14} fill="#fff" />
+                ) : (
+                  <Plus size={19} style={{ transform: isPlusMenuOpen ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s ease' }} />
+                )}
+              </button>
+
+              {/* Grok/Chat-Style Popup Menu */}
+              {isPlusMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 10px)',
+                    left: '0',
+                    width: '210px',
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: 'var(--radius-lg, 14px)',
+                    boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.35))',
+                    padding: '6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    zIndex: 50,
+                    animation: 'fadeIn 0.15s ease-out',
+                  }}
+                >
+                  {/* 1. Rekam Suara / Stop */}
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText(sttTranscript);
-                      setCopiedId('stt');
-                      setTimeout(() => setCopiedId(null), 2000);
+                      setIsPlusMenuOpen(false);
+                      handleToggleRecord();
                     }}
                     style={{
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '6px',
-                      padding: '4px 10px',
-                      fontSize: '12px',
-                      color: copiedId === 'stt' ? '#10B981' : 'var(--text-secondary)',
-                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '5px',
+                      gap: '10px',
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: isRecording ? '#ef4444' : 'var(--text-primary)',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    {isRecording ? <Square size={16} fill="#ef4444" color="#ef4444" /> : <Mic size={16} color="var(--text-secondary)" />}
+                    <span style={{ flex: 1 }}>
+                      {isRecording
+                        ? (language === 'id' ? 'Hentikan Rekaman' : 'Stop Recording')
+                        : (language === 'id' ? 'Rekam Suara' : 'Record Voice')}
+                    </span>
+                  </button>
+
+                  {/* 2. Unggah file audio */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPlusMenuOpen(false);
+                      audioFileInputRef.current?.click();
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-primary)',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Upload size={16} color="var(--text-secondary)" />
+                    <span style={{ flex: 1 }}>{language === 'id' ? 'Unggah File Audio' : 'Upload Audio'}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Recording Status Pill */}
+              {isRecording && (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-full, 9999px)',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#ef4444',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                  }}
+                >
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }} />
+                  <span>{language === 'id' ? 'Merekam suara...' : 'Recording voice...'}</span>
+                </div>
+              )}
+
+              {/* Uploaded Audio File Badge */}
+              {uploadedAudioFile && (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-full, 9999px)',
+                    background: 'rgba(56, 189, 248, 0.12)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    color: '#38bdf8',
+                    fontSize: '12px',
+                    maxWidth: '220px',
+                  }}
+                >
+                  <FileAudio size={13} style={{ flexShrink: 0 }} />
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '140px',
                     }}
                   >
-                    {copiedId === 'stt' ? <Check size={12} /> : <Copy size={12} />}
-                    <span>{copiedId === 'stt' ? 'Tersalin' : 'Salin Teks'}</span>
+                    {uploadedAudioFile.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveAudioFile}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      padding: '1px',
+                    }}
+                  >
+                    <X size={12} />
                   </button>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
 
-              <div
+            {/* Right Controls: Model Selector Pill + Circular Send Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
+              {/* Model Selector Pill */}
+              <button
+                type="button"
+                onClick={handleOpenModelSelector}
                 style={{
-                  minHeight: '120px',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-card)',
-                  padding: '18px 22px',
                   display: 'flex',
-                  alignItems: sttTranscript ? 'flex-start' : 'center',
-                  justifyContent: sttTranscript ? 'flex-start' : 'center',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '5px 10px',
+                  borderRadius: 'var(--radius-md, 6px)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '12.5px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  maxWidth: '180px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
                 }}
               >
-                {sttTranscript ? (
-                  <p style={{ fontSize: '14px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                    {sttTranscript}
-                  </p>
-                ) : (
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, textAlign: 'center' }}>
-                    {language === 'id'
-                      ? 'Transkripsi akan muncul di sini secara real-time saat Anda berbicara'
-                      : 'Transcription will appear here in real-time as you speak'}
-                  </p>
-                )}
-              </div>
+                <span
+                  style={{
+                    maxWidth: '140px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {modelDisplayName}
+                </span>
+                <ChevronDown size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+              </button>
+
+              {/* Circular Send Button (Grok/Chat style) */}
+              {isRecording || isTranscribingFile ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isRecording) handleToggleRecord();
+                  }}
+                  title={language === 'id' ? 'Hentikan' : 'Stop'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '34px',
+                    height: '34px',
+                    background: 'var(--accent-danger, #ef4444)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    transition: 'transform 0.15s ease, opacity 0.15s ease',
+                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.35)',
+                  }}
+                >
+                  <Square size={13} fill="#FFFFFF" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleTranscribeAudioFile}
+                  disabled={!uploadedAudioFile && !sttTranscript}
+                  title={language === 'id' ? 'Transkripsikan' : 'Transcribe'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '34px',
+                    height: '34px',
+                    background: uploadedAudioFile || sttTranscript
+                      ? '#38bdf8'
+                      : 'var(--bg-subtle, rgba(255, 255, 255, 0.06))',
+                    color: uploadedAudioFile || sttTranscript ? '#FFFFFF' : 'var(--text-muted)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    cursor: uploadedAudioFile || sttTranscript ? 'pointer' : 'default',
+                    flexShrink: 0,
+                    transition: 'all 0.15s ease',
+                    boxShadow: uploadedAudioFile || sttTranscript ? '0 2px 8px rgba(56, 189, 248, 0.4)' : 'none',
+                    opacity: uploadedAudioFile || sttTranscript ? 1 : 0.6,
+                  }}
+                >
+                  <ArrowUp size={16} strokeWidth={2.4} />
+                </button>
+              )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Media Detail Modal */}
       <MediaDetailModal

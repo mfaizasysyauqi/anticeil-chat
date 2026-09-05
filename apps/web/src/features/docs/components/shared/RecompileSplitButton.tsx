@@ -6,6 +6,7 @@ import {
   recompileDropdownArrowStyle,
   popoverItemStyle,
 } from '../../styles/editorSharedStyles';
+import { useSettingsStore } from '../../../settings/store/useSettingsStore';
 
 export interface RecompileSplitButtonProps {
   isCompiling: boolean;
@@ -29,9 +30,12 @@ export function RecompileSplitButton({
   onToggleAutoCompile,
   onResetRecompile,
   extraItems,
-  label = 'Recompile',
-  title = 'Recompile (Ctrl+Enter)',
+  label,
+  title,
 }: RecompileSplitButtonProps) {
+  const language = useSettingsStore((s) => s.language);
+  const resolvedLabel = label ?? (language === 'id' ? 'Kompilasi' : 'Recompile');
+  const resolvedTitle = title ?? (language === 'id' ? 'Kompilasi Ulang (Ctrl+Enter)' : 'Recompile (Ctrl+Enter)');
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const arrowButtonRef = useRef<HTMLButtonElement>(null);
@@ -65,7 +69,7 @@ export function RecompileSplitButton({
           type="button"
           onClick={onRecompile}
           disabled={isCompiling}
-          title={title}
+          title={resolvedTitle}
           style={{
             ...recompileBtnStyle,
             opacity: isCompiling ? 0.8 : 1,
@@ -76,7 +80,7 @@ export function RecompileSplitButton({
           ) : (
             <Play size={11} fill="#ffffff" color="#ffffff" />
           )}
-          <span>{label}</span>
+          <span>{resolvedLabel}</span>
         </button>
 
         {/* Dropdown arrow toggle */}
@@ -84,7 +88,7 @@ export function RecompileSplitButton({
           ref={arrowButtonRef}
           type="button"
           onClick={toggleDropdown}
-          title="Compilation options"
+          title={language === 'id' ? 'Opsi kompilasi' : 'Compilation options'}
           style={recompileDropdownArrowStyle}
         >
           <ChevronDown size={10} />
@@ -126,7 +130,7 @@ export function RecompileSplitButton({
                 letterSpacing: '0.04em',
               }}
             >
-              Compile Mode
+              {language === 'id' ? 'Mode Kompilasi' : 'Compile Mode'}
             </div>
             <button
               type="button"
@@ -149,10 +153,10 @@ export function RecompileSplitButton({
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Auto-compile on change
+                  {language === 'id' ? 'Kompilasi otomatis saat mengetik' : 'Auto-compile on change'}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  Compiles automatically as you type
+                  {language === 'id' ? 'Dokumen otomatis dikompilasi saat ada perubahan' : 'Compiles automatically as you type'}
                 </span>
               </div>
             </button>
@@ -172,7 +176,7 @@ export function RecompileSplitButton({
                   }}
                 >
                   <RefreshCw size={13} color="var(--brand-primary)" />
-                  <span>Kompilasi dari awal (Reset)</span>
+                  <span>{language === 'id' ? 'Kompilasi dari awal (Reset)' : 'Recompile from scratch (Reset)'}</span>
                 </button>
               </>
             )}

@@ -87,19 +87,8 @@ export function CreditBadge() {
         <Zap size={13} color={badgeColor} fill={badgeColor} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace' }}>
           <span style={{ color: badgeColor }}>
-            {dailyCredits}/{maxCredits}
+            {(dailyCredits || 0) + (paidCredits || 0)} credits
           </span>
-          {paidCredits > 0 && (
-            <span style={{
-              color: '#f59e0b',
-              background: 'rgba(245, 158, 11, 0.2)',
-              padding: '0 4px',
-              borderRadius: '4px',
-              fontSize: '10.5px',
-            }}>
-              +{paidCredits}
-            </span>
-          )}
         </div>
       </button>
 

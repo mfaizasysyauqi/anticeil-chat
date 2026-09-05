@@ -95,7 +95,7 @@ async function sendTelegramReply(chatId: number | string, text: string) {
 async function checkTelegramUpdates(targetToken?: string) {
   if (!BOT_TOKEN) return false;
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=-10&limit=10`, {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=-15&limit=15`, {
       cache: 'no-store',
     });
     const data = await res.json();
@@ -105,36 +105,53 @@ async function checkTelegramUpdates(targetToken?: string) {
 
     for (const update of data.result) {
       const updateId = update.update_id;
-      const msg = update.message;
-      if (!msg || !msg.text) continue;
+      const msg = update.message || update.edited_message;
+      if (!msg) continue;
 
-      const text = msg.text.trim();
+      const text = msg.text?.trim() || '';
       const chatId = msg.chat?.id;
+      const contact = msg.contact;
 
-      // Handle /start or /start tg_xxxx
+      let matched = false;
+
+      // Match 1: /start or /start tg_xxxx
       if (text.startsWith('/start')) {
         const parts = text.split(' ');
         const incomingToken = parts[1]?.trim();
-
-        // If specific token matches or if user sent /start while polling targetToken
-        if (targetToken && (incomingToken === targetToken || !incomingToken)) {
-          if (sessions.has(targetToken)) {
-            const session = sessions.get(targetToken)!;
-            session.verified = true;
-            session.telegramUserId = String(chatId);
-            sessions.set(targetToken, session);
-            foundMatch = true;
-          }
+        if (targetToken && (incomingToken === targetToken || !incomingToken || targetToken.includes(incomingToken || ''))) {
+          matched = true;
         }
+      }
 
-        // Send reply to user if not already replied in this session
-        if (chatId && !repliedUpdates.has(updateId)) {
-          repliedUpdates.add(updateId);
-          await sendTelegramReply(
-            chatId,
-            `🎉 *Selamat Datang di Anticeil!* 🚀\n\nNomor akun Anda telah *berhasil diverifikasi* secara instan.\n\nSilakan kembali ke browser Anda untuk menyelesaikan pembuatan akun. ✨`
-          );
+      // Match 2: Shared contact
+      if (contact && targetToken) {
+        matched = true;
+      }
+
+      // Match 3: Direct token message
+      if (text && targetToken && text.includes(targetToken)) {
+        matched = true;
+      }
+
+      // If matched, mark session verified
+      if (matched && targetToken && sessions.has(targetToken)) {
+        const session = sessions.get(targetToken)!;
+        session.verified = true;
+        session.telegramUserId = String(chatId);
+        if (contact?.phone_number) {
+          session.phone = contact.phone_number;
         }
+        sessions.set(targetToken, session);
+        foundMatch = true;
+      }
+
+      // Send reply to user if not already replied in this session
+      if (chatId && !repliedUpdates.has(updateId) && matched) {
+        repliedUpdates.add(updateId);
+        await sendTelegramReply(
+          chatId,
+          `🎉 *Selamat Datang di Anticeil!* 🚀\n\nNomor akun Anda telah *berhasil diverifikasi* secara instan.\n\nSilakan kembali ke browser Anda untuk menyelesaikan pembuatan akun. ✨`
+        );
       }
     }
 
@@ -150,10 +167,30 @@ export async function POST(req: NextRequest) {
     cleanExpiredSessions();
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
     const body = await req.json();
-    const { action, token, phone, telegramUserId } = body;
+    const { action, token, phone, telegramUserId, turnstileToken } = body;
 
     // 1. Create a new verification session token (Rate limited per IP)
     if (action === 'create-session') {
+      const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+      if (turnstileSecret && turnstileToken) {
+        try {
+          const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              secret: turnstileSecret,
+              response: turnstileToken,
+              remoteip: clientIp,
+            }),
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyData.success) {
+            console.warn('Turnstile verification notice:', verifyData);
+          }
+        } catch (err) {
+          console.warn('Error verifying turnstile token:', err);
+        }
+      }
       const rateCheck = checkIpRateLimit(clientIp, 5, 60 * 1000);
       if (!rateCheck.allowed) {
         return NextResponse.json(

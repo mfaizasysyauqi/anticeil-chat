@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-:root {
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
   /* Kimi-style Neutral Charcoal Dark Theme — no blue tint, pure elegant gray */
   --bg-main:           #171717;   /* page canvas — near-black warm gray         */
   --bg-sidebar-dock:   #0f0f0f;   /* far-left icon rail — deepest layer          */
@@ -101,6 +103,7 @@
 }
 
 [data-theme='light'] {
+  color-scheme: light;
   /* Clean warm-white light theme — sidebar dock stays dark for contrast */
   --bg-main:           #f7f7f5;
   --bg-sidebar-dock:   #1e1e1e;
@@ -167,6 +170,25 @@ input::placeholder,
 textarea::placeholder {
   color: var(--text-muted);
   opacity: 0.95;
+}
+
+select {
+  color-scheme: dark;
+}
+
+[data-theme='light'] select {
+  color-scheme: light;
+}
+
+select option {
+  background-color: var(--bg-surface, #1e1e1e);
+  color: var(--text-primary, #f5f5f5);
+  padding: 6px 10px;
+}
+
+[data-theme='light'] select option {
+  background-color: #ffffff;
+  color: #1a1a1a;
 }
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
@@ -557,6 +579,101 @@ code, pre, kbd {
 }
 
 
+/* ─── Rail Theme Colors (Chat = Orange, Docs = Deep Blue, Media = Light Blue, AI Credit = Warm Amber) ─── */
+:root {
+  --rail-chat-color: #f97316;
+  --rail-chat-bg: rgba(249, 115, 22, 0.15);
+  --rail-docs-color: #2563eb;
+  --rail-docs-bg: rgba(37, 99, 235, 0.15);
+  --rail-media-color: #38bdf8;
+  --rail-media-bg: rgba(56, 189, 248, 0.15);
+  --rail-credit-color: #f59e0b;
+}
+
+/* Rail Icon Button Hover Effects (Distinct Thematic Colors per Feature) */
+.rail-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #94a3b8);
+  background: transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.rail-icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* Chat Button (Electric Sky Blue) */
+.rail-icon-btn.chat-btn:hover {
+  color: var(--rail-chat-color) !important;
+  background: var(--rail-chat-bg) !important;
+  transform: scale(1.08);
+}
+.rail-icon-btn.chat-btn.active {
+  background: var(--rail-chat-bg) !important;
+  color: var(--rail-chat-color) !important;
+}
+
+/* Docs Button (Emerald Mint Green) */
+.rail-icon-btn.docs-btn:hover {
+  color: var(--rail-docs-color) !important;
+  background: var(--rail-docs-bg) !important;
+  transform: scale(1.08);
+}
+.rail-icon-btn.docs-btn.active {
+  background: var(--rail-docs-bg) !important;
+  color: var(--rail-docs-color) !important;
+}
+
+/* Media Button (Radiant Purple) */
+.rail-icon-btn.media-btn:hover {
+  color: var(--rail-media-color) !important;
+  background: var(--rail-media-bg) !important;
+  transform: scale(1.08);
+}
+.rail-icon-btn.media-btn.active {
+  background: var(--rail-media-bg) !important;
+  color: var(--rail-media-color) !important;
+}
+
+/* Tag Accent Dots */
+.rail-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.rail-tag-dot.chat-dot {
+  background-color: var(--rail-chat-color);
+  box-shadow: 0 0 6px var(--rail-chat-color);
+}
+.rail-tag-dot.docs-dot {
+  background-color: var(--rail-docs-color);
+  box-shadow: 0 0 6px var(--rail-docs-color);
+}
+.rail-tag-dot.media-dot {
+  background-color: var(--rail-media-color);
+  box-shadow: 0 0 6px var(--rail-media-color);
+}
+
+/* ─── Remove Focus Color Rings from all Chat/Media/Docs Prompt Forms ─── */
+textarea:focus,
+input:focus,
+form:focus-within,
+.chat-input-wrapper:focus-within,
+.prompt-bar-form:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Icon rail: visible by default on desktop */
 .sidebar-icon-rail {
   display: flex;
@@ -651,6 +768,9 @@ code, pre, kbd {
   /* Docs rail visible only when drawer is open */
   .docs-view-root > .sidebar-icon-rail.rail-open {
     display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: center !important;
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -1254,4 +1374,18 @@ code, pre, kbd {
 }
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ── Responsive Chatform Styles (Mobile, Tablet, Desktop) ── */
+@media (max-width: 640px) {
+  .chat-input-container {
+    padding: var(--space-xs) 12px var(--space-md) 12px !important;
+  }
+  .chat-input-wrapper {
+    padding: 8px 10px !important;
+  }
+  .prompt-bar-toolbar,
+  .chat-input-toolbar {
+    gap: 6px !important;
+  }
 }

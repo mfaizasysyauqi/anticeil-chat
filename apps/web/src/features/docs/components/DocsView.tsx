@@ -88,6 +88,7 @@ import {
 import { useDocsStore, DocsViewMode, DocFormat, DocCollaborator, DocComment, DocCommentReply } from '../store/useDocsStore';
 import { DocFileTabsBar } from './shared/DocFileTabsBar';
 import { SplitResizeDivider } from './shared/SplitResizeDivider';
+import { downloadDocAsZip } from '../utils/zipUtils';
 
 
 export type PaperSizeId = 'a4' | 'letter' | 'legal' | 'a5' | 'b5' | 'custom';
@@ -208,6 +209,7 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { StorageMeter } from '../../storage/components/StorageMeter';
+import { BottomRailMeters } from '../../../shared/components/BottomRailMeters';
 import { SettingsModal } from '../../settings/components/SettingsModal';
 import { CreditLimitModal } from '../../credits/components/CreditLimitModal';
 import { PricingModal } from '../../pricing/components/PricingModal';
@@ -215,6 +217,7 @@ import { AuthModal } from '../../auth/components/AuthModal';
 import { getBundledDocContent } from '../utils/docResolver';
 import { lintDocumentContent, DocDiagnostic } from '../utils/docLinter';
 import { compileLatexToHtml } from '../utils/latexCompiler';
+import { compileTypstToHtml } from '../utils/typstCompiler';
 import { DocsCoAuthorSidebar } from './DocsCoAuthorSidebar';
 import { DocsTemplateModal } from './DocsTemplateModal';
 import { DocsLandingView } from './DocsLandingView';
@@ -293,6 +296,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
+    useAuthStore.getState().initializeAuth();
   }, []);
 
   // Bottom drawer footer widget state (Stats collapsed by default)
@@ -381,6 +385,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }
   }, [theme]);
 
+  const [previewRuntimeErrors, setPreviewRuntimeErrors] = useState<DocDiagnostic[]>([]);
+
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.data?.type === 'DOCS_PREVIEW_SCALE') {
@@ -390,6 +396,23 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       if (e.data?.type === 'DOCS_PAGE_SCROLLED' && typeof e.data.currentPage === 'number') {
         setCurrentPage(e.data.currentPage);
         setPageInputValue(String(e.data.currentPage));
+      }
+      if (e.data?.type === 'DOCS_PREVIEW_ERROR') {
+        const errorMsg = e.data.message || 'Error executing preview scripts';
+        setPreviewRuntimeErrors([
+          {
+            id: `runtime_${Date.now()}`,
+            type: 'error',
+            line: e.data.lineno || 1,
+            column: e.data.colno,
+            fileName: 'Preview Window',
+            message: `[Preview Error] ${errorMsg}`,
+            suggestion: 'Periksa sintaks dokumen, karakter terlarang, atau rumus KaTeX.',
+          },
+        ]);
+      }
+      if (e.data?.type === 'DOCS_PREVIEW_READY') {
+        setPreviewRuntimeErrors([]);
       }
     };
     window.addEventListener('message', onMessage);
@@ -1098,7 +1121,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         'You are an elite presentation designer. Create a 5 to 7 slide widescreen (16:9) presentation deck in Markdown. Separate each slide strictly using "---" on a new line. Include title slide, agenda, problem-solution, key metrics, technical architecture or diagrams, and conclusion.';
     } else {
       systemInstruction =
-        'You are an elite Academic and Technical Paper author. Output a complete, publication-ready research paper or technical document in Markdown with rich LaTeX mathematical formulas (using $inline$ and $$block$$), section headings, data tables, and BibTeX references.';
+        'You are an elite, publication-grade Academic and Technical Author. Output a complete, publication-ready research paper, technical report, or skripsi with an exquisite cover (using \\begin{titlepage} with badge, title, subtitle callout, and tabular metadata), clean sectioning (\\section, \\subsection), definition lists (\\begin{description}), structured tables, and KaTeX formulas. Always escape special symbols (\\&, \\%, \\_, \\$, \\#) in regular text.';
     }
 
     const messages: ChatMessage[] = [
@@ -1169,40 +1192,61 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     return { rootFiles: roots, folderMap: folders };
   }, [filteredSubFiles, docFiles]);
 
-  // Document Headings & Section Outline for Outline Tab
+  // Document Headings & Section Outline for Outline Tab (Derives across all modular sub-files)
   const documentHeadings = useMemo(() => {
-    const text = activeSubFile?.content || activeDoc?.content || '';
-    if (!text) return [];
-
-    const headings: Array<{ line: number; text: string; level: number }> = [];
-    const lines = text.split('\n');
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      // Markdown: #, ##, ###, ####
-      const mdMatch = line.match(/^(#{1,4})\s+(.+)$/);
-      if (mdMatch) {
-        headings.push({
-          line: i,
-          level: mdMatch[1].length,
-          text: mdMatch[2].trim(),
-        });
-        continue;
-      }
-      // LaTeX: \section{}, \subsection{}, \subsubsection{}
-      const secMatch = line.match(/\\(section|subsection|subsubsection)\*?\{([^}]+)\}/);
-      if (secMatch) {
-        const type = secMatch[1];
-        const level = type === 'section' ? 1 : type === 'subsection' ? 2 : 3;
-        headings.push({
-          line: i,
-          level,
-          text: secMatch[2].trim(),
-        });
-      }
+    interface HeadingItem {
+      fileId?: string;
+      fileName?: string;
+      line: number;
+      text: string;
+      level: number;
     }
+    const headings: HeadingItem[] = [];
+
+    const parseTextForHeadings = (text: string, fileId?: string, fileName?: string) => {
+      if (!text) return;
+      const lines = text.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Markdown: #, ##, ###, ####
+        const mdMatch = line.match(/^(#{1,4})\s+(.+)$/);
+        if (mdMatch) {
+          headings.push({
+            fileId,
+            fileName,
+            line: i,
+            level: mdMatch[1].length,
+            text: mdMatch[2].trim(),
+          });
+          continue;
+        }
+        // LaTeX: \section{}, \subsection{}, \subsubsection{}
+        const secMatch = line.match(/\\(section|subsection|subsubsection)\*?\{([^}]+)\}/);
+        if (secMatch) {
+          const type = secMatch[1];
+          const level = type === 'section' ? 1 : type === 'subsection' ? 2 : 3;
+          headings.push({
+            fileId,
+            fileName,
+            line: i,
+            level,
+            text: secMatch[2].trim(),
+          });
+        }
+      }
+    };
+
+    if (docFiles && docFiles.length > 0) {
+      docFiles.forEach((file) => {
+        parseTextForHeadings(file.content, file.id, file.name);
+      });
+    } else {
+      const fallbackText = activeSubFile?.content || activeDoc?.content || '';
+      parseTextForHeadings(fallbackText, activeSubFile?.id, activeSubFile?.name);
+    }
+
     return headings;
-  }, [activeSubFile?.content, activeDoc?.content]);
+  }, [docFiles, activeSubFile?.content, activeSubFile?.id, activeSubFile?.name, activeDoc?.content]);
 
   // Document Find & Replace matches
   const searchMatches = useMemo(() => {
@@ -1255,8 +1299,33 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   // Compilation & Linter diagnostics (Errors, Warnings, Info)
   const lintResults = useMemo(() => {
     const text = activeSubFile?.content ?? activeDoc?.content ?? '';
-    return lintDocumentContent(text, docFiles, activeSubFile?.name || 'main.tex');
-  }, [activeSubFile?.content, activeDoc?.content, docFiles, activeSubFile?.name]);
+    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+    const staticLint = isTypst
+      ? { errors: [], warnings: [], infos: [] }
+      : lintDocumentContent(text, docFiles, activeSubFile?.name || 'main.tex');
+
+    let typstErrors: DocDiagnostic[] = [];
+    let typstWarnings: DocDiagnostic[] = [];
+    let typstInfos: DocDiagnostic[] = [];
+
+    if (isTypst) {
+      const typstResult = compileTypstToHtml(text, activeDoc?.title, docFiles);
+      typstErrors = typstResult.diagnostics.filter((d) => d.type === 'error') as DocDiagnostic[];
+      typstWarnings = typstResult.diagnostics.filter((d) => d.type === 'warning') as DocDiagnostic[];
+      typstInfos = typstResult.diagnostics.filter((d) => d.type === 'info') as DocDiagnostic[];
+    }
+
+    const allErrors = [...previewRuntimeErrors, ...typstErrors, ...staticLint.errors];
+    const allWarnings = [...typstWarnings, ...staticLint.warnings];
+    const allInfos = [...typstInfos, ...staticLint.infos];
+
+    return {
+      errors: allErrors,
+      warnings: allWarnings,
+      infos: allInfos,
+      totalLogs: allErrors.length + allWarnings.length + allInfos.length,
+    };
+  }, [activeSubFile?.content, activeDoc?.content, docFiles, activeSubFile?.name, previewRuntimeErrors, activeDoc?.format, activeDoc?.title]);
 
   const handleRecompile = () => {
     setIsRecompiling(true);
@@ -1317,14 +1386,18 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     return PAPER_SIZES.find((p) => p.id === effectivePaperSizeId) || PAPER_SIZES[0];
   }, [effectivePaperSizeId, customPaperWidthMm, customPaperHeightMm]);
 
-  // Markdown + KaTeX + LaTeX Compilation HTML using bundled content (respects Auto Compile ON/OFF)
+  // Markdown + KaTeX + LaTeX + Typst Compilation HTML using bundled content (respects Auto Compile ON/OFF)
   const previewHtml = useMemo(() => {
     const raw = (isAutoCompile ? (bundledContent || activeDoc?.content) : compiledContent) || activeDoc?.content || '';
     if (!raw) return '';
     const isLight = theme === 'light';
     const paperWidthPx = currentPaperConfig.widthPx;
     const paperHeightPx = currentPaperConfig.heightPx;
-    const compiledLatexHtml = compileLatexToHtml(raw, activeDoc?.title, activeDoc?.files);
+
+    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ') || raw.includes('#set page') || raw.includes('#block(') || raw.startsWith('= ');
+    const compiledDocHtml = isTypst
+      ? compileTypstToHtml(raw, activeDoc?.title, activeDoc?.files).html
+      : compileLatexToHtml(raw, activeDoc?.title, activeDoc?.files);
 
     return `
 <!DOCTYPE html>
@@ -1357,7 +1430,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       background-color: ${isLight ? '#cbd5e1' : '#070a10'};
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color: #1e293b;
-      overflow-x: auto;
+      overflow-x: hidden;
       overflow-y: auto;
     }
     #page-container {
@@ -1369,7 +1442,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       width: 100%;
       min-height: 100%;
       box-sizing: border-box;
-      overflow-x: auto;
+      overflow-x: hidden;
     }
     #scaler-outer {
       position: relative;
@@ -1536,6 +1609,10 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       padding-bottom: 0;
       text-align: center;
     }
+    .academic-paper-title .paper-formatted-block {
+      margin: 4px auto;
+      text-align: center;
+    }
     .academic-paper-author {
       font-size: 13px;
       color: #334155;
@@ -1631,8 +1708,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     .academic-table-card {
       margin: 20px auto;
       width: 100%;
+      max-width: 100%;
       text-align: center;
       display: block;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .academic-table-caption {
       font-size: 11.5px;
@@ -1656,20 +1736,24 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       color: #1e293b;
       border-top: 2px solid #0f172a;
       border-bottom: 2px solid #0f172a;
+      table-layout: auto;
     }
     .academic-table th {
       border-bottom: 1px solid #0f172a;
-      padding: 6px 10px;
+      padding: 7px 12px;
       font-weight: 700;
-      text-align: center;
+      text-align: left;
       background-color: transparent;
       color: #0f172a;
+      white-space: nowrap;
     }
     .academic-table td {
       border: none;
       border-bottom: 1px solid #e2e8f0;
-      padding: 6px 10px;
-      text-align: center;
+      padding: 7px 12px;
+      text-align: left;
+      vertical-align: top;
+      word-break: normal;
     }
     .academic-table tr:last-child td {
       border-bottom: none;
@@ -1702,6 +1786,85 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       margin: 14px 0;
       overflow-x: auto;
     }
+    /* Table of Contents / Daftar Isi Card */
+    .academic-toc-card {
+      margin: 18px 0 24px 0;
+      padding: 16px 20px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .academic-toc-title {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-align: center;
+      margin-bottom: 12px;
+      color: #0f172a;
+      text-transform: uppercase;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+    .academic-toc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .academic-toc-item {
+      display: flex;
+      align-items: baseline;
+      font-size: 12.5px;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+    .academic-toc-item.level-1 {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .academic-toc-item.level-2 {
+      padding-left: 18px;
+      font-size: 12px;
+      color: #334155;
+    }
+    .academic-toc-item.level-3 {
+      padding-left: 36px;
+      font-size: 11.5px;
+      color: #64748b;
+    }
+    .toc-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      margin-right: 8px;
+      color: #0284c7;
+      flex-shrink: 0;
+    }
+    .toc-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toc-dots {
+      flex: 1;
+      border-bottom: 1px dotted #cbd5e1;
+      margin: 0 8px;
+      height: 1px;
+      min-width: 20px;
+    }
+    .toc-bullet {
+      font-size: 11px;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+    .doc-page-break {
+      width: 100%;
+      height: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+      visibility: hidden;
+    }
     .academic-callout {
       margin: 14px 0;
       padding: 10px 14px;
@@ -1730,34 +1893,148 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       border-left: 3px solid #10b981;
       background-color: #f0fdf4;
     }
+    /* Titlepage & Cover Sheet Styling */
+    .paper-cover-sheet .paper-page-content {
+      min-height: calc(100% - 20px);
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      text-align: center !important;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .paper-cover-sheet .paper-page-content > * {
+      text-align: center !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .paper-cover-sheet .paper-page-footer {
+      display: none !important;
+    }
+    .paper-titlepage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      margin: auto 0;
+      box-sizing: border-box;
+      padding: 24px 12px;
+    }
+    .tcolorbox {
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      line-height: 1.55;
+    }
+    .paper-formatted-block {
+      width: 100%;
+      word-break: break-word;
+      margin: 4px 0;
+    }
+    /* Description List (LaTeX \begin{description}) */
+    .paper-description {
+      margin: 12px 0 16px 0;
+      padding: 0;
+      width: 100%;
+    }
+    .paper-desc-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      margin-bottom: 7px;
+      line-height: 1.55;
+    }
+    .paper-desc-term {
+      font-weight: 700;
+      color: #0f172a;
+      min-width: 140px;
+      flex-shrink: 0;
+      margin-right: 12px;
+      font-size: 13.5px;
+    }
+    .paper-desc-def {
+      margin: 0;
+      color: #334155;
+      flex: 1;
+      font-size: 13.5px;
+    }
+    .paper-footnote-ref {
+      font-size: 10px;
+      font-weight: 700;
+      color: #0073ea;
+      cursor: help;
+      margin-left: 2px;
+    }
+    .paper-minipage {
+      display: inline-block;
+      vertical-align: top;
+      box-sizing: border-box;
+      padding: 4px;
+    }
+    @page {
+      size: ${currentPaperConfig.widthMm}mm ${currentPaperConfig.heightMm}mm;
+      margin: 0;
+    }
     @media print {
-      body {
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      html, body {
+        overflow: visible !important;
         background: transparent !important;
         padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
       }
       #page-container {
         padding: 0 !important;
+        margin: 0 !important;
         width: 100% !important;
+        overflow: visible !important;
+        display: block !important;
       }
       #scaler-outer {
         margin: 0 !important;
         width: 100% !important;
         height: auto !important;
+        overflow: visible !important;
       }
       #scaler-wrapper {
         position: static !important;
         transform: none !important;
         width: 100% !important;
+        display: block !important;
+        overflow: visible !important;
       }
       .paper-sheet-page {
         margin: 0 !important;
         box-shadow: none !important;
         border-radius: 0 !important;
+        border: none !important;
         page-break-after: always !important;
         break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        width: 100% !important;
         height: 100vh !important;
         min-height: 100vh !important;
-        max-height: none !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+      .academic-table-card, pre, .katex-display {
+        overflow: visible !important;
       }
     }
   </style>
@@ -1774,14 +2051,40 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   <!-- Hidden staging container for initial render and measurement -->
   <div id="rendered-content-raw" style="position: absolute; top: -99999px; left: -99999px; width: ${paperWidthPx - 128}px; visibility: hidden; pointer-events: none;"></div>
 
+  <!-- Embedded Data Payload -->
+  <script type="application/json" id="docs-raw-markdown">${JSON.stringify(raw).replace(/<\/script/gi, '<\\/script')}</script>
+  <script type="application/json" id="docs-precompiled-html">${JSON.stringify(compiledDocHtml).replace(/<\/script/gi, '<\\/script')}</script>
+
   <script>
-    const rawMarkdown = ${JSON.stringify(raw)};
-    const precompiledHtml = ${JSON.stringify(compiledLatexHtml)};
-    
-    marked.setOptions({
-      gfm: true,
-      breaks: true,
+    window.addEventListener('error', function(e) {
+      try {
+        window.parent.postMessage({
+          type: 'DOCS_PREVIEW_ERROR',
+          message: e.message || String(e),
+          lineno: e.lineno,
+          colno: e.colno
+        }, '*');
+      } catch (err) {}
     });
+
+    window.addEventListener('unhandledrejection', function(e) {
+      try {
+        window.parent.postMessage({
+          type: 'DOCS_PREVIEW_ERROR',
+          message: e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled Promise Rejection'
+        }, '*');
+      } catch (err) {}
+    });
+
+    const rawMarkdown = JSON.parse(document.getElementById('docs-raw-markdown').textContent || '""');
+    const precompiledHtml = JSON.parse(document.getElementById('docs-precompiled-html').textContent || '""');
+    
+    if (typeof marked !== 'undefined' && marked.setOptions) {
+      marked.setOptions({
+        gfm: true,
+        breaks: true,
+      });
+    }
 
     const rawContainer = document.getElementById('rendered-content-raw');
     const pagedContainer = document.getElementById('rendered-pages-container');
@@ -1789,29 +2092,48 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     const paperWidthPx = ${paperWidthPx};
     const paperHeightPx = ${paperHeightPx};
 
-    if (precompiledHtml) {
-      rawContainer.innerHTML = precompiledHtml;
-    } else {
-      rawContainer.innerHTML = marked.parse(rawMarkdown);
+    try {
+      if (precompiledHtml) {
+        rawContainer.innerHTML = precompiledHtml;
+      } else if (typeof marked !== 'undefined' && marked.parse) {
+        rawContainer.innerHTML = marked.parse(rawMarkdown);
+      } else {
+        rawContainer.textContent = rawMarkdown;
+      }
+    } catch (e) {
+      console.warn('Parser error:', e);
+      rawContainer.innerHTML = precompiledHtml || rawMarkdown;
     }
 
-    // Render KaTeX formulas
-    renderMathInElement(rawContainer, {
-      delimiters: [
-        {left: '$$', right: '$$', display: true},
-        {left: '$', right: '$', display: false},
-        {left: '\\\\(', right: '\\\\)', display: false},
-        {left: '\\\\[', right: '\\\\]', display: true}
-      ],
-      throwOnError: false
-    });
+    // Render KaTeX formulas safely
+    try {
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(rawContainer, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\\\(', right: '\\\\)', display: false},
+            {left: '\\\\[', right: '\\\\]', display: true}
+          ],
+          throwOnError: false
+        });
+      }
+    } catch (e) {
+      console.warn('KaTeX render error:', e);
+    }
 
-    // Render Mermaid diagrams
-    mermaid.initialize({
-      startOnLoad: true,
-      theme: 'default',
-      fontFamily: 'Inter, system-ui, sans-serif',
-    });
+    // Render Mermaid diagrams safely
+    try {
+      if (typeof mermaid !== 'undefined' && mermaid.initialize) {
+        mermaid.initialize({
+          startOnLoad: true,
+          theme: 'default',
+          fontFamily: 'Inter, system-ui, sans-serif',
+        });
+      }
+    } catch (e) {
+      console.warn('Mermaid render error:', e);
+    }
 
     function createPageSheet(pageIndex) {
       const sheet = document.createElement('div');
@@ -1842,8 +2164,13 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
           node.children.length > 0 &&
           (node.classList.contains('academic-paper-wrapper') ||
             node.classList.contains('academic-paper-body') ||
+            node.classList.contains('typst-paper-wrapper') ||
+            node.classList.contains('typst-paper-body') ||
+            node.classList.contains('typst-page-container') ||
             node.id === 'rendered-content-raw')
         ) {
+          Array.from(node.children).forEach(traverse);
+        } else if (node.querySelector && node.querySelector('.doc-page-break')) {
           Array.from(node.children).forEach(traverse);
         } else {
           result.push(node);
@@ -1853,52 +2180,186 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       return result;
     }
 
-    function paginateAndRender() {
-      pagedContainer.innerHTML = '';
-      const childNodes = getFlattenedChildNodes(rawContainer);
-      if (childNodes.length === 0) {
-        const { sheet } = createPageSheet(1);
-        pagedContainer.appendChild(sheet);
-        return 1;
+    function hasVisibleContent(container) {
+      if (!container) return false;
+      if (
+        container.querySelector &&
+        container.querySelector(
+          'img, svg, canvas, table, iframe, .paper-titlepage, .academic-toc-card, .tcolorbox, .paper-formatted-block, .academic-callout, .paper-minipage'
+        )
+      ) {
+        return true;
       }
-
-      const availableHeight = paperHeightPx - 130; // 56px top + 64px bottom + 10px buffer
-      let currentPageNum = 1;
-      let { sheet: currentSheet, content: currentContent } = createPageSheet(currentPageNum);
-      pagedContainer.appendChild(currentSheet);
-
-      childNodes.forEach(function(node) {
-        if (node.tagName === 'HR') {
-          // Explicit Page Break
-          currentPageNum++;
-          const next = createPageSheet(currentPageNum);
-          currentSheet = next.sheet;
-          currentContent = next.content;
-          pagedContainer.appendChild(currentSheet);
-          return;
-        }
-
-        const clone = node.cloneNode(true);
-        currentContent.appendChild(clone);
-
-        if (currentContent.offsetHeight > availableHeight && currentContent.children.length > 1) {
-          currentContent.removeChild(clone);
-          currentPageNum++;
-          const next = createPageSheet(currentPageNum);
-          currentSheet = next.sheet;
-          currentContent = next.content;
-          pagedContainer.appendChild(currentSheet);
-          currentContent.appendChild(clone);
-        }
-      });
-
-      totalPagesCount = currentPageNum;
-      return currentPageNum;
+      return container.textContent && container.textContent.trim().length > 0;
     }
 
-    // Overleaf Interactive Scaling, Zoom & Page Tracking
+    function paginateAndRender() {
+      try {
+        pagedContainer.innerHTML = '';
+        const childNodes = getFlattenedChildNodes(rawContainer);
+        if (childNodes.length === 0) {
+          const { sheet } = createPageSheet(1);
+          pagedContainer.appendChild(sheet);
+          return 1;
+        }
+
+        const availableHeight = paperHeightPx - 130; // 56px top + 64px bottom + 10px buffer
+        let currentPageNum = 1;
+        let { sheet: currentSheet, content: currentContent } = createPageSheet(currentPageNum);
+        pagedContainer.appendChild(currentSheet);
+
+        childNodes.forEach(function(node) {
+          // Skip empty paragraphs or whitespace nodes that have no text or visual elements
+          if (node.tagName === 'P' && !hasVisibleContent(node) && !(node.querySelector && node.querySelector('.doc-page-break'))) {
+            return;
+          }
+
+          // Check for explicit page breaks (newpage or clearpage) or Chapter Title start
+          const isPageBreak =
+            (node.classList && node.classList.contains('doc-page-break')) ||
+            (node.querySelector && node.querySelector('.doc-page-break') !== null) ||
+            (node.tagName === 'HR' && node.style && node.style.pageBreakAfter === 'always');
+
+          const isChapterHeading =
+            (node.tagName === 'H1' && !node.classList.contains('academic-paper-title')) ||
+            (node.classList && (node.classList.contains('paper-sec-title') || node.classList.contains('doc-chapter-title'))) ||
+            (node.textContent && /^(\s*)(Bab\s+\d+|Chapter\s+\d+)/i.test(node.textContent.trim()));
+
+          if (isPageBreak || (isChapterHeading && hasVisibleContent(currentContent))) {
+            // Explicit Page Break or Chapter Heading: only create new page if current page already has real visible content
+            if (hasVisibleContent(currentContent)) {
+              currentPageNum++;
+              const next = createPageSheet(currentPageNum);
+              currentSheet = next.sheet;
+              currentContent = next.content;
+              pagedContainer.appendChild(currentSheet);
+            }
+            if (isPageBreak) return;
+          }
+
+          const clone = node.cloneNode(true);
+          currentContent.appendChild(clone);
+
+          if (currentContent.offsetHeight > availableHeight && currentContent.children.length > 1) {
+            currentContent.removeChild(clone);
+            currentPageNum++;
+            const next = createPageSheet(currentPageNum);
+            currentSheet = next.sheet;
+            currentContent = next.content;
+            pagedContainer.appendChild(currentSheet);
+            currentContent.appendChild(clone);
+          }
+        });
+
+        // Prune trailing empty pages if any were created
+        while (pagedContainer.children.length > 1) {
+          const lastSheet = pagedContainer.lastElementChild;
+          const lastContent = lastSheet ? lastSheet.querySelector('.paper-page-content') : null;
+          if (!lastContent || !hasVisibleContent(lastContent)) {
+            pagedContainer.removeChild(lastSheet);
+            currentPageNum = Math.max(1, currentPageNum - 1);
+          } else {
+            break;
+          }
+        }
+
+        // Helper for lowercase Roman numerals
+        function toRomanLower(num) {
+          if (num <= 0) return '';
+          var romanMap = [
+            [1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'],
+            [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'],
+            [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']
+          ];
+          var res = '';
+          for (var i = 0; i < romanMap.length; i++) {
+            while (num >= romanMap[i][0]) {
+              res += romanMap[i][1];
+              num -= romanMap[i][0];
+            }
+          }
+          return res;
+        }
+
+        // Check if document has preliminary front matter (Cover, TOC, or explicit roman)
+        var allSheets = Array.from(pagedContainer.children);
+        var hasFrontMatter = allSheets.some(function(sh) {
+          return (
+            sh.querySelector('.paper-titlepage') !== null ||
+            sh.querySelector('.academic-toc-card') !== null ||
+            sh.querySelector('[data-numbering="roman"]') !== null
+          );
+        });
+
+        var romanCounter = 1;
+        var arabicCounter = 1;
+        var isMainMatter = !hasFrontMatter;
+
+        allSheets.forEach(function(sh, idx) {
+          var c = sh.querySelector('.paper-page-content');
+          var f = sh.querySelector('.paper-page-footer');
+          if (!c || !f) return;
+
+          // 1. Detect Cover Page or thispagestyle{empty}
+          var isCover =
+            c.querySelector('.paper-titlepage') !== null ||
+            c.querySelector('.doc-page-empty-style') !== null ||
+            c.querySelector('.typst-cover-page') !== null ||
+            (idx === 0 && allSheets.length > 1 && (c.querySelector('.academic-paper-header') !== null || c.querySelector('h1') !== null));
+
+          if (isCover) {
+            sh.classList.add('paper-cover-sheet');
+            f.textContent = '';
+            f.style.display = 'none';
+            return;
+          }
+
+          // 2. Check for explicit switches or start of main content (first \section title)
+          if (c.querySelector('[data-numbering="arabic"]') !== null) {
+            isMainMatter = true;
+          } else if (c.querySelector('[data-numbering="roman"]') !== null) {
+            isMainMatter = false;
+          } else if (hasFrontMatter && c.querySelector('.paper-sec-title') !== null) {
+            isMainMatter = true;
+          }
+
+          // 3. Check for explicit counter reset
+          var counterEl = c.querySelector('[data-page]');
+          if (counterEl) {
+            var targetP = parseInt(counterEl.getAttribute('data-page') || '', 10);
+            if (!isNaN(targetP)) {
+              if (isMainMatter) arabicCounter = targetP;
+              else romanCounter = targetP;
+            }
+          }
+
+          // 4. Assign footer text
+          if (!isMainMatter) {
+            f.textContent = toRomanLower(romanCounter);
+            f.style.display = 'block';
+            romanCounter++;
+          } else {
+            f.textContent = String(arabicCounter);
+            f.style.display = 'block';
+            arabicCounter++;
+          }
+        });
+
+        totalPagesCount = currentPageNum;
+        return currentPageNum;
+      } catch (paginateErr) {
+        console.error('Pagination error, executing fallback:', paginateErr);
+        pagedContainer.innerHTML = '';
+        const { sheet, content } = createPageSheet(1);
+        content.innerHTML = rawContainer.innerHTML;
+        pagedContainer.appendChild(sheet);
+        totalPagesCount = 1;
+        return 1;
+      }
+    }
+
     var currentScale = 1.0;
-    var userScaleMode = 'auto'; // 'auto' or fixed number
+    var userScaleMode = 'auto';
 
     function updateScaleAndPages() {
       var outer = document.getElementById('scaler-outer');
@@ -1908,36 +2369,47 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
       var totalP = paginateAndRender();
 
-      var clientWidth = document.documentElement.clientWidth || (window.innerWidth - 12);
-      var safePadding = 32; // 16px padding on both sides
-      var availableWidth = Math.max(16, clientWidth - safePadding);
+      var clientWidth = container.clientWidth || document.documentElement.clientWidth || (window.innerWidth - 12);
+      var safePadding = 36;
+      var availableWidth = Math.max(100, clientWidth - safePadding);
 
       var scale = userScaleMode === 'auto'
-        ? Math.min(1.0, availableWidth / paperWidthPx)
+        ? (availableWidth / paperWidthPx)
         : (Number(userScaleMode) / 100);
 
       currentScale = scale;
       wrapper.style.transform = 'scale(' + scale + ')';
 
       var totalHeightUnscaled = (totalP * paperHeightPx) + ((totalP - 1) * 24);
-      var scaledWidth = Math.round(paperWidthPx * scale);
+      var scaledWidth = Math.floor(paperWidthPx * scale);
       var scaledHeight = Math.round(totalHeightUnscaled * scale);
 
-      outer.style.width = scaledWidth + 'px';
+      if (userScaleMode === 'auto') {
+        outer.style.width = scaledWidth + 'px';
+        outer.style.maxWidth = '100%';
+        container.style.overflowX = 'hidden';
+        document.documentElement.style.overflowX = 'hidden';
+      } else {
+        outer.style.width = scaledWidth + 'px';
+        outer.style.maxWidth = 'none';
+        container.style.overflowX = 'auto';
+        document.documentElement.style.overflowX = 'auto';
+      }
       outer.style.height = scaledHeight + 'px';
       wrapper.style.width = paperWidthPx + 'px';
 
-      // Post scale percentage and total pages to parent
       try {
         window.parent.postMessage({
           type: 'DOCS_PREVIEW_SCALE',
           scale: Math.round(scale * 100),
           totalPages: totalP
         }, '*');
+        window.parent.postMessage({
+          type: 'DOCS_PREVIEW_READY'
+        }, '*');
       } catch (e) {}
     }
 
-    // Scroll tracking for current page in Overleaf page counter
     window.addEventListener('scroll', function() {
       var scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
       var pages = document.querySelectorAll('.paper-sheet-page');
@@ -1953,10 +2425,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       } catch (e) {}
     }, { passive: true });
 
-    // Initial render
     updateScaleAndPages();
 
-    // Attach ResizeObserver to documentElement for auto scaling
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(function() {
         if (userScaleMode === 'auto') updateScaleAndPages();
@@ -1971,11 +2441,9 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     setTimeout(updateScaleAndPages, 100);
     setTimeout(updateScaleAndPages, 300);
 
-    // Listen for messages from parent (Overleaf preview actions)
     window.addEventListener('message', function(e) {
       if (!e.data) return;
 
-      // 1. Scroll to heading
       if (e.data.type === 'DOCS_SCROLL_TO_HEADING') {
         var text = (e.data.text || '').toLowerCase().trim();
         var headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
@@ -1988,20 +2456,17 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         }
       }
 
-      // 2. Go to specific page
       if (e.data.type === 'DOCS_GO_TO_PAGE') {
         var p = Math.max(1, Math.min(totalPagesCount, e.data.page || 1));
         var targetTop = (p - 1) * (${paperHeightPx} * currentScale);
         window.scrollTo({ top: targetTop, behavior: 'smooth' });
       }
 
-      // 3. Set Zoom Level
       if (e.data.type === 'DOCS_SET_ZOOM') {
         userScaleMode = e.data.zoom;
         updateScaleAndPages();
       }
 
-      // 4. Invert Preview Colors — apply only to paper pages, not outer background
       if (e.data.type === 'DOCS_SET_INVERTED') {
         var pages = document.querySelectorAll('.paper-sheet-page');
         for (var i = 0; i < pages.length; i++) {
@@ -2011,7 +2476,6 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         }
       }
 
-      // 5. Trigger Print / Export
       if (e.data.type === 'DOCS_TRIGGER_PRINT') {
         window.print();
       }
@@ -2077,9 +2541,10 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }
   };
 
-  // Overleaf Paragraph Style handler
   const handleApplyParagraphStyle = (styleType: string) => {
     const isLatex = activeDoc?.format === 'latex';
+    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+
     const map: Record<string, [string, string, string]> = isLatex
       ? {
           normal: ['', '', ''],
@@ -2088,6 +2553,15 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
           subsubsection: ['\\subsubsection{', '}\n', 'Sub Sub Bagian'],
           paragraph: ['\\paragraph{', '}\n', 'Paragraf'],
           subparagraph: ['\\subparagraph{', '}\n', 'Sub Paragraf'],
+        }
+      : isTypst
+      ? {
+          normal: ['', '', ''],
+          section: ['= ', '\n', 'Judul Bagian'],
+          subsection: ['== ', '\n', 'Sub Bagian'],
+          subsubsection: ['=== ', '\n', 'Sub Sub Bagian'],
+          paragraph: ['==== ', '\n', 'Paragraf'],
+          subparagraph: ['===== ', '\n', 'Sub Paragraf'],
         }
       : {
           normal: ['', '', ''],
@@ -2328,6 +2802,18 @@ ${exportText}
     URL.revokeObjectURL(url);
   };
 
+  // ── PHASE 0: SSR / INITIAL HYDRATION SKELETON ──
+  if (!mounted) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '13px' }}>
+          <div style={{ width: '16px', height: '16px', border: '2px solid var(--border-subtle)', borderTopColor: 'var(--brand-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <span>Memuat Anticeil Docs...</span>
+        </div>
+      </div>
+    );
+  }
+
   // ── PHASE 1: LANDING VIEW ──
   if (!initialDocId && studioPhase === 'landing') {
     return <DocsLandingView onStartGenerate={handleStartGenerate} />;
@@ -2376,7 +2862,7 @@ ${exportText}
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 0 12px 0',
+          padding: 0,
           flexShrink: 0,
           zIndex: 10,
         }}
@@ -2456,22 +2942,8 @@ ${exportText}
                   setActiveDrawerTab('files');
                 }
               }}
-              style={{
-                width: '34px',
-                height: '34px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '8px',
-                backgroundColor: isSidebarOpen && activeDrawerTab === 'files' ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
-                border: 'none',
-                color: isSidebarOpen && activeDrawerTab === 'files' ? 'var(--brand-primary)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover-subtle"
-              title={language === 'id' ? 'Struktur File (Files)' : 'Project Files'}
+              className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'files' ? ' active' : ''}`}
+              aria-label={language === 'id' ? 'Struktur File (Files)' : 'Project Files'}
             >
               {isSidebarOpen && activeDrawerTab === 'files' && (
                 <div
@@ -2502,22 +2974,8 @@ ${exportText}
                   setActiveDrawerTab('search');
                 }
               }}
-              style={{
-                width: '34px',
-                height: '34px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '8px',
-                backgroundColor: isSidebarOpen && activeDrawerTab === 'search' ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
-                border: 'none',
-                color: isSidebarOpen && activeDrawerTab === 'search' ? 'var(--brand-primary)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover-subtle"
-              title={language === 'id' ? 'Pencarian & Ganti (Search)' : 'Search & Replace'}
+              className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'search' ? ' active' : ''}`}
+              aria-label={language === 'id' ? 'Pencarian & Ganti (Search)' : 'Search & Replace'}
             >
               {isSidebarOpen && activeDrawerTab === 'search' && (
                 <div
@@ -2548,22 +3006,8 @@ ${exportText}
                   setActiveDrawerTab('review');
                 }
               }}
-              style={{
-                width: '34px',
-                height: '34px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '8px',
-                backgroundColor: isSidebarOpen && activeDrawerTab === 'review' ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
-                border: 'none',
-                color: isSidebarOpen && activeDrawerTab === 'review' ? 'var(--brand-primary)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover-subtle"
-              title={language === 'id' ? 'Panel Review & Komentar (Ctrl+J)' : 'Review panel (Ctrl+J)'}
+              className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'review' ? ' active' : ''}`}
+              aria-label={language === 'id' ? 'Panel Review & Komentar (Ctrl+J)' : 'Review panel (Ctrl+J)'}
             >
               {isSidebarOpen && activeDrawerTab === 'review' && (
                 <div
@@ -2651,6 +3095,14 @@ ${exportText}
             </button>
           </div>
         </div>
+
+        {/* Bottom of 48px Rail: Circular AI Credits Ring + Storage Ring */}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <BottomRailMeters
+            onOpenTopup={() => openPricingModal('topup')}
+            onOpenTiers={() => openPricingModal('tiers')}
+          />
+        </div>
       </div>
 
       {/* 1. Main Workspace Area to the right of Mini Sidebar */}
@@ -2737,7 +3189,7 @@ ${exportText}
                 ) : activeDoc.format === 'slide' ? (
                   <Layers size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />
                 ) : (
-                  <FileText size={13.5} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                  <FileText size={13.5} color="var(--rail-docs-color)" style={{ flexShrink: 0 }} />
                 )}
 
                 <input
@@ -3976,7 +4428,15 @@ ${exportText}
                             documentHeadings.map((h, idx) => (
                               <div
                                 key={idx}
-                                onClick={() => { jumpToLine(h.line); scrollPreviewToHeading(h.text); }}
+                                onClick={() => {
+                                  if (h.fileId && h.fileId !== activeDoc?.activeFileId && activeDoc) {
+                                    setActiveFileId(activeDoc.id, h.fileId);
+                                  }
+                                  setTimeout(() => {
+                                    jumpToLine(h.line);
+                                    scrollPreviewToHeading(h.text);
+                                  }, 50);
+                                }}
                                 className="clickable-pill"
                                 style={{
                                   padding: '4px 6px',
@@ -4008,6 +4468,11 @@ ${exportText}
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                                   {h.text}
                                 </span>
+                                {h.fileName && (
+                                  <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', opacity: 0.6, flexShrink: 0 }}>
+                                    {h.fileName.split('/').pop()}
+                                  </span>
+                                )}
                               </div>
                             ))
                           )}
@@ -4780,98 +5245,7 @@ ${exportText}
                     flexShrink: 0,
                   }}
                 >
-                  {/* Collapsible Stats Row: AI Credits + Storage */}
-                  <div style={{ marginBottom: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setIsStatsExpanded(prev => !prev)}
-                      className="clickable-pill"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        padding: '6px 10px',
-                        backgroundColor: 'var(--bg-subtle)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-md, 8px)',
-                        cursor: 'pointer',
-                        color: 'var(--text-muted)',
-                        transition: 'all 0.15s ease',
-                      }}
-                      title={isStatsExpanded ? (language === 'id' ? 'Sembunyikan statistik' : 'Hide stats') : (language === 'id' ? 'Tampilkan statistik' : 'Show stats')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 600 }}>
-                        <Zap size={12} color="#f59e0b" fill="#f59e0b" style={{ flexShrink: 0 }} />
-                        <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '11.5px' }}>
-                          {dailyCredits}/{maxCredits}
-                        </span>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500 }}>
-                          {language === 'id' ? 'kredit' : 'credits'}
-                        </span>
-                      </div>
-                      <ChevronDown
-                        size={12}
-                        style={{
-                          transform: isStatsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                          color: 'var(--text-muted)',
-                          flexShrink: 0,
-                        }}
-                      />
-                    </button>
 
-                    {isStatsExpanded && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px', animation: 'fadeIn 0.15s ease' }}>
-                        {/* AI Credits Meter */}
-                        <div
-                          onClick={() => openPricingModal('topup')}
-                          title={language === 'id' ? 'Kredit AI Harian — Klik untuk Top-up / Upgrade' : 'Daily AI Credits — Click to Top-up / Upgrade'}
-                          className="clickable-pill"
-                          style={{
-                            padding: '8px 12px',
-                            borderRadius: 'var(--radius-md, 8px)',
-                            backgroundColor: 'var(--bg-subtle)',
-                            border: '1px solid var(--border-subtle)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '6px',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                              <Zap size={12} color="#f59e0b" fill="#f59e0b" />
-                              <span>{language === 'id' ? 'Kredit AI' : 'AI Credits'}</span>
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ fontWeight: 700, color: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : 'var(--text-primary)' }}>
-                                {dailyCredits}/{maxCredits}
-                              </span>
-                              {paidCredits > 0 && (
-                                <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#f59e0b', background: 'rgba(245,158,11,0.18)', padding: '1px 5px', borderRadius: '4px' }}>
-                                  +{paidCredits}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{ width: '100%', height: '4px', borderRadius: '9999px', backgroundColor: 'var(--border-subtle)', overflow: 'hidden' }}>
-                            <div style={{
-                              width: `${Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100))}%`,
-                              height: '100%',
-                              backgroundColor: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : '#f59e0b',
-                              borderRadius: '9999px',
-                              transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                            }} />
-                          </div>
-                        </div>
-
-                        {/* Storage Meter */}
-                        <StorageMeter compact onManageClick={() => openPricingModal('tiers')} />
-                      </div>
-                    )}
-                  </div>
 
                   {/* Profile Trigger Button */}
                   <div style={{ position: 'relative' }}>
@@ -5335,8 +5709,11 @@ ${exportText}
                           type="button"
                           onClick={() => {
                             const isLatex = activeDoc?.format === 'latex';
+                            const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
                             if (isLatex) {
                               insertShortcut('\\begin{enumerate}\n  \\item ', '\n\\end{enumerate}\n', 'item pertama');
+                            } else if (isTypst) {
+                              insertShortcut('\n+ ', '', 'item pertama');
                             } else {
                               insertShortcut('\n1. ', '', 'item pertama');
                             }
@@ -5366,15 +5743,36 @@ ${exportText}
                     )}
                   </div>
                   {/* Blockquote */}
-                  <button type="button" onClick={() => insertShortcut('\n> ', '', 'kutipan')} style={toolbarBtnStyle} title="Blockquote / Kutipan">
+                  <button type="button" onClick={() => {
+                    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+                    if (isTypst) {
+                      insertShortcut('\n#quote[\n', '\n]\n', 'kutipan di sini');
+                    } else {
+                      insertShortcut('\n> ', '', 'kutipan');
+                    }
+                  }} style={toolbarBtnStyle} title="Blockquote / Kutipan">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
                   </button>
                   {/* Code Block */}
-                  <button type="button" onClick={() => insertShortcut('\n```\n', '\n```\n', 'kode di sini')} style={toolbarBtnStyle} title={language === 'id' ? 'Blok Kode' : 'Code Block'}>
+                  <button type="button" onClick={() => {
+                    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+                    if (isTypst) {
+                      insertShortcut('\n```typst\n', '\n```\n', 'kode di sini');
+                    } else {
+                      insertShortcut('\n```\n', '\n```\n', 'kode di sini');
+                    }
+                  }} style={toolbarBtnStyle} title={language === 'id' ? 'Blok Kode' : 'Code Block'}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                   </button>
                   {/* Horizontal Rule */}
-                  <button type="button" onClick={() => insertShortcut('\n---\n')} style={toolbarBtnStyle} title={language === 'id' ? 'Garis Horizontal' : 'Horizontal Rule'}>
+                  <button type="button" onClick={() => {
+                    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+                    if (isTypst) {
+                      insertShortcut('\n#line(length: 100%)\n');
+                    } else {
+                      insertShortcut('\n---\n');
+                    }
+                  }} style={toolbarBtnStyle} title={language === 'id' ? 'Garis Horizontal' : 'Horizontal Rule'}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="2" y1="12" x2="22" y2="12"/></svg>
                   </button>
 
@@ -5382,15 +5780,25 @@ ${exportText}
 
                   {/* GROUP 2: Insert Content — Link, Image, Table */}
                   {/* Link */}
-                  <button type="button" onClick={() => insertShortcut('[', '](https://)', 'teks link')} style={toolbarBtnStyle} title={language === 'id' ? 'Sisipkan Tautan' : 'Insert Link'}>
+                  <button type="button" onClick={() => {
+                    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+                    if (isTypst) {
+                      insertShortcut('#link("https://', '")[teks link]', 'example.com');
+                    } else {
+                      insertShortcut('[', '](https://)', 'teks link');
+                    }
+                  }} style={toolbarBtnStyle} title={language === 'id' ? 'Sisipkan Tautan' : 'Insert Link'}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   </button>
                   {/* Image */}
                   <button type="button"
                     onClick={() => {
                       const isLatex = activeDoc?.format === 'latex';
+                      const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
                       if (isLatex) {
                         insertShortcut('\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{', '}\n  \\caption{Deskripsi gambar}\n  \\label{fig:contoh}\n\\end{figure}\n', 'gambar.png');
+                      } else if (isTypst) {
+                        insertShortcut('#figure(\n  image("', '", width: 80%),\n  caption: [Deskripsi gambar],\n)\n', 'gambar.png');
                       } else {
                         insertShortcut('![', '](url-gambar)', 'alt text');
                       }
@@ -5404,8 +5812,11 @@ ${exportText}
                   <button type="button"
                     onClick={() => {
                       const isLatex = activeDoc?.format === 'latex';
+                      const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
                       if (isLatex) {
                         insertShortcut('\\begin{table}[htbp]\n  \\centering\n  \\begin{tabular}{|c|c|c|}\n    \\hline\n    Kolom 1 & Kolom 2 & Kolom 3 \\\\\n    \\hline\n    Data 1 & Data 2 & Data 3 \\\\\n    \\hline\n  \\end{tabular}\n  \\caption{Tabel contoh}\n  \\label{tab:contoh}\n\\end{table}\n');
+                      } else if (isTypst) {
+                        insertShortcut('\n#table(\n  columns: (1fr, 1fr, 1fr),\n  align: (left, left, left),\n  [*Kolom 1*], [*Kolom 2*], [*Kolom 3*],\n  [Data 1], [Data 2], [Data 3],\n)\n');
                       } else {
                         insertShortcut('\n| Kolom 1 | Kolom 2 | Kolom 3 |\n| :--- | :--- | :--- |\n| Baris 1 | Data A | Data B |\n');
                       }
@@ -5424,7 +5835,17 @@ ${exportText}
                     <span style={{ fontSize: '10.5px', fontWeight: 700 }}>$x$</span>
                   </button>
                   {/* Math block */}
-                  <button type="button" onClick={() => insertShortcut('\n$$\n', '\n$$\n', '\\int_{0}^{\\infty} f(x) dx = 1')} style={toolbarBtnStyle} title="Persamaan Matematika Block ($$...$$)">
+                  <button type="button" onClick={() => {
+                    const isLatex = activeDoc?.format === 'latex';
+                    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+                    if (isLatex) {
+                      insertShortcut('\\begin{equation}\n  ', '\n\\end{equation}\n', 'f(x) = x^2');
+                    } else if (isTypst) {
+                      insertShortcut('\n$ ', ' $\n', 'integral_0^infinity f(x) dif x = 1');
+                    } else {
+                      insertShortcut('\n$$\n', '\n$$\n', '\\int_{0}^{\\infty} f(x) dx = 1');
+                    }
+                  }} style={toolbarBtnStyle} title="Persamaan Matematika Block ($$...$$)">
                     <Sigma size={12} color="#8B5CF6" />
                   </button>
                   {/* Greek & LaTeX Symbols Popover (Overleaf Omega) */}
@@ -6547,6 +6968,32 @@ ${exportText}
                           <button
                             type="button"
                             onClick={() => {
+                              if (activeDoc) downloadDocAsZip(activeDoc);
+                              setIsExportMenuOpen(false);
+                            }}
+                            className="clickable-pill"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '7px 10px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'var(--text-primary)',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              cursor: 'pointer',
+                              width: '100%',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <Download size={13} color="#3B82F6" />
+                            <span>Unduh ZIP Project (.zip)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
                               handleExportPDF();
                               setIsExportMenuOpen(false);
                             }}
@@ -6964,24 +7411,72 @@ ${exportText}
                         ))}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setIsLogDrawerOpen(false)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          padding: '2px 4px',
-                          fontSize: '11px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '2px',
-                        }}
-                        title={language === 'id' ? 'Tutup Panel' : 'Close Panel'}
-                      >
-                        <X size={13} />
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {lintResults.totalLogs > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const allLogs = [...lintResults.errors, ...lintResults.warnings, ...lintResults.infos];
+                              const logText = allLogs
+                                .map(
+                                  (d) =>
+                                    `- [${d.type.toUpperCase()}] Baris ${d.line} (${d.fileName || 'main.tex'}): ${d.message}${
+                                      d.suggestion ? ` (Saran: ${d.suggestion})` : ''
+                                    }`
+                                )
+                                .join('\n');
+                              const prompt =
+                                language === 'id'
+                                  ? `Tolong bantu saya menganalisis dan memperbarui kode dokumen LaTeX untuk menyelesaikan seluruh log & warning berikut:\n\n${logText}\n\nBerikan penjelasan ringkas serta perbaikan kode lengkap yang siap dipakai.`
+                                  : `Please help me analyze and fix all of the following LaTeX output logs & warnings:\n\n${logText}\n\nProvide a concise explanation and updated complete code.`;
+                              setCoAuthorPendingPrompt(prompt);
+                              setActiveDrawerTab('ai');
+                              if (!isSidebarOpen) toggleSidebar();
+                            }}
+                            style={{
+                              padding: '3px 9px',
+                              borderRadius: '5px',
+                              backgroundColor: 'rgba(0, 115, 234, 0.12)',
+                              border: '1px solid rgba(0, 115, 234, 0.3)',
+                              color: 'var(--brand-primary)',
+                              fontSize: '11px',
+                              fontWeight: 650,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title={
+                              language === 'id'
+                                ? 'Kirim seluruh log output ke AI Co-Author untuk perbaikan otomatis'
+                                : 'Send all output logs to AI Co-Author'
+                            }
+                          >
+                            <Sparkles size={12} />
+                            <span>{language === 'id' ? 'Kirim Semua Log ke AI' : 'Send All Logs to AI'}</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => setIsLogDrawerOpen(false)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '2px 4px',
+                            fontSize: '11px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                          }}
+                          title={language === 'id' ? 'Tutup Panel' : 'Close Panel'}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
                     </div>
 
                     {(() => {
@@ -7090,37 +7585,37 @@ ${exportText}
                               >
                                 Lompat ke Baris
                               </button>
-                              {d.type === 'error' && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const errorMsg = d.message || '';
-                                    const suggestion = d.suggestion ? `\nSaran: ${d.suggestion}` : '';
-                                    const fileCtx = d.fileName ? ` di file ${d.fileName}` : '';
-                                    const prompt = `Tolong perbaiki error LaTeX berikut${fileCtx} (baris ${d.line}):\n\n${errorMsg}${suggestion}\n\nTampilkan kode yang sudah diperbaiki.`;
-                                    setCoAuthorPendingPrompt(prompt);
-                                    setActiveDrawerTab('ai');
-                                    if (!isSidebarOpen) toggleSidebar();
-                                  }}
-                                  style={{
-                                    padding: '3px 8px',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'rgba(0, 115, 234, 0.12)',
-                                    border: '1px solid rgba(0, 115, 234, 0.3)',
-                                    color: 'var(--brand-primary)',
-                                    fontSize: '11px',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  <Sparkles size={11} />
-                                  <span>Perbaiki AI</span>
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const errorMsg = d.message || '';
+                                  const suggestion = d.suggestion ? `\nSaran: ${d.suggestion}` : '';
+                                  const fileCtx = d.fileName ? ` di file ${d.fileName}` : '';
+                                  const prompt = language === 'id'
+                                    ? `Tolong bantu perbaiki masalah LaTeX berikut${fileCtx} (baris ${d.line}):\n\n[${d.type.toUpperCase()}] ${errorMsg}${suggestion}\n\nBerikan penjelasan ringkas serta kode yang sudah diperbaiki.`
+                                    : `Please help fix this LaTeX issue${fileCtx} (line ${d.line}):\n\n[${d.type.toUpperCase()}] ${errorMsg}${suggestion}\n\nProvide a concise explanation and updated code.`;
+                                  setCoAuthorPendingPrompt(prompt);
+                                  setActiveDrawerTab('ai');
+                                  if (!isSidebarOpen) toggleSidebar();
+                                }}
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'rgba(0, 115, 234, 0.12)',
+                                  border: '1px solid rgba(0, 115, 234, 0.3)',
+                                  color: 'var(--brand-primary)',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <Sparkles size={11} />
+                                <span>{language === 'id' ? 'Kirim ke AI' : 'Send to AI'}</span>
+                              </button>
                             </div>
                           </div>
 
@@ -7164,6 +7659,7 @@ ${exportText}
                 )}
 
                 <iframe
+                  key={`preview-${compileVersion}-${effectiveDocId}`}
                   ref={previewIframeRef}
                   srcDoc={previewHtml}
                   sandbox="allow-scripts allow-modals allow-same-origin"
@@ -7798,58 +8294,75 @@ ${exportText}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '6px', border: 'none', backgroundColor: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
                 className="hover-subtle"
               >
-                <X size={15} />
+                <X size={16} />
               </button>
             </div>
 
             {/* Body */}
             <div style={{ padding: '20px' }}>
               {/* Format sections */}
-              {([
-                {
-                  label: 'LaTeX',
-                  formats: [
-                    { ext: '.tex', desc: 'LaTeX document', color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)' },
-                    { ext: '.bib', desc: 'BibTeX bibliography', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
-                    { ext: '.cls', desc: 'Document class (e.g. IEEEtran)', color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
-                    { ext: '.sty', desc: 'Style / package file', color: '#EC4899', bg: 'rgba(236,72,153,0.1)' },
-                    { ext: '.bst', desc: 'Bibliography style', color: '#F97316', bg: 'rgba(249,115,22,0.1)' },
-                    { ext: '.tikz', desc: 'TikZ diagram', color: '#14B8A6', bg: 'rgba(20,184,166,0.1)' },
-                  ],
-                },
-              ] as const).map((group) => (
-                <div key={group.label} style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
-                    {group.label}
+              {(() => {
+                const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
+                const fileGroups = isTypst
+                  ? [
+                      {
+                        label: 'Typst Engine',
+                        formats: [
+                          { ext: '.typ', desc: 'Typst document module', color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
+                          { ext: '.bib', desc: 'BibTeX bibliography', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
+                          { ext: '.json', desc: 'JSON data source', color: '#06B6D4', bg: 'rgba(6,182,212,0.1)' },
+                          { ext: '.md', desc: 'Markdown documentation', color: '#0073EA', bg: 'rgba(0,115,234,0.1)' },
+                        ],
+                      },
+                    ]
+                  : [
+                      {
+                        label: 'LaTeX Engine',
+                        formats: [
+                          { ext: '.tex', desc: 'LaTeX document', color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)' },
+                          { ext: '.bib', desc: 'BibTeX bibliography', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
+                          { ext: '.cls', desc: 'Document class (e.g. IEEEtran)', color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
+                          { ext: '.sty', desc: 'Style / package file', color: '#EC4899', bg: 'rgba(236,72,153,0.1)' },
+                          { ext: '.bst', desc: 'Bibliography style', color: '#F97316', bg: 'rgba(249,115,22,0.1)' },
+                          { ext: '.tikz', desc: 'TikZ diagram', color: '#14B8A6', bg: 'rgba(20,184,166,0.1)' },
+                        ],
+                      },
+                    ];
+
+                return fileGroups.map((group) => (
+                  <div key={group.label} style={{ marginBottom: '16px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                      {group.label}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      {group.formats.map((f) => (
+                        <button
+                          key={f.ext}
+                          type="button"
+                          onClick={() => setNewSubFileExt(f.ext)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            border: `1.5px solid ${newSubFileExt === f.ext ? f.color : 'transparent'}`,
+                            backgroundColor: newSubFileExt === f.ext ? f.bg : 'var(--bg-subtle)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease',
+                          }}
+                          onMouseEnter={(e) => { if (newSubFileExt !== f.ext) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
+                          onMouseLeave={(e) => { if (newSubFileExt !== f.ext) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'; }}
+                        >
+                          <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: f.color, flexShrink: 0 }}>{f.ext}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.2 }}>{f.desc}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                    {group.formats.map((f) => (
-                      <button
-                        key={f.ext}
-                        type="button"
-                        onClick={() => setNewSubFileExt(f.ext)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          border: `1.5px solid ${newSubFileExt === f.ext ? f.color : 'transparent'}`,
-                          backgroundColor: newSubFileExt === f.ext ? f.bg : 'var(--bg-subtle)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.12s ease',
-                        }}
-                        onMouseEnter={(e) => { if (newSubFileExt !== f.ext) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
-                        onMouseLeave={(e) => { if (newSubFileExt !== f.ext) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'; }}
-                      >
-                        <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: f.color, flexShrink: 0 }}>{f.ext}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.2 }}>{f.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ));
+              })()}
 
               {/* File name input */}
               <div style={{ marginTop: '4px' }}>

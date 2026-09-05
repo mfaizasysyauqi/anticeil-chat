@@ -42,6 +42,8 @@ import { SplashScreen } from '../../../shared/components/SplashScreen';
 import { DocFileTabsBar, SplitResizeDivider, RecompileSplitButton, FocusModeOverlay } from './shared';
 import { useSplitResize } from '../hooks/useSplitResize';
 import { handleStandardEditorKeyDown } from '../utils/editorKeyUtils';
+import { resolveDocImports } from '../utils/docResolver';
+import { downloadDocAsZip } from '../utils/zipUtils';
 import {
   editorToolbarStyle,
   toolbarBtnStyle,
@@ -66,6 +68,7 @@ export function DocsSlideView({
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const documents = useDocsStore((s) => s.documents);
   const updateDocumentContent = useDocsStore((s) => s.updateDocumentContent);
+  const updateSubFileContent = useDocsStore((s) => s.updateSubFileContent);
   const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
   const theme = useSettingsStore((s) => s.theme);
   const language = useSettingsStore((s) => s.language);
@@ -85,7 +88,16 @@ export function DocsSlideView({
   const activeDoc = documents.find((d) => d.id === activeDocId);
 
   if (!activeDoc) {
-    return <SplashScreen title="Anticeil Slide" subtitle="Memuat Presentation Engine & Slide Stage..." />;
+    return (
+      <SplashScreen
+        title="Anticeil Slide"
+        subtitle={
+          language === 'id'
+            ? 'Memuat Presentation Engine & Slide Stage...'
+            : 'Loading Presentation Engine & Slide Stage...'
+        }
+      />
+    );
   }
   const docFiles = activeDoc?.files || [];
   const activeSubFile = docFiles.find((f) => f.id === activeDoc?.activeFileId) || docFiles[0];
@@ -177,35 +189,42 @@ export function DocsSlideView({
     );
   }, [zoomLevel]);
 
-  // Sync document content when active document changes
+  // Sync document content when active document or active subfile changes
   useEffect(() => {
     if (!activeDoc) return;
-    const text = activeDoc.content || '';
-    setCode(text);
-    setPreviewContent(text);
+    const currentText = activeSubFile?.content ?? activeDoc.content ?? '';
+    setCode(currentText);
+    const mainFile = docFiles.find((f) => f.isMain) || docFiles[0];
+    const fullDeck = resolveDocImports(mainFile?.content || currentText, docFiles);
+    setPreviewContent(fullDeck);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDocId]);
+  }, [activeDocId, activeDoc?.activeFileId]);
 
   // Debounced sync code -> preview & store
   useEffect(() => {
     const t = setTimeout(() => {
       if (isAutoCompile) {
-        setPreviewContent(code);
+        const mainFile = docFiles.find((f) => f.isMain) || docFiles[0];
+        const isEditingMain = !activeSubFile || activeSubFile.id === mainFile?.id;
+        const rootContent = isEditingMain ? code : (mainFile?.content || code);
+        const updatedFiles = docFiles.map((f) => (f.id === activeSubFile?.id ? { ...f, content: code } : f));
+        setPreviewContent(resolveDocImports(rootContent, updatedFiles));
       }
-      if (activeDoc && activeDoc.content !== code) {
+      if (activeDoc && activeSubFile && activeSubFile.content !== code) {
+        updateSubFileContent(activeDoc.id, activeSubFile.id, code);
+      } else if (activeDoc && activeDoc.content !== code) {
         updateDocumentContent(activeDoc.id, code);
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [code, activeDoc, updateDocumentContent, isAutoCompile]);
+  }, [code, activeDoc, activeSubFile, docFiles, updateSubFileContent, updateDocumentContent, isAutoCompile]);
 
   // Sync slide theme with global theme changes
   useEffect(() => {
     setSlideTheme(theme === 'light' ? 'light' : 'midnight');
   }, [theme]);
 
-  // Close popovers on outside mousedown (mousedown fires before click, so
-  // stopPropagation on the button click doesn't race with this handler)
+  // Close popovers on outside mousedown
   useEffect(() => {
     const onOutside = () => {
       setIsDownloadMenuOpen(false);
@@ -218,7 +237,8 @@ export function DocsSlideView({
 
   // Split raw markdown into individual slide chunks using '---' delimiter
   const slides = useMemo(() => {
-    const raw = previewContent.trim();
+    const resolved = resolveDocImports(previewContent, docFiles);
+    const raw = resolved.trim();
     if (!raw) {
       return [
         '# Judul Presentasi\n\n### Subjudul atau Ringkasan\n\n* Poin penting 1\n* Poin penting 2\n* Poin penting 3',
@@ -226,7 +246,7 @@ export function DocsSlideView({
     }
     const parts = raw.split(/\n---\n/);
     return parts.length > 0 ? parts : [raw];
-  }, [previewContent]);
+  }, [previewContent, docFiles]);
 
   const validIndex = Math.min(Math.max(0, currentSlideIndex), Math.max(0, slides.length - 1));
 
@@ -416,6 +436,25 @@ export function DocsSlideView({
       tableThBg = '#f1f5f9';
     }
 
+    const globalHeaderMatch = (previewContent || '').match(/<!--\s*header:\s*["']?([^"'\n>]+)["']?\s*-->/i);
+    const globalFooterMatch = (previewContent || '').match(/<!--\s*footer:\s*["']?([^"'\n>]+)["']?\s*-->/i);
+    const globalPaginateMatch = (previewContent || '').match(/<!--\s*paginate:\s*(true|false)\s*-->/i);
+    const globalBgMatch = (previewContent || '').match(/<!--\s*bg:\s*["']?([^"'\n>]+)["']?\s*-->/i);
+
+    const headerMatch = content.match(/<!--\s*header:\s*["']?([^"'\n>]+)["']?\s*-->/i);
+    const footerMatch = content.match(/<!--\s*footer:\s*["']?([^"'\n>]+)["']?\s*-->/i);
+    const paginateMatch = content.match(/<!--\s*paginate:\s*(true|false)\s*-->/i);
+    const bgMatch = content.match(/<!--\s*bg:\s*["']?([^"'\n>]+)["']?\s*-->/i);
+
+    const slideHeader = headerMatch ? headerMatch[1].trim() : globalHeaderMatch ? globalHeaderMatch[1].trim() : '';
+    const slideFooter = footerMatch ? footerMatch[1].trim() : globalFooterMatch ? globalFooterMatch[1].trim() : '';
+    const showPaginate = paginateMatch
+      ? paginateMatch[1].toLowerCase() === 'true'
+      : globalPaginateMatch
+      ? globalPaginateMatch[1].toLowerCase() === 'true'
+      : true;
+    const customBg = bgMatch ? bgMatch[1].trim() : globalBgMatch ? globalBgMatch[1].trim() : '';
+
     const isGlobalDark = theme !== 'light';
 
     return `
@@ -477,6 +516,7 @@ export function DocsSlideView({
       width: 960px;
       height: 540px;
       ${bgStyle}
+      ${customBg ? `background: ${customBg} !important;` : ''}
       color: ${textColor};
       border-radius: 12px;
       box-shadow: ${isDark ? '0 20px 50px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.08)' : '0 15px 35px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)'};
@@ -555,6 +595,25 @@ export function DocsSlideView({
     strong { font-weight: 700; }
     em { font-style: italic; }
     a { color: ${h1Color}; text-decoration: none; }
+    @media print {
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      html, body {
+        overflow: visible !important;
+        background: transparent !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -562,27 +621,58 @@ export function DocsSlideView({
     <div id="scaler-outer">
       <div id="scaler-wrapper">
         <div class="slide-canvas">
+          ${slideHeader ? `<div style="position: absolute; top: 18px; left: 56px; right: 56px; font-size: 12px; font-weight: 600; opacity: 0.65; border-bottom: 1px solid rgba(148,163,184,0.25); padding-bottom: 4px; display: flex; justify-content: space-between;"><span>${slideHeader}</span></div>` : ''}
           <div class="slide-inner" id="slide-content"></div>
+          <div style="position: absolute; bottom: 16px; left: 56px; right: 56px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; opacity: 0.65;">
+            <span>${slideFooter}</span>
+            ${showPaginate ? `<span>${validIndex + 1} / ${slides.length}</span>` : ''}
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const raw = ${JSON.stringify(content)};
-    marked.setOptions({ gfm: true, breaks: true });
-    const container = document.getElementById('slide-content');
-    container.innerHTML = marked.parse(raw);
+  <!-- Embedded Data Payload -->
+  <script type="application/json" id="slide-raw-content">${JSON.stringify(content || '').replace(/<\/script/gi, '<\\/script')}</script>
 
-    renderMathInElement(container, {
-      delimiters: [
-        {left: '$$', right: '$$', display: true},
-        {left: '$', right: '$', display: false},
-      ],
-      throwOnError: false
+  <script>
+    window.addEventListener('error', function(e) {
+      console.warn('Slide preview error:', e.message);
     });
 
-    mermaid.initialize({ startOnLoad: true, theme: '${isDark ? 'dark' : 'default'}' });
+    const raw = JSON.parse(document.getElementById('slide-raw-content').textContent || '""');
+    if (typeof marked !== 'undefined' && marked.setOptions) {
+      marked.setOptions({ gfm: true, breaks: true });
+    }
+    const container = document.getElementById('slide-content');
+    try {
+      if (typeof marked !== 'undefined' && marked.parse) {
+        container.innerHTML = marked.parse(raw);
+      } else {
+        container.textContent = raw;
+      }
+    } catch (e) {
+      console.warn('Slide parse error:', e);
+      container.textContent = raw;
+    }
+
+    try {
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(container, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+          ],
+          throwOnError: false
+        });
+      }
+    } catch (e) {}
+
+    try {
+      if (typeof mermaid !== 'undefined' && mermaid.initialize) {
+        mermaid.initialize({ startOnLoad: true, theme: '${isDark ? 'dark' : 'default'}' });
+      }
+    } catch (e) {}
 
     var SLIDE_W = 960;
     var SLIDE_H = 540;
@@ -761,7 +851,7 @@ export function DocsSlideView({
                   borderColor: isStructureMenuOpen ? 'var(--border-subtle)' : 'transparent',
                   flexShrink: 0,
                 }}
-                title="Struktur / Bagian Slide (TT)"
+                title={language === 'id' ? 'Struktur / Bagian Slide (TT)' : 'Slide Structure / Headings (TT)'}
               >
                 <span style={{ fontFamily: 'serif', fontWeight: 800, fontSize: '12px', lineHeight: 1, letterSpacing: '-0.5px' }}>
                   T<span style={{ fontSize: '9.5px' }}>T</span>
@@ -790,7 +880,7 @@ export function DocsSlideView({
                   }}
                 >
                   <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Struktur Slide Deck
+                    {language === 'id' ? 'Struktur Slide Deck' : 'Slide Deck Structure'}
                   </div>
                   <button
                     type="button"
@@ -798,7 +888,7 @@ export function DocsSlideView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 800, fontSize: '14px', width: '22px', color: 'var(--brand-primary)' }}>#</span>
-                    <span>Judul Slide Utama (H1)</span>
+                    <span>{language === 'id' ? 'Judul Slide Utama (H1)' : 'Main Slide Title (H1)'}</span>
                   </button>
                   <button
                     type="button"
@@ -806,7 +896,7 @@ export function DocsSlideView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '13px', width: '22px', color: '#60a5fa' }}>##</span>
-                    <span>Subjudul / Section (H2)</span>
+                    <span>{language === 'id' ? 'Subjudul / Bagian (H2)' : 'Subtitle / Section (H2)'}</span>
                   </button>
                   <button
                     type="button"
@@ -814,7 +904,7 @@ export function DocsSlideView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '12px', width: '22px', color: '#a78bfa' }}>###</span>
-                    <span>Topik Ringkas (H3)</span>
+                    <span>{language === 'id' ? 'Topik Ringkas (H3)' : 'Subtopic (H3)'}</span>
                   </button>
                   <button
                     type="button"
@@ -822,7 +912,7 @@ export function DocsSlideView({
                     style={popoverItemStyle}
                   >
                     <Quote size={13} style={{ width: '22px', color: '#f59e0b' }} />
-                    <span>Kutipan / Callout Poin</span>
+                    <span>{language === 'id' ? 'Kutipan / Callout Poin' : 'Quote / Callout Point'}</span>
                   </button>
                   <button
                     type="button"
@@ -830,7 +920,7 @@ export function DocsSlideView({
                     style={popoverItemStyle}
                   >
                     <span style={{ fontWeight: 700, fontSize: '12px', width: '22px', color: '#10b981' }}>---</span>
-                    <span>Pemisah Slide Baru (Break)</span>
+                    <span>{language === 'id' ? 'Pemisah Slide Baru (Break)' : 'New Slide Separator (Break)'}</span>
                   </button>
                 </div>,
                 document.body
@@ -842,7 +932,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('**', '**', 'teks tebal')}
               style={{ ...toolbarBtnStyle, fontWeight: 700, flexShrink: 0 }}
-              title="Tebal (Ctrl+B)"
+              title={language === 'id' ? 'Tebal (Ctrl+B)' : 'Bold (Ctrl+B)'}
             >
               B
             </button>
@@ -850,7 +940,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('*', '*', 'teks miring')}
               style={{ ...toolbarBtnStyle, fontStyle: 'italic', fontFamily: 'serif', flexShrink: 0 }}
-              title="Miring (Ctrl+I)"
+              title={language === 'id' ? 'Miring (Ctrl+I)' : 'Italic (Ctrl+I)'}
             >
               I
             </button>
@@ -858,7 +948,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('~~', '~~', 'teks coret')}
               style={{ ...toolbarBtnStyle, textDecoration: 'line-through', flexShrink: 0 }}
-              title="Coret (Strikethrough)"
+              title={language === 'id' ? 'Coret (Strikethrough)' : 'Strikethrough'}
             >
               S
             </button>
@@ -866,7 +956,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('<u>', '</u>', 'teks garis bawah')}
               style={{ ...toolbarBtnStyle, textDecoration: 'underline', flexShrink: 0 }}
-              title="Garis Bawah (Underline)"
+              title={language === 'id' ? 'Garis Bawah (Underline)' : 'Underline'}
             >
               U
             </button>
@@ -874,7 +964,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('`', '`', 'kode')}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Kode Inline"
+              title={language === 'id' ? 'Kode Inline' : 'Inline Code'}
             >
               <Code2 size={12} />
             </button>
@@ -886,7 +976,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('\n- ', '', 'poin slide')}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Daftar Poin (Bullet List)"
+              title={language === 'id' ? 'Daftar Poin (Bullet List)' : 'Bullet List'}
             >
               <List size={12} />
             </button>
@@ -894,7 +984,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('\n1. ', '', 'langkah pertama')}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Daftar Bernomor (Numbered List)"
+              title={language === 'id' ? 'Daftar Bernomor (Numbered List)' : 'Numbered List'}
             >
               <ListOrdered size={12} />
             </button>
@@ -902,7 +992,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('\n> ', '', 'kutipan inspiratif')}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Blok Kutipan (Quote)"
+              title={language === 'id' ? 'Blok Kutipan (Quote)' : 'Blockquote'}
             >
               <Quote size={12} />
             </button>
@@ -914,7 +1004,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('\n```javascript\n', '\n```\n', '// kode program')}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Blok Kode Program"
+              title={language === 'id' ? 'Blok Kode Program' : 'Code Block'}
             >
               <FileText size={12} />
             </button>
@@ -922,7 +1012,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('$$', '$$', 'E = mc^2')}
               style={{ ...toolbarBtnStyle, fontWeight: 700, color: '#f59e0b', fontSize: '10.5px', flexShrink: 0 }}
-              title="Formula Matematika LaTeX ($x$)"
+              title={language === 'id' ? 'Formula Matematika LaTeX ($x$)' : 'LaTeX Math Formula ($x$)'}
             >
               $x$
             </button>
@@ -930,7 +1020,7 @@ export function DocsSlideView({
               type="button"
               onClick={() => insertShortcut('\n| Kolom 1 | Kolom 2 |\n|---|---|\n| Data A | Data B |\n')}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Sisipkan Tabel Markdown"
+              title={language === 'id' ? 'Sisipkan Tabel Markdown' : 'Insert Markdown Table'}
             >
               <TableIcon size={12} />
             </button>
@@ -943,7 +1033,7 @@ export function DocsSlideView({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => triggerAddCommentFromSelection(textareaRef.current, code)}
               style={{ ...toolbarBtnStyle, flexShrink: 0 }}
-              title="Tambah Komentar Review (Ctrl+Shift+C)"
+              title={language === 'id' ? 'Tambah Komentar Review (Ctrl+Shift+C)' : 'Add Review Comment (Ctrl+Shift+C)'}
             >
               <MessageSquarePlus size={12} />
             </button>
@@ -973,7 +1063,7 @@ export function DocsSlideView({
                   flexShrink: 0,
                 }}
                 className="hover-subtle"
-                title="Pilih Tema Slide"
+                title={language === 'id' ? 'Pilih Tema Slide' : 'Select Slide Theme'}
               >
                 <Palette
                   size={13}
@@ -1004,7 +1094,7 @@ export function DocsSlideView({
                   }}
                 >
                   <div style={{ padding: '4px 8px 3px', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Tema Tampilan Slide
+                    {language === 'id' ? 'Tema Tampilan Slide' : 'Slide Appearance Theme'}
                   </div>
                   <button
                     type="button"
@@ -1070,7 +1160,7 @@ export function DocsSlideView({
                 color: 'var(--brand-primary)',
                 flexShrink: 0,
               }}
-              title="Tambah Slide Baru dengan pembatas (---)"
+              title={language === 'id' ? 'Tambah Slide Baru dengan pembatas (---)' : 'Add New Slide with separator (---)'}
             >
               <Plus size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
             </button>
@@ -1228,7 +1318,7 @@ export function DocsSlideView({
                 isAutoCompile={isAutoCompile}
                 onRecompile={handleRecompile}
                 onToggleAutoCompile={setIsAutoCompile}
-                title="Kompilasi Ulang Slide (Ctrl+Enter)"
+                title={language === 'id' ? 'Kompilasi Ulang Slide (Ctrl+Enter)' : 'Recompile Slide (Ctrl+Enter)'}
               />
 
               {/* Present (F5) Button (Between Recompile and Download) */}
@@ -1252,7 +1342,7 @@ export function DocsSlideView({
                   boxShadow: '0 2px 8px rgba(0, 115, 234, 0.3)',
                   flexShrink: 0,
                 }}
-                title="Tampilkan Presentasi Layar Penuh (F5)"
+                title={language === 'id' ? 'Tampilkan Presentasi Layar Penuh (F5)' : 'Full Screen Presentation (F5)'}
               >
                 <Play size={10} fill="#ffffff" />
                 <span>{language === 'id' ? 'Presentasi (F5)' : 'Present (F5)'}</span>
@@ -1285,7 +1375,7 @@ export function DocsSlideView({
                     transition: 'all 0.15s ease',
                   }}
                   className="hover-subtle"
-                  title="Unduh / Ekspor Slide"
+                  title={language === 'id' ? 'Unduh / Ekspor Slide' : 'Download / Export Slide'}
                 >
                   <Download size={14} />
                 </button>
@@ -1311,18 +1401,33 @@ export function DocsSlideView({
                     }}
                   >
                     <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Opsi Ekspor Slide
+                      {language === 'id' ? 'Opsi Ekspor Slide' : 'Slide Export Options'}
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        window.print();
+                        if (activeDoc) downloadDocAsZip(activeDoc);
+                        setIsDownloadMenuOpen(false);
+                      }}
+                      style={popoverItemStyle}
+                    >
+                      <Download size={13} color="#3B82F6" />
+                      <span>{language === 'id' ? 'Unduh ZIP Slide (.zip)' : 'Download Slide ZIP (.zip)'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (previewIframeRef.current?.contentWindow) {
+                          previewIframeRef.current.contentWindow.print();
+                        } else {
+                          window.print();
+                        }
                         setIsDownloadMenuOpen(false);
                       }}
                       style={popoverItemStyle}
                     >
                       <Printer size={13} color="var(--brand-primary)" />
-                      <span>Cetak / Simpan PDF</span>
+                      <span>{language === 'id' ? 'Cetak / Simpan PDF' : 'Print / Save as PDF'}</span>
                     </button>
                     <button
                       type="button"
@@ -1333,7 +1438,7 @@ export function DocsSlideView({
                       style={popoverItemStyle}
                     >
                       <Layers size={13} color="#8B5CF6" />
-                      <span>Ekspor HTML Standalone</span>
+                      <span>{language === 'id' ? 'Ekspor HTML Standalone' : 'Export Standalone HTML'}</span>
                     </button>
                     <button
                       type="button"
@@ -1344,7 +1449,7 @@ export function DocsSlideView({
                       style={popoverItemStyle}
                     >
                       <FileText size={13} color="#10B981" />
-                      <span>File Markdown (.slide)</span>
+                      <span>{language === 'id' ? 'File Markdown (.slide)' : 'Markdown File (.slide)'}</span>
                     </button>
                   </div>,
                   document.body
@@ -1374,7 +1479,7 @@ export function DocsSlideView({
                   transition: 'all 0.15s ease',
                 }}
                 className={validIndex > 0 ? 'hover-subtle' : ''}
-                title="Slide Sebelumnya (←)"
+                title={language === 'id' ? 'Slide Sebelumnya (←)' : 'Previous Slide (←)'}
               >
                 <ChevronLeft size={14} />
               </button>
@@ -1423,7 +1528,7 @@ export function DocsSlideView({
                   transition: 'all 0.15s ease',
                 }}
                 className={validIndex < slides.length - 1 ? 'hover-subtle' : ''}
-                title="Slide Selanjutnya (→)"
+                title={language === 'id' ? 'Slide Selanjutnya (→)' : 'Next Slide (→)'}
               >
                 <ChevronRight size={14} />
               </button>
@@ -1464,7 +1569,7 @@ export function DocsSlideView({
                   textAlign: 'center',
                   cursor: 'pointer',
                 }}
-                title="Klik untuk reset zoom 100%"
+                title={language === 'id' ? 'Klik untuk reset zoom 100%' : 'Click to reset zoom to 100%'}
               >
                 {zoomLevel}%
               </span>
@@ -1648,7 +1753,7 @@ export function DocsSlideView({
               srcDoc={getSlideHtml(slides[validIndex] || '')}
               sandbox="allow-scripts allow-modals allow-same-origin"
               style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-              title="Fullscreen Presentation"
+              title={language === 'id' ? 'Presentasi Layar Penuh' : 'Fullscreen Presentation'}
             />
           </div>
 

@@ -56,7 +56,7 @@ export function DocsGeneratingView({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: isFinished ? '#10B981' : 'var(--brand-primary)',
+            color: isFinished ? 'var(--accent-success, #10B981)' : 'var(--brand-primary)',
             transition: 'all 0.3s ease',
           }}
         >
@@ -95,24 +95,36 @@ export function DocsGeneratingView({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-primary)' }}>
-            <CheckCircle2 size={15} color="#10B981" />
-            <span>Menganalisis kebutuhan & merancang kerangka ilmiah</span>
+            <CheckCircle2 size={15} color="var(--accent-success, #10B981)" />
+            <span>
+              {language === 'id'
+                ? 'Menganalisis kebutuhan & merancang kerangka ilmiah'
+                : 'Analyzing requirements & structuring scientific outline'}
+            </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: isFinished ? 'var(--text-primary)' : 'var(--brand-primary)' }}>
             {isFinished ? (
-              <CheckCircle2 size={15} color="#10B981" />
+              <CheckCircle2 size={15} color="var(--accent-success, #10B981)" />
             ) : (
               <RefreshCw size={14} className="spin" color="var(--brand-primary)" />
             )}
-            <span>Menulis formulasi LaTeX, tabel data, & sitasi referensi</span>
+            <span>
+              {language === 'id'
+                ? 'Menulis formulasi LaTeX, tabel data, & sitasi referensi'
+                : 'Drafting LaTeX formulas, data tables, & references'}
+            </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: isFinished ? 'var(--text-primary)' : 'var(--text-muted)' }}>
             {isFinished ? (
-              <CheckCircle2 size={15} color="#10B981" />
+              <CheckCircle2 size={15} color="var(--accent-success, #10B981)" />
             ) : (
               <div style={{ width: '15px', height: '15px', borderRadius: '50%', border: '2px solid var(--border-subtle)' }} />
             )}
-            <span>Validasi sintaks KaTeX & kompilasi lembar Overleaf</span>
+            <span>
+              {language === 'id'
+                ? 'Validasi sintaks KaTeX & kompilasi lembar Overleaf'
+                : 'Validating KaTeX syntax & compiling document view'}
+            </span>
           </div>
         </div>
 
@@ -169,7 +181,7 @@ export function DocsGeneratingView({
           </button>
         ) : (
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Mohon tunggu beberapa detik...
+            {language === 'id' ? 'Mohon tunggu beberapa detik...' : 'Please wait a moment...'}
           </div>
         )}
       </div>

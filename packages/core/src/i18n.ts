@@ -31,8 +31,8 @@ export const TRANSLATIONS = {
     nav: {
       chat: 'Chat',
       newChat: 'New Chat',
-      docs: 'Docs & LaTeX',
-      imagine: 'Image',
+      docs: 'Docs Studio',
+      imagine: 'Media Studio',
       pdfTools: 'PDF',
       automations: 'Automations',
       gateway: 'Route Gateway',
@@ -429,8 +429,8 @@ export const TRANSLATIONS = {
     nav: {
       chat: 'Percakapan',
       newChat: 'Percakapan Baru',
-      docs: 'Dokumen & LaTeX',
-      imagine: 'Gambar',
+      docs: 'Docs Studio',
+      imagine: 'Media Studio',
       pdfTools: 'PDF',
       automations: 'Otomatisasi',
       gateway: 'Route Gateway',

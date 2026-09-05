@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { getTierStorageName, getTierBadgeStyle } from '@anticeil/core';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Search,
@@ -65,6 +65,7 @@ import { useSettingsStore } from '../../features/settings/store/useSettingsStore
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { ConnectorsModal } from '../../features/connectors/components/ConnectorsModal';
 import { StorageMeter } from '../../features/storage/components/StorageMeter';
+import { BottomRailMeters } from './BottomRailMeters';
 import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
@@ -594,7 +595,7 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
         >
           {/* Pin / Unpin */}
           {(() => {
-            const pinColor = item.type === 'video' ? '#fb7185' : item.type === 'audio' ? '#60a5fa' : '#A25DDC';
+            const pinColor = item.type === 'video' ? '#fb7185' : item.type === 'audio' ? '#60a5fa' : 'var(--rail-media-color)';
             return (
               <button
                 type="button"
@@ -716,12 +717,12 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
                       style={{
                         display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
                         borderRadius: '4px', border: 'none',
-                        background: item.collectionId === c.id ? 'rgba(162, 93, 220, 0.15)' : 'transparent',
-                        color: item.collectionId === c.id ? '#A25DDC' : 'var(--text-primary)',
+                        background: item.collectionId === c.id ? 'var(--rail-media-bg)' : 'transparent',
+                        color: item.collectionId === c.id ? 'var(--rail-media-color)' : 'var(--text-primary)',
                         fontSize: '11px', cursor: 'pointer', textAlign: 'left', fontWeight: item.collectionId === c.id ? 600 : 400,
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = item.collectionId === c.id ? 'rgba(162, 93, 220, 0.15)' : 'transparent')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = item.collectionId === c.id ? 'var(--rail-media-bg)' : 'transparent')}
                     >
                       <Folder size={11} />
                       <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
@@ -1245,10 +1246,14 @@ function DocSidebarItem({
   onMove,
 }: DocSidebarItemProps) {
   const getFormatIcon = () => {
-    if (doc.format === 'sheet') return <Table size={12} color="#10B981" style={{ flexShrink: 0 }} />;
-    if (doc.format === 'slide') return <Presentation size={12} color="#8B5CF6" style={{ flexShrink: 0 }} />;
-    return <FileText size={12} color="#0073EA" style={{ flexShrink: 0 }} />;
+    if (doc.format === 'sheet') return <Table size={12} color="#22c55e" style={{ flexShrink: 0 }} />;
+    if (doc.format === 'slide') return <Presentation size={12} color="#f59e0b" style={{ flexShrink: 0 }} />;
+    return <FileText size={12} color="var(--brand-primary)" style={{ flexShrink: 0 }} />;
   };
+
+  const activeColor = doc.format === 'sheet' ? '#22c55e' : doc.format === 'slide' ? '#f59e0b' : 'var(--brand-primary)';
+  const activeBg = doc.format === 'sheet' ? 'rgba(34, 197, 94, 0.12)' : doc.format === 'slide' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 115, 234, 0.12)';
+  const pinnedBg = doc.format === 'sheet' ? 'rgba(34, 197, 94, 0.05)' : doc.format === 'slide' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(0, 115, 234, 0.05)';
 
   return (
     <div
@@ -1259,8 +1264,8 @@ function DocSidebarItem({
         gap: '7px',
         padding: '4px 8px',
         borderRadius: 'var(--radius-sm, 6px)',
-        background: isActive ? 'rgba(0, 115, 234, 0.12)' : doc.isPinned ? 'rgba(0, 115, 234, 0.05)' : 'transparent',
-        color: isActive ? 'var(--brand-primary)' : 'var(--text-secondary)',
+        background: isActive ? activeBg : doc.isPinned ? pinnedBg : 'transparent',
+        color: isActive ? activeColor : 'var(--text-secondary)',
         fontSize: '12px',
         fontWeight: isActive ? 600 : 400,
         cursor: 'pointer',
@@ -1278,13 +1283,13 @@ function DocSidebarItem({
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            color: isActive ? 'var(--brand-primary)' : 'var(--text-primary)',
+            color: isActive ? activeColor : 'var(--text-primary)',
             flex: 1,
           }}
         >
           {doc.title || 'Untitled Doc'}
         </span>
-        {doc.isPinned && <Pin size={9} color="var(--brand-primary)" style={{ flexShrink: 0 }} />}
+        {doc.isPinned && <Pin size={9} color={activeColor} style={{ flexShrink: 0 }} />}
       </div>
 
       <DocItemMenu
@@ -1296,6 +1301,114 @@ function DocSidebarItem({
         onTogglePin={onTogglePin}
         onMove={onMove}
       />
+    </div>
+  );
+}
+
+interface DateGroup<T> {
+  labelId: string;
+  labelEn: string;
+  items: T[];
+}
+
+function groupItemsByDate<T extends { updatedAt?: number; createdAt?: number; isPinned?: boolean }>(
+  items: T[]
+): DateGroup<T>[] {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfYesterday = startOfToday - 24 * 60 * 60 * 1000;
+  const startOf7Days = startOfToday - 7 * 24 * 60 * 60 * 1000;
+
+  const getTime = (item: T) => item.updatedAt || item.createdAt || 0;
+
+  const pinned = items.filter((item) => item.isPinned);
+  const unpinned = items.filter((item) => !item.isPinned);
+
+  const today = unpinned.filter((item) => getTime(item) >= startOfToday);
+  const yesterday = unpinned.filter((item) => getTime(item) >= startOfYesterday && getTime(item) < startOfToday);
+  const previous7Days = unpinned.filter((item) => getTime(item) >= startOf7Days && getTime(item) < startOfYesterday);
+  const earlier = unpinned.filter((item) => getTime(item) < startOf7Days);
+
+  const groups: DateGroup<T>[] = [];
+
+  if (pinned.length > 0) {
+    groups.push({ labelId: 'Disematkan', labelEn: 'Pinned', items: pinned });
+  }
+  if (today.length > 0) {
+    groups.push({ labelId: 'Hari Ini', labelEn: 'Today', items: today });
+  }
+  if (yesterday.length > 0) {
+    groups.push({ labelId: 'Kemarin', labelEn: 'Yesterday', items: yesterday });
+  }
+  if (previous7Days.length > 0) {
+    groups.push({ labelId: '7 Hari Terakhir', labelEn: 'Previous 7 Days', items: previous7Days });
+  }
+  if (earlier.length > 0) {
+    groups.push({ labelId: 'Sebelumnya', labelEn: 'Earlier', items: earlier });
+  }
+
+  return groups;
+}
+
+interface RailIconButtonProps {
+  href?: string;
+  onClick?: () => void;
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
+  colorType: 'chat' | 'docs' | 'media';
+}
+
+function RailIconButton({ href, onClick, icon, label, isActive, colorType }: RailIconButtonProps) {
+  const [hovered, setHovered] = useState(false);
+
+  const className = `rail-icon-btn ${colorType}-btn${isActive ? ' active' : ''}`;
+
+  return (
+    <div
+      style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {href ? (
+        <Link href={href} onClick={onClick} className={className} aria-label={label}>
+          {icon}
+        </Link>
+      ) : (
+        <button type="button" onClick={onClick} className={className} aria-label={label}>
+          {icon}
+        </button>
+      )}
+
+      {/* Floating Tag (Symmetric 1:1 with AI Credit Ring Floating Tag) */}
+      {hovered && (
+        <div
+          className="animate-fade-in"
+          style={{
+            position: 'absolute',
+            left: 'calc(100% + 12px)',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            backgroundColor: 'var(--bg-surface, #18181b)',
+            border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
+            borderRadius: '8px',
+            padding: '5px 10px',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '11px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            pointerEvents: 'none',
+          }}
+        >
+          <span className={`rail-tag-dot ${colorType}-dot`} />
+          <span>{label}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -1319,13 +1432,17 @@ export function Sidebar({
   // Track which project folders are expanded (showing their chats)
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
   const [isMounted, setIsMounted] = useState(false);
+  const [avatarImgError, setAvatarImgError] = useState(false);
   const session = useAuthStore((s) => s.session);
 
-  const isImage = pathname === '/image';
-  const isVideo = pathname === '/video';
-  const isAudio = pathname === '/audio';
-  const isDocs = pathname === '/docs' || pathname.startsWith('/docs');
-  const isMediaMode = isImage || isVideo || isAudio;
+  const searchParams = useSearchParams();
+  const currentTab = searchParams?.get('tab');
+  const isMedia = pathname === '/media' || pathname?.startsWith('/media');
+  const isImage = pathname === '/image' || (isMedia && (!currentTab || currentTab === 'image'));
+  const isVideo = pathname === '/video' || (isMedia && currentTab === 'video');
+  const isAudio = pathname === '/audio' || (isMedia && currentTab === 'audio');
+  const isDocs = pathname === '/docs' || pathname?.startsWith('/docs');
+  const isMediaMode = isMedia || pathname === '/image' || pathname === '/video' || pathname === '/audio';
 
   // Docs store state (isolated database & folders completely independent from Chat)
   const docs = useDocsStore((s) => s.documents);
@@ -1335,6 +1452,8 @@ export function Sidebar({
   const deleteDocFolder = useDocsStore((s) => s.deleteFolder);
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const activeProjectId = useDocsStore((s) => s.activeProjectId);
+  const selectedDocFormat = useDocsStore((s) => s.selectedFormat);
+  const setSelectedDocFormat = useDocsStore((s) => s.setSelectedFormat);
   const setActiveDocId = useDocsStore((s) => s.setActiveDocId);
   const setActiveProjectId = useDocsStore((s) => s.setActiveProjectId);
   const createDocument = useDocsStore((s) => s.createDocument);
@@ -1346,11 +1465,31 @@ export function Sidebar({
   const [isAddingDocFolder, setIsAddingDocFolder] = useState(false);
   const [newDocFolderName, setNewDocFolderName] = useState('');
 
+  // Active Doc format derivation & format filtering
+  const activeDoc = docs.find((d) => d.id === activeDocId || (pathname.startsWith('/docs/') && pathname.endsWith(d.id)));
+  const currentDocFormat = pathname === '/docs' ? selectedDocFormat : (activeDoc?.format || selectedDocFormat || 'latex');
+  const isSheetDoc = currentDocFormat === 'sheet';
+  const isSlideDoc = currentDocFormat === 'slide';
+  const isLatexDoc = !isSheetDoc && !isSlideDoc;
+
+  // Filtered documents by format (LaTeX/Document, Sheet, Slide) and search query
+  const filteredDocs = useMemo(() => {
+    return docs.filter((d) => {
+      const matchSearch = d.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchFormat = isSheetDoc
+        ? d.format === 'sheet'
+        : isSlideDoc
+        ? d.format === 'slide'
+        : (d.format === 'latex' || d.format === 'typst' || d.format === 'markdown' || !d.format);
+      return matchSearch && matchFormat;
+    });
+  }, [docs, searchQuery, isSheetDoc, isSlideDoc]);
+
   const unassignedDocs = useMemo(() => {
-    return docs
-      .filter((d) => !d.projectId && d.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    return filteredDocs
+      .filter((d) => !d.projectId)
       .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || b.updatedAt - a.updatedAt);
-  }, [docs, searchQuery]);
+  }, [filteredDocs]);
 
   // Imagine Mode UI States
   const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
@@ -1371,9 +1510,9 @@ export function Sidebar({
     type: item.type,
   }));
 
-  const mediaAccentColor = isVideo ? '#fb7185' : isAudio ? '#60a5fa' : '#A25DDC';
-  const mediaBadgeBg = isVideo ? 'rgba(251, 113, 133, 0.15)' : isAudio ? 'rgba(96, 165, 250, 0.15)' : 'rgba(162, 93, 220, 0.15)';
-  const mediaPinnedBg = isVideo ? 'rgba(251, 113, 133, 0.08)' : isAudio ? 'rgba(96, 165, 250, 0.08)' : 'rgba(162, 93, 220, 0.08)';
+  const mediaAccentColor = isVideo ? '#fb7185' : isAudio ? '#60a5fa' : 'var(--rail-media-color)';
+  const mediaBadgeBg = isVideo ? 'rgba(251, 113, 133, 0.15)' : isAudio ? 'rgba(96, 165, 250, 0.15)' : 'var(--rail-media-bg)';
+  const mediaPinnedBg = isVideo ? 'rgba(251, 113, 133, 0.08)' : isAudio ? 'rgba(96, 165, 250, 0.08)' : 'rgba(56, 189, 248, 0.08)';
 
   // Strictly isolate history by media type: video on /video, audio on /audio, image on /image
   const currentMediaHistory = useMemo(() => {
@@ -1747,7 +1886,7 @@ export function Sidebar({
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0, flex: 1 }}>
           <MessageSquare
             size={13}
-            color={isActive ? 'var(--brand-primary)' : 'var(--text-muted)'}
+            color={isActive ? 'var(--rail-chat-color)' : 'var(--text-muted)'}
             style={{ flexShrink: 0 }}
           />
           <span
@@ -2106,8 +2245,122 @@ export function Sidebar({
 
   const displayEmail = user?.email || '-';
 
-  // Prevent hydration mismatch by not rendering until mounted
+  const avatarUrl =
+    (typeof user?.user_metadata?.avatar_url === 'string' && user.user_metadata.avatar_url) ||
+    (typeof user?.user_metadata?.picture === 'string' && user.user_metadata.picture) ||
+    null;
+
+  // Prevent hydration mismatch by rendering correctly proportioned placeholder until mounted
   if (!isMounted) {
+    if (railOnly) {
+      return (
+        <aside
+          className="sidebar-rail-aside"
+          style={{
+            width: '48px',
+            minWidth: '48px',
+            maxWidth: '48px',
+            height: '100%',
+            display: 'flex',
+            background: 'var(--bg-main)',
+            borderRight: '1px solid var(--border-subtle)',
+            flexShrink: 0,
+            zIndex: 1000,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            className="sidebar-icon-rail"
+            style={{
+              width: '48px',
+              height: '100%',
+              background: 'var(--bg-main)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: 0,
+              flexShrink: 0,
+            }}
+          >
+            {/* Top: Brand Logo matching header height 48px */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+              <div
+                style={{
+                  height: '48px',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <img
+                    src="/anticeil-logo.png"
+                    alt="Anticeil Logo"
+                    style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Quick App Icons Placeholder */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
+                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: pathname === '/chat' ? 'rgba(0, 115, 234, 0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <MessageSquare size={17} color={pathname === '/chat' ? 'var(--brand-primary)' : 'var(--text-muted)'} />
+                </div>
+                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'rgba(0, 115, 234, 0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileText size={17} color={(pathname === '/docs' || pathname.startsWith('/docs')) ? 'var(--brand-primary)' : 'var(--text-muted)'} />
+                </div>
+                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: (pathname === '/media' || pathname.startsWith('/audio') || pathname.startsWith('/image') || pathname.startsWith('/video')) ? 'rgba(162, 93, 220, 0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Sparkles size={17} color={(pathname === '/media' || pathname.startsWith('/audio') || pathname.startsWith('/image') || pathname.startsWith('/video')) ? '#A25DDC' : 'var(--text-muted)'} />
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Section */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                }}
+              />
+            </div>
+          </div>
+        </aside>
+      );
+    }
+
+    if (drawerOnly) {
+      return (
+        <aside
+          className={`app-sidebar-drawer drawer-only-panel ${isOpenMobile ? 'drawer-open' : ''} ${isDesktopCollapsed ? 'collapsed' : ''}`}
+          style={{
+            height: '100%',
+            display: 'flex',
+            background: 'var(--bg-sidebar)',
+            flexShrink: 0,
+            zIndex: 1000,
+            overflow: 'visible',
+            border: 'none',
+          }}
+        />
+      );
+    }
+
     return (
       <aside
         className={`app-sidebar-drawer ${isOpenMobile ? 'drawer-open' : ''} ${isDesktopCollapsed ? 'collapsed' : ''}`}
@@ -2153,7 +2406,7 @@ export function Sidebar({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 0 12px 0',
+          padding: 0,
           flexShrink: 0,
         }}
       >
@@ -2220,100 +2473,40 @@ export function Sidebar({
           {/* Quick App Icons */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
             {/* Chat */}
-            <Link
+            <RailIconButton
               href="/chat"
-              title={t.nav.chat}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: pathname === '/chat' ? 'var(--brand-subtle, rgba(0, 115, 234, 0.15))' : 'transparent',
-                color: pathname === '/chat' ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <MessageSquare size={17} />
-            </Link>
+              label={t.nav.chat || 'Anticeil Chat'}
+              icon={<MessageSquare size={17} />}
+              isActive={pathname === '/chat'}
+              colorType="chat"
+            />
 
-            {/* Docs & LaTeX */}
-            <Link
+            {/* Docs Studio */}
+            <RailIconButton
               href="/docs"
-              title={t.nav.docs || 'Docs & LaTeX'}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'rgba(0, 115, 234, 0.15)' : 'transparent',
-                color: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <FileText size={17} />
-            </Link>
+              label={t.nav.docs || 'Docs Studio'}
+              icon={<FileText size={17} />}
+              isActive={pathname === '/docs' || pathname.startsWith('/docs')}
+              colorType="docs"
+            />
 
-            {/* Image */}
-            <Link
-              href="/image"
-              title={t.nav.imagine}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: pathname === '/image' ? 'rgba(162, 93, 220, 0.2)' : 'transparent',
-                color: pathname === '/image' ? '#A25DDC' : 'var(--text-secondary)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <ImageIcon size={17} />
-            </Link>
-
-            {/* Video */}
-            <Link
-              href="/video"
-              title={language === 'id' ? 'Video' : 'Video'}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: pathname === '/video' ? 'rgba(251, 113, 133, 0.2)' : 'transparent',
-                color: pathname === '/video' ? '#fb7185' : 'var(--text-secondary)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Film size={17} />
-            </Link>
-
-            {/* Audio */}
-            <Link
-              href="/audio"
-              title={language === 'id' ? 'Audio' : 'Audio'}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: pathname === '/audio' ? 'rgba(96, 165, 250, 0.2)' : 'transparent',
-                color: pathname === '/audio' ? '#60a5fa' : 'var(--text-secondary)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Music size={17} />
-            </Link>
+            {/* Media Studio */}
+            <RailIconButton
+              href="/media"
+              label={t.nav.imagine || 'Media Studio'}
+              icon={<Sparkles size={17} />}
+              isActive={isMediaMode}
+              colorType="media"
+            />
           </div>
+        </div>
+
+        {/* Bottom of 48px Rail: Circular AI Credits Ring + Storage Ring */}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <BottomRailMeters
+            onOpenTopup={() => openPricingModal('topup')}
+            onOpenTiers={() => openPricingModal('tiers')}
+          />
         </div>
       </div>}
 
@@ -2344,8 +2537,8 @@ export function Sidebar({
               borderRight: '1px solid var(--border-subtle)',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'flex-start',
-              padding: '0 0 12px 0',
+              justifyContent: 'space-between',
+              padding: 0,
               flexShrink: 0,
             }}
           >
@@ -2387,101 +2580,47 @@ export function Sidebar({
 
               {/* Quick App Icons */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
-                <Link
+                <RailIconButton
                   href="/chat"
-                  title={t.nav.chat}
                   onClick={onCloseMobile}
-                  style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: pathname === '/chat' ? 'var(--brand-subtle, rgba(0, 115, 234, 0.15))' : 'transparent',
-                  color: pathname === '/chat' ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <MessageSquare size={17} />
-              </Link>
-              
-              <Link
-                href="/docs"
-                title={t.nav.docs || 'Docs & LaTeX'}
-                onClick={onCloseMobile}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'rgba(0, 115, 234, 0.15)' : 'transparent',
-                  color: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <FileText size={17} />
-              </Link>
-              
-              <Link
-                href="/image"
-                title={t.nav.imagine}
-                onClick={onCloseMobile}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: pathname === '/image' ? 'rgba(162, 93, 220, 0.2)' : 'transparent',
-                  color: pathname === '/image' ? '#A25DDC' : 'var(--text-secondary)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <ImageIcon size={17} />
-              </Link>
-              
-              <Link
-                href="/video"
-                title={language === 'id' ? 'Video' : 'Video'}
-                onClick={onCloseMobile}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: pathname === '/video' ? 'rgba(251, 113, 133, 0.2)' : 'transparent',
-                  color: pathname === '/video' ? '#fb7185' : 'var(--text-secondary)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Film size={17} />
-              </Link>
-              
-              <Link
-                href="/audio"
-                title={language === 'id' ? 'Audio' : 'Audio'}
-                onClick={onCloseMobile}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: pathname === '/audio' ? 'rgba(96, 165, 250, 0.2)' : 'transparent',
-                  color: pathname === '/audio' ? '#60a5fa' : 'var(--text-secondary)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Music size={17} />
-              </Link>
+                  label={t.nav.chat || 'Anticeil Chat'}
+                  icon={<MessageSquare size={17} />}
+                  isActive={pathname === '/chat'}
+                  colorType="chat"
+                />
+                
+                <RailIconButton
+                  href="/docs"
+                  onClick={onCloseMobile}
+                  label={t.nav.docs || 'Docs Studio'}
+                  icon={<FileText size={17} />}
+                  isActive={pathname === '/docs' || pathname.startsWith('/docs')}
+                  colorType="docs"
+                />
+                
+                <RailIconButton
+                  href="/media"
+                  onClick={onCloseMobile}
+                  label={t.nav.imagine || 'Media Studio'}
+                  icon={<Sparkles size={17} />}
+                  isActive={isMediaMode}
+                  colorType="media"
+                />
               </div>
+            </div>
+
+            {/* Bottom of 48px Rail in Drawer Mode: Circular AI Credits Ring */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <BottomRailMeters
+                onOpenTopup={() => {
+                  onCloseMobile?.();
+                  openPricingModal('topup');
+                }}
+                onOpenTiers={() => {
+                  onCloseMobile?.();
+                  openPricingModal('tiers');
+                }}
+              />
             </div>
           </div>
         )}
@@ -2520,12 +2659,10 @@ export function Sidebar({
                 textOverflow: 'ellipsis',
               }}
             >
-              {isImage
-                ? 'Anticeil Image'
-                : isVideo
-                ? 'Anticeil Video'
-                : isAudio
-                ? 'Anticeil Audio'
+              {isMediaMode
+                ? 'Media Studio'
+                : isDocs
+                ? 'Docs Studio'
                 : 'Anticeil'}
             </span>
           </div>
@@ -2601,14 +2738,10 @@ export function Sidebar({
                   textOverflow: 'ellipsis',
                 }}
               >
-                {isImage
-                  ? (t.nav.imagine || (language === 'id' ? 'Gambar' : 'Image'))
-                  : isVideo
-                  ? 'Video'
-                  : isAudio
-                  ? 'Audio'
+                {isMediaMode
+                  ? 'Media Studio'
                   : isDocs
-                  ? (language === 'id' ? 'Dokumen' : 'Docs')
+                  ? 'Docs Studio'
                   : (language === 'id' ? 'Percakapan' : 'Chat')}
               </span>
             </div>
@@ -2638,7 +2771,7 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Mobile-only Feature Subheader (e.g. PERCAKAPAN, DOKUMEN, VIDEO) with Close Button */}
+        {/* Mobile-only Feature Subheader (e.g. PERCAKAPAN, DOCS STUDIO, MEDIA STUDIO) with Close Button */}
         <div
           className="show-on-drawer"
           style={{
@@ -2660,14 +2793,10 @@ export function Sidebar({
               letterSpacing: '0.04em',
             }}
           >
-            {isImage
-              ? (t.nav.imagine || (language === 'id' ? 'Gambar' : 'Image'))
-              : isVideo
-              ? 'Video'
-              : isAudio
-              ? 'Audio'
+            {isMediaMode
+              ? 'Media Studio'
               : isDocs
-              ? (language === 'id' ? 'Dokumen' : 'Docs')
+              ? 'Docs Studio'
               : (language === 'id' ? 'Percakapan' : 'Chat')}
           </span>
 
@@ -2694,130 +2823,167 @@ export function Sidebar({
 
         {/* Primary Action Button (Mode-Aware) */}
         <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {isImage ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (pathname !== '/image') router.push('/image');
-                if (onCloseMobile) onCloseMobile();
-              }}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 10px',
-                borderRadius: 'var(--radius-md, 6px)',
-                background: pathname === '/image' ? 'var(--bg-subtle)' : 'transparent',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'left',
-                transition: 'background 0.15s ease',
-              }}
-            >
-              <Sparkles size={15} color="#A25DDC" />
-              <span>{language === 'id' ? 'Gambar Baru' : 'New Image'}</span>
-            </button>
-          ) : isVideo ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (pathname !== '/video') router.push('/video');
-                if (onCloseMobile) onCloseMobile();
-              }}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 10px',
-                borderRadius: 'var(--radius-md, 6px)',
-                background: pathname === '/video' ? 'var(--bg-subtle)' : 'transparent',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'left',
-                transition: 'background 0.15s ease',
-              }}
-            >
-              <Film size={15} color="#fb7185" />
-              <span>{language === 'id' ? 'Video Baru' : 'New Video'}</span>
-            </button>
-          ) : isAudio ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (pathname !== '/audio') router.push('/audio');
-                if (onCloseMobile) onCloseMobile();
-              }}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 10px',
-                borderRadius: 'var(--radius-md, 6px)',
-                background: pathname === '/audio' ? 'var(--bg-subtle)' : 'transparent',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'left',
-                transition: 'background 0.15s ease',
-              }}
-            >
-              <Music size={15} color="#60a5fa" />
-              <span>{language === 'id' ? 'Audio Baru' : 'New Audio'}</span>
-            </button>
+          {isMediaMode ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  router.push('/media?tab=image');
+                  if (onCloseMobile) onCloseMobile();
+                }}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius-md, 6px)',
+                  background: isImage ? 'var(--rail-media-bg)' : 'transparent',
+                  border: isImage ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid transparent',
+                  color: isImage ? 'var(--rail-media-color)' : 'var(--text-primary)',
+                  fontSize: '12.5px',
+                  fontWeight: isImage ? 600 : 500,
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <ImageIcon size={14} color="var(--rail-media-color)" />
+                <span>{language === 'id' ? 'Gambar Baru' : 'New Image'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  router.push('/media?tab=video');
+                  if (onCloseMobile) onCloseMobile();
+                }}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius-md, 6px)',
+                  background: isVideo ? 'rgba(251, 113, 133, 0.12)' : 'transparent',
+                  border: isVideo ? '1px solid rgba(251, 113, 133, 0.3)' : '1px solid transparent',
+                  color: isVideo ? '#fb7185' : 'var(--text-primary)',
+                  fontSize: '12.5px',
+                  fontWeight: isVideo ? 600 : 500,
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Film size={14} color="#fb7185" />
+                <span>{language === 'id' ? 'Video Baru' : 'New Video'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  router.push('/media?tab=audio');
+                  if (onCloseMobile) onCloseMobile();
+                }}
+                className="clickable-pill"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius-md, 6px)',
+                  background: isAudio ? 'rgba(96, 165, 250, 0.12)' : 'transparent',
+                  border: isAudio ? '1px solid rgba(96, 165, 250, 0.3)' : '1px solid transparent',
+                  color: isAudio ? '#60a5fa' : 'var(--text-primary)',
+                  fontSize: '12.5px',
+                  fontWeight: isAudio ? 600 : 500,
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Music size={14} color="#60a5fa" />
+                <span>{language === 'id' ? 'Audio Baru' : 'New Audio'}</span>
+              </button>
+            </div>
           ) : isDocs ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
-              {(
-                [
-                  { format: 'latex' as const, icon: <FileText size={13} color="var(--brand-primary)" />, label: language === 'id' ? 'Dokumen Baru' : 'New Document' },
-                  { format: 'sheet' as const, icon: <Table size={13} color="#22c55e" />, label: language === 'id' ? 'Spreadsheet Baru' : 'New Spreadsheet' },
-                  { format: 'slide' as const, icon: <Presentation size={13} color="#f59e0b" />, label: language === 'id' ? 'Slide Baru' : 'New Slide' },
-                ]
-              ).map(({ format, icon, label }) => (
-                <button
-                  key={format}
-                  type="button"
-                  onClick={() => {
-                    const newId = createDocument(label, undefined, format, activeProjectId);
-                    setActiveDocId(newId);
-                    router.push('/docs/' + newId);
-                    if (onCloseMobile) onCloseMobile();
-                  }}
-                  className="clickable-pill"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '6px 10px',
-                    borderRadius: 'var(--radius-md, 6px)',
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-primary)',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                    transition: 'background 0.15s ease',
-                  }}
-                >
-                  {icon}
-                  <span>{label}</span>
-                </button>
-              ))}
+              {(() => {
+                const activeDoc = docs.find((d) => d.id === activeDocId);
+                const currentDocFormat = pathname === '/docs' ? selectedDocFormat : (activeDoc?.format || 'latex');
+
+                const docsNavItems = [
+                  {
+                    format: 'latex' as const,
+                    icon: <FileText size={14} color="var(--rail-docs-color)" />,
+                    label: language === 'id' ? 'Dokumen Baru' : 'New Document',
+                    color: 'var(--rail-docs-color)',
+                    bg: 'var(--rail-docs-bg)',
+                    border: 'rgba(52, 211, 153, 0.3)',
+                    isActive: isDocs && (currentDocFormat === 'latex' || currentDocFormat === 'markdown' || !currentDocFormat),
+                  },
+                  {
+                    format: 'sheet' as const,
+                    icon: <Table size={14} color="#22c55e" />,
+                    label: language === 'id' ? 'Spreadsheet Baru' : 'New Spreadsheet',
+                    color: '#22c55e',
+                    bg: 'rgba(34, 197, 94, 0.12)',
+                    border: 'rgba(34, 197, 94, 0.3)',
+                    isActive: isDocs && currentDocFormat === 'sheet',
+                  },
+                  {
+                    format: 'slide' as const,
+                    icon: <Presentation size={14} color="#f59e0b" />,
+                    label: language === 'id' ? 'Slide Baru' : 'New Slide',
+                    color: '#f59e0b',
+                    bg: 'rgba(245, 158, 11, 0.12)',
+                    border: 'rgba(245, 158, 11, 0.3)',
+                    isActive: isDocs && currentDocFormat === 'slide',
+                  },
+                ];
+
+                return docsNavItems.map(({ format, icon, label, color, bg, border, isActive }) => (
+                  <button
+                    key={format}
+                    type="button"
+                    onClick={() => {
+                      if (selectedDocFormat !== format) {
+                        setSelectedDocFormat(format);
+                      }
+                      if (activeDocId !== null) {
+                        setActiveDocId(null);
+                      }
+                      if (pathname !== '/docs') {
+                        router.push('/docs');
+                      }
+                      if (onCloseMobile) onCloseMobile();
+                    }}
+                    className="clickable-pill"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 10px',
+                      borderRadius: 'var(--radius-md, 6px)',
+                      background: isActive ? bg : 'transparent',
+                      border: isActive ? `1px solid ${border}` : '1px solid transparent',
+                      color: isActive ? color : 'var(--text-primary)',
+                      fontSize: '12.5px',
+                      fontWeight: isActive ? 600 : 500,
+                      cursor: 'pointer',
+                      width: '100%',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {icon}
+                    <span>{label}</span>
+                  </button>
+                ));
+              })()}
             </div>
           ) : (
             <button
@@ -2841,7 +3007,7 @@ export function Sidebar({
                 transition: 'background 0.15s ease',
               }}
             >
-              <SquarePen size={15} color="var(--brand-primary)" />
+              <SquarePen size={15} color="var(--rail-chat-color)" />
               <span>{t.nav.newChat}</span>
             </button>
           )}
@@ -2869,10 +3035,18 @@ export function Sidebar({
                 transition: 'all 0.15s ease',
               }}
             >
-              <Plug size={14} color="var(--brand-primary)" />
+              <Plug size={14} color="var(--rail-chat-color)" />
               <span>{t.nav.connectors || (language === 'id' ? 'Konektor & Integrasi' : 'Connectors & Integrations')}</span>
             </button>
           )}
+
+          {/* Divider between Menu Navigation & Search */}
+          <div
+            style={{
+              borderTop: '1px solid var(--border-subtle)',
+              margin: '3px 0 1px 0',
+            }}
+          />
 
           {/* Search Box (Mode-Aware) */}
           <div
@@ -2884,7 +3058,6 @@ export function Sidebar({
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
               borderRadius: '6px',
-              marginTop: '4px',
             }}
           >
             <Search size={12} color="var(--text-muted)" />
@@ -2892,7 +3065,11 @@ export function Sidebar({
               type="text"
               placeholder={
                 isDocs
-                  ? (language === 'id' ? 'Cari dokumen & folder...' : 'Search docs & folders...')
+                  ? isSheetDoc
+                    ? (language === 'id' ? 'Cari spreadsheet & folder...' : 'Search spreadsheets & folders...')
+                    : isSlideDoc
+                    ? (language === 'id' ? 'Cari slide & folder...' : 'Search slides & folders...')
+                    : (language === 'id' ? 'Cari dokumen & folder...' : 'Search docs & folders...')
                   : isImage
                   ? language === 'id'
                     ? 'Cari prompt gambar...'
@@ -2953,7 +3130,11 @@ export function Sidebar({
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    {language === 'id' ? 'Folder Proyek' : 'Project Folders'}
+                    {isSheetDoc
+                      ? (language === 'id' ? 'Folder Spreadsheet' : 'Spreadsheet Folders')
+                      : isSlideDoc
+                      ? (language === 'id' ? 'Folder Slide' : 'Slide Folders')
+                      : (language === 'id' ? 'Folder Dokumen' : 'Document Folders')}
                   </span>
                   {isProjectsExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
                 </div>
@@ -2971,12 +3152,12 @@ export function Sidebar({
                   {docFolders.map((folder) => {
                     const isFolderOpen = expandedFolderIds.has(folder.id);
                     const isSelected = activeProjectId === folder.id;
-                    const folderDocs = docs
-                      .filter(
-                        (d) => d.projectId === folder.id &&
-                          d.title.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
+                    const folderDocs = filteredDocs
+                      .filter((d) => d.projectId === folder.id)
                       .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || b.updatedAt - a.updatedAt);
+
+                    const folderActiveColor = isSheetDoc ? '#22c55e' : isSlideDoc ? '#f59e0b' : 'var(--brand-primary)';
+                    const folderActiveBg = isSheetDoc ? 'rgba(34, 197, 94, 0.12)' : isSlideDoc ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 115, 234, 0.12)';
 
                     return (
                       <div key={folder.id} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -2989,8 +3170,8 @@ export function Sidebar({
                             gap: '7px',
                             padding: '5px 8px',
                             borderRadius: 'var(--radius-sm, 6px)',
-                            background: isSelected ? 'rgba(0, 115, 234, 0.12)' : isFolderOpen ? 'var(--bg-subtle)' : 'transparent',
-                            color: isSelected ? 'var(--brand-primary)' : isFolderOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            background: isSelected ? folderActiveBg : isFolderOpen ? 'var(--bg-subtle)' : 'transparent',
+                            color: isSelected ? folderActiveColor : isFolderOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
                             fontSize: '12px',
                             fontWeight: isSelected || isFolderOpen ? 600 : 400,
                             cursor: 'pointer',
@@ -3010,7 +3191,7 @@ export function Sidebar({
                             }}
                           >
                             {isFolderOpen ? (
-                              <FolderOpen size={13} color={isSelected ? 'var(--brand-primary)' : 'var(--text-secondary)'} style={{ flexShrink: 0 }} />
+                              <FolderOpen size={13} color={isSelected ? folderActiveColor : 'var(--text-secondary)'} style={{ flexShrink: 0 }} />
                             ) : (
                               <Folder size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                             )}
@@ -3020,7 +3201,7 @@ export function Sidebar({
                             {folderDocs.length > 0 && (
                               <span style={{
                                 fontSize: '10px',
-                                background: isSelected ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                                background: isSelected ? folderActiveColor : 'var(--bg-subtle)',
                                 color: isSelected ? '#fff' : 'var(--text-muted)',
                                 border: '1px solid var(--border-subtle)',
                                 borderRadius: '999px',
@@ -3055,7 +3236,11 @@ export function Sidebar({
                                 color: 'var(--text-muted)',
                                 fontStyle: 'italic',
                               }}>
-                                {language === 'id' ? 'Belum ada dokumen di folder ini' : 'No docs in this folder'}
+                                {isSheetDoc
+                                  ? (language === 'id' ? 'Belum ada spreadsheet di folder ini' : 'No spreadsheets in this folder')
+                                  : isSlideDoc
+                                  ? (language === 'id' ? 'Belum ada slide di folder ini' : 'No slides in this folder')
+                                  : (language === 'id' ? 'Belum ada dokumen di folder ini' : 'No docs in this folder')}
                               </div>
                             ) : (
                               folderDocs.map((doc) => (
@@ -3084,7 +3269,13 @@ export function Sidebar({
                               type="button"
                               onClick={() => {
                                 setActiveProjectId(folder.id);
-                                const newId = createDocument('Dokumen Baru', undefined, 'latex', folder.id);
+                                const newFormat = isSheetDoc ? 'sheet' : isSlideDoc ? 'slide' : 'latex';
+                                const defaultTitle = isSheetDoc
+                                  ? (language === 'id' ? 'Spreadsheet Baru' : 'New Spreadsheet')
+                                  : isSlideDoc
+                                  ? (language === 'id' ? 'Slide Baru' : 'New Slide')
+                                  : (language === 'id' ? 'Dokumen Baru' : 'New Document');
+                                const newId = createDocument(defaultTitle, undefined, newFormat, folder.id);
                                 setActiveDocId(newId);
                                 router.push('/docs/' + newId);
                                 if (onCloseMobile) onCloseMobile();
@@ -3098,7 +3289,7 @@ export function Sidebar({
                                 borderRadius: 'var(--radius-sm, 6px)',
                                 background: 'transparent',
                                 border: 'none',
-                                color: 'var(--brand-primary)',
+                                color: folderActiveColor,
                                 fontSize: '11px',
                                 fontWeight: 500,
                                 cursor: 'pointer',
@@ -3108,7 +3299,13 @@ export function Sidebar({
                               }}
                             >
                               <Plus size={10} />
-                              <span>{language === 'id' ? 'Buat dokumen di folder ini' : 'Add document to folder'}</span>
+                              <span>
+                                {isSheetDoc
+                                  ? (language === 'id' ? 'Buat spreadsheet di folder ini' : 'Add spreadsheet to folder')
+                                  : isSlideDoc
+                                  ? (language === 'id' ? 'Buat slide di folder ini' : 'Add slide to folder')
+                                  : (language === 'id' ? 'Buat dokumen di folder ini' : 'Add document to folder')}
+                              </span>
                             </button>
                           </div>
                         )}
@@ -3193,7 +3390,13 @@ export function Sidebar({
                       }}
                     >
                       <Plus size={11} />
-                      <span>{language === 'id' ? 'Tambah folder dokumen' : 'Add doc folder'}</span>
+                      <span>
+                        {isSheetDoc
+                          ? (language === 'id' ? 'Tambah folder spreadsheet' : 'Add spreadsheet folder')
+                          : isSlideDoc
+                          ? (language === 'id' ? 'Tambah folder slide' : 'Add slide folder')
+                          : (language === 'id' ? 'Tambah folder dokumen' : 'Add doc folder')}
+                      </span>
                     </button>
                   )}
 
@@ -3214,31 +3417,51 @@ export function Sidebar({
                         }}
                       >
                         <span style={{ fontSize: '10.5px', fontWeight: 650, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                          {language === 'id' ? 'Dokumen Lainnya' : 'Other Documents'} ({unassignedDocs.length})
+                          {isSheetDoc
+                            ? (language === 'id' ? 'Spreadsheet Lainnya' : 'Other Spreadsheets')
+                            : isSlideDoc
+                            ? (language === 'id' ? 'Slide Lainnya' : 'Other Slides')
+                            : (language === 'id' ? 'Dokumen Lainnya' : 'Other Documents')} ({unassignedDocs.length})
                         </span>
                         {isUnassignedExpanded ? <ChevronDown size={10} color="var(--text-muted)" /> : <ChevronRight size={10} color="var(--text-muted)" />}
                       </div>
 
                       {isUnassignedExpanded && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', paddingLeft: '4px' }}>
-                          {unassignedDocs.map((doc) => (
-                            <DocSidebarItem
-                              key={doc.id}
-                              doc={doc}
-                              isActive={activeDocId === doc.id}
-                              language={language}
-                              folders={docFolders}
-                              onSelect={() => {
-                                setActiveProjectId(null);
-                                setActiveDocId(doc.id);
-                                router.push('/docs/' + doc.id);
-                                if (onCloseMobile) onCloseMobile();
-                              }}
-                              onRename={(id, title) => updateDocumentTitle(id, title)}
-                              onDelete={(id) => deleteDocument(id)}
-                              onTogglePin={(id) => togglePin(id)}
-                              onMove={(id, targetProjId) => moveDocumentToProject(id, targetProjId)}
-                            />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '2px' }}>
+                          {groupItemsByDate(unassignedDocs).map((group) => (
+                            <div key={group.labelEn} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                              <div
+                                style={{
+                                  fontSize: '9.5px',
+                                  fontWeight: 700,
+                                  color: 'var(--text-muted)',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.04em',
+                                  padding: '4px 6px 2px 4px',
+                                }}
+                              >
+                                {language === 'id' ? group.labelId : group.labelEn}
+                              </div>
+                              {group.items.map((doc) => (
+                                <DocSidebarItem
+                                  key={doc.id}
+                                  doc={doc}
+                                  isActive={activeDocId === doc.id}
+                                  language={language}
+                                  folders={docFolders}
+                                  onSelect={() => {
+                                    setActiveProjectId(null);
+                                    setActiveDocId(doc.id);
+                                    router.push('/docs/' + doc.id);
+                                    if (onCloseMobile) onCloseMobile();
+                                  }}
+                                  onRename={(id, title) => updateDocumentTitle(id, title)}
+                                  onDelete={(id) => deleteDocument(id)}
+                                  onTogglePin={(id) => togglePin(id)}
+                                  onMove={(id, targetProjId) => moveDocumentToProject(id, targetProjId)}
+                                />
+                              ))}
+                            </div>
                           ))}
                         </div>
                       )}
@@ -3416,7 +3639,7 @@ export function Sidebar({
               </div>
 
               {/* Media History (Filtered per mode: Video on /video, Audio on /audio, Image on /image) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
                 <div
                   onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
                   style={{
@@ -3450,77 +3673,94 @@ export function Sidebar({
                           : (language === 'id' ? 'Belum ada gambar dibuat' : 'No images generated yet')}
                       </div>
                     ) : (
-                      currentMediaHistory
-                        .filter((item) => {
+                      (() => {
+                        const filteredMedia = currentMediaHistory.filter((item) => {
                           const matchSearch = item.prompt.toLowerCase().includes(searchQuery.toLowerCase()) || item.style.toLowerCase().includes(searchQuery.toLowerCase());
                           const matchCol = activeImageCollectionId ? item.collectionId === activeImageCollectionId : true;
                           return matchSearch && matchCol;
-                        })
-                        .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
-                        .map((item) => (
-                          <div
-                            key={item.id}
-                            className="clickable-pill"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '5px 8px',
-                              borderRadius: 'var(--radius-sm, 6px)',
-                              background: item.isPinned ? mediaPinnedBg : 'transparent',
-                              color: 'var(--text-secondary)',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease',
-                              position: 'relative',
-                            }}
-                          >
-                            {/* Type icon & Title */}
-                            <div
-                              onClick={() => {
-                                const fullItem = imagineItems.find((i) => i.id === item.id);
-                                if (fullItem) {
-                                  setSelectedMediaItem(fullItem);
-                                }
-                              }}
-                              style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
-                            >
-                              {item.type === 'video' ? (
-                                <Film size={13} color="#fb7185" style={{ flexShrink: 0 }} />
-                              ) : item.type === 'audio' ? (
-                                <Music size={13} color="#60a5fa" style={{ flexShrink: 0 }} />
-                              ) : (
-                                <ImageIcon size={13} color="#A25DDC" style={{ flexShrink: 0 }} />
-                              )}
-                              <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  {item.isPinned && <Pin size={9} color={mediaAccentColor} style={{ flexShrink: 0 }} />}
-                                  <span>{item.prompt}</span>
-                                </div>
-                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                  <span>{item.style}</span>
-                                  <span>•</span>
-                                  <span>{item.time}</span>
-                                  {item.collectionId && (
-                                    <span style={{ background: mediaBadgeBg, color: mediaAccentColor, padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
-                                      {imageCollections.find((c) => c.id === item.collectionId)?.name || '📁'}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                        });
 
-                            {/* Three-dot menu for Media item */}
-                            <ImagineItemMenu
-                              item={item}
-                              language={language}
-                              collections={imageCollections.filter((c) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id))}
-                              togglePin={toggleImaginePin}
-                              moveToCollection={moveImagineToCollection}
-                              removeItem={removeImagineItem}
-                            />
+                        return groupItemsByDate(filteredMedia).map((group) => (
+                          <div key={group.labelEn} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div
+                              style={{
+                                fontSize: '9.5px',
+                                fontWeight: 700,
+                                color: 'var(--text-muted)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                                padding: '4px 6px 2px 4px',
+                              }}
+                            >
+                              {language === 'id' ? group.labelId : group.labelEn}
+                            </div>
+                            {group.items.map((item) => (
+                              <div
+                                key={item.id}
+                                className="clickable-pill"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '5px 8px',
+                                  borderRadius: 'var(--radius-sm, 6px)',
+                                  background: item.isPinned ? mediaPinnedBg : 'transparent',
+                                  color: 'var(--text-secondary)',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease',
+                                  position: 'relative',
+                                }}
+                              >
+                                {/* Type icon & Title */}
+                                <div
+                                  onClick={() => {
+                                    const fullItem = imagineItems.find((i) => i.id === item.id);
+                                    if (fullItem) {
+                                      setSelectedMediaItem(fullItem);
+                                    }
+                                  }}
+                                  style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
+                                >
+                                  {item.type === 'video' ? (
+                                    <Film size={13} color="#fb7185" style={{ flexShrink: 0 }} />
+                                  ) : item.type === 'audio' ? (
+                                    <Music size={13} color="#60a5fa" style={{ flexShrink: 0 }} />
+                                  ) : (
+                                    <ImageIcon size={13} color="var(--rail-media-color)" style={{ flexShrink: 0 }} />
+                                  )}
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      {item.isPinned && <Pin size={9} color={mediaAccentColor} style={{ flexShrink: 0 }} />}
+                                      <span>{item.prompt}</span>
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                      <span>{item.style}</span>
+                                      <span>•</span>
+                                      <span>{item.time}</span>
+                                      {item.collectionId && (
+                                        <span style={{ background: mediaBadgeBg, color: mediaAccentColor, padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
+                                          {imageCollections.find((c) => c.id === item.collectionId)?.name || '📁'}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Three-dot menu for Media item */}
+                                <ImagineItemMenu
+                                  item={item}
+                                  language={language}
+                                  collections={imageCollections.filter((c) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id))}
+                                  togglePin={toggleImaginePin}
+                                  moveToCollection={moveImagineToCollection}
+                                  removeItem={removeImagineItem}
+                                />
+                              </div>
+                            ))}
                           </div>
-                        ))
+                        ));
+                      })()
                     )}
                   </div>
                 )}
@@ -3734,7 +3974,7 @@ export function Sidebar({
               </div>
 
               {/* Chat History Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
                 <div
                   onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
                   style={{
@@ -3809,124 +4049,25 @@ export function Sidebar({
         <div
           ref={profileMenuRef}
           style={{
+            height: '56px',
+            boxSizing: 'border-box',
             borderTop: '1px solid var(--border-subtle)',
-            padding: '8px 10px',
+            padding: '0 10px',
             background: 'var(--bg-main)',
             position: 'relative',
             flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            minWidth: 0,
           }}
         >
           {/* Floating Profile Popover Menu (moved to be anchored at trigger button) */}
 
-          {/* Collapsible Stats Row: AI Credits + Storage */}
-          <div style={{ marginBottom: '8px' }}>
-            {/* Toggle Row */}
-            <button
-              type="button"
-              onClick={() => setIsStatsExpanded(prev => !prev)}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                padding: '6px 10px',
-                backgroundColor: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md, 8px)',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                transition: 'all 0.15s ease',
-              }}
-              title={isStatsExpanded ? (language === 'id' ? 'Sembunyikan statistik' : 'Hide stats') : (language === 'id' ? 'Tampilkan statistik' : 'Show stats')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 600 }}>
-                <Zap size={12} color="#f59e0b" fill="#f59e0b" style={{ flexShrink: 0 }} />
-                <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '11.5px' }}>
-                  {dailyCredits}/{maxCredits}
-                </span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500 }}>
-                  {language === 'id' ? 'kredit' : 'credits'}
-                </span>
-              </div>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                style={{
-                  transform: isStatsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease',
-                  color: 'var(--text-muted)',
-                  flexShrink: 0,
-                }}
-              >
-                <path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
 
-            {/* Expandable Content */}
-            {isStatsExpanded && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px', animation: 'fadeIn 0.15s ease' }}>
-                {/* AI Credits Meter */}
-                <div
-                  onClick={() => openPricingModal('topup')}
-                  title={language === 'id' ? 'Kredit AI Harian & Saldo Tambahan — Klik untuk Top-up / Upgrade' : 'Daily AI Credits & Extra Balance — Click to Top-up / Upgrade'}
-                  className="clickable-pill"
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    backgroundColor: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-subtle)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      <Zap size={12} color="#f59e0b" fill="#f59e0b" />
-                      <span>{language === 'id' ? 'Kredit AI' : 'AI Credits'}</span>
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontWeight: 700, color: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : 'var(--text-primary)' }}>
-                        {dailyCredits}/{maxCredits}
-                      </span>
-                      {paidCredits > 0 && (
-                        <span style={{
-                          fontSize: '9.5px',
-                          fontWeight: 800,
-                          color: '#f59e0b',
-                          background: 'rgba(245, 158, 11, 0.18)',
-                          padding: '1px 5px',
-                          borderRadius: '4px',
-                        }}>
-                          +{paidCredits}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ width: '100%', height: '4px', borderRadius: '9999px', backgroundColor: 'var(--border-subtle)', overflow: 'hidden' }}>
-                    <div style={{
-                      width: `${Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100))}%`,
-                      height: '100%',
-                      backgroundColor: dailyCredits === 0 ? 'var(--accent-danger, #ef4444)' : '#f59e0b',
-                      borderRadius: '9999px',
-                      transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                    }} />
-                  </div>
-                </div>
-
-                {/* Storage Meter */}
-                <StorageMeter compact onManageClick={() => openPricingModal('tiers')} />
-              </div>
-            )}
-          </div>
 
           {/* Profile Trigger Button (Avatar + Name) */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', width: '100%', minWidth: 0 }}>
           {/* Floating Profile Popover Menu (anchored above trigger button only) */}
           {isProfileMenuOpen && (
             <div
@@ -3953,13 +4094,51 @@ export function Sidebar({
                   padding: '8px 10px 6px 10px',
                   borderBottom: '1px solid var(--border-subtle)',
                   marginBottom: '3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
                 }}
               >
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {displayName}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {displayEmail}
+                {avatarUrl && !avatarImgError ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarImgError(true)}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #0073EA, #A25DDC)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {(displayName[0] || '?').toUpperCase()}
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {displayName}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {displayEmail}
+                  </div>
                 </div>
               </div>
 
@@ -3971,7 +4150,14 @@ export function Sidebar({
               {/* API Keys */}
               <button
                 type="button"
-                onClick={() => { openSettingsTab('keys'); setIsProfileMenuOpen(false); }}
+                onClick={() => {
+                  setIsProfileMenuOpen(false);
+                  if (!user) {
+                    openAuthModal('login');
+                  } else {
+                    openSettingsTab('keys');
+                  }
+                }}
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -4057,6 +4243,8 @@ export function Sidebar({
             className="clickable-pill"
             style={{
               width: '100%',
+              minWidth: 0,
+              overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
@@ -4069,27 +4257,44 @@ export function Sidebar({
               transition: 'background 0.15s ease',
             }}
           >
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #0073EA, #A25DDC)',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12.5px',
-                fontWeight: 700,
-                flexShrink: 0,
-                boxShadow: '0 2px 6px rgba(0, 115, 234, 0.3)',
-              }}
-            >
-              {(displayName[0] || '?').toUpperCase()}
-            </div>
+            {avatarUrl && !avatarImgError ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarImgError(true)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #0073EA, #A25DDC)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(0, 115, 234, 0.3)',
+                }}
+              >
+                {(displayName[0] || '?').toUpperCase()}
+              </div>
+            )}
 
             <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, width: '100%' }}>
                 <span
                   style={{
                     fontSize: '13px',
@@ -4098,6 +4303,8 @@ export function Sidebar({
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
+                    flex: 1,
+                    minWidth: 0,
                   }}
                 >
                   {displayName}
@@ -4115,6 +4322,7 @@ export function Sidebar({
                         color: badge.color,
                         border: badge.border,
                         flexShrink: 0,
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {badge.label}

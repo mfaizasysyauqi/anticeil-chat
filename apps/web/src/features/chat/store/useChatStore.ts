@@ -201,8 +201,11 @@ export const useChatStore = create<ChatState>()(
         const session = state.getActiveSession();
         if (!session || !prompt.trim()) return;
 
-        const allowed = useCreditStore.getState().deductCredits('image', 'anticeil');
-        if (!allowed) return;
+        const allowed = useCreditStore.getState().canAfford('image', 'anticeil');
+        if (!allowed) {
+          useCreditStore.getState().setLimitModalOpen(true, 'image');
+          return;
+        }
 
         const cleanPrompt = prompt.trim();
         const userMessageId = `msg-user-${Date.now()}`;
@@ -234,15 +237,20 @@ export const useChatStore = create<ChatState>()(
           isGenerating: true,
         }));
 
+        let creditDeducted = false;
+
         try {
+          useCreditStore.getState().deductCredits('image', 'anticeil');
+          creditDeducted = true;
+
           const encodedPrompt = encodeURIComponent(cleanPrompt);
           const seed = Math.floor(Math.random() * 100000);
           const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=1024&height=1024&nologo=true`;
 
-          await new Promise<void>((resolve) => {
+          await new Promise<void>((resolve, reject) => {
             const img = new Image();
             img.onload = () => resolve();
-            img.onerror = () => resolve();
+            img.onerror = () => reject(new Error('Gagal memuat gambar'));
             img.src = imageUrl;
           });
 
@@ -262,6 +270,9 @@ export const useChatStore = create<ChatState>()(
             },
           }));
         } catch (err: unknown) {
+          if (creditDeducted) {
+            useCreditStore.getState().refundCredits('image', 'anticeil');
+          }
           const errMsg = err instanceof Error ? err.message : 'Image generation failed';
           set((s) => ({
             messages: {
@@ -287,8 +298,11 @@ export const useChatStore = create<ChatState>()(
         const session = state.getActiveSession();
         if (!session) return;
 
-        const allowed = useCreditStore.getState().deductCredits('video', 'anticeil');
-        if (!allowed) return;
+        const allowed = useCreditStore.getState().canAfford('video', 'anticeil');
+        if (!allowed) {
+          useCreditStore.getState().setLimitModalOpen(true, 'video');
+          return;
+        }
 
         const cleanPrompt = prompt.trim();
         const userMessageId = `msg-user-${Date.now()}`;
@@ -320,7 +334,12 @@ export const useChatStore = create<ChatState>()(
           isGenerating: true,
         }));
 
+        let creditDeducted = false;
+
         try {
+          useCreditStore.getState().deductCredits('video', 'anticeil');
+          creditDeducted = true;
+
           // Video simulation URL / sample stream for client-side rendering
           const videoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
 
@@ -342,6 +361,9 @@ export const useChatStore = create<ChatState>()(
             },
           }));
         } catch (err: unknown) {
+          if (creditDeducted) {
+            useCreditStore.getState().refundCredits('video', 'anticeil');
+          }
           const errMsg = err instanceof Error ? err.message : 'Video generation failed';
           set((s) => ({
             messages: {
@@ -379,10 +401,13 @@ export const useChatStore = create<ChatState>()(
         const session = state.getActiveSession();
         if (!session) return;
 
-        // Credit check & deduction for Anticeil Free provider
+        // Credit check for Anticeil Free provider (do not deduct until stream receives content)
         if (session.providerId === 'anticeil') {
-          const allowed = useCreditStore.getState().deductCredits('chat', 'anticeil');
-          if (!allowed) return;
+          const allowed = useCreditStore.getState().canAfford('chat', 'anticeil');
+          if (!allowed) {
+            useCreditStore.getState().setLimitModalOpen(true, 'chat');
+            return;
+          }
         }
 
         const settings = useSettingsStore.getState();
@@ -586,6 +611,7 @@ export const useChatStore = create<ChatState>()(
         });
 
         const userTier = useAuthStore.getState().tier;
+        let creditDeducted = false;
 
         try {
           await streamBYOKChat({
@@ -601,6 +627,12 @@ export const useChatStore = create<ChatState>()(
             onChunk: (chunk) => {
               if (chunk.delta) accumulatedText += chunk.delta;
               if (chunk.reasoningDelta) accumulatedReasoning += chunk.reasoningDelta;
+
+              // Deduct credits on first actual content received from Anticeil provider
+              if (!creditDeducted && (chunk.delta || chunk.reasoningDelta) && session.providerId === 'anticeil') {
+                useCreditStore.getState().deductCredits('chat', 'anticeil');
+                creditDeducted = true;
+              }
 
               if (chunk.promptTokens) promptTokensCount = chunk.promptTokens;
               if (chunk.completionTokens) completionTokensCount = chunk.completionTokens;
@@ -861,6 +893,9 @@ export const useChatStore = create<ChatState>()(
             }
           }
         } catch (err: unknown) {
+          if (creditDeducted && session.providerId === 'anticeil') {
+            useCreditStore.getState().refundCredits('chat', 'anticeil');
+          }
           const errorMessage = err instanceof Error ? err.message : 'Failed to generate response';
           set((s) => ({
             messages: {

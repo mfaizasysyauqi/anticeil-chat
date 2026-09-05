@@ -68,13 +68,19 @@ export function TierPricingCards({
           const isBusy = actionLoadingId === plan.id;
 
           const priceStr =
-            plan.priceIdr === null || plan.priceIdr === undefined
-              ? 'Dedicated'
-              : plan.priceIdr === 0
-              ? 'Rp 0'
-              : `Rp ${plan.priceIdr.toLocaleString('id-ID')}`;
+            currency === 'usd'
+              ? (plan.priceUsd === null || plan.priceUsd === undefined
+                  ? (lang === 'id' ? 'Khusus' : 'Dedicated')
+                  : plan.priceUsd === 0
+                  ? '$0'
+                  : `$${plan.priceUsd}`)
+              : (plan.priceIdr === null || plan.priceIdr === undefined
+                  ? (lang === 'id' ? 'Khusus' : 'Dedicated')
+                  : plan.priceIdr === 0
+                  ? 'Rp 0'
+                  : `Rp ${plan.priceIdr.toLocaleString('id-ID')}`);
 
-          const period = plan.periodIdr;
+          const period = currency === 'usd' ? plan.periodUsd : (lang === 'id' ? plan.periodIdr : plan.periodUsd);
           const subtitle = lang === 'id' ? plan.subtitleId : plan.subtitleEn;
           const ctaLabel = lang === 'id' ? plan.ctaLabelId : plan.ctaLabelEn;
 
@@ -85,29 +91,29 @@ export function TierPricingCards({
             : ctaLabel;
 
           const cardBorder = isHighlight
-            ? '2px solid #1E6BEB'
+            ? '2px solid var(--brand-primary)'
             : isCurrent
-            ? '2px solid #10b981'
-            : '1px solid var(--border-subtle, #E5E7EB)';
+            ? '2px solid var(--accent-success)'
+            : '1px solid var(--border-subtle)';
 
           const cardShadow = isHighlight
-            ? '0 12px 32px -4px rgba(30, 107, 235, 0.16), 0 2px 6px rgba(0,0,0,0.04)'
-            : '0 2px 8px rgba(0, 0, 0, 0.04)';
+            ? 'var(--shadow-lg)'
+            : 'var(--shadow-sm)';
 
           const btnBg = isCurrent
-            ? 'var(--bg-main, #F3F4F6)'
+            ? 'var(--bg-main)'
             : isHighlight
-            ? '#1E6BEB'
-            : 'var(--bg-subtle, #F3F4F6)';
+            ? 'var(--brand-primary)'
+            : 'var(--bg-subtle)';
 
           const btnColor = isCurrent
-            ? 'var(--text-muted, #6B7280)'
+            ? 'var(--text-muted)'
             : isHighlight
             ? '#FFFFFF'
-            : 'var(--text-primary, #111827)';
+            : 'var(--text-primary)';
 
           const btnShadow = isHighlight && !isCurrent
-            ? '0 4px 14px rgba(30, 107, 235, 0.35)'
+            ? '0 4px 14px rgba(0, 115, 234, 0.35)'
             : 'none';
 
           return (
@@ -118,7 +124,7 @@ export function TierPricingCards({
                 borderRadius: '16px',
                 border: cardBorder,
                 boxShadow: cardShadow,
-                background: 'var(--bg-surface, #FFFFFF)',
+                background: 'var(--bg-surface)',
                 padding: '22px 18px 18px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -133,7 +139,7 @@ export function TierPricingCards({
                     position: 'absolute',
                     top: '-10px',
                     right: '14px',
-                    background: '#1E6BEB',
+                    background: 'var(--brand-primary)',
                     color: '#FFFFFF',
                     fontSize: '10px',
                     fontWeight: 700,
@@ -160,7 +166,7 @@ export function TierPricingCards({
                     style={{
                       fontSize: '15px',
                       fontWeight: 700,
-                      color: 'var(--text-primary, #111827)',
+                      color: 'var(--text-primary)',
                     }}
                   >
                     {plan.name}
@@ -172,8 +178,8 @@ export function TierPricingCards({
                         fontWeight: 700,
                         padding: '2px 7px',
                         borderRadius: '999px',
-                        background: 'rgba(16, 185, 129, 0.15)',
-                        color: '#10b981',
+                        background: 'rgba(0, 200, 117, 0.15)',
+                        color: 'var(--accent-success)',
                       }}
                     >
                       {lang === 'id' ? 'Aktif' : 'Active'}
@@ -194,7 +200,7 @@ export function TierPricingCards({
                     style={{
                       fontSize: '28px',
                       fontWeight: 800,
-                      color: 'var(--text-primary, #111827)',
+                      color: 'var(--text-primary)',
                       letterSpacing: '-0.03em',
                       lineHeight: 1.1,
                     }}
@@ -204,7 +210,7 @@ export function TierPricingCards({
                   <span
                     style={{
                       fontSize: '12px',
-                      color: 'var(--text-muted, #6B7280)',
+                      color: 'var(--text-muted)',
                       marginLeft: '4px',
                     }}
                   >
@@ -216,7 +222,7 @@ export function TierPricingCards({
                 <div
                   style={{
                     fontSize: '11.5px',
-                    color: 'var(--text-muted, #6B7280)',
+                    color: 'var(--text-muted)',
                     marginTop: '4px',
                     marginBottom: '18px',
                   }}
@@ -234,21 +240,25 @@ export function TierPricingCards({
                       <React.Fragment key={key}>
                         {/* Divider after the AI credit section (after monthlyAiCredits) */}
                         {keyIdx === 2 && (
-                          <div style={{ height: '1px', background: 'var(--border-subtle, #E5E7EB)', margin: '2px 0' }} />
+                          <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '2px 0' }} />
                         )}
                         <div
                           style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            fontSize: '12.5px',
-                            gap: '10px',
+                            fontSize: '12px',
+                            gap: '6px',
                           }}
                         >
                           <span
                             style={{
-                              color: 'var(--text-secondary, #6B7280)',
-                              flexShrink: 0,
+                              color: 'var(--text-secondary)',
+                              flexShrink: 1,
+                              minWidth: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {label}
@@ -264,12 +274,12 @@ export function TierPricingCards({
                           >
                             {typeof val === 'boolean' ? (
                               val ? (
-                                <Check size={16} color="#16A34A" strokeWidth={2.6} />
+                                <Check size={15} color="var(--accent-success)" strokeWidth={2.6} />
                               ) : (
                                 <span
                                   style={{
-                                    color: 'var(--text-muted, #9CA3AF)',
-                                    fontSize: '15px',
+                                    color: 'var(--text-muted)',
+                                    fontSize: '14px',
                                     lineHeight: 1,
                                   }}
                                 >
@@ -280,8 +290,10 @@ export function TierPricingCards({
                               <span
                                 style={{
                                   fontWeight: 600,
-                                  color: 'var(--text-primary, #111827)',
+                                  color: 'var(--text-primary)',
                                   textAlign: 'right',
+                                  whiteSpace: 'nowrap',
+                                  fontSize: '12px',
                                 }}
                               >
                                 {val}
@@ -308,11 +320,11 @@ export function TierPricingCards({
                     fontSize: '13px',
                     fontWeight: 700,
                     textDecoration: 'none',
-                    background: isHighlight ? '#1E6BEB' : 'var(--bg-subtle, #F3F4F6)',
-                    color: isHighlight ? '#FFFFFF' : 'var(--text-primary, #111827)',
-                    border: isHighlight ? 'none' : '1px solid var(--border-subtle, #E5E7EB)',
+                    background: isHighlight ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                    color: isHighlight ? '#FFFFFF' : 'var(--text-primary)',
+                    border: isHighlight ? 'none' : '1px solid var(--border-subtle)',
                     boxShadow: isHighlight
-                      ? '0 4px 14px rgba(30, 107, 235, 0.35)'
+                      ? '0 4px 14px rgba(0, 115, 234, 0.35)'
                       : 'none',
                   }}
                 >
@@ -327,7 +339,7 @@ export function TierPricingCards({
                     marginTop: 'auto',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    border: isHighlight ? 'none' : '1px solid var(--border-subtle, #E5E7EB)',
+                    border: isHighlight ? 'none' : '1px solid var(--border-subtle)',
                     background: btnBg,
                     color: btnColor,
                     fontSize: '13px',

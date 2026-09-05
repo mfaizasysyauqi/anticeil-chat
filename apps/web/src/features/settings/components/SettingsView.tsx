@@ -13,6 +13,7 @@ import {
   Lock,
   Sun,
   Moon,
+  Laptop,
   Globe,
   Sparkles,
   AlertCircle,
@@ -308,13 +309,30 @@ export function SettingsView() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {theme === 'dark' ? <Moon size={16} color="#579BFC" /> : <Sun size={16} color="#FDAB3D" />}
+                {theme === 'system' ? <Laptop size={16} color="#0073EA" /> : theme === 'dark' ? <Moon size={16} color="#579BFC" /> : <Sun size={16} color="#FDAB3D" />}
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
                   {t.common.theme}
                 </span>
               </div>
 
               <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-subtle)', padding: '2px', borderRadius: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setTheme('system')}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    background: theme === 'system' ? 'var(--bg-surface)' : 'transparent',
+                    color: theme === 'system' ? 'var(--text-primary)' : 'var(--text-muted)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: theme === 'system' ? 'var(--shadow-sm)' : 'none',
+                  }}
+                >
+                  {language === 'id' ? 'Sistem' : 'System'}
+                </button>
                 <button
                   type="button"
                   onClick={() => setTheme('light')}

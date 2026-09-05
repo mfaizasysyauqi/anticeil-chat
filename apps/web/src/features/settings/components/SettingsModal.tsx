@@ -19,6 +19,7 @@ import {
   Lock,
   Sun,
   Moon,
+  Laptop,
   Globe,
   Sparkles,
   Zap,
@@ -1586,7 +1587,29 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <h3 style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
                   {language === 'id' ? 'Tema Visual' : 'Visual Theme'}
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setTheme('system')}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: theme === 'system' ? '2px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
+                      background: theme === 'system' ? 'rgba(0, 115, 234, 0.08)' : 'var(--bg-main)',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <Laptop size={18} color="#0073EA" />
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700 }}>{language === 'id' ? 'Sistem' : 'System'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{language === 'id' ? 'Otomatis' : 'Auto Sync'}</div>
+                    </div>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setTheme('light')}
@@ -1604,7 +1627,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   >
                     <Sun size={18} color="#F59E0B" />
                     <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 700 }}>Light Mode</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700 }}>{language === 'id' ? 'Terang' : 'Light Mode'}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Bright & Clean</div>
                     </div>
                   </button>
@@ -1626,7 +1649,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   >
                     <Moon size={18} color="#8B5CF6" />
                     <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 700 }}>Dark Mode</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700 }}>{language === 'id' ? 'Gelap' : 'Dark Mode'}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>High Contrast</div>
                     </div>
                   </button>

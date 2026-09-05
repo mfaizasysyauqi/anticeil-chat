@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { DocsView } from '../../../src/features/docs/components/DocsView';
 import { useDocsStore, DocItem } from '../../../src/features/docs/store/useDocsStore';
 
+import { useAuthStore } from '../../../src/features/auth/store/useAuthStore';
+
 interface DocsDetailPageProps {
   params: Promise<{ id: string }>;
 }
@@ -19,6 +21,10 @@ export default function DocsDetailPage({ params }: DocsDetailPageProps) {
   const setActiveDocId = useDocsStore((s) => s.setActiveDocId);
   const setStudioPhase = useDocsStore((s) => s.setStudioPhase);
   const upsertDocument = useDocsStore((s) => s.upsertDocument);
+
+  useEffect(() => {
+    useAuthStore.getState().initializeAuth();
+  }, []);
 
   useEffect(() => {
     if (!docId) return;

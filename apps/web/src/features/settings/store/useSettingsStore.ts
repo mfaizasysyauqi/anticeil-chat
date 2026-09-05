@@ -25,6 +25,18 @@ export interface SetApiKeyResult {
   activeProviderId?: LLMProviderId;
 }
 
+export type ThemeMode = 'system' | 'dark' | 'light';
+
+export function getEffectiveTheme(theme: ThemeMode): 'dark' | 'light' {
+  if (theme === 'system') {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return 'light';
+    }
+    return 'dark';
+  }
+  return theme;
+}
+
 interface SettingsState {
   apiKeys: ApiKeysState;
   dynamicModels: Partial<Record<LLMProviderId, LLMModel[]>>;
@@ -32,7 +44,7 @@ interface SettingsState {
   testConnectionStatus: Partial<Record<LLMProviderId, { testing: boolean; result?: ProviderConnectionTestResult }>>;
   activeProviderId: LLMProviderId;
   activeModelId: string;
-  theme: 'dark' | 'light';
+  theme: ThemeMode;
   language: Language;
   isSettingsOpen: boolean;
   activeSettingsTab: 'keys' | 'appearance' | 'backup';
@@ -57,7 +69,7 @@ interface SettingsState {
   setActiveMediaStorageDriver: (driver: 'supabase' | 'r2') => void;
   toggleProvider: (providerId: LLMProviderId, isEnabled: boolean) => void;
   setActiveProviderAndModel: (providerId: LLMProviderId, modelId: string) => void;
-  setTheme: (theme: 'dark' | 'light') => void;
+  setTheme: (theme: ThemeMode) => void;
   setLanguage: (lang: Language) => void;
   hasConfiguredKey: (providerId: LLMProviderId) => boolean;
   refreshModels: (providerId?: LLMProviderId) => Promise<void>;
@@ -104,19 +116,25 @@ const initialApiKeys: ApiKeysState = {
 };
 
 function getInitialLanguage(): Language {
-  return 'en'; // persist middleware rehydrates the real value after mount
+  if (typeof window === 'undefined') return 'en';
+  try {
+    const stored = localStorage.getItem('anticeil_lang');
+    if (stored === 'id' || stored === 'en') return stored;
+    return 'en';
+  } catch {
+    return 'en';
+  }
 }
 
-function getInitialTheme(): 'dark' | 'light' {
-  // Server-safe: returns dark as the default (matches blocking script fallback).
-  // The blocking script in layout.tsx sets the correct data-theme before first paint.
-  if (typeof window === 'undefined') return 'dark';
+function getInitialTheme(): ThemeMode {
+  if (typeof window === 'undefined') return 'system';
   try {
     const stored = localStorage.getItem('anticeil_settings_storage');
-    const theme = stored ? JSON.parse(stored).state.theme : null;
-    return theme === 'light' ? 'light' : 'dark';
+    const theme = stored ? JSON.parse(stored).state?.theme : null;
+    if (theme === 'light' || theme === 'dark' || theme === 'system') return theme;
+    return 'system';
   } catch {
-    return 'dark';
+    return 'system';
   }
 }
 
@@ -267,7 +285,8 @@ export const useSettingsStore = create<SettingsState>()(
 
       setTheme: (theme) => {
         if (typeof document !== 'undefined') {
-          document.documentElement.setAttribute('data-theme', theme);
+          const effective = getEffectiveTheme(theme);
+          document.documentElement.setAttribute('data-theme', effective);
         }
         set({ theme });
       },
@@ -288,16 +307,8 @@ export const useSettingsStore = create<SettingsState>()(
 
         const config = get().apiKeys[providerId];
         const apiKey = config?.apiKey?.trim() || '';
-        const liveModels = get().dynamicModels[providerId];
-        const hasLiveModels = Boolean(liveModels && liveModels.length > 0);
 
-        // For local / gateway / custom providers (ollama, omniroute, custom):
-        if (providerId === 'ollama' || providerId === 'omniroute' || providerId === 'custom') {
-          // Ready only if local server actually responded with live models OR user provided custom API key
-          return hasLiveModels || apiKey.length >= 4;
-        }
-
-        // For cloud providers:
+        // All BYOK providers (including Ollama, OmniRoute, and cloud providers) require an API key to be configured
         return apiKey.length >= 4;
       },
 
@@ -533,25 +544,40 @@ export const useSettingsStore = create<SettingsState>()(
   )
 );
 
-// Cross-tab / cross-page synchronized updates
+// Cross-tab / cross-page synchronized updates & OS theme listener
 if (typeof window !== 'undefined') {
+  // Listen to OS theme changes when theme is 'system'
+  const mediaQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)');
+  const handleSystemThemeChange = (e: MediaQueryListEvent | MediaQueryList) => {
+    const currentTheme = useSettingsStore.getState().theme;
+    if (currentTheme === 'system') {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+    }
+  };
+  if (mediaQuery?.addEventListener) {
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+  } else if (mediaQuery?.addListener) {
+    mediaQuery.addListener(handleSystemThemeChange);
+  }
+
   window.addEventListener('storage', (event) => {
     if (event.key === 'anticeil_settings_storage' && event.newValue) {
       try {
         const parsed = JSON.parse(event.newValue);
         if (parsed?.state) {
           const newLang = parsed.state.language;
-          const newTheme = parsed.state.theme;
+          const newTheme = parsed.state.theme as ThemeMode;
           if (newLang === 'en' || newLang === 'id') {
             document.documentElement.setAttribute('lang', newLang);
           }
-          if (newTheme === 'dark' || newTheme === 'light') {
-            document.documentElement.setAttribute('data-theme', newTheme);
+          if (newTheme === 'dark' || newTheme === 'light' || newTheme === 'system') {
+            const effective = getEffectiveTheme(newTheme);
+            document.documentElement.setAttribute('data-theme', effective);
           }
           useSettingsStore.setState((prev) => ({
             ...prev,
             language: (newLang === 'en' || newLang === 'id') ? newLang : prev.language,
-            theme: (newTheme === 'dark' || newTheme === 'light') ? newTheme : prev.theme,
+            theme: (newTheme === 'dark' || newTheme === 'light' || newTheme === 'system') ? newTheme : prev.theme,
             apiKeys: parsed.state.apiKeys || prev.apiKeys,
             activeProviderId: parsed.state.activeProviderId || prev.activeProviderId,
             activeModelId: parsed.state.activeModelId || prev.activeModelId,

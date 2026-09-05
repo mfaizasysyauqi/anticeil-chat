@@ -5,6 +5,7 @@ import type { LocaleType, IWorkbookData, IDisposable } from '@univerjs/core';
 import type { FUniver } from '@univerjs/core/facade';
 import type { FWorkbook } from '@univerjs/sheets/facade';
 import { parseWorkbook, convertToUniverWorkbook } from 'antsheet';
+import { useSettingsStore } from '../../settings/store/useSettingsStore';
 
 
 import '@univerjs/design/lib/index.css';
@@ -216,6 +217,7 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
   onContentChange,
   readOnly = false,
 }) => {
+  const language = useSettingsStore((s) => s.language);
   const containerRef = useRef<HTMLDivElement>(null);
   const univerInstanceRef = useRef<any>(null);
   const univerApiRef = useRef<FUniver | null>(null);
@@ -873,9 +875,11 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
             animation: 'spin 0.9s linear infinite',
           }} />
           <div style={{ textAlign: 'center' }}>
-            Memuat Anticeil Spreadsheet Engine...
+            {language === 'id' ? 'Memuat Anticeil Spreadsheet Engine...' : 'Loading Anticeil Spreadsheet Engine...'}
             <span style={{ opacity: 0.55, fontSize: '11.5px', display: 'block', marginTop: 4 }}>
-              (mode dev mungkin agak lama karena compile modules)
+              {language === 'id'
+                ? '(mode dev mungkin agak lama karena compile modules)'
+                : '(dev mode might take longer while modules compile)'}
             </span>
           </div>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -903,19 +907,20 @@ const UniverSheetsCore: React.FC<UniverSheetsCoreProps> = ({
             width: '100%',
             padding: '20px 22px',
             borderRadius: 10,
-            border: '1px solid #ef444433',
-            backgroundColor: '#ef444410',
+            border: '1px solid var(--accent-danger, #ef4444)',
+            backgroundColor: 'var(--bg-subtle)',
             textAlign: 'center',
           }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#ef4444', marginBottom: 8 }}>
-              ❌ Anticeil Spreadsheet gagal dimuat
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--accent-danger, #ef4444)', marginBottom: 8 }}>
+              {language === 'id' ? '❌ Anticeil Spreadsheet gagal dimuat' : '❌ Failed to load Anticeil Spreadsheet'}
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginBottom: 10, fontFamily: "'JetBrains Mono', monospace", wordBreak: 'break-all' }}>
               {initError || 'Unknown error'}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              Pastikan engine Anticeil Spreadsheet terkonfigurasi dengan benar.
-              Refresh halaman (F5) atau restart dev server jika perlu.
+              {language === 'id'
+                ? 'Pastikan engine Anticeil Spreadsheet terkonfigurasi dengan benar. Refresh halaman (F5) atau restart dev server jika perlu.'
+                : 'Ensure the Anticeil Spreadsheet engine is configured properly. Refresh page (F5) or restart the dev server if needed.'}
             </div>
           </div>
         </div>

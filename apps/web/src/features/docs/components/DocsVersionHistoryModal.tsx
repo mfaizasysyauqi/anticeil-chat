@@ -157,6 +157,17 @@ export function DocsVersionHistoryModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [diffMode, setDiffMode] = useState<'split' | 'unified' | 'preview'>('unified');
   const [selectedSubFileId, setSelectedSubFileId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'timeline' | 'diff'>('timeline');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Modal dialogs inside version history
   const [isLabelingCurrent, setIsLabelingCurrent] = useState(false);
@@ -311,17 +322,20 @@ export function DocsVersionHistoryModal({
         {/* ── Modal Header ── */}
         <div
           style={{
-            height: '56px',
-            padding: '0 20px',
+            minHeight: '56px',
+            height: 'auto',
+            padding: '10px 16px',
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '10px',
+            flexWrap: 'wrap',
             backgroundColor: 'var(--bg-main)',
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
             <div
               style={{
                 width: '34px',
@@ -338,7 +352,7 @@ export function DocsVersionHistoryModal({
               <History size={18} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <h2
                   style={{
                     fontSize: '15px',
@@ -383,7 +397,7 @@ export function DocsVersionHistoryModal({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Label Current Version Button */}
             <button
               type="button"
@@ -406,7 +420,7 @@ export function DocsVersionHistoryModal({
               title={language === 'id' ? 'Simpan versi bernama saat ini' : 'Label current version as checkpoint'}
             >
               <Tag size={13} />
-              <span>{language === 'id' ? 'Beri Nama Versi Ini' : 'Label Current Version'}</span>
+              <span>{language === 'id' ? 'Beri Nama Versi' : 'Label Version'}</span>
             </button>
 
             <button
@@ -430,20 +444,83 @@ export function DocsVersionHistoryModal({
           </div>
         </div>
 
-        {/* ── Modal Body: 2 Columns (Timeline List Left + Diff Inspector Right) ── */}
-        <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
-          {/* ── Left Column: Snapshot Timeline List (320px) ── */}
+        {/* ── Mobile View Switcher Tabs (Visible on screens < 768px) ── */}
+        {isMobile && (
           <div
             style={{
-              width: '340px',
-              borderRight: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-main)',
               display: 'flex',
-              flexDirection: 'column',
+              padding: '6px 12px',
+              gap: '6px',
+              backgroundColor: 'var(--bg-subtle)',
+              borderBottom: '1px solid var(--border-subtle)',
               flexShrink: 0,
-              overflow: 'hidden',
             }}
           >
+            <button
+              type="button"
+              onClick={() => setMobileTab('timeline')}
+              style={{
+                flex: 1,
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: mobileTab === 'timeline' ? 'var(--bg-surface)' : 'transparent',
+                color: mobileTab === 'timeline' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                fontSize: '12px',
+                fontWeight: 650,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: mobileTab === 'timeline' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              <History size={14} />
+              <span>{language === 'id' ? `Riwayat (${snapshots.length})` : `History (${snapshots.length})`}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileTab('diff')}
+              style={{
+                flex: 1,
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: mobileTab === 'diff' ? 'var(--bg-surface)' : 'transparent',
+                color: mobileTab === 'diff' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                fontSize: '12px',
+                fontWeight: 650,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: mobileTab === 'diff' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              <Layers size={14} />
+              <span>{language === 'id' ? 'Inspektor Diff' : 'Diff Inspector'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* ── Modal Body: Split Columns on Desktop, Tabbed Single Column on Mobile ── */}
+        <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', flexDirection: 'row' }}>
+          {/* ── Left Column: Snapshot Timeline List ── */}
+          {(!isMobile || mobileTab === 'timeline') && (
+            <div
+              style={{
+                width: isMobile ? '100%' : '340px',
+                borderRight: isMobile ? 'none' : '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-main)',
+                display: 'flex',
+                flexDirection: 'column',
+                flexShrink: 0,
+                overflow: 'hidden',
+              }}
+            >
             {/* Filter & Search Bar */}
             <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div
@@ -558,7 +635,10 @@ export function DocsVersionHistoryModal({
                   return (
                     <div
                       key={snap.id}
-                      onClick={() => setSelectedSnapshotId(snap.id)}
+                      onClick={() => {
+                        setSelectedSnapshotId(snap.id);
+                        if (isMobile) setMobileTab('diff');
+                      }}
                       style={{
                         padding: '10px 12px',
                         marginBottom: '6px',
@@ -759,306 +839,311 @@ export function DocsVersionHistoryModal({
               )}
             </div>
           </div>
+          )}
 
           {/* ── Right Column: Diff Visualizer & Restore Controls ── */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              backgroundColor: 'var(--bg-surface)',
-              minWidth: 0,
-              overflow: 'hidden',
-            }}
-          >
-            {/* Top Inspector Bar */}
+          {(!isMobile || mobileTab === 'diff') && (
             <div
               style={{
-                height: '52px',
-                padding: '0 16px',
-                borderBottom: '1px solid var(--border-subtle)',
+                flex: 1,
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                backgroundColor: 'var(--bg-main)',
-                flexShrink: 0,
+                flexDirection: 'column',
+                backgroundColor: 'var(--bg-surface)',
+                minWidth: 0,
+                overflow: 'hidden',
               }}
             >
-              {/* Sub-file Selector (if multi-file doc) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                {snapshotFiles.length > 1 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <FileText size={13} color="var(--text-muted)" />
-                    <select
-                      value={effectiveSubFileId || ''}
-                      onChange={(e) => setSelectedSubFileId(e.target.value)}
+              {/* Top Inspector Bar */}
+              <div
+                style={{
+                  minHeight: '48px',
+                  height: 'auto',
+                  padding: '8px 14px',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  backgroundColor: 'var(--bg-main)',
+                  flexShrink: 0,
+                }}
+              >
+                {/* Sub-file Selector (if multi-file doc) & Diff Badges */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
+                  {snapshotFiles.length > 1 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <FileText size={13} color="var(--text-muted)" />
+                      <select
+                        value={effectiveSubFileId || ''}
+                        onChange={(e) => setSelectedSubFileId(e.target.value)}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '5px',
+                          border: '1px solid var(--border-subtle)',
+                          backgroundColor: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          outline: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {snapshotFiles.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name} {f.isMain ? '(main)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Diff Stats Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        padding: '2px 7px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      +{diffStats.added}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#EF4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                        padding: '2px 7px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      -{diffStats.removed}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {diffStats.unchanged} {language === 'id' ? 'baris sama' : 'unchanged'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons: Mode Selector + Restore Button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flexShrink: 0 }}>
+                  {/* View Mode Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--bg-subtle)', borderRadius: '6px', padding: '2px', border: '1px solid var(--border-subtle)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setDiffMode('unified')}
                       style={{
                         padding: '4px 8px',
-                        borderRadius: '5px',
-                        border: '1px solid var(--border-subtle)',
-                        backgroundColor: 'var(--bg-surface)',
-                        color: 'var(--text-primary)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        outline: 'none',
+                        fontSize: '11px',
+                        fontWeight: diffMode === 'unified' ? 650 : 500,
+                        borderRadius: '4px',
+                        border: 'none',
+                        backgroundColor: diffMode === 'unified' ? 'var(--bg-surface)' : 'transparent',
+                        color: diffMode === 'unified' ? 'var(--brand-primary)' : 'var(--text-muted)',
                         cursor: 'pointer',
                       }}
                     >
-                      {snapshotFiles.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name} {f.isMain ? '(main)' : ''}
-                        </option>
-                      ))}
-                    </select>
+                      Diff View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiffMode('preview')}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        fontWeight: diffMode === 'preview' ? 650 : 500,
+                        borderRadius: '4px',
+                        border: 'none',
+                        backgroundColor: diffMode === 'preview' ? 'var(--bg-surface)' : 'transparent',
+                        color: diffMode === 'preview' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {language === 'id' ? 'Isi Snapshot' : 'Snapshot Content'}
+                    </button>
+                  </div>
+
+                  {/* Copy Button */}
+                  <button
+                    type="button"
+                    onClick={handleCopyContent}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      height: '30px',
+                      padding: '0 8px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
+                      fontSize: '11.5px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                    title={language === 'id' ? 'Salin teks snapshot' : 'Copy snapshot text'}
+                  >
+                    {copiedNotification ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
+                    <span>{copiedNotification ? (language === 'id' ? 'Disalin' : 'Copied') : (language === 'id' ? 'Salin' : 'Copy')}</span>
+                  </button>
+
+                  {/* Download Button */}
+                  <button
+                    type="button"
+                    onClick={handleDownloadSnapshot}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      height: '30px',
+                      padding: '0 8px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
+                      fontSize: '11.5px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                    title={language === 'id' ? 'Unduh teks snapshot' : 'Download snapshot file'}
+                  >
+                    <Download size={12} />
+                    <span>{language === 'id' ? 'Unduh' : 'Download'}</span>
+                  </button>
+
+                  {/* RESTORE BUTTON */}
+                  {selectedSnapshot && (
+                    <button
+                      type="button"
+                      onClick={() => setRestoreConfirmSnap(selectedSnapshot)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        height: '30px',
+                        padding: '0 10px',
+                        borderRadius: '6px',
+                        backgroundColor: '#16a34a',
+                        border: 'none',
+                        color: '#ffffff',
+                        fontSize: '11.5px',
+                        fontWeight: 650,
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(22, 163, 74, 0.3)',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#15803d')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#16a34a')}
+                      title={language === 'id' ? 'Kembalikan dokumen ke versi ini' : 'Restore document to this version'}
+                    >
+                      <RotateCcw size={12} strokeWidth={2.4} />
+                      <span>{language === 'id' ? 'Kembalikan Versi Ini' : 'Restore this version'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Main Diff Content Pane */}
+              <div style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--bg-main)', padding: '12px 0', fontFamily: 'var(--font-mono, monospace)', fontSize: '12.5px', lineHeight: 1.6 }}>
+                {diffMode === 'preview' ? (
+                  /* Raw Snapshot Content View */
+                  <pre style={{ margin: 0, padding: '0 16px', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {snapshotContent || (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        {language === 'id' ? '(Dokumen kosong pada versi ini)' : '(Document was empty at this version)'}
+                      </span>
+                    )}
+                  </pre>
+                ) : (
+                  /* Unified Line Diff Visualizer */
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {diffLines.length === 0 ? (
+                      <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        {language === 'id' ? 'Tidak ada perbedaan dengan versi aktif' : 'Identical to current working version'}
+                      </div>
+                    ) : (
+                      diffLines.map((line, idx) => {
+                        const isAdded = line.type === 'added';
+                        const isRemoved = line.type === 'removed';
+
+                        return (
+                          <div
+                            key={idx}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              backgroundColor: isAdded
+                                ? 'rgba(16, 185, 129, 0.12)'
+                                : isRemoved
+                                ? 'rgba(239, 68, 68, 0.12)'
+                                : 'transparent',
+                              borderLeft: isAdded
+                                ? '3px solid #10B981'
+                                : isRemoved
+                                ? '3px solid #EF4444'
+                                : '3px solid transparent',
+                              padding: '1px 8px',
+                            }}
+                          >
+                            {/* Line Number Column */}
+                            <div
+                              style={{
+                                width: '50px',
+                                textAlign: 'right',
+                                paddingRight: '12px',
+                                color: 'var(--text-muted)',
+                                opacity: 0.7,
+                                userSelect: 'none',
+                                fontSize: '11px',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {line.oldLineNumber || line.newLineNumber || ''}
+                            </div>
+
+                            {/* Diff Prefix (+ / - / space) */}
+                            <div
+                              style={{
+                                width: '16px',
+                                textAlign: 'center',
+                                color: isAdded ? '#10B981' : isRemoved ? '#EF4444' : 'var(--text-muted)',
+                                fontWeight: 700,
+                                userSelect: 'none',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {isAdded ? '+' : isRemoved ? '-' : ' '}
+                            </div>
+
+                            {/* Line Content */}
+                            <div
+                              style={{
+                                flex: 1,
+                                color: isAdded
+                                  ? 'var(--accent-success, #10B981)'
+                                  : isRemoved
+                                  ? 'var(--accent-danger, #EF4444)'
+                                  : 'var(--text-primary)',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-all',
+                              }}
+                            >
+                              {line.content || ' '}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 )}
-
-                {/* Diff Stats Badges */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#10B981',
-                      backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                      padding: '2px 7px',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    +{diffStats.added}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#EF4444',
-                      backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                      padding: '2px 7px',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    -{diffStats.removed}
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {diffStats.unchanged} {language === 'id' ? 'baris sama' : 'unchanged'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons: Mode Selector + Restore Button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                {/* View Mode Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--bg-subtle)', borderRadius: '6px', padding: '2px', border: '1px solid var(--border-subtle)' }}>
-                  <button
-                    type="button"
-                    onClick={() => setDiffMode('unified')}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      fontWeight: diffMode === 'unified' ? 650 : 500,
-                      borderRadius: '4px',
-                      border: 'none',
-                      backgroundColor: diffMode === 'unified' ? 'var(--bg-surface)' : 'transparent',
-                      color: diffMode === 'unified' ? 'var(--brand-primary)' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Diff View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDiffMode('preview')}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      fontWeight: diffMode === 'preview' ? 650 : 500,
-                      borderRadius: '4px',
-                      border: 'none',
-                      backgroundColor: diffMode === 'preview' ? 'var(--bg-surface)' : 'transparent',
-                      color: diffMode === 'preview' ? 'var(--brand-primary)' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {language === 'id' ? 'Isi Snapshot' : 'Snapshot Content'}
-                  </button>
-                </div>
-
-                {/* Copy Button */}
-                <button
-                  type="button"
-                  onClick={handleCopyContent}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    height: '30px',
-                    padding: '0 8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '11.5px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
-                  title={language === 'id' ? 'Salin teks snapshot' : 'Copy snapshot text'}
-                >
-                  {copiedNotification ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-                  <span>{copiedNotification ? (language === 'id' ? 'Disalin' : 'Copied') : (language === 'id' ? 'Salin' : 'Copy')}</span>
-                </button>
-
-                {/* Download Button */}
-                <button
-                  type="button"
-                  onClick={handleDownloadSnapshot}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    height: '30px',
-                    padding: '0 8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '11.5px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
-                  title={language === 'id' ? 'Unduh teks snapshot' : 'Download snapshot file'}
-                >
-                  <Download size={12} />
-                  <span>{language === 'id' ? 'Unduh' : 'Download'}</span>
-                </button>
-
-                {/* RESTORE BUTTON */}
-                {selectedSnapshot && (
-                  <button
-                    type="button"
-                    onClick={() => setRestoreConfirmSnap(selectedSnapshot)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      height: '32px',
-                      padding: '0 12px',
-                      borderRadius: '6px',
-                      backgroundColor: '#16a34a',
-                      border: 'none',
-                      color: '#ffffff',
-                      fontSize: '12px',
-                      fontWeight: 650,
-                      cursor: 'pointer',
-                      boxShadow: '0 1px 3px rgba(22, 163, 74, 0.3)',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#15803d')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#16a34a')}
-                    title={language === 'id' ? 'Kembalikan dokumen ke versi ini' : 'Restore document to this version'}
-                  >
-                    <RotateCcw size={13} strokeWidth={2.4} />
-                    <span>{language === 'id' ? 'Kembalikan Versi Ini' : 'Restore this version'}</span>
-                  </button>
-                )}
               </div>
             </div>
-
-            {/* Main Diff Content Pane */}
-            <div style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--bg-editor, #0f172a)', padding: '12px 0', fontFamily: 'var(--font-mono, monospace)', fontSize: '12.5px', lineHeight: 1.6 }}>
-              {diffMode === 'preview' ? (
-                /* Raw Snapshot Content View */
-                <pre style={{ margin: 0, padding: '0 16px', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {snapshotContent || (
-                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                      {language === 'id' ? '(Dokumen kosong pada versi ini)' : '(Document was empty at this version)'}
-                    </span>
-                  )}
-                </pre>
-              ) : (
-                /* Unified Line Diff Visualizer */
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {diffLines.length === 0 ? (
-                    <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      {language === 'id' ? 'Tidak ada perbedaan dengan versi aktif' : 'Identical to current working version'}
-                    </div>
-                  ) : (
-                    diffLines.map((line, idx) => {
-                      const isAdded = line.type === 'added';
-                      const isRemoved = line.type === 'removed';
-
-                      return (
-                        <div
-                          key={idx}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            backgroundColor: isAdded
-                              ? 'rgba(16, 185, 129, 0.15)'
-                              : isRemoved
-                              ? 'rgba(239, 68, 68, 0.15)'
-                              : 'transparent',
-                            borderLeft: isAdded
-                              ? '3px solid #10B981'
-                              : isRemoved
-                              ? '3px solid #EF4444'
-                              : '3px solid transparent',
-                            padding: '1px 8px',
-                          }}
-                        >
-                          {/* Line Number Column */}
-                          <div
-                            style={{
-                              width: '50px',
-                              textAlign: 'right',
-                              paddingRight: '12px',
-                              color: 'var(--text-muted)',
-                              opacity: 0.5,
-                              userSelect: 'none',
-                              fontSize: '11px',
-                              flexShrink: 0,
-                            }}
-                          >
-                            {line.oldLineNumber || line.newLineNumber || ''}
-                          </div>
-
-                          {/* Diff Prefix (+ / - / space) */}
-                          <div
-                            style={{
-                              width: '16px',
-                              textAlign: 'center',
-                              color: isAdded ? '#10B981' : isRemoved ? '#EF4444' : 'var(--text-muted)',
-                              fontWeight: 700,
-                              userSelect: 'none',
-                              flexShrink: 0,
-                            }}
-                          >
-                            {isAdded ? '+' : isRemoved ? '-' : ' '}
-                          </div>
-
-                          {/* Line Content */}
-                          <div
-                            style={{
-                              flex: 1,
-                              color: isAdded
-                                ? '#34D399'
-                                : isRemoved
-                                ? '#F87171'
-                                : 'var(--text-primary)',
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-all',
-                            }}
-                          >
-                            {line.content || ' '}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
