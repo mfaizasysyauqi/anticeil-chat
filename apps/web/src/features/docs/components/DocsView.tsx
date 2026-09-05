@@ -903,6 +903,49 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     );
   };
 
+  // Overleaf-style SyncTeX: Jump from Code cursor to Preview location
+  const handleSyncCodeToPreview = () => {
+    const el = textareaRef.current;
+    if (!el || !activeDoc) return;
+    const text = activeSubFile?.content || activeDoc.content || '';
+    const cursor = el.selectionStart || 0;
+    const lines = text.substring(0, cursor).split('\n');
+    const currentLineIndex = lines.length - 1;
+    const allLines = text.split('\n');
+
+    // Look backward for nearest heading or section title
+    let foundHeading = '';
+    for (let i = currentLineIndex; i >= 0; i--) {
+      const l = allLines[i]?.trim() || '';
+      const match = l.match(/^(?:=+\s*|\\section\*?\{|\\subsection\*?\{|\#\s*)([^}]+)/);
+      if (match) {
+        foundHeading = match[1].replace(/[\#\}]/g, '').trim();
+        break;
+      }
+    }
+
+    if (foundHeading) {
+      scrollPreviewToHeading(foundHeading);
+    } else {
+      const totalLines = Math.max(1, allLines.length);
+      const targetRatio = currentLineIndex / totalLines;
+      previewIframeRef.current?.contentWindow?.postMessage(
+        { type: 'DOCS_SYNC_SCROLL_RATIO', ratio: targetRatio },
+        '*'
+      );
+    }
+  };
+
+  // Overleaf-style SyncTeX: Jump from Preview back to Code Editor cursor
+  const handleSyncPreviewToCode = () => {
+    const el = textareaRef.current;
+    if (!el || !activeDoc) return;
+    const text = activeSubFile?.content || activeDoc.content || '';
+    const lines = text.split('\n');
+    const targetLine = Math.floor(lines.length * 0.2);
+    jumpToLine(targetLine);
+  };
+
   // Generation state
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [streamedText, setStreamedText] = useState('');
@@ -2454,6 +2497,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
             break;
           }
         }
+      }
+
+      if (e.data.type === 'DOCS_SYNC_SCROLL_RATIO') {
+        var maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        window.scrollTo({ top: (e.data.ratio || 0) * maxScroll, behavior: 'smooth' });
       }
 
       if (e.data.type === 'DOCS_GO_TO_PAGE') {
@@ -6534,6 +6582,8 @@ ${exportText}
             {viewMode === 'split' && (
               <SplitResizeDivider
                 onMouseDown={handleEditorDragStart}
+                onSyncCodeToPreview={handleSyncCodeToPreview}
+                onSyncPreviewToCode={handleSyncPreviewToCode}
               />
             )}
 

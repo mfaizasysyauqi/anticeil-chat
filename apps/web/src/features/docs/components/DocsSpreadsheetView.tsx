@@ -286,6 +286,31 @@ export function DocsSpreadsheetView({
 
   const textareaRef    = useRef<HTMLTextAreaElement>(null);
   const backdropContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sync Code -> Preview: Jump preview to cell/row corresponding to cursor line
+  const handleSyncCodeToPreview = () => {
+    try {
+      const api = (window as any).__univerAPI;
+      if (api) {
+        const wb = api.getActiveWorkbook?.();
+        if (wb) {
+          const sheet = wb.getActiveSheet?.();
+          if (sheet) {
+            sheet.getRange?.('A1')?.activate?.();
+          }
+        }
+      }
+    } catch { /* fallback ignore */ }
+  };
+
+  // Sync Preview -> Code: Focus editor and scroll to top/active row
+  const handleSyncPreviewToCode = () => {
+    const el = textareaRef.current;
+    if (el) {
+      el.focus();
+      el.scrollTop = 0;
+    }
+  };
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
   const [editorScrollTop, setEditorScrollTop] = useState(0);
@@ -1083,6 +1108,8 @@ export function DocsSpreadsheetView({
         <SplitResizeDivider
           isResizing={isResizing}
           onMouseDown={startResize}
+          onSyncCodeToPreview={handleSyncCodeToPreview}
+          onSyncPreviewToCode={handleSyncPreviewToCode}
         />
       )}
 

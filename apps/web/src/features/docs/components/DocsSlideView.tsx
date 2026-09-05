@@ -324,6 +324,35 @@ export function DocsSlideView({
     }, 100);
   };
 
+  // Sync Code -> Preview: Find active slide index based on cursor position in code
+  const handleSyncCodeToPreview = () => {
+    const el = textareaRef.current;
+    if (!el) {
+      setCurrentSlideIndex(0);
+      return;
+    }
+    const cursor = el.selectionStart || 0;
+    const codeBeforeCursor = code.substring(0, cursor);
+    const slideIndex = codeBeforeCursor.split(/^---$/m).length - 1;
+    setCurrentSlideIndex(Math.max(0, Math.min(slideIndex, slides.length - 1)));
+  };
+
+  // Sync Preview -> Code: Jump editor cursor to active slide separator in code
+  const handleSyncPreviewToCode = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const parts = code.split(/^---$/m);
+    let charOffset = 0;
+    const targetIdx = Math.min(currentSlideIndex, parts.length - 1);
+    for (let i = 0; i < targetIdx; i++) {
+      charOffset += parts[i].length + 4;
+    }
+    el.focus();
+    el.setSelectionRange(charOffset, charOffset);
+    const lines = code.substring(0, charOffset).split('\n').length;
+    el.scrollTop = Math.max(0, lines * 21 - 80);
+  };
+
   // Tab key indent & compile shortcut handler (DRY utility)
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (handleStandardEditorKeyDown(e, code, setCode, handleRecompile)) {
@@ -1291,6 +1320,8 @@ export function DocsSlideView({
         <SplitResizeDivider
           isResizing={isResizing}
           onMouseDown={startResize}
+          onSyncCodeToPreview={handleSyncCodeToPreview}
+          onSyncPreviewToCode={handleSyncPreviewToCode}
         />
       )}
 
