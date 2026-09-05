@@ -289,24 +289,69 @@ export function DocsSpreadsheetView({
 
   // Sync Code -> Preview: Jump preview to cell/row corresponding to cursor line
   const handleSyncCodeToPreview = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const cursor = el.selectionStart || 0;
+    const textBefore = code.substring(0, cursor);
+    const lineIndex = textBefore.split('\n').length - 1;
+    const lines = code.split('\n');
+    const currentLine = lines[lineIndex] || '';
+
+    // Match cell coordinates like A1, B4, D12
+    const match = currentLine.match(/\b([A-Z]{1,3}\d{1,5})\b/i);
+    const targetCell = match ? match[1].toUpperCase() : 'A1';
+
     try {
       const api = (window as any).__univerAPI;
       if (api) {
         const wb = api.getActiveWorkbook?.();
-        if (wb) {
-          const sheet = wb.getActiveSheet?.();
-          if (sheet) {
-            sheet.getRange?.('A1')?.activate?.();
+        const sheet = wb?.getActiveSheet?.();
+        if (sheet) {
+          const range = sheet.getRange?.(targetCell);
+          if (range) {
+            sheet.setActiveRange?.(range) || range.activate?.();
           }
         }
       }
     } catch { /* fallback ignore */ }
   };
 
-  // Sync Preview -> Code: Focus editor and scroll to top/active row
+  // Sync Preview -> Code: Focus editor and jump to active cell row
   const handleSyncPreviewToCode = () => {
     const el = textareaRef.current;
-    if (el) {
+    if (!el) return;
+
+    let targetCoord = '';
+    try {
+      const api = (window as any).__univerAPI;
+      if (api) {
+        const wb = api.getActiveWorkbook?.();
+        const sheet = wb?.getActiveSheet?.();
+        const range = sheet?.getActiveRange?.() || sheet?.getSelection?.()?.getActiveRange?.();
+        if (range) {
+          const r = (range.getRow?.() ?? 0) + 1;
+          const c = range.getColumn?.() ?? 0;
+          targetCoord = `${String.fromCharCode(65 + c)}${r}`;
+        }
+      }
+    } catch {}
+
+    const lines = code.split('\n');
+    let targetIdx = -1;
+
+    if (targetCoord) {
+      targetIdx = lines.findIndex((l) => new RegExp(`\\b${targetCoord}\\b`, 'i').test(l));
+    }
+
+    if (targetIdx !== -1) {
+      let charIdx = 0;
+      for (let i = 0; i < targetIdx; i++) {
+        charIdx += lines[i].length + 1;
+      }
+      el.focus();
+      el.setSelectionRange(charIdx, charIdx + lines[targetIdx].length);
+      el.scrollTop = Math.max(0, targetIdx * 21 - 80);
+    } else {
       el.focus();
       el.scrollTop = 0;
     }

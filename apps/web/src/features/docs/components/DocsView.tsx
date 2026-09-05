@@ -397,6 +397,22 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         setCurrentPage(e.data.currentPage);
         setPageInputValue(String(e.data.currentPage));
       }
+      if (e.data?.type === 'DOCS_PREVIEW_DOUBLE_CLICK') {
+        if (typeof e.data.page === 'number') {
+          setCurrentPage(e.data.page);
+          setPageInputValue(String(e.data.page));
+        }
+        if (e.data.textSnippet && textareaRef.current && activeDoc) {
+          const text = activeSubFile?.content || activeDoc.content || '';
+          const idx = text.indexOf(e.data.textSnippet);
+          if (idx !== -1) {
+            const line = text.substring(0, idx).split('\n').length - 1;
+            jumpToLine(line);
+            return;
+          }
+        }
+        handleSyncPreviewToCode();
+      }
       if (e.data?.type === 'DOCS_PREVIEW_ERROR') {
         const errorMsg = e.data.message || 'Error executing preview scripts';
         setPreviewRuntimeErrors([
@@ -909,30 +925,39 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     if (!el || !activeDoc) return;
     const text = activeSubFile?.content || activeDoc.content || '';
     const cursor = el.selectionStart || 0;
-    const lines = text.substring(0, cursor).split('\n');
-    const currentLineIndex = lines.length - 1;
+    const linesBefore = text.substring(0, cursor).split('\n');
+    const currentLineIndex = linesBefore.length - 1;
     const allLines = text.split('\n');
 
-    // Look backward for nearest heading or section title
+    // 1. Look backward for nearest heading or section title
     let foundHeading = '';
     for (let i = currentLineIndex; i >= 0; i--) {
       const l = allLines[i]?.trim() || '';
-      const match = l.match(/^(?:=+\s*|\\section\*?\{|\\subsection\*?\{|\#\s*)([^}]+)/);
+      const match = l.match(/^(?:=+\s*|\\(?:sub)*section\*?\{|#+\s*)([^}\n]+)/);
       if (match) {
         foundHeading = match[1].replace(/[\#\}]/g, '').trim();
         break;
       }
     }
 
+    // 2. Determine target page number (explicit page breaks vs proportional line)
+    let explicitBreaks = 1;
+    for (let i = 0; i <= currentLineIndex; i++) {
+      if (/\\newpage|\\clearpage|#pagebreak\(|Bab\s+\d+|Chapter\s+\d+/i.test(allLines[i])) {
+        explicitBreaks++;
+      }
+    }
+    const proportionalPage = Math.max(1, Math.min(totalPages, Math.ceil(((currentLineIndex + 1) / Math.max(1, allLines.length)) * totalPages)));
+    const targetPage = Math.max(explicitBreaks, proportionalPage);
+
+    // Jump preview to target page
+    handleGoToPage(targetPage);
+
+    // If heading found, scroll directly to that heading element in the preview
     if (foundHeading) {
-      scrollPreviewToHeading(foundHeading);
-    } else {
-      const totalLines = Math.max(1, allLines.length);
-      const targetRatio = currentLineIndex / totalLines;
-      previewIframeRef.current?.contentWindow?.postMessage(
-        { type: 'DOCS_SYNC_SCROLL_RATIO', ratio: targetRatio },
-        '*'
-      );
+      setTimeout(() => {
+        scrollPreviewToHeading(foundHeading);
+      }, 100);
     }
   };
 
@@ -941,9 +966,31 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     const el = textareaRef.current;
     if (!el || !activeDoc) return;
     const text = activeSubFile?.content || activeDoc.content || '';
-    const lines = text.split('\n');
-    const targetLine = Math.floor(lines.length * 0.2);
-    jumpToLine(targetLine);
+    const allLines = text.split('\n');
+
+    if (currentPage <= 1) {
+      jumpToLine(0);
+      return;
+    }
+
+    // Look for explicit page breaks corresponding to currentPage
+    const breakLineIndices: number[] = [];
+    allLines.forEach((line, idx) => {
+      if (/\\newpage|\\clearpage|#pagebreak\(|Bab\s+\d+|Chapter\s+\d+/i.test(line)) {
+        breakLineIndices.push(idx);
+      }
+    });
+
+    if (breakLineIndices.length >= currentPage - 1) {
+      const targetLine = breakLineIndices[currentPage - 2];
+      jumpToLine(targetLine);
+    } else {
+      const targetLine = Math.min(
+        allLines.length - 1,
+        Math.floor(((currentPage - 1) / Math.max(1, totalPages)) * allLines.length)
+      );
+      jumpToLine(targetLine);
+    }
   };
 
   // Generation state
@@ -2454,19 +2501,33 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }
 
     window.addEventListener('scroll', function() {
-      var scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      var viewCenter = window.innerHeight / 3;
       var pages = document.querySelectorAll('.paper-sheet-page');
       var cur = 1;
       for (var i = 0; i < pages.length; i++) {
-        var pageTop = (pages[i].offsetTop - 40) * currentScale;
-        if (scrollTop >= pageTop) {
-          cur = i + 1;
+        var rect = pages[i].getBoundingClientRect();
+        if (rect.top <= viewCenter && rect.bottom > 0) {
+          cur = parseInt(pages[i].getAttribute('data-page-number'), 10) || (i + 1);
         }
       }
       try {
         window.parent.postMessage({ type: 'DOCS_PAGE_SCROLLED', currentPage: cur }, '*');
       } catch (e) {}
     }, { passive: true });
+
+    document.addEventListener('dblclick', function(e) {
+      var target = e.target;
+      var text = (target.textContent || '').trim().substring(0, 40);
+      var pageEl = target.closest ? target.closest('.paper-sheet-page') : null;
+      var pageNum = pageEl ? parseInt(pageEl.getAttribute('data-page-number'), 10) : 1;
+      try {
+        window.parent.postMessage({
+          type: 'DOCS_PREVIEW_DOUBLE_CLICK',
+          page: pageNum,
+          textSnippet: text
+        }, '*');
+      } catch (err) {}
+    });
 
     updateScaleAndPages();
 
@@ -2506,8 +2567,15 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
       if (e.data.type === 'DOCS_GO_TO_PAGE') {
         var p = Math.max(1, Math.min(totalPagesCount, e.data.page || 1));
-        var targetTop = (p - 1) * (${paperHeightPx} * currentScale);
-        window.scrollTo({ top: targetTop, behavior: 'smooth' });
+        var targetSheet = document.querySelector('.paper-sheet-page[data-page-number="' + p + '"]');
+        if (targetSheet) {
+          targetSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          var targetTop = (p - 1) * (${paperHeightPx} + 24) * currentScale;
+          window.scrollTo({ top: targetTop, behavior: 'smooth' });
+          document.documentElement.scrollTop = targetTop;
+          document.body.scrollTop = targetTop;
+        }
       }
 
       if (e.data.type === 'DOCS_SET_ZOOM') {

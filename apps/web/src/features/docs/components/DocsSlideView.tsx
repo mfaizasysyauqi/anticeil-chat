@@ -333,24 +333,39 @@ export function DocsSlideView({
     }
     const cursor = el.selectionStart || 0;
     const codeBeforeCursor = code.substring(0, cursor);
-    const slideIndex = codeBeforeCursor.split(/^---$/m).length - 1;
+    const slideIndex = codeBeforeCursor.split(/(?:^|\n)\s*---\s*(?:\n|$)/).length - 1;
     setCurrentSlideIndex(Math.max(0, Math.min(slideIndex, slides.length - 1)));
   };
 
-  // Sync Preview -> Code: Jump editor cursor to active slide separator in code
+  // Sync Preview -> Code: Jump editor cursor to active slide in code
   const handleSyncPreviewToCode = () => {
     const el = textareaRef.current;
     if (!el) return;
-    const parts = code.split(/^---$/m);
+    const parts = code.split(/(?:^|\n)\s*---\s*(?:\n|$)/);
+    const targetIdx = Math.min(validIndex, parts.length - 1);
+
+    // Try finding the first line of the target slide for exact cursor placement
+    const targetSlide = slides[targetIdx]?.trim() || '';
+    const firstLine = targetSlide.split('\n')[0]?.trim() || '';
+
+    if (firstLine && code.includes(firstLine)) {
+      const idx = code.indexOf(firstLine);
+      el.focus();
+      el.setSelectionRange(idx, idx + firstLine.length);
+      const lineNumber = code.substring(0, idx).split('\n').length;
+      el.scrollTop = Math.max(0, (lineNumber - 2) * 21);
+      return;
+    }
+
+    // Fallback: calculate char offset of separator
     let charOffset = 0;
-    const targetIdx = Math.min(currentSlideIndex, parts.length - 1);
     for (let i = 0; i < targetIdx; i++) {
-      charOffset += parts[i].length + 4;
+      charOffset += parts[i].length + 5;
     }
     el.focus();
     el.setSelectionRange(charOffset, charOffset);
     const lines = code.substring(0, charOffset).split('\n').length;
-    el.scrollTop = Math.max(0, lines * 21 - 80);
+    el.scrollTop = Math.max(0, (lines - 2) * 21);
   };
 
   // Tab key indent & compile shortcut handler (DRY utility)
