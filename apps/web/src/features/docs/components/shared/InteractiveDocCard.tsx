@@ -13,7 +13,8 @@ import {
   Layers,
   FileCode,
 } from 'lucide-react';
-import { DocFormat, DocItem } from '../../store/useDocsStore';
+import { DocFormat } from '../../store/useDocsStore';
+import { getFormatMeta } from '../../utils/docFormatUtils';
 
 export interface InteractiveDocCardProps {
   doc: {
@@ -39,35 +40,8 @@ export function InteractiveDocCard({
   const isSheet = format === 'sheet';
   const isSlide = format === 'slide';
 
-  const brandColor = isSheet
-    ? 'var(--accent-success, #10B981)'
-    : isSlide
-    ? 'var(--brand-secondary, #8B5CF6)'
-    : 'var(--brand-primary, #0073EA)';
-  const bgBadge = isSheet
-    ? 'rgba(16, 185, 129, 0.12)'
-    : isSlide
-    ? 'rgba(139, 92, 246, 0.12)'
-    : 'rgba(0, 115, 234, 0.12)';
-  const borderBadge = isSheet
-    ? 'rgba(16, 185, 129, 0.3)'
-    : isSlide
-    ? 'rgba(139, 92, 246, 0.3)'
-    : 'rgba(0, 115, 234, 0.3)';
-
-  const formatLabel = isSheet
-    ? language === 'id'
-      ? 'Spreadsheet Studio'
-      : 'Spreadsheet Studio'
-    : isSlide
-    ? language === 'id'
-      ? 'Slide Presentation'
-      : 'Slide Presentation'
-    : language === 'id'
-    ? 'Dokumen LaTeX'
-    : 'LaTeX Document';
-
-  const FormatIcon = isSheet ? Table : isSlide ? Presentation : FileText;
+  const { brandColor, bgBadge, borderBadge, formatLabel } = getFormatMeta(format, language);
+  const FormatIcon = isSheet ? Table : isSlide ? Presentation : format === 'typst' ? FileCode : FileText;
 
   // Derive stats / outline summary
   const content = doc.content || '';
