@@ -5,6 +5,8 @@ import { User, Session, AuthError } from '@supabase/supabase-js';
 import { UserTier, isCloudTier } from '@anticeil/core';
 import { createClient } from '../../../shared/utils/supabase/client';
 
+export type AuthModalMode = 'login' | 'register' | 'verify_phone';
+
 interface AuthState {
   user: User | null;
   session: Session | null;
@@ -12,17 +14,20 @@ interface AuthState {
   error: string | null;
   tier: UserTier;
   isAuthModalOpen: boolean;
-  authModalMode: 'login' | 'register';
+  authModalMode: AuthModalMode;
+  needsPhoneVerification: boolean;
 
   // Actions
   initializeAuth: () => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithOAuth: (provider?: 'google') => Promise<{ error: AuthError | null }>;
+  saveVerifiedPhone: (phone: string, telegramUserId?: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   clearError: () => void;
   setTier: (tier: UserTier) => Promise<void>;
   fetchUserTier: (accessToken?: string) => Promise<UserTier>;
-  openAuthModal: (mode?: 'login' | 'register') => void;
+  openAuthModal: (mode?: AuthModalMode) => void;
   setAuthModalOpen: (open: boolean) => void;
 }
 
@@ -38,6 +43,11 @@ function getStoredTier(): UserTier {
   return 'free';
 }
 
+function isUserPhoneVerified(user: User | null): boolean {
+  if (!user) return true;
+  return Boolean(user.user_metadata?.phone_verified || user.phone);
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
@@ -46,9 +56,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   tier: getStoredTier(),
   isAuthModalOpen: false,
   authModalMode: 'login',
+  needsPhoneVerification: false,
 
-  openAuthModal: (mode = 'login') => set({ isAuthModalOpen: true, authModalMode: mode }),
-  setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
+  openAuthModal: (mode = 'login') =>
+    set({
+      isAuthModalOpen: true,
+      authModalMode: get().needsPhoneVerification ? 'verify_phone' : mode,
+    }),
+  setAuthModalOpen: (open) => {
+    // If phone is unverified, don't allow closing without verification
+    if (!open && get().needsPhoneVerification) {
+      return;
+    }
+    set({ isAuthModalOpen: open });
+  },
 
   fetchUserTier: async (token) => {
     try {
@@ -111,6 +132,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  saveVerifiedPhone: async (phone: string, telegramUserId?: string) => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          phone_verified: true,
+          phone: phone,
+          telegram_user_id: telegramUserId,
+        },
+      });
+
+      if (error) {
+        console.warn('Failed to update phone verification in Supabase:', error);
+        return false;
+      }
+
+      if (data.user) {
+        set({
+          user: data.user,
+          needsPhoneVerification: false,
+          isAuthModalOpen: false,
+        });
+      }
+      return true;
+    } catch (err) {
+      console.warn('saveVerifiedPhone error:', err);
+      return false;
+    }
+  },
+
   initializeAuth: async () => {
     try {
       const supabase = createClient();
@@ -118,10 +169,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         data: { session },
       } = await supabase.auth.getSession();
 
+      const user = session?.user || null;
+      const needsVerification = user ? !isUserPhoneVerified(user) : false;
+
       set({
         session,
-        user: session?.user || null,
+        user,
         isLoading: false,
+        needsPhoneVerification: needsVerification,
+        isAuthModalOpen: needsVerification,
+        authModalMode: needsVerification ? 'verify_phone' : 'login',
       });
 
       // Sync user tier
@@ -146,10 +203,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Subscribe to live auth state changes
       supabase.auth.onAuthStateChange((_event, newSession) => {
+        const newUser = newSession?.user || null;
+        const newNeedsVerification = newUser ? !isUserPhoneVerified(newUser) : false;
+
         set({
           session: newSession,
-          user: newSession?.user || null,
+          user: newUser,
           isLoading: false,
+          needsPhoneVerification: newNeedsVerification,
+          isAuthModalOpen: newNeedsVerification ? true : get().isAuthModalOpen,
+          authModalMode: newNeedsVerification ? 'verify_phone' : get().authModalMode,
         });
 
         if (_event === 'SIGNED_IN' && newSession?.access_token) {
@@ -192,11 +255,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { error };
       }
 
+      const needsVerification = data.user ? !isUserPhoneVerified(data.user) : false;
+
       set({
         session: data.session,
         user: data.user,
         isLoading: false,
         error: null,
+        needsPhoneVerification: needsVerification,
+        isAuthModalOpen: needsVerification,
+        authModalMode: needsVerification ? 'verify_phone' : 'login',
       });
 
       if (data.session?.access_token) {
@@ -236,11 +304,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       if (data.session) {
+        const needsVerification = data.user ? !isUserPhoneVerified(data.user) : false;
+
         set({
           session: data.session,
           user: data.user,
           isLoading: false,
           error: null,
+          needsPhoneVerification: needsVerification,
+          isAuthModalOpen: needsVerification,
+          authModalMode: needsVerification ? 'verify_phone' : 'login',
         });
 
         const token = data.session.access_token;
@@ -267,11 +340,46 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  signInWithOAuth: async (provider = 'google') => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = createClient();
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        set({ error: error.message, isLoading: false });
+        return { error };
+      }
+
+      return { error: null };
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Google sign-in failed';
+      set({ error: errMsg, isLoading: false });
+      return { error: { message: errMsg, name: 'AuthError', status: 500 } as AuthError };
+    }
+  },
+
   signOut: async () => {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      set({ user: null, session: null, error: null });
+      set({
+        user: null,
+        session: null,
+        error: null,
+        needsPhoneVerification: false,
+        isAuthModalOpen: false,
+      });
       import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
         useProjectStore.getState().loadLocalFolders();
       });

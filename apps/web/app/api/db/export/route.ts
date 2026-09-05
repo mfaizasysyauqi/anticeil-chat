@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { AnticeilDatabaseBackup, ChatMessage, ChatSession, ProjectFolderData } from '@anticeil/core';
-
-function getSupabase(token: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  );
-}
+import { getSupabaseWithToken } from '@/shared/utils/supabase/tokenClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +10,7 @@ export async function GET(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) return NextResponse.json({ error: 'Unauthorized: missing token' }, { status: 401 });
 
-    const supabase = getSupabase(token);
+    const supabase = getSupabaseWithToken(token);
     const {
       data: { user },
       error: userErr,

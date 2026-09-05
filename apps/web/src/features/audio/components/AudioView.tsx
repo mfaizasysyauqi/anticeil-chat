@@ -137,8 +137,8 @@ export function AudioView() {
     if (!canFit(estimatedBytes)) {
       alert(
         language === 'id'
-          ? 'Kapasitas penyimpanan 1 GB Anda tidak mencukupi untuk file audio baru.'
-          : 'Not enough storage space in your 1 GB quota.'
+          ? 'Kapasitas penyimpanan Anda tidak mencukupi untuk file audio baru.'
+          : 'Not enough storage space in your quota.'
       );
       return;
     }

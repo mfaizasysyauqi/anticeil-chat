@@ -68,8 +68,9 @@ export function PricingModal() {
     setActionId(planId);
     await new Promise((r) => setTimeout(r, 600));
     await setTier(planId as any);
-    if (planId === 'starter') addPaidCredits(100);
-    if (planId === 'pro') addPaidCredits(600);
+    if (planId === 'starter') addPaidCredits(150);
+    if (planId === 'pro') addPaidCredits(750);
+    if (planId === 'enterprise') addPaidCredits(3000);
     setActionId(null);
     setSuccessMsg(
       language === 'id'
@@ -295,24 +296,6 @@ export function PricingModal() {
                 <Layers size={12} />
                 <span>{language === 'id' ? 'Paket & Storage' : 'Plans & Storage'}</span>
               </button>
-            </div>
-
-            {/* Currency Indicator (Fixed IDR for Midtrans Verification) */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                background: 'var(--bg-main)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                padding: '4px 10px',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--accent-success, #10b981)',
-              }}
-            >
-              <span>🇮🇩 Rp IDR</span>
             </div>
           </div>
         </div>

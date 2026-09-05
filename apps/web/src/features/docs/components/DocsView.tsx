@@ -1067,6 +1067,10 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
 
   // Start Agentic Generation
   const handleStartGenerate = async (promptText: string, format: DocFormat) => {
+    // Credit check & deduction for Anticeil Docs AI generation (1 credit per request)
+    const allowed = useCreditStore.getState().deductCredits('docs', 'anticeil');
+    if (!allowed) return;
+
     setCurrentPrompt(promptText);
     setStreamedText('');
     setIsGenerationFinished(false);
@@ -1095,15 +1099,17 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       },
     ];
 
+    const userTier = useAuthStore.getState().tier;
     let accumulated = '';
     try {
       await streamBYOKChat({
-        providerId: 'groq' as LLMProviderId,
+        providerId: 'anticeil',
         modelId: 'llama-3.3-70b-versatile',
         systemPrompt: systemInstruction,
         messages,
         apiKeyConfig: { apiKey: '', isEnabled: true },
         temperature: 0.6,
+        tier: userTier,
         onChunk: (chunk) => {
           if (chunk.delta) {
             accumulated += chunk.delta;

@@ -86,6 +86,12 @@ interface StorageState {
     isPro: boolean;
     isEnterprise: boolean;
   };
+
+  // Grace Period & Auto-Migration
+  isGracePeriodDismissed: boolean;
+  isMigratingCloudToLocal: boolean;
+  dismissGracePeriod: () => void;
+  migrateCloudToLocalAndPurge: (accessToken: string) => Promise<{ success: boolean; count: number }>;
 }
 
 export { FREE_STORAGE_LIMIT_BYTES, STARTER_STORAGE_LIMIT_BYTES, PRO_STORAGE_LIMIT_BYTES, ENTERPRISE_STORAGE_LIMIT_BYTES };
@@ -320,6 +326,10 @@ export const useStorageStore = create<StorageState>()(
       fileCount: 0,
       lastSyncedAt: null,
       isSyncing: false,
+      isGracePeriodDismissed: false,
+      isMigratingCloudToLocal: false,
+
+      dismissGracePeriod: () => set({ isGracePeriodDismissed: true }),
 
       localDetails: EMPTY_DETAILS,
       supabaseDetails: EMPTY_DETAILS,
@@ -560,6 +570,50 @@ export const useStorageStore = create<StorageState>()(
           isPro: tier === 'pro',
           isEnterprise: tier === 'enterprise',
         };
+      },
+
+      migrateCloudToLocalAndPurge: async (accessToken: string) => {
+        if (!accessToken || get().isMigratingCloudToLocal) {
+          return { success: false, count: 0 };
+        }
+
+        set({ isMigratingCloudToLocal: true });
+        try {
+          const { DatabaseService } = await import('../services/databaseService');
+          const result = await DatabaseService.migrateAndPurgeCloud(accessToken, 'merge');
+
+          // Refresh local measurement
+          get().refreshLocalUsage();
+
+          // Reset cloud sources
+          const state = get();
+          set({
+            isMigratingCloudToLocal: false,
+            isGracePeriodDismissed: true,
+            sources: {
+              ...state.sources,
+              databaseBytes: 0,
+              dbTextBytes: 0,
+              dbFileBytes: 0,
+            },
+            supabaseDetails: EMPTY_DETAILS,
+          });
+
+          // Reload folders into memory
+          const { useProjectStore } = await import('@/features/chat/store/useProjectStore');
+          useProjectStore.getState().loadLocalFolders();
+
+          const totalCount =
+            (result.migration.sessionsCount || 0) +
+            (result.migration.messagesCount || 0) +
+            (result.migration.foldersCount || 0);
+
+          return { success: true, count: totalCount };
+        } catch (err) {
+          console.error('[StorageStore] Migration error:', err);
+          set({ isMigratingCloudToLocal: false });
+          return { success: false, count: 0 };
+        }
       },
     }),
     {

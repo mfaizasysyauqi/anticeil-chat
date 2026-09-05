@@ -53,6 +53,7 @@ import { DatabaseService } from '../../storage/services/databaseService';
 import { StorageMeter } from '../../storage/components/StorageMeter';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 import { useCreditStore } from '../../credits/store/useCreditStore';
+import { KeyLimitDialog } from './KeyLimitDialog';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -190,6 +191,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const apiKeys = useSettingsStore((s) => s.apiKeys);
   const setApiKey = useSettingsStore((s) => s.setApiKey);
+  const clearApiKey = useSettingsStore((s) => s.clearApiKey);
   const clearAllKeys = useSettingsStore((s) => s.clearAllKeys);
   const importApiKeys = useSettingsStore((s) => s.importApiKeys);
   const language = useSettingsStore((s) => s.language);
@@ -222,6 +224,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const paidCredits = useCreditStore((s) => s.paidCredits) || 0;
   const addPaidCredits = useCreditStore((s) => s.addPaidCredits);
   const setPricingModalOpen = useCreditStore((s) => s.setPricingModalOpen);
+  const openPricingModal = useCreditStore((s) => s.openPricingModal);
   const signOut = useAuthStore((s) => s.signOut);
   const t = getTranslation(language);
 
@@ -236,6 +239,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const [keyLimitDialog, setKeyLimitDialog] = useState<{
+    isOpen: boolean;
+    newProviderId?: LLMProviderId;
+    newKey?: string;
+    newUrl?: string;
+    existingProviderId?: LLMProviderId;
+    existingProviderName?: string;
+    newProviderName?: string;
+  } | null>(null);
 
   // Enterprise Custom Supabase Form State
   const [enterpriseUrlInput, setEnterpriseUrlInput] = useState(customSupabaseUrl || '');
@@ -398,7 +410,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }));
   };
 
-  const handleSaveProvider = (providerId: LLMProviderId) => {
+  const handleSaveProvider = (providerId: LLMProviderId, forceReplace = false) => {
     const draft = draftKeys[providerId];
     const savedKey = apiKeys[providerId]?.apiKey || '';
     const savedUrl = apiKeys[providerId]?.baseUrl;
@@ -406,7 +418,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const keyToSave = draft?.apiKey !== undefined ? draft.apiKey : savedKey;
     const urlToSave = draft?.baseUrl !== undefined ? draft.baseUrl : savedUrl;
 
-    setApiKey(providerId, keyToSave, urlToSave);
+    const res = setApiKey(providerId, keyToSave, urlToSave, forceReplace);
+
+    if (res && !res.success && res.reason === 'FREE_LIMIT_EXCEEDED' && res.activeProviderId) {
+      const existingName = PROVIDER_DEFINITIONS.find((p) => p.id === res.activeProviderId)?.name || res.activeProviderId;
+      const newName = PROVIDER_DEFINITIONS.find((p) => p.id === providerId)?.name || providerId;
+      setKeyLimitDialog({
+        isOpen: true,
+        newProviderId: providerId,
+        newKey: keyToSave,
+        newUrl: urlToSave,
+        existingProviderId: res.activeProviderId,
+        existingProviderName: existingName,
+        newProviderName: newName,
+      });
+      return;
+    }
+
     setSavedStatus((prev) => ({ ...prev, [providerId]: true }));
     setDraftKeys((prev) => {
       const next = { ...prev };
@@ -416,6 +444,26 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setTimeout(() => {
       setSavedStatus((prev) => ({ ...prev, [providerId]: false }));
     }, 2500);
+  };
+
+  const handleConfirmReplaceKey = () => {
+    if (!keyLimitDialog?.newProviderId) return;
+    handleSaveProvider(keyLimitDialog.newProviderId, true);
+    setKeyLimitDialog(null);
+  };
+
+  const handleDeleteKey = (providerId: LLMProviderId) => {
+    const provName = PROVIDER_DEFINITIONS.find((p) => p.id === providerId)?.name || providerId;
+    if (confirm(language === 'id' ? `Hapus kunci API untuk ${provName}?` : `Delete API key for ${provName}?`)) {
+      clearApiKey(providerId);
+      setDraftKeys((prev) => {
+        const next = { ...prev };
+        delete next[providerId];
+        return next;
+      });
+      setStatusNotice(language === 'id' ? `Kunci API ${provName} telah dihapus.` : `API key for ${provName} removed.`);
+      setTimeout(() => setStatusNotice(''), 3000);
+    }
   };
 
   const handleCancelProvider = (providerId: LLMProviderId) => {
@@ -804,6 +852,52 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </p>
                 </div>
               </div>
+
+              {/* Free Tier 1-Key Limit Callout */}
+              {tier === 'free' && (
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    background: 'rgba(59, 130, 246, 0.08)',
+                    border: '1px solid rgba(59, 130, 246, 0.25)',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Zap size={16} color="#3b82f6" style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4 }}>
+                      {language === 'id'
+                        ? 'Paket Free Community: Maksimal 1 API Key aktif. Semua model dari kunci tersebut dapat digunakan sepenuhnya tanpa batasan.'
+                        : 'Free Community Plan: Max 1 active API Key. All models from the active key are fully unlocked without restriction.'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      setPricingModalOpen(true);
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      background: 'var(--brand-primary, #0073ea)',
+                      color: '#fff',
+                      border: 'none',
+                      fontSize: '11px',
+                      fontWeight: 650,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {language === 'id' ? 'Upgrade Multi-Key ↗' : 'Upgrade Multi-Key ↗'}
+                  </button>
+                </div>
+              )}
 
               {/* Category Filter & Search */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1274,6 +1368,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         const ts = testConnectionStatus[provId];
                         const isTesting = ts?.testing === true;
                         const result = ts?.result;
+                        const hasSavedKey = Boolean(savedKey?.trim());
+
                         return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <button
@@ -1306,6 +1402,31 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                   : (language === 'id' ? 'Uji Koneksi' : 'Test Connection')}
                               </span>
                             </button>
+
+                            {hasSavedKey && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteKey(provId)}
+                                title={language === 'id' ? 'Hapus Kunci API' : 'Delete API Key'}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '5px 8px',
+                                  borderRadius: '6px',
+                                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                                  background: 'rgba(239, 68, 68, 0.08)',
+                                  color: '#ef4444',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <Trash2 size={11} />
+                                <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+                              </button>
+                            )}
 
                             {result && !isTesting && (
                               <span
@@ -1564,7 +1685,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 {/* Tab 2: Cloud Mode (Starter & Pro) */}
                 <button
                   type="button"
-                  onClick={() => setDbViewMode('pro')}
+                  onClick={() => {
+                    if (tier === 'free') {
+                      openPricingModal('tiers');
+                      return;
+                    }
+                    setDbViewMode('pro');
+                  }}
                   style={{
                     flex: 1,
                     display: 'flex',
@@ -1584,7 +1711,18 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 >
                   <Cloud size={14} />
                   <span>{language === 'id' ? 'Mode Cloud (Starter / Pro)' : 'Cloud Mode (Starter / Pro)'}</span>
-                  {(tier === 'starter' || tier === 'pro') && (
+                  {tier === 'free' ? (
+                    <span style={{
+                      fontSize: '9.5px',
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      background: 'rgba(0, 115, 234, 0.18)',
+                      color: '#0073EA',
+                      fontWeight: 700,
+                    }}>
+                      {language === 'id' ? 'Aktivasi' : 'Upgrade'}
+                    </span>
+                  ) : (tier === 'starter' || tier === 'pro') && (
                     <span style={{
                       fontSize: '9.5px',
                       padding: '1px 6px',
@@ -1601,7 +1739,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 {/* Tab 3: Enterprise BYOD (Custom DB & R2) */}
                 <button
                   type="button"
-                  onClick={() => setDbViewMode('enterprise')}
+                  onClick={() => {
+                    if (tier !== 'enterprise') {
+                      openPricingModal('tiers');
+                      return;
+                    }
+                    setDbViewMode('enterprise');
+                  }}
                   style={{
                     flex: 1,
                     display: 'flex',
@@ -1621,9 +1765,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 >
                   <Building size={14} />
                   <span>{language === 'id' ? 'Mode Enterprise' : 'Enterprise Mode'}</span>
-                  {tier === 'enterprise' && (
+                  {tier === 'enterprise' ? (
                     <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', background: '#8B5CF6', color: '#fff', fontWeight: 700 }}>
                       Active
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: '9.5px',
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      background: 'rgba(139, 92, 246, 0.18)',
+                      color: '#8B5CF6',
+                      fontWeight: 700,
+                    }}>
+                      {language === 'id' ? 'Aktivasi' : 'Upgrade'}
                     </span>
                   )}
                 </button>
@@ -3283,6 +3438,21 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       {showR2Guide && createPortal(r2GuideModal, document.body)}
       {showMigrationConfirm && createPortal(migrationConfirmModal, document.body)}
       {showDeleteConfirm && createPortal(deleteConfirmModal, document.body)}
+      {keyLimitDialog?.isOpen &&
+        createPortal(
+          <KeyLimitDialog
+            dialogData={keyLimitDialog}
+            language={language}
+            onClose={() => setKeyLimitDialog(null)}
+            onConfirmReplace={handleConfirmReplaceKey}
+            onUpgrade={() => {
+              setKeyLimitDialog(null);
+              onClose();
+              setPricingModalOpen(true);
+            }}
+          />,
+          document.body
+        )}
     </>
   );
 }
@@ -3338,26 +3508,37 @@ function StorageMeterPanel({
   const r2OtherMedia = (breakdown.audio || 0) + (breakdown.docs || 0) + (breakdown.other || 0);
 
   // Quota calculation per focused mode
-  const effectiveCloudTier = tier === 'starter' ? 'starter' : 'pro';
-  const limitBytes = mode === 'enterprise'
-    ? 100 * 1024 * 1024 * 1024 // 100 GB / Unlimited BYOD
-    : mode === 'pro'
-    ? (tier === 'starter' ? 5 * 1024 * 1024 * 1024 : 10 * 1024 * 1024 * 1024) // 5 GB for Starter, 10 GB for Pro
-    : 100 * 1024 * 1024;      // 100 MB for Local
+  const isLocalMode = mode === 'local';
+  const isEnterpriseMode = mode === 'enterprise';
+  const isStarterCloud = mode === 'pro' && tier === 'starter';
+  const isProCloud = mode === 'pro' && tier !== 'starter';
 
-  const usedBytes = mode === 'local'
+  const limitBytes = isEnterpriseMode
+    ? 100 * 1024 * 1024 * 1024 // BYOD / 100 GB Dedicated
+    : isStarterCloud
+    ? 5 * 1024 * 1024 * 1024 // 5 GB for Starter
+    : isProCloud
+    ? 10 * 1024 * 1024 * 1024 // 10 GB for Pro
+    : 0;
+
+  const usedBytes = isLocalMode
     ? localTotal
     : (dbTotal + r2Total) || localTotal;
 
-  const percentage = Math.min(100, Math.round((usedBytes / limitBytes) * 100));
-  const isNearLimit = percentage >= 85;
-  const barColor = percentage >= 98
+  const percentage = isLocalMode
+    ? 0
+    : Math.min(100, Math.round((usedBytes / limitBytes) * 100));
+
+  const isNearLimit = !isLocalMode && percentage >= 85;
+  const barColor = isLocalMode
+    ? '#00C875'
+    : percentage >= 98
     ? '#EF4444'
     : isNearLimit
     ? '#F59E0B'
-    : mode === 'enterprise'
+    : isEnterpriseMode
     ? '#8B5CF6'
-    : tier === 'starter'
+    : isStarterCloud
     ? '#f59e0b'
     : '#0073EA';
 
@@ -3378,12 +3559,12 @@ function StorageMeterPanel({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              {mode === 'local'
-                ? (language === 'id' ? 'Kapasitas Penyimpanan Lokal' : 'Local Storage Quota & Utilization')
-                : mode === 'pro'
-                ? (tier === 'starter'
-                    ? (language === 'id' ? 'Kapasitas Starter Cloud (5 GB)' : 'Starter Cloud Storage Quota (5 GB)')
-                    : (language === 'id' ? 'Kapasitas Pro Cloud (10 GB)' : 'Pro Cloud Storage Quota (10 GB)'))
+              {isLocalMode
+                ? (language === 'id' ? 'Kapasitas Penyimpanan Lokal Browser' : 'Local Browser Storage & Utilization')
+                : isStarterCloud
+                ? (language === 'id' ? 'Kapasitas Starter Cloud (5 GB)' : 'Starter Cloud Storage Quota (5 GB)')
+                : isProCloud
+                ? (language === 'id' ? 'Kapasitas Pro Cloud (10 GB)' : 'Pro Cloud Storage Quota (10 GB)')
                 : (language === 'id' ? 'Kapasitas Penyimpanan Enterprise BYOD' : 'Enterprise Storage Quota & Utilization')}
             </h3>
             <button
@@ -3408,13 +3589,13 @@ function StorageMeterPanel({
             </button>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
-            {mode === 'enterprise'
+            {isEnterpriseMode
               ? (language === 'id' ? `${fileCount} item tersimpan — Mode Enterprise (Dedicated Supabase & R2)` : `${fileCount} items stored — Enterprise Mode (BYOD Supabase & R2)`)
-              : mode === 'pro'
-              ? (tier === 'starter'
-                  ? (language === 'id' ? `${fileCount} item tersimpan — Starter Cloud Mode (5 GB Supabase Cloud)` : `${fileCount} items stored — Starter Cloud Mode (5 GB Cloud)`)
-                  : (language === 'id' ? `${fileCount} item tersimpan — Pro Cloud Mode (10 GB Cloud R2 + Supabase)` : `${fileCount} items stored — Pro Cloud Mode (10 GB Cloud)`))
-              : (language === 'id' ? `${fileCount} item tersimpan — Mode Lokal (100 MB Browser Memory)` : `${fileCount} items stored — Local Mode (100 MB Local)`)}
+              : isStarterCloud
+              ? (language === 'id' ? `${fileCount} item tersimpan — Starter Cloud Mode (5 GB Supabase Cloud)` : `${fileCount} items stored — Starter Cloud Mode (5 GB Cloud)`)
+              : isProCloud
+              ? (language === 'id' ? `${fileCount} item tersimpan — Pro Cloud Mode (10 GB Cloud R2 + Supabase)` : `${fileCount} items stored — Pro Cloud Mode (10 GB Cloud)`)
+              : (language === 'id' ? `${fileCount} item tersimpan — Mode Lokal (Penyimpanan Browser Tanpa Batas)` : `${fileCount} items stored — Local Mode (Unlimited Browser Storage)`)}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -3428,7 +3609,11 @@ function StorageMeterPanel({
             }}
           />
           <span style={{ fontSize: '13.5px', fontWeight: 800, color: barColor, whiteSpace: 'nowrap' }}>
-            {percentage}%
+            {isLocalMode
+              ? (language === 'id' ? 'Privat Lokal' : 'Local')
+              : isEnterpriseMode
+              ? 'BYOD'
+              : `${percentage}%`}
           </span>
         </div>
       </div>
@@ -3446,17 +3631,32 @@ function StorageMeterPanel({
         >
           <div
             style={{
-              width: `${percentage}%`,
+              width: isLocalMode ? '100%' : `${percentage}%`,
               height: '100%',
               background: barColor,
+              opacity: isLocalMode ? 0.35 : 1,
               borderRadius: '999px',
               transition: 'width 0.5s ease',
             }}
           />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-muted)' }}>
-          <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'terpakai' : 'used'}</span>
-          <span>{formatStorageBytes(Math.max(0, limitBytes - usedBytes))} {language === 'id' ? 'tersisa dari' : 'free of'} {formatStorageBytes(limitBytes)}</span>
+          {isLocalMode ? (
+            <>
+              <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'tersimpan di browser lokal' : 'stored in local browser'}</span>
+              <span style={{ color: '#00C875', fontWeight: 600 }}>{language === 'id' ? 'Tanpa Batas Server' : 'Unlimited Local Storage'}</span>
+            </>
+          ) : isEnterpriseMode ? (
+            <>
+              <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'terpakai' : 'used'}</span>
+              <span style={{ color: '#8B5CF6', fontWeight: 600 }}>Zero-Trust BYOD</span>
+            </>
+          ) : (
+            <>
+              <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'terpakai' : 'used'}</span>
+              <span>{formatStorageBytes(Math.max(0, limitBytes - usedBytes))} {language === 'id' ? 'tersisa dari' : 'free of'} {formatStorageBytes(limitBytes)}</span>
+            </>
+          )}
         </div>
       </div>
 

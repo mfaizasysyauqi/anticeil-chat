@@ -15,6 +15,7 @@ import {
   Moon,
   Globe,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import {
   PROVIDER_DEFINITIONS,
@@ -23,12 +24,16 @@ import {
 } from '@anticeil/core';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useChatStore } from '../../chat/store/useChatStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
+import { useCreditStore } from '../../credits/store/useCreditStore';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
+import { KeyLimitDialog } from './KeyLimitDialog';
 
 export function SettingsView() {
   const apiKeys = useSettingsStore((s) => s.apiKeys);
   const setApiKey = useSettingsStore((s) => s.setApiKey);
+  const clearApiKey = useSettingsStore((s) => s.clearApiKey);
   const clearAllKeys = useSettingsStore((s) => s.clearAllKeys);
   const importApiKeys = useSettingsStore((s) => s.importApiKeys);
   const language = useSettingsStore((s) => s.language);
@@ -37,6 +42,8 @@ export function SettingsView() {
   const setTheme = useSettingsStore((s) => s.setTheme);
   const sessions = useChatStore((s) => s.sessions);
   const messages = useChatStore((s) => s.messages);
+  const tier = useAuthStore((s) => s.tier);
+  const setPricingModalOpen = useCreditStore((s) => s.setPricingModalOpen);
   const t = getTranslation(language);
 
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
@@ -46,6 +53,15 @@ export function SettingsView() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [draftKeys, setDraftKeys] = useState<Record<string, { apiKey?: string; baseUrl?: string }>>({});
+  const [keyLimitDialog, setKeyLimitDialog] = useState<{
+    isOpen: boolean;
+    newProviderId?: LLMProviderId;
+    newKey?: string;
+    newUrl?: string;
+    existingProviderId?: LLMProviderId;
+    existingProviderName?: string;
+    newProviderName?: string;
+  } | null>(null);
 
   const toggleVisibility = (id: string) => {
     setVisibleKeys((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -71,7 +87,7 @@ export function SettingsView() {
     }));
   };
 
-  const handleSaveProvider = (providerId: LLMProviderId) => {
+  const handleSaveProvider = (providerId: LLMProviderId, forceReplace = false) => {
     const draft = draftKeys[providerId];
     const savedKey = apiKeys[providerId]?.apiKey || '';
     const savedUrl = apiKeys[providerId]?.baseUrl;
@@ -79,7 +95,23 @@ export function SettingsView() {
     const keyToSave = draft?.apiKey !== undefined ? draft.apiKey : savedKey;
     const urlToSave = draft?.baseUrl !== undefined ? draft.baseUrl : savedUrl;
 
-    setApiKey(providerId, keyToSave, urlToSave);
+    const res = setApiKey(providerId, keyToSave, urlToSave, forceReplace);
+
+    if (res && !res.success && res.reason === 'FREE_LIMIT_EXCEEDED' && res.activeProviderId) {
+      const existingName = PROVIDER_DEFINITIONS.find((p) => p.id === res.activeProviderId)?.name || res.activeProviderId;
+      const newName = PROVIDER_DEFINITIONS.find((p) => p.id === providerId)?.name || providerId;
+      setKeyLimitDialog({
+        isOpen: true,
+        newProviderId: providerId,
+        newKey: keyToSave,
+        newUrl: urlToSave,
+        existingProviderId: res.activeProviderId,
+        existingProviderName: existingName,
+        newProviderName: newName,
+      });
+      return;
+    }
+
     setSavedStatus((prev) => ({ ...prev, [providerId]: true }));
     setDraftKeys((prev) => {
       const next = { ...prev };
@@ -89,6 +121,26 @@ export function SettingsView() {
     setTimeout(() => {
       setSavedStatus((prev) => ({ ...prev, [providerId]: false }));
     }, 2500);
+  };
+
+  const handleConfirmReplaceKey = () => {
+    if (!keyLimitDialog?.newProviderId) return;
+    handleSaveProvider(keyLimitDialog.newProviderId, true);
+    setKeyLimitDialog(null);
+  };
+
+  const handleDeleteKey = (providerId: LLMProviderId) => {
+    const provName = PROVIDER_DEFINITIONS.find((p) => p.id === providerId)?.name || providerId;
+    if (confirm(language === 'id' ? `Hapus kunci API untuk ${provName}?` : `Delete API key for ${provName}?`)) {
+      clearApiKey(providerId);
+      setDraftKeys((prev) => {
+        const next = { ...prev };
+        delete next[providerId];
+        return next;
+      });
+      setImportNotice(language === 'id' ? `Kunci API ${provName} telah dihapus.` : `API key for ${provName} removed.`);
+      setTimeout(() => setImportNotice(''), 3000);
+    }
   };
 
   const handleCancelProvider = (providerId: LLMProviderId) => {
@@ -383,6 +435,50 @@ export function SettingsView() {
           style={{ display: 'none' }}
         />
 
+        {/* Free Tier 1-Key Limit Callout */}
+        {tier === 'free' && (
+          <div
+            style={{
+              padding: '12px 16px',
+              background: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
+              borderRadius: 'var(--radius-md, 8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '16px' }}>⚡</span>
+              <span style={{ fontSize: '12.5px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4 }}>
+                {language === 'id'
+                  ? 'Paket Free Community: Maksimal 1 API Key aktif. Semua model dari provider tersebut dapat digunakan secara bebas tanpa batasan.'
+                  : 'Free Community Plan: Max 1 active API Key. All models from the configured provider are fully available without restriction.'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPricingModalOpen(true)}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '6px',
+                background: 'var(--brand-primary, #0073ea)',
+                color: '#fff',
+                border: 'none',
+                fontSize: '11.5px',
+                fontWeight: 650,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {language === 'id' ? 'Upgrade Multi-Key ↗' : 'Upgrade Multi-Key ↗'}
+            </button>
+          </div>
+        )}
+
         {/* Provider Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
           {PROVIDER_DEFINITIONS.map((provider) => {
@@ -449,22 +545,48 @@ export function SettingsView() {
                     )}
                   </div>
 
-                  <a
-                    href={provider.docUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      fontSize: 'var(--font-sm)',
-                      color: 'var(--brand-primary)',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-xs)',
-                    }}
-                  >
-                    <span>{t.settings.getApiKey}</span>
-                    <ExternalLink size={11} />
-                  </a>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {Boolean(savedKey?.trim()) && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteKey(provider.id)}
+                        title={language === 'id' ? 'Hapus Kunci API' : 'Delete API Key'}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(239, 68, 68, 0.25)',
+                          background: 'rgba(239, 68, 68, 0.08)',
+                          color: '#ef4444',
+                          fontSize: '11px',
+                          fontWeight: 650,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Trash2 size={11} />
+                        <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
+                      </button>
+                    )}
+
+                    <a
+                      href={provider.docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: 'var(--font-sm)',
+                        color: 'var(--brand-primary)',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-xs)',
+                      }}
+                    >
+                      <span>{t.settings.getApiKey}</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  </div>
                 </div>
 
                 {/* Anticeil Built-in Description */}
@@ -761,6 +883,18 @@ export function SettingsView() {
       <ConnectorsModal
         isOpen={isConnectorsModalOpen}
         onClose={() => setIsConnectorsModalOpen(false)}
+      />
+
+      {/* Free Tier API Key Limit Modal Dialog */}
+      <KeyLimitDialog
+        dialogData={keyLimitDialog}
+        language={language}
+        onClose={() => setKeyLimitDialog(null)}
+        onConfirmReplace={handleConfirmReplaceKey}
+        onUpgrade={() => {
+          setKeyLimitDialog(null);
+          setPricingModalOpen(true);
+        }}
       />
     </div>
   );

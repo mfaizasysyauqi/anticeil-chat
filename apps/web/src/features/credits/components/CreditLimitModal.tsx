@@ -41,6 +41,10 @@ export function CreditLimitModal() {
   const actionName =
     attemptedAction === 'chat'
       ? (language === 'id' ? 'Chat & Reasoning' : 'Chat & Reasoning')
+      : attemptedAction === 'docs'
+      ? (language === 'id' ? 'Generasi & Co-Author Dokumen' : 'Document AI Generation')
+      : attemptedAction === 'scrape'
+      ? (language === 'id' ? 'Pencarian Web & Ekstraksi Data' : 'Web Search & Scraping')
       : attemptedAction === 'image'
       ? (language === 'id' ? 'Generasi Gambar' : 'Image Generation')
       : attemptedAction === 'video'

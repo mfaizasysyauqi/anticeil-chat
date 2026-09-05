@@ -5,16 +5,16 @@ import { UserTier } from '../types';
  */
 
 // Tier Storage Hard Limits (Bytes)
-export const FREE_STORAGE_LIMIT_BYTES = 100 * 1024 * 1024; // 100 MB per user
+export const FREE_STORAGE_LIMIT_BYTES = 0; // Unlimited Local Browser Storage (No cloud server cap)
 export const STARTER_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB per user
 export const PRO_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB per user
 export const ENTERPRISE_STORAGE_LIMIT_BYTES = 100 * 1024 * 1024 * 1024; // 100 GB (BYOD Zero-Trust)
 
-export const MAX_FREE_STORAGE_BYTES = FREE_STORAGE_LIMIT_BYTES;
+export const MAX_FREE_STORAGE_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB max local browser threshold
 export const MAX_FREE_FILE_BYTES = 10 * 1024 * 1024; // 10 MB per file
 
 export const TIER_STORAGE_LIMITS: Record<UserTier, number> = {
-  free: FREE_STORAGE_LIMIT_BYTES,
+  free: 0, // Unlimited Local Storage
   starter: STARTER_STORAGE_LIMIT_BYTES,
   pro: PRO_STORAGE_LIMIT_BYTES,
   enterprise: ENTERPRISE_STORAGE_LIMIT_BYTES,
@@ -24,7 +24,7 @@ export const TIER_STORAGE_LIMITS: Record<UserTier, number> = {
  * Returns effective storage limit in bytes for a given user tier.
  */
 export function getTierStorageLimitBytes(tier: UserTier = 'free'): number {
-  return TIER_STORAGE_LIMITS[tier] ?? FREE_STORAGE_LIMIT_BYTES;
+  return TIER_STORAGE_LIMITS[tier] ?? 0;
 }
 
 /**
@@ -48,7 +48,7 @@ export function getTierStorageName(tier: UserTier = 'free', lang: 'en' | 'id' = 
       return 'Supabase Cloud (5GB)';
     case 'free':
     default:
-      return lang === 'id' ? 'Penyimpanan Lokal (100MB)' : 'Local Storage (100MB)';
+      return lang === 'id' ? 'Penyimpanan Browser Lokal (Tanpa Batas)' : 'Local Browser Storage (Unlimited)';
   }
 }
 

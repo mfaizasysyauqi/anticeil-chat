@@ -517,7 +517,7 @@ export function ImageView() {
     if (mediaMode === 'image') {
       const estimatedBytes = 1.2 * 1024 * 1024;
       if (!canFit(estimatedBytes)) {
-        alert(language === 'id' ? 'Kapasitas penyimpanan 1 GB Anda tidak mencukupi untuk render media baru.' : 'Not enough storage space in your 1 GB quota.');
+        alert(language === 'id' ? 'Kapasitas penyimpanan Anda tidak mencukupi untuk render media baru.' : 'Not enough storage space in your quota.');
         return;
       }
 

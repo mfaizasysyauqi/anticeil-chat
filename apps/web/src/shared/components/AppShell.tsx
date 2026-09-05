@@ -9,6 +9,7 @@ import { SettingsModal } from '../../features/settings/components/SettingsModal'
 import { CreditLimitModal } from '../../features/credits/components/CreditLimitModal';
 import { PricingModal } from '../../features/pricing/components/PricingModal';
 import { AuthModal } from '../../features/auth/components/AuthModal';
+import { CloudGracePeriodBanner } from '../../features/storage/components/CloudGracePeriodBanner';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 
@@ -88,6 +89,9 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
             setIsMobileSidebarOpen(false);
           }}
         />
+
+        {/* Grace Period Alert for Expired Pro / Unmigrated Cloud Data */}
+        <CloudGracePeriodBanner />
 
         {/* Workspace row: Drawer + Main Content */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>

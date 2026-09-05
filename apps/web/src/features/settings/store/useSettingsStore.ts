@@ -17,6 +17,13 @@ import {
 } from '@anticeil/core';
 
 import { FREE_GROQ_KEYS, FREE_GEMINI_KEYS } from '../../chat/data/byokApi';
+import { useAuthStore } from '../../auth/store/useAuthStore';
+
+export interface SetApiKeyResult {
+  success: boolean;
+  reason?: 'FREE_LIMIT_EXCEEDED';
+  activeProviderId?: LLMProviderId;
+}
 
 interface SettingsState {
   apiKeys: ApiKeysState;
@@ -42,7 +49,9 @@ interface SettingsState {
   setSettingsOpen: (open: boolean) => void;
   setSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
   openSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
-  setApiKey: (providerId: LLMProviderId, apiKey: string, baseUrl?: string) => void;
+  getActiveByokProviders: () => LLMProviderId[];
+  setApiKey: (providerId: LLMProviderId, apiKey: string, baseUrl?: string, forceReplace?: boolean) => SetApiKeyResult;
+  clearApiKey: (providerId: LLMProviderId) => void;
   setCustomSupabaseConfig: (url: string, anonKey: string) => void;
   setCustomR2Config: (config: { accountId: string; bucketName: string; accessKeyId: string; secretAccessKey: string; publicUrl: string }) => void;
   setActiveMediaStorageDriver: (driver: 'supabase' | 'r2') => void;
@@ -157,9 +166,48 @@ export const useSettingsStore = create<SettingsState>()(
       },
 
 
-      setApiKey: (providerId, apiKey, baseUrl) => {
+      getActiveByokProviders: () => {
+        const { apiKeys } = get();
+        return (Object.keys(apiKeys) as LLMProviderId[]).filter(
+          (p) => p !== 'anticeil' && Boolean(apiKeys[p]?.apiKey?.trim())
+        );
+      },
+
+      setApiKey: (providerId, apiKey, baseUrl, forceReplace = false) => {
         const trimmedKey = apiKey.trim();
         const trimmedUrl = baseUrl?.trim();
+
+        // If user is attempting to save a non-empty key for a BYOK provider
+        if (trimmedKey && providerId !== 'anticeil') {
+          const tier = useAuthStore.getState().tier;
+          if (tier === 'free') {
+            const activeByok = get().getActiveByokProviders();
+            const otherActive = activeByok.find((p) => p !== providerId);
+            if (otherActive && !forceReplace) {
+              return {
+                success: false,
+                reason: 'FREE_LIMIT_EXCEEDED',
+                activeProviderId: otherActive,
+              };
+            }
+            // If forceReplace is true, remove the other active key first
+            if (otherActive && forceReplace) {
+              set((state) => ({
+                apiKeys: {
+                  ...state.apiKeys,
+                  [otherActive]: {
+                    ...state.apiKeys[otherActive],
+                    apiKey: '',
+                  },
+                },
+                dynamicModels: {
+                  ...state.dynamicModels,
+                  [otherActive]: undefined,
+                },
+              }));
+            }
+          }
+        }
 
         set((state) => ({
           apiKeys: {
@@ -183,6 +231,24 @@ export const useSettingsStore = create<SettingsState>()(
         ) {
           get().refreshModels(providerId);
         }
+
+        return { success: true };
+      },
+
+      clearApiKey: (providerId) => {
+        set((state) => ({
+          apiKeys: {
+            ...state.apiKeys,
+            [providerId]: {
+              ...state.apiKeys[providerId],
+              apiKey: '',
+            },
+          },
+          dynamicModels: {
+            ...state.dynamicModels,
+            [providerId]: undefined,
+          },
+        }));
       },
 
       toggleProvider: (providerId, isEnabled) =>

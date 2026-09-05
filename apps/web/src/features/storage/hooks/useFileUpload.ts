@@ -83,7 +83,7 @@ export function useFileUpload() {
 
       // 2. Check client-side storage quota before uploading
       const canUpload = addUsage(file.size);
-      if (!canUpload) throw new Error('Storage quota exceeded (1 GB)');
+      if (!canUpload) throw new Error('Storage quota exceeded for your tier');
 
       // 3. PUT file directly to R2
       const put = await fetch(uploadUrl, {

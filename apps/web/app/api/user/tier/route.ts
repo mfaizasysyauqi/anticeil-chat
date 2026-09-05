@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabase(token: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  );
-}
+import { getSupabaseWithToken } from '@/shared/utils/supabase/tokenClient';
 
 // GET /api/user/tier — Get active user tier
 export async function GET(req: NextRequest) {
@@ -17,7 +9,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ tier: 'free', isGuest: true });
     }
 
-    const supabase = getSupabase(token);
+    const supabase = getSupabaseWithToken(token);
     const {
       data: { user },
       error: userErr,
@@ -56,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = getSupabase(token);
+    const supabase = getSupabaseWithToken(token);
     const {
       data: { user },
       error: userErr,

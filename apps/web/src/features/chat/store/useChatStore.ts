@@ -585,6 +585,8 @@ export const useChatStore = create<ChatState>()(
           return m;
         });
 
+        const userTier = useAuthStore.getState().tier;
+
         try {
           await streamBYOKChat({
             providerId: session.providerId,
@@ -593,6 +595,7 @@ export const useChatStore = create<ChatState>()(
             messages: apiMessages,
             apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
             temperature: session.temperature,
+            tier: userTier,
             enableWebSearch: shouldWebSearch,
             signal: controller.signal,
             onChunk: (chunk) => {
@@ -773,6 +776,7 @@ export const useChatStore = create<ChatState>()(
                 messages: synthesisMessages,
                 apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
                 temperature: session.temperature,
+                tier: userTier,
                 signal: controller.signal,
                 onChunk: (chunk) => {
                   if (chunk.delta) synthesisText += chunk.delta;
@@ -983,8 +987,15 @@ export const useChatStore = create<ChatState>()(
         const session = state.sessions.find((s) => s.id === sessionId);
         if (!session) return;
 
+        // Credit check & deduction for Anticeil Free provider
+        if (session.providerId === 'anticeil') {
+          const allowed = useCreditStore.getState().deductCredits('chat', 'anticeil');
+          if (!allowed) return;
+        }
+
         const settings = useSettingsStore.getState();
         const apiKeyConfig = settings.apiKeys[session.providerId];
+        const userTier = useAuthStore.getState().tier;
 
         set((s) => ({
           messages: { ...s.messages, [sessionId]: updatedMsgs },
@@ -1012,6 +1023,7 @@ export const useChatStore = create<ChatState>()(
             messages: apiMessages,
             apiKeyConfig: apiKeyConfig || { apiKey: '', isEnabled: true },
             temperature: session.temperature,
+            tier: userTier,
             signal: controller.signal,
             onChunk: (chunk) => {
               if (chunk.delta) accumulatedText += chunk.delta;

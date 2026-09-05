@@ -7,6 +7,7 @@ export * from './domain/promptTemplates';
 export * from './domain/modelFetcher';
 export * from './domain/fileParser';
 export * from './domain/storageLimits';
+export * from './domain/tierLimits';
 export * from './domain/webSearch';
 export * from './domain/connectors/types';
 export * from './domain/connectors/gmailClient';

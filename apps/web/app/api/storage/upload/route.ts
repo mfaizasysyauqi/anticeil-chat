@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createClient } from '@supabase/supabase-js';
+import { getTierMaxFileLimit, UserTier } from '@anticeil/core';
 import { r2, R2_BUCKET, r2Key, createCustomR2Client } from '../../../../src/lib/r2';
 
 /**
@@ -48,10 +49,15 @@ export async function POST(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Quota guard: 1 GB per single file
-    const ONE_GB = 1024 * 1024 * 1024;
-    if (typeof size === 'number' && size > ONE_GB) {
-      return NextResponse.json({ error: 'File exceeds 1 GB quota' }, { status: 413 });
+    // Quota guard: validate per-file size based on user tier
+    const userTier = (user.user_metadata?.tier || 'free') as UserTier;
+    const maxFileLimit = getTierMaxFileLimit(userTier);
+    if (typeof size === 'number' && size > maxFileLimit) {
+      const maxMb = Math.round(maxFileLimit / (1024 * 1024));
+      return NextResponse.json(
+        { error: `File exceeds the ${maxMb} MB limit for ${userTier.toUpperCase()} tier.` },
+        { status: 413 }
+      );
     }
 
     // Build unique key: userId/category/timestamp-filename

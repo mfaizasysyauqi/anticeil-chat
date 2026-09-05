@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { HardDrive, AlertTriangle, Sparkles } from 'lucide-react';
 import { useStorageStore, formatStorageBytes } from '../store/useStorageStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
+import { getTierStorageName } from '@anticeil/core';
 
 interface StorageMeterProps {
   compact?: boolean;
@@ -15,6 +17,7 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
   const usedBytes = useStorageStore((s) => s.usedBytes);
   const limitBytes = useStorageStore((s) => s.limitBytes);
   const language = useSettingsStore((s) => s.language);
+  const tier = useAuthStore((s) => s.tier);
 
   useEffect(() => {
     setMounted(true);
@@ -24,21 +27,47 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
     return null;
   }
 
-  const percentage = Math.min(100, Math.round((usedBytes / limitBytes) * 100));
-  const isNearLimit = percentage >= 85;
-  const isFull = percentage >= 98;
+  const isFreeTier = tier === 'free' || !tier;
+  const isStarter = tier === 'starter';
+  const isPro = tier === 'pro';
+  const isEnterprise = tier === 'enterprise';
 
-  const barColor = isFull
+  const effectiveLimitBytes = isStarter
+    ? 5 * 1024 * 1024 * 1024
+    : isPro
+    ? 10 * 1024 * 1024 * 1024
+    : isEnterprise
+    ? 100 * 1024 * 1024 * 1024
+    : 0;
+
+  const percentage = isFreeTier
+    ? 0
+    : Math.min(100, Math.round((usedBytes / effectiveLimitBytes) * 100));
+
+  const isNearLimit = !isFreeTier && percentage >= 85;
+  const isFull = !isFreeTier && percentage >= 98;
+
+  const barColor = isFreeTier
+    ? 'var(--accent-success, #00C875)'
+    : isFull
     ? 'var(--accent-danger, #EF4444)'
     : isNearLimit
     ? 'var(--accent-warning, #F59E0B)'
+    : isStarter
+    ? '#f59e0b'
+    : isEnterprise
+    ? '#8B5CF6'
     : 'var(--brand-primary, #0073EA)';
 
   if (compact) {
     return (
       <div
         onClick={onManageClick}
-        title={language === 'id' ? 'Kapasitas Penyimpanan — Klik untuk Upgrade / Kelola' : 'Personal Storage Quota — Click to Upgrade / Manage'}
+        title={
+          isFreeTier
+            ? (language === 'id' ? 'Penyimpanan Lokal Browser (Tanpa Batas) — Klik untuk Upgrade ke Cloud' : 'Unlimited Local Browser Storage — Click to Upgrade to Cloud')
+            : (language === 'id' ? 'Kapasitas Cloud — Klik untuk Kelola' : 'Cloud Storage Quota — Click to Manage')
+        }
         className={onManageClick ? 'clickable-pill' : ''}
         style={{
           padding: '8px 12px',
@@ -55,10 +84,22 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', gap: '4px', minWidth: 0 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)', minWidth: 0, overflow: 'hidden' }}>
             <HardDrive size={12} color={barColor} style={{ flexShrink: 0 }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{language === 'id' ? 'Penyimpanan' : 'Storage'}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {isFreeTier
+                ? (language === 'id' ? 'Penyimpanan' : 'Storage')
+                : isStarter
+                ? 'Starter Cloud'
+                : isPro
+                ? 'Pro Cloud'
+                : 'Enterprise'}
+            </span>
           </span>
           <span style={{ fontWeight: 700, color: isFull ? 'var(--accent-danger)' : 'var(--text-primary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {formatStorageBytes(usedBytes)} / {formatStorageBytes(limitBytes)}
+            {isFreeTier
+              ? `${formatStorageBytes(usedBytes)} (Lokal)`
+              : isEnterprise
+              ? `${formatStorageBytes(usedBytes)} (BYOD)`
+              : `${formatStorageBytes(usedBytes)} / ${formatStorageBytes(effectiveLimitBytes)}`}
           </span>
         </div>
 
@@ -74,9 +115,10 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
         >
           <div
             style={{
-              width: `${percentage}%`,
+              width: isFreeTier ? '100%' : `${percentage}%`,
               height: '100%',
               backgroundColor: barColor,
+              opacity: isFreeTier ? 0.35 : 1,
               borderRadius: '9999px',
               transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
@@ -105,21 +147,23 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
               width: '32px',
               height: '32px',
               borderRadius: '8px',
-              backgroundColor: 'rgba(0, 115, 234, 0.1)',
+              backgroundColor: isFreeTier ? 'rgba(0, 200, 117, 0.1)' : 'rgba(0, 115, 234, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--brand-primary)',
+              color: isFreeTier ? '#00C875' : 'var(--brand-primary)',
             }}
           >
             <HardDrive size={16} />
           </div>
           <div>
             <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {language === 'id' ? 'Kuota Penyimpanan Ruang Kerja' : 'Workspace Storage Quota'}
+              {isFreeTier
+                ? (language === 'id' ? 'Penyimpanan Lokal Browser' : 'Local Browser Storage')
+                : (language === 'id' ? 'Kuota Penyimpanan Ruang Kerja' : 'Workspace Storage Quota')}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              {language === 'id' ? 'Gratis 1 GB untuk seluruh dokumen, media, & canvas' : 'Free 1 GB for all docs, media, & canvas'}
+              {getTierStorageName(tier, language as 'en' | 'id')}
             </div>
           </div>
         </div>
@@ -135,7 +179,11 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
             border: '1px solid var(--border-subtle)',
           }}
         >
-          {percentage}% {language === 'id' ? 'Terpakai' : 'Used'}
+          {isFreeTier
+            ? (language === 'id' ? '100% Privat Lokal' : '100% Private Local')
+            : isEnterprise
+            ? 'BYOD Dedicated'
+            : `${percentage}% ${language === 'id' ? 'Terpakai' : 'Used'}`}
         </span>
       </div>
 
@@ -151,9 +199,10 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
       >
         <div
           style={{
-            width: `${percentage}%`,
+            width: isFreeTier ? '100%' : `${percentage}%`,
             height: '100%',
             backgroundColor: barColor,
+            opacity: isFreeTier ? 0.35 : 1,
             borderRadius: '9999px',
             transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
@@ -161,8 +210,22 @@ export function StorageMeter({ compact = false, onManageClick }: StorageMeterPro
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-        <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'dari' : 'of'} {formatStorageBytes(limitBytes)}</span>
-        <span>{formatStorageBytes(Math.max(0, limitBytes - usedBytes))} {language === 'id' ? 'tersisa' : 'remaining'}</span>
+        {isFreeTier ? (
+          <>
+            <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'tersimpan di browser Anda' : 'stored in your browser'}</span>
+            <span style={{ color: '#00C875', fontWeight: 600 }}>{language === 'id' ? 'Tanpa Batas Server' : 'Unlimited Local'}</span>
+          </>
+        ) : isEnterprise ? (
+          <>
+            <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'terpakai' : 'used'}</span>
+            <span style={{ color: '#8B5CF6', fontWeight: 600 }}>Custom BYOD</span>
+          </>
+        ) : (
+          <>
+            <span>{formatStorageBytes(usedBytes)} {language === 'id' ? 'dari' : 'of'} {formatStorageBytes(effectiveLimitBytes)}</span>
+            <span>{formatStorageBytes(Math.max(0, effectiveLimitBytes - usedBytes))} {language === 'id' ? 'tersisa' : 'remaining'}</span>
+          </>
+        )}
       </div>
     </div>
   );

@@ -298,4 +298,54 @@ export class DatabaseService {
     const cloudBackup: AnticeilDatabaseBackup = await res.json();
     return this.importLocalDatabase(cloudBackup, mode);
   }
+
+  /**
+   * Purge user records from Supabase Cloud
+   */
+  static async purgeCloudDatabase(accessToken: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch('/api/db/purge', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}: Failed to purge cloud database`);
+    }
+
+    return res.json();
+  }
+
+  /**
+   * 1-Click Grace Period Resolution: Pull all cloud data to local, then purge cloud records
+   */
+  static async migrateAndPurgeCloud(
+    accessToken: string,
+    mode: 'merge' | 'replace' = 'merge'
+  ): Promise<{
+    migration: {
+      sessionsCount: number;
+      messagesCount: number;
+      foldersCount: number;
+      personasCount: number;
+    };
+    purgeSuccess: boolean;
+  }> {
+    // 1. Pull cloud data and store safely in local
+    const migration = await this.migrateCloudToLocal(accessToken, mode);
+
+    // 2. Once local import is confirmed, purge cloud copy
+    let purgeSuccess = false;
+    try {
+      const purgeRes = await this.purgeCloudDatabase(accessToken);
+      purgeSuccess = purgeRes.success;
+    } catch (e) {
+      console.warn('[DatabaseService] Failed to purge cloud after migration:', e);
+    }
+
+    return { migration, purgeSuccess };
+  }
 }
+

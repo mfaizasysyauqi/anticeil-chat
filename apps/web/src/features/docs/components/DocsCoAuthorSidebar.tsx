@@ -24,6 +24,7 @@ import {
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
+import { useCreditStore } from '../../credits/store/useCreditStore';
 import { useCoAuthorHistoryStore, CoAuthorMessage } from '../store/useCoAuthorHistoryStore';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, LLMProviderId, getModelById, PROVIDER_DEFINITIONS } from '@anticeil/core';
@@ -278,6 +279,12 @@ export function DocsCoAuthorSidebar({
     const promptToSend = customPrompt || inputPrompt.trim();
     if (!promptToSend || isGenerating) return;
 
+    // Credit check & deduction for Anticeil Docs AI (1 credit per request)
+    if (selectedProviderId === 'anticeil') {
+      const allowed = useCreditStore.getState().deductCredits('docs', 'anticeil');
+      if (!allowed) return;
+    }
+
     if (!customPrompt) setInputPrompt('');
 
     const snapshotId = activeDoc ? createDocSnapshot(activeDoc.id, promptToSend.slice(0, 35)) : undefined;
@@ -373,6 +380,7 @@ When the user asks you to create, modify, or manage files, invoke the action tag
       }));
 
     const keyConfig = apiKeys[selectedProviderId] || { apiKey: '', isEnabled: true };
+    const userTier = useAuthStore.getState().tier;
 
     try {
       let fullResponse = '';
@@ -384,6 +392,7 @@ When the user asks you to create, modify, or manage files, invoke the action tag
         messages: apiMessages,
         apiKeyConfig: keyConfig,
         temperature: 0.6,
+        tier: userTier,
         enableWebSearch,
         onChunk: (chunk) => {
           if (chunk.delta) {

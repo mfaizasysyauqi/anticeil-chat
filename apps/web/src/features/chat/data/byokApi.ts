@@ -3,7 +3,9 @@ import {
   ChatStreamChunk,
   LLMProviderId,
   ProviderApiKeyConfig,
+  UserTier,
   getProviderById,
+  getTierAiLimits,
   parseSSELine,
   BASE_LANGUAGE_INSTRUCTION,
 } from '@anticeil/core';
@@ -15,6 +17,8 @@ export interface SendMessageOptions {
   messages: ChatMessage[];
   apiKeyConfig: ProviderApiKeyConfig;
   temperature?: number;
+  maxTokens?: number;
+  tier?: UserTier;
   enableWebSearch?: boolean;
   onChunk: (chunk: ChatStreamChunk) => void;
   signal?: AbortSignal;
@@ -56,6 +60,8 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
     messages,
     apiKeyConfig,
     temperature = 0.7,
+    maxTokens,
+    tier,
     enableWebSearch = false,
     onChunk,
     signal,
@@ -69,13 +75,34 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
     throw new Error(`API key is required for ${providerDef.name}. Please configure it in Settings.`);
   }
 
+  // Get active tier limits for token budget protection
+  const effectiveTier: UserTier =
+    tier ||
+    (typeof window !== 'undefined' && (localStorage.getItem('anticeil_user_tier') as UserTier)) ||
+    'free';
+  const tierAiLimits = getTierAiLimits(effectiveTier);
+
   // Format messages into common structure and filter empty content
-  const rawFormatted = messages
+  let rawFormatted = messages
     .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.content && m.content.trim())
     .map((m) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content.trim(),
     }));
+
+  // For built-in Anticeil provider: enforce developer token & cost protection limits
+  if (providerId === 'anticeil') {
+    if (rawFormatted.length > tierAiLimits.maxHistoryMessages) {
+      rawFormatted = rawFormatted.slice(-tierAiLimits.maxHistoryMessages);
+    }
+    rawFormatted = rawFormatted.map((m) => ({
+      role: m.role,
+      content:
+        m.content.length > tierAiLimits.maxInputChars
+          ? m.content.slice(0, tierAiLimits.maxInputChars) + '\n...[truncated for token optimization]'
+          : m.content,
+    }));
+  }
 
   // Merge consecutive same-role messages to guarantee strict role alternation (required by Gemini & Anthropic)
   const formattedMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
@@ -109,7 +136,10 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
       const anticeilBody: Record<string, unknown> = {
         contents,
         systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
-        generationConfig: { temperature },
+        generationConfig: {
+          temperature,
+          maxOutputTokens: maxTokens || tierAiLimits.maxOutputTokens,
+        },
       };
       // Native Google Search Grounding — no external API needed
       if (enableWebSearch) anticeilBody.tools = [{ googleSearch: {} }];
@@ -140,6 +170,7 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
           model: modelId,
           messages: payloadMessages,
           temperature,
+          max_tokens: maxTokens || tierAiLimits.maxOutputTokens,
           stream: true,
         }),
         signal,
@@ -178,6 +209,7 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
         model: modelId,
         messages: payloadMessages,
         temperature,
+        ...(maxTokens ? { max_tokens: maxTokens } : {}),
         stream: true,
       }),
       signal,
@@ -199,7 +231,7 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
         model: modelId,
         system: effectiveSystemPrompt,
         messages: formattedMessages,
-        max_tokens: 4096,
+        max_tokens: maxTokens || 4096,
         temperature,
         stream: true,
       }),
@@ -207,7 +239,7 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
     });
   }
 
-  // 3. Google Gemini API
+  // 3. Google Gemini API (BYOK)
   else if (providerId === 'gemini') {
     const endpoint = `${baseUrl.replace(/\/+$/, '')}/models/${modelId}:streamGenerateContent?alt=sse&key=${apiKey}`;
     const contents = formattedMessages.map((m) => ({
@@ -218,7 +250,10 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
     const geminiBody: Record<string, unknown> = {
       contents,
       systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
-      generationConfig: { temperature },
+      generationConfig: {
+        temperature,
+        ...(maxTokens ? { maxOutputTokens: maxTokens } : {}),
+      },
     };
     // Native Google Search Grounding — no external API needed
     if (enableWebSearch) geminiBody.tools = [{ googleSearch: {} }];
@@ -250,6 +285,7 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
         stream: true,
         options: {
           temperature,
+          ...(maxTokens ? { num_predict: maxTokens } : {}),
         },
       }),
       signal,

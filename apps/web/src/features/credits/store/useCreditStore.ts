@@ -2,8 +2,16 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import {
+  CREDIT_COSTS,
+  CreditActionType,
+  isBYOKProvider,
+  getActionCreditCost,
+} from '@anticeil/core';
 
 export const MAX_DAILY_CREDITS = 50;
+export { CREDIT_COSTS, isBYOKProvider, getActionCreditCost };
+export type { CreditActionType };
 
 // Credit packages available for top-up (Never Expire & Stackable)
 export interface CreditPack {
@@ -56,22 +64,12 @@ export const CREDIT_PACKS: CreditPack[] = [
   },
 ];
 
-export const CREDIT_COSTS = {
-  chat: 1,
-  image: 5,
-  audio: 5,
-  video: 15,
-  scrape: 1,
-} as const;
-
-export type CreditActionType = keyof typeof CREDIT_COSTS;
-
 interface CreditState {
   credits: number;          // Daily free credits (reset each day at 00:00)
   maxDailyCredits: number;
   lastResetDate: string;    // YYYY-MM-DD
 
-  paidCredits: number;      // Stackable top-up credits (Never expire! Stack on every purchase)
+  paidCredits: number;      // Stackable top-up & tier bonus credits (Never expire!)
 
   isLimitModalOpen: boolean;
   isPricingModalOpen: boolean;
@@ -122,24 +120,24 @@ export const useCreditStore = create<CreditState>()(
       },
 
       canAfford: (actionType, providerId) => {
-        // BYOK, OmniRoute, Ollama, Custom — always free
-        if (providerId !== 'anticeil' && !providerId.startsWith('anticeil-')) {
+        // BYOK, OmniRoute, Ollama, Custom — always free (0 credits)
+        if (isBYOKProvider(providerId)) {
           return true;
         }
         get().checkAndResetDaily();
-        const cost = CREDIT_COSTS[actionType] ?? 1;
+        const cost = getActionCreditCost(actionType);
         const total = (get().credits || 0) + (get().paidCredits || 0);
         return total >= cost;
       },
 
       deductCredits: (actionType, providerId) => {
-        // BYOK / Local always pass through
-        if (providerId !== 'anticeil' && !providerId.startsWith('anticeil-')) {
+        // BYOK / Local always pass through (0 credits)
+        if (isBYOKProvider(providerId)) {
           return true;
         }
 
         get().checkAndResetDaily();
-        const cost = CREDIT_COSTS[actionType] ?? 1;
+        const cost = getActionCreditCost(actionType);
         const { credits, paidCredits } = get();
         const total = (credits || 0) + (paidCredits || 0);
 
@@ -148,7 +146,7 @@ export const useCreditStore = create<CreditState>()(
           return false;
         }
 
-        // Priority: consume daily free first, then paid top-up credits
+        // Priority: consume daily free first, then paid/bonus credits
         if (credits >= cost) {
           set({ credits: Math.max(0, credits - cost) });
         } else {

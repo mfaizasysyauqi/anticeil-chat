@@ -234,7 +234,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
     for (let i = 0; i < files.length; i++) {
       if (!canFit(files[i].size)) {
-        alert(language === 'id' ? 'Sisa kuota penyimpanan 1 GB Anda tidak mencukupi untuk berkas ini.' : 'Not enough storage space in your 1 GB quota.');
+        alert(language === 'id' ? 'Sisa kuota penyimpanan Anda tidak mencukupi untuk berkas ini.' : 'Not enough storage space in your quota.');
         continue;
       }
       try {

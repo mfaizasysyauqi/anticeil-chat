@@ -9,9 +9,15 @@ interface TelegramSession {
   createdAt: number;
 }
 
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
 const globalSessions = globalThis as unknown as {
   _telegramVerificationSessions?: Map<string, TelegramSession>;
   _telegramRepliedUpdates?: Set<number>;
+  _telegramIpRateLimits?: Map<string, RateLimitEntry>;
 };
 
 if (!globalSessions._telegramVerificationSessions) {
@@ -22,10 +28,15 @@ if (!globalSessions._telegramRepliedUpdates) {
   globalSessions._telegramRepliedUpdates = new Set<number>();
 }
 
+if (!globalSessions._telegramIpRateLimits) {
+  globalSessions._telegramIpRateLimits = new Map<string, RateLimitEntry>();
+}
+
 const sessions = globalSessions._telegramVerificationSessions;
 const repliedUpdates = globalSessions._telegramRepliedUpdates;
+const ipRateLimits = globalSessions._telegramIpRateLimits;
 
-// Clean up expired sessions (older than 15 minutes)
+// Clean up expired sessions and rate limit entries
 function cleanExpiredSessions() {
   const now = Date.now();
   for (const [key, session] of sessions.entries()) {
@@ -33,6 +44,30 @@ function cleanExpiredSessions() {
       sessions.delete(key);
     }
   }
+  for (const [ip, entry] of ipRateLimits.entries()) {
+    if (now > entry.resetAt) {
+      ipRateLimits.delete(ip);
+    }
+  }
+}
+
+// Check IP rate limit (Max 5 session creations per IP per minute)
+function checkIpRateLimit(ip: string, maxRequests = 5, windowMs = 60 * 1000): { allowed: boolean; remainingSeconds: number } {
+  const now = Date.now();
+  const entry = ipRateLimits.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    ipRateLimits.set(ip, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remainingSeconds: 0 };
+  }
+
+  if (entry.count >= maxRequests) {
+    const remainingSeconds = Math.ceil((entry.resetAt - now) / 1000);
+    return { allowed: false, remainingSeconds };
+  }
+
+  entry.count += 1;
+  return { allowed: true, remainingSeconds: 0 };
 }
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'AnticeilBot';
@@ -113,11 +148,24 @@ async function checkTelegramUpdates(targetToken?: string) {
 export async function POST(req: NextRequest) {
   try {
     cleanExpiredSessions();
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
     const body = await req.json();
     const { action, token, phone, telegramUserId } = body;
 
-    // 1. Create a new verification session token
+    // 1. Create a new verification session token (Rate limited per IP)
     if (action === 'create-session') {
+      const rateCheck = checkIpRateLimit(clientIp, 5, 60 * 1000);
+      if (!rateCheck.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Terlalu banyak permintaan verifikasi. Harap tunggu ${rateCheck.remainingSeconds} detik lagi.`,
+            remainingSeconds: rateCheck.remainingSeconds,
+          },
+          { status: 429 }
+        );
+      }
+
       const newToken = `tg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       sessions.set(newToken, {
         token: newToken,
