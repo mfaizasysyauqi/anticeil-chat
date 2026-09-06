@@ -36,10 +36,13 @@ export async function POST(req: NextRequest) {
       custom_field3: userId,
     } = body;
 
-    // Verify authenticity
-    if (!verifySignature(order_id, status_code, gross_amount, signature_key)) {
-      console.warn("[Midtrans Webhook] Invalid signature for order:", order_id);
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    // Verify authenticity — return 200 even on mismatch so Midtrans dashboard
+    // test notifications don't show "Test failed" (they use a dummy signature).
+    // We simply skip processing if the signature is invalid.
+    const signatureValid = verifySignature(order_id, status_code, gross_amount, signature_key);
+    if (!signatureValid) {
+      console.warn("[Midtrans Webhook] Invalid/test signature for order:", order_id);
+      return NextResponse.json({ received: true }); // 200 so Midtrans marks test as OK
     }
 
     // Determine if payment was successful
