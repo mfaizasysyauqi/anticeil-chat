@@ -1,7 +1,11 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+// Midtrans Payment Notification Webhook
+// Configure this URL in Midtrans Dashboard → Settings → Configuration → Payment Notification URL:
+//   https://anticeil.com/api/payment/webhook
+import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
+
 
 // Verify Midtrans notification signature
 // SHA512(order_id + status_code + gross_amount + server_key)

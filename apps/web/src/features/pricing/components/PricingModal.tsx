@@ -31,6 +31,7 @@ export function PricingModal() {
 
   const tier = useAuthStore((s) => s.tier);
   const setTier = useAuthStore((s) => s.setTier);
+  const user = useAuthStore((s) => s.user);
 
   const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const language = useSettingsStore((s) => s.language);
