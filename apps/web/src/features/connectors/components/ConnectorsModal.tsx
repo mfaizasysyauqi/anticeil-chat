@@ -58,6 +58,7 @@ const CONNECTOR_ORDER: ConnectorId[] = [
   'google_drive',
   'notion',
   'github',
+  'smithery',
   'custom_webhook',
 ];
 
@@ -70,6 +71,10 @@ const TOKEN_LINKS: Partial<Record<ConnectorId, { url: string; label: string }>> 
   github: {
     url: 'https://github.com/settings/tokens',
     label: 'github.com/settings/tokens',
+  },
+  smithery: {
+    url: 'https://smithery.ai/account/api-keys',
+    label: 'smithery.ai/account/api-keys',
   },
 };
 

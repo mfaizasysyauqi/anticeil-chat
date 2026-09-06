@@ -141,6 +141,16 @@ const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
     isSandboxMode: false,
     scopes: ['custom:execute'],
   },
+  smithery: {
+    id: 'smithery',
+    name: 'Smithery MCP Registry',
+    description: 'Access thousands of MCP tool servers from the Smithery registry using your own API key.',
+    icon: '🔌',
+    status: 'disconnected',
+    isEnabled: false,
+    isSandboxMode: false,
+    scopes: ['mcp:read', 'mcp:execute'],
+  },
 };
 
 export const useConnectorsStore = create<ConnectorsState>()(

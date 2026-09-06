@@ -5,6 +5,7 @@ export type ConnectorId =
   | 'notion'
   | 'github'
   | 'custom_webhook'
+  | 'smithery'
   | 'anticeil_image'
   | 'anticeil_video'
   | 'anticeil_audio';

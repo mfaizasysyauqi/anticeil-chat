@@ -114,7 +114,6 @@ const initialApiKeys: ApiKeysState = {
   tavily: { apiKey: '', baseUrl: 'https://api.tavily.com', isEnabled: true },
   firecrawl: { apiKey: '', baseUrl: 'https://api.firecrawl.dev/v1', isEnabled: true },
   brave: { apiKey: '', baseUrl: 'https://api.search.brave.com/res/v1', isEnabled: true },
-  smithery: { apiKey: '', baseUrl: 'https://api.smithery.ai', isEnabled: true },
   omniroute: { apiKey: '', baseUrl: 'http://localhost:20128/v1', isEnabled: true },
   custom: { apiKey: '', baseUrl: 'http://localhost:1234/v1', isEnabled: true },
 };

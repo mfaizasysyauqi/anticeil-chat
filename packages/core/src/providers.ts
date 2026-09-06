@@ -702,19 +702,6 @@ export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
       capabilities: { text: false, webSearch: true },
     },
   ],
-  smithery: [
-    {
-      id: 'smithery-mcp',
-      name: 'Smithery MCP Registry',
-      providerId: 'smithery',
-      contextWindow: 0,
-      description: 'Access thousands of MCP tool servers via the Smithery registry',
-      inputCostPer1M: 0,
-      outputCostPer1M: 0,
-      supportsStreaming: false,
-      capabilities: { text: false },
-    },
-  ],
   omniroute: [
     {
       id: 'omniroute-auto',
@@ -1091,17 +1078,6 @@ export const PROVIDER_DEFINITIONS: ProviderDefinition[] = [
     requiresApiKey: true,
     category: 'search',
     description: 'Indeks pencarian web independen global dengan privasi penuh.',
-  },
-  {
-    id: 'smithery',
-    name: 'Smithery MCP Registry',
-    icon: 'plug',
-    defaultBaseUrl: 'https://api.smithery.ai',
-    docUrl: 'https://smithery.ai',
-    models: PROVIDER_MODELS.smithery,
-    requiresApiKey: true,
-    category: 'tools',
-    description: 'Akses ribuan MCP tool server melalui Smithery registry. Tambahkan API key dari smithery.ai.',
   },
 
   // ─── OmniRoute Local Gateway ───
