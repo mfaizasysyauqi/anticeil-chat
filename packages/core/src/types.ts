@@ -30,6 +30,7 @@ export type LLMProviderId =
   | 'tavily'
   | 'firecrawl'
   | 'brave'
+  | 'smithery'
   | 'omniroute'
   | 'custom';
 

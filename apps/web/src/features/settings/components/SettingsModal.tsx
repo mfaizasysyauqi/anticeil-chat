@@ -234,7 +234,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
   const [statusNotice, setStatusNotice] = useState('');
   const [providerSearch, setProviderSearch] = useState('');
-  const [providerCategory, setProviderCategory] = useState<'all' | 'chat' | 'audio' | 'image' | 'video' | 'search' | 'custom'>('all');
+  const [providerCategory, setProviderCategory] = useState<'all' | 'chat' | 'audio' | 'image' | 'video' | 'search' | 'tools' | 'custom'>('all');
   const [expandedEndpoints, setExpandedEndpoints] = useState<Record<string, boolean>>({});
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -957,6 +957,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     { id: 'audio', label: '🎵 Audio & Voice' },
                     { id: 'image', label: '🎨 Gambar & Video' },
                     { id: 'search', label: '🌐 Web Search' },
+                    { id: 'tools', label: '🔌 Tools & MCP' },
                     { id: 'custom', label: '⚙️ Gateway & Custom' },
                   ].map((cat) => {
                     const active = providerCategory === cat.id;
