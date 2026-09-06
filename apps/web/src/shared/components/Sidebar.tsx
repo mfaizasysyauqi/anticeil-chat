@@ -1354,69 +1354,6 @@ function groupItemsByDate<T extends { updatedAt?: number; createdAt?: number; is
   return groups;
 }
 
-interface RailIconButtonProps {
-  href?: string;
-  onClick?: () => void;
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  colorType: 'chat' | 'docs' | 'media';
-}
-
-function RailIconButton({ href, onClick, icon, label, isActive, colorType }: RailIconButtonProps) {
-  const [hovered, setHovered] = useState(false);
-
-  const className = `rail-icon-btn ${colorType}-btn${isActive ? ' active' : ''}`;
-
-  return (
-    <div
-      style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {href ? (
-        <Link href={href} onClick={onClick} className={className} aria-label={label}>
-          {icon}
-        </Link>
-      ) : (
-        <button type="button" onClick={onClick} className={className} aria-label={label}>
-          {icon}
-        </button>
-      )}
-
-      {/* Floating Tag (Symmetric 1:1 with AI Credit Ring Floating Tag) */}
-      {hovered && (
-        <div
-          className="animate-fade-in"
-          style={{
-            position: 'absolute',
-            left: 'calc(100% + 12px)',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            backgroundColor: 'var(--bg-surface, #18181b)',
-            border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
-            borderRadius: '8px',
-            padding: '5px 10px',
-            whiteSpace: 'nowrap',
-            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
-            zIndex: 999999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '11px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            pointerEvents: 'none',
-          }}
-        >
-          <span className={`rail-tag-dot ${colorType}-dot`} />
-          <span>{label}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function Sidebar({
   isOpenMobile = false,
   onCloseMobile,

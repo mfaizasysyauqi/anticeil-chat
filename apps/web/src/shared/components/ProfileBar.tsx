@@ -9,7 +9,6 @@ import {
   Zap,
   LogOut,
 } from 'lucide-react';
-import { useUserStore } from '../../features/user/store/useUserStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useCreditStore } from '../../features/credits/store/useCreditStore';
@@ -26,14 +25,18 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
   const [avatarImgError, setAvatarImgError] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  const { user, profile, signOut } = useUserStore();
+  const user = useAuthStore((s) => s.user);
+  const tier = useAuthStore((s) => s.tier);
+  const signOut = useAuthStore((s) => s.signOut);
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
-  const { tier, language, openSettingsTab } = useSettingsStore();
+
+  const language = useSettingsStore((s) => s.language);
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const openPricingModal = useCreditStore((s) => s.openPricingModal);
 
-  const displayName = profile?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Pengguna';
-  const displayEmail = user?.email || profile?.email || (language === 'id' ? 'Tersimpan Lokal' : 'Local Storage');
-  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || '';
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Pengguna';
+  const displayEmail = user?.email || (language === 'id' ? 'Tersimpan Lokal' : 'Local Storage');
+  const avatarUrl = user?.user_metadata?.avatar_url || '';
 
   const handleToggleMenu = (openState?: boolean) => {
     const nextState = openState !== undefined ? openState : !isProfileMenuOpen;
