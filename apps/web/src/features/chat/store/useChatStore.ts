@@ -498,9 +498,9 @@ export const useChatStore = create<ChatState>()(
           }
         }
 
-        // Firecrawl URL scraping — auto-detects URLs in message, priority:
+        // Firecrawl URL scraping — auto-detects URLs in message (max 3), priority:
         //   1. User BYOK Firecrawl key (direct, no credit cost)
-        //   2. Anticeil provider key via /api/scrape (deducts 1 credit per URL, anticeil session only)
+        //   2. Anticeil provider key via /api/scrape (included in 1 chat credit, no extra deduction)
         //   3. Jina Reader fallback (free, no key)
         const urlMatches = cleanUserQuery.match(/https?:\/\/[^\s]+/g);
         if (urlMatches && urlMatches.length > 0) {
@@ -529,20 +529,18 @@ export const useChatStore = create<ChatState>()(
                   markdown = data?.data?.markdown || '';
                 }
               } else if (isAnticeilSession) {
-                // 2. Anticeil provider key — deduct 1 credit, proxy via server route
-                const allowed = useCreditStore.getState().deductCredits('scrape', 'anticeil');
-                if (allowed) {
-                  const res = await fetch('/api/scrape', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url }),
-                    signal: controller.signal,
-                  });
-                  if (res.ok) {
-                    const data = await res.json();
-                    markdown = data?.markdown || '';
-                  }
+                // 2. Anticeil provider key — scrape included in the 1 chat credit already paid
+                const res = await fetch('/api/scrape', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ url }),
+                  signal: controller.signal,
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  markdown = data?.markdown || '';
                 }
+
               } else {
                 // 3. Fallback: Jina Reader (no key, rate-limited)
                 const jinaRes = await fetch(`https://r.jina.ai/${url}`, {
