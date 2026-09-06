@@ -3,6 +3,7 @@
 import React from 'react';
 import { Image as ImageIcon, Film, Music } from 'lucide-react';
 import { ConnectorId } from '@anticeil/core';
+import { Smithery as SmitheryIcon } from '@lobehub/icons';
 
 interface LogoProps {
   size?: number;
@@ -108,18 +109,6 @@ export function AnticeilAudioLogo({ size = 20 }: LogoProps) {
   return <Music size={size} color="#60a5fa" />;
 }
 
-export function SmitheryLogo({ size = 20 }: LogoProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <rect width="48" height="48" rx="10" fill="#1a1a1a" />
-      <rect x="8" y="8" width="14" height="14" rx="3" fill="#FF5C00" />
-      <rect x="26" y="8" width="14" height="14" rx="3" fill="#FF5C00" />
-      <rect x="8" y="26" width="14" height="14" rx="3" fill="#FF5C00" />
-      <rect x="26" y="26" width="14" height="14" rx="3" fill="#FF5C00" />
-    </svg>
-  );
-}
-
 export function ConnectorBrandIcon({ id, size = 20 }: { id: ConnectorId; size?: number }) {
   switch (id) {
     case 'gmail':
@@ -135,7 +124,7 @@ export function ConnectorBrandIcon({ id, size = 20 }: { id: ConnectorId; size?: 
     case 'custom_webhook':
       return <CustomApiLogo size={size} />;
     case 'smithery':
-      return <SmitheryLogo size={size} />;
+      return <SmitheryIcon size={size} />;
     case 'anticeil_image':
       return <AnticeilImageLogo size={size} />;
     case 'anticeil_video':
