@@ -96,12 +96,4 @@ export function getSmitheryStreamUrl(
   return `${SMITHERY_BASE_URL}/${serverEncoded}/mcp?${params}`;
 }
 
-/** Test Smithery API key validity */
-export async function testSmitheryKey(apiKey: string): Promise<boolean> {
-  try {
-    await listSmitheryServers(apiKey, { pageSize: 1 });
-    return true;
-  } catch {
-    return false;
-  }
-}
+
