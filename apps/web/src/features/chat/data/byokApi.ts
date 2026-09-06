@@ -9,6 +9,7 @@ import {
   parseSSELine,
   BASE_LANGUAGE_INSTRUCTION,
 } from '@anticeil/core';
+import { useSettingsStore } from '../../settings/store/useSettingsStore';
 
 export interface SendMessageOptions {
   providerId: LLMProviderId;
@@ -25,15 +26,8 @@ export interface SendMessageOptions {
 }
 
 // ── Built-in Free Tier Rotating Key Pool ─────────────────────────────────
-export const FREE_GROQ_KEYS: string[] = [
-  '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',
-  ...(process.env.NEXT_PUBLIC_GROQ_API_KEYS ? process.env.NEXT_PUBLIC_GROQ_API_KEYS.split(',').map((k) => k.trim()) : []),
-].filter((k, i, self) => Boolean(k) && self.indexOf(k) === i);
-
-export const FREE_GEMINI_KEYS: string[] = [
-  'AQ.Ab8RN6JWoVCHAxjnHnTig8_iYyHTobEtwGGo9AAOiyFHQc-5Dg',
-  ...(process.env.NEXT_PUBLIC_GEMINI_API_KEYS ? process.env.NEXT_PUBLIC_GEMINI_API_KEYS.split(',').map((k) => k.trim()) : []),
-].filter((k, i, self) => Boolean(k) && self.indexOf(k) === i);
+import { FREE_GROQ_KEYS, FREE_GEMINI_KEYS } from './freeKeys';
+export { FREE_GROQ_KEYS, FREE_GEMINI_KEYS };
 
 let groqKeyIndex = 0;
 let geminiKeyIndex = 0;
@@ -53,15 +47,90 @@ export function getNextFreeKey(providerId: 'groq' | 'gemini'): string {
 }
 
 export function normalizeGeminiModel(modelId: string): string {
-  if (!modelId) return 'gemini-2.0-flash';
-  const clean = modelId.trim().toLowerCase();
-  if (clean.includes('3.5') || clean.includes('3.0') || clean === 'gemini-flash' || clean === 'gemini-2.0-flash-exp') {
-    return 'gemini-2.0-flash';
+  if (!modelId) return 'gemini-3.6-flash';
+  const clean = modelId.trim().replace(/^models\//i, '');
+  // Auto-upgrade discontinued gemini-2.0-flash to gemini-3.6-flash
+  if (clean === 'gemini-2.0-flash' || clean === 'gemini-2.0') {
+    return 'gemini-3.6-flash';
   }
-  if (clean === 'gemini-pro') {
-    return 'gemini-1.5-pro';
+  return clean;
+}
+
+export async function fetchGroqWithFallback(
+  endpoint: string,
+  modelId: string,
+  messages: Array<{ role: string; content: string }>,
+  temperature: number,
+  maxTokens?: number,
+  signal?: AbortSignal,
+  customApiKey?: string
+): Promise<Response> {
+  // Groq on-demand / free tier enforces strict OTPM (output tokens per minute) limits:
+  // - qwen/qwen3.6-27b: 1000 OTPM limit on free tier (max_tokens must be <= 950)
+  // - llama-3.3-70b-versatile / llama-3.1-8b-instant: 6,000+ OTPM limit (max_tokens 2048+)
+  // - Custom API Key (BYOK): Developer tier limits (4096+ tokens)
+  let safeMaxTokens = maxTokens || 2048;
+  if (!customApiKey) {
+    if (modelId.includes('qwen3.6') || modelId.includes('qwen3')) {
+      safeMaxTokens = Math.min(safeMaxTokens, 950);
+    } else {
+      safeMaxTokens = Math.min(safeMaxTokens, 2048);
+    }
   }
-  return modelId;
+
+  const keysToTry = customApiKey
+    ? [customApiKey, ...FREE_GROQ_KEYS]
+    : FREE_GROQ_KEYS.length > 0
+    ? FREE_GROQ_KEYS
+    : [''];
+
+  let lastResponse: Response | null = null;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = keysToTry[i] || getNextFreeKey('groq');
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(key ? { Authorization: `Bearer ${key}` } : {}),
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages,
+          temperature,
+          max_tokens: safeMaxTokens,
+          stream: true,
+        }),
+        signal,
+      });
+
+      if (resp.ok) {
+        return resp;
+      }
+
+      lastResponse = resp;
+      if (resp.status === 404) {
+        try {
+          useSettingsStore.getState().markModelAsUnavailable(modelId);
+        } catch {}
+        return resp;
+      }
+      if (resp.status === 429) {
+        console.warn(`[Groq] Key #${i + 1} for ${modelId} hit 429 rate limit. Retrying with next key...`);
+        continue;
+      }
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') throw err;
+      console.warn(`[Groq] Key #${i + 1} fetch error:`, err);
+    }
+  }
+
+  if (lastResponse) {
+    return lastResponse;
+  }
+
+  throw new Error(`Semua percobaan kunci API Groq untuk model ${modelId} gagal.`);
 }
 
 export async function streamBYOKChat(options: SendMessageOptions): Promise<void> {
@@ -167,56 +236,32 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
         });
 
         if (!response.ok) {
-          console.warn('[byokApi] Gemini returned non-200, falling back to Groq Cloud LPU:', response.status);
-          const groqKey = getNextFreeKey('groq');
-          const groqEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
-          const payloadMessages = [
-            { role: 'system', content: effectiveSystemPrompt },
-            ...formattedMessages,
-          ];
-          response = await fetch(groqEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${groqKey}`,
-            },
-            body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
-              messages: payloadMessages,
-              temperature,
-              max_tokens: maxTokens || tierAiLimits.maxOutputTokens,
-              stream: true,
-            }),
-            signal,
-          });
+          let errDetail = '';
+          try {
+            const errJson = await response.json();
+            errDetail = errJson.error?.message || errJson.message || '';
+          } catch {
+            errDetail = await response.text();
+          }
+          const lowerDetail = errDetail.toLowerCase();
+          if (
+            response.status === 404 ||
+            lowerDetail.includes('not found') ||
+            lowerDetail.includes('does not exist') ||
+            lowerDetail.includes('no longer available') ||
+            lowerDetail.includes('deprecated')
+          ) {
+            try {
+              useSettingsStore.getState().markModelAsUnavailable(rawModelId);
+            } catch {}
+          }
+          throw new Error(`Google Gemini API (${response.status}): ${errDetail || 'Kunci API Gemini tidak valid atau kuota habis. Silakan periksa kunci API Anda di Pengaturan.'}`);
         }
       } catch (geminiErr) {
-        console.warn('[byokApi] Gemini fetch failed, falling back to Groq LPU:', geminiErr);
-        const groqKey = getNextFreeKey('groq');
-        const groqEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
-        const payloadMessages = [
-          { role: 'system', content: effectiveSystemPrompt },
-          ...formattedMessages,
-        ];
-        response = await fetch(groqEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${groqKey}`,
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: payloadMessages,
-            temperature,
-            max_tokens: maxTokens || tierAiLimits.maxOutputTokens,
-            stream: true,
-          }),
-          signal,
-        });
+        throw geminiErr;
       }
     } else {
-      // Groq Models
-      const groqKey = apiKey || getNextFreeKey('groq');
+      // Groq Models in Anticeil Provider
       const groqBaseUrl = baseUrl || 'https://api.groq.com/openai/v1';
       const endpoint = `${groqBaseUrl.replace(/\/+$/, '')}/chat/completions`;
       const payloadMessages = [
@@ -224,28 +269,41 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
         ...formattedMessages,
       ];
 
-      response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${groqKey}`,
-        },
-        body: JSON.stringify({
-          model: modelId,
-          messages: payloadMessages,
-          temperature,
-          max_tokens: maxTokens || tierAiLimits.maxOutputTokens,
-          stream: true,
-        }),
+      response = await fetchGroqWithFallback(
+        endpoint,
+        modelId,
+        payloadMessages,
+        temperature,
+        maxTokens || tierAiLimits.maxOutputTokens,
         signal,
-      });
+        apiKey
+      );
     }
   }
 
-  // 1. OpenAI / Groq / DeepSeek / OpenRouter / Together / Fireworks / Mistral / xAI / Perplexity / Cohere / Custom Endpoint
+  // 1. Groq Provider
+  else if (providerId === 'groq') {
+    const groqBaseUrl = baseUrl || 'https://api.groq.com/openai/v1';
+    const endpoint = `${groqBaseUrl.replace(/\/+$/, '')}/chat/completions`;
+    const payloadMessages = [
+      { role: 'system', content: effectiveSystemPrompt },
+      ...formattedMessages,
+    ];
+
+    response = await fetchGroqWithFallback(
+      endpoint,
+      modelId,
+      payloadMessages,
+      temperature,
+      maxTokens || tierAiLimits.maxOutputTokens,
+      signal,
+      apiKey
+    );
+  }
+
+  // 2. OpenAI / DeepSeek / OpenRouter / Together / Fireworks / Mistral / xAI / Perplexity / Cohere / Custom Endpoint
   else if (
     providerId === 'openai' ||
-    providerId === 'groq' ||
     providerId === 'deepseek' ||
     providerId === 'openrouter' ||
     providerId === 'together' ||
@@ -365,6 +423,20 @@ export async function streamBYOKChat(options: SendMessageOptions): Promise<void>
       errorDetail = errJson.error?.message || errJson.message || JSON.stringify(errJson);
     } catch {
       errorDetail = await response.text();
+    }
+    const lowerError = errorDetail.toLowerCase();
+    if (
+      response.status === 404 ||
+      lowerError.includes('does not exist') ||
+      lowerError.includes('model_not_found') ||
+      lowerError.includes('no longer available') ||
+      lowerError.includes('not found') ||
+      lowerError.includes('decommissioned') ||
+      lowerError.includes('deprecated')
+    ) {
+      try {
+        useSettingsStore.getState().markModelAsUnavailable(rawModelId);
+      } catch {}
     }
     throw new Error(`HTTP ${response.status} (${response.statusText}): ${errorDetail || 'Request failed'}`);
   }

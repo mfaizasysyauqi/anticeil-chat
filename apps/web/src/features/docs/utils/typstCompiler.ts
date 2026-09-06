@@ -164,7 +164,7 @@ export function compileTypstToHtml(
   }
 
   // 3. Compile Typst AST into rich HTML output
-  const html = parseAndRenderTypst(resolvedCode);
+  const html = parseAndRenderTypst(resolvedCode, subFiles);
 
   return { html, diagnostics };
 }
@@ -228,6 +228,7 @@ function extractParamValue(argsStr: string, paramName: string): string | null {
   const valStart = match.index + match[0].length;
   let parenDepth = 0;
   let bracketDepth = 0;
+  let braceDepth = 0;
   let inString = false;
   let stringChar = '';
 
@@ -247,18 +248,86 @@ function extractParamValue(argsStr: string, paramName: string): string | null {
 
     if (ch === '(') parenDepth++;
     else if (ch === ')') {
-      if (parenDepth === 0 && bracketDepth === 0) {
+      if (parenDepth === 0 && bracketDepth === 0 && braceDepth === 0) {
         return argsStr.substring(valStart, i).trim();
       }
-      parenDepth--;
+      if (parenDepth > 0) parenDepth--;
     } else if (ch === '[') bracketDepth++;
-    else if (ch === ']') bracketDepth--;
-    else if (ch === ',' && parenDepth === 0 && bracketDepth === 0) {
+    else if (ch === ']') {
+      if (bracketDepth > 0) bracketDepth--;
+    } else if (ch === '{') braceDepth++;
+    else if (ch === '}') {
+      if (braceDepth > 0) braceDepth--;
+    } else if (ch === ',' && parenDepth === 0 && bracketDepth === 0 && braceDepth === 0) {
       return argsStr.substring(valStart, i).trim();
     }
   }
 
   return argsStr.substring(valStart).trim();
+}
+
+/**
+ * Resolves Typst 0.11+ dynamic #context { ... } expressions, counters (counter(page)), and locate() blocks.
+ */
+function resolveTypstContextExpr(rawExpr: string): string {
+  let expr = rawExpr.trim();
+
+  // If wrapped in context { ... } or #context { ... }
+  if (/^(?:#\s*)?context\s*\{/.test(expr)) {
+    const startIdx = expr.indexOf('{');
+    const matched = extractBalancedGroup(expr, startIdx, '{', '}');
+    if (matched) {
+      let inner = matched.content;
+      // Replace counter(page)...
+      inner = inner.replace(/counter\s*\(\s*page\s*\)\s*\.(?:get|final)\s*\(\s*\)\s*\.first\s*\(\s*\)/g, '1');
+      inner = inner.replace(/counter\s*\(\s*page\s*\)\s*\.display\s*\([^)]*\)/g, '1');
+      inner = inner.replace(/counter\s*\(\s*page\s*\)/g, '1');
+
+      // Strip let declarations and track variable values
+      const varMap: Record<string, string> = { page_number: '1', total_pages: '1', page: '1' };
+      const letMatches = inner.matchAll(/let\s+([a-zA-Z0-9_-]+)\s*=\s*([^;\n]+)/g);
+      for (const m of letMatches) {
+        varMap[m[1].trim()] = '1';
+      }
+
+      // Remove let lines
+      inner = inner.replace(/let\s+[a-zA-Z0-9_-]+\s*=\s*[^;\n]+[;\n]?/g, '').trim();
+
+      // Replace variable usages
+      for (const [k, v] of Object.entries(varMap)) {
+        inner = inner.replace(new RegExp(`(?:#)?\\b${k}\\b`, 'g'), v);
+      }
+
+      // If there's an align(...) or [ ... ] or direct content
+      const contentBlockMatch = inner.match(/\[([\s\S]*?)\]/);
+      if (contentBlockMatch && !inner.startsWith('align') && !inner.startsWith('#align') && !inner.startsWith('block') && !inner.startsWith('#block')) {
+        inner = contentBlockMatch[1];
+      }
+
+      expr = inner.trim();
+    }
+  } else if (/^(?:#\s*)?context\s*\[/.test(expr)) {
+    const startIdx = expr.indexOf('[');
+    const matched = extractBalancedGroup(expr, startIdx, '[', ']');
+    if (matched) {
+      expr = matched.content;
+    }
+  } else if (/^(?:#\s*)?locate\s*\(/.test(expr)) {
+    const bracketMatch = expr.match(/\[([\s\S]*?)\]/);
+    if (bracketMatch) {
+      expr = bracketMatch[1];
+    }
+  }
+
+  // Replace counters and variables
+  expr = expr.replace(/counter\s*\(\s*page\s*\)\s*\.(?:get|final)\s*\(\s*\)\s*\.first\s*\(\s*\)/g, '1');
+  expr = expr.replace(/counter\s*\(\s*page\s*\)\s*\.display\s*\([^)]*\)/g, '1');
+  expr = expr.replace(/#?counter\s*\(\s*page\s*\)/g, '1');
+  expr = expr.replace(/#page_number\b/g, '1');
+  expr = expr.replace(/#total_pages\b/g, '1');
+  expr = expr.replace(/^(?:#\s*)?context\s+/g, '');
+
+  return expr.trim();
 }
 
 /**
@@ -288,9 +357,49 @@ function parseTypstColor(colorStr: string): string {
 }
 
 /**
+ * Automatically computes high-contrast text color (#ffffff vs #0f172a) based on background luminance
+ */
+export function getContrastTextColor(bgColor: string): string {
+  if (!bgColor) return '#0f172a';
+  const clean = bgColor.trim().toLowerCase();
+  if (clean === 'transparent' || clean === 'none') return '#0f172a';
+
+  let r = 0, g = 0, b = 0;
+  const hexMatch = clean.match(/^#?([a-f0-9]{6})$/i);
+  if (hexMatch) {
+    const val = parseInt(hexMatch[1], 16);
+    r = (val >> 16) & 255;
+    g = (val >> 8) & 255;
+    b = val & 255;
+  } else {
+    const hex3Match = clean.match(/^#?([a-f0-9]{3})$/i);
+    if (hex3Match) {
+      const hex = hex3Match[1];
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else {
+      const rgbMatch = clean.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+      if (rgbMatch) {
+        r = parseInt(rgbMatch[1], 10);
+        g = parseInt(rgbMatch[2], 10);
+        b = parseInt(rgbMatch[3], 10);
+      } else {
+        if (['black', 'navy', 'darkgreen', 'darkblue', 'maroon', 'purple', 'teal'].includes(clean)) return '#ffffff';
+        return '#0f172a';
+      }
+    }
+  }
+
+  // Calculate relative perceived luminance (YIQ equation)
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq < 145 ? '#ffffff' : '#0f172a';
+}
+
+/**
  * Main Typst Parser and HTML Renderer
  */
-function parseAndRenderTypst(rawCode: string): string {
+function parseAndRenderTypst(rawCode: string, subFiles: Array<{ name: string; content: string }> = []): string {
   let code = rawCode;
 
   // 1. Remove comments
@@ -305,7 +414,7 @@ function parseAndRenderTypst(rawCode: string): string {
   let globalLeading = '1.65';
 
   // 2. Extract and strip #set page(...) commands with balanced matching
-  let setPageIdx = code.search(/#set\s+page\s*\(/);
+  let setPageIdx = code.search(/(?:#\s*)?set\s+page\s*\(/);
   while (setPageIdx !== -1) {
     const parenStart = code.indexOf('(', setPageIdx);
     const matched = extractBalancedGroup(code, parenStart, '(', ')');
@@ -316,22 +425,36 @@ function parseAndRenderTypst(rawCode: string): string {
       // Extract header: ...
       const headerVal = extractParamValue(pageArgs, 'header');
       if (headerVal) {
-        headerHtml = parseTypstBodyFunctions(headerVal);
+        let cleanHeader = resolveTypstContextExpr(headerVal);
+        if (cleanHeader.startsWith('[') && cleanHeader.endsWith(']')) {
+          const matchedGroup = extractBalancedGroup(cleanHeader, 0, '[', ']');
+          if (matchedGroup && matchedGroup.endPos === cleanHeader.length - 1) {
+            cleanHeader = matchedGroup.content;
+          }
+        }
+        headerHtml = parseTypstBodyFunctions(cleanHeader, subFiles);
       }
 
       // Extract footer: ...
       const footerVal = extractParamValue(pageArgs, 'footer');
       if (footerVal) {
-        footerHtml = parseTypstBodyFunctions(footerVal);
+        let cleanFooter = resolveTypstContextExpr(footerVal);
+        if (cleanFooter.startsWith('[') && cleanFooter.endsWith(']')) {
+          const matchedGroup = extractBalancedGroup(cleanFooter, 0, '[', ']');
+          if (matchedGroup && matchedGroup.endPos === cleanFooter.length - 1) {
+            cleanFooter = matchedGroup.content;
+          }
+        }
+        footerHtml = parseTypstBodyFunctions(cleanFooter, subFiles);
       }
     } else {
       break;
     }
-    setPageIdx = code.search(/#set\s+page\s*\(/);
+    setPageIdx = code.search(/(?:#\s*)?set\s+page\s*\(/);
   }
 
   // 3. Extract and strip #set text(...) commands
-  let setTextIdx = code.search(/#set\s+text\s*\(/);
+  let setTextIdx = code.search(/(?:#\s*)?set\s+text\s*\(/);
   while (setTextIdx !== -1) {
     const parenStart = code.indexOf('(', setTextIdx);
     const matched = extractBalancedGroup(code, parenStart, '(', ')');
@@ -350,11 +473,11 @@ function parseAndRenderTypst(rawCode: string): string {
     } else {
       break;
     }
-    setTextIdx = code.search(/#set\s+text\s*\(/);
+    setTextIdx = code.search(/(?:#\s*)?set\s+text\s*\(/);
   }
 
   // 4. Extract and strip #set par(...) commands
-  let setParIdx = code.search(/#set\s+par\s*\(/);
+  let setParIdx = code.search(/(?:#\s*)?set\s+par\s*\(/);
   while (setParIdx !== -1) {
     const parenStart = code.indexOf('(', setParIdx);
     const matched = extractBalancedGroup(code, parenStart, '(', ')');
@@ -367,29 +490,69 @@ function parseAndRenderTypst(rawCode: string): string {
     } else {
       break;
     }
-    setParIdx = code.search(/#set\s+par\s*\(/);
+    setParIdx = code.search(/(?:#\s*)?set\s+par\s*\(/);
   }
 
-  // Strip remaining #set, #show, #let, #import statements
+  // 5. Strip any other multiline #set ... (...) or set ... (...) rules cleanly
+  let otherSetIdx = code.search(/(?:#\s*)?set\s+[a-zA-Z0-9_-]+\s*\(/);
+  while (otherSetIdx !== -1) {
+    const parenStart = code.indexOf('(', otherSetIdx);
+    const matched = extractBalancedGroup(code, parenStart, '(', ')');
+    if (matched) {
+      code = code.substring(0, otherSetIdx) + code.substring(matched.endPos + 1);
+      otherSetIdx = code.search(/(?:#\s*)?set\s+[a-zA-Z0-9_-]+\s*\(/);
+    } else {
+      break;
+    }
+  }
+
+  // 6. Strip #show ... rules (e.g. #show heading: set text(...) or #show: template)
+  let showIdx = code.search(/(?:#\s*)?show\b/);
+  while (showIdx !== -1) {
+    const nextNewline = code.indexOf('\n', showIdx);
+    const parenStart = code.indexOf('(', showIdx);
+    if (parenStart !== -1 && (nextNewline === -1 || parenStart < nextNewline)) {
+      const matched = extractBalancedGroup(code, parenStart, '(', ')');
+      if (matched) {
+        code = code.substring(0, showIdx) + code.substring(matched.endPos + 1);
+        showIdx = code.search(/(?:#\s*)?show\b/);
+        continue;
+      }
+    }
+    // Fallback single line strip
+    code = code.substring(0, showIdx) + (nextNewline !== -1 ? code.substring(nextNewline + 1) : '');
+    showIdx = code.search(/(?:#\s*)?show\b/);
+  }
+
+  // Strip remaining #let, #import statements
   code = code.replace(/#set\s+[\s\S]*?(?:;|\n|$)/g, '');
-  code = code.replace(/#show\s+[\s\S]*?(?:;|\n|$)/g, '');
   code = code.replace(/#let\s+[\s\S]*?(?:;|\n|$)/g, '');
   code = code.replace(/#import\s+[\s\S]*?(?:;|\n|$)/g, '');
 
   // 5. Parse function calls & markup in body content
-  const bodyHtml = parseTypstBodyFunctions(code);
+  const bodyHtml = parseTypstBodyFunctions(code, subFiles);
 
   const headerBanner = headerHtml
-    ? `<div class="typst-header-banner" style="display: flex; justify-content: flex-end; width: 100%; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 8px; margin-bottom: 16px; font-size: 9pt; color: #64748b;">${headerHtml}</div>`
+    ? `<div class="typst-header-banner" style="display: block; width: 100%; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 8px; margin-bottom: 16px; font-size: 9pt; color: #64748b;">${headerHtml}</div>`
     : '';
 
   const footerBanner = footerHtml
-    ? `<div class="typst-footer-banner" style="display: flex; justify-content: center; width: 100%; margin-top: 24px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 9pt; color: #64748b;">${footerHtml}</div>`
+    ? `<div class="typst-footer-banner" style="display: block; width: 100%; margin-top: 24px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 9pt; color: #64748b;">${footerHtml}</div>`
     : '';
 
   // Return wrapped in typst-paper-wrapper & typst-paper-body so DocsView.tsx getFlattenedChildNodes unwraps child nodes for multi-page pagination
   return `
     <div class="typst-paper-wrapper" style="font-family: ${globalFont}; font-size: ${globalFontSize}; color: ${globalTextColor}; line-height: ${globalLeading}; width: 100%;">
+      <style>
+        .typst-paper-wrapper .academic-table th {
+          background-color: inherit;
+          color: inherit !important;
+        }
+        .typst-paper-wrapper .academic-table thead th,
+        .typst-paper-wrapper .academic-table thead th * {
+          color: inherit !important;
+        }
+      </style>
       ${headerBanner}
       <div class="typst-paper-body" style="width: 100%;">
         ${bodyHtml}
@@ -403,23 +566,90 @@ function parseAndRenderTypst(rawCode: string): string {
  * Parses multiline Typst functions like block(...), align(...), text(...), v(...), h(...), line(...), table(...), grid(...)
  * with or without leading '#' prefix.
  */
-function parseTypstBodyFunctions(code: string): string {
+function parseTypstBodyFunctions(code: string, subFiles: Array<{ name: string; content: string }> = []): string {
   let str = code;
+
+  // Process #context blocks & dynamic page counters in body
+  str = str.replace(/(?:#\s*)?context\s*\{([\s\S]*?)\}/g, (match) => resolveTypstContextExpr(match));
+  str = str.replace(/(?:#\s*)?context\s*\[([\s\S]*?)\]/g, '$1');
+  str = str.replace(/#?counter\s*\(\s*page\s*\)\s*\.(?:get|final)\s*\(\s*\)\s*\.first\s*\(\s*\)/g, '1');
+  str = str.replace(/#?counter\s*\(\s*page\s*\)\s*\.display\s*\([^)]*\)/g, '1');
+  str = str.replace(/#?counter\s*\(\s*page\s*\)/g, '1');
 
   // Process #pagebreak() or pagebreak() or #pagebreak
   str = str.replace(/(?:#\s*)?pagebreak\s*(?:\(\s*\))?/g, '<div class="doc-page-break"></div>');
 
-  // Process #image("...") or image("...")
-  str = str.replace(/(?:#\s*)?image\s*\(\s*["']([^"']+)["']([^)]*)\)/g, (match, src, args) => {
-    let widthStyle = 'max-width: 100%;';
-    if (args) {
+  // Process #image("...") or image(...) using balanced parentheses (handles nested rgb(), etc.)
+  let imageSearchPos = 0;
+  while (imageSearchPos < str.length) {
+    const match = str.substring(imageSearchPos).match(/(?:#|(?<=\s|^|[(,]))image\s*\(/);
+    if (!match || match.index === undefined) break;
+
+    const imgIdx = imageSearchPos + match.index;
+    const parenStart = str.indexOf('(', imgIdx);
+    const argsMatch = extractBalancedGroup(str, parenStart, '(', ')');
+
+    if (argsMatch) {
+      const args = argsMatch.content;
+      const srcMatch = args.match(/["']([^"']+)["']/);
+      const rawSrc = srcMatch ? srcMatch[1] : '';
+
+      let widthStyle = 'max-width: 100%;';
+      let heightStyle = '';
+      let borderRadiusStyle = 'border-radius: 6px;';
+      let strokeStyle = '';
+      let fitStyle = 'object-fit: cover;';
+
       const widthVal = extractParamValue(args, 'width');
-      if (widthVal) {
-        widthStyle = `width: ${widthVal}; max-width: 100%;`;
+      if (widthVal) widthStyle = `width: ${widthVal}; max-width: 100%;`;
+
+      const heightVal = extractParamValue(args, 'height');
+      if (heightVal) heightStyle = `height: ${heightVal};`;
+
+      const fitVal = extractParamValue(args, 'fit');
+      if (fitVal) {
+        const cleanFit = fitVal.replace(/["']/g, '').trim();
+        if (cleanFit === 'cover' || cleanFit === 'contain' || cleanFit === 'fill') {
+          fitStyle = `object-fit: ${cleanFit};`;
+        }
       }
+
+      const radiusVal = extractParamValue(args, 'radius') || extractParamValue(args, 'corner-radius');
+      if (radiusVal) borderRadiusStyle = `border-radius: ${radiusVal};`;
+
+      const strokeVal = extractParamValue(args, 'stroke');
+      if (strokeVal) {
+        const parts = strokeVal.split('+').map((s) => s.trim());
+        const widthPart = parts[0] || '1pt';
+        const colorPart = parts[1] ? parseTypstColor(parts[1]) : '#2d6a4f';
+        strokeStyle = `border: ${widthPart} solid ${colorPart};`;
+      }
+
+      const cleanPath = rawSrc.replace(/^\.\//, '').toLowerCase();
+      const foundSub = subFiles?.find(
+        (f) =>
+          f.name.toLowerCase() === cleanPath ||
+          f.name.toLowerCase().endsWith('/' + cleanPath) ||
+          cleanPath.endsWith('/' + f.name.toLowerCase()) ||
+          f.name.toLowerCase() === `${cleanPath}.png` ||
+          f.name.toLowerCase() === `${cleanPath}.jpg` ||
+          f.name.toLowerCase() === `${cleanPath}.jpeg` ||
+          f.name.toLowerCase() === `${cleanPath}.webp` ||
+          f.name.toLowerCase() === `${cleanPath}.svg`
+      );
+
+      let resolvedSrc = rawSrc;
+      if (foundSub?.content && foundSub.content.trim()) {
+        resolvedSrc = foundSub.content.trim();
+      }
+
+      const replacement = `<img src="${resolvedSrc}" alt="Dokumen Image" style="${widthStyle} ${heightStyle} ${borderRadiusStyle} ${strokeStyle} ${fitStyle} box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: inline-block; vertical-align: middle;" />`;
+      str = str.substring(0, imgIdx) + replacement + str.substring(argsMatch.endPos + 1);
+      imageSearchPos = imgIdx + replacement.length;
+    } else {
+      imageSearchPos = imgIdx + 6;
     }
-    return `<div style="text-align: center; margin: 14px 0;"><img src="${src}" alt="Dokumen Image" style="${widthStyle} height: auto; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: inline-block;" /></div>`;
-  });
+  }
 
   // Process #table(...) or table(...)
   let searchPos = 0;
@@ -450,8 +680,15 @@ function parseTypstBodyFunctions(code: string): string {
       let headerBg = '#2d6a4f';
       const fillVal = extractParamValue(tableArgs, 'fill');
       if (fillVal) {
-        const colorMatch = fillVal.match(/rgb\(["']?([^"')]+)["']?\)/);
-        if (colorMatch) headerBg = parseTypstColor(colorMatch[0]);
+        const rgbMatch = fillVal.match(/rgb\(\s*["']?([^"')]+)["']?\s*\)/i);
+        if (rgbMatch) {
+          headerBg = parseTypstColor(rgbMatch[0]);
+        } else {
+          const hexMatch = fillVal.match(/#([a-fA-F0-9]{3,8})/);
+          if (hexMatch) {
+            headerBg = `#${hexMatch[1]}`;
+          }
+        }
       }
 
       // Extract all bracketed cells [...] in tableArgs
@@ -475,10 +712,11 @@ function parseTypstBodyFunctions(code: string): string {
         const headerCells = cells.slice(0, colCount);
         const bodyCells = cells.slice(colCount);
 
-        tableHtml += `<thead style="background-color: ${headerBg}; color: #ffffff;"><tr>`;
+        const headerTextColor = getContrastTextColor(headerBg);
+        tableHtml += `<thead style="background-color: ${headerBg} !important; color: ${headerTextColor} !important;"><tr>`;
         headerCells.forEach((c) => {
-          const inner = parseTypstBodyFunctions(c);
-          tableHtml += `<th style="padding: 9px 12px; border-bottom: 2px solid #1e293b; text-align: left; font-weight: 700;">${inner}</th>`;
+          const inner = parseTypstBodyFunctions(c, subFiles);
+          tableHtml += `<th style="padding: 9px 12px; background-color: ${headerBg} !important; border-bottom: 2px solid ${headerTextColor === '#ffffff' ? 'rgba(255,255,255,0.25)' : '#1e293b'}; text-align: left; font-weight: 700; color: ${headerTextColor} !important;">${inner}</th>`;
         });
         tableHtml += `</tr></thead><tbody>`;
 
@@ -486,10 +724,11 @@ function parseTypstBodyFunctions(code: string): string {
           const rowItems = bodyCells.slice(r, r + colCount);
           const isEven = (r / colCount) % 2 === 1;
           const rowBg = isEven ? '#f8fafc' : '#ffffff';
-          tableHtml += `<tr style="background-color: ${rowBg};">`;
+          const rowTextColor = getContrastTextColor(rowBg);
+          tableHtml += `<tr style="background-color: ${rowBg} !important; color: ${rowTextColor} !important;">`;
           rowItems.forEach((c) => {
-            const inner = parseTypstBodyFunctions(c);
-            tableHtml += `<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; color: #1e293b; vertical-align: top;">${inner}</td>`;
+            const inner = parseTypstBodyFunctions(c, subFiles);
+            tableHtml += `<td style="padding: 8px 12px; background-color: ${rowBg} !important; border-bottom: 1px solid #e2e8f0; color: ${rowTextColor} !important; vertical-align: top;">${inner}</td>`;
           });
           tableHtml += `</tr>`;
         }
@@ -505,12 +744,156 @@ function parseTypstBodyFunctions(code: string): string {
     }
   }
 
-  // Process #block(...) [...] or block(...) [...]
+  // Process #grid(...) or grid(...)
   searchPos = 0;
   while (searchPos < str.length) {
-    const match = str.substring(searchPos).match(/(?:#|(?<=\s|^|[(,]))block\s*(?:\(|\[)/);
+    const match = str.substring(searchPos).match(/(?:#|(?<=\s|^|[(,]))grid\s*\(/);
     if (!match || match.index === undefined) break;
 
+    const gridIdx = searchPos + match.index;
+    const parenStart = str.indexOf('(', gridIdx);
+    const matched = extractBalancedGroup(str, parenStart, '(', ')');
+
+    if (matched) {
+      const gridArgs = matched.content;
+
+      // Extract columns: (auto, auto) or columns: 2
+      let colCount = 2;
+      const colVal = extractParamValue(gridArgs, 'columns');
+      if (colVal) {
+        if (colVal.startsWith('(')) {
+          colCount = Math.max(1, colVal.split(',').length);
+        } else {
+          const num = parseInt(colVal, 10);
+          if (!isNaN(num)) colCount = num;
+        }
+      }
+
+      // Extract gutter: 20pt or column-gutter: 20pt
+      let gap = '16px';
+      const gutterVal = extractParamValue(gridArgs, 'gutter') || extractParamValue(gridArgs, 'column-gutter');
+      if (gutterVal) gap = gutterVal;
+
+      // Split arguments into positional items, skipping named parameters (columns: ..., gutter: ..., etc.)
+      const items: string[] = [];
+      let idx = 0;
+      while (idx < gridArgs.length) {
+        while (idx < gridArgs.length && /[\s,]/.test(gridArgs[idx])) idx++;
+        if (idx >= gridArgs.length) break;
+
+        // Check if this is a named parameter: e.g. columns: ... or gutter: ...
+        const namedMatch = gridArgs.substring(idx).match(/^[a-zA-Z0-9_-]+\s*:\s*/);
+        if (namedMatch) {
+          idx += namedMatch[0].length;
+          // Skip value of named parameter
+          let pDepth = 0;
+          let bDepth = 0;
+          let inStr = false;
+          let sChar = '';
+          while (idx < gridArgs.length) {
+            const ch = gridArgs[idx];
+            if (inStr) {
+              if (ch === sChar && gridArgs[idx - 1] !== '\\') inStr = false;
+              idx++;
+              continue;
+            }
+            if (ch === '"' || ch === "'") {
+              inStr = true;
+              sChar = ch;
+              idx++;
+              continue;
+            }
+            if (ch === '(') pDepth++;
+            else if (ch === ')') pDepth--;
+            else if (ch === '[') bDepth++;
+            else if (ch === ']') bDepth--;
+            else if (ch === ',' && pDepth === 0 && bDepth === 0) {
+              idx++;
+              break;
+            }
+            idx++;
+          }
+          continue;
+        }
+
+        // Positional item (e.g. box(...), image(...), [...], or text)
+        const itemStart = idx;
+        let pDepth = 0;
+        let bDepth = 0;
+        let inStr = false;
+        let sChar = '';
+        while (idx < gridArgs.length) {
+          const ch = gridArgs[idx];
+          if (inStr) {
+            if (ch === sChar && gridArgs[idx - 1] !== '\\') inStr = false;
+            idx++;
+            continue;
+          }
+          if (ch === '"' || ch === "'") {
+            inStr = true;
+            sChar = ch;
+            idx++;
+            continue;
+          }
+          if (ch === '(') pDepth++;
+          else if (ch === ')') pDepth--;
+          else if (ch === '[') bDepth++;
+          else if (ch === ']') bDepth--;
+          else if (ch === ',' && pDepth === 0 && bDepth === 0) {
+            break;
+          }
+          idx++;
+        }
+
+        const itemStr = gridArgs.substring(itemStart, idx).trim();
+        if (itemStr) items.push(itemStr);
+        if (idx < gridArgs.length && gridArgs[idx] === ',') idx++;
+      }
+
+      // Convert columns definition
+      let gridTemplateCols = `repeat(${colCount}, 1fr)`;
+      if (colVal) {
+        if (colVal.startsWith('(') && colVal.endsWith(')')) {
+          const colDefs = colVal.slice(1, -1).split(',').map((c) => c.trim()).filter(Boolean);
+          if (colDefs.length > 0) {
+            gridTemplateCols = colDefs
+              .map((c) => {
+                if (c === '1fr' || c.endsWith('fr')) return c;
+                if (c === 'auto') return 'auto';
+                if (/^[\d.]+(pt|px|cm|mm|in|rem|em|%)$/.test(c)) return c;
+                return '1fr';
+              })
+              .join(' ');
+          }
+        } else if (/^\d+$/.test(colVal.trim())) {
+          gridTemplateCols = `repeat(${colVal.trim()}, 1fr)`;
+        }
+      }
+
+      const renderedItems = items.map((item) => {
+        let content = item;
+        if (content.startsWith('[') && content.endsWith(']')) {
+          content = content.substring(1, content.length - 1);
+        }
+        return parseTypstBodyFunctions(content, subFiles);
+      });
+
+      const gridHtml = `<div class="typst-grid" style="display: grid; grid-template-columns: ${gridTemplateCols}; gap: ${gap}; margin: 16px 0; width: 100%; box-sizing: border-box; align-items: start;">${renderedItems.map((c) => `<div class="typst-grid-cell" style="min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: stretch; text-align: left;">${c}</div>`).join('')}</div>`;
+
+      str = str.substring(0, gridIdx) + gridHtml + str.substring(matched.endPos + 1);
+      searchPos = gridIdx + gridHtml.length;
+    } else {
+      searchPos = gridIdx + 5;
+    }
+  }
+
+  // Process #block(...) [...], #rect(...) [...], #circle(...) [...], #box(...) [...]
+  searchPos = 0;
+  while (searchPos < str.length) {
+    const match = str.substring(searchPos).match(/(?:#|(?<=\s|^|[(,]))(block|rect|circle|box|square|ellipse)\s*(?:\(|\[)/);
+    if (!match || match.index === undefined) break;
+
+    const blockType = match[1].toLowerCase();
     const blockIdx = searchPos + match.index;
     const isParen = str[blockIdx + match[0].length - 1] === '(';
 
@@ -520,8 +903,9 @@ function parseTypstBodyFunctions(code: string): string {
 
     let currentPos = blockIdx + match[0].length - 1;
 
+    let argsMatch: { content: string; endPos: number } | null = null;
     if (isParen) {
-      const argsMatch = extractBalancedGroup(str, currentPos, '(', ')');
+      argsMatch = extractBalancedGroup(str, currentPos, '(', ')');
       if (argsMatch) {
         argsStr = argsMatch.content;
         currentPos = argsMatch.endPos + 1;
@@ -535,17 +919,76 @@ function parseTypstBodyFunctions(code: string): string {
         contentStr = contentMatch.content;
         endPos = contentMatch.endPos;
       }
+    } else if (isParen && argsStr) {
+      // Box or block without trailing [...], e.g. box(width: ..., height: ..., image(...))
+      endPos = argsMatch ? argsMatch.endPos : currentPos - 1;
+      // Extract positional items (any item not a named parameter foo: bar)
+      const namedParams = ['width', 'height', 'radius', 'size', 'clip', 'stroke', 'fill', 'inset'];
+      let idx = 0;
+      const positionalParts: string[] = [];
+      while (idx < argsStr.length) {
+        while (idx < argsStr.length && /[\s,]/.test(argsStr[idx])) idx++;
+        if (idx >= argsStr.length) break;
+
+        const isNamed = namedParams.some((np) => new RegExp(`^${np}\\s*:`).test(argsStr.substring(idx)));
+        let pDepth = 0;
+        let bDepth = 0;
+        let inStr = false;
+        let sChar = '';
+        const itemStart = idx;
+
+        while (idx < argsStr.length) {
+          const ch = argsStr[idx];
+          if (inStr) {
+            if (ch === sChar && argsStr[idx - 1] !== '\\') inStr = false;
+            idx++;
+            continue;
+          }
+          if (ch === '"' || ch === "'") {
+            inStr = true;
+            sChar = ch;
+            idx++;
+            continue;
+          }
+          if (ch === '(') pDepth++;
+          else if (ch === ')') pDepth--;
+          else if (ch === '[') bDepth++;
+          else if (ch === ']') bDepth--;
+          else if (ch === ',' && pDepth === 0 && bDepth === 0) {
+            break;
+          }
+          idx++;
+        }
+
+        const chunk = argsStr.substring(itemStart, idx).trim();
+        if (!isNamed && chunk) {
+          positionalParts.push(chunk);
+        }
+        if (idx < argsStr.length && argsStr[idx] === ',') idx++;
+      }
+      contentStr = positionalParts.join(' ');
     }
 
     if (endPos > blockIdx) {
-      let bg = '#f8fafc';
-      let stroke = '1px solid #e2e8f0';
-      let inset = '16px';
-      let radius = '6px';
-      let width = '100%';
+      let bg = blockType === 'block' ? '#f8fafc' : 'transparent';
+      let stroke = 'none';
+      let inset = '0';
+      const isCircleOrEllipse = blockType === 'circle' || blockType === 'ellipse';
+      const isInline = blockType === 'circle' || blockType === 'box' || blockType === 'square' || blockType === 'ellipse';
+      let radius = isCircleOrEllipse ? '50%' : '0';
+      let width = isInline ? 'auto' : '100%';
+      let height = 'auto';
+      let aspectRatioStyle = isCircleOrEllipse || blockType === 'square' ? 'aspect-ratio: 1 / 1;' : '';
+      let overflowStyle = '';
 
       const fillVal = extractParamValue(argsStr, 'fill');
-      if (fillVal) bg = parseTypstColor(fillVal);
+      let containerTextColor = '';
+      if (fillVal) {
+        bg = parseTypstColor(fillVal);
+        if (bg && bg !== 'transparent' && bg !== 'none') {
+          containerTextColor = `color: ${getContrastTextColor(bg)};`;
+        }
+      }
 
       const strokeVal = extractParamValue(argsStr, 'stroke');
       if (strokeVal) {
@@ -559,13 +1002,39 @@ function parseTypstBodyFunctions(code: string): string {
       if (insetVal) inset = insetVal;
 
       const radiusVal = extractParamValue(argsStr, 'radius');
-      if (radiusVal) radius = radiusVal;
+      if (blockType === 'circle') {
+        radius = '50%';
+        if (radiusVal) {
+          const radMatch = radiusVal.match(/^([\d.]+)(pt|px|cm|mm|in|rem|em)?$/);
+          if (radMatch) {
+            const num = parseFloat(radMatch[1]);
+            const unit = radMatch[2] || 'pt';
+            const diameter = `${num * 2}${unit}`;
+            width = diameter;
+            height = diameter;
+          }
+        }
+      } else if (radiusVal) {
+        radius = radiusVal;
+        overflowStyle = 'overflow: hidden;';
+      }
 
-      const widthVal = extractParamValue(argsStr, 'width');
+      const widthVal = extractParamValue(argsStr, 'width') || extractParamValue(argsStr, 'size');
       if (widthVal) width = widthVal;
 
-      const renderedInner = parseTypstBodyFunctions(contentStr);
-      const replacement = `<div style="background-color: ${bg}; border: ${stroke}; padding: ${inset}; border-radius: ${radius}; width: ${width}; margin: 14px 0; box-sizing: border-box; display: block;">${renderedInner}</div>`;
+      const heightVal = extractParamValue(argsStr, 'height');
+      if (heightVal) height = heightVal;
+
+      if (/clip:\s*true/i.test(argsStr) || radiusVal || isCircleOrEllipse) {
+        overflowStyle = 'overflow: hidden;';
+      }
+
+      const renderedInner = parseTypstBodyFunctions(contentStr, subFiles);
+      const displayStyle = isInline ? 'inline-flex' : 'block';
+      const flexAlignment = isInline ? 'justify-content: center; align-items: center;' : '';
+      const heightStyle = height !== 'auto' ? `height: ${height};` : '';
+
+      const replacement = `<div style="background-color: ${bg}; ${containerTextColor} border: ${stroke}; padding: ${inset}; border-radius: ${radius}; width: ${width}; ${heightStyle} ${aspectRatioStyle} ${overflowStyle} margin: 10px auto; box-sizing: border-box; display: ${displayStyle}; ${flexAlignment} flex-shrink: 0; max-width: 100%; text-align: left;">${renderedInner}</div>`;
 
       str = str.substring(0, blockIdx) + replacement + str.substring(endPos + 1);
       searchPos = blockIdx + replacement.length;
@@ -603,8 +1072,13 @@ function parseTypstBodyFunctions(code: string): string {
     }
 
     if (endPos > alignIdx) {
-      const renderedInner = parseTypstBodyFunctions(contentStr);
-      const replacement = `<div style="text-align: ${posStr}; width: 100%; margin: 6px 0;">${renderedInner}</div>`;
+      let textAlign = 'left';
+      if (posStr.includes('right')) textAlign = 'right';
+      else if (posStr.includes('center')) textAlign = 'center';
+      else if (posStr.includes('left')) textAlign = 'left';
+
+      const renderedInner = parseTypstBodyFunctions(contentStr, subFiles);
+      const replacement = `<div style="text-align: ${textAlign}; width: 100%; margin: 4px 0;">${renderedInner}</div>`;
       str = str.substring(0, alignIdx) + replacement + str.substring(endPos + 1);
       searchPos = alignIdx + replacement.length;
     } else {
@@ -669,7 +1143,7 @@ function parseTypstBodyFunctions(code: string): string {
       const fontVal = extractParamValue(argsStr, 'font');
       if (fontVal) styleStr += `font-family: ${fontVal}, sans-serif; `;
 
-      const renderedInner = parseTypstBodyFunctions(contentStr);
+      const renderedInner = parseTypstBodyFunctions(contentStr, subFiles);
       const replacement = `<span style="${styleStr}">${renderedInner}</span>`;
       str = str.substring(0, textIdx) + replacement + str.substring(endPos + 1);
       searchPos = textIdx + replacement.length;
@@ -682,23 +1156,41 @@ function parseTypstBodyFunctions(code: string): string {
   str = str.replace(/(?:#\s*)?v\(\s*([\d.]+\w*)\s*\)/g, '<div style="height: $1; min-height: $1; display: block;"></div>');
   str = str.replace(/(?:#\s*)?h\(\s*([\d.]+\w*)\s*\)/g, '<span style="display: inline-block; width: $1;"></span>');
 
-  // Process #line(...) or line(...)
-  str = str.replace(/(?:#\s*)?line\(([^)]*)\)/g, (match, args) => {
-    let strokeColor = '#cbd5e1';
-    let strokeWidth = '1pt';
-    let lengthStr = '100%';
+  // Process #line(...) or line(...) using balanced parentheses (handles nested rgb(...), etc.)
+  let lineSearchPos = 0;
+  while (lineSearchPos < str.length) {
+    const match = str.substring(lineSearchPos).match(/(?:#|(?<=\s|^|[(,]))line\s*\(/);
+    if (!match || match.index === undefined) break;
 
-    const strokeVal = extractParamValue(args, 'stroke');
-    if (strokeVal) {
-      const parts = strokeVal.split('+').map((s) => s.trim());
-      strokeWidth = parts[0] || '1pt';
-      if (parts[1]) strokeColor = parseTypstColor(parts[1]);
+    const lineIdx = lineSearchPos + match.index;
+    const parenStart = str.indexOf('(', lineIdx);
+    const argsMatch = extractBalancedGroup(str, parenStart, '(', ')');
+
+    if (argsMatch) {
+      const args = argsMatch.content;
+      let strokeColor = '#cbd5e1';
+      let strokeWidth = '1pt';
+      let lengthStr = '100%';
+
+      const strokeVal = extractParamValue(args, 'stroke');
+      if (strokeVal) {
+        const parts = strokeVal.split('+').map((s) => s.trim());
+        strokeWidth = parts[0] || '1pt';
+        if (parts[1]) strokeColor = parseTypstColor(parts[1]);
+        else if (strokeVal.startsWith('#') || strokeVal.startsWith('rgb(') || ['black', 'green', 'blue', 'red', 'navy'].includes(strokeVal.trim())) {
+          strokeColor = parseTypstColor(strokeVal);
+        }
+      }
+      const lenVal = extractParamValue(args, 'length');
+      if (lenVal) lengthStr = lenVal;
+
+      const replacement = `<hr style="border: none; border-top: ${strokeWidth} solid ${strokeColor}; margin: 12px 0; width: ${lengthStr};" />`;
+      str = str.substring(0, lineIdx) + replacement + str.substring(argsMatch.endPos + 1);
+      lineSearchPos = lineIdx + replacement.length;
+    } else {
+      lineSearchPos = lineIdx + 5;
     }
-    const lenVal = extractParamValue(args, 'length');
-    if (lenVal) lengthStr = lenVal;
-
-    return `<hr style="border: none; border-top: ${strokeWidth} solid ${strokeColor}; margin: 12px 0; width: ${lengthStr};" />`;
-  });
+  }
 
   // Process #counter(page).display()
   str = str.replace(/(?:#\s*)?counter\(page\)\.display\([^)]*\)/g, '1');
@@ -708,63 +1200,220 @@ function parseTypstBodyFunctions(code: string): string {
 }
 
 /**
+ * Converts Typst mathematical syntax into KaTeX-compatible LaTeX math
+ */
+function convertTypstMathToKatex(mathStr: string): string {
+  if (!mathStr || !mathStr.trim()) return '';
+  let res = mathStr.trim();
+
+  // text("...") or "..." -> \text{...}
+  res = res.replace(/text\s*\(\s*["']([^"']+)["']\s*\)/g, '\\text{$1}');
+  res = res.replace(/["']([^"']+)["']/g, '\\text{$1}');
+
+  // Convert frac(...) using balanced paren matching
+  let fracMatch = res.match(/(?:\\frac|frac)\s*\(/);
+  while (fracMatch && fracMatch.index !== undefined) {
+    const startIdx = fracMatch.index;
+    const parenStart = res.indexOf('(', startIdx);
+    let depth = 0;
+    let commaIdx = -1;
+    let endIdx = -1;
+    for (let i = parenStart; i < res.length; i++) {
+      const ch = res[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') {
+        depth--;
+        if (depth === 0) {
+          endIdx = i;
+          break;
+        }
+      } else if (ch === ',' && depth === 1) {
+        commaIdx = i;
+      }
+    }
+    if (endIdx !== -1 && commaIdx !== -1) {
+      const numerator = res.substring(parenStart + 1, commaIdx).trim();
+      const denominator = res.substring(commaIdx + 1, endIdx).trim();
+      const replacement = `\\frac{${numerator}}{${denominator}}`;
+      res = res.substring(0, startIdx) + replacement + res.substring(endIdx + 1);
+    } else {
+      break;
+    }
+    fracMatch = res.match(/(?:\\frac|frac)\s*\(/);
+  }
+
+  // Convert sqrt(...) using balanced paren matching
+  let sqrtMatch = res.match(/(?:\\sqrt|sqrt)\s*\(/);
+  while (sqrtMatch && sqrtMatch.index !== undefined) {
+    const startIdx = sqrtMatch.index;
+    const parenStart = res.indexOf('(', startIdx);
+    let depth = 0;
+    let endIdx = -1;
+    for (let i = parenStart; i < res.length; i++) {
+      const ch = res[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') {
+        depth--;
+        if (depth === 0) {
+          endIdx = i;
+          break;
+        }
+      }
+    }
+    if (endIdx !== -1) {
+      const inner = res.substring(parenStart + 1, endIdx).trim();
+      const replacement = `\\sqrt{${inner}}`;
+      res = res.substring(0, startIdx) + replacement + res.substring(endIdx + 1);
+    } else {
+      break;
+    }
+    sqrtMatch = res.match(/(?:\\sqrt|sqrt)\s*\(/);
+  }
+
+  // Convert subscripts: I_("biomassa") -> I_{\text{biomassa}}, I_(biomassa) -> I_{\text{biomassa}}, I_(\text{biomassa}) -> I_{\text{biomassa}}
+  res = res.replace(/_(\([a-zA-Z0-9_\s"'\\{}]+\)|"[^"]+"|'[^']+'|[a-zA-Z0-9]+)/g, (m, rawInner) => {
+    let clean = rawInner.replace(/^\(/, '').replace(/\)$/, '').replace(/^["']/, '').replace(/["']$/, '').trim();
+    if (clean.startsWith('\\text{')) return `_{${clean}}`;
+    if (/^[a-zA-Z0-9]+$/.test(clean) && clean.length > 1) return `_{\\text{${clean}}}`;
+    return `_{${clean}}`;
+  });
+
+  // Convert superscripts: x^("text") -> x^{\text{text}}, x^(2) -> x^{2}, x^(n) -> x^{n}
+  res = res.replace(/\^(\([a-zA-Z0-9_\s"'\\{}+\-*/=]+\)|"[^"]+"|'[^']+'|[a-zA-Z0-9]+)/g, (m, rawInner) => {
+    let clean = rawInner.replace(/^\(/, '').replace(/\)$/, '').replace(/^["']/, '').replace(/["']$/, '').trim();
+    if (clean.startsWith('\\text{')) return `^{${clean}}`;
+    return `^{${clean}}`;
+  });
+
+  // Convert sum and limits: sum_(i=1)^n or sum(i=1)^n or sum i = 1^n
+  res = res.replace(/(?<!\\)\bsum\s*_\s*\{?\(?([^)}^]+)\)?\}?\s*\^\s*\{?\(?([^)}^]+)\)?\}?/g, '\\sum_{$1}^{$2}');
+  res = res.replace(/(?<!\\)\bsum\s+([a-zA-Z0-9]+)\s*=\s*([a-zA-Z0-9]+)\s*\^\s*([a-zA-Z0-9]+)/g, '\\sum_{$1=$2}^{$3}');
+  res = res.replace(/(?<!\\)\bsum\b/g, '\\sum');
+
+  // Multi-letter Greek letters
+  const greekLetters = [
+    'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa',
+    'lambda', 'mu', 'nu', 'xi', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
+    'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi', 'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega'
+  ];
+  for (const g of greekLetters) {
+    const r = new RegExp(`(?<!\\\\)\\b${g}\\b`, 'g');
+    res = res.replace(r, `\\${g}`);
+  }
+
+  // Math operators
+  res = res.replace(/(?<!\\)\bdot\b/g, '\\cdot');
+  res = res.replace(/(?<!\\)\bcdot\b/g, '\\cdot');
+  res = res.replace(/(?<!\\)\btimes\b/g, '\\times');
+  res = res.replace(/(?<!\\)\bdiv\b/g, '\\div');
+  res = res.replace(/(?<!\\)\bpm\b/g, '\\pm');
+  res = res.replace(/(?<!\\)\bmp\b/g, '\\mp');
+  res = res.replace(/(?<!\\)\bapprox\b/g, '\\approx');
+  res = res.replace(/(?<!\\)\bneq\b/g, '\\neq');
+  res = res.replace(/(?<!\\)\ble\b/g, '\\le');
+  res = res.replace(/(?<!\\)\bge\b/g, '\\ge');
+  res = res.replace(/(?<!\\)\binfinity\b|(?<!\\)\boo\b/g, '\\infty');
+  res = res.replace(/(?<!\\)\bnabla\b/g, '\\nabla');
+  res = res.replace(/(?<!\\)\bpartial\b/g, '\\partial');
+  res = res.replace(/(?<!\\)\bprod\b/g, '\\prod');
+  res = res.replace(/(?<!\\)\bintegral\b/g, '\\int');
+  res = res.replace(/->/g, '\\rightarrow');
+  res = res.replace(/=>/g, '\\Rightarrow');
+  res = res.replace(/<-/g, '\\leftarrow');
+  res = res.replace(/<=/g, '\\Leftarrow');
+
+  return res;
+}
+
+/**
  * Parses inline Typst formatting (headings, math, lists, bold, italic, paragraphs)
  */
 function parseTypstInlineMarkup(text: string): string {
   let res = text;
+  const mathPlaceholders: Array<{ type: 'display' | 'inline'; content: string }> = [];
 
-  // Convert Typst math $ ... $ to KaTeX-compatible LaTeX math
-  res = res.replace(/\$([^\$\n]+)\$/g, (m, mathContent) => {
-    let content = mathContent;
-
-    // text("...") -> \text{...}
-    content = content.replace(/text\s*\(\s*["']([^"']+)["']\s*\)/g, '\\text{$1}');
-    content = content.replace(/["']([^"']+)["']/g, '\\text{$1}');
-
-    // sum(i=1)^(n) or sum_(i=1)^(n) -> \sum_{i=1}^{n}
-    content = content.replace(/sum\s*\(?([^)^=]+=[^)]+)\)?\s*\^\s*\(?([^)]+)\)?/g, '\\sum_{$1}^{$2}');
-    content = content.replace(/sum_([^\^]+)\^([^\s\$]+)/g, '\\sum_{$1}^{$2}');
-    content = content.replace(/sum\b/g, '\\sum');
-
-    // Symbols & Operators
-    content = content.replace(/dif\b/g, '\\mathrm{d}');
-    content = content.replace(/->/g, '\\rightarrow');
-    content = content.replace(/=>/g, '\\Rightarrow');
-    content = content.replace(/<-/g, '\\leftarrow');
-    content = content.replace(/<=/g, '\\Leftarrow');
-
-    return `$${content}$`;
+  // Step 1: Protect and extract Display/Block Math: $ ... $ on its own line or surrounded by whitespace
+  res = res.replace(/(?:^|\n)\s*\$\s*([\s\S]*?)\s*\$\s*(?:\n|$)/g, (match, mathContent) => {
+    const idx = mathPlaceholders.length;
+    mathPlaceholders.push({ type: 'display', content: mathContent.trim() });
+    return `\n\n«TYPSTMATHBLOCK${idx}»\n\n`;
   });
 
-  // Headings: = Heading 1, == Heading 2, === Heading 3
+  // Step 2: Protect and extract Inline Typst math $ ... $
+  res = res.replace(/(?<!\$)\$([^\$\n]+)\$(?!\$)/g, (match, mathContent) => {
+    const idx = mathPlaceholders.length;
+    mathPlaceholders.push({ type: 'inline', content: mathContent.trim() });
+    return `«TYPSTMSLOT${idx}»`;
+  });
+
+  // Step 3: Parse Document Headings
   res = res.replace(/^=====\s+(.+)$/gm, '<h5 style="font-size: 1.0em; color: #2d6a4f; margin-top: 1.0em; margin-bottom: 0.3em; font-weight: 600;">$1</h5>');
   res = res.replace(/^====\s+(.+)$/gm, '<h4 style="font-size: 1.05em; color: #2d6a4f; margin-top: 1.1em; margin-bottom: 0.3em; font-weight: 600;">$1</h4>');
   res = res.replace(/^===\s+(.+)$/gm, '<h3 style="font-size: 1.15em; color: #2d6a4f; margin-top: 1.2em; margin-bottom: 0.4em; font-weight: 600;">$1</h3>');
   res = res.replace(/^==\s+(.+)$/gm, '<h2 style="font-size: 1.35em; color: #2d6a4f; margin-top: 1.4em; margin-bottom: 0.5em; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 4px; font-weight: 700;">$1</h2>');
   res = res.replace(/^=\s+(.+)$/gm, '<div class="doc-page-break"></div><h1 class="paper-sec-title" style="font-size: 1.7em; color: #1b4332; margin-top: 1.5em; margin-bottom: 0.6em; font-weight: 800; letter-spacing: -0.02em;">$1</h1>');
 
-  // Bold *text*
-  res = res.replace(/\*([^\*\n]+)\*/g, '<strong>$1</strong>');
+  // Step 4: Parse Bold, Italic, Strikethrough, and Underline formatting
+  // 4a. Triple Bold + Italic: ***text*** or ___text___
+  res = res.replace(/\*\*\*([^\*\n]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+  res = res.replace(/___([^_\n]+)___/g, '<strong><em>$1</em></strong>');
 
-  // Italic _text_
-  res = res.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+  // 4b. Double Asterisk / Double Underscore Bold: **text**
+  res = res.replace(/\*\*([^\*\n]+)\*\*/g, '<strong>$1</strong>');
 
-  // Code `code`
+  // 4c. Single Asterisk Typst Native Bold: *text*
+  res = res.replace(/(?<=\s|^|[([{"'])\*([^\*\n\s][^\*\n]*[^\*\n\s]|[^\*\n\s])\*(?=\s|$|[.,!?;:)}\]"'])/g, '<strong>$1</strong>');
+
+  // 4d. Double Underscore Underline: __text__
+  res = res.replace(/__([^_\n]+)__/g, '<u>$1</u>');
+
+  // 4e. Single Underscore Typst Native Italic: _text_
+  res = res.replace(/(?<=\s|^|[([{"'])_([^_\n\s][^_\n]*[^_\n\s]|[^_\n\s])_(?=\s|$|[.,!?;:)}\]"'])/g, '<em>$1</em>');
+
+  // 4f. Strikethrough: ~~text~~
+  res = res.replace(/~~([^~\n]+)~~/g, '<del>$1</del>');
+
+  // 4g. Typographic Dashes: --- -> em-dash (—), -- -> en-dash (–)
+  res = res.replace(/---/g, '—');
+  res = res.replace(/--/g, '–');
+
+  // Step 5: Parse Inline Code `code`
   res = res.replace(/`([^`\n]+)`/g, '<code style="background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; font-family: \'JetBrains Mono\', monospace; font-size: 0.9em; color: #0f766e;">$1</code>');
 
-  // Lists: - Item or + Item or 1. Item
-  res = res.replace(/^-\s+(.+)$/gm, '<li style="margin-bottom: 4px;">$1</li>');
-  res = res.replace(/(<li style="margin-bottom: 4px;">.*<\/li>\n?)+/g, '<ul style="margin: 8px 0; padding-left: 24px;">$&</ul>');
+  // Step 6: Parse Lists
+  // 6a. Split numbered points that were written inline (e.g. "...fisik. 2. *Jangan..." or "...fisik. 2. <strong>Jangan...")
+  res = res.replace(/(?<=[.!?:]|\b)\s+(\d+[.)]\s+(?:<[^>]+>|[a-zA-Z0-9*_\`"'\(\[\{]))/g, '\n$1');
 
-  res = res.replace(/^[\+\d\.]+\s+(.+)$/gm, '<li style="margin-bottom: 4px;">$1</li>');
+  // 6b. Unordered lists (- Item or • Item)
+  res = res.replace(/^[\s\t]*[-•]\s+(.+)$/gm, '<li class="typst-ul-item" style="margin-bottom: 5px; text-align: left;">$1</li>');
+  res = res.replace(/(<li class="typst-ul-item"[^>]*>[\s\S]*?<\/li>\s*)+/g, '<ul style="margin: 8px 0; padding-left: 20px; text-align: left; list-style-position: outside;">\n$&</ul>');
 
-  // Line break \
+  // 6c. Ordered lists (+ Item or 1. Item or 1) Item)
+  res = res.replace(/^[\s\t]*(?:\+|\d+[.)])\s+(.+)$/gm, '<li class="typst-ol-item" style="margin-bottom: 5px; text-align: left;">$1</li>');
+  res = res.replace(/(<li class="typst-ol-item"[^>]*>[\s\S]*?<\/li>\s*)+/g, '<ol style="margin: 8px 0; padding-left: 20px; text-align: left; list-style-position: outside;">\n$&</ol>');
+
+  // Step 7: Parse Line break \
   res = res.replace(/\\$/gm, '<br />');
 
-  // Clean up remaining unparsed #function syntax lines that weren't caught
-  res = res.replace(/#(?:[a-zA-Z0-9_.]+)\s*(?:\([^)]*\)|\[[^\]]*\])?/g, '');
+  // Step 8: Clean up remaining unparsed #function syntax lines that weren't caught (never strip hex colors like #ffffff or #2d6a4f)
+  res = res.replace(/(?<![:"'=&#])#(?!([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b)([a-zA-Z_][a-zA-Z0-9_-]*)\s*(?:\([^)]*\)|\[[^\]]*\])?/g, '');
 
-  // Split into paragraphs
+  // Step 9: Restore Math Placeholders with converted KaTeX markup (clean and pristine)
+  res = res.replace(/«TYPSTMATHBLOCK(\d+)»/g, (_, idxStr) => {
+    const item = mathPlaceholders[parseInt(idxStr, 10)];
+    if (!item) return '';
+    const converted = convertTypstMathToKatex(item.content);
+    return `<div class="katex-display" style="text-align: center; margin: 18px 0; font-size: 1.15em; overflow-x: auto;">$$ ${converted} $$</div>`;
+  });
+
+  res = res.replace(/«TYPSTMSLOT(\d+)»/g, (_, idxStr) => {
+    const item = mathPlaceholders[parseInt(idxStr, 10)];
+    if (!item) return '';
+    const converted = convertTypstMathToKatex(item.content);
+    return `$${converted}$`;
+  });
+
+  // Step 10: Split into paragraphs
   const blocks = res
     .split(/\n\s*\n/)
     .map((b) => b.trim())
@@ -777,7 +1426,9 @@ function parseTypstInlineMarkup(text: string): string {
         b.startsWith('<ol') ||
         b.startsWith('<hr') ||
         b.startsWith('<table') ||
-        b.startsWith('<span')
+        b.startsWith('<span') ||
+        b.startsWith('<img') ||
+        b.startsWith('<figure')
       ) {
         return b;
       }

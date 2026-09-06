@@ -41,18 +41,20 @@ export function resolveDocImports(
     }
   }
 
-  // Regex for LaTeX \input{name}, \include{name}, \subfile{name}
+  // Regex for LaTeX \input{name}, \include{name}, \subfile{name},
+  // Typst #include "name",
   // and Markdown @import "name", @[include](name), !include(name)
   const importRegex =
-    /(\\input\{([^}]+)\}|\\include\{([^}]+)\}|\\subfile\{([^}]+)\}|@import\s+["']([^"']+)["']|@\[include\]\(([^)]+)\)|!include\(([^)]+)\))/g;
+    /(\\input\{([^}]+)\}|\\include\{([^}]+)\}|\\subfile\{([^}]+)\}|#include\s+["']([^"']+)["']|@import\s+["']([^"']+)["']|@\[include\]\(([^)]+)\)|!include\(([^)]+)\))/g;
 
   return rootContent.replace(
     importRegex,
-    (match, full, latexInput, latexInclude, latexSubfile, atImport, mdInclude1, mdInclude2) => {
+    (match, full, latexInput, latexInclude, latexSubfile, typstInclude, atImport, mdInclude1, mdInclude2) => {
       const target = (
         latexInput ||
         latexInclude ||
         latexSubfile ||
+        typstInclude ||
         atImport ||
         mdInclude1 ||
         mdInclude2 ||

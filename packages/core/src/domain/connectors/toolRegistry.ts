@@ -1139,10 +1139,11 @@ export async function executeConnectorTool(
     }
 
     // 6. Anticeil Media Tools
+    const _cid = toolDef.connectorId as string;
     if (
-      toolDef.connectorId === 'anticeil_image' ||
-      toolDef.connectorId === 'anticeil_video' ||
-      toolDef.connectorId === 'anticeil_audio'
+      _cid === 'anticeil_image' ||
+      _cid === 'anticeil_video' ||
+      _cid === 'anticeil_audio'
     ) {
       const cleanPrompt = String(args.prompt || 'illustration').trim();
       const encodedPrompt = encodeURIComponent(cleanPrompt);

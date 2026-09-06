@@ -695,6 +695,10 @@ function lintTypst(content: string, activeFileName: string): LintResult {
   let totalHeadings = 0;
   let totalMath = 0;
   let inCodeBlock = false;
+  let openParenCount = 0;
+  let parenStartLine = 1;
+  let openBracketCount = 0;
+  let bracketStartLine = 1;
 
   for (let i = 0; i < lines.length; i++) {
     const lineNum = i + 1;
@@ -716,39 +720,76 @@ function lintTypst(content: string, activeFileName: string): LintResult {
       totalMath++;
     }
 
-    // Check parens & bracket balance in #set/#show/#let rules
-    if (line.trim().startsWith('#set ') || line.trim().startsWith('#show ') || line.trim().startsWith('#let ')) {
-      let openParen = 0;
-      let openBracket = 0;
-      for (const char of line) {
-        if (char === '(') openParen++;
-        if (char === ')') openParen--;
-        if (char === '[') openBracket++;
-        if (char === ']') openBracket--;
+    // Track parenthesis & bracket balance across multi-line statements
+    for (let cIdx = 0; cIdx < line.length; cIdx++) {
+      const ch = line[cIdx];
+      // Skip string literals
+      if (ch === '"' || ch === "'") {
+        const sChar = ch;
+        cIdx++;
+        while (cIdx < line.length && (line[cIdx] !== sChar || line[cIdx - 1] === '\\')) {
+          cIdx++;
+        }
+        continue;
       }
-      if (openParen > 0) {
-        warnings.push({
-          id: `unclosed_typst_paren_${lineNum}`,
-          type: 'warning',
-          message: `Aturan Typst '${line.trim().split(' ')[0]}' memiliki tanda kurung '(' yang belum ditutup.`,
-          line: lineNum,
-          fileName: activeFileName,
-          snippet: line.trim(),
-          suggestion: `Periksa tanda penutup ')' pada aturan Typst ini.`,
-        });
-      }
-      if (openBracket > 0) {
-        warnings.push({
-          id: `unclosed_typst_bracket_${lineNum}`,
-          type: 'warning',
-          message: `Blok Typst '${line.trim().split(' ')[0]}' memiliki kurung siku '[' yang belum ditutup.`,
-          line: lineNum,
-          fileName: activeFileName,
-          snippet: line.trim(),
-          suggestion: `Periksa tanda penutup ']' pada blok ini.`,
-        });
+      if (ch === '(') {
+        if (openParenCount === 0) parenStartLine = lineNum;
+        openParenCount++;
+      } else if (ch === ')') {
+        openParenCount--;
+        if (openParenCount < 0) {
+          warnings.push({
+            id: `unmatched_close_paren_${lineNum}`,
+            type: 'warning',
+            message: `Tanda kurung tutup ')' ditemukan tanpa kurung buka '(' sebelumnya.`,
+            line: lineNum,
+            fileName: activeFileName,
+            snippet: line.trim(),
+            suggestion: `Periksa tanda kurung ')' berlebih pada baris ini.`,
+          });
+          openParenCount = 0;
+        }
+      } else if (ch === '[') {
+        if (openBracketCount === 0) bracketStartLine = lineNum;
+        openBracketCount++;
+      } else if (ch === ']') {
+        openBracketCount--;
+        if (openBracketCount < 0) {
+          warnings.push({
+            id: `unmatched_close_bracket_${lineNum}`,
+            type: 'warning',
+            message: `Tanda kurung siku tutup ']' ditemukan tanpa kurung siku buka '[' sebelumnya.`,
+            line: lineNum,
+            fileName: activeFileName,
+            snippet: line.trim(),
+            suggestion: `Periksa kurung siku ']' berlebih pada baris ini.`,
+          });
+          openBracketCount = 0;
+        }
       }
     }
+  }
+
+  if (openParenCount > 0) {
+    warnings.push({
+      id: `unclosed_typst_paren_${parenStartLine}`,
+      type: 'warning',
+      message: `Tanda kurung '(' pada baris ${parenStartLine} belum ditutup hingga akhir dokumen.`,
+      line: parenStartLine,
+      fileName: activeFileName,
+      suggestion: `Tambahkan tanda penutup ')' untuk menyelesaikan aturan/fungsi Typst.`,
+    });
+  }
+
+  if (openBracketCount > 0) {
+    warnings.push({
+      id: `unclosed_typst_bracket_${bracketStartLine}`,
+      type: 'warning',
+      message: `Blok kurung siku '[' pada baris ${bracketStartLine} belum ditutup hingga akhir dokumen.`,
+      line: bracketStartLine,
+      fileName: activeFileName,
+      suggestion: `Tambahkan tanda penutup ']' untuk menyelesaikan blok konten Typst.`,
+    });
   }
 
   if (inCodeBlock) {
@@ -818,6 +859,28 @@ export function lintDocumentContent(
       return lintAntsheet(content, activeFileName);
     case 'slide':
       return lintSlide(content, activeFileName);
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'webp':
+    case 'svg':
+    case 'gif':
+    case 'bmp':
+    case 'ico':
+      return {
+        errors: [],
+        warnings: [],
+        infos: [
+          {
+            id: 'info_asset_valid',
+            type: 'info',
+            message: `Berkas aset gambar/media (${activeFileName}) valid.`,
+            line: 1,
+            fileName: activeFileName,
+          },
+        ],
+        totalLogs: 1,
+      };
     case 'tex':
     case 'sty':
     case 'cls':

@@ -68,7 +68,7 @@ function parseReasoningAndActionsToSteps(
         durationSeconds: estDuration,
         content: rawBlocks[0],
         isStreaming,
-        defaultExpanded: true,
+        defaultExpanded: isStreaming,
       });
     } else {
       rawBlocks.forEach((block, idx) => {
@@ -81,7 +81,7 @@ function parseReasoningAndActionsToSteps(
           durationSeconds: stepDuration,
           content: block,
           isStreaming: isStreaming && isLastBlock,
-          defaultExpanded: isLastBlock,
+          defaultExpanded: isStreaming && isLastBlock,
         });
 
         // Interleave action steps if available
@@ -90,12 +90,14 @@ function parseReasoningAndActionsToSteps(
           const actType =
             act.type === 'create' || act.type === 'patch' || act.type === 'update'
               ? 'edited'
+              : act.type === 'checked'
+              ? 'checked'
               : 'analyzed';
 
           result.push({
             id: `action_${idx}`,
             type: actType,
-            title: actType === 'edited' ? `Edited` : `Analyzed`,
+            title: actType === 'edited' ? `Edited` : actType === 'checked' ? `Checked` : `Analyzed`,
             fileName: act.name,
             diffCount: 1,
           });
@@ -106,23 +108,56 @@ function parseReasoningAndActionsToSteps(
 
   // Add remaining actions if any were not interleaved
   if (actions && actions.length > 0) {
-    const processedNames = new Set(result.map((s) => s.fileName).filter(Boolean));
+    const processedKeys = new Set(result.map((s) => `${s.type}_${s.fileName}`));
     actions.forEach((act, idx) => {
-      if (!processedNames.has(act.name)) {
-        const actType =
-          act.type === 'create' || act.type === 'patch' || act.type === 'update'
-            ? 'edited'
-            : 'analyzed';
+      const actType =
+        act.type === 'create' || act.type === 'patch' || act.type === 'update'
+          ? 'edited'
+          : act.type === 'checked'
+          ? 'checked'
+          : 'analyzed';
 
+      const key = `${actType}_${act.name}`;
+      if (!processedKeys.has(key)) {
+        processedKeys.add(key);
         result.push({
           id: `action_extra_${idx}`,
           type: actType,
-          title: actType === 'edited' ? `Edited` : `Analyzed`,
+          title: actType === 'edited' ? `Edited` : actType === 'checked' ? `Checked` : `Analyzed`,
           fileName: act.name,
           diffCount: 1,
         });
       }
     });
+  }
+
+  // If no thoughts were parsed, provide active streaming step or fallback action steps
+  if (result.length === 0) {
+    if (isStreaming) {
+      result.push({
+        id: 'active_streaming_step',
+        type: 'thought',
+        title: 'Menganalisis dokumen & mempersiapkan perubahan...',
+        isStreaming: true,
+        defaultExpanded: true,
+      });
+    } else if (actions && actions.length > 0) {
+      actions.forEach((act, idx) => {
+        const actType =
+          act.type === 'create' || act.type === 'patch' || act.type === 'update'
+            ? 'edited'
+            : act.type === 'checked'
+            ? 'checked'
+            : 'analyzed';
+        result.push({
+          id: `action_fallback_${idx}`,
+          type: actType,
+          title: actType === 'edited' ? 'Edited' : actType === 'checked' ? 'Checked' : 'Analyzed',
+          fileName: act.name,
+          diffCount: 1,
+        });
+      });
+    }
   }
 
   return result;
@@ -141,7 +176,7 @@ function TimelineStepItem({
   onOpenFile?: (fileName: string, fileId?: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState<boolean>(
-    step.defaultExpanded ?? (step.type === 'thought' || step.type === 'ran')
+    step.defaultExpanded ?? false
   );
 
   const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
@@ -233,9 +268,10 @@ function TimelineStepItem({
     );
   }
 
-  // 2. Analyzed / Edited / Explored step chips
-  if (step.type === 'analyzed' || step.type === 'edited' || step.type === 'explored') {
+  // 2. Analyzed / Edited / Explored / Checked step chips
+  if (step.type === 'analyzed' || step.type === 'edited' || step.type === 'explored' || step.type === 'checked') {
     const isEdit = step.type === 'edited';
+    const isChecked = step.type === 'checked';
     return (
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: '2px 0' }}>
         <button
@@ -247,8 +283,8 @@ function TimelineStepItem({
             gap: '6px',
             padding: '3px 8px 3px 6px',
             borderRadius: '6px',
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+            border: isChecked ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(255, 255, 255, 0.08)',
             color: 'var(--text-secondary)',
             fontSize: '12px',
             fontFamily: 'inherit',
@@ -258,21 +294,25 @@ function TimelineStepItem({
           }}
           onMouseEnter={(e) => {
             if (step.fileName) {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.07)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.16)';
+              e.currentTarget.style.backgroundColor = isChecked ? 'rgba(16, 185, 129, 0.14)' : 'rgba(255, 255, 255, 0.07)';
+              e.currentTarget.style.borderColor = isChecked ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.16)';
             }
           }}
           onMouseLeave={(e) => {
             if (step.fileName) {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.backgroundColor = isChecked ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.03)';
+              e.currentTarget.style.borderColor = isChecked ? '1px solid rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)';
             }
           }}
         >
-          <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-            {step.title || (isEdit ? 'Edited' : 'Analyzed')}
+          <span style={{ color: isChecked ? '#10B981' : 'var(--text-muted)', fontWeight: isChecked ? 600 : 400 }}>
+            {step.title || (isChecked ? 'Checked' : isEdit ? 'Edited' : 'Analyzed')}
           </span>
-          <FileCode size={13} style={{ color: '#3B82F6' }} />
+          {isChecked ? (
+            <CheckCircle2 size={13} style={{ color: '#10B981' }} />
+          ) : (
+            <FileCode size={13} style={{ color: '#3B82F6' }} />
+          )}
           <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
             {step.fileName || 'file'}
           </span>
@@ -360,7 +400,13 @@ export function AgentStepTimeline({
   onOpenFile,
   language = 'id',
 }: AgentStepTimelineProps) {
-  const [isGroupExpanded, setIsGroupExpanded] = useState<boolean>(true);
+  const [isGroupExpanded, setIsGroupExpanded] = useState<boolean>(isStreaming);
+
+  useEffect(() => {
+    if (!isStreaming) {
+      setIsGroupExpanded(false);
+    }
+  }, [isStreaming]);
 
   // Compute final step list (either explicitly passed customSteps or parsed from reasoning/actions)
   const steps: AgentTimelineStep[] = useMemo(() => {
@@ -368,12 +414,12 @@ export function AgentStepTimeline({
     return parseReasoningAndActionsToSteps(reasoningContent, actions, isStreaming);
   }, [customSteps, reasoningContent, actions, isStreaming]);
 
-  if (steps.length === 0 && !isStreaming) return null;
-
-  // Total duration estimation
+  // Total duration estimation (must be computed unconditionally before any early return)
   const totalSeconds = useMemo(() => {
     return steps.reduce((acc, curr) => acc + (curr.durationSeconds || 1), 0);
   }, [steps]);
+
+  if (steps.length === 0 && !isStreaming) return null;
 
   const durationLabel = totalSeconds >= 60 ? `${Math.floor(totalSeconds / 60)}m` : `${totalSeconds}s`;
   const summaryTitle = isStreaming

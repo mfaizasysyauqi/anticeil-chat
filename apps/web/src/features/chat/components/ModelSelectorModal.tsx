@@ -25,6 +25,7 @@ import {
   LLMProviderId,
   LLMModel,
   getTranslation,
+  isModelActiveAndAvailable,
 } from '@anticeil/core';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useChatStore } from '../store/useChatStore';
@@ -93,13 +94,19 @@ export function ModelSelectorModal({
   const isLoadingModels = useSettingsStore((s) => s.isLoadingModels);
   const dynamicModels = useSettingsStore((s) => s.dynamicModels);
   const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
+  const disabledModelIds = useSettingsStore((s) => s.disabledModelIds) || [];
 
   const isCurrentProviderLoading = Boolean(isLoadingModels[selectedProviderId]);
   const rawModels = getModelsForProvider(selectedProviderId);
   const seenModelIds = new Set<string>();
+  const disabledSet = new Set(disabledModelIds.map((id) => id.toLowerCase()));
   const models = rawModels.filter((m) => {
     if (!m || !m.id || seenModelIds.has(m.id)) return false;
     seenModelIds.add(m.id);
+
+    const clean = m.id.toLowerCase().replace(/^models\//, '');
+    if (disabledSet.has(clean)) return false;
+    if (!isModelActiveAndAvailable(m)) return false;
 
     if (targetCapability === 'text' || !targetCapability) {
       // Keep only models that can do text/chat; exclude pure media-gen models
@@ -141,11 +148,7 @@ export function ModelSelectorModal({
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
 
   const handleSelectModel = (model: LLMModel) => {
-    if (!user) {
-      onClose();
-      openAuthModal('login');
-      return;
-    }
+    setActiveProviderAndModel(model.providerId, model.id);
     if (onSelectModel) {
       onSelectModel(model.providerId, model.id);
     } else if (activeSession) {
@@ -154,7 +157,6 @@ export function ModelSelectorModal({
         modelId: model.id,
       });
     }
-    setActiveProviderAndModel(model.providerId, model.id);
     onClose();
   };
 

@@ -26,6 +26,22 @@ export interface DocCollaborator {
   invitedAt: number;
 }
 
+export interface DocSuggestion {
+  id: string;
+  docId: string;
+  subFileId?: string | null;
+  authorName: string;
+  authorEmail?: string;
+  /** 'add' = pure insertion, 'delete' = pure deletion, 'replace' = substitution */
+  type: 'add' | 'delete' | 'replace';
+  fromLine: number;
+  toLine: number;
+  originalText: string;
+  suggestedText: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: number;
+}
+
 export interface DocCommentReply {
   id: string;
   authorName: string;
@@ -83,6 +99,8 @@ export interface DocItem {
   ownerEmail?: string;
   // Overleaf-style Comments & Review
   comments?: DocComment[];
+  // Overleaf-style Track Changes / Suggestions
+  suggestions?: DocSuggestion[];
 }
 
 interface DocsState {
@@ -141,6 +159,15 @@ interface DocsState {
   // Active sidebar drawer tab state ('files' | 'search' | 'review' | 'ai')
   activeDrawerTab: 'files' | 'search' | 'review' | 'ai';
   setActiveDrawerTab: (tab: 'files' | 'search' | 'review' | 'ai') => void;
+
+  // Overleaf Editing / Reviewing mode
+  reviewMode: 'editing' | 'reviewing';
+  setReviewMode: (mode: 'editing' | 'reviewing') => void;
+
+  // Track Changes / Suggestion Actions
+  addSuggestion: (docId: string, suggestion: Omit<DocSuggestion, 'id' | 'createdAt' | 'status'>) => string;
+  acceptSuggestion: (docId: string, suggestionId: string) => void;
+  rejectSuggestion: (docId: string, suggestionId: string) => void;
 
   activeTextareaElement: HTMLTextAreaElement | null;
   registerActiveTextarea: (el: HTMLTextAreaElement | null) => void;
@@ -441,6 +468,91 @@ export const useDocsStore = create<DocsState>((set, get) => {
     // Active sidebar drawer tab state
     activeDrawerTab: 'files',
     setActiveDrawerTab: (tab) => set({ activeDrawerTab: tab }),
+
+    // Overleaf Editing / Reviewing mode
+    reviewMode: 'editing',
+    setReviewMode: (mode) => set({ reviewMode: mode }),
+
+    addSuggestion: (docId, suggestionData) => {
+      const suggestionId = 'sug_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      const newSuggestion: DocSuggestion = {
+        ...suggestionData,
+        id: suggestionId,
+        status: 'pending',
+        createdAt: Date.now(),
+      };
+      const updated = get().documents.map((d) => {
+        if (d.id !== docId) return d;
+        const existing = d.suggestions || [];
+        return { ...d, suggestions: [newSuggestion, ...existing], updatedAt: Date.now() };
+      });
+      set({ documents: updated });
+      saveToStorage(updated);
+      return suggestionId;
+    },
+
+    acceptSuggestion: (docId, suggestionId) => {
+      const doc = get().documents.find((d) => d.id === docId);
+      if (!doc) return;
+      const sug = (doc.suggestions || []).find((s) => s.id === suggestionId);
+      if (!sug || sug.status !== 'pending') return;
+
+      // Apply the text change to the relevant sub-file
+      const fileId = sug.subFileId || doc.activeFileId;
+      const targetFile = (doc.files || []).find((f) => f.id === fileId) ||
+                         (doc.files || []).find((f) => f.isMain) ||
+                         (doc.files || [])[0];
+      if (targetFile) {
+        const lines = targetFile.content.split('\n');
+        const before = lines.slice(0, sug.fromLine - 1).join('\n');
+        const after = lines.slice(sug.toLine).join('\n');
+        const newContent = [before, sug.suggestedText, after].filter((_, i) => !(i === 0 && before === '') || true).join('\n').replace(/^\n/, '');
+        const updatedFiles = (doc.files || []).map((f) =>
+          f.id === targetFile.id ? { ...f, content: newContent, updatedAt: Date.now() } : f
+        );
+        const mainFile = updatedFiles.find((f) => f.isMain);
+        const updatedDocs = get().documents.map((d) => {
+          if (d.id !== docId) return d;
+          return {
+            ...d,
+            files: updatedFiles,
+            content: mainFile ? mainFile.content : d.content,
+            suggestions: (d.suggestions || []).map((s) =>
+              s.id === suggestionId ? { ...s, status: 'accepted' as const } : s
+            ),
+            updatedAt: Date.now(),
+          };
+        });
+        set({ documents: updatedDocs });
+        saveToStorage(updatedDocs);
+      } else {
+        const updated = get().documents.map((d) =>
+          d.id !== docId ? d : {
+            ...d,
+            suggestions: (d.suggestions || []).map((s) =>
+              s.id === suggestionId ? { ...s, status: 'accepted' as const } : s
+            ),
+            updatedAt: Date.now(),
+          }
+        );
+        set({ documents: updated });
+        saveToStorage(updated);
+      }
+    },
+
+    rejectSuggestion: (docId, suggestionId) => {
+      const updated = get().documents.map((d) =>
+        d.id !== docId ? d : {
+          ...d,
+          suggestions: (d.suggestions || []).map((s) =>
+            s.id === suggestionId ? { ...s, status: 'rejected' as const } : s
+          ),
+          updatedAt: Date.now(),
+        }
+      );
+      set({ documents: updated });
+      saveToStorage(updated);
+    },
 
     activeTextareaElement: null,
     registerActiveTextarea: (el) => set({ activeTextareaElement: el }),

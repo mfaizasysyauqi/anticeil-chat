@@ -26,6 +26,7 @@ export interface PricingTier {
     dataSovereignty: LocalizedFeatureValue;
     exportBackup: LocalizedFeatureValue;
     teamAccess: LocalizedFeatureValue;
+    trackChanges: LocalizedFeatureValue;
   };
   ctaLabelEn: string;
   ctaLabelId: string;
@@ -43,6 +44,7 @@ export const FEATURE_KEYS = [
   'dataSovereignty',
   'exportBackup',
   'teamAccess',
+  'trackChanges',
 ] as const;
 
 export type FeatureKey = typeof FEATURE_KEYS[number];
@@ -59,6 +61,7 @@ export const FEATURE_LABELS: Record<'en' | 'id', Record<FeatureKey | 'mostPopula
     dataSovereignty: 'Data Sovereignty',
     exportBackup: '.json Backup',
     teamAccess: 'Team Access',
+    trackChanges: 'Track Changes',
     mostPopular: 'Most Popular',
     active: 'Active Plan',
   },
@@ -73,6 +76,7 @@ export const FEATURE_LABELS: Record<'en' | 'id', Record<FeatureKey | 'mostPopula
     dataSovereignty: 'Kedaulatan Data',
     exportBackup: 'Cadangan .json',
     teamAccess: 'Akses Tim',
+    trackChanges: 'Track Changes',
     mostPopular: 'Paling Populer',
     active: 'Paket Aktif',
   },
@@ -99,6 +103,7 @@ export const PRICING_TIERS: PricingTier[] = [
       dataSovereignty: { en: 'Private Local', id: 'Privat Lokal' },
       exportBackup: { en: true, id: true },
       teamAccess: { en: false, id: false },
+      trackChanges: { en: 'Local comments only', id: 'Komentar lokal saja' },
     },
     ctaLabelEn: 'Get started free',
     ctaLabelId: 'Mulai Gratis',
@@ -124,6 +129,7 @@ export const PRICING_TIERS: PricingTier[] = [
       dataSovereignty: { en: 'Encrypted Cloud', id: 'Cloud Enkripsi' },
       exportBackup: { en: true, id: true },
       teamAccess: { en: false, id: false },
+      trackChanges: { en: true, id: true },
     },
     ctaLabelEn: 'Get Starter Plan',
     ctaLabelId: 'Beli Starter Plan',
@@ -150,6 +156,7 @@ export const PRICING_TIERS: PricingTier[] = [
       dataSovereignty: { en: 'Encrypted Cloud', id: 'Cloud Enkripsi' },
       exportBackup: { en: true, id: true },
       teamAccess: { en: false, id: false },
+      trackChanges: { en: true, id: true },
     },
     ctaLabelEn: 'Get Pro Power',
     ctaLabelId: 'Beli Pro Power',
@@ -175,6 +182,7 @@ export const PRICING_TIERS: PricingTier[] = [
       dataSovereignty: { en: '100% Zero-Trust', id: '100% Zero-Trust' },
       exportBackup: { en: true, id: true },
       teamAccess: { en: true, id: true },
+      trackChanges: { en: true, id: true },
     },
     ctaLabelEn: 'Get Enterprise Plan',
     ctaLabelId: 'Beli Enterprise Plan',

@@ -43,6 +43,42 @@ function getStoredTier(): UserTier {
   return 'free';
 }
 
+function getStoredUser(): User | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('anticeil_cached_user');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+  }
+  return null;
+}
+
+function getStoredSession(): Session | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('anticeil_cached_session');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+  }
+  return null;
+}
+
+function saveCachedAuth(user: User | null, session: Session | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (user) {
+      localStorage.setItem('anticeil_cached_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('anticeil_cached_user');
+    }
+    if (session) {
+      localStorage.setItem('anticeil_cached_session', JSON.stringify(session));
+    } else {
+      localStorage.removeItem('anticeil_cached_session');
+    }
+  } catch {}
+}
+
 function isUserPhoneVerified(user: User | null): boolean {
   if (!user) return true;
   return Boolean(user.user_metadata?.phone_verified || user.phone);
@@ -58,10 +94,16 @@ function isConnectorCallbackUrl(): boolean {
   );
 }
 
+let authInitPromise: Promise<void> | null = null;
+let isAuthListenerAttached = false;
+
+const initialUser = getStoredUser();
+const initialSession = getStoredSession();
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  session: null,
-  isLoading: true,
+  user: initialUser,
+  session: initialSession,
+  isLoading: initialUser ? false : true,
   error: null,
   tier: getStoredTier(),
   isAuthModalOpen: false,
@@ -155,6 +197,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       if (data.user) {
+        saveCachedAuth(data.user, get().session);
         set({
           user: data.user,
           needsPhoneVerification: false,
@@ -169,84 +212,120 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initializeAuth: async () => {
-    try {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const user = session?.user || null;
-      const isConnectorCB = isConnectorCallbackUrl();
-      const needsVerification = user && !isConnectorCB ? !isUserPhoneVerified(user) : false;
-
-      set({
-        session,
-        user,
-        isLoading: false,
-        needsPhoneVerification: needsVerification,
-        isAuthModalOpen: false,
-        authModalMode: 'login',
-      });
-
-      // Sync user tier
-      if (session?.access_token) {
-        get().fetchUserTier(session.access_token);
-      }
-
-      // Sync storage and project folders for this user
-      if (session?.access_token) {
-        import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
-          useStorageStore.getState().syncFromSupabase(session.access_token);
-        });
-        import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
-          useProjectStore.getState().fetchFolders(session.access_token);
-        });
-      } else {
-        // Free / offline mode: load local folders
-        import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
-          useProjectStore.getState().loadLocalFolders();
-        });
-      }
-
-      // Subscribe to live auth state changes
-      supabase.auth.onAuthStateChange((_event, newSession) => {
-        const newUser = newSession?.user || null;
-        const isConnectorCB = isConnectorCallbackUrl();
-        const newNeedsVerification = newUser && !isConnectorCB ? !isUserPhoneVerified(newUser) : false;
-
-        set({
-          session: newSession,
-          user: newUser,
-          isLoading: false,
-          needsPhoneVerification: newNeedsVerification,
-          isAuthModalOpen: isConnectorCB ? false : get().isAuthModalOpen,
-          authModalMode: get().authModalMode,
-        });
-
-        if (_event === 'SIGNED_IN' && newSession?.access_token) {
-          get().fetchUserTier(newSession.access_token);
-          import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
-            useStorageStore.getState().syncFromSupabase(newSession.access_token);
-          });
-          import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
-            useProjectStore.getState().fetchFolders(newSession.access_token);
-          });
-        }
-
-        // On sign out, fallback to local storage mode
-        if (_event === 'SIGNED_OUT' || !newSession) {
-          import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
-            useProjectStore.getState().loadLocalFolders();
-          });
-          import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
-            useStorageStore.getState().resetStorage();
-          });
-        }
-      });
-    } catch (err: unknown) {
-      console.error('Auth initialization error:', err);
-      set({ isLoading: false });
+    if (authInitPromise) {
+      return authInitPromise;
     }
+
+    authInitPromise = (async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const user = session?.user || null;
+        const isConnectorCB = isConnectorCallbackUrl();
+        const needsVerification = user && !isConnectorCB ? !isUserPhoneVerified(user) : false;
+
+        if (session && user) {
+          saveCachedAuth(user, session);
+          set({
+            session,
+            user,
+            isLoading: false,
+            needsPhoneVerification: needsVerification,
+            isAuthModalOpen: false,
+            authModalMode: 'login',
+          });
+
+          get().fetchUserTier(session.access_token);
+          import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+            useStorageStore.getState().syncFromSupabase(session.access_token);
+          });
+          import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+            useProjectStore.getState().fetchFolders(session.access_token);
+          });
+        } else {
+          // If no active session returned by Supabase, check if we had cached credentials or verify
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            const resolvedUser = userData.user;
+            saveCachedAuth(resolvedUser, get().session);
+            set({
+              user: resolvedUser,
+              isLoading: false,
+              needsPhoneVerification: !isUserPhoneVerified(resolvedUser),
+            });
+          } else {
+            // Truly unauthenticated (Guest mode)
+            saveCachedAuth(null, null);
+            set({
+              session: null,
+              user: null,
+              isLoading: false,
+              needsPhoneVerification: false,
+            });
+            import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+              useProjectStore.getState().loadLocalFolders();
+            });
+          }
+        }
+
+        // Attach live auth change listener only once
+        if (!isAuthListenerAttached) {
+          isAuthListenerAttached = true;
+          supabase.auth.onAuthStateChange((_event, newSession) => {
+            const newUser = newSession?.user || null;
+            const isConnectorCB = isConnectorCallbackUrl();
+            const newNeedsVerification = newUser && !isConnectorCB ? !isUserPhoneVerified(newUser) : false;
+
+            if (_event === 'SIGNED_OUT') {
+              saveCachedAuth(null, null);
+              set({
+                session: null,
+                user: null,
+                isLoading: false,
+                needsPhoneVerification: false,
+              });
+              import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+                useProjectStore.getState().loadLocalFolders();
+              });
+              import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+                useStorageStore.getState().resetStorage();
+              });
+              return;
+            }
+
+            if (newSession && newUser) {
+              saveCachedAuth(newUser, newSession);
+              set({
+                session: newSession,
+                user: newUser,
+                isLoading: false,
+                needsPhoneVerification: newNeedsVerification,
+                isAuthModalOpen: isConnectorCB ? false : get().isAuthModalOpen,
+                authModalMode: get().authModalMode,
+              });
+
+              get().fetchUserTier(newSession.access_token);
+              import('../../storage/store/useStorageStore').then(({ useStorageStore }) => {
+                useStorageStore.getState().syncFromSupabase(newSession.access_token);
+              });
+              import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
+                useProjectStore.getState().fetchFolders(newSession.access_token);
+              });
+            }
+          });
+        }
+      } catch (err: unknown) {
+        console.error('Auth initialization error:', err);
+        set({ isLoading: false });
+      } finally {
+        authInitPromise = null;
+      }
+    })();
+
+    return authInitPromise;
   },
 
   signInWithPassword: async (email, password) => {
@@ -264,6 +343,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       const needsVerification = data.user ? !isUserPhoneVerified(data.user) : false;
+
+      if (data.user && data.session) {
+        saveCachedAuth(data.user, data.session);
+      }
 
       set({
         session: data.session,
@@ -313,6 +396,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (data.session) {
         const needsVerification = data.user ? !isUserPhoneVerified(data.user) : false;
+
+        if (data.user) {
+          saveCachedAuth(data.user, data.session);
+        }
 
         set({
           session: data.session,
@@ -379,6 +466,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     try {
+      saveCachedAuth(null, null);
       const supabase = createClient();
       await supabase.auth.signOut();
       set({

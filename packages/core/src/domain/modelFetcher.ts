@@ -1,6 +1,69 @@
 import { LLMModel, LLMProviderId, ModelCapabilities } from '../types';
 import { PROVIDER_MODELS, PROVIDER_DEFINITIONS } from '../providers';
 
+export const DEPRECATED_OR_UNAVAILABLE_MODELS = new Set<string>([
+  // Deprecated Google Gemini models
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-exp',
+  'gemini-exp-1206',
+  'gemini-exp-1121',
+  'gemini-exp-1114',
+  'gemini-1.0-pro',
+  // Decommissioned Groq / open-weight models
+  'gemma-4-31b-it',
+  'gemma-7b-it',
+  'gemma-2-9b-it',
+  'llama-3-70b-8192',
+  'llama-3-8b-8192',
+  'llama-2-70b-4096',
+  'llama2-70b-4096',
+  'mixtral-8x7b-32768',
+  // Legacy / discontinued OpenAI models
+  'gpt-3.5-turbo-0301',
+  'gpt-3.5-turbo-0613',
+  'text-davinci-003',
+  'text-davinci-002',
+]);
+
+/**
+ * Checks whether a given model is active, valid, and not deprecated or decommissioned by the provider.
+ */
+export function isModelActiveAndAvailable(model: {
+  id?: string;
+  active?: boolean;
+  is_active?: boolean;
+  deprecated?: boolean;
+  status?: string;
+  [key: string]: any;
+}): boolean {
+  if (!model || !model.id || typeof model.id !== 'string') return false;
+  const cleanId = model.id.trim().toLowerCase().replace(/^models\//, '');
+  if (!cleanId) return false;
+
+  // Check known discontinued blacklist
+  if (DEPRECATED_OR_UNAVAILABLE_MODELS.has(cleanId)) return false;
+
+  // Filter out discontinued 2.0-flash (except lite or 3.x)
+  if (cleanId.includes('2.0-flash') && !cleanId.includes('lite') && !cleanId.includes('3.')) {
+    return false;
+  }
+
+  // Filter out preview-deprecated models
+  if (cleanId.includes('preview-deprecated') || cleanId.includes('-deprecated')) {
+    return false;
+  }
+
+  // Check explicit status flags from provider APIs
+  if (model.active === false || model.is_active === false || model.deprecated === true) {
+    return false;
+  }
+  if (typeof model.status === 'string' && model.status.toLowerCase() === 'deprecated') {
+    return false;
+  }
+
+  return true;
+}
+
 export interface ProviderConnectionTestResult {
   success: boolean;
   statusCode?: number;
@@ -327,6 +390,7 @@ export async function fetchProviderModels(
 
       if (geminiLive.status === 'fulfilled' && geminiLive.value.length > 0) {
         for (const m of geminiLive.value) {
+          if (!isModelActiveAndAvailable(m)) continue;
           liveModels.push({
             ...m,
             providerId: 'anticeil',
@@ -341,6 +405,7 @@ export async function fetchProviderModels(
 
       if (groqLive.status === 'fulfilled' && groqLive.value.length > 0) {
         for (const m of groqLive.value) {
+          if (!isModelActiveAndAvailable(m)) continue;
           if (
             m.id.includes('compound') ||
             m.id.includes('guard') ||
@@ -365,7 +430,7 @@ export async function fetchProviderModels(
         // Sort with Gemini Flash & Pro and Llama 70B at the top
         liveModels.sort((a, b) => {
           const rank = (id: string) => {
-            if (id.includes('2.0-flash')) return 1;
+            if (id.includes('3.6-flash') || id.includes('3.7-flash')) return 1;
             if (id.includes('1.5-flash')) return 2;
             if (id.includes('1.5-pro')) return 3;
             if (id.includes('llama-3.3-70b') || id.includes('70b')) return 4;
@@ -455,6 +520,7 @@ function parseModelsResponse(
       const cleanId = rawName.replace(/^models\//, '');
       if (!cleanId) continue;
       if (seenIds.has(cleanId)) continue;
+      if (!isModelActiveAndAvailable({ id: cleanId })) continue;
 
       // Filter out non-chat / experimental / embedding / media-only models
       if (
@@ -540,6 +606,7 @@ function parseModelsResponse(
     for (const item of rawList) {
       const id = item.id || item.model_id || item.name || item._id;
       if (!id || typeof id !== 'string' || seenIds.has(id)) continue;
+      if (!isModelActiveAndAvailable({ ...item, id })) continue;
 
       // Global exclusion for embedding, reranking, moderation, guardrails
       if (

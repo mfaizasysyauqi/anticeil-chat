@@ -44,6 +44,7 @@ import {
   FileAttachment,
   parseUploadedFile,
   generateConnectorsSystemInstruction,
+  cleanAgenticStream,
 } from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
@@ -58,6 +59,7 @@ import {
   extractCleanContent,
   stripAgentActionTags,
   ExecutedAgentAction,
+  autoRepairLatexContent,
 } from '../utils/docAgentUtils';
 
 function FileActionChip({
@@ -83,9 +85,11 @@ function FileActionChip({
       ? 'Renamed'
       : action.type === 'delete'
       ? 'Deleted'
+      : action.type === 'checked'
+      ? 'Checked'
       : 'Edited';
 
-  const actionColor = action.type === 'delete' ? '#EF4444' : '#10B981';
+  const actionColor = action.type === 'delete' ? '#EF4444' : action.type === 'checked' ? '#10B981' : '#10B981';
 
   const handleClick = () => {
     if (targetFile) {
@@ -182,12 +186,15 @@ export function DocsCoAuthorSidebar({
 
   const activeDoc = documents.find((d) => d.id === activeDocId);
 
-  const [selectedProviderId, setSelectedProviderId] = useState<LLMProviderId>(
-    globalProviderId || 'groq'
-  );
-  const [selectedModelId, setSelectedModelId] = useState<string>(
-    globalModelId || 'llama-3.3-70b-versatile'
-  );
+  const activeProviderId = useSettingsStore((s) => s.activeProviderId);
+  const activeModelId = useSettingsStore((s) => s.activeModelId);
+  const setActiveProviderAndModel = useSettingsStore((s) => s.setActiveProviderAndModel);
+
+  const selectedProviderId = activeProviderId || 'anticeil';
+  const selectedModelId =
+    activeModelId === 'gemini-2.0-flash'
+      ? 'gemini-3.6-flash'
+      : (activeModelId || 'gemini-3.6-flash');
   const user = useAuthStore((s) => s.user);
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
@@ -236,7 +243,10 @@ export function DocsCoAuthorSidebar({
       }
     }
 
-    setAttachments((prev) => [...prev, ...newAttachments]);
+    setAttachments((prev) => {
+      const existingKeys = new Set(prev.map((a) => `${a.name}_${a.size}`));
+      return [...prev, ...newAttachments.filter((a) => !existingKeys.has(`${a.name}_${a.size}`))];
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -263,7 +273,10 @@ export function DocsCoAuthorSidebar({
     }
 
     if (newAttachments.length > 0) {
-      setAttachments((prev) => [...prev, ...newAttachments]);
+      setAttachments((prev) => {
+        const existingKeys = new Set(prev.map((a) => `${a.name}_${a.size}`));
+        return [...prev, ...newAttachments.filter((a) => !existingKeys.has(`${a.name}_${a.size}`))];
+      });
     }
   };
 
@@ -311,6 +324,7 @@ export function DocsCoAuthorSidebar({
             actions: m.actions,
             snapshotId: m.snapshotId,
             reverted: m.reverted,
+            timestamp: m.timestamp,
           }));
         }
         return prev;
@@ -330,6 +344,7 @@ export function DocsCoAuthorSidebar({
                 actions: m.actions,
                 snapshotId: m.snapshotId,
                 reverted: m.reverted,
+                timestamp: m.timestamp,
               }));
             }
             return prev;
@@ -417,26 +432,28 @@ export function DocsCoAuthorSidebar({
 
     const subFiles = activeDoc?.files || [];
     const activeSubFile = subFiles.find((f) => f.id === activeDoc?.activeFileId);
-    const subFilesTree = subFiles.map((f) => `- ${f.name} (${f.content.length} characters)`).join('\n');
-    const subFilesContent = subFiles
-      .map((f) => `--- File: ${f.name} ---\n\`\`\`\n${f.content.slice(0, 3000)}\n\`\`\``)
-      .join('\n\n');
+    const subFilesTree = subFiles.map((f) => `- ${f.name} (${f.content.length} chars)`).join('\n');
+    
+    // Lean context: active file content (max 1800 chars) + main file (max 1200 chars) to prevent 7000 ITPM limit
+    const activeFileSnippet = activeSubFile ? activeSubFile.content.slice(0, 1800) : activeDoc?.content.slice(0, 1800) || '';
+    const otherFilesSummary = subFiles
+      .filter((f) => f.id !== activeDoc?.activeFileId)
+      .slice(0, 5)
+      .map((f) => `- ${f.name}: ${f.content.slice(0, 200).replace(/\n+/g, ' ')}...`)
+      .join('\n');
 
     const projectContext = activeDoc
-      ? `\n\nPROJECT FILES & ARCHITECTURE:
+      ? `\n\nPROJECT FILES:
 - Project Title: "${activeDoc.title}"
 - Format: ${activeDoc.format}
 - Currently Open File: ${activeSubFile ? activeSubFile.name : 'Main Document'}
 - File Tree:
 ${subFilesTree || '- Main document file (root)'}
-
-FULL PROJECT CONTENTS:
---- Main Document Content ---
+${otherFilesSummary ? `\nOther Project Modules:\n${otherFilesSummary}\n` : ''}
+CURRENT FILE CONTENT:
 \`\`\`
-${activeDoc.content.slice(0, 4000)}
-\`\`\`
-
-${subFilesContent}`
+${activeFileSnippet}
+\`\`\``
       : '';
 
     const docFormat = activeDoc?.format || 'latex';
@@ -450,6 +467,40 @@ Always output clean AntSheet syntax with ## Meta, ## Cells, formulas, and charts
 The project workspace is a Feature-First slide presentation environment (.slide, .md) using '---' slide delimiters or @[include] sub-slide modules.`;
     } else if (docFormat === 'markdown') {
       formatPreamble = `You are an expert technical documentation AI Co-Author specializing in modular Markdown documentation.`;
+    } else if (docFormat === 'typst') {
+      formatPreamble = `You are an elite document author & Typst typesetting specialist.
+The document workspace is a pure Typst environment (.typ).
+
+STRICT TYPST STANDARDS:
+- Always use native Typst markup ($...$ for math, = for headings, #grid for multi-column layouts, #table for tables, #block/#box for containers).
+- MULTI-COLUMN GRID LAYOUTS:
+  When the user asks for a 2-column or N-column grid (e.g., character profiles, cards, galleries):
+  * Wrap each full column's content (Image + Title + Description) inside a single bracketed block [...] per column.
+    Example:
+    #grid(
+      columns: (1fr, 1fr),
+      gutter: 20pt,
+      [
+        #align(center)[
+          #box(width: 140pt, height: 140pt, radius: 70pt, stroke: 3pt + rgb("#2d6a4f"), clip: true, image("assets/kancil.png"))
+          
+          *Si Kancil*
+          
+          Satwa herbivora kecil yang sangat cerdik...
+        ]
+      ],
+      [
+        #align(center)[
+          #box(radius: 12pt, stroke: 2pt + rgb("#2d6a4f"), clip: true, image("assets/buaya.png"))
+          
+          *Si Buaya*
+          
+          Predator pemelihara ekosistem sungai...
+        ]
+      ]
+    )
+  * NEVER pass loose image and text as separate arguments to a 2-column grid.
+- Always ensure balanced parentheses and brackets with no stray syntax.`;
     } else {
       formatPreamble = `You are an elite, publication-grade AI Document Architect & Co-Author specializing in LaTeX (.tex) and Markdown document composition.
 You excel at writing Software Documentation, REST API Specifications, Product Requirement Documents (PRDs), System RFCs, Executive Business Reports, Whitepapers, as well as Academic Papers, Thesis/Skripsi, and mathematical research.
@@ -496,57 +547,132 @@ STRICT PUBLICATION, COVER & PAGINATION STANDARDS:
 
     const systemPrompt = `${formatPreamble}
 
-${connectorsInstruction ? connectorsInstruction + '\n\n' : ''}CRITICAL IMAGE & MEDIA INSTRUCTION:
-When the user asks to generate, create, or insert an image, picture, illustration, or logo (e.g., "buatkan gambar...", "buat logo..."):
-- NEVER write raw vector path geometry (\`#let logo = box(...)\`), manual Bezier curves, or raw ASCII art for images/logos.
-- Always use the image URL format: \`https://image.pollinations.ai/prompt/YOUR_PROMPT_KEYWORDS?width=1024&height=1024&nologo=true&seed=12345\`
-- For Typst (.typ): Insert \`#align(center)[#image("https://image.pollinations.ai/prompt/YOUR_PROMPT_KEYWORDS?width=1024&height=1024&nologo=true&seed=12345", width: 50%)]\` or \`#image(...)\`.
-- For LaTeX (.tex): Insert \`\\begin{figure}[htbp]\\centering\\includegraphics[width=0.5\\textwidth]{https://image.pollinations.ai/prompt/YOUR_PROMPT_KEYWORDS?width=1024&height=1024&nologo=true&seed=12345}\\end{figure}\`.
+${connectorsInstruction ? connectorsInstruction + '\n\n' : ''}STRICT COLOR CONTRAST RULES:
+- ALWAYS guarantee high visual contrast between text and background across all documents (Typst, LaTeX, Markdown, Slides):
+  * When using a dark background (such as #2d6a4f, #1b4332, #0f172a, navy, dark green) for table headers, callout boxes, or badges: the text inside MUST be crisp pure white. In Typst tables with dark header fill, format headers as: [#text(fill: white)[*Nama Kolom*]] or [#text(fill: rgb("#ffffff"))[*Nama Kolom*]].
+  * NEVER leave dark text on dark background or light text on light background.
+
+CRITICAL IMAGE & ASSET MANAGEMENT INSTRUCTION:
+When the user asks to generate, create, or insert an image, photo, illustration, or logo (e.g., "tambah gambar...", "buat logo...", "generate image"):
+- NEVER write raw vector path geometry (#let logo = box(...)), manual Bezier curves, or raw ASCII art.
+- NEVER dump raw tool_call JSON, raw tool blocks, or JSON strings into document text files.
+- ALWAYS create the image asset file under the assets/ subfolder using <create_file name="assets/nama_gambar.jpg">https://image.pollinations.ai/prompt/YOUR_PROMPT_KEYWORDS?width=1024&height=1024&nologo=true&seed=12345</create_file>.
+- ALWAYS import/reference the asset in your document using its relative assets/ path:
+  * For Typst (.typ) standard image: #align(center)[#image("assets/nama_gambar.jpg", width: 75%)]
+  * For LaTeX (.tex) standard image: \\begin{figure}[htbp]\\centering\\includegraphics[width=0.8\\textwidth]{assets/nama_gambar.jpg}\\end{figure}
+  * For Markdown (.md / .slide): ![Judul Gambar](assets/nama_gambar.jpg)
+
+STRICT CIRCULAR & ROUNDED IMAGE RULES:
+1. **TYPST PERFECT CIRCLE (STRICTLY BANS CAPSULE / OVAL STRETCHING)**:
+   - When asked to make an image circular (lingkaran / circle / bulat / avatar / profile):
+   - NEVER use relative width or height (e.g. width: 100%, width: 60%, width: auto) inside a circle or block, because Typst stretches it horizontally into an ugly capsule / oval / stadium shape!
+   - ALWAYS use a fixed-dimension #box (or #circle) with identical width and height in points (pt), with radius exactly half of the width, clip: true, and an explicit square image with fit: "cover":
+   Structure:
+   #align(center)[
+     #box(width: 140pt, height: 140pt, radius: 70pt, clip: true, stroke: 2pt + rgb("#2d6a4f"))[
+       #image("assets/nama_gambar.jpg", width: 140pt, height: 140pt, fit: "cover")
+     ]
+   ]
+   Or with #circle:
+   #align(center)[
+     #circle(radius: 70pt, clip: true, stroke: 2pt + rgb("#2d6a4f"))[
+       #image("assets/nama_gambar.jpg", width: 140pt, height: 140pt, fit: "cover")
+     ]
+   ]
+   *CRITICAL: The #image MUST explicitly specify width: 140pt, height: 140pt, fit: "cover"! Setting width and height to the exact same fixed pt size guarantees that the image fills the circle 100% without flat top/bottom edges and without oval distortion.*
+
+2. **TYPST ROUNDED RECTANGLE (Borders / Corners)**:
+   - For soft rounded corners (not circular):
+   #align(center)[
+     #block(radius: 12pt, clip: true)[
+       #image("assets/nama_gambar.jpg", width: 70%)
+     ]
+   ]
+
+3. **LATEX PERFECT CIRCLE**:
+   \\begin{center}
+   \\begin{tcolorbox}[width=5cm,height=5cm,arc=2.5cm,auto outer arc,clip upper,boxsep=0pt,left=0pt,right=0pt,top=0pt,bottom=0pt,colframe=primaryblue,colback=white]
+   \\includegraphics[width=5cm,height=5cm,keepaspectratio=false]{assets/nama_gambar.jpg}
+   \\end{tcolorbox}
+   \\end{center}
 
 You have FULL READ and WRITE (CRUD) access to this document and all sub-files in the project.
 
-Available Agent Action Tags — use these when instructed to create, edit, rename, or delete files:
+MANDATORY AGENT WORKFLOW:
+1. ALWAYS begin every response with a <think> block (1-2 concise sentences) detailing what file you are inspecting, your reasoning, and the exact changes you are making. This is strictly required to power the Antigravity Agent Work Timeline:
+<think>
+Menganalisis file main.typ dan memperbaiki styling gambar sampul agar berbentuk lingkaran sempurna (circle) menggunakan #box berdimensi 140pt x 140pt, radius: 70pt, clip: true, dan image width: 140pt, height: 140pt, fit: "cover".
+</think>
 
-1. **Targeted patch** (PREFERRED for small edits — only replaces the specified block, leaving the rest untouched):
-<patch_file name="filename.ext" find="exact text to find and replace">
-replacement text here
+2. MANDATORY EXECUTION RULE — NO CONVERSATIONAL-ONLY PROMISES:
+Whenever the user asks to modify, fix, style, update, write, add, or delete ANY code, text, or file in the document:
+YOU MUST ALWAYS EMIT THE ACTUAL CODE CHANGES VIA ACTION TAGS (<patch_file> or <update_file>).
+NEVER, UNDER ANY CIRCUMSTANCES, ONLY SAY IN TEXT THAT YOU UPDATED OR FIXED THE FILE WITHOUT EMITTING THE ACTION TAG!
+Saying you updated a file without outputting an action tag will NOT modify the file in the editor!
+
+AVAILABLE ACTION TAGS:
+
+1. **Targeted patch** (PREFERRED for localized changes):
+<patch_file name="filename.ext">
+<find>
+exact original code snippet to find
+</find>
+<replace>
+exact replacement code snippet
+</replace>
 </patch_file>
 
-2. Create a new sub-file:
-<create_file name="filename.ext">
-File content here...
-</create_file>
-
-3. Update / Rewrite an entire existing file (only when the change is large or structural):
+2. **Update / Rewrite file** (when change is extensive or structural):
 <update_file name="filename.ext">
 Complete updated file content...
 </update_file>
 
-4. Rewrite the main document (only when a complete overhaul is requested):
+3. **Create new file**:
+<create_file name="filename.ext">
+File content here...
+</create_file>
+
+4. **Rewrite main document**:
 <rewrite_main>
 Updated main content here...
 </rewrite_main>
 
-5. Rename a file:
+5. **Rename file**:
 <rename_file from="old_name.ext" to="new_name.ext" />
 
-6. Delete a file:
+6. **Delete file**:
 <delete_file name="filename.ext" />
 
-IMPORTANT — prefer patch_file over update_file / rewrite_main whenever the change is localized (e.g. editing a single equation, table, section, or paragraph). Only rewrite the full file when the user explicitly requests a full rewrite or when the change affects more than 40% of the file.
+After emitting the action tags, provide a brief, polite explanation of what was changed.${projectContext}`;
 
-When the user asks you to create, modify, or manage files, invoke the action tags and explain what you accomplished in clear, concise prose.${projectContext}`;
+    // Auto-prune persisted history: keep max 60 msgs and drop anything older than 7 days
+    if (activeDoc) {
+      const cutoffMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const session = historyStore.getSession(activeDoc.id);
+      if (session) {
+        const stale = session.messages
+          .filter((m) => (m.timestamp ?? 0) < cutoffMs)
+          .map((m) => m.id);
+        if (stale.length > 0) historyStore.removeMessages(activeDoc.id, stale);
+      }
+    }
 
-    const apiMessages: ChatMessage[] = newHistory
-      .filter((m) => m.id !== assistantMsgId)
-      .map((m) => ({
-        id: m.id,
-        sessionId: 'docs_coauthor',
-        role: m.role,
-        content: m.content,
-        timestamp: Date.now(),
-        status: 'done' as const,
-      }));
+    // Sliding window: send only last 10 messages to avoid 413 / ITPM limits
+    const CONTEXT_WINDOW = 10;
+    const historyForApi = newHistory.filter((m) => m.id !== assistantMsgId);
+    const windowedHistory =
+      historyForApi.length > CONTEXT_WINDOW
+        ? historyForApi.slice(-CONTEXT_WINDOW)
+        : historyForApi;
+
+    const apiMessages: ChatMessage[] = windowedHistory.map((m) => ({
+      id: m.id,
+      sessionId: 'docs_coauthor',
+      role: m.role,
+      content: m.content,
+      timestamp: Date.now(),
+      status: 'done' as const,
+    }));
 
     const keyConfig = apiKeys[selectedProviderId] || { apiKey: '', isEnabled: true };
     const userTier = useAuthStore.getState().tier;
@@ -578,50 +704,118 @@ When the user asks you to create, modify, or manage files, invoke the action tag
             creditDeducted = true;
           }
 
+          const { cleanContent, reasoningContent: streamReasoning } = cleanAgenticStream(
+            fullResponse,
+            fullReasoning,
+            false
+          );
+
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantMsgId
-                ? { ...msg, content: fullResponse, reasoningContent: fullReasoning }
+                ? {
+                    ...msg,
+                    content: cleanContent,
+                    reasoningContent: streamReasoning || fullReasoning || undefined,
+                  }
                 : msg
             )
           );
         },
       });
 
+      const { cleanContent: finalCleanContent, reasoningContent: finalReasoning } = cleanAgenticStream(
+        fullResponse,
+        fullReasoning,
+        true
+      );
+
       // After streaming completes, parse and execute agent actions
       let executedActions = activeDoc ? executeDocAgentActions(activeDoc.id, fullResponse) : [];
 
-      // Full Auto fallback — if no XML tags but clean code was returned, apply it
+      // Full Auto fallback — if no XML tags but full clean document code was returned, apply it safely
       if (executedActions.length === 0 && activeDoc) {
         const cleanCode = extractCleanContent(fullResponse);
-        if (cleanCode && cleanCode.length > 10 && cleanCode !== fullResponse.trim()) {
+        if (cleanCode && cleanCode.length > 30 && cleanCode !== fullResponse.trim()) {
           const subFilesList = activeDoc.files || [];
           const curSubFile = subFilesList.find((f) => f.id === activeDoc.activeFileId);
-          if (curSubFile) {
-            updateSubFileContent(activeDoc.id, curSubFile.id, cleanCode);
-            executedActions.push({ type: 'update', name: curSubFile.name });
-          } else {
-            updateDocumentContent(activeDoc.id, cleanCode);
-            executedActions.push({ type: 'update', name: activeDoc.title || 'Dokumen' });
+          const existingContent = curSubFile ? curSubFile.content : activeDoc.content;
+
+          // Check if cleanCode is a full document rewrite (has preamble / headers / covers > 50% lines)
+          const cleanLines = cleanCode.split('\n').length;
+          const existingLines = existingContent.split('\n').length;
+          const isFullDocument =
+            cleanLines > 10 &&
+            (existingLines <= 5 || cleanLines >= existingLines * 0.4 || /#set page|\\documentclass|^#\s+=|\\begin\{document\}/m.test(cleanCode));
+
+          if (isFullDocument) {
+            if (curSubFile) {
+              updateSubFileContent(activeDoc.id, curSubFile.id, cleanCode);
+              executedActions.push({ type: 'update', name: curSubFile.name });
+            } else {
+              updateDocumentContent(activeDoc.id, cleanCode);
+              executedActions.push({ type: 'update', name: activeDoc.title || 'Dokumen' });
+            }
           }
         }
       }
 
-      if (executedActions.length > 0) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantMsgId ? { ...msg, actions: executedActions } : msg
-          )
-        );
+      // Syntax Verification & Auto-Repair Loop Phase
+      if (activeDoc) {
+        const latestDoc = useDocsStore.getState().documents.find((d) => d.id === activeDoc.id);
+        if (latestDoc) {
+          const filesToCheck = (latestDoc.files || []).filter((f) =>
+            executedActions.some((a) => a.name.toLowerCase() === f.name.toLowerCase())
+          );
+
+          if (filesToCheck.length > 0) {
+            for (const file of filesToCheck) {
+              const repaired = autoRepairLatexContent(file.content, file.name);
+              if (repaired && repaired !== file.content) {
+                updateSubFileContent(latestDoc.id, file.id, repaired);
+              }
+              executedActions.push({ type: 'checked', name: file.name });
+            }
+          } else {
+            // Check active subfile or main document content
+            const activeSub = (latestDoc.files || []).find((f) => f.id === latestDoc.activeFileId) || (latestDoc.files || [])[0];
+            if (activeSub) {
+              const repaired = autoRepairLatexContent(activeSub.content, activeSub.name);
+              if (repaired && repaired !== activeSub.content) {
+                updateSubFileContent(latestDoc.id, activeSub.id, repaired);
+              }
+              executedActions.push({ type: 'checked', name: activeSub.name });
+            } else if (latestDoc.content) {
+              const repaired = autoRepairLatexContent(latestDoc.content, 'main.typ');
+              if (repaired && repaired !== latestDoc.content) {
+                updateDocumentContent(latestDoc.id, repaired);
+              }
+              executedActions.push({ type: 'checked', name: 'main.typ' });
+            }
+          }
+        }
       }
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMsgId
+            ? {
+                ...msg,
+                content: finalCleanContent,
+                reasoningContent: finalReasoning || fullReasoning || undefined,
+                actions: executedActions.length > 0 ? executedActions : undefined,
+              }
+            : msg
+        )
+      );
 
       // Persist assistant message to history
       if (activeDoc) {
         const finalMsg: CoAuthorMessage = {
           id: assistantMsgId,
           role: 'assistant',
-          content: stripAgentActionTags(fullResponse),
-          reasoningContent: fullReasoning || undefined,
+          content: stripAgentActionTags(finalCleanContent),
+          reasoningContent: finalReasoning || fullReasoning || undefined,
           actions: executedActions.length > 0 ? executedActions : undefined,
           snapshotId,
           timestamp: Date.now(),
@@ -635,9 +829,6 @@ When the user asks you to create, modify, or manage files, invoke the action tag
       }
     } catch (err) {
       console.warn('[DocsCoAuthor] Streaming error:', err);
-      if (selectedProviderId === 'anticeil') {
-        useCreditStore.getState().refundCredits('docs', 'anticeil');
-      }
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -688,8 +879,7 @@ When the user asks you to create, modify, or manage files, invoke the action tag
           currentModelId={selectedModelId}
           onClose={() => setIsModelSelectorOpen(false)}
           onSelectModel={(providerId, modelId) => {
-            setSelectedProviderId(providerId);
-            setSelectedModelId(modelId);
+            setActiveProviderAndModel(providerId, modelId);
           }}
         />
       )}
@@ -872,10 +1062,17 @@ When the user asks you to create, modify, or manage files, invoke the action tag
                     restoreDocSnapshot(activeDoc.id, turnSnapshotId);
                   }
                   setInputPrompt(msg.content);
-                  const idsToRemove = [msg.id];
-                  if (assistantMsg) idsToRemove.push(assistantMsg.id);
-                  setMessages((prev) => prev.filter((m2) => !idsToRemove.includes(m2.id)));
-                  historyStore.removeMessages(activeDoc.id, idsToRemove);
+                  // Find index of this turn in the messages list
+                  const msgIndex = messages.findIndex((m2) => m2.id === msg.id);
+                  if (msgIndex !== -1) {
+                    // Cascade undo: remove this turn AND all subsequent turns after it
+                    const idsToRemove = messages.slice(msgIndex).map((m2) => m2.id);
+                    historyStore.removeMessages(activeDoc.id, idsToRemove);
+                    if (isCloudUser && authSession?.access_token) {
+                      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
+                    }
+                    setMessages((prev) => prev.slice(0, msgIndex));
+                  }
                 }
               : undefined;
 

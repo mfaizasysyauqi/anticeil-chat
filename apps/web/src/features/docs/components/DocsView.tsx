@@ -87,6 +87,7 @@ import {
 } from 'lucide-react';
 import { useDocsStore, DocsViewMode, DocFormat, DocCollaborator, DocComment, DocCommentReply } from '../store/useDocsStore';
 import { DocFileTabsBar } from './shared/DocFileTabsBar';
+import { DocVisualEditor } from './shared/DocVisualEditor';
 import { SplitResizeDivider } from './shared/SplitResizeDivider';
 import { downloadDocAsZip } from '../utils/zipUtils';
 
@@ -262,6 +263,17 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const setMainSubFile = useDocsStore((s) => s.setMainSubFile);
   const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
 
+  const effectiveDocId = initialDocId || activeDocId;
+  const activeDoc = documents.find((d) => d.id === effectiveDocId) || documents[0];
+
+  // Active sub-file in the Overleaf multi-file tree
+  const docFiles = activeDoc?.files || [];
+  const activeSubFile =
+    docFiles.find((f) => f.id === activeDoc?.activeFileId) ||
+    docFiles.find((f) => f.isMain) ||
+    docFiles[0] ||
+    null;
+
   // Overleaf-style Sharing Actions
   const updateDocSharing = useDocsStore((s) => s.updateDocSharing);
   const addDocCollaborator = useDocsStore((s) => s.addDocCollaborator);
@@ -334,11 +346,26 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const triggerAddCommentFromSelection = useDocsStore((s) => s.triggerAddCommentFromSelection);
   const registerActiveTextarea = useDocsStore((s) => s.registerActiveTextarea);
 
+  // Overleaf Editing / Reviewing mode
+  const reviewMode = useDocsStore((s) => s.reviewMode);
+  const setReviewMode = useDocsStore((s) => s.setReviewMode);
+  const addSuggestion = useDocsStore((s) => s.addSuggestion);
+  const acceptSuggestion = useDocsStore((s) => s.acceptSuggestion);
+  const rejectSuggestion = useDocsStore((s) => s.rejectSuggestion);
+
   const [draftCommentText, setDraftCommentText] = useState('');
   const [replyingCommentId, setReplyingCommentId] = useState<string | null>(null);
   const [replyDraftText, setReplyDraftText] = useState('');
   const [editorScrollTop, setEditorScrollTop] = useState(0);
   const [editorScrollLeft, setEditorScrollLeft] = useState(0);
+  const [editorRenderMode, setEditorRenderMode] = useState<'code' | 'visual'>('code');
+
+  // Editing / Reviewing dropdown state
+  const [isReviewDropdownOpen, setIsReviewDropdownOpen] = useState(false);
+  const [reviewDropdownPos, setReviewDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const reviewDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const reviewDropdownMenuRef = useRef<HTMLDivElement>(null);
+  const [isUpgradeToReviewModalOpen, setIsUpgradeToReviewModalOpen] = useState(false);
 
   // Outline panel height inside Files tab (px) — draggable like Overleaf
   const [outlinePanelHeight, setOutlinePanelHeight] = useState(180);
@@ -354,7 +381,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [isAutoCompile, setIsAutoCompile] = useState(false);
+  const [isAutoCompile, setIsAutoCompile] = useState(true);
   const [compileMode, setCompileMode] = useState<'normal' | 'draft'>('normal');
   const [syntaxCheckMode, setSyntaxCheckMode] = useState<'check' | 'none'>('check');
   const [errorHandlingMode, setErrorHandlingMode] = useState<'stop' | 'continue'>('continue');
@@ -386,6 +413,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   }, [theme]);
 
   const [previewRuntimeErrors, setPreviewRuntimeErrors] = useState<DocDiagnostic[]>([]);
+  const [visualHighlightLine, setVisualHighlightLine] = useState<number | null>(null);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -402,12 +430,12 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
           setCurrentPage(e.data.page);
           setPageInputValue(String(e.data.page));
         }
-        if (e.data.textSnippet && textareaRef.current && activeDoc) {
+        if (e.data.textSnippet && activeDoc) {
           const text = activeSubFile?.content || activeDoc.content || '';
           const idx = text.indexOf(e.data.textSnippet);
           if (idx !== -1) {
             const line = text.substring(0, idx).split('\n').length - 1;
-            jumpToLine(line);
+            handleSyncPreviewToCode(line);
             return;
           }
         }
@@ -433,7 +461,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, []);
+  }, [activeDoc, activeSubFile, editorRenderMode, totalPages, currentPage]);
 
   // Search in Document state
   const [docSearchQuery, setDocSearchQuery] = useState('');
@@ -919,10 +947,53 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     );
   };
 
-  // Overleaf-style SyncTeX: Jump from Code cursor to Preview location
+  // Overleaf-style SyncTeX: Jump from Visual block to Preview location
+  const handleSyncVisualToPreview = (lineNumber: number, headingText?: string) => {
+    if (!activeDoc) return;
+    const text = activeSubFile?.content || activeDoc.content || '';
+    const allLines = text.split('\n');
+
+    let foundHeading = headingText || '';
+    if (!foundHeading) {
+      for (let i = Math.min(lineNumber - 1, allLines.length - 1); i >= 0; i--) {
+        const l = allLines[i]?.trim() || '';
+        const match = l.match(/^(?:=+\s*|\\(?:sub)*section\*?\{|#+\s*)([^}\n]+)/);
+        if (match) {
+          foundHeading = match[1].replace(/[\#\}]/g, '').trim();
+          break;
+        }
+      }
+    }
+
+    let explicitBreaks = 1;
+    for (let i = 0; i < lineNumber && i < allLines.length; i++) {
+      if (/\\newpage|\\clearpage|#pagebreak\(|Bab\s+\d+|Chapter\s+\d+/i.test(allLines[i])) {
+        explicitBreaks++;
+      }
+    }
+    const proportionalPage = Math.max(1, Math.min(totalPages, Math.ceil((lineNumber / Math.max(1, allLines.length)) * totalPages)));
+    const targetPage = Math.max(explicitBreaks, proportionalPage);
+
+    handleGoToPage(targetPage);
+
+    if (foundHeading) {
+      setTimeout(() => {
+        scrollPreviewToHeading(foundHeading);
+      }, 100);
+    }
+  };
+
+  // Overleaf-style SyncTeX: Jump from Code or Visual Editor to Preview location
   const handleSyncCodeToPreview = () => {
+    if (!activeDoc) return;
+    if (editorRenderMode === 'visual') {
+      const line = visualHighlightLine || 1;
+      handleSyncVisualToPreview(line);
+      return;
+    }
+
     const el = textareaRef.current;
-    if (!el || !activeDoc) return;
+    if (!el) return;
     const text = activeSubFile?.content || activeDoc.content || '';
     const cursor = el.selectionStart || 0;
     const linesBefore = text.substring(0, cursor).split('\n');
@@ -961,34 +1032,40 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }
   };
 
-  // Overleaf-style SyncTeX: Jump from Preview back to Code Editor cursor
-  const handleSyncPreviewToCode = () => {
-    const el = textareaRef.current;
-    if (!el || !activeDoc) return;
+  // Overleaf-style SyncTeX: Jump from Preview back to Code or Visual Editor
+  const handleSyncPreviewToCode = (forcedLine?: number) => {
+    if (!activeDoc) return;
     const text = activeSubFile?.content || activeDoc.content || '';
     const allLines = text.split('\n');
 
-    if (currentPage <= 1) {
-      jumpToLine(0);
-      return;
+    let targetLine = typeof forcedLine === 'number' ? forcedLine : 0;
+
+    if (typeof forcedLine !== 'number') {
+      if (currentPage <= 1) {
+        targetLine = 0;
+      } else {
+        // Look for explicit page breaks corresponding to currentPage
+        const breakLineIndices: number[] = [];
+        allLines.forEach((line, idx) => {
+          if (/\\newpage|\\clearpage|#pagebreak\(|Bab\s+\d+|Chapter\s+\d+/i.test(line)) {
+            breakLineIndices.push(idx);
+          }
+        });
+
+        if (breakLineIndices.length >= currentPage - 1) {
+          targetLine = breakLineIndices[currentPage - 2];
+        } else {
+          targetLine = Math.min(
+            allLines.length - 1,
+            Math.floor(((currentPage - 1) / Math.max(1, totalPages)) * allLines.length)
+          );
+        }
+      }
     }
 
-    // Look for explicit page breaks corresponding to currentPage
-    const breakLineIndices: number[] = [];
-    allLines.forEach((line, idx) => {
-      if (/\\newpage|\\clearpage|#pagebreak\(|Bab\s+\d+|Chapter\s+\d+/i.test(line)) {
-        breakLineIndices.push(idx);
-      }
-    });
-
-    if (breakLineIndices.length >= currentPage - 1) {
-      const targetLine = breakLineIndices[currentPage - 2];
-      jumpToLine(targetLine);
+    if (editorRenderMode === 'visual') {
+      setVisualHighlightLine(targetLine + 1);
     } else {
-      const targetLine = Math.min(
-        allLines.length - 1,
-        Math.floor(((currentPage - 1) / Math.max(1, totalPages)) * allLines.length)
-      );
       jumpToLine(targetLine);
     }
   };
@@ -1126,17 +1203,6 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     window.addEventListener('mouseup', onUp);
   }, [coAuthorWidth]);
 
-  const effectiveDocId = initialDocId || activeDocId;
-  const activeDoc = documents.find((d) => d.id === effectiveDocId) || documents[0];
-
-  // Active sub-file in the Overleaf multi-file tree
-  const docFiles = activeDoc?.files || [];
-  const activeSubFile =
-    docFiles.find((f) => f.id === activeDoc?.activeFileId) ||
-    docFiles.find((f) => f.isMain) ||
-    docFiles[0] ||
-    null;
-
   // Bundled content for live preview & compilation
   const bundledContent = useMemo(() => {
     if (!activeDoc) return '';
@@ -1189,7 +1255,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   // Start Agentic Generation
   const handleStartGenerate = async (promptText: string, format: DocFormat) => {
     const activeProviderId = useSettingsStore.getState().activeProviderId || 'anticeil';
-    const activeModelId = useSettingsStore.getState().activeModelId || 'llama-3.3-70b-versatile';
+    const activeModelId = useSettingsStore.getState().activeModelId || 'qwen/qwen3.8-27b';
     const apiKeys = useSettingsStore.getState().apiKeys;
     const activeApiKeyConfig = (apiKeys as Record<string, any>)[activeProviderId] || { apiKey: '', isEnabled: false };
 
@@ -1389,16 +1455,18 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   // Compilation & Linter diagnostics (Errors, Warnings, Info)
   const lintResults = useMemo(() => {
     const text = activeSubFile?.content ?? activeDoc?.content ?? '';
-    const isTypst = activeDoc?.format === 'typst' || (activeSubFile?.name || '').endsWith('.typ');
-    const staticLint = isTypst
-      ? { errors: [], warnings: [], infos: [] }
-      : lintDocumentContent(text, docFiles, activeSubFile?.name || 'main.tex');
+    const activeFileName = activeSubFile?.name || (activeDoc?.format === 'typst' ? 'main.typ' : activeDoc?.format === 'slide' ? 'main.slide' : activeDoc?.format === 'sheet' ? 'sheet1.antsheet' : 'main.tex');
+    const isTypst = activeDoc?.format === 'typst' || activeFileName.endsWith('.typ') || text.includes('#set page') || text.includes('#grid(') || text.includes('#block(');
+    
+    // 1. Run multi-format static linter
+    const staticLint = lintDocumentContent(text, docFiles, activeFileName);
 
     let typstErrors: DocDiagnostic[] = [];
     let typstWarnings: DocDiagnostic[] = [];
     let typstInfos: DocDiagnostic[] = [];
 
-    if (isTypst) {
+    // 2. Run AST/Compiler-specific diagnostics for Typst
+    if (isTypst && text.trim()) {
       const typstResult = compileTypstToHtml(text, activeDoc?.title, docFiles);
       typstErrors = typstResult.diagnostics.filter((d) => d.type === 'error') as DocDiagnostic[];
       typstWarnings = typstResult.diagnostics.filter((d) => d.type === 'warning') as DocDiagnostic[];
@@ -1409,11 +1477,36 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     const allWarnings = [...typstWarnings, ...staticLint.warnings];
     const allInfos = [...typstInfos, ...staticLint.infos];
 
+    // Deduplicate diagnostics by line and message
+    const seenErrors = new Set<string>();
+    const uniqueErrors = allErrors.filter((d) => {
+      const key = `${d.line}_${d.message}`;
+      if (seenErrors.has(key)) return false;
+      seenErrors.add(key);
+      return true;
+    });
+
+    const seenWarnings = new Set<string>();
+    const uniqueWarnings = allWarnings.filter((d) => {
+      const key = `${d.line}_${d.message}`;
+      if (seenWarnings.has(key)) return false;
+      seenWarnings.add(key);
+      return true;
+    });
+
+    const seenInfos = new Set<string>();
+    const uniqueInfos = allInfos.filter((d) => {
+      const key = `${d.line}_${d.message}`;
+      if (seenInfos.has(key)) return false;
+      seenInfos.add(key);
+      return true;
+    });
+
     return {
-      errors: allErrors,
-      warnings: allWarnings,
-      infos: allInfos,
-      totalLogs: allErrors.length + allWarnings.length + allInfos.length,
+      errors: uniqueErrors,
+      warnings: uniqueWarnings,
+      infos: uniqueInfos,
+      totalLogs: uniqueErrors.length + uniqueWarnings.length + uniqueInfos.length,
     };
   }, [activeSubFile?.content, activeDoc?.content, docFiles, activeSubFile?.name, previewRuntimeErrors, activeDoc?.format, activeDoc?.title]);
 
@@ -1833,9 +1926,16 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       padding: 7px 12px;
       font-weight: 700;
       text-align: left;
-      background-color: transparent;
-      color: #0f172a;
       white-space: nowrap;
+      background-color: inherit;
+      color: inherit;
+    }
+    .academic-table thead th,
+    .academic-table thead th strong,
+    .academic-table thead th span,
+    .academic-table thead th b,
+    .academic-table thead th p {
+      color: inherit !important;
     }
     .academic-table td {
       border: none;
@@ -2434,6 +2534,23 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
             arabicCounter++;
           }
         });
+
+        // Render KaTeX formulas on final paginated pages
+        if (typeof renderMathInElement === 'function') {
+          try {
+            renderMathInElement(pagedContainer, {
+              delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+              ],
+              throwOnError: false
+            });
+          } catch (kErr) {
+            console.warn('KaTeX pagedContainer render error:', kErr);
+          }
+        }
 
         totalPagesCount = currentPageNum;
         return currentPageNum;
@@ -3058,6 +3175,7 @@ ${exportText}
                   setActiveDrawerTab('files');
                 }
               }}
+              style={{ position: 'relative' }}
               className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'files' ? ' active' : ''}`}
               aria-label={language === 'id' ? 'Struktur File (Files)' : 'Project Files'}
             >
@@ -3090,6 +3208,7 @@ ${exportText}
                   setActiveDrawerTab('search');
                 }
               }}
+              style={{ position: 'relative' }}
               className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'search' ? ' active' : ''}`}
               aria-label={language === 'id' ? 'Pencarian & Ganti (Search)' : 'Search & Replace'}
             >
@@ -3122,6 +3241,7 @@ ${exportText}
                   setActiveDrawerTab('review');
                 }
               }}
+              style={{ position: 'relative' }}
               className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'review' ? ' active' : ''}`}
               aria-label={language === 'id' ? 'Panel Review & Komentar (Ctrl+J)' : 'Review panel (Ctrl+J)'}
             >
@@ -4987,6 +5107,35 @@ ${exportText}
                         </div>
                       </div>
 
+                      {/* Local-only storage banner (free tier only) */}
+                      {tier === 'free' && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '7px',
+                          padding: '6px 10px',
+                          backgroundColor: 'rgba(245,158,11,0.08)',
+                          borderBottom: '1px solid rgba(245,158,11,0.18)',
+                          flexShrink: 0,
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                          </svg>
+                          <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', flex: 1, lineHeight: 1.4 }}>
+                            {language === 'id'
+                              ? 'Komentar hanya tersimpan di browser ini. '
+                              : 'Comments are stored locally only. '}
+                            <button
+                              type="button"
+                              onClick={() => openPricingModal('tiers')}
+                              style={{ background: 'none', border: 'none', padding: 0, color: '#f59e0b', fontSize: '10.5px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                              {language === 'id' ? 'Upgrade untuk sync.' : 'Upgrade to sync.'}
+                            </button>
+                          </span>
+                        </div>
+                      )}
+
                       {/* Comment Container (Positions aligned with commented lines) */}
                       <div style={{ flex: 1, overflowY: 'auto', position: 'relative', minHeight: 0, backgroundColor: 'var(--bg-sidebar)' }}>
                         <div style={{ position: 'relative', width: '100%', minHeight: `${minContainerHeight}px` }}>
@@ -5336,6 +5485,76 @@ ${exportText}
                           })}
                         </div>
                       </div>
+
+                      {/* ── Suggestions / Track Changes Section ── */}
+                      {(() => {
+                        const pendingSuggestions = (activeDoc?.suggestions || []).filter(s => s.status === 'pending');
+                        if (pendingSuggestions.length === 0) return null;
+                        return (
+                          <div style={{ borderTop: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+                            <div style={{ padding: '8px 12px 4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+                              {language === 'id' ? `${pendingSuggestions.length} Saran Perubahan` : `${pendingSuggestions.length} Tracked Change${pendingSuggestions.length > 1 ? 's' : ''}`}
+                            </div>
+                            <div style={{ maxHeight: '240px', overflowY: 'auto', padding: '4px 8px 8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {pendingSuggestions.map((sug) => (
+                                <div key={sug.id} style={{
+                                  backgroundColor: 'var(--bg-surface)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: '8px',
+                                  padding: '8px 10px',
+                                  fontSize: '11.5px',
+                                }}>
+                                  {/* Author row */}
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg,#10B981,#059669)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, flexShrink: 0 }}>
+                                        {(sug.authorName[0] || '?').toUpperCase()}
+                                      </div>
+                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '11px' }}>{sug.authorName}</span>
+                                    </div>
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                      {sug.type === 'add' ? (language === 'id' ? 'Penambahan' : 'Added') :
+                                       sug.type === 'delete' ? (language === 'id' ? 'Penghapusan' : 'Deleted') :
+                                       (language === 'id' ? 'Penggantian' : 'Replaced')}
+                                    </span>
+                                  </div>
+                                  {/* Diff preview */}
+                                  {sug.originalText && (
+                                    <div style={{ fontFamily: "'JetBrains Mono','Fira Code',monospace", fontSize: '10.5px', padding: '2px 6px', borderRadius: '3px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', textDecoration: 'line-through', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {sug.originalText.substring(0, 80)}{sug.originalText.length > 80 ? '…' : ''}
+                                    </div>
+                                  )}
+                                  {sug.suggestedText && (
+                                    <div style={{ fontFamily: "'JetBrains Mono','Fira Code',monospace", fontSize: '10.5px', padding: '2px 6px', borderRadius: '3px', backgroundColor: 'rgba(16,185,129,0.1)', color: '#10B981', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {sug.suggestedText.substring(0, 80)}{sug.suggestedText.length > 80 ? '…' : ''}
+                                    </div>
+                                  )}
+                                  {/* Accept / Reject */}
+                                  <div style={{ display: 'flex', gap: '5px', marginTop: '7px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => activeDoc && acceptSuggestion(activeDoc.id, sug.id)}
+                                      style={{ flex: 1, height: '24px', borderRadius: '5px', border: 'none', backgroundColor: '#10B981', color: '#fff', fontSize: '10.5px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}
+                                    >
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                      {language === 'id' ? 'Terima' : 'Accept'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => activeDoc && rejectSuggestion(activeDoc.id, sug.id)}
+                                      style={{ flex: 1, height: '24px', borderRadius: '5px', border: '1px solid var(--border-subtle)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '10.5px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}
+                                    >
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                      {language === 'id' ? 'Tolak' : 'Reject'}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })()}
@@ -5556,12 +5775,13 @@ ${exportText}
                   ref={editorContainerRef}
                   style={{
                     flex: viewMode === 'code' ? 1 : `${editorSplitRatio} 1 0%`,
-                    minWidth: viewMode === 'split' ? '240px' : 0,
+                    minWidth: viewMode === 'split' ? '200px' : 0,
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     backgroundColor: 'var(--bg-main)',
                     borderRight: 'none',
+                    overflow: 'hidden',
                   }}
                 >
                   {/* Overleaf-Style File Tabs - DRY Shared Component */}
@@ -5581,16 +5801,29 @@ ${exportText}
                     backgroundColor: 'var(--bg-surface)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1px',
-                    overflowX: 'auto',
+                    justifyContent: 'space-between',
                     flexShrink: 0,
-                    flexWrap: 'nowrap',
+                    overflow: 'hidden',
                   }}
                 >
-                  {/* Undo / Redo */}
-                  <button type="button" onClick={() => { textareaRef.current?.focus(); document.execCommand('undo'); }} style={toolbarBtnStyle} title="Undo (Ctrl+Z)">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M3 13C5.5 6.5 12 5 17 8s6 9 2 13"/></svg>
-                  </button>
+                  {/* Left Scrollable Formatting Tools */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1px',
+                      overflowX: 'auto',
+                      overflowY: 'hidden',
+                      flex: 1,
+                      minWidth: 0,
+                      scrollbarWidth: 'none',
+                    }}
+                    className="custom-scrollbar-thin"
+                  >
+                    {/* Undo / Redo */}
+                    <button type="button" onClick={() => { textareaRef.current?.focus(); document.execCommand('undo'); }} style={toolbarBtnStyle} title="Undo (Ctrl+Z)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M3 13C5.5 6.5 12 5 17 8s6 9 2 13"/></svg>
+                    </button>
                   <button type="button" onClick={() => { textareaRef.current?.focus(); document.execCommand('redo'); }} style={toolbarBtnStyle} title="Redo (Ctrl+Y)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M21 13C18.5 6.5 12 5 7 8S1 17 5 21"/></svg>
                   </button>
@@ -6149,9 +6382,203 @@ ${exportText}
                     <MessageSquarePlus size={12} />
                   </button>
 
-                  <div style={separatorStyle} />
+                  </div>
 
-                  {/* Paper Size Selector Button & Popover (Moved to Code Editor Toolbar) */}
+                  {/* Right Fixed Meta & View Controls (Always visible like Overleaf) */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      flexShrink: 0,
+                      marginLeft: '6px',
+                      paddingLeft: '6px',
+                      borderLeft: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    {/* Overleaf Code / Visual Mode Segmented Switcher */}
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '2px',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--bg-main)',
+                        border: '1px solid var(--border-subtle)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setEditorRenderMode('code')}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '11px',
+                          fontWeight: 650,
+                          borderRadius: '4px',
+                          border: 'none',
+                          backgroundColor: editorRenderMode === 'code' ? 'var(--bg-surface)' : 'transparent',
+                          color: editorRenderMode === 'code' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                          boxShadow: editorRenderMode === 'code' ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title="Mode Kode Sumber (LaTeX / Typst)"
+                      >
+                        <Code2 size={11} strokeWidth={2.2} />
+                        <span>Code</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditorRenderMode('visual')}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '11px',
+                          fontWeight: 650,
+                          borderRadius: '4px',
+                          border: 'none',
+                          backgroundColor: editorRenderMode === 'visual' ? 'var(--bg-surface)' : 'transparent',
+                          color: editorRenderMode === 'visual' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                          boxShadow: editorRenderMode === 'visual' ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title="Mode Visual (Overleaf Visual Editor)"
+                      >
+                        <Eye size={11} strokeWidth={2.2} />
+                        <span>Visual</span>
+                      </button>
+                    </div>
+
+                    <div style={separatorStyle} />
+
+                    {/* Editing / Reviewing dropdown (Overleaf-style) */}
+                    <div style={{ position: 'relative', display: 'inline-flex' }}>
+                      <button
+                        ref={reviewDropdownButtonRef}
+                        type="button"
+                        onClick={() => {
+                          const btn = reviewDropdownButtonRef.current;
+                          if (!btn) return;
+                          const rect = btn.getBoundingClientRect();
+                          setReviewDropdownPos({ top: rect.bottom + 4, left: rect.left });
+                          setIsReviewDropdownOpen(v => !v);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          padding: '2px 4px',
+                          height: '24px',
+                          minWidth: '24px',
+                          borderRadius: '6px',
+                          border: '1px solid',
+                          borderColor: reviewMode === 'reviewing' ? 'rgba(16,185,129,0.5)' : 'var(--border-subtle)',
+                          backgroundColor: reviewMode === 'reviewing' ? 'rgba(16,185,129,0.1)' : 'transparent',
+                          color: reviewMode === 'reviewing' ? '#10B981' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          transition: 'all 0.15s ease',
+                        }}
+                        title={reviewMode === 'reviewing' ? 'Reviewing — edits become suggestions' : 'Editing — click to switch mode'}
+                      >
+                        {reviewMode === 'reviewing' ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                        )}
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+
+                      {isReviewDropdownOpen && reviewDropdownPos && typeof document !== 'undefined' && createPortal(
+                        <div
+                          ref={reviewDropdownMenuRef}
+                          className="animate-fade-in"
+                          style={{
+                            position: 'fixed',
+                            top: `${reviewDropdownPos.top}px`,
+                            left: `${reviewDropdownPos.left}px`,
+                            zIndex: 99999999,
+                            width: '240px',
+                            backgroundColor: 'var(--bg-surface)',
+                            border: '1px solid var(--border-strong)',
+                            borderRadius: '8px',
+                            boxShadow: 'var(--shadow-xl, 0 12px 32px rgba(0,0,0,0.3))',
+                            padding: '4px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1px',
+                          }}
+                        >
+                          {/* Editing option */}
+                          <button
+                            type="button"
+                            onClick={() => { setReviewMode('editing'); setIsReviewDropdownOpen(false); }}
+                            style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                              width: '100%', padding: '7px 10px', borderRadius: '6px', border: 'none',
+                              backgroundColor: reviewMode === 'editing' ? 'var(--bg-subtle)' : 'transparent',
+                              color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left',
+                              transition: 'background 0.12s ease',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = reviewMode === 'editing' ? 'var(--bg-subtle)' : 'transparent'}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                              <span style={{ fontSize: '12.5px', fontWeight: 600 }}>Editing</span>
+                              {reviewMode === 'editing' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}><polyline points="20 6 9 17 4 12"/></svg>}
+                            </div>
+                            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '1px', paddingLeft: '18px' }}>Edit content directly</span>
+                          </button>
+
+                          {/* Reviewing option */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (tier === 'free') {
+                                setIsReviewDropdownOpen(false);
+                                setIsUpgradeToReviewModalOpen(true);
+                              } else {
+                                setReviewMode('reviewing');
+                                setActiveDrawerTab('review');
+                                setIsReviewDropdownOpen(false);
+                              }
+                            }}
+                            style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                              width: '100%', padding: '7px 10px', borderRadius: '6px', border: 'none',
+                              backgroundColor: reviewMode === 'reviewing' ? 'rgba(16,185,129,0.1)' : 'transparent',
+                              color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left',
+                              transition: 'background 0.12s ease',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = reviewMode === 'reviewing' ? 'rgba(16,185,129,0.12)' : 'var(--bg-subtle)'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = reviewMode === 'reviewing' ? 'rgba(16,185,129,0.1)' : 'transparent'}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              <span style={{ fontSize: '12.5px', fontWeight: 600 }}>Reviewing</span>
+                              {tier === 'free' && (
+                                <span style={{ marginLeft: 'auto', fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff' }}>PRO</span>
+                              )}
+                              {tier !== 'free' && reviewMode === 'reviewing' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}><polyline points="20 6 9 17 4 12"/></svg>}
+                            </div>
+                            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '1px', paddingLeft: '18px' }}>Edits become suggestions</span>
+                          </button>
+                        </div>,
+                        document.body
+                      )}
+                    </div>
+
+                    <div style={separatorStyle} />
+
+                    {/* Paper Size Selector Button & Popover (Moved to Code Editor Toolbar) */}
                   <div style={{ position: 'relative', display: 'inline-flex' }}>
                     <button
                       ref={paperSizeButtonRef}
@@ -6309,6 +6736,7 @@ ${exportText}
                       </div>,
                       document.body
                     )}
+                    </div>
                   </div>
                 </div>
 
@@ -6502,6 +6930,26 @@ ${exportText}
                       </div>
                     </div>
                   </div>
+                ) : editorRenderMode === 'visual' ? (
+                  <DocVisualEditor
+                    content={activeSubFile?.content ?? activeDoc?.content ?? ''}
+                    onChange={(newContent) => {
+                      if (activeDoc && activeSubFile) {
+                        updateSubFileContent(activeDoc.id, activeSubFile.id, newContent);
+                      } else if (activeDoc) {
+                        updateDocumentContent(activeDoc.id, newContent);
+                      }
+                    }}
+                    format={activeDoc?.format ?? 'latex'}
+                    fileName={activeSubFile?.name ?? 'main.tex'}
+                    subFiles={activeDoc?.files ?? []}
+                    docTitle={activeDoc?.title ?? ''}
+                    theme={theme}
+                    language={language}
+                    highlightLine={visualHighlightLine}
+                    onSyncToPreview={handleSyncVisualToPreview}
+                    onBlockFocus={(line) => setVisualHighlightLine(line)}
+                  />
                 ) : (
                 <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', backgroundColor: 'var(--bg-main)' }}>
                   {/* Line numbers gutter */}
@@ -6637,6 +7085,7 @@ ${exportText}
                         boxSizing: 'border-box',
                         overflow: 'auto',
                         whiteSpace: 'pre',
+                        fontVariantLigatures: 'none',
                         zIndex: 1,
                       }}
                     />
@@ -7882,14 +8331,14 @@ ${exportText}
                 </p>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
                   {language === 'id'
-                    ? 'Mendukung .tex, .bib, .md, .txt, .csv, gambar, dan lainnya'
-                    : 'Supports .tex, .bib, .md, .txt, .csv, images, and more'}
+                    ? 'Mendukung .tex, .typ, .bib, .md, .txt, .pdf, gambar, dan lainnya'
+                    : 'Supports .tex, .typ, .bib, .md, .txt, .pdf, images, and more'}
                 </p>
                 <input
                   ref={uploadInputRef}
                   type="file"
                   multiple
-                  accept=".tex,.bib,.md,.txt,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yaml,.yml,.png,.jpg,.jpeg,.gif,.svg,.pdf"
+                  accept=".tex,.typ,.bib,.md,.txt,.pdf,.png,.jpg,.jpeg,.gif,.svg,.csv"
                   style={{ display: 'none' }}
                   onChange={e => {
                     if (e.target.files && e.target.files.length > 0) {
@@ -8772,6 +9221,85 @@ ${exportText}
       <CreditLimitModal />
       <PricingModal />
       <AuthModal />
+
+      {/* Upgrade to Review Modal (Overleaf-style upgrade gate for free tier) */}
+      {isUpgradeToReviewModalOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 999999999,
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          onClick={() => setIsUpgradeToReviewModalOpen(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="animate-fade-in"
+            style={{
+              width: '380px', maxWidth: '90vw',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-strong)',
+              borderRadius: '12px',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+              padding: '24px',
+              display: 'flex', flexDirection: 'column', gap: '16px',
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {language === 'id' ? 'Upgrade untuk Review' : 'Upgrade to Review'}
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {language === 'id' ? 'Fitur Track Changes tersedia di paket Starter & Pro' : 'Track Changes is available on Starter & Pro plans'}
+                </div>
+              </div>
+              <button type="button" onClick={() => setIsUpgradeToReviewModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', borderRadius: '4px' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            {/* Features list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                language === 'id' ? 'Lacak semua perubahan sebagai saran' : 'Track all edits as tracked suggestions',
+                language === 'id' ? 'Tampilan diff merah/hijau per baris' : 'Red/green line-level diff previews',
+                language === 'id' ? 'Accept / Reject satu per satu atau sekaligus' : 'Accept / Reject individually or all at once',
+                language === 'id' ? 'Kolaborasi real-time via Supabase & Cloudflare' : 'Real-time collaboration via Supabase & Cloudflare',
+              ].map((feature, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  {feature}
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <button
+              type="button"
+              onClick={() => { setIsUpgradeToReviewModalOpen(false); openPricingModal('tiers'); }}
+              style={{
+                width: '100%', height: '40px', borderRadius: '8px', border: 'none',
+                background: 'linear-gradient(135deg,#0073EA,#A25DDC)',
+                color: '#fff', fontSize: '13.5px', fontWeight: 700,
+                cursor: 'pointer', transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >
+              {language === 'id' ? '⚡ Tingkatkan ke Starter / Pro' : '⚡ Upgrade to Starter / Pro'}
+            </button>
+
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
+              {language === 'id' ? 'Mulai dari $8/bulan · Batalkan kapan saja' : 'From $8/month · Cancel anytime'}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

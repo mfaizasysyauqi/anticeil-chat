@@ -326,7 +326,7 @@ Every document MUST have a dedicated cover page that is centered horizontally an
     try {
       await streamBYOKChat({
         providerId,
-        modelId: activeModelId || 'llama-3.3-70b-versatile',
+        modelId: activeModelId || 'qwen/qwen3.8-27b',
         systemPrompt: systemInstruction,
         messages: apiMessages,
         apiKeyConfig: activeApiKeyConfig,

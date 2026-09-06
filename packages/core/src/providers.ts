@@ -3,8 +3,8 @@ import { LLMModel, LLMProviderId, ProviderDefinition } from './types';
 export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
   anticeil: [
     {
-      id: 'gemini-2.0-flash',
-      name: 'Gemini 2.0 Flash (Anticeil Free)',
+      id: 'gemini-3.6-flash',
+      name: 'Gemini 3.6 Flash (Anticeil Free)',
       providerId: 'anticeil',
       contextWindow: 1048576,
       description: 'Next-gen multimodal speed & 1M context powered by Anticeil Free Cloud',
@@ -61,18 +61,18 @@ export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
       },
     },
     {
-      id: 'llama-3.3-70b-versatile',
-      name: 'Llama 3.3 70B (Groq / Anticeil)',
+      id: 'qwen/qwen3.8-27b',
+      name: 'Qwen 3.8 27B (Groq / Anticeil)',
       providerId: 'anticeil',
-      contextWindow: 128000,
-      description: 'Ultra-fast 250+ tok/s high intelligence model on Groq LPU via Anticeil',
+      contextWindow: 131042,
+      description: 'Ultra-fast reasoning model on Groq LPU via Anticeil',
       inputCostPer1M: 0,
       outputCostPer1M: 0,
       supportsStreaming: true,
       isPopular: true,
       capabilities: {
         text: true,
-        vision: false,
+        vision: true,
         reasoning: false,
         imageGen: false,
         docAnalysis: true,
@@ -212,8 +212,8 @@ export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
   ],
   gemini: [
     {
-      id: 'gemini-2.0-flash',
-      name: 'Gemini 2.0 Flash',
+      id: 'gemini-3.6-flash',
+      name: 'Gemini 3.6 Flash',
       providerId: 'gemini',
       contextWindow: 1048576,
       description: 'Next-gen speed and multimodal performance with 1M context',
@@ -284,35 +284,35 @@ export const PROVIDER_MODELS: Record<LLMProviderId, LLMModel[]> = {
       isPopular: true,
     },
     {
-      id: 'llama-3.3-70b-versatile',
-      name: 'Llama 3.3 70B (Groq)',
+      id: 'qwen/qwen3.8-27b',
+      name: 'Qwen 3.8 27B (Groq)',
       providerId: 'groq',
-      contextWindow: 128000,
-      description: 'Ultra-fast LPU inference exceeding 250+ tokens per second',
-      inputCostPer1M: 0.59,
-      outputCostPer1M: 0.79,
+      contextWindow: 131042,
+      description: 'Ultra-fast LPU inference with reasoning and vision',
+      inputCostPer1M: 0.80,
+      outputCostPer1M: 4.00,
       supportsStreaming: true,
       isPopular: true,
     },
     {
-      id: 'llama-3.1-8b-instant',
-      name: 'Llama 3.1 8B Instant (Groq)',
+      id: 'qwen/qwen3.6-27b',
+      name: 'Qwen 3.6 27B (Groq)',
       providerId: 'groq',
-      contextWindow: 128000,
-      description: 'Ultra high-speed lightweight LPU inference for instant chat',
-      inputCostPer1M: 0.05,
-      outputCostPer1M: 0.08,
+      contextWindow: 131042,
+      description: 'High-speed reasoning model with tool use on Groq LPU',
+      inputCostPer1M: 0.60,
+      outputCostPer1M: 3.00,
       supportsStreaming: true,
       isPopular: true,
     },
     {
-      id: 'deepseek-r1-distill-llama-70b',
-      name: 'DeepSeek-R1 Distill Llama 70B (Groq)',
+      id: 'openai/gpt-oss-20b',
+      name: 'GPT-OSS 20B (Groq)',
       providerId: 'groq',
-      contextWindow: 128000,
-      description: 'Reasoning model distilled from DeepSeek-R1 running at high speed on Groq',
-      inputCostPer1M: 0.75,
-      outputCostPer1M: 0.99,
+      contextWindow: 131072,
+      description: 'OpenAI open-source 20B model on Groq LPU',
+      inputCostPer1M: 0.075,
+      outputCostPer1M: 0.30,
       supportsStreaming: true,
       supportsReasoning: true,
     },
@@ -1108,7 +1108,7 @@ export const PROVIDER_DEFINITIONS: ProviderDefinition[] = [
 ];
 
 export const DEFAULT_PROVIDER_ID: LLMProviderId = 'anticeil';
-export const DEFAULT_MODEL_ID = 'gemini-2.0-flash';
+export const DEFAULT_MODEL_ID = 'gemini-3.6-flash';
 
 export function getModelById(modelId: string): LLMModel | undefined {
   for (const models of Object.values(PROVIDER_MODELS)) {

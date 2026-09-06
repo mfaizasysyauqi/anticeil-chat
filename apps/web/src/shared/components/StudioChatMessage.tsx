@@ -151,7 +151,7 @@ export function StudioChatMessage({
 
       {/* Antigravity Agent Step & Thought Execution Timeline */}
       {!isUser &&
-        (reasoningContent || (actions && actions.length > 0) || (steps && steps.length > 0) || (isStreaming && !content)) && (
+        (reasoningContent || (actions && actions.length > 0) || (steps && steps.length > 0) || isStreaming) && (
           <div style={{ width: '100%' }}>
             <AgentStepTimeline
               reasoningContent={reasoningContent || ''}

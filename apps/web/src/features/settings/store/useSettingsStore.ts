@@ -14,9 +14,10 @@ import {
   fetchProviderModels,
   testProviderConnection,
   ProviderConnectionTestResult,
+  isModelActiveAndAvailable,
 } from '@anticeil/core';
 
-import { FREE_GROQ_KEYS, FREE_GEMINI_KEYS } from '../../chat/data/byokApi';
+import { FREE_GEMINI_KEYS, FREE_GROQ_KEYS } from '../../chat/data/freeKeys';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 
 export interface SetApiKeyResult {
@@ -56,8 +57,10 @@ interface SettingsState {
   customR2SecretAccessKey: string;
   customR2PublicUrl: string;
   activeMediaStorageDriver: 'supabase' | 'r2';
+  disabledModelIds: string[];
   
   // Actions
+  markModelAsUnavailable: (modelId: string) => void;
   setSettingsOpen: (open: boolean) => void;
   setSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
   openSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
@@ -159,6 +162,22 @@ export const useSettingsStore = create<SettingsState>()(
       customR2SecretAccessKey: '',
       customR2PublicUrl: '',
       activeMediaStorageDriver: 'supabase' as 'supabase' | 'r2',
+      disabledModelIds: [],
+
+      markModelAsUnavailable: (modelId: string) => {
+        if (!modelId) return;
+        const clean = modelId.trim().toLowerCase().replace(/^models\//, '');
+        const current = get().disabledModelIds || [];
+        if (!current.includes(clean)) {
+          const nextDisabled = [...current, clean];
+          const shouldResetActive =
+            get().activeModelId.toLowerCase().replace(/^models\//, '') === clean;
+          set({
+            disabledModelIds: nextDisabled,
+            ...(shouldResetActive ? { activeModelId: DEFAULT_MODEL_ID } : {}),
+          });
+        }
+      },
 
       setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
       setSettingsTab: (tab) => set({ activeSettingsTab: tab }),
@@ -402,9 +421,13 @@ export const useSettingsStore = create<SettingsState>()(
           : (PROVIDER_MODELS[providerId] || []);
 
         const seen = new Set<string>();
+        const disabled = new Set((state.disabledModelIds || []).map((id) => id.toLowerCase()));
         return list.filter((m) => {
           if (!m || !m.id || seen.has(m.id)) return false;
           seen.add(m.id);
+          const clean = m.id.toLowerCase().replace(/^models\//, '');
+          if (disabled.has(clean)) return false;
+          if (!isModelActiveAndAvailable(m)) return false;
           return true;
         });
       },
@@ -489,6 +512,9 @@ export const useSettingsStore = create<SettingsState>()(
           document.documentElement.setAttribute('data-theme', state.theme);
         }
         // Auto-migrate persisted localStorage settings
+        if (state?.activeModelId === 'gemini-2.0-flash') {
+          useSettingsStore.setState({ activeModelId: 'gemini-3.6-flash' });
+        }
         if (state?.apiKeys) {
           let needsUpdate = false;
           const updatedKeys = { ...state.apiKeys };
@@ -539,6 +565,7 @@ export const useSettingsStore = create<SettingsState>()(
         customR2SecretAccessKey: state.customR2SecretAccessKey,
         customR2PublicUrl: state.customR2PublicUrl,
         activeMediaStorageDriver: state.activeMediaStorageDriver,
+        disabledModelIds: state.disabledModelIds,
       }),
     }
   )

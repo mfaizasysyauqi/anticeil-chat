@@ -1064,16 +1064,19 @@ export function compileLatexToHtml(
     const incMatch = figBody.match(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/i);
     if (incMatch) {
       imgName = incMatch[1].trim();
+      const cleanPath = imgName.replace(/^\.\//, '').toLowerCase();
       const foundSub = subFiles?.find(
         (f) =>
-          f.name.toLowerCase() === imgName.toLowerCase() ||
-          f.name.toLowerCase() === `${imgName.toLowerCase()}.png` ||
-          f.name.toLowerCase() === `${imgName.toLowerCase()}.jpg` ||
-          f.name.toLowerCase() === `${imgName.toLowerCase()}.jpeg` ||
-          f.name.toLowerCase() === `${imgName.toLowerCase()}.webp` ||
-          f.name.toLowerCase() === `${imgName.toLowerCase()}.svg`
+          f.name.toLowerCase() === cleanPath ||
+          f.name.toLowerCase().endsWith('/' + cleanPath) ||
+          cleanPath.endsWith('/' + f.name.toLowerCase()) ||
+          f.name.toLowerCase() === `${cleanPath}.png` ||
+          f.name.toLowerCase() === `${cleanPath}.jpg` ||
+          f.name.toLowerCase() === `${cleanPath}.jpeg` ||
+          f.name.toLowerCase() === `${cleanPath}.webp` ||
+          f.name.toLowerCase() === `${cleanPath}.svg`
       );
-      imgSrc = foundSub?.content || imgName;
+      imgSrc = (foundSub?.content && foundSub.content.trim()) ? foundSub.content.trim() : imgName;
     }
 
     if (!imgSrc) return '';
@@ -1084,16 +1087,19 @@ export function compileLatexToHtml(
   // Standalone \includegraphics outside figure
   body = body.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (_m, imgName) => {
     const rawName = imgName.trim();
+    const cleanPath = rawName.replace(/^\.\//, '').toLowerCase();
     const foundSub = subFiles?.find(
       (f) =>
-        f.name.toLowerCase() === rawName.toLowerCase() ||
-        f.name.toLowerCase() === `${rawName.toLowerCase()}.png` ||
-        f.name.toLowerCase() === `${rawName.toLowerCase()}.jpg` ||
-        f.name.toLowerCase() === `${rawName.toLowerCase()}.jpeg` ||
-        f.name.toLowerCase() === `${rawName.toLowerCase()}.webp` ||
-        f.name.toLowerCase() === `${rawName.toLowerCase()}.svg`
+        f.name.toLowerCase() === cleanPath ||
+        f.name.toLowerCase().endsWith('/' + cleanPath) ||
+        cleanPath.endsWith('/' + f.name.toLowerCase()) ||
+        f.name.toLowerCase() === `${cleanPath}.png` ||
+        f.name.toLowerCase() === `${cleanPath}.jpg` ||
+        f.name.toLowerCase() === `${cleanPath}.jpeg` ||
+        f.name.toLowerCase() === `${cleanPath}.webp` ||
+        f.name.toLowerCase() === `${cleanPath}.svg`
     );
-    const imgSrc = foundSub?.content || rawName;
+    const imgSrc = (foundSub?.content && foundSub.content.trim()) ? foundSub.content.trim() : rawName;
     return `\n<div class="academic-figure"><img src="${imgSrc}" alt="${rawName}" class="academic-figure-img" /></div>\n`;
   });
 
