@@ -14,12 +14,14 @@ import {
   ShieldCheck,
   KeyRound,
   Layers,
+  AlertCircle,
 } from 'lucide-react';
 import { TierPricingCards } from './TierPricingCards';
 import { type TierId } from '../constants/pricingTiers';
 import { useCreditStore, CREDIT_PACKS, CreditPack } from '../../credits/store/useCreditStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useMidtrans } from '../../payment/hooks/useMidtrans';
 
 export function PricingModal() {
   const isOpen = useCreditStore((s) => s.isPricingModalOpen);
@@ -38,6 +40,9 @@ export function PricingModal() {
   const [currency, setCurrency] = useState<'idr' | 'usd'>('idr');
   const [actionId, setActionId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const { pay } = useMidtrans();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -50,34 +55,119 @@ export function PricingModal() {
 
   if (!isOpen || !mounted) return null;
 
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(null), 4000);
+  };
+
+  const createPayment = async (type: 'topup' | 'tier', itemId: string) => {
+    const res = await fetch('/api/payment/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type,
+        itemId,
+        userId: user?.id,
+        userEmail: user?.email,
+        userName: user?.user_metadata?.name || user?.user_metadata?.full_name,
+      }),
+    });
+    return res.json() as Promise<{ token?: string; credits?: number; orderId?: string; error?: string }>;
+  };
+
   const handleTopup = async (pack: CreditPack) => {
     setActionId(pack.id);
-    await new Promise((r) => setTimeout(r, 600));
-    addPaidCredits(pack.credits);
-    setActionId(null);
-    setSuccessMsg(
-      language === 'id'
-        ? `✓ Berhasil top-up +${pack.credits.toLocaleString()} kredit AI!`
-        : `✓ Successfully topped up +${pack.credits.toLocaleString()} AI credits!`
-    );
-    setTimeout(() => setSuccessMsg(null), 2500);
+    setErrorMsg(null);
+    try {
+      const data = await createPayment('topup', pack.id);
+      if (!data.token) {
+        showError(data.error || (language === 'id' ? 'Gagal membuat pembayaran' : 'Failed to create payment'));
+        setActionId(null);
+        return;
+      }
+      pay(data.token, {
+        onSuccess: () => {
+          addPaidCredits(pack.credits);
+          setActionId(null);
+          setSuccessMsg(
+            language === 'id'
+              ? `✓ Pembayaran berhasil! +${pack.credits.toLocaleString()} kredit AI ditambahkan.`
+              : `✓ Payment successful! +${pack.credits.toLocaleString()} AI credits added.`
+          );
+          setTimeout(() => setSuccessMsg(null), 4000);
+        },
+        onPending: () => {
+          setActionId(null);
+          setSuccessMsg(
+            language === 'id'
+              ? '⏳ Menunggu konfirmasi pembayaran...'
+              : '⏳ Waiting for payment confirmation...'
+          );
+          setTimeout(() => setSuccessMsg(null), 5000);
+        },
+        onError: () => {
+          setActionId(null);
+          showError(language === 'id' ? 'Pembayaran gagal. Coba lagi.' : 'Payment failed. Please try again.');
+        },
+        onClose: () => { setActionId(null); },
+      });
+    } catch {
+      setActionId(null);
+      showError(language === 'id' ? 'Terjadi kesalahan. Coba lagi.' : 'Something went wrong. Please try again.');
+    }
   };
 
   const handleSwitchTier = async (planId: TierId) => {
     if (planId === tier) return;
+    // Free tier → instant
+    if (planId === 'free') {
+      await setTier('free');
+      setSuccessMsg(language === 'id' ? '✓ Beralih ke Free tier.' : '✓ Switched to Free tier.');
+      setTimeout(() => setSuccessMsg(null), 2500);
+      return;
+    }
     setActionId(planId);
-    await new Promise((r) => setTimeout(r, 600));
-    await setTier(planId as any);
-    if (planId === 'starter') addPaidCredits(150);
-    if (planId === 'pro') addPaidCredits(750);
-    if (planId === 'enterprise') addPaidCredits(3000);
-    setActionId(null);
-    setSuccessMsg(
-      language === 'id'
-        ? `✓ Berhasil beralih ke paket ${planId.toUpperCase()}!`
-        : `✓ Successfully switched to ${planId.toUpperCase()} plan!`
-    );
-    setTimeout(() => setSuccessMsg(null), 2500);
+    setErrorMsg(null);
+    try {
+      const data = await createPayment('tier', planId);
+      if (!data.token) {
+        showError(data.error || (language === 'id' ? 'Gagal membuat pembayaran' : 'Failed to create payment'));
+        setActionId(null);
+        return;
+      }
+      pay(data.token, {
+        onSuccess: async () => {
+          await setTier(planId as any);
+          if (planId === 'starter') addPaidCredits(150);
+          if (planId === 'pro') addPaidCredits(750);
+          if (planId === 'enterprise') addPaidCredits(3000);
+          setActionId(null);
+          setSuccessMsg(
+            language === 'id'
+              ? `✓ Upgrade ke ${planId.toUpperCase()} berhasil! Kredit bonus ditambahkan.`
+              : `✓ Upgraded to ${planId.toUpperCase()}! Bonus credits added.`
+          );
+          setTimeout(() => setSuccessMsg(null), 4000);
+        },
+        onPending: () => {
+          setActionId(null);
+          setSuccessMsg(
+            language === 'id'
+              ? '⏳ Menunggu konfirmasi pembayaran...'
+              : '⏳ Waiting for payment confirmation...'
+          );
+          setTimeout(() => setSuccessMsg(null), 5000);
+        },
+        onError: () => {
+          setActionId(null);
+          showError(language === 'id' ? 'Pembayaran gagal. Coba lagi.' : 'Payment failed. Please try again.');
+        },
+        onClose: () => { setActionId(null); },
+      });
+    } catch {
+      setActionId(null);
+      showError(language === 'id' ? 'Terjadi kesalahan. Coba lagi.' : 'Something went wrong. Please try again.');
+    }
   };
 
   const useCases = [
@@ -317,6 +407,26 @@ export function PricingModal() {
           }}>
             <ShieldCheck size={16} />
             <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* Error Alert */}
+        {errorMsg && (
+          <div style={{
+            margin: '12px 22px 0',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            color: 'var(--accent-error, #ef4444)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '12px',
+            fontWeight: 700,
+          }}>
+            <AlertCircle size={16} />
+            <span>{errorMsg}</span>
           </div>
         )}
 
