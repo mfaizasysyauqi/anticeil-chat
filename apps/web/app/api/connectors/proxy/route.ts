@@ -6,6 +6,7 @@ const ALLOWED_HOSTNAMES = new Set([
   'gmail.googleapis.com',
   'www.googleapis.com',
   'calendar.googleapis.com',
+  'api.smithery.ai',
 ]);
 
 export async function POST(req: NextRequest) {

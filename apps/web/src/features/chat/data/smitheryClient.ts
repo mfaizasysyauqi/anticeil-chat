@@ -31,7 +31,7 @@ export interface SmitheryListResponse {
   };
 }
 
-/** List available MCP servers from Smithery registry */
+/** List available MCP servers from Smithery registry (via server-side proxy to avoid CORS) */
 export async function listSmitheryServers(
   apiKey: string,
   opts?: { query?: string; page?: number; pageSize?: number }
@@ -39,13 +39,18 @@ export async function listSmitheryServers(
   const params = new URLSearchParams();
   if (opts?.query) params.set('q', opts.query);
   if (opts?.page) params.set('page', String(opts.page));
-  if (opts?.pageSize) params.set('pageSize', String(opts.pageSize ?? 20));
+  params.set('pageSize', String(opts?.pageSize ?? 20));
 
-  const res = await fetch(`${SMITHERY_BASE_URL}/v2/servers?${params}`, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
+  const targetUrl = `${SMITHERY_BASE_URL}/servers?${params}`;
+
+  const res = await fetch('/api/connectors/proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      url: targetUrl,
+      method: 'GET',
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }),
   });
 
   if (!res.ok) {
@@ -54,6 +59,16 @@ export async function listSmitheryServers(
   }
 
   return res.json();
+}
+
+/** Test Smithery API key validity */
+export async function testSmitheryKey(apiKey: string): Promise<boolean> {
+  try {
+    await listSmitheryServers(apiKey, { pageSize: 1 });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Get a Smithery WebSocket URL for a specific MCP server (hosted mode) */
