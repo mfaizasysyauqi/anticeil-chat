@@ -213,6 +213,9 @@ import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { StorageMeter } from '../../storage/components/StorageMeter';
 import { BottomRailMeters } from '../../../shared/components/BottomRailMeters';
+import { ProfileBar } from '../../../shared/components/ProfileBar';
+import { SidebarRail } from '../../../shared/components/SidebarRail';
+import { RailIconButton } from '../../../shared/components/RailIconButton';
 import { SettingsModal } from '../../settings/components/SettingsModal';
 import { CreditLimitModal } from '../../credits/components/CreditLimitModal';
 import { PricingModal } from '../../pricing/components/PricingModal';
@@ -3062,24 +3065,11 @@ ${exportText}
       />
 
       {/* 0. Far-Left Mini Sidebar (Exact 48px width matching main Sidebar.tsx) */}
-      <div
-        className={`sidebar-icon-rail${isSidebarOpen ? ' rail-open' : ''}`}
-        style={{
-          width: '48px',
-          height: '100%',
-          backgroundColor: 'var(--bg-main)',
-          borderRight: '1px solid var(--border-subtle)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 0,
-          flexShrink: 0,
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-          {/* Logo container matching exact 48px header height for 1:1 symmetry */}
+      <SidebarRail
+        className={isSidebarOpen ? 'rail-open' : ''}
+        onOpenTopup={() => openPricingModal('topup')}
+        onOpenTiers={() => openPricingModal('tiers')}
+        topContent={
           <div
             style={{
               height: '48px',
@@ -3111,213 +3101,93 @@ ${exportText}
               />
             </Link>
           </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px', width: '100%' }}>
+          {/* Expand button (when sidebar is collapsed) */}
+          {!isSidebarOpen && (
+            <RailIconButton
+              onClick={toggleSidebar}
+              icon={<PanelLeftOpen size={16} />}
+              label={language === 'id' ? 'Buka Sidebar / Drawer' : 'Expand Sidebar'}
+            />
+          )}
 
-          {/* Quick App Tabs */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px', width: '100%' }}>
-            {/* Expand button (when sidebar is collapsed) */}
-            {!isSidebarOpen && (
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '8px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                className="hover-subtle"
-                title={language === 'id' ? 'Buka Sidebar / Drawer' : 'Expand Sidebar'}
-                aria-label="Expand sidebar"
-              >
-                <PanelLeftOpen size={16} />
-              </button>
-            )}
+          {/* Tab: Files */}
+          <RailIconButton
+            onClick={() => {
+              if (!isSidebarOpen) {
+                toggleSidebar();
+                setActiveDrawerTab('files');
+              } else if (activeDrawerTab === 'files') {
+                toggleSidebar();
+              } else {
+                setActiveDrawerTab('files');
+              }
+            }}
+            icon={<FileText size={16} />}
+            label={language === 'id' ? 'Struktur File (Files)' : 'Project Files'}
+            isActive={isSidebarOpen && activeDrawerTab === 'files'}
+            showIndicatorBar
+          />
 
-            {/* Tab: Files */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isSidebarOpen) {
-                  toggleSidebar();
-                  setActiveDrawerTab('files');
-                } else if (activeDrawerTab === 'files') {
-                  toggleSidebar();
-                } else {
-                  setActiveDrawerTab('files');
-                }
-              }}
-              style={{ position: 'relative' }}
-              className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'files' ? ' active' : ''}`}
-              aria-label={language === 'id' ? 'Struktur File (Files)' : 'Project Files'}
-            >
-              {isSidebarOpen && activeDrawerTab === 'files' && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '7px',
-                    bottom: '7px',
-                    width: '3px',
-                    backgroundColor: 'var(--brand-primary)',
-                    borderRadius: '0 2px 2px 0',
-                  }}
-                />
-              )}
-              <FileText size={16} />
-            </button>
+          {/* Tab: Search */}
+          <RailIconButton
+            onClick={() => {
+              if (!isSidebarOpen) {
+                toggleSidebar();
+                setActiveDrawerTab('search');
+              } else if (activeDrawerTab === 'search') {
+                toggleSidebar();
+              } else {
+                setActiveDrawerTab('search');
+              }
+            }}
+            icon={<Search size={16} />}
+            label={language === 'id' ? 'Pencarian & Ganti (Search)' : 'Search & Replace'}
+            isActive={isSidebarOpen && activeDrawerTab === 'search'}
+            showIndicatorBar
+          />
 
-            {/* Tab: Search */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isSidebarOpen) {
-                  toggleSidebar();
-                  setActiveDrawerTab('search');
-                } else if (activeDrawerTab === 'search') {
-                  toggleSidebar();
-                } else {
-                  setActiveDrawerTab('search');
-                }
-              }}
-              style={{ position: 'relative' }}
-              className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'search' ? ' active' : ''}`}
-              aria-label={language === 'id' ? 'Pencarian & Ganti (Search)' : 'Search & Replace'}
-            >
-              {isSidebarOpen && activeDrawerTab === 'search' && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '7px',
-                    bottom: '7px',
-                    width: '3px',
-                    backgroundColor: 'var(--brand-primary)',
-                    borderRadius: '0 2px 2px 0',
-                  }}
-                />
-              )}
-              <Search size={16} />
-            </button>
+          {/* Tab: Review Panel */}
+          <RailIconButton
+            onClick={() => {
+              if (!isSidebarOpen) {
+                toggleSidebar();
+                setActiveDrawerTab('review');
+              } else if (activeDrawerTab === 'review') {
+                toggleSidebar();
+              } else {
+                setActiveDrawerTab('review');
+              }
+            }}
+            icon={<MessageSquarePlus size={16} />}
+            label={language === 'id' ? 'Panel Review & Komentar (Ctrl+J)' : 'Review panel (Ctrl+J)'}
+            isActive={isSidebarOpen && activeDrawerTab === 'review'}
+            badgeCount={activeDoc?.comments?.filter(c => !c.resolved)?.length ?? 0}
+            showIndicatorBar
+          />
 
-            {/* Tab: Review Panel (Overleaf Style) */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isSidebarOpen) {
-                  toggleSidebar();
-                  setActiveDrawerTab('review');
-                } else if (activeDrawerTab === 'review') {
-                  toggleSidebar();
-                } else {
-                  setActiveDrawerTab('review');
-                }
-              }}
-              style={{ position: 'relative' }}
-              className={`rail-icon-btn docs-btn${isSidebarOpen && activeDrawerTab === 'review' ? ' active' : ''}`}
-              aria-label={language === 'id' ? 'Panel Review & Komentar (Ctrl+J)' : 'Review panel (Ctrl+J)'}
-            >
-              {isSidebarOpen && activeDrawerTab === 'review' && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '7px',
-                    bottom: '7px',
-                    width: '3px',
-                    backgroundColor: 'var(--brand-primary)',
-                    borderRadius: '0 2px 2px 0',
-                  }}
-                />
-              )}
-              <MessageSquarePlus size={16} />
-              {(activeDoc?.comments?.filter(c => !c.resolved)?.length ?? 0) > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '4px',
-                    right: '4px',
-                    minWidth: '13px',
-                    height: '13px',
-                    padding: '0 3px',
-                    borderRadius: '999px',
-                    backgroundColor: 'var(--brand-primary)',
-                    color: '#ffffff',
-                    fontSize: '8.5px',
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    lineHeight: 1,
-                  }}
-                >
-                  {activeDoc?.comments?.filter(c => !c.resolved)?.length}
-                </span>
-              )}
-            </button>
-
-            {/* Tab: AI Assist */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isSidebarOpen) {
-                  toggleSidebar();
-                  setActiveDrawerTab('ai');
-                } else if (activeDrawerTab === 'ai') {
-                  toggleSidebar();
-                } else {
-                  setActiveDrawerTab('ai');
-                }
-              }}
-              style={{
-                width: '34px',
-                height: '34px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '8px',
-                backgroundColor: isSidebarOpen && activeDrawerTab === 'ai' ? 'rgba(0, 115, 234, 0.15)' : 'transparent',
-                border: 'none',
-                color: isSidebarOpen && activeDrawerTab === 'ai' ? 'var(--brand-primary)' : 'var(--brand-primary)',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover-subtle"
-              title={language === 'id' ? 'AI Co-Author Assistant' : 'AI Co-Author Assistant'}
-            >
-              {isSidebarOpen && activeDrawerTab === 'ai' && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '7px',
-                    bottom: '7px',
-                    width: '3px',
-                    backgroundColor: 'var(--brand-primary)',
-                    borderRadius: '0 2px 2px 0',
-                  }}
-                />
-              )}
-              <Sparkles size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom of 48px Rail: Circular AI Credits Ring + Storage Ring */}
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <BottomRailMeters
-            onOpenTopup={() => openPricingModal('topup')}
-            onOpenTiers={() => openPricingModal('tiers')}
+          {/* Tab: AI Assist */}
+          <RailIconButton
+            onClick={() => {
+              if (!isSidebarOpen) {
+                toggleSidebar();
+                setActiveDrawerTab('ai');
+              } else if (activeDrawerTab === 'ai') {
+                toggleSidebar();
+              } else {
+                setActiveDrawerTab('ai');
+              }
+            }}
+            icon={<Sparkles size={16} />}
+            label={language === 'id' ? 'AI Co-Author Assistant' : 'AI Co-Author Assistant'}
+            isActive={isSidebarOpen && activeDrawerTab === 'ai'}
+            colorType="docs"
+            showIndicatorBar
           />
         </div>
-      </div>
+      </SidebarRail>
 
       {/* 1. Main Workspace Area to the right of Mini Sidebar */}
       <div style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
@@ -5548,165 +5418,8 @@ ${exportText}
                   </div>
                 )}
 
-                {/* FOOTER: Collapsible Credits + Storage + Profile (mirrors main Sidebar) */}
-                <div
-                  style={{
-                    borderTop: '1px solid var(--border-subtle)',
-                    padding: '8px 10px',
-                    background: 'var(--bg-main)',
-                    position: 'relative',
-                    flexShrink: 0,
-                  }}
-                >
-
-
-                  {/* Profile Trigger Button */}
-                  <div style={{ position: 'relative' }}>
-                    {isProfileMenuOpen && (
-                      <div
-                        ref={profileMenuRef}
-                        className="animate-fade-in"
-                        style={{
-                          position: 'absolute',
-                          bottom: 'calc(100% + 6px)',
-                          left: 0,
-                          right: 0,
-                          backgroundColor: 'var(--bg-surface)',
-                          border: '1px solid var(--border-strong)',
-                          borderRadius: 'var(--radius-lg, 12px)',
-                          boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
-                          padding: '6px',
-                          zIndex: 999999999,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '2px',
-                        }}
-                      >
-                        {/* User Header */}
-                        <div style={{ padding: '8px 10px 6px 10px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '3px' }}>
-                          <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {displayName}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {displayEmail}
-                          </div>
-                        </div>
-
-                        <div style={{ padding: '6px 10px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          {language === 'id' ? 'Pengaturan' : 'Settings'}
-                        </div>
-
-                        <button type="button" onClick={() => { openSettingsTab('keys'); setIsProfileMenuOpen(false); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <KeyRound size={14} color="var(--text-secondary)" />
-                          <span>{language === 'id' ? 'Kunci API (BYOK)' : 'API Keys (BYOK)'}</span>
-                        </button>
-
-                        <button type="button" onClick={() => { openSettingsTab('appearance'); setIsProfileMenuOpen(false); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <Palette size={14} color="var(--text-secondary)" />
-                          <span>{language === 'id' ? 'Tampilan & Bahasa' : 'Appearance & Language'}</span>
-                        </button>
-
-                        <button type="button" onClick={() => { openSettingsTab('backup'); setIsProfileMenuOpen(false); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <Database size={14} color="var(--text-secondary)" />
-                          <span>{language === 'id' ? 'Database & Cadangan' : 'Database & Backup'}</span>
-                        </button>
-
-                        <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
-
-                        <button type="button" onClick={() => { openPricingModal('tiers'); setIsProfileMenuOpen(false); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,115,234,0.08)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <Zap size={14} color="var(--brand-primary)" />
-                          <span>{language === 'id' ? 'Tingkatkan Paket' : 'Upgrade Plan'}</span>
-                        </button>
-
-                        <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
-
-                        {user ? (
-                          <button type="button" onClick={() => { signOut(); setIsProfileMenuOpen(false); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--accent-danger)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          >
-                            <LogOut size={14} />
-                            <span>{language === 'id' ? 'Keluar' : 'Log Out'}</span>
-                          </button>
-                        ) : (
-                          <button type="button" onClick={() => { setIsProfileMenuOpen(false); openAuthModal('login'); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          >
-                            <LogOut size={14} />
-                            <span>{language === 'id' ? 'Masuk' : 'Log In'}</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    <button
-                      ref={profileButtonRef}
-                      type="button"
-                      onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                      className="clickable-pill"
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '6px 8px',
-                        borderRadius: 'var(--radius-md, 8px)',
-                        background: isProfileMenuOpen ? 'var(--bg-subtle)' : 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'background 0.15s ease',
-                      }}
-                    >
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #0073EA, #A25DDC)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12.5px', fontWeight: 700, flexShrink: 0, boxShadow: '0 2px 6px rgba(0,115,234,0.3)' }}>
-                        {(displayName[0] || '?').toUpperCase()}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {displayName}
-                          </span>
-                          {(() => {
-                            const badge = getTierBadgeStyle(tier);
-                            return (
-                              <span style={{
-                                fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', flexShrink: 0,
-                                background: badge.background,
-                                color: badge.color,
-                                border: badge.border,
-                              }}>
-                                {badge.label}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {getTierStorageName(tier, language as 'en' | 'id')}
-                        </div>
-                      </div>
-                      <MoreHorizontal size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                    </button>
-                  </div>{/* end position:relative wrapper */}
-                </div>{/* end FOOTER */}
+                {/* FOOTER: ProfileBar (mirrors main Sidebar) */}
+                <ProfileBar />
               </aside>
 
               {/* Resize handle: Left Drawer ↔ Editor */}

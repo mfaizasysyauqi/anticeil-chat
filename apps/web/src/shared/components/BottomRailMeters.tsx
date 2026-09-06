@@ -164,7 +164,7 @@ export function BottomRailMeters({
     <div
       style={{
         width: '100%',
-        height: '56px',
+        height: '48px',
         borderTop: '1px solid var(--border-subtle)',
         padding: 0,
         background: 'var(--bg-main)',

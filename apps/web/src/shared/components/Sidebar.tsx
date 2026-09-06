@@ -66,6 +66,10 @@ import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { ConnectorsModal } from '../../features/connectors/components/ConnectorsModal';
 import { StorageMeter } from '../../features/storage/components/StorageMeter';
 import { BottomRailMeters } from './BottomRailMeters';
+import { DrawerPanelHeader } from './DrawerPanelHeader';
+import { ProfileBar } from './ProfileBar';
+import { SidebarRail } from './SidebarRail';
+import { RailIconButton } from './RailIconButton';
 import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
@@ -2421,6 +2425,7 @@ export function Sidebar({
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              borderBottom: '1px solid var(--border-subtle)',
             }}
           >
             <Link
@@ -2635,191 +2640,31 @@ export function Sidebar({
         }}>
         {/* Workspace Title Header — hidden when drawerOnly (Navbar is above and shows title) */}
         {!drawerOnly && (
-        <div
-          style={{
-            height: '48px',
-            boxSizing: 'border-box',
-            padding: '0 12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderBottom: '1px solid var(--border-subtle)',
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-            <span
-              style={{
-                fontSize: '13.5px',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.01em',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {isMediaMode
-                ? 'Media Studio'
-                : isDocs
-                ? 'Docs Studio'
-                : 'Anticeil'}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {/* Mobile Drawer Close */}
-            <button
-              onClick={onCloseMobile}
-              className="show-on-drawer"
-              style={{
-                display: 'none',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '3px',
-              }}
-              aria-label="Close drawer"
-            >
-              <X size={16} />
-            </button>
-
-            {/* Desktop Collapse Button */}
-            {onToggleDesktopCollapse && (
-              <button
-                onClick={onToggleDesktopCollapse}
-                className="hide-on-drawer"
-                title={t.sidebar.collapseSidebar}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: '3px',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                aria-label={t.sidebar.collapseSidebar}
-              >
-                <PanelLeftClose size={15} />
-              </button>
-            )}
-          </div>
-        </div>
+          <DrawerPanelHeader
+            title={isMediaMode ? 'Media Studio' : isDocs ? 'Docs Studio' : 'Anticeil'}
+            titleStyle="primary"
+            onClose={onCloseMobile}
+            collapseLabel={t.sidebar.collapseSidebar}
+            onCollapse={onToggleDesktopCollapse}
+          />
         )}
 
-        {/* Drawer-only top bar: feature title + collapse button (matching docs editor style) */}
+        {/* Drawer-only top bar: feature title + collapse button */}
         {drawerOnly && (
-          <div
-            className="hide-on-drawer"
-            style={{
-              height: '48px',
-              boxSizing: 'border-box',
-              padding: '0 8px 0 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: '1px solid var(--border-subtle)',
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {isMediaMode
-                  ? 'Media Studio'
-                  : isDocs
-                  ? 'Docs Studio'
-                  : (language === 'id' ? 'Percakapan' : 'Chat')}
-              </span>
-            </div>
-
-            {onToggleDesktopCollapse && (
-              <button
-                onClick={onToggleDesktopCollapse}
-                title={t.sidebar.collapseSidebar}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.15s ease',
-                }}
-                aria-label={t.sidebar.collapseSidebar}
-              >
-                <PanelLeftClose size={15} />
-              </button>
-            )}
-          </div>
+          <DrawerPanelHeader
+            hideClass="hide-on-drawer"
+            title={isMediaMode ? 'Media Studio' : isDocs ? 'Docs Studio' : (language === 'id' ? 'Percakapan' : 'Chat')}
+            collapseLabel={t.sidebar.collapseSidebar}
+            onCollapse={onToggleDesktopCollapse}
+          />
         )}
 
-        {/* Mobile-only Feature Subheader (e.g. PERCAKAPAN, DOCS STUDIO, MEDIA STUDIO) with Close Button */}
-        <div
-          className="show-on-drawer"
-          style={{
-            height: '48px',
-            padding: '0 12px',
-            display: 'none',
-            alignItems: 'center',
-            flexShrink: 0,
-            borderBottom: '1px solid var(--border-subtle)',
-            justifyContent: 'space-between',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
-            {isMediaMode
-              ? 'Media Studio'
-              : isDocs
-              ? 'Docs Studio'
-              : (language === 'id' ? 'Percakapan' : 'Chat')}
-          </span>
-
-          <button
-            onClick={onCloseMobile}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease',
-            }}
-            aria-label="Close drawer"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        {/* Mobile-only Feature Subheader */}
+        <DrawerPanelHeader
+          showClass="show-on-drawer"
+          title={isMediaMode ? 'Media Studio' : isDocs ? 'Docs Studio' : (language === 'id' ? 'Percakapan' : 'Chat')}
+          onClose={onCloseMobile}
+        />
 
         {/* Primary Action Button (Mode-Aware) */}
         <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -4044,301 +3889,9 @@ export function Sidebar({
         </div>
 
         {/* ─────────────────────────────────────────────────────────────
-         * 3. Bottom Profile Bar with Grok-style Floating Popover Menu
+         * 3. Bottom Profile Bar (Reusable ProfileBar Component)
          * ───────────────────────────────────────────────────────────── */}
-        <div
-          ref={profileMenuRef}
-          style={{
-            height: '56px',
-            boxSizing: 'border-box',
-            borderTop: '1px solid var(--border-subtle)',
-            padding: '0 10px',
-            background: 'var(--bg-main)',
-            position: 'relative',
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            minWidth: 0,
-          }}
-        >
-          {/* Floating Profile Popover Menu (moved to be anchored at trigger button) */}
-
-
-
-          {/* Profile Trigger Button (Avatar + Name) */}
-          <div style={{ position: 'relative', width: '100%', minWidth: 0 }}>
-          {/* Floating Profile Popover Menu (anchored above trigger button only) */}
-          {isProfileMenuOpen && (
-            <div
-              className="animate-fade-in"
-              style={{
-                position: 'absolute',
-                bottom: 'calc(100% + 6px)',
-                left: 0,
-                right: 0,
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-strong)',
-                borderRadius: 'var(--radius-lg, 12px)',
-                boxShadow: 'var(--shadow-xl, 0 20px 40px rgba(0,0,0,0.25))',
-                padding: '6px',
-                zIndex: 999999999,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px',
-              }}
-            >
-              {/* User Header */}
-              <div
-                style={{
-                  padding: '8px 10px 6px 10px',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  marginBottom: '3px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                }}
-              >
-                {avatarUrl && !avatarImgError ? (
-                  <img
-                    src={avatarUrl}
-                    alt={displayName}
-                    referrerPolicy="no-referrer"
-                    onError={() => setAvatarImgError(true)}
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      flexShrink: 0,
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #0073EA, #A25DDC)',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12.5px',
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {(displayName[0] || '?').toUpperCase()}
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {displayName}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {displayEmail}
-                  </div>
-                </div>
-              </div>
-
-              {/* Settings Section Label */}
-              <div style={{ padding: '6px 10px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {language === 'id' ? 'Pengaturan' : 'Settings'}
-              </div>
-
-              {/* API Keys */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsProfileMenuOpen(false);
-                  if (!user) {
-                    openAuthModal('login');
-                  } else {
-                    openSettingsTab('keys');
-                  }
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <KeyRound size={14} color="var(--text-secondary)" />
-                <span>{language === 'id' ? 'Kunci API (BYOK)' : 'API Keys (BYOK)'}</span>
-              </button>
-
-              {/* Appearance */}
-              <button
-                type="button"
-                onClick={() => { openSettingsTab('appearance'); setIsProfileMenuOpen(false); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <Palette size={14} color="var(--text-secondary)" />
-                <span>{language === 'id' ? 'Tampilan & Bahasa' : 'Appearance & Language'}</span>
-              </button>
-
-              {/* Database */}
-              <button
-                type="button"
-                onClick={() => { openSettingsTab('backup'); setIsProfileMenuOpen(false); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <Database size={14} color="var(--text-secondary)" />
-                <span>{language === 'id' ? 'Database & Cadangan' : 'Database & Backup'}</span>
-              </button>
-
-              {/* Divider */}
-              <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
-
-              {/* Tingkatkan Paket */}
-              <button
-                type="button"
-                onClick={() => { openPricingModal('tiers'); setIsProfileMenuOpen(false); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,115,234,0.08)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <Zap size={14} color="var(--brand-primary)" />
-                <span>{language === 'id' ? 'Tingkatkan Paket' : 'Upgrade Plan'}</span>
-              </button>
-
-              {/* Divider */}
-              <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
-
-              {/* Logout / Login */}
-              {user ? (
-                <button
-                  type="button"
-                  onClick={() => { signOut(); setIsProfileMenuOpen(false); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--accent-danger)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <LogOut size={14} />
-                  <span>{language === 'id' ? 'Keluar' : 'Log Out'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileMenuOpen(false);
-                    openAuthModal('login');
-                  }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <LogOut size={14} />
-                  <span>{language === 'id' ? 'Masuk' : 'Log In'}</span>
-                </button>
-              )}
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className="clickable-pill"
-            style={{
-              width: '100%',
-              minWidth: 0,
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '6px 8px',
-              borderRadius: 'var(--radius-md, 8px)',
-              background: isProfileMenuOpen ? 'var(--bg-subtle)' : 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'background 0.15s ease',
-            }}
-          >
-            {avatarUrl && !avatarImgError ? (
-              <img
-                src={avatarUrl}
-                alt={displayName}
-                referrerPolicy="no-referrer"
-                onError={() => setAvatarImgError(true)}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  flexShrink: 0,
-                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #0073EA, #A25DDC)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  flexShrink: 0,
-                  boxShadow: '0 2px 6px rgba(0, 115, 234, 0.3)',
-                }}
-              >
-                {(displayName[0] || '?').toUpperCase()}
-              </div>
-            )}
-
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, width: '100%' }}>
-                <span
-                  style={{
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  {displayName}
-                </span>
-                {(() => {
-                  const badge = getTierBadgeStyle(tier);
-                  return (
-                    <span
-                      style={{
-                        fontSize: '9.5px',
-                        fontWeight: 800,
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        background: badge.background,
-                        color: badge.color,
-                        border: badge.border,
-                        flexShrink: 0,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {badge.label}
-                    </span>
-                  );
-                })()}
-              </div>
-              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {getTierStorageName(tier, language as 'en' | 'id')}
-              </div>
-            </div>
-
-            <MoreHorizontal size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-          </button>
-          </div>{/* end position:relative wrapper */}
-        </div>
+        <ProfileBar />
         </div>{/* end Main Content Panel */}
       </div>}
 
