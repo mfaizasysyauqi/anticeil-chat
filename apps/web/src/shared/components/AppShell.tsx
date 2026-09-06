@@ -80,17 +80,19 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
 
       {/* ── Slim Icon Rail (48px, full height, far left) ── */}
       {showSidebar && (
-        <Sidebar
-          railOnly
-          isOpenMobile={isMobileSidebarOpen}
-          onCloseMobile={() => setIsMobileSidebarOpen(false)}
-          isDesktopCollapsed={isDesktopSidebarCollapsed}
-          onToggleDesktopCollapse={() => {
-            setIsDesktopSidebarCollapsed((prev) => !prev);
-            setIsMobileSidebarOpen(false);
-          }}
-          onOpenModelSelector={handleOpenModelSelector}
-        />
+        <Suspense fallback={null}>
+          <Sidebar
+            railOnly
+            isOpenMobile={isMobileSidebarOpen}
+            onCloseMobile={() => setIsMobileSidebarOpen(false)}
+            isDesktopCollapsed={isDesktopSidebarCollapsed}
+            onToggleDesktopCollapse={() => {
+              setIsDesktopSidebarCollapsed((prev) => !prev);
+              setIsMobileSidebarOpen(false);
+            }}
+            onOpenModelSelector={handleOpenModelSelector}
+          />
+        </Suspense>
       )}
 
       {/* ── Right Column: Navbar on top, then Drawer + Content ── */}
@@ -112,17 +114,19 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Drawer panel (no rail) */}
           {showSidebar && (
-            <Sidebar
-              drawerOnly
-              isOpenMobile={isMobileSidebarOpen}
-              onCloseMobile={() => setIsMobileSidebarOpen(false)}
-              isDesktopCollapsed={isDesktopSidebarCollapsed}
-              onToggleDesktopCollapse={() => {
-                setIsDesktopSidebarCollapsed((prev) => !prev);
-                setIsMobileSidebarOpen(false);
-              }}
-              onOpenModelSelector={handleOpenModelSelector}
-            />
+            <Suspense fallback={null}>
+              <Sidebar
+                drawerOnly
+                isOpenMobile={isMobileSidebarOpen}
+                onCloseMobile={() => setIsMobileSidebarOpen(false)}
+                isDesktopCollapsed={isDesktopSidebarCollapsed}
+                onToggleDesktopCollapse={() => {
+                  setIsDesktopSidebarCollapsed((prev) => !prev);
+                  setIsMobileSidebarOpen(false);
+                }}
+                onOpenModelSelector={handleOpenModelSelector}
+              />
+            </Suspense>
           )}
 
           {/* Main Content */}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useEffect } from 'react';
+import React, { use, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DocsView } from '../../../src/features/docs/components/DocsView';
 import { useDocsStore, DocItem } from '../../../src/features/docs/store/useDocsStore';
@@ -11,9 +11,7 @@ interface DocsDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function DocsDetailPage({ params }: DocsDetailPageProps) {
-  const resolvedParams = use(params);
-  const docId = resolvedParams.id;
+function DocsSearchParamsReader({ docId }: { docId: string }) {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
@@ -21,10 +19,6 @@ export default function DocsDetailPage({ params }: DocsDetailPageProps) {
   const setActiveDocId = useDocsStore((s) => s.setActiveDocId);
   const setStudioPhase = useDocsStore((s) => s.setStudioPhase);
   const upsertDocument = useDocsStore((s) => s.upsertDocument);
-
-  useEffect(() => {
-    useAuthStore.getState().initializeAuth();
-  }, []);
 
   useEffect(() => {
     if (!docId) return;
@@ -55,5 +49,24 @@ export default function DocsDetailPage({ params }: DocsDetailPageProps) {
       });
   }, [docId, token, documents, setActiveDocId, setStudioPhase, upsertDocument]);
 
-  return <DocsView initialDocId={docId} />;
+  return null;
 }
+
+export default function DocsDetailPage({ params }: DocsDetailPageProps) {
+  const resolvedParams = use(params);
+  const docId = resolvedParams.id;
+
+  useEffect(() => {
+    useAuthStore.getState().initializeAuth();
+  }, []);
+
+  return (
+    <>
+      <Suspense fallback={null}>
+        <DocsSearchParamsReader docId={docId} />
+      </Suspense>
+      <DocsView initialDocId={docId} />
+    </>
+  );
+}
+
