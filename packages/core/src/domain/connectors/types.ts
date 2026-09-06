@@ -33,6 +33,7 @@ export interface ConnectorConfig {
   account?: ConnectorAccount;
   lastSyncedAt?: number;
   selectedModelId?: string;
+  selectedMcpServers?: string[]; // Smithery: list of enabled MCP server qualifiedNames
   error?: string;
 }
 

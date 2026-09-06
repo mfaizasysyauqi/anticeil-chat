@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -16,6 +16,10 @@ import {
   ChevronUp,
   Sparkles,
   Sliders,
+  Search,
+  ToggleLeft,
+  ToggleRight,
+  RefreshCw,
 } from 'lucide-react';
 import { useConnectorsStore } from '../store/useConnectorsStore';
 import { ConnectorId, getTranslation } from '@anticeil/core';
@@ -24,6 +28,7 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { ImageModelSelectorModal } from '../../image/components/ImageModelSelectorModal';
 import { VideoModelSelectorModal } from '../../video/components/VideoModelSelectorModal';
 import { AudioModelSelectorModal } from '../../audio/components/AudioModelSelectorModal';
+import { listSmitheryServers, SmitheryServer } from '../../../features/chat/data/smitheryClient';
 
 interface ConnectorsModalProps {
   isOpen: boolean;
@@ -105,6 +110,43 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const [accountEmailInput, setAccountEmailInput] = useState('');
   const [tokenSuccessMsg, setTokenSuccessMsg] = useState<string | null>(null);
   const [isMediaModelModalOpen, setIsMediaModelModalOpen] = useState(false);
+
+  // ── Smithery MCP server picker state ──────────────────────────────────────
+  const setSmitheryServers = useConnectorsStore((s) => s.setSmitheryServers);
+  const [smitheryServers, setSmitheryServerList] = useState<SmitheryServer[]>([]);
+  const [smitherySearch, setSmitherySearch] = useState('');
+  const [smitheryLoading, setSmitheryLoading] = useState(false);
+  const [smitheryError, setSmitheryError] = useState<string | null>(null);
+
+  const fetchSmitheryServers = useCallback(async (token: string, q?: string) => {
+    setSmitheryLoading(true);
+    setSmitheryError(null);
+    try {
+      const res = await listSmitheryServers(token, { query: q, pageSize: 30 });
+      setSmitheryServerList(res.servers);
+    } catch (e: any) {
+      setSmitheryError(e?.message ?? 'Failed to load servers');
+    } finally {
+      setSmitheryLoading(false);
+    }
+  }, []);
+
+  // Auto-fetch when Smithery connector is selected and connected
+  useEffect(() => {
+    if (selectedConnectorId === 'smithery' && connectors.smithery?.accessToken) {
+      fetchSmitheryServers(connectors.smithery.accessToken, smitherySearch || undefined);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConnectorId, connectors.smithery?.accessToken]);
+
+  const enabledSmitheryServers = new Set(connectors.smithery?.selectedMcpServers ?? []);
+
+  const toggleSmitheryServer = (qualifiedName: string) => {
+    const next = new Set(enabledSmitheryServers);
+    if (next.has(qualifiedName)) next.delete(qualifiedName);
+    else next.add(qualifiedName);
+    setSmitheryServers(Array.from(next));
+  };
 
   if (!isOpen || !mounted) return null;
 
@@ -586,6 +628,116 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                       <ChevronDown size={14} />
                     </div>
                   </button>
+                </div>
+              )}
+
+              {/* Smithery MCP Server Picker — shown when Smithery is connected */}
+              {selectedConnectorId === 'smithery' && isConnected && (
+                <div
+                  style={{
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: 'var(--bg-subtle)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Header */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      borderBottom: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Plug size={14} color="var(--brand-primary)" />
+                      {language === 'id' ? 'Pilih MCP Server' : 'Select MCP Servers'}
+                      {enabledSmitheryServers.size > 0 && (
+                        <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', backgroundColor: 'var(--brand-subtle)', color: 'var(--brand-primary)', fontWeight: 700 }}>
+                          {enabledSmitheryServers.size} {language === 'id' ? 'aktif' : 'active'}
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => fetchSmitheryServers(connectors.smithery!.accessToken!, smitherySearch || undefined)}
+                      title="Refresh"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', display: 'flex' }}
+                    >
+                      <RefreshCw size={13} style={smitheryLoading ? { animation: 'spin 1s linear infinite' } : {}} />
+                    </button>
+                  </div>
+
+                  {/* Search */}
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '6px 10px' }}>
+                      <Search size={13} color="var(--text-muted)" />
+                      <input
+                        type="text"
+                        placeholder={language === 'id' ? 'Cari server MCP...' : 'Search MCP servers...'}
+                        value={smitherySearch}
+                        onChange={(e) => setSmitherySearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') fetchSmitheryServers(connectors.smithery!.accessToken!, smitherySearch || undefined);
+                        }}
+                        style={{ background: 'none', border: 'none', outline: 'none', flex: 1, fontSize: '12px', color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Server List */}
+                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {smitheryLoading ? (
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        {language === 'id' ? 'Memuat server...' : 'Loading servers...'}
+                      </div>
+                    ) : smitheryError ? (
+                      <div style={{ padding: '12px 14px', color: 'var(--accent-danger)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <AlertCircle size={13} />
+                        {smitheryError}
+                      </div>
+                    ) : smitheryServers.length === 0 ? (
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        {language === 'id' ? 'Tidak ada server ditemukan' : 'No servers found'}
+                      </div>
+                    ) : smitheryServers.map((srv) => {
+                      const isEnabled = enabledSmitheryServers.has(srv.qualifiedName);
+                      return (
+                        <button
+                          key={srv.qualifiedName}
+                          type="button"
+                          onClick={() => toggleSmitheryServer(srv.qualifiedName)}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '9px 14px',
+                            background: isEnabled ? 'rgba(99,102,241,0.06)' : 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--border-subtle)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'background 0.1s',
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: isEnabled ? 'var(--brand-primary)' : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {srv.displayName || srv.qualifiedName}
+                            </div>
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {srv.description || srv.qualifiedName}
+                            </div>
+                          </div>
+                          {isEnabled
+                            ? <ToggleRight size={18} color="var(--brand-primary)" />
+                            : <ToggleLeft size={18} color="var(--text-muted)" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

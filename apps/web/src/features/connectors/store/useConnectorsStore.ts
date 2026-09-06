@@ -35,6 +35,7 @@ export interface ConnectorsState {
   setLastOAuthError: (error: string | null) => void;
   recordToolExecution: (result: ToolCallResult) => void;
   clearToolHistory: () => void;
+  setSmitheryServers: (servers: string[]) => void;
 
   // Handle OAuth callback params from URL (called once on /chat mount)
   handleOAuthCallback: (searchParams: URLSearchParams) => void;
@@ -184,6 +185,15 @@ export const useConnectorsStore = create<ConnectorsState>()(
           connectors: {
             ...state.connectors,
             [id]: { ...state.connectors[id], ...updates, lastSyncedAt: Date.now() },
+          },
+        }));
+      },
+
+      setSmitheryServers: (servers) => {
+        set((state) => ({
+          connectors: {
+            ...state.connectors,
+            smithery: { ...state.connectors.smithery, selectedMcpServers: servers },
           },
         }));
       },
