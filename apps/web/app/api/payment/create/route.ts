@@ -1,7 +1,11 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
-const MIDTRANS_API_URL = "https://app.midtrans.com/snap/v1/transactions";
+// Sandbox keys: Mid-server-xxxx (not Mid-production-xxxx)
+const IS_SANDBOX = !MIDTRANS_SERVER_KEY?.startsWith("Mid-server-production");
+const MIDTRANS_API_URL = IS_SANDBOX
+  ? "https://app.sandbox.midtrans.com/snap/v1/transactions"
+  : "https://app.midtrans.com/snap/v1/transactions";
 
 // Credit pack prices (mirrors useCreditStore to avoid cross-import on server)
 const PACK_MAP: Record<string, { name: string; credits: number; priceIdr: number }> = {

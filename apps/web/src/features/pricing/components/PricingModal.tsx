@@ -32,6 +32,7 @@ export function PricingModal() {
   const tier = useAuthStore((s) => s.tier);
   const setTier = useAuthStore((s) => s.setTier);
   const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
 
   const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const language = useSettingsStore((s) => s.language);
@@ -77,6 +78,11 @@ export function PricingModal() {
   };
 
   const handleTopup = async (pack: CreditPack) => {
+    if (!user) {
+      setPricingModalOpen(false);
+      openAuthModal('login');
+      return;
+    }
     setActionId(pack.id);
     setErrorMsg(null);
     try {
@@ -120,11 +126,16 @@ export function PricingModal() {
 
   const handleSwitchTier = async (planId: TierId) => {
     if (planId === tier) return;
-    // Free tier → instant
+    // Free tier → instant (no login required)
     if (planId === 'free') {
       await setTier('free');
       setSuccessMsg(language === 'id' ? '✓ Beralih ke Free tier.' : '✓ Switched to Free tier.');
       setTimeout(() => setSuccessMsg(null), 2500);
+      return;
+    }
+    if (!user) {
+      setPricingModalOpen(false);
+      openAuthModal('login');
       return;
     }
     setActionId(planId);
