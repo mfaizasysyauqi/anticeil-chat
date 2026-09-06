@@ -90,6 +90,7 @@ import { DocFileTabsBar } from './shared/DocFileTabsBar';
 import { DocVisualEditor } from './shared/DocVisualEditor';
 import { SplitResizeDivider } from './shared/SplitResizeDivider';
 import { RecompileSplitButton } from './shared/RecompileSplitButton';
+import { FocusModeOverlay } from './shared/FocusModeOverlay';
 import { downloadDocAsZip } from '../utils/zipUtils';
 
 
@@ -5746,8 +5747,31 @@ ${exportText}
             </div>
           ) : (
             <>
-              {/* Center: Source Code Editor */}
-              {(viewMode === 'split' || viewMode === 'code') && (
+              {/* Focus Mode: distraction-free overlay (shared, same as Sheet/Slide) */}
+              <FocusModeOverlay
+                isOpen={isFocusMode}
+                onClose={() => setIsFocusMode(false)}
+                activeFileName={activeSubFile?.name || activeDoc?.title || 'Document'}
+                value={activeSubFile?.content ?? activeDoc?.content ?? ''}
+                onChange={(val) => {
+                  if (activeDoc && activeSubFile) updateSubFileContent(activeDoc.id, activeSubFile.id, val);
+                  else if (activeDoc) updateDocumentContent(activeDoc.id, val);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const el = e.currentTarget;
+                    const start = el.selectionStart;
+                    const newVal = el.value.substring(0, start) + '  ' + el.value.substring(el.selectionEnd);
+                    if (activeDoc && activeSubFile) updateSubFileContent(activeDoc.id, activeSubFile.id, newVal);
+                    else if (activeDoc) updateDocumentContent(activeDoc.id, newVal);
+                    requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = start + 2; });
+                  }
+                }}
+              />
+
+              {/* Center: Source Code Editor (hidden in focus mode) */}
+              {!isFocusMode && (viewMode === 'split' || viewMode === 'code') && (
                 <div
                   ref={editorContainerRef}
                   style={{
@@ -7073,7 +7097,7 @@ ${exportText}
           )}
 
             {/* Resize handle: Editor ↔ Preview - DRY Shared Component */}
-            {viewMode === 'split' && (
+            {!isFocusMode && viewMode === 'split' && (
               <SplitResizeDivider
                 onMouseDown={handleEditorDragStart}
                 onSyncCodeToPreview={handleSyncCodeToPreview}
@@ -7082,7 +7106,7 @@ ${exportText}
             )}
 
             {/* Right: Live Overleaf-Style Preview */}
-            {(viewMode === 'split' || viewMode === 'preview') && (
+            {!isFocusMode && (viewMode === 'split' || viewMode === 'preview') && (
               <div
                 style={{
                   flex: viewMode === 'preview' ? 1 : `${1 - editorSplitRatio} 1 0%`,
