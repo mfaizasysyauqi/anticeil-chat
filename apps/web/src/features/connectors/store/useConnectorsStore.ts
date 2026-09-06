@@ -356,6 +356,9 @@ export const useConnectorsStore = create<ConnectorsState>()(
       name: 'anticeil_connectors_store',
       onRehydrateStorage: () => (state) => {
         if (!state) return;
+        // Merge DEFAULT_CONNECTORS so newly added connectors always appear
+        // even when localStorage has a stale state from a previous version
+        state.connectors = { ...DEFAULT_CONNECTORS, ...state.connectors };
         // Clean up any active connectors that are no longer authenticated
         if (state.activeConnectorIds && state.activeConnectorIds.length > 0) {
           state.activeConnectorIds = state.activeConnectorIds.filter(
