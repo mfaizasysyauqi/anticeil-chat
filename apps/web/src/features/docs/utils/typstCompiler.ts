@@ -409,6 +409,18 @@ function parseTypstBodyFunctions(code: string): string {
   // Process #pagebreak() or pagebreak() or #pagebreak
   str = str.replace(/(?:#\s*)?pagebreak\s*(?:\(\s*\))?/g, '<div class="doc-page-break"></div>');
 
+  // Process #image("...") or image("...")
+  str = str.replace(/(?:#\s*)?image\s*\(\s*["']([^"']+)["']([^)]*)\)/g, (match, src, args) => {
+    let widthStyle = 'max-width: 100%;';
+    if (args) {
+      const widthVal = extractParamValue(args, 'width');
+      if (widthVal) {
+        widthStyle = `width: ${widthVal}; max-width: 100%;`;
+      }
+    }
+    return `<div style="text-align: center; margin: 14px 0;"><img src="${src}" alt="Dokumen Image" style="${widthStyle} height: auto; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: inline-block;" /></div>`;
+  });
+
   // Process #table(...) or table(...)
   let searchPos = 0;
   while (searchPos < str.length) {

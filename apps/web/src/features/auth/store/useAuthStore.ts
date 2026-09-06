@@ -48,6 +48,16 @@ function isUserPhoneVerified(user: User | null): boolean {
   return Boolean(user.user_metadata?.phone_verified || user.phone);
 }
 
+function isConnectorCallbackUrl(): boolean {
+  if (typeof window === 'undefined') return false;
+  const search = window.location.search;
+  return (
+    search.includes('connector_connected') ||
+    search.includes('connector_token') ||
+    search.includes('connector_error')
+  );
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
@@ -61,13 +71,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   openAuthModal: (mode = 'login') =>
     set({
       isAuthModalOpen: true,
-      authModalMode: get().needsPhoneVerification ? 'verify_phone' : mode,
+      authModalMode: mode,
     }),
   setAuthModalOpen: (open) => {
-    // If phone is unverified, don't allow closing without verification
-    if (!open && get().needsPhoneVerification) {
-      return;
-    }
     set({ isAuthModalOpen: open });
   },
 
@@ -170,15 +176,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } = await supabase.auth.getSession();
 
       const user = session?.user || null;
-      const needsVerification = user ? !isUserPhoneVerified(user) : false;
+      const isConnectorCB = isConnectorCallbackUrl();
+      const needsVerification = user && !isConnectorCB ? !isUserPhoneVerified(user) : false;
 
       set({
         session,
         user,
         isLoading: false,
         needsPhoneVerification: needsVerification,
-        isAuthModalOpen: needsVerification,
-        authModalMode: needsVerification ? 'verify_phone' : 'login',
+        isAuthModalOpen: false,
+        authModalMode: 'login',
       });
 
       // Sync user tier
@@ -204,15 +211,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Subscribe to live auth state changes
       supabase.auth.onAuthStateChange((_event, newSession) => {
         const newUser = newSession?.user || null;
-        const newNeedsVerification = newUser ? !isUserPhoneVerified(newUser) : false;
+        const isConnectorCB = isConnectorCallbackUrl();
+        const newNeedsVerification = newUser && !isConnectorCB ? !isUserPhoneVerified(newUser) : false;
 
         set({
           session: newSession,
           user: newUser,
           isLoading: false,
           needsPhoneVerification: newNeedsVerification,
-          isAuthModalOpen: newNeedsVerification ? true : get().isAuthModalOpen,
-          authModalMode: newNeedsVerification ? 'verify_phone' : get().authModalMode,
+          isAuthModalOpen: isConnectorCB ? false : get().isAuthModalOpen,
+          authModalMode: get().authModalMode,
         });
 
         if (_event === 'SIGNED_IN' && newSession?.access_token) {

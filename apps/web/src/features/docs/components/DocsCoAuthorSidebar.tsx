@@ -25,6 +25,10 @@ import {
   FileText,
   FileCode,
   X,
+  FileUp,
+  LayoutGrid,
+  Plug,
+  ChevronRight,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -39,8 +43,12 @@ import {
   PROVIDER_DEFINITIONS,
   FileAttachment,
   parseUploadedFile,
+  generateConnectorsSystemInstruction,
 } from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
+import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
+import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
+import { ConnectorBrandIcon } from '../../connectors/components/ConnectorLogos';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 import { StudioChatMessage } from '../../../shared/components/StudioChatMessage';
 import { InteractiveDocCard } from './shared/InteractiveDocCard';
@@ -162,6 +170,10 @@ export function DocsCoAuthorSidebar({
   const globalModelId = useSettingsStore((s) => s.activeModelId);
   const apiKeys = useSettingsStore((s) => s.apiKeys);
 
+  const connectors = useConnectorsStore((s) => s.connectors);
+  const activeConnectorIds = useConnectorsStore((s) => s.activeConnectorIds);
+  const toggleActiveConnector = useConnectorsStore((s) => s.toggleActiveConnector);
+
   const authSession = useAuthStore((s) => s.session);
   const tier = useAuthStore((s) => s.tier);
   const isCloudUser = isCloudTier(tier);
@@ -187,7 +199,25 @@ export function DocsCoAuthorSidebar({
   const [inputPrompt, setInputPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const plusMenuRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
+
+  // Close Plus Dropdown Menu on Outside Click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(e.target as Node)) {
+        setIsPlusMenuOpen(false);
+      }
+    };
+    if (isPlusMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isPlusMenuOpen]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -462,7 +492,16 @@ STRICT PUBLICATION, COVER & PAGINATION STANDARDS:
   * NEVER output raw Markdown (such as '###' or '**bold**') inside .tex files.`;
     }
 
+    const connectorsInstruction = generateConnectorsSystemInstruction(activeConnectorIds);
+
     const systemPrompt = `${formatPreamble}
+
+${connectorsInstruction ? connectorsInstruction + '\n\n' : ''}CRITICAL IMAGE & MEDIA INSTRUCTION:
+When the user asks to generate, create, or insert an image, picture, illustration, or logo (e.g., "buatkan gambar...", "buat logo..."):
+- NEVER write raw vector path geometry (\`#let logo = box(...)\`), manual Bezier curves, or raw ASCII art for images/logos.
+- Always use the image URL format: \`https://image.pollinations.ai/prompt/YOUR_PROMPT_KEYWORDS?width=1024&height=1024&nologo=true&seed=12345\`
+- For Typst (.typ): Insert \`#align(center)[#image("https://image.pollinations.ai/prompt/YOUR_PROMPT_KEYWORDS?width=1024&height=1024&nologo=true&seed=12345", width: 50%)]\` or \`#image(...)\`.
+- For LaTeX (.tex): Insert \`\\begin{figure}[htbp]\\centering\\includegraphics[width=0.5\\textwidth]{https://image.pollinations.ai/prompt/YOUR_PROMPT_KEYWORDS?width=1024&height=1024&nologo=true&seed=12345}\\end{figure}\`.
 
 You have FULL READ and WRITE (CRUD) access to this document and all sub-files in the project.
 
@@ -741,7 +780,7 @@ When the user asks you to create, modify, or manage files, invoke the action tag
         </div>
       </div>
 
-      {/* Model Selector Pill + Web Search Toggle */}
+      {/* Model Selector Pill */}
       <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-sidebar)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <button
           type="button"
@@ -783,44 +822,6 @@ When the user asks you to create, modify, or manage files, invoke the action tag
             </span>
             <ChevronDown size={12} color="var(--text-muted)" />
           </div>
-        </button>
-
-        {/* Web Search Toggle */}
-        <button
-          type="button"
-          onClick={() => setEnableWebSearch((v) => !v)}
-          title={enableWebSearch ? 'Web search ON — click to disable' : 'Web search OFF — click to enable'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 8px',
-            borderRadius: '5px',
-            border: `1px solid ${enableWebSearch ? 'rgba(16,185,129,0.4)' : 'var(--border-subtle)'}`,
-            backgroundColor: enableWebSearch ? 'rgba(16,185,129,0.08)' : 'transparent',
-            color: enableWebSearch ? '#10B981' : 'var(--text-muted)',
-            fontSize: '11px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            width: 'fit-content',
-          }}
-        >
-          <Globe size={11} />
-          <span>{language === 'id' ? 'Pencarian Web' : 'Web Search'}</span>
-          <span
-            style={{
-              marginLeft: '2px',
-              padding: '1px 5px',
-              borderRadius: '999px',
-              fontSize: '9.5px',
-              fontWeight: 700,
-              backgroundColor: enableWebSearch ? '#10B981' : 'var(--bg-subtle)',
-              color: enableWebSearch ? '#fff' : 'var(--text-muted)',
-            }}
-          >
-            {enableWebSearch ? 'ON' : 'OFF'}
-          </span>
         </button>
       </div>
 
@@ -986,6 +987,113 @@ When the user asks you to create, modify, or manage files, invoke the action tag
           </div>
         )}
 
+        {/* Active Chips Bar (Pencarian Web & Active Connectors) */}
+        {(enableWebSearch || activeConnectorIds.length > 0) && (
+          <div
+            className="no-scrollbar"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              flexWrap: 'nowrap',
+              maxWidth: '100%',
+              paddingBottom: '2px',
+              marginBottom: '8px',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {/* Active Web Search Chip */}
+            {enableWebSearch && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '3px 8px',
+                  borderRadius: '999px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#10B981',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Globe size={11} />
+                <span>{language === 'id' ? 'Pencarian Web' : 'Web Search'}</span>
+                <button
+                  type="button"
+                  onClick={() => setEnableWebSearch(false)}
+                  title="Matikan pencarian web"
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: '#10B981',
+                    marginLeft: '2px',
+                  }}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            )}
+
+            {/* Active Connector Badges */}
+            {(['anticeil_image', 'anticeil_video', 'anticeil_audio', 'gmail', 'calendar', 'google_drive', 'notion', 'github', 'custom_webhook'] as const)
+              .filter((id) => activeConnectorIds.includes(id))
+              .map((connId) => {
+              const conn = connectors[connId];
+              if (!conn) return null;
+              return (
+                <div
+                  key={connId}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '3px 8px',
+                    borderRadius: '999px',
+                    backgroundColor: 'var(--brand-subtle, rgba(99, 102, 241, 0.12))',
+                    border: '1px solid var(--brand-primary, rgba(99, 102, 241, 0.3))',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'var(--brand-primary)',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <ConnectorBrandIcon id={connId} size={13} />
+                  <span>{conn.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleActiveConnector(connId)}
+                    title={`Lepas sematan ${conn.name}`}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'var(--brand-primary)',
+                      marginLeft: '2px',
+                    }}
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -1014,32 +1122,241 @@ When the user asks you to create, modify, or manage files, invoke the action tag
             style={{ display: 'none' }}
           />
 
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            title={
-              language === 'id'
-                ? 'Lampirkan media / gambar (atau Paste screenshot)'
-                : 'Attach media / image (or paste screenshot)'
-            }
-            disabled={isGenerating}
-            style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '5px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: 'var(--text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: isGenerating ? 'default' : 'pointer',
-              flexShrink: 0,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Plus size={15} />
-          </button>
+          {/* Plus (+) Button & Popup Menu Container */}
+          <div ref={plusMenuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setIsPlusMenuOpen((prev) => !prev)}
+              title={language === 'id' ? 'Tambah lampiran, keterampilan, atau pencarian' : 'Add attachment, skills, or search'}
+              disabled={isGenerating}
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: isPlusMenuOpen ? 'var(--bg-subtle)' : 'transparent',
+                color: isPlusMenuOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: isGenerating ? 'default' : 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Plus
+                size={16}
+                style={{
+                  transform: isPlusMenuOpen ? 'rotate(45deg)' : 'none',
+                  transition: 'transform 0.2s ease',
+                }}
+              />
+            </button>
+
+            {/* Popup Menu */}
+            {isPlusMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 'calc(100% + 8px)',
+                  left: '0',
+                  width: '210px',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 'var(--radius-lg, 12px)',
+                  boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.35))',
+                  padding: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  zIndex: 100,
+                  animation: 'fadeIn 0.15s ease-out',
+                }}
+              >
+                {/* 1. Unggah file */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlusMenuOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '7px 10px',
+                    borderRadius: 'var(--radius-md, 6px)',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: 'var(--text-primary)',
+                    fontSize: '12.5px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <FileUp size={15} color="var(--text-secondary)" />
+                  <span style={{ flex: 1 }}>{language === 'id' ? 'Unggah file' : 'Upload file'}</span>
+                </button>
+
+                {/* 2. Berkas terbaru */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlusMenuOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '7px 10px',
+                    borderRadius: 'var(--radius-md, 6px)',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: 'var(--text-primary)',
+                    fontSize: '12.5px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <FileText size={15} color="var(--text-secondary)" />
+                    <span>{language === 'id' ? 'Berkas terbaru' : 'Recent files'}</span>
+                  </div>
+                  <ChevronRight size={13} color="var(--text-muted)" />
+                </button>
+
+                {/* 3. Keterampilan */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlusMenuOpen(false);
+                    if (!user) {
+                      openAuthModal('login');
+                      return;
+                    }
+                    setIsModelSelectorOpen(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '7px 10px',
+                    borderRadius: 'var(--radius-md, 6px)',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: 'var(--text-primary)',
+                    fontSize: '12.5px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <LayoutGrid size={15} color="var(--text-secondary)" />
+                    <span>{language === 'id' ? 'Keterampilan' : 'Skills'}</span>
+                  </div>
+                  <ChevronRight size={13} color="var(--text-muted)" />
+                </button>
+
+                {/* 4. Pencarian Web */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEnableWebSearch((v) => !v);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '7px 10px',
+                    borderRadius: 'var(--radius-md, 6px)',
+                    border: 'none',
+                    backgroundColor: enableWebSearch ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                    color: enableWebSearch ? '#10B981' : 'var(--text-primary)',
+                    fontSize: '12.5px',
+                    fontWeight: enableWebSearch ? 600 : 500,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!enableWebSearch) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!enableWebSearch) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Globe size={15} color={enableWebSearch ? '#10B981' : 'var(--text-secondary)'} />
+                    <span>{language === 'id' ? 'Pencarian Web' : 'Web Search'}</span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '9.5px',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: '999px',
+                      backgroundColor: enableWebSearch ? '#10B981' : 'var(--bg-subtle)',
+                      color: enableWebSearch ? '#FFFFFF' : 'var(--text-muted)',
+                    }}
+                  >
+                    {enableWebSearch ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 4px' }} />
+
+                {/* 5. Kelola Konektor */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlusMenuOpen(false);
+                    setIsConnectorsModalOpen(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '7px 10px',
+                    borderRadius: 'var(--radius-md, 6px)',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: 'var(--brand-primary)',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--brand-subtle, rgba(99, 102, 241, 0.12))')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <Plug size={15} color="var(--brand-primary)" />
+                  <span>{language === 'id' ? 'Kelola Konektor' : 'Manage Connectors'}</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           <input
             type="text"
@@ -1098,6 +1415,17 @@ When the user asks you to create, modify, or manage files, invoke the action tag
         language={language === 'id' ? 'id' : 'en'}
         isCloudUser={isCloudUser}
       />
+
+      {isModelSelectorOpen && (
+        <ModelSelectorModal onClose={() => setIsModelSelectorOpen(false)} />
+      )}
+
+      {isConnectorsModalOpen && (
+        <ConnectorsModal
+          isOpen={isConnectorsModalOpen}
+          onClose={() => setIsConnectorsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

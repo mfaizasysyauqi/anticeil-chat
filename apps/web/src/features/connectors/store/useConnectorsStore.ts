@@ -48,6 +48,39 @@ export interface ConnectorsState {
 }
 
 const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
+  anticeil_image: {
+    id: 'anticeil_image',
+    name: 'Anticeil Image',
+    description: 'Generate high-quality AI images, illustrations, and doc graphics directly from chat or documents.',
+    icon: '🖼️',
+    status: 'connected',
+    isEnabled: true,
+    isSandboxMode: false,
+    selectedModelId: 'imagen-3.0-generate-002',
+    scopes: ['image:generate', 'image:edit'],
+  },
+  anticeil_video: {
+    id: 'anticeil_video',
+    name: 'Anticeil Video',
+    description: 'Generate AI video clips, motion animations, and video sequences.',
+    icon: '🎬',
+    status: 'connected',
+    isEnabled: true,
+    isSandboxMode: false,
+    selectedModelId: 'luma-dream-machine',
+    scopes: ['video:generate', 'video:render'],
+  },
+  anticeil_audio: {
+    id: 'anticeil_audio',
+    name: 'Anticeil Audio',
+    description: 'Generate AI voice speech, narration, background music, and sound effects.',
+    icon: '🎵',
+    status: 'connected',
+    isEnabled: true,
+    isSandboxMode: false,
+    selectedModelId: 'eleven_multilingual_v2',
+    scopes: ['audio:speech', 'audio:music', 'audio:sfx'],
+  },
   gmail: {
     id: 'gmail',
     name: 'Gmail',

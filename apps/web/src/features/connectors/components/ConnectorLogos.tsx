@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Image as ImageIcon, Film, Music } from 'lucide-react';
 import { ConnectorId } from '@anticeil/core';
 
 interface LogoProps {
@@ -95,6 +96,18 @@ export function CustomApiLogo({ size = 20 }: LogoProps) {
   );
 }
 
+export function AnticeilImageLogo({ size = 20 }: LogoProps) {
+  return <ImageIcon size={size} color="#38bdf8" />;
+}
+
+export function AnticeilVideoLogo({ size = 20 }: LogoProps) {
+  return <Film size={size} color="#fb7185" />;
+}
+
+export function AnticeilAudioLogo({ size = 20 }: LogoProps) {
+  return <Music size={size} color="#60a5fa" />;
+}
+
 export function ConnectorBrandIcon({ id, size = 20 }: { id: ConnectorId; size?: number }) {
   switch (id) {
     case 'gmail':
@@ -109,6 +122,12 @@ export function ConnectorBrandIcon({ id, size = 20 }: { id: ConnectorId; size?: 
       return <GitHubLogo size={size} />;
     case 'custom_webhook':
       return <CustomApiLogo size={size} />;
+    case 'anticeil_image':
+      return <AnticeilImageLogo size={size} />;
+    case 'anticeil_video':
+      return <AnticeilVideoLogo size={size} />;
+    case 'anticeil_audio':
+      return <AnticeilAudioLogo size={size} />;
     default:
       return <span style={{ fontSize: `${size}px` }}>🔌</span>;
   }

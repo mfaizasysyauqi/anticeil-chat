@@ -4,7 +4,10 @@ export type ConnectorId =
   | 'google_drive'
   | 'notion'
   | 'github'
-  | 'custom_webhook';
+  | 'custom_webhook'
+  | 'anticeil_image'
+  | 'anticeil_video'
+  | 'anticeil_audio';
 
 export type ConnectorStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
 
@@ -28,6 +31,7 @@ export interface ConnectorConfig {
   scopes: string[];
   account?: ConnectorAccount;
   lastSyncedAt?: number;
+  selectedModelId?: string;
   error?: string;
 }
 

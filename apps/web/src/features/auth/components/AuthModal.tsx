@@ -204,7 +204,7 @@ export function AuthModal() {
 
   if (!isOpen || !mounted) return null;
 
-  const isPhoneGateMode = mode === 'verify_phone' || needsPhoneVerification;
+  const isPhoneGateMode = mode === 'verify_phone';
 
   return createPortal(
     <div
@@ -221,7 +221,7 @@ export function AuthModal() {
         animation: 'fadeIn 0.2s ease-out',
       }}
       onClick={(e) => {
-        if (!isPhoneGateMode && e.target === e.currentTarget) {
+        if (e.target === e.currentTarget) {
           setAuthModalOpen(false);
         }
       }}
@@ -268,22 +268,20 @@ export function AuthModal() {
                 : 'Sign in or sign up with your Google Account for instant cloud sync, multi-device backup, and daily AI credits.'}
             </p>
           </div>
-          {!isPhoneGateMode && (
-            <button
-              type="button"
-              onClick={() => setAuthModalOpen(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '4px',
-                borderRadius: '6px',
-              }}
-            >
-              <X size={18} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setAuthModalOpen(false)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '6px',
+            }}
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Feedback Alerts */}

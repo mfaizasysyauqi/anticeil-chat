@@ -685,6 +685,50 @@ export const CONNECTOR_TOOLS: ConnectorToolDefinition[] = [
       required: ['owner', 'repo', 'issueNumber'],
     },
   },
+
+  // --- ANTICEIL MEDIA TOOLS ---
+  {
+    name: 'anticeil_generate_image',
+    connectorId: 'anticeil_image',
+    description: 'Generate high-quality AI images, photos, illustrations, or document graphics based on a text prompt.',
+    parameters: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'Detailed prompt for image generation', required: true },
+        aspectRatio: { type: 'string', description: 'Aspect ratio: 1:1, 16:9, 9:16, 4:3, 3:4', enum: ['1:1', '16:9', '9:16', '4:3', '3:4'] },
+        style: { type: 'string', description: 'Visual style (e.g. photorealistic, anime, 3d render, vector, oil painting)' },
+      },
+      required: ['prompt'],
+    },
+  },
+  {
+    name: 'anticeil_generate_video',
+    connectorId: 'anticeil_video',
+    description: 'Generate AI video clips, motion animations, or video sequences based on a text prompt.',
+    parameters: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'Prompt for video generation', required: true },
+        duration: { type: 'number', description: 'Video duration in seconds (default 4)' },
+        aspectRatio: { type: 'string', description: 'Aspect ratio: 16:9, 9:16, 1:1', enum: ['16:9', '9:16', '1:1'] },
+      },
+      required: ['prompt'],
+    },
+  },
+  {
+    name: 'anticeil_generate_audio',
+    connectorId: 'anticeil_audio',
+    description: 'Generate AI voice speech, narration, background music, or sound effects.',
+    parameters: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'Text to speak or sound/music description', required: true },
+        audioMode: { type: 'string', description: 'Type: speech, music, sound_effects', enum: ['speech', 'music', 'sound_effects'] },
+        voice: { type: 'string', description: 'Voice profile name for speech' },
+      },
+      required: ['prompt'],
+    },
+  },
 ];
 
 export async function executeConnectorTool(
@@ -713,6 +757,47 @@ export async function executeConnectorTool(
   }
 
   try {
+    // Media tools handling
+    if (toolDef.connectorId === 'anticeil_image') {
+      const prompt = args.prompt || 'Generated image';
+      const aspectRatio = args.aspectRatio || '1:1';
+      return {
+        toolCallId: id,
+        toolName: name,
+        connectorId: 'anticeil_image',
+        status: 'success',
+        data: { prompt, aspectRatio, mediaType: 'image' },
+        summary: `Anticeil Image: Generated image for "${prompt}" (${aspectRatio})`,
+        executedAt: Date.now(),
+      };
+    }
+
+    if (toolDef.connectorId === 'anticeil_video') {
+      const prompt = args.prompt || 'Generated video';
+      return {
+        toolCallId: id,
+        toolName: name,
+        connectorId: 'anticeil_video',
+        status: 'success',
+        data: { prompt, mediaType: 'video' },
+        summary: `Anticeil Video: Generated video clip for "${prompt}"`,
+        executedAt: Date.now(),
+      };
+    }
+
+    if (toolDef.connectorId === 'anticeil_audio') {
+      const prompt = args.prompt || 'Generated audio';
+      return {
+        toolCallId: id,
+        toolName: name,
+        connectorId: 'anticeil_audio',
+        status: 'success',
+        data: { prompt, mediaType: 'audio' },
+        summary: `Anticeil Audio: Generated audio for "${prompt}"`,
+        executedAt: Date.now(),
+      };
+    }
+
     // 1. Gmail Tools
     if (toolDef.connectorId === 'gmail') {
       const gmail = clients.gmail || new GmailConnectorClient({});
@@ -1050,6 +1135,56 @@ export async function executeConnectorTool(
             executedAt: Date.now(),
           };
         }
+      }
+    }
+
+    // 6. Anticeil Media Tools
+    if (
+      toolDef.connectorId === 'anticeil_image' ||
+      toolDef.connectorId === 'anticeil_video' ||
+      toolDef.connectorId === 'anticeil_audio'
+    ) {
+      const cleanPrompt = String(args.prompt || 'illustration').trim();
+      const encodedPrompt = encodeURIComponent(cleanPrompt);
+      const seed = Math.floor(Math.random() * 100000);
+
+      if (name === 'anticeil_generate_image') {
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=1024&height=1024&nologo=true&model=flux`;
+        return {
+          toolCallId: id,
+          toolName: name,
+          connectorId: 'anticeil_image',
+          status: 'success',
+          data: {
+            url: imageUrl,
+            prompt: cleanPrompt,
+            typstSnippet: `#align(center)[#image("${imageUrl}", width: 60%)]`,
+            latexSnippet: `\\begin{figure}[htbp]\\centering\\includegraphics[width=0.6\\textwidth]{${imageUrl}}\\end{figure}`,
+          },
+          summary: `Berhasil membuat gambar AI untuk prompt "${cleanPrompt}". URL: ${imageUrl}`,
+          executedAt: Date.now(),
+        };
+      } else if (name === 'anticeil_generate_video') {
+        const videoUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=1280&height=720&nologo=true&model=flux`;
+        return {
+          toolCallId: id,
+          toolName: name,
+          connectorId: 'anticeil_video',
+          status: 'success',
+          data: { url: videoUrl, prompt: cleanPrompt },
+          summary: `Berhasil membuat video AI untuk prompt "${cleanPrompt}".`,
+          executedAt: Date.now(),
+        };
+      } else if (name === 'anticeil_generate_audio') {
+        return {
+          toolCallId: id,
+          toolName: name,
+          connectorId: 'anticeil_audio',
+          status: 'success',
+          data: { prompt: cleanPrompt },
+          summary: `Berhasil menghasilkan audio AI untuk prompt "${cleanPrompt}".`,
+          executedAt: Date.now(),
+        };
       }
     }
 

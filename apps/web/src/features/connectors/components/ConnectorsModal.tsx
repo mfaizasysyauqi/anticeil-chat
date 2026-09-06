@@ -14,11 +14,16 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Sparkles,
+  Sliders,
 } from 'lucide-react';
 import { useConnectorsStore } from '../store/useConnectorsStore';
 import { ConnectorId, getTranslation } from '@anticeil/core';
 import { ConnectorBrandIcon } from './ConnectorLogos';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { ImageModelSelectorModal } from '../../image/components/ImageModelSelectorModal';
+import { VideoModelSelectorModal } from '../../video/components/VideoModelSelectorModal';
+import { AudioModelSelectorModal } from '../../audio/components/AudioModelSelectorModal';
 
 interface ConnectorsModalProps {
   isOpen: boolean;
@@ -43,6 +48,19 @@ const PROVIDER_LABEL: Partial<Record<ConnectorId, string>> = {
   github: 'GitHub',
 };
 
+// Canonical connector display order (Anticeil Media first, followed by Google & integrations)
+const CONNECTOR_ORDER: ConnectorId[] = [
+  'anticeil_image',
+  'anticeil_video',
+  'anticeil_audio',
+  'gmail',
+  'calendar',
+  'google_drive',
+  'notion',
+  'github',
+  'custom_webhook',
+];
+
 // Helpful links for getting tokens
 const TOKEN_LINKS: Partial<Record<ConnectorId, { url: string; label: string }>> = {
   notion: {
@@ -64,6 +82,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const connectors = useConnectorsStore((s) => s.connectors);
   const activeConnectorIds = useConnectorsStore((s) => s.activeConnectorIds);
   const toggleActiveConnector = useConnectorsStore((s) => s.toggleActiveConnector);
+  const updateConnector = useConnectorsStore((s) => s.updateConnector);
   const disconnectConnector = useConnectorsStore((s) => s.disconnectConnector);
   const disconnectAllGoogle = useConnectorsStore((s) => s.disconnectAllGoogle);
   const setAccessToken = useConnectorsStore((s) => s.setAccessToken);
@@ -74,12 +93,13 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const t = getTranslation(language);
   const tc = t.connectors;
 
-  const [selectedConnectorId, setSelectedConnectorId] = useState<ConnectorId>('gmail');
+  const [selectedConnectorId, setSelectedConnectorId] = useState<ConnectorId>('anticeil_image');
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualToken, setManualToken] = useState('');
   const [accountEmailInput, setAccountEmailInput] = useState('');
   const [tokenSuccessMsg, setTokenSuccessMsg] = useState<string | null>(null);
+  const [isMediaModelModalOpen, setIsMediaModelModalOpen] = useState(false);
 
   if (!isOpen || !mounted) return null;
 
@@ -89,6 +109,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const provider = OAUTH_PROVIDER[selectedConnectorId];
   const providerLabel = PROVIDER_LABEL[selectedConnectorId];
   const isGoogleService = ['gmail', 'calendar', 'google_drive'].includes(selectedConnectorId);
+  const isAnticeilMedia = ['anticeil_image', 'anticeil_video', 'anticeil_audio'].includes(selectedConnectorId);
 
   const handleConnectOAuth = () => {
     if (!provider) return;
@@ -297,7 +318,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
               {tc.availableConnectors}
             </div>
 
-            {Object.values(connectors).map((conn) => {
+            {CONNECTOR_ORDER.map((id) => connectors[id]).filter(Boolean).map((conn) => {
               const isSelected = conn.id === selectedConnectorId;
               const isAttached = activeConnectorIds.includes(conn.id);
               const connected = conn.status === 'connected';
@@ -470,7 +491,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
               </div>
 
               {/* Connected Account Info */}
-              {isConnected && current.account && (
+              {isConnected && (
                 <div
                   style={{
                     display: 'flex',
@@ -496,11 +517,70 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {current.account.name
+                      {current.account?.name
                         ? `${current.account.name} — ${current.account.email}`
-                        : current.account.email}
+                        : current.account?.email || (language === 'id' ? 'Layanan Media Bawaan Anticeil (Siap Digunakan)' : 'Built-in Anticeil Media Service (Ready)')}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Anticeil Media Model Selection Card */}
+              {isAnticeilMedia && (
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: 'var(--radius-lg, 12px)',
+                    border: '1px solid var(--border-strong)',
+                    backgroundColor: 'var(--bg-subtle)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Sparkles size={16} color="var(--brand-primary)" />
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {language === 'id' ? 'Model AI Terpilih' : 'Selected AI Model'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {language === 'id' ? 'Model untuk tool calling' : 'Tool calling model'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsMediaModelModalOpen(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <Sliders size={15} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {current.selectedModelId || (language === 'id' ? 'Pilih Model AI...' : 'Select AI Model...')}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--brand-primary)', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}>
+                      <span>{language === 'id' ? 'Pilih Model' : 'Select Model'}</span>
+                      <ChevronDown size={14} />
+                    </div>
+                  </button>
                 </div>
               )}
 
@@ -872,6 +952,43 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
           </div>
         </div>
       </div>
+
+      {isMediaModelModalOpen && current.id === 'anticeil_image' && (
+        <ImageModelSelectorModal
+          isOpen={isMediaModelModalOpen}
+          onClose={() => setIsMediaModelModalOpen(false)}
+          mediaMode="image"
+          selectedModelId={current.selectedModelId || 'imagen-3.0-generate-002'}
+          onSelectModel={(modelId) => {
+            updateConnector('anticeil_image', { selectedModelId: modelId });
+            setIsMediaModelModalOpen(false);
+          }}
+        />
+      )}
+
+      {isMediaModelModalOpen && current.id === 'anticeil_video' && (
+        <VideoModelSelectorModal
+          isOpen={isMediaModelModalOpen}
+          onClose={() => setIsMediaModelModalOpen(false)}
+          selectedModelId={current.selectedModelId || 'luma-dream-machine'}
+          onSelectModel={(modelId) => {
+            updateConnector('anticeil_video', { selectedModelId: modelId });
+            setIsMediaModelModalOpen(false);
+          }}
+        />
+      )}
+
+      {isMediaModelModalOpen && current.id === 'anticeil_audio' && (
+        <AudioModelSelectorModal
+          isOpen={isMediaModelModalOpen}
+          onClose={() => setIsMediaModelModalOpen(false)}
+          selectedModelId={current.selectedModelId || 'eleven_multilingual_v2'}
+          onSelectModel={(modelId) => {
+            updateConnector('anticeil_audio', { selectedModelId: modelId });
+            setIsMediaModelModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 
