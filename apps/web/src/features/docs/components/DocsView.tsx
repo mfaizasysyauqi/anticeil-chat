@@ -89,6 +89,7 @@ import { useDocsStore, DocsViewMode, DocFormat, DocCollaborator, DocComment, Doc
 import { DocFileTabsBar } from './shared/DocFileTabsBar';
 import { DocVisualEditor } from './shared/DocVisualEditor';
 import { SplitResizeDivider } from './shared/SplitResizeDivider';
+import { RecompileSplitButton } from './shared/RecompileSplitButton';
 import { downloadDocAsZip } from '../utils/zipUtils';
 
 
@@ -387,7 +388,6 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const [errorHandlingMode, setErrorHandlingMode] = useState<'stop' | 'continue'>('continue');
   const [compiledContent, setCompiledContent] = useState('');
   const [compileVersion, setCompileVersion] = useState(0);
-  const [isRecompileDropdownOpen, setIsRecompileDropdownOpen] = useState(false);
   const [isZoomDropdownOpen, setIsZoomDropdownOpen] = useState(false);
 
   // Paper Size & Custom Dimensions State
@@ -399,9 +399,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const paperSizeButtonRef = useRef<HTMLButtonElement>(null);
   const paperSizeDropdownRef = useRef<HTMLDivElement>(null);
 
-  const recompileDropdownRef = useRef<HTMLDivElement>(null);
   const zoomDropdownRef = useRef<HTMLDivElement>(null);
-  const recompileButtonRef = useRef<HTMLButtonElement>(null);
   const zoomButtonRef = useRef<HTMLButtonElement>(null);
   const [isPreviewInverted, setIsPreviewInverted] = useState(false);
   const [pageInputValue, setPageInputValue] = useState('1');
@@ -595,23 +593,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     }
   };
 
-  // Recompile & Zoom Popover Positions
-  const [recompileDropdownPos, setRecompileDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  // Zoom Popover Position
   const [zoomDropdownPos, setZoomDropdownPos] = useState<{ top: number; left: number } | null>(null);
-
-  const toggleRecompileDropdown = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isRecompileDropdownOpen) {
-      setIsRecompileDropdownOpen(false);
-    } else if (recompileButtonRef.current) {
-      const rect = recompileButtonRef.current.getBoundingClientRect();
-      setRecompileDropdownPos({
-        top: rect.bottom + 4,
-        left: rect.left,
-      });
-      setIsRecompileDropdownOpen(true);
-    }
-  };
 
   const togglePaperSizeDropdown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -686,12 +669,6 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
         layoutMenuRef.current && !layoutMenuRef.current.contains(target)
       ) {
         setIsLayoutMenuOpen(false);
-      }
-      if (
-        recompileButtonRef.current && !recompileButtonRef.current.contains(target) &&
-        recompileDropdownRef.current && !recompileDropdownRef.current.contains(target)
-      ) {
-        setIsRecompileDropdownOpen(false);
       }
       if (
         paperSizeButtonRef.current && !paperSizeButtonRef.current.contains(target) &&
@@ -7139,279 +7116,24 @@ ${exportText}
                 >
                   {/* Left: Recompile Split Button + Logs Icon + Download PDF */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
-                    {/* Recompile Split Button */}
-                    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'stretch' }}>
-                      <button
-                        type="button"
-                        onClick={handleRecompile}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '4px 9px',
-                          borderTopLeftRadius: '5px',
-                          borderBottomLeftRadius: '5px',
-                          backgroundColor: '#00843D',
-                          border: 'none',
-                          color: '#ffffff',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'background-color 0.15s ease',
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#007033')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#00843D')}
-                        title={language === 'id' ? 'Kompilasi Ulang Dokumen (Ctrl+Enter)' : 'Recompile Document (Ctrl+Enter)'}
-                      >
-                        <RefreshCw size={11} style={{ animation: isRecompiling ? 'spin 0.5s linear infinite' : 'none' }} />
-                        <span>Recompile</span>
-                      </button>
-
-                      <button
-                        ref={recompileButtonRef}
-                        type="button"
-                        onClick={toggleRecompileDropdown}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '0 5px',
-                          borderTopRightRadius: '5px',
-                          borderBottomRightRadius: '5px',
-                          backgroundColor: '#00843D',
-                          border: 'none',
-                          borderLeft: '1px solid rgba(255, 255, 255, 0.25)',
-                          color: '#ffffff',
-                          cursor: 'pointer',
-                          transition: 'background-color 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#007033')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#00843D')}
-                        title={language === 'id' ? 'Opsi Kompilasi' : 'Compilation Options'}
-                      >
-                        <ChevronDown size={12} style={{ transform: isRecompileDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-                      </button>
-
-                      {/* Recompile Dropdown Popover (Overleaf-Identical Complete Menu) */}
-                      {isRecompileDropdownOpen && recompileDropdownPos && typeof document !== 'undefined' && createPortal(
-                        <div
-                          ref={recompileDropdownRef}
-                          onClick={(e) => e.stopPropagation()}
-                          className="animate-fade-in"
-                          style={{
-                            position: 'fixed',
-                            top: `${recompileDropdownPos.top}px`,
-                            left: `${recompileDropdownPos.left}px`,
-                            zIndex: 999999999,
-                            minWidth: '240px',
-                            backgroundColor: 'var(--bg-surface)',
-                            border: '1px solid var(--border-strong)',
-                            borderRadius: '6px',
-                            boxShadow: 'var(--shadow-xl, 0 12px 32px rgba(0,0,0,0.35))',
-                            padding: '6px 0',
-                            display: 'flex',
-                            flexDirection: 'column',
-                          }}
-                        >
-                          {/* 1. Auto compile */}
-                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
-                            Auto compile
-                          </div>
-                          <div
-                            onClick={() => {
-                              setIsAutoCompile(true);
-                              setCompiledContent(bundledContent || activeDoc?.content || '');
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>On</span>
-                            {isAutoCompile && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-                          <div
-                            onClick={() => setIsAutoCompile(false)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>Off</span>
-                            {!isAutoCompile && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-
-                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-
-                          {/* 2. Compile mode */}
-                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
-                            Compile mode
-                          </div>
-                          <div
-                            onClick={() => setCompileMode('normal')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>Normal</span>
-                            {compileMode === 'normal' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-                          <div
-                            onClick={() => setCompileMode('draft')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>Fast [draft]</span>
-                            {compileMode === 'draft' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-
-                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-
-                          {/* 3. Syntax checks */}
-                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
-                            Syntax checks
-                          </div>
-                          <div
-                            onClick={() => setSyntaxCheckMode('check')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>Check syntax before compile</span>
-                            {syntaxCheckMode === 'check' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-                          <div
-                            onClick={() => setSyntaxCheckMode('none')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>Don&apos;t check syntax</span>
-                            {syntaxCheckMode === 'none' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-
-                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-
-                          {/* 4. Compile error handling */}
-                          <div style={{ padding: '4px 14px 2px 14px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
-                            Compile error handling
-                          </div>
-                          <div
-                            onClick={() => setErrorHandlingMode('stop')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>Stop on first error</span>
-                            {errorHandlingMode === 'stop' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-                          <div
-                            onClick={() => setErrorHandlingMode('continue')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 14px',
-                              cursor: 'pointer',
-                              fontSize: '12.5px',
-                              color: 'var(--text-primary)',
-                            }}
-                            className="hover-subtle"
-                          >
-                            <span>Try to compile despite errors</span>
-                            {errorHandlingMode === 'continue' && <Check size={14} strokeWidth={2.4} color="var(--brand-primary)" />}
-                          </div>
-
-                          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-
-                          {/* 5. Stop compilation / Recompile from scratch */}
-                          <div
-                            onClick={() => {
-                              if (isRecompiling) {
-                                setIsRecompiling(false);
-                                setIsRecompileDropdownOpen(false);
-                              }
-                            }}
-                            style={{
-                              padding: '6px 14px',
-                              fontSize: '12.5px',
-                              color: isRecompiling ? '#EF4444' : 'var(--text-muted)',
-                              cursor: isRecompiling ? 'pointer' : 'default',
-                              opacity: isRecompiling ? 1 : 0.6,
-                            }}
-                            className={isRecompiling ? 'hover-subtle' : ''}
-                          >
-                            Stop compilation
-                          </div>
-                          <div
-                            onClick={() => {
-                              handleRecompile();
-                              setIsRecompileDropdownOpen(false);
-                            }}
-                            style={{
-                              padding: '6px 14px',
-                              fontSize: '12.5px',
-                              color: '#0073ea',
-                              fontWeight: 500,
-                              cursor: 'pointer',
-                            }}
-                            className="hover-subtle"
-                          >
-                            Recompile from scratch
-                          </div>
-                        </div>,
-                        document.body
-                      )}
-                    </div>
+                    {/* Recompile Split Button (shared) */}
+                    <RecompileSplitButton
+                      isCompiling={isRecompiling}
+                      isAutoCompile={isAutoCompile}
+                      onRecompile={handleRecompile}
+                      onToggleAutoCompile={(enabled) => {
+                        setIsAutoCompile(enabled);
+                        if (enabled) setCompiledContent(bundledContent || activeDoc?.content || '');
+                      }}
+                      compileMode={compileMode}
+                      onChangeCompileMode={setCompileMode}
+                      syntaxCheckMode={syntaxCheckMode}
+                      onChangeSyntaxCheck={setSyntaxCheckMode}
+                      errorHandlingMode={errorHandlingMode}
+                      onChangeErrorHandling={setErrorHandlingMode}
+                      onStopCompilation={() => setIsRecompiling(false)}
+                      onResetRecompile={handleRecompile}
+                    />
 
                     {/* Logs & Diagnostics Icon Button */}
                     <button
