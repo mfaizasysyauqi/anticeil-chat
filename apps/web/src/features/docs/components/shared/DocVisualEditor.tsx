@@ -739,7 +739,7 @@ export function DocVisualEditor({
                     borderRadius: '6px',
                     transition: 'all 0.15s ease',
                     boxSizing: 'border-box',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     border: isEditing
                       ? '1px solid var(--brand-primary, #38bdf8)'
                       : isHovered
