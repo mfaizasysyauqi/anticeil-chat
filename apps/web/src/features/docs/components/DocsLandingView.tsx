@@ -25,11 +25,7 @@ import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { useCoAuthorHistoryStore, CoAuthorMessage } from '../store/useCoAuthorHistoryStore';
 import { useCoAuthorEditActions } from '../hooks/useCoAuthorEditActions';
-import {
-  CoAuthorEditButton,
-  CoAuthorEditTextarea,
-  CoAuthorUndoToast,
-} from './CoAuthorEditActions';
+import { CoAuthorEditTextarea, CoAuthorUndoToast } from './CoAuthorEditActions';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, getModelById, isCloudTier, cleanAgenticStream } from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
@@ -930,7 +926,6 @@ Every document MUST have a dedicated cover page that is centered horizontally an
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)', width: '100%' }}>
               {messages.map((msg, index) => {
                 const isUserMsg = msg.role === 'user';
-                const isAssistant = msg.role === 'assistant';
                 const isStreamingThis = isGenerating && msg.id === streamingMsgIdRef.current;
                 const isEditingThis = editActions.editingMessageId === msg.id;
 
@@ -947,60 +942,27 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                         textareaRef={editActions.editTextareaRef}
                       />
                     ) : (
-                      <>
-                        {/* User Message with Edit Button */}
-                        {isUserMsg && (
-                          <div style={{ position: 'relative' }}>
-                            <StudioChatMessage
-                              id={msg.id}
-                              role={msg.role}
-                              content={msg.content}
-                              isStreaming={false}
+                      <StudioChatMessage
+                        id={msg.id}
+                        role={msg.role}
+                        content={isUserMsg ? msg.content : stripAgentActionTags(msg.content)}
+                        reasoningContent={msg.reasoningContent}
+                        isStreaming={isStreamingThis}
+                        assistantName="AI Co-Author"
+                        assistantColor={activeColor}
+                        language={language}
+                        onEdit={isUserMsg ? () => editActions.handleStartEdit(msg.id, msg.content) : undefined}
+                        extraContent={
+                          !isUserMsg && activeDoc && (activeDoc.content.length > 10 || (msg.content && msg.content.length > 30)) ? (
+                            <InteractiveDocCard
+                              doc={activeDoc}
+                              onOpenEditor={() => handleOpenEditor(activeDoc.id)}
                               language={language}
+                              isGenerating={isStreamingThis}
                             />
-                            {/* Hover Edit Button */}
-                            <div
-                              style={{
-                                position: 'absolute',
-                                top: '8px',
-                                right: '8px',
-                                opacity: 0,
-                                transition: 'opacity 0.15s',
-                              }}
-                              className="user-msg-actions"
-                            >
-                              <CoAuthorEditButton
-                                onClick={() => editActions.handleStartEdit(msg.id, msg.content)}
-                                language={language}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Assistant Message */}
-                        {!isUserMsg && (
-                          <StudioChatMessage
-                            id={msg.id}
-                            role={msg.role}
-                            content={stripAgentActionTags(msg.content)}
-                            reasoningContent={msg.reasoningContent}
-                            isStreaming={isStreamingThis}
-                            assistantName="AI Co-Author"
-                            assistantColor={activeColor}
-                            language={language}
-                            extraContent={
-                              activeDoc && (activeDoc.content.length > 10 || (msg.content && msg.content.length > 30)) ? (
-                                <InteractiveDocCard
-                                  doc={activeDoc}
-                                  onOpenEditor={() => handleOpenEditor(activeDoc.id)}
-                                  language={language}
-                                  isGenerating={isStreamingThis}
-                                />
-                              ) : undefined
-                            }
-                          />
-                        )}
-                      </>
+                          ) : undefined
+                        }
+                      />
                     )}
                   </div>
                 );

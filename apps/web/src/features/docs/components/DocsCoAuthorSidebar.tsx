@@ -32,7 +32,6 @@ import {
   PanelLeftClose,
   Globe,
   History,
-  Trash2,
   Plus,
   Image as ImageIcon,
   FileText,
@@ -42,13 +41,18 @@ import {
   LayoutGrid,
   Plug,
   ChevronRight,
-  Pencil,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { useCoAuthorHistoryStore, CoAuthorMessage } from '../store/useCoAuthorHistoryStore';
+import { useCoAuthorEditActions } from '../hooks/useCoAuthorEditActions';
+import {
+  CoAuthorEditButton,
+  CoAuthorEditTextarea,
+  CoAuthorUndoToast,
+} from './CoAuthorEditActions';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import {
   ChatMessage,
@@ -225,16 +229,8 @@ export function DocsCoAuthorSidebar({
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
 
-  // ── Edit & Delete State ──────────────────────────────────────────────────
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [editingContent, setEditingContent] = useState<string>('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [undoToast, setUndoToast] = useState<{
-    messageId: string;
-    count: number;
-    timeoutId: ReturnType<typeof setTimeout> | null;
-  } | null>(null);
-  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+  // ── Edit & Undo Hook (reusable logic) ───────────────────────────────────
+  // Note: hook needs messages/state that comes after, so defined later
 
   // Close Plus Dropdown Menu on Outside Click
   useEffect(() => {
@@ -421,147 +417,8 @@ export function DocsCoAuthorSidebar({
 
   // ── Edit & Delete Handlers ─────────────────────────────────────────────
 
-  const handleStartEdit = (messageId: string, currentContent: string) => {
-    setEditingMessageId(messageId);
-    setEditingContent(currentContent);
-    // Focus textarea after state update
-    setTimeout(() => {
-      editTextareaRef.current?.focus();
-    }, 100);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingMessageId(null);
-    setEditingContent('');
-  };
-
-  const handleSaveEdit = async () => {
-    if (!activeDoc || !editingMessageId || !editingContent.trim()) return;
-
-    const newContent = editingContent.trim();
-
-    // Call store to edit message and delete subsequent messages
-    historyStore.editMessage(activeDoc.id, editingMessageId, newContent);
-
-    // Sync to cloud for starter+ users
-    if (isCloudUser && authSession?.access_token) {
-      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
-    }
-
-    // Update local messages state
-    const session = historyStore.getSession(activeDoc.id);
-    if (session) {
-      setMessages(
-        session.messages.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          reasoningContent: m.reasoningContent,
-          actions: m.actions,
-          snapshotId: m.snapshotId,
-          reverted: m.reverted,
-          timestamp: m.timestamp,
-        }))
-      );
-    }
-
-    // Exit edit mode
-    setEditingMessageId(null);
-    setEditingContent('');
-
-    // Re-send the edited prompt
-    handleSend(newContent);
-  };
-
-  const handleDeleteAfter = (messageId: string) => {
-    setDeleteConfirmId(messageId);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!activeDoc || !deleteConfirmId) return;
-
-    const msgToDelete = messages.find((m) => m.id === deleteConfirmId);
-    if (!msgToDelete) return;
-
-    // Find how many messages will be deleted
-    const msgIndex = messages.findIndex((m) => m.id === deleteConfirmId);
-    const deletedCount = messages.length - msgIndex;
-
-    // Delete from store
-    historyStore.deleteAfter(activeDoc.id, deleteConfirmId);
-
-    // Sync to cloud for starter+ users
-    if (isCloudUser && authSession?.access_token) {
-      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
-    }
-
-    // Update local messages
-    setMessages((prev) => prev.slice(0, msgIndex));
-
-    // Close confirmation
-    setDeleteConfirmId(null);
-
-    // Show undo toast
-    showUndoToast(deleteConfirmId, deletedCount);
-  };
-
-  const showUndoToast = (messageId: string, count: number) => {
-    // Clear existing timeout if any
-    if (undoToast?.timeoutId) {
-      clearTimeout(undoToast.timeoutId);
-    }
-
-    // Auto-hide after 8 seconds
-    const timeoutId = setTimeout(() => {
-      setUndoToast(null);
-    }, 8000);
-
-    setUndoToast({ messageId, count, timeoutId });
-  };
-
-  const handleUndoDelete = () => {
-    if (!activeDoc || !undoToast) return;
-
-    const success = historyStore.undoDelete(activeDoc.id, undoToast.messageId);
-    if (!success) return;
-
-    // Sync to cloud
-    if (isCloudUser && authSession?.access_token) {
-      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
-    }
-
-    // Refresh messages from store
-    const session = historyStore.getSession(activeDoc.id);
-    if (session) {
-      setMessages(
-        session.messages.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          reasoningContent: m.reasoningContent,
-          actions: m.actions,
-          snapshotId: m.snapshotId,
-          reverted: m.reverted,
-          timestamp: m.timestamp,
-        }))
-      );
-    }
-
-    // Clear undo toast
-    if (undoToast.timeoutId) {
-      clearTimeout(undoToast.timeoutId);
-    }
-    setUndoToast(null);
-  };
-
-  // Clear undo toast timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (undoToast?.timeoutId) {
-        clearTimeout(undoToast.timeoutId);
-      }
-    };
-  }, [undoToast]);
+  // ── Edit & Undo Hook (reusable logic) ───────────────────────────────────
+  // Note: hook needs messages/state that comes after, so defined later
 
   const handleSend = async (customPrompt?: string) => {
     let rawPrompt = customPrompt || inputPrompt.trim();

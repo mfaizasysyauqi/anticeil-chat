@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ThumbsUp,
   ThumbsDown,
+  Pencil,
 } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { AgentStepTimeline, AgentTimelineStep } from './AgentStepTimeline';
@@ -35,6 +36,7 @@ export interface StudioChatMessageProps {
   extraContent?: React.ReactNode;
   language?: 'id' | 'en';
   onCopy?: () => void;
+  onEdit?: () => void;
   onUndo?: () => void;
   isReverted?: boolean;
   timestamp?: number;
@@ -60,6 +62,8 @@ export function StudioChatMessage({
   assistantColor = 'var(--brand-primary)',
   extraContent,
   language = 'id',
+  onCopy,
+  onEdit,
   onUndo,
   isReverted = false,
   timestamp,
@@ -231,7 +235,7 @@ export function StudioChatMessage({
               </button>
             )}
 
-            {/* Antigravity-style Action Bar inside user prompt bubble (Timestamp, Copy, Undo) — Hover visible only */}
+            {/* Antigravity-style Action Bar inside user prompt bubble (Timestamp, Copy, Edit, Undo) — Hover visible only */}
             <div
               style={{
                 display: 'flex',
@@ -268,6 +272,26 @@ export function StudioChatMessage({
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
               </button>
+
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  title={language === 'id' ? 'Edit prompt' : 'Edit prompt'}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '2px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Pencil size={13} />
+                </button>
+              )}
 
               {onUndo && (
                 <button
