@@ -41,6 +41,7 @@ import {
   LayoutGrid,
   Plug,
   ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -185,7 +186,6 @@ export function DocsCoAuthorSidebar({
   const coAuthorPendingPrompt = useDocsStore((s) => s.copilotPendingPrompt);
   const setCoAuthorPendingPrompt = useDocsStore((s) => s.setCopilotPendingPrompt);
   const createDocSnapshot = useDocsStore((s) => s.createDocSnapshot);
-  const restoreDocSnapshot = useDocsStore((s) => s.restoreDocSnapshot);
 
   const language = useSettingsStore((s) => s.language);
   const globalProviderId = useSettingsStore((s) => s.activeProviderId);
@@ -228,9 +228,6 @@ export function DocsCoAuthorSidebar({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
-
-  // ── Edit & Undo Hook (reusable logic) ───────────────────────────────────
-  // Note: hook needs messages/state that comes after, so defined later
 
   // Close Plus Dropdown Menu on Outside Click
   useEffect(() => {
@@ -320,18 +317,9 @@ export function DocsCoAuthorSidebar({
   const removeAttachment = (id: string) => {
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
-  const [messages, setMessages] = useState<
-    Array<{
-      id: string;
-      role: 'user' | 'assistant';
-      content: string;
-      reasoningContent?: string;
-      actions?: Array<{ type: string; name: string }>;
-      snapshotId?: string;
-      reverted?: boolean;
-      timestamp?: number;
-    }>
-  >([
+
+  // Messages state - must be defined before useCoAuthorEditActions hook
+  const [messages, setMessages] = useState<CoAuthorMessage[]>([
     {
       id: 'welcome',
       role: 'assistant',
@@ -339,11 +327,29 @@ export function DocsCoAuthorSidebar({
         language === 'id'
           ? 'Halo! Saya AI Co-Author Anda. Semua instruksi yang Anda berikan akan otomatis diedit langsung ke dokumen Anda (Full Auto). Anda juga dapat membatalkan perubahan (Undo) kapan saja.'
           : 'Hello! I am your AI Co-Author. All instructions will be automatically applied directly to your document (Full Auto). You can undo changes up to any point at any time.',
+      timestamp: Date.now(),
     },
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const streamingMsgIdRef = useRef<string | null>(null);
+
+  // ── Edit & Undo Hook (reusable logic from useCoAuthorEditActions) ─────────────────
+  const {
+    editingMessageId,
+    editingContent,
+    setEditingContent,
+    editTextareaRef,
+    handleStartEdit,
+    handleCancelEdit,
+    handleSaveEdit,
+    undoToast,
+    handleUndoDelete,
+  } = useCoAuthorEditActions({
+    activeDocId,
+    messages,
+    setMessages: setMessages as React.Dispatch<React.SetStateAction<CoAuthorMessage[]>>,
+  });
 
   // Load history when active doc changes
   useEffect(() => {
@@ -986,6 +992,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                     content: language === 'id'
                       ? 'Riwayat chat dihapus. Halo lagi! Saya AI Co-Author Anda.'
                       : 'Chat history cleared. Hello again! I am your AI Co-Author.',
+                    timestamp: Date.now(),
                   }]);
                 }
               }}
@@ -1099,30 +1106,6 @@ After emitting the action tags, provide a brief, polite explanation of what was 
             );
           }
 
-          const turnSnapshotId = msg.snapshotId || (assistantMsg && assistantMsg.snapshotId);
-          const isTurnReverted = msg.reverted || (assistantMsg && assistantMsg.reverted);
-
-          const handleUndoTurn =
-            msg.role === 'user' && activeDoc
-              ? () => {
-                  if (turnSnapshotId) {
-                    restoreDocSnapshot(activeDoc.id, turnSnapshotId);
-                  }
-                  setInputPrompt(msg.content);
-                  // Find index of this turn in the messages list
-                  const msgIndex = messages.findIndex((m2) => m2.id === msg.id);
-                  if (msgIndex !== -1) {
-                    // Cascade undo: remove this turn AND all subsequent turns after it
-                    const idsToRemove = messages.slice(msgIndex).map((m2) => m2.id);
-                    historyStore.removeMessages(activeDoc.id, idsToRemove);
-                    if (isCloudUser && authSession?.access_token) {
-                      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
-                    }
-                    setMessages((prev) => prev.slice(0, msgIndex));
-                  }
-                }
-              : undefined;
-
           return (
             <div
               key={`turn_${msg.id}`}
@@ -1186,7 +1169,10 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                     </button>
                     <button
                       type="button"
-                      onClick={handleSaveEdit}
+                      onClick={async () => {
+                        const newPrompt = await handleSaveEdit();
+                        if (newPrompt) await handleSend(newPrompt);
+                      }}
                       disabled={!editingContent.trim()}
                       style={{
                         padding: '6px 12px',
@@ -1215,81 +1201,9 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                       content={msg.content}
                       timestamp={msg.timestamp}
                       isSticky={true}
-                      onUndo={handleUndoTurn}
-                      isReverted={isTurnReverted}
                       language={language === 'id' ? 'id' : 'en'}
+                      onEdit={!isGenerating ? () => handleStartEdit(msg.id, msg.content) : undefined}
                     />
-                    {/* Edit & Delete Buttons (absolute positioned on top-right) */}
-                    {!isGenerating && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '8px',
-                          right: '8px',
-                          display: 'flex',
-                          gap: '6px',
-                          opacity: 0,
-                          transition: 'opacity 0.15s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleStartEdit(msg.id, msg.content)}
-                          title={language === 'id' ? 'Edit prompt' : 'Edit prompt'}
-                          style={{
-                            padding: '4px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.15s',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                            e.currentTarget.style.color = 'var(--brand-primary)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                          }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAfter(msg.id)}
-                          title={language === 'id' ? 'Hapus prompt dan response setelahnya' : 'Delete prompt and responses after'}
-                          style={{
-                            padding: '4px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.15s',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-                            e.currentTarget.style.color = '#EF4444';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </>
               )}
@@ -1808,147 +1722,12 @@ After emitting the action tags, provide a brief, polite explanation of what was 
         isCloudUser={isCloudUser}
       />
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div
-          onClick={() => setDeleteConfirmId(null)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '400px',
-              width: '90%',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-            }}
-          >
-            <h3
-              style={{
-                margin: '0 0 12px 0',
-                fontSize: '16px',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-              }}
-            >
-              {language === 'id' ? 'Hapus Prompt & Response?' : 'Delete Prompt & Response?'}
-            </h3>
-            <p
-              style={{
-                margin: '0 0 20px 0',
-                fontSize: '13px',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.5,
-              }}
-            >
-              {language === 'id'
-                ? 'Semua response AI setelah prompt ini akan dihapus. Anda dapat mengembalikan dengan tombol Undo.'
-                : 'All AI responses after this prompt will be deleted. You can restore them with the Undo button.'}
-            </p>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmId(null)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-subtle)',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-secondary)',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {language === 'id' ? 'Batal' : 'Cancel'}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: '#EF4444',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {language === 'id' ? 'Hapus' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Undo Toast Notification */}
-      {undoToast && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-            zIndex: 9998,
-            animation: 'docs-slideUp 0.3s ease-out',
-          }}
-        >
-          <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-            {language === 'id'
-              ? `${undoToast.count} pesan dihapus`
-              : `${undoToast.count} message${undoToast.count > 1 ? 's' : ''} deleted`}
-          </span>
-          <button
-            type="button"
-            onClick={handleUndoDelete}
-            style={{
-              padding: '4px 12px',
-              borderRadius: '6px',
-              border: '1px solid var(--brand-primary)',
-              backgroundColor: 'transparent',
-              color: 'var(--brand-primary)',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--brand-primary)';
-              e.currentTarget.style.color = '#FFFFFF';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = 'var(--brand-primary)';
-            }}
-          >
-            {language === 'id' ? 'Batalkan' : 'Undo'}
-          </button>
-        </div>
-      )}
+      <CoAuthorUndoToast
+        state={undoToast}
+        onUndo={handleUndoDelete}
+        language={language === 'id' ? 'id' : 'en'}
+      />
 
       {isModelSelectorOpen && (
         <ModelSelectorModal onClose={() => setIsModelSelectorOpen(false)} />

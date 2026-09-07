@@ -36,6 +36,11 @@ export interface CoAuthorSession {
 interface UndoEntry {
   deletedBy: string; // messageId yang menghapus
   messages: CoAuthorMessage[];
+  editedMessage?: {
+    id: string;
+    originalContent: string;
+    wasEdited: boolean;
+  };
 }
 
 interface CoAuthorHistoryState {
@@ -92,14 +97,22 @@ export const useCoAuthorHistoryStore = create<CoAuthorHistoryState>()(
         const messagesToDelete = session.messages.slice(msgIndex + 1);
         const deletedIds = messagesToDelete.map((m) => m.id);
 
-        // Save to undo stack
+        // Save to undo stack (including the edited message's original content)
         const undoKey = `${docId}-${messageId}`;
         set((s) => ({
           undoStack: {
             ...s.undoStack,
             [undoKey]: [
               ...(s.undoStack[undoKey] || []),
-              { deletedBy: messageId, messages: messagesToDelete },
+              {
+                deletedBy: messageId,
+                messages: messagesToDelete,
+                editedMessage: {
+                  id: messageId,
+                  originalContent,
+                  wasEdited: !!msg.isEdited,
+                },
+              },
             ],
           },
         }));
@@ -178,6 +191,7 @@ export const useCoAuthorHistoryStore = create<CoAuthorHistoryState>()(
 
         const lastEntry = undoEntries[undoEntries.length - 1];
         const messagesToRestore = lastEntry.messages;
+        const editedInfo = lastEntry.editedMessage;
 
         // Remove from undo stack
         set((s) => {
@@ -196,7 +210,7 @@ export const useCoAuthorHistoryStore = create<CoAuthorHistoryState>()(
           return { undoStack: newStack };
         });
 
-        // Restore messages to session
+        // Restore messages to session (and revert edited message if needed)
         set((s) => {
           const session = s.sessions[docId];
           if (!session) return s;
@@ -204,9 +218,21 @@ export const useCoAuthorHistoryStore = create<CoAuthorHistoryState>()(
           const msgIndex = session.messages.findIndex((m) => m.id === messageId);
           if (msgIndex === -1) return s;
 
+          let workingMsgs = [...session.messages];
+
+          // Revert the edited message back to its original content
+          if (editedInfo && editedInfo.id === messageId) {
+            workingMsgs[msgIndex] = {
+              ...workingMsgs[msgIndex],
+              content: editedInfo.originalContent,
+              originalContent: editedInfo.wasEdited ? editedInfo.originalContent : undefined,
+              isEdited: editedInfo.wasEdited,
+            };
+          }
+
           // Insert restored messages after the current message
-          const before = session.messages.slice(0, msgIndex + 1);
-          const after = session.messages.slice(msgIndex + 1);
+          const before = workingMsgs.slice(0, msgIndex + 1);
+          const after = workingMsgs.slice(msgIndex + 1);
           const restored = [...before, ...messagesToRestore, ...after];
 
           return {

@@ -14,7 +14,6 @@ interface UseCoAuthorEditActionsProps {
   activeDocId: string | null;
   messages: CoAuthorMessage[];
   setMessages: React.Dispatch<React.SetStateAction<CoAuthorMessage[]>>;
-  onEditComplete?: (newPrompt: string) => Promise<void>;
 }
 
 interface UndoToastState {
@@ -27,7 +26,6 @@ export function useCoAuthorEditActions({
   activeDocId,
   messages,
   setMessages,
-  onEditComplete,
 }: UseCoAuthorEditActionsProps) {
   const historyStore = useCoAuthorHistoryStore();
   const authSession = useAuthStore((s) => s.session);
@@ -51,15 +49,10 @@ export function useCoAuthorEditActions({
     setEditingContent('');
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = async (): Promise<string | undefined> => {
     if (!activeDocId || !editingMessageId || !editingContent.trim()) return;
 
     const newContent = editingContent.trim();
-    const msgIndex = messages.findIndex((m) => m.id === editingMessageId);
-    if (msgIndex === -1) return;
-
-    // Count how many messages will be deleted (all after this one)
-    const deletedCount = messages.length - msgIndex - 1;
 
     // Call store to edit message and delete subsequent messages
     historyStore.editMessage(activeDocId, editingMessageId, newContent);
@@ -69,34 +62,26 @@ export function useCoAuthorEditActions({
       historyStore.syncToCloud(activeDocId, authSession.access_token);
     }
 
-    // Update local state
-    setMessages((prev) => {
-      const idx = prev.findIndex((m) => m.id === editingMessageId);
-      if (idx === -1) return prev;
+    // Refresh messages from store to get the updated list (with deleted responses)
+    const session = historyStore.getSession(activeDocId);
+    if (session) {
+      const msgIndex = session.messages.findIndex((m) => m.id === editingMessageId);
+      const deletedCount = msgIndex >= 0 ? session.messages.length - msgIndex - 1 : 0;
 
-      const updated = [...prev];
-      updated[idx] = {
-        ...updated[idx],
-        content: newContent,
-        isEdited: true,
-      };
+      setMessages([...session.messages]);
 
-      // Remove messages after this one
-      return updated.slice(0, idx + 1);
-    });
+      // Clear edit state
+      setEditingMessageId(null);
+      setEditingContent('');
 
-    setEditingMessageId(null);
-    setEditingContent('');
-
-    // Show undo toast if messages were deleted
-    if (deletedCount > 0) {
-      showUndoToast(editingMessageId, deletedCount);
+      // Show undo toast if messages were deleted
+      if (deletedCount > 0) {
+        showUndoToast(editingMessageId, deletedCount);
+      }
     }
 
-    // Re-send the edited prompt to generate new response
-    if (onEditComplete) {
-      await onEditComplete(newContent);
-    }
+    // Return new content so component can handle re-send
+    return newContent;
   };
 
   // ── Undo Handlers ──────────────────────────────────────────────────────
@@ -124,10 +109,10 @@ export function useCoAuthorEditActions({
       historyStore.syncToCloud(activeDocId, authSession.access_token);
     }
 
-    // Refresh messages from store
+    // Refresh messages from store (clone to ensure React re-render)
     const session = historyStore.getSession(activeDocId);
     if (session) {
-      setMessages(session.messages);
+      setMessages([...session.messages]);
     }
 
     // Clear undo toast

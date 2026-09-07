@@ -463,7 +463,6 @@ Every document MUST have a dedicated cover page that is centered horizontally an
     activeDocId,
     messages,
     setMessages,
-    onEditComplete: handleSendPrompt,
   });
 
   const formatOptions: { id: DocFormat; label: string; icon: React.ReactNode }[] = [
@@ -936,7 +935,10 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                       <CoAuthorEditTextarea
                         value={editActions.editingContent}
                         onChange={editActions.setEditingContent}
-                        onSave={editActions.handleSaveEdit}
+                        onSave={async () => {
+                          const newPrompt = await editActions.handleSaveEdit();
+                          if (newPrompt) await handleSendPrompt(newPrompt);
+                        }}
                         onCancel={editActions.handleCancelEdit}
                         language={language}
                         textareaRef={editActions.editTextareaRef}
