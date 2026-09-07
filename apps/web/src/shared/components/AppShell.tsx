@@ -42,6 +42,7 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const theme = useSettingsStore((s) => s.theme);
   const isSettingsOpen = useSettingsStore((s) => s.isSettingsOpen);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
@@ -61,6 +62,28 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
       document.documentElement.setAttribute('data-theme', theme);
     }
   }, [theme]);
+
+  // Track viewport: mobile/tablet vs desktop (overlay only shows on mobile/tablet)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(max-width: 1023px)');
+    const handleChange = (e: MediaQueryListEvent) => setIsMobileOrTablet(e.matches);
+    setIsMobileOrTablet(mql.matches);
+    mql.addEventListener('change', handleChange);
+    return () => mql.removeEventListener('change', handleChange);
+  }, []);
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isMobileSidebarOpen && isMobileOrTablet) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [isMobileSidebarOpen, isMobileOrTablet]);
 
 
   return (
@@ -153,6 +176,20 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
       <Suspense fallback={null}>
         <AuthQueryHandler />
       </Suspense>
+
+      {/* Mobile/Tablet Overlay — closes drawer on click */}
+      {isMobileSidebarOpen && isMobileOrTablet && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999,
+            cursor: 'pointer',
+          }}
+        />
+      )}
     </div>
   );
 }

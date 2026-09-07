@@ -2388,7 +2388,18 @@ export function Sidebar({
               />
             </Link>
           }
-          bottomContent={<BottomRailMeters onOpenTopup={() => openPricingModal('topup')} onOpenTiers={() => openPricingModal('tiers')} />}
+          bottomContent={
+            <>
+              <RailIconButton
+                href="/documentation"
+                label={language === 'id' ? 'Dokumentasi' : 'Documentation'}
+                icon={<BookOpen size={17} />}
+                isActive={isDocumentation}
+                colorType="docs"
+              />
+              <BottomRailMeters onOpenTopup={() => openPricingModal('topup')} onOpenTiers={() => openPricingModal('tiers')} />
+            </>
+          }
         >
           {/* Expand button — only shown on desktop when collapsed */}
           {isDesktopCollapsed && onToggleDesktopCollapse && (
@@ -2437,13 +2448,6 @@ export function Sidebar({
               icon={<Sparkles size={17} />}
               isActive={isMediaMode}
               colorType="media"
-            />
-            <RailIconButton
-              href="/documentation"
-              label={language === 'id' ? 'Dokumentasi' : 'Documentation'}
-              icon={<BookOpen size={17} />}
-              isActive={isDocumentation}
-              colorType="docs"
             />
           </div>
         </SidebarRail>
@@ -2500,9 +2504,21 @@ export function Sidebar({
                 />
               </Link>
             }
-            bottomContent={<BottomRailMeters onOpenTopup={() => { onCloseMobile?.(); openPricingModal('topup'); }} onOpenTiers={() => { onCloseMobile?.(); openPricingModal('tiers'); }} />}
+            bottomContent={
+              <>
+                <RailIconButton
+                  href="/documentation"
+                  onClick={onCloseMobile}
+                  label={language === 'id' ? 'Dokumentasi' : 'Documentation'}
+                  icon={<BookOpen size={17} />}
+                  isActive={isDocumentation}
+                  colorType="docs"
+                />
+                <BottomRailMeters onOpenTopup={() => { onCloseMobile?.(); openPricingModal('topup'); }} onOpenTiers={() => { onCloseMobile?.(); openPricingModal('tiers'); }} />
+              </>
+            }
           >
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px', flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
               <RailIconButton
                 href="/chat"
                 onClick={onCloseMobile}
@@ -2526,16 +2542,6 @@ export function Sidebar({
                 icon={<Sparkles size={17} />}
                 isActive={isMediaMode}
                 colorType="media"
-              />
-              <div style={{ flex: 1 }} />
-              <RailIconButton
-                href="/documentation"
-                onClick={onCloseMobile}
-                label={language === 'id' ? 'Dokumentasi' : 'Documentation'}
-                icon={<BookOpen size={17} />}
-                isActive={isDocumentation}
-                colorType="docs"
-                iconAlign="bottom"
               />
             </div>
           </SidebarRail>
@@ -3553,7 +3559,7 @@ export function Sidebar({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '4px 6px',
+                    padding: '0px 6px 4px 6px',
                     cursor: 'pointer',
                   }}
                 >
