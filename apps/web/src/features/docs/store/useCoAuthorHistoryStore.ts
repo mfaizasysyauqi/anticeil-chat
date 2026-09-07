@@ -21,6 +21,8 @@ export interface CoAuthorMessage {
   snapshotId?: string;
   reverted?: boolean;
   timestamp: number;
+  originalContent?: string; // Track original for edit/undo
+  isEdited?: boolean;
 }
 
 export interface CoAuthorSession {
@@ -31,9 +33,17 @@ export interface CoAuthorSession {
   updatedAt: number;
 }
 
+interface UndoEntry {
+  deletedBy: string; // messageId yang menghapus
+  messages: CoAuthorMessage[];
+}
+
 interface CoAuthorHistoryState {
   // docId → session
   sessions: Record<string, CoAuthorSession>;
+
+  // Undo stack: key = `${docId}-${messageId}`, value = array of deleted message batches
+  undoStack: Record<string, UndoEntry[]>;
 
   // CRUD
   getSession: (docId: string) => CoAuthorSession | null;
@@ -41,6 +51,12 @@ interface CoAuthorHistoryState {
   updateLastMessage: (docId: string, partial: Partial<CoAuthorMessage>) => void;
   removeMessages: (docId: string, messageIds: string[]) => void;
   clearSession: (docId: string) => void;
+
+  // Edit & Delete (new)
+  editMessage: (docId: string, messageId: string, newContent: string) => string[]; // returns deleted message IDs
+  deleteAfter: (docId: string, messageId: string) => void; // delete prompt + all assistant responses after
+  undoDelete: (docId: string, messageId: string) => boolean; // restore deleted messages, returns true if success
+  getUndoEntry: (docId: string, messageId: string) => UndoEntry[] | null;
 
   // Cloud sync (starter+)
   syncToCloud: (docId: string, accessToken: string) => Promise<void>;
@@ -55,8 +71,163 @@ export const useCoAuthorHistoryStore = create<CoAuthorHistoryState>()(
   persist(
     (set, get) => ({
       sessions: {},
+      undoStack: {},
 
       getSession: (docId) => get().sessions[docId] ?? null,
+
+      // ── Edit & Delete Methods ───────────────────────────────────────────────
+
+      editMessage: (docId, messageId, newContent) => {
+        const session = get().sessions[docId];
+        if (!session) return [];
+
+        const msgIndex = session.messages.findIndex((m) => m.id === messageId);
+        if (msgIndex === -1) return [];
+
+        const msg = session.messages[msgIndex];
+        // Save original content if not already saved
+        const originalContent = msg.originalContent ?? msg.content;
+
+        // Find all messages after this one (including assistant responses)
+        const messagesToDelete = session.messages.slice(msgIndex + 1);
+        const deletedIds = messagesToDelete.map((m) => m.id);
+
+        // Save to undo stack
+        const undoKey = `${docId}-${messageId}`;
+        set((s) => ({
+          undoStack: {
+            ...s.undoStack,
+            [undoKey]: [
+              ...(s.undoStack[undoKey] || []),
+              { deletedBy: messageId, messages: messagesToDelete },
+            ],
+          },
+        }));
+
+        // Update the message content and mark as edited
+        set((s) => {
+          const updatedMsgs = [...s.sessions[docId].messages];
+          updatedMsgs[msgIndex] = {
+            ...updatedMsgs[msgIndex],
+            content: newContent,
+            originalContent,
+            isEdited: true,
+          };
+          // Remove messages after this one
+          const filtered = updatedMsgs.slice(0, msgIndex + 1);
+          return {
+            sessions: {
+              ...s.sessions,
+              [docId]: {
+                ...s.sessions[docId],
+                messages: filtered,
+                updatedAt: Date.now(),
+              },
+            },
+          };
+        });
+
+        return deletedIds;
+      },
+
+      deleteAfter: (docId, messageId) => {
+        const session = get().sessions[docId];
+        if (!session) return;
+
+        const msgIndex = session.messages.findIndex((m) => m.id === messageId);
+        if (msgIndex === -1) return;
+
+        // Collect messages to delete (all after this message)
+        const messagesToDelete = session.messages.slice(msgIndex + 1);
+        if (messagesToDelete.length === 0) return;
+
+        // Save to undo stack
+        const undoKey = `${docId}-${messageId}`;
+        set((s) => ({
+          undoStack: {
+            ...s.undoStack,
+            [undoKey]: [
+              ...(s.undoStack[undoKey] || []),
+              { deletedBy: messageId, messages: messagesToDelete },
+            ],
+          },
+        }));
+
+        // Remove messages after this one
+        set((s) => {
+          const existing = s.sessions[docId];
+          if (!existing) return s;
+          const filtered = existing.messages.slice(0, msgIndex + 1);
+          return {
+            sessions: {
+              ...s.sessions,
+              [docId]: {
+                ...existing,
+                messages: filtered,
+                updatedAt: Date.now(),
+              },
+            },
+          };
+        });
+      },
+
+      undoDelete: (docId, messageId) => {
+        const undoKey = `${docId}-${messageId}`;
+        const undoEntries = get().undoStack[undoKey];
+        if (!undoEntries || undoEntries.length === 0) return false;
+
+        const lastEntry = undoEntries[undoEntries.length - 1];
+        const messagesToRestore = lastEntry.messages;
+
+        // Remove from undo stack
+        set((s) => {
+          const newEntries = [...(s.undoStack[undoKey] || [])];
+          newEntries.pop();
+
+          const newStack = {
+            ...s.undoStack,
+            [undoKey]: newEntries,
+          };
+          // Clean up empty entries
+          if (newEntries.length === 0) {
+            delete newStack[undoKey];
+          }
+
+          return { undoStack: newStack };
+        });
+
+        // Restore messages to session
+        set((s) => {
+          const session = s.sessions[docId];
+          if (!session) return s;
+
+          const msgIndex = session.messages.findIndex((m) => m.id === messageId);
+          if (msgIndex === -1) return s;
+
+          // Insert restored messages after the current message
+          const before = session.messages.slice(0, msgIndex + 1);
+          const after = session.messages.slice(msgIndex + 1);
+          const restored = [...before, ...messagesToRestore, ...after];
+
+          return {
+            sessions: {
+              ...s.sessions,
+              [docId]: {
+                ...session,
+                messages: restored,
+                updatedAt: Date.now(),
+              },
+            },
+          };
+        });
+
+        return true;
+      },
+
+      getUndoEntry: (docId, messageId) => {
+        const undoKey = `${docId}-${messageId}`;
+        return get().undoStack[undoKey] || null;
+      },
 
       saveMessage: (docId, docTitle, msg) => {
         set((s) => {

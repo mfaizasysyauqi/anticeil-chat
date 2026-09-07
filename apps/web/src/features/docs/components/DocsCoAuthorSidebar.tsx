@@ -2,6 +2,19 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { isCloudTier } from '@anticeil/core';
+
+// Inject slideUp animation keyframes
+if (typeof document !== 'undefined' && !document.getElementById('docs-coauthor-slideup')) {
+  const style = document.createElement('style');
+  style.id = 'docs-coauthor-slideup';
+  style.textContent = `
+    @keyframes docs-slideUp {
+      from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+}
 import {
   Sparkles,
   Send,
@@ -29,6 +42,7 @@ import {
   LayoutGrid,
   Plug,
   ChevronRight,
+  Pencil,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -210,6 +224,17 @@ export function DocsCoAuthorSidebar({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const [isConnectorsModalOpen, setIsConnectorsModalOpen] = useState(false);
+
+  // ── Edit & Delete State ──────────────────────────────────────────────────
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState<string>('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [undoToast, setUndoToast] = useState<{
+    messageId: string;
+    count: number;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+  } | null>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Close Plus Dropdown Menu on Outside Click
   useEffect(() => {
@@ -393,6 +418,150 @@ export function DocsCoAuthorSidebar({
     if (!activeDoc) return [];
     return executeDocAgentActions(activeDoc.id, text);
   };
+
+  // ── Edit & Delete Handlers ─────────────────────────────────────────────
+
+  const handleStartEdit = (messageId: string, currentContent: string) => {
+    setEditingMessageId(messageId);
+    setEditingContent(currentContent);
+    // Focus textarea after state update
+    setTimeout(() => {
+      editTextareaRef.current?.focus();
+    }, 100);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!activeDoc || !editingMessageId || !editingContent.trim()) return;
+
+    const newContent = editingContent.trim();
+
+    // Call store to edit message and delete subsequent messages
+    historyStore.editMessage(activeDoc.id, editingMessageId, newContent);
+
+    // Sync to cloud for starter+ users
+    if (isCloudUser && authSession?.access_token) {
+      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
+    }
+
+    // Update local messages state
+    const session = historyStore.getSession(activeDoc.id);
+    if (session) {
+      setMessages(
+        session.messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          reasoningContent: m.reasoningContent,
+          actions: m.actions,
+          snapshotId: m.snapshotId,
+          reverted: m.reverted,
+          timestamp: m.timestamp,
+        }))
+      );
+    }
+
+    // Exit edit mode
+    setEditingMessageId(null);
+    setEditingContent('');
+
+    // Re-send the edited prompt
+    handleSend(newContent);
+  };
+
+  const handleDeleteAfter = (messageId: string) => {
+    setDeleteConfirmId(messageId);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!activeDoc || !deleteConfirmId) return;
+
+    const msgToDelete = messages.find((m) => m.id === deleteConfirmId);
+    if (!msgToDelete) return;
+
+    // Find how many messages will be deleted
+    const msgIndex = messages.findIndex((m) => m.id === deleteConfirmId);
+    const deletedCount = messages.length - msgIndex;
+
+    // Delete from store
+    historyStore.deleteAfter(activeDoc.id, deleteConfirmId);
+
+    // Sync to cloud for starter+ users
+    if (isCloudUser && authSession?.access_token) {
+      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
+    }
+
+    // Update local messages
+    setMessages((prev) => prev.slice(0, msgIndex));
+
+    // Close confirmation
+    setDeleteConfirmId(null);
+
+    // Show undo toast
+    showUndoToast(deleteConfirmId, deletedCount);
+  };
+
+  const showUndoToast = (messageId: string, count: number) => {
+    // Clear existing timeout if any
+    if (undoToast?.timeoutId) {
+      clearTimeout(undoToast.timeoutId);
+    }
+
+    // Auto-hide after 8 seconds
+    const timeoutId = setTimeout(() => {
+      setUndoToast(null);
+    }, 8000);
+
+    setUndoToast({ messageId, count, timeoutId });
+  };
+
+  const handleUndoDelete = () => {
+    if (!activeDoc || !undoToast) return;
+
+    const success = historyStore.undoDelete(activeDoc.id, undoToast.messageId);
+    if (!success) return;
+
+    // Sync to cloud
+    if (isCloudUser && authSession?.access_token) {
+      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
+    }
+
+    // Refresh messages from store
+    const session = historyStore.getSession(activeDoc.id);
+    if (session) {
+      setMessages(
+        session.messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          reasoningContent: m.reasoningContent,
+          actions: m.actions,
+          snapshotId: m.snapshotId,
+          reverted: m.reverted,
+          timestamp: m.timestamp,
+        }))
+      );
+    }
+
+    // Clear undo toast
+    if (undoToast.timeoutId) {
+      clearTimeout(undoToast.timeoutId);
+    }
+    setUndoToast(null);
+  };
+
+  // Clear undo toast timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (undoToast?.timeoutId) {
+        clearTimeout(undoToast.timeoutId);
+      }
+    };
+  }, [undoToast]);
 
   const handleSend = async (customPrompt?: string) => {
     let rawPrompt = customPrompt || inputPrompt.trim();
@@ -1108,20 +1277,168 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                 width: '100%',
               }}
             >
-              {/* User Prompt (Sticky scoped to this turn container) */}
-              <StudioChatMessage
-                id={msg.id}
-                role="user"
-                content={msg.content}
-                timestamp={msg.timestamp}
-                isSticky={true}
-                onUndo={handleUndoTurn}
-                isReverted={isTurnReverted}
-                language={language === 'id' ? 'id' : 'en'}
-              />
+              {/* Edit Mode: Inline Textarea */}
+              {editingMessageId === msg.id ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    border: '2px solid var(--brand-primary)',
+                    backgroundColor: 'var(--bg-surface)',
+                  }}
+                >
+                  <textarea
+                    ref={editTextareaRef}
+                    value={editingContent}
+                    onChange={(e) => setEditingContent(e.target.value)}
+                    style={{
+                      width: '100%',
+                      minHeight: '80px',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-main)',
+                      color: 'var(--text-primary)',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                      lineHeight: 1.5,
+                      resize: 'vertical',
+                    }}
+                    placeholder={language === 'id' ? 'Edit prompt...' : 'Edit prompt...'}
+                  />
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {language === 'id' ? 'Batal' : 'Cancel'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveEdit}
+                      disabled={!editingContent.trim()}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        backgroundColor: 'var(--brand-primary)',
+                        color: '#FFFFFF',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: editingContent.trim() ? 'pointer' : 'not-allowed',
+                        opacity: editingContent.trim() ? 1 : 0.5,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {language === 'id' ? 'Simpan & Kirim Ulang' : 'Save & Resend'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* User Prompt with Edit/Delete Buttons */}
+                  <div style={{ position: 'relative' }}>
+                    <StudioChatMessage
+                      id={msg.id}
+                      role="user"
+                      content={msg.content}
+                      timestamp={msg.timestamp}
+                      isSticky={true}
+                      onUndo={handleUndoTurn}
+                      isReverted={isTurnReverted}
+                      language={language === 'id' ? 'id' : 'en'}
+                    />
+                    {/* Edit & Delete Buttons (absolute positioned on top-right) */}
+                    {!isGenerating && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          display: 'flex',
+                          gap: '6px',
+                          opacity: 0,
+                          transition: 'opacity 0.15s',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(msg.id, msg.content)}
+                          title={language === 'id' ? 'Edit prompt' : 'Edit prompt'}
+                          style={{
+                            padding: '4px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                            e.currentTarget.style.color = 'var(--brand-primary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAfter(msg.id)}
+                          title={language === 'id' ? 'Hapus prompt dan response setelahnya' : 'Delete prompt and responses after'}
+                          style={{
+                            padding: '4px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                            e.currentTarget.style.color = '#EF4444';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Assistant Output Response for this Turn */}
-              {assistantMsg && (
+              {assistantMsg && editingMessageId !== msg.id && (
                 <StudioChatMessage
                   id={assistantMsg.id}
                   role="assistant"
@@ -1633,6 +1950,148 @@ After emitting the action tags, provide a brief, polite explanation of what was 
         language={language === 'id' ? 'id' : 'en'}
         isCloudUser={isCloudUser}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div
+          onClick={() => setDeleteConfirmId(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <h3
+              style={{
+                margin: '0 0 12px 0',
+                fontSize: '16px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+              }}
+            >
+              {language === 'id' ? 'Hapus Prompt & Response?' : 'Delete Prompt & Response?'}
+            </h3>
+            <p
+              style={{
+                margin: '0 0 20px 0',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.5,
+              }}
+            >
+              {language === 'id'
+                ? 'Semua response AI setelah prompt ini akan dihapus. Anda dapat mengembalikan dengan tombol Undo.'
+                : 'All AI responses after this prompt will be deleted. You can restore them with the Undo button.'}
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-secondary)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {language === 'id' ? 'Batal' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {language === 'id' ? 'Hapus' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Undo Toast Notification */}
+      {undoToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+            zIndex: 9998,
+            animation: 'docs-slideUp 0.3s ease-out',
+          }}
+        >
+          <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+            {language === 'id'
+              ? `${undoToast.count} pesan dihapus`
+              : `${undoToast.count} message${undoToast.count > 1 ? 's' : ''} deleted`}
+          </span>
+          <button
+            type="button"
+            onClick={handleUndoDelete}
+            style={{
+              padding: '4px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--brand-primary)',
+              backgroundColor: 'transparent',
+              color: 'var(--brand-primary)',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--brand-primary)';
+              e.currentTarget.style.color = '#FFFFFF';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'var(--brand-primary)';
+            }}
+          >
+            {language === 'id' ? 'Batalkan' : 'Undo'}
+          </button>
+        </div>
+      )}
 
       {isModelSelectorOpen && (
         <ModelSelectorModal onClose={() => setIsModelSelectorOpen(false)} />
