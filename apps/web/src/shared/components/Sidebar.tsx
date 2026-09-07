@@ -59,6 +59,7 @@ import {
   GitFork,
   Table,
   Presentation,
+  BookOpen,
 } from 'lucide-react';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -79,6 +80,8 @@ import { FolderFileDrawer } from '../../features/storage/components/FolderFileDr
 import { useCreditStore } from '../../features/credits/store/useCreditStore';
 import { MediaDetailModal } from './MediaDetailModal';
 import { createClient } from '../utils/supabase/client';
+import { DOC_CATEGORIES, ALL_DOC_SECTIONS } from '../../features/documentation/data';
+import { DocSidebar } from '../../features/documentation/components/DocSidebar';
 
 interface SidebarProps {
   isOpenMobile?: boolean;
@@ -1383,7 +1386,10 @@ export function Sidebar({
   const isVideo = pathname === '/video' || (isMedia && currentTab === 'video');
   const isAudio = pathname === '/audio' || (isMedia && currentTab === 'audio');
   const isDocs = pathname === '/docs' || pathname?.startsWith('/docs');
+  const isDocumentation = pathname === '/documentation' || pathname?.startsWith('/documentation');
   const isMediaMode = isMedia || pathname === '/image' || pathname === '/video' || pathname === '/audio';
+
+  const activeDocSectionId = searchParams?.get('section') || 'intro';
 
   // Docs store state (isolated database & folders completely independent from Chat)
   const docs = useDocsStore((s) => s.documents);
@@ -1569,6 +1575,25 @@ export function Sidebar({
   const paidCredits = useCreditStore((s) => s.paidCredits) || 0;
   const openPricingModal = useCreditStore((s) => s.openPricingModal);
   const t = getTranslation(language);
+
+  const drawerTitle = isDocumentation
+    ? (language === 'id' ? 'Dokumentasi' : 'Documentation')
+    : isMediaMode
+    ? 'Media Studio'
+    : isDocs
+    ? 'Docs Studio'
+    : (language === 'id' ? 'Percakapan' : 'Chat');
+
+  const docSearchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q || !isDocumentation) return [];
+    return ALL_DOC_SECTIONS.filter((sec) => {
+      const titleMatch = (sec.titleId + ' ' + sec.titleEn).toLowerCase().includes(q);
+      const summaryMatch = ((sec.summaryId || '') + ' ' + (sec.summaryEn || '')).toLowerCase().includes(q);
+      const contentMatch = JSON.stringify(language === 'id' ? sec.contentId : sec.contentEn).toLowerCase().includes(q);
+      return titleMatch || summaryMatch || contentMatch;
+    });
+  }, [searchQuery, isDocumentation, language]);
 
   // Helper to reliably get accessToken from active session or store
   const getAccessToken = async (): Promise<string | null> => {
@@ -2337,34 +2362,11 @@ export function Sidebar({
        * 1. Slim Left Icon Rail (48px)
        * Show on desktop when not drawerOnly, or on mobile/tablet always
        * ───────────────────────────────────────────────────────────── */}
-      {!drawerOnly && <div
-        className="sidebar-icon-rail hide-on-drawer"
-        style={{
-          width: '48px',
-          height: '100%',
-          background: 'var(--bg-main)',
-          borderRight: '1px solid var(--border-subtle)',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 0,
-          flexShrink: 0,
-        }}
-      >
-        {/* Top: Brand Logo + Primary Feature Shortcuts */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-          {/* Logo container matching exact 48px header height for 1:1 symmetry */}
-          <div
-            style={{
-              height: '48px',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              borderBottom: '1px solid var(--border-subtle)',
-            }}
-          >
+      {/* 1. Desktop Icon Rail (48px fixed width) */}
+      {!drawerOnly && (
+        <SidebarRail
+          className="hide-on-drawer"
+          topContent={
             <Link
               href="/chat"
               title="Anticeil Chat"
@@ -2385,8 +2387,9 @@ export function Sidebar({
                 style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
               />
             </Link>
-          </div>
-
+          }
+          bottomContent={<BottomRailMeters onOpenTopup={() => openPricingModal('topup')} onOpenTiers={() => openPricingModal('tiers')} />}
+        >
           {/* Expand button — only shown on desktop when collapsed */}
           {isDesktopCollapsed && onToggleDesktopCollapse && (
             <button
@@ -2414,7 +2417,6 @@ export function Sidebar({
 
           {/* Quick App Icons */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
-            {/* Chat */}
             <RailIconButton
               href="/chat"
               label={t.nav.chat || 'Anticeil Chat'}
@@ -2422,8 +2424,6 @@ export function Sidebar({
               isActive={pathname === '/chat'}
               colorType="chat"
             />
-
-            {/* Docs Studio */}
             <RailIconButton
               href="/docs"
               label={t.nav.docs || 'Docs Studio'}
@@ -2431,8 +2431,6 @@ export function Sidebar({
               isActive={pathname === '/docs' || pathname.startsWith('/docs')}
               colorType="docs"
             />
-
-            {/* Media Studio */}
             <RailIconButton
               href="/media"
               label={t.nav.imagine || 'Media Studio'}
@@ -2440,17 +2438,16 @@ export function Sidebar({
               isActive={isMediaMode}
               colorType="media"
             />
+            <RailIconButton
+              href="/documentation"
+              label={language === 'id' ? 'Dokumentasi' : 'Documentation'}
+              icon={<BookOpen size={17} />}
+              isActive={isDocumentation}
+              colorType="docs"
+            />
           </div>
-        </div>
-
-        {/* Bottom of 48px Rail: Circular AI Credits Ring + Storage Ring */}
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <BottomRailMeters
-            onOpenTopup={() => openPricingModal('topup')}
-            onOpenTiers={() => openPricingModal('tiers')}
-          />
-        </div>
-      </div>}
+        </SidebarRail>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
        * 2. Main Workspace & Navigation Panel (Grok / Monday style)
@@ -2470,101 +2467,78 @@ export function Sidebar({
       >
         {/* Icon Rail for Drawer Mode (Mobile/Tablet only - shown when drawer is open) */}
         {drawerOnly && (
-          <div
-            className="sidebar-icon-rail show-on-drawer"
-            style={{
-              width: '48px',
-              height: '100%',
-              background: 'var(--bg-main)',
-              borderRight: '1px solid var(--border-subtle)',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: 0,
-              flexShrink: 0,
+          <SidebarRail
+            className="show-on-drawer"
+            onOpenTopup={() => {
+              onCloseMobile?.();
+              openPricingModal('topup');
             }}
-          >
-            {/* Logo + Quick App Icons */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-              {/* Logo container */}
-              <div
+            onOpenTiers={() => {
+              onCloseMobile?.();
+              openPricingModal('tiers');
+            }}
+            topContent={
+              <Link
+                href="/chat"
+                title="Anticeil Chat"
                 style={{
-                  height: '48px',
-                  width: '100%',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  flexShrink: 0,
+                  textDecoration: 'none',
+                  transition: 'transform 0.15s ease',
                 }}
+                onClick={onCloseMobile}
               >
-                <Link
-                  href="/chat"
-                  title="Anticeil Chat"
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textDecoration: 'none',
-                    transition: 'transform 0.15s ease',
-                  }}
-                  onClick={onCloseMobile}
-                >
-                  <img
-                    src="/anticeil-logo.png"
-                    alt="Anticeil Logo"
-                    style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
-                  />
-                </Link>
-              </div>
-
-              {/* Quick App Icons */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
-                <RailIconButton
-                  href="/chat"
-                  onClick={onCloseMobile}
-                  label={t.nav.chat || 'Anticeil Chat'}
-                  icon={<MessageSquare size={17} />}
-                  isActive={pathname === '/chat'}
-                  colorType="chat"
+                <img
+                  src="/anticeil-logo.png"
+                  alt="Anticeil Logo"
+                  style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
                 />
-                
-                <RailIconButton
-                  href="/docs"
-                  onClick={onCloseMobile}
-                  label={t.nav.docs || 'Docs Studio'}
-                  icon={<FileText size={17} />}
-                  isActive={pathname === '/docs' || pathname.startsWith('/docs')}
-                  colorType="docs"
-                />
-                
-                <RailIconButton
-                  href="/media"
-                  onClick={onCloseMobile}
-                  label={t.nav.imagine || 'Media Studio'}
-                  icon={<Sparkles size={17} />}
-                  isActive={isMediaMode}
-                  colorType="media"
-                />
-              </div>
-            </div>
-
-            {/* Bottom of 48px Rail in Drawer Mode: Circular AI Credits Ring */}
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <BottomRailMeters
-                onOpenTopup={() => {
-                  onCloseMobile?.();
-                  openPricingModal('topup');
-                }}
-                onOpenTiers={() => {
-                  onCloseMobile?.();
-                  openPricingModal('tiers');
-                }}
+              </Link>
+            }
+            bottomContent={<BottomRailMeters onOpenTopup={() => { onCloseMobile?.(); openPricingModal('topup'); }} onOpenTiers={() => { onCloseMobile?.(); openPricingModal('tiers'); }} />}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px', flex: 1 }}>
+              <RailIconButton
+                href="/chat"
+                onClick={onCloseMobile}
+                label={t.nav.chat || 'Anticeil Chat'}
+                icon={<MessageSquare size={17} />}
+                isActive={pathname === '/chat'}
+                colorType="chat"
+              />
+              <RailIconButton
+                href="/docs"
+                onClick={onCloseMobile}
+                label={t.nav.docs || 'Docs Studio'}
+                icon={<FileText size={17} />}
+                isActive={pathname === '/docs' || pathname.startsWith('/docs')}
+                colorType="docs"
+              />
+              <RailIconButton
+                href="/media"
+                onClick={onCloseMobile}
+                label={t.nav.imagine || 'Media Studio'}
+                icon={<Sparkles size={17} />}
+                isActive={isMediaMode}
+                colorType="media"
+              />
+              <div style={{ flex: 1 }} />
+              <RailIconButton
+                href="/documentation"
+                onClick={onCloseMobile}
+                label={language === 'id' ? 'Dokumentasi' : 'Documentation'}
+                icon={<BookOpen size={17} />}
+                isActive={isDocumentation}
+                colorType="docs"
+                iconAlign="bottom"
               />
             </div>
-          </div>
+          </SidebarRail>
         )}
 
         {/* Main Content Panel */}
@@ -2578,7 +2552,7 @@ export function Sidebar({
         {/* Workspace Title Header — hidden when drawerOnly (Navbar is above and shows title) */}
         {!drawerOnly && (
           <DrawerPanelHeader
-            title={isMediaMode ? 'Media Studio' : isDocs ? 'Docs Studio' : 'Anticeil'}
+            title={drawerTitle}
             titleStyle="primary"
             onClose={onCloseMobile}
             collapseLabel={t.sidebar.collapseSidebar}
@@ -2590,7 +2564,7 @@ export function Sidebar({
         {drawerOnly && (
           <DrawerPanelHeader
             hideClass="hide-on-drawer"
-            title={isMediaMode ? 'Media Studio' : isDocs ? 'Docs Studio' : (language === 'id' ? 'Percakapan' : 'Chat')}
+            title={drawerTitle}
             collapseLabel={t.sidebar.collapseSidebar}
             onCollapse={onToggleDesktopCollapse}
           />
@@ -2599,12 +2573,13 @@ export function Sidebar({
         {/* Mobile-only Feature Subheader */}
         <DrawerPanelHeader
           showClass="show-on-drawer"
-          title={isMediaMode ? 'Media Studio' : isDocs ? 'Docs Studio' : (language === 'id' ? 'Percakapan' : 'Chat')}
+          title={drawerTitle}
           onClose={onCloseMobile}
         />
 
         {/* Primary Action Button (Mode-Aware) */}
-        <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {!isDocumentation && (
+          <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
           {isMediaMode ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
               <button
@@ -2795,7 +2770,7 @@ export function Sidebar({
           )}
 
           {/* Connectors & Integrations Shortcut in Chat Mode */}
-          {!isMediaMode && !isDocs && (
+          {!isMediaMode && !isDocs && !isDocumentation && (
             <button
               type="button"
               onClick={() => setIsConnectorsModalOpen(true)}
@@ -2846,7 +2821,9 @@ export function Sidebar({
             <input
               type="text"
               placeholder={
-                isDocs
+                isDocumentation
+                  ? (language === 'id' ? 'Filter topik...' : 'Filter topics...')
+                  : isDocs
                   ? isSheetDoc
                     ? (language === 'id' ? 'Cari spreadsheet & folder...' : 'Search spreadsheets & folders...')
                     : isSlideDoc
@@ -2879,6 +2856,7 @@ export function Sidebar({
             />
           </div>
         </div>
+        )}
 
         {/* Scrollable Tree (Projects & History - Mode-Aware) */}
         <div
@@ -2894,7 +2872,21 @@ export function Sidebar({
           {/* ─────────────────────────────────────────────────────────────
            * A. MEDIA MODE SIDEBAR CONTENT (Image/Video/Audio)
            * ───────────────────────────────────────────────────────────── */}
-          {isDocs ? (
+          {isDocumentation ? (
+            <DocSidebar
+              embedded
+              categories={DOC_CATEGORIES}
+              activeSectionId={activeDocSectionId}
+              onSelectSection={(secId) => {
+                router.push(`/documentation?section=${secId}`);
+                if (onCloseMobile) onCloseMobile();
+              }}
+              language={language as 'id' | 'en'}
+              searchQuery={searchQuery}
+              onSearchChange={(q) => setSearchQuery(q)}
+              searchResults={docSearchResults}
+            />
+          ) : isDocs ? (
             /* ─────────────────────────────────────────────────────────────
              * C. DOCS STUDIO MODE SIDEBAR CONTENT (Project Folders & Isolated Docs)
              * ───────────────────────────────────────────────────────────── */

@@ -7,11 +7,20 @@ import {
   CreditActionType,
   isBYOKProvider,
   getActionCreditCost,
+  getModelCreditWeight,
+  calculateDynamicCreditCost,
+  CalculateCreditOptions,
 } from '@anticeil/core';
 
 export const MAX_DAILY_CREDITS = 50;
-export { CREDIT_COSTS, isBYOKProvider, getActionCreditCost };
-export type { CreditActionType };
+export {
+  CREDIT_COSTS,
+  isBYOKProvider,
+  getActionCreditCost,
+  getModelCreditWeight,
+  calculateDynamicCreditCost,
+};
+export type { CreditActionType, CalculateCreditOptions };
 
 // Credit packages available for top-up (Never Expire & Stackable)
 export interface CreditPack {
@@ -74,17 +83,38 @@ interface CreditState {
   isPricingModalOpen: boolean;
   pricingModalInitialTab: 'topup' | 'tiers';
   attemptedAction: CreditActionType | null;
+  attemptedCost?: number;
 
   // Actions
   checkAndResetDaily: () => void;
   addPaidCredits: (amount: number) => void;
-  canAfford: (actionType: CreditActionType, providerId: string) => boolean;
-  deductCredits: (actionType: CreditActionType, providerId: string) => boolean;
-  refundCredits: (actionType: CreditActionType, providerId: string) => void;
-  setLimitModalOpen: (open: boolean, actionType?: CreditActionType) => void;
+  canAfford: (
+    actionType: CreditActionType,
+    providerId: string,
+    options?: CalculateCreditOptions
+  ) => boolean;
+  deductCredits: (
+    actionType: CreditActionType,
+    providerId: string,
+    options?: CalculateCreditOptions
+  ) => boolean;
+  refundCredits: (
+    actionType: CreditActionType,
+    providerId: string,
+    options?: CalculateCreditOptions
+  ) => void;
+  setLimitModalOpen: (
+    open: boolean,
+    actionType?: CreditActionType,
+    attemptedCost?: number
+  ) => void;
   setPricingModalOpen: (open: boolean) => void;
   openPricingModal: (tab: 'topup' | 'tiers') => void;
   resetCreditsToMax: () => void;
+  /** Fetch paid_credits from Supabase and override local value (call on login) */
+  loadPaidCreditsFromSupabase: () => Promise<void>;
+  /** Persist current paidCredits to Supabase (call after deduction affects paid credits) */
+  syncPaidCreditsToSupabase: () => Promise<void>;
 }
 
 function getTodayDateString(): string {
@@ -105,6 +135,7 @@ export const useCreditStore = create<CreditState>()(
       isPricingModalOpen: false,
       pricingModalInitialTab: 'topup' as 'topup' | 'tiers',
       attemptedAction: null,
+      attemptedCost: 1,
 
       checkAndResetDaily: () => {
         const today = getTodayDateString();
@@ -119,30 +150,30 @@ export const useCreditStore = create<CreditState>()(
         }));
       },
 
-      canAfford: (actionType, providerId) => {
+      canAfford: (actionType, providerId, options) => {
         // BYOK, OmniRoute, Ollama, Custom — always free (0 credits)
         if (isBYOKProvider(providerId)) {
           return true;
         }
         get().checkAndResetDaily();
-        const cost = getActionCreditCost(actionType);
+        const cost = getActionCreditCost(actionType, options);
         const total = (get().credits || 0) + (get().paidCredits || 0);
         return total >= cost;
       },
 
-      deductCredits: (actionType, providerId) => {
+      deductCredits: (actionType, providerId, options) => {
         // BYOK / Local always pass through (0 credits)
         if (isBYOKProvider(providerId)) {
           return true;
         }
 
         get().checkAndResetDaily();
-        const cost = getActionCreditCost(actionType);
+        const cost = getActionCreditCost(actionType, options);
         const { credits, paidCredits } = get();
         const total = (credits || 0) + (paidCredits || 0);
 
         if (total < cost) {
-          set({ isLimitModalOpen: true, attemptedAction: actionType });
+          set({ isLimitModalOpen: true, attemptedAction: actionType, attemptedCost: cost });
           return false;
         }
 
@@ -155,13 +186,15 @@ export const useCreditStore = create<CreditState>()(
             credits: 0,
             paidCredits: Math.max(0, (paidCredits || 0) - remaining),
           });
+          // Paid credits changed — sync to Supabase (fire-and-forget)
+          get().syncPaidCreditsToSupabase();
         }
         return true;
       },
 
-      refundCredits: (actionType, providerId) => {
+      refundCredits: (actionType, providerId, options) => {
         if (isBYOKProvider(providerId)) return;
-        const cost = getActionCreditCost(actionType);
+        const cost = getActionCreditCost(actionType, options);
         set((state) => {
           const maxFree = state.maxDailyCredits || MAX_DAILY_CREDITS;
           const currentFree = state.credits || 0;
@@ -180,8 +213,12 @@ export const useCreditStore = create<CreditState>()(
         });
       },
 
-      setLimitModalOpen: (open, actionType) => {
-        set({ isLimitModalOpen: open, attemptedAction: actionType ?? null });
+      setLimitModalOpen: (open, actionType, attemptedCost) => {
+        set({
+          isLimitModalOpen: open,
+          attemptedAction: actionType ?? null,
+          attemptedCost: attemptedCost ?? (actionType ? getActionCreditCost(actionType) : 1),
+        });
       },
 
       setPricingModalOpen: (open) => {
@@ -194,6 +231,32 @@ export const useCreditStore = create<CreditState>()(
 
       resetCreditsToMax: () => {
         set({ credits: MAX_DAILY_CREDITS, lastResetDate: getTodayDateString() });
+      },
+
+      loadPaidCreditsFromSupabase: async () => {
+        try {
+          const res = await fetch('/api/credits');
+          if (!res.ok) return; // not logged in or error — keep local value
+          const { paid_credits } = await res.json() as { paid_credits: number };
+          if (typeof paid_credits === 'number') {
+            set({ paidCredits: paid_credits });
+          }
+        } catch {
+          // Network error — keep local value
+        }
+      },
+
+      syncPaidCreditsToSupabase: async () => {
+        try {
+          const { paidCredits } = get();
+          await fetch('/api/credits', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paid_credits: paidCredits }),
+          });
+        } catch {
+          // Best-effort — local store is still correct
+        }
       },
     }),
     {

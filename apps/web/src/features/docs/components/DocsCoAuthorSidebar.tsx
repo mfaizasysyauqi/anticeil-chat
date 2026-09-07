@@ -226,9 +226,21 @@ export function DocsCoAuthorSidebar({
     };
   }, [isPlusMenuOpen]);
 
+  const MAX_ATTACHMENTS_PER_MESSAGE = 5;
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    if (attachments.length + files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
+      alert(
+        language === 'id'
+          ? `Maksimal hanya dapat melampirkan ${MAX_ATTACHMENTS_PER_MESSAGE} berkas.`
+          : `You can attach a maximum of ${MAX_ATTACHMENTS_PER_MESSAGE} files.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     const newAttachments: FileAttachment[] = [];
     const currentTotalBytes = attachments.reduce((acc, a) => acc + (a.size || 0), 0);
@@ -253,6 +265,10 @@ export function DocsCoAuthorSidebar({
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
+
+    if (attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE) {
+      return;
+    }
 
     const newAttachments: FileAttachment[] = [];
     const currentTotalBytes = attachments.reduce((acc, a) => acc + (a.size || 0), 0);
@@ -700,7 +716,12 @@ After emitting the action tags, provide a brief, polite explanation of what was 
           }
 
           if (!creditDeducted && (chunk.delta || chunk.reasoningDelta) && selectedProviderId === 'anticeil') {
-            useCreditStore.getState().deductCredits('docs', 'anticeil');
+            const promptLength = apiMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
+            useCreditStore.getState().deductCredits('docs', 'anticeil', {
+              modelId: selectedModelId,
+              promptLength,
+              totalTokens: chunk.promptTokens,
+            });
             creditDeducted = true;
           }
 

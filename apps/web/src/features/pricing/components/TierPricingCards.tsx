@@ -23,7 +23,7 @@ const RESPONSIVE_GRID_CSS = `
       gap: 14px;
     }
   }
-  @media (max-width: 540px) {
+  @media (max-width: 600px) {
     .anticeil-tier-grid {
       grid-template-columns: 1fr;
       gap: 12px;

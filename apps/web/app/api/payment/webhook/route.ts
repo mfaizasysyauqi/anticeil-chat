@@ -59,8 +59,11 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Midtrans Webhook] Payment success: ${order_id} | type=${type} itemId=${itemId} userId=${userId}`);
 
-    // If tier upgrade and user is logged in → update Supabase
-    if (type === "tier" && userId) {
+    const PACK_CREDITS: Record<string, number> = {
+      pack_100: 100, pack_350: 350, pack_600: 600, pack_1500: 1500,
+    };
+
+    if (userId) {
       try {
         const { createClient } = await import("@supabase/supabase-js");
         const supabase = createClient(
@@ -68,14 +71,26 @@ export async function POST(req: NextRequest) {
           process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
-        const { error } = await supabase.auth.admin.updateUserById(userId, {
-          user_metadata: { tier: itemId },
-        });
+        // Fetch current metadata first so we can merge safely
+        const { data: { user: currentUser } } = await supabase.auth.admin.getUserById(userId);
+        const currentMeta = currentUser?.user_metadata || {};
 
-        if (error) {
-          console.error("[Midtrans Webhook] Failed to update user tier:", error.message);
-        } else {
-          console.log(`[Midtrans Webhook] Updated user ${userId} to tier: ${itemId}`);
+        if (type === "topup") {
+          const addCredits = PACK_CREDITS[itemId] ?? 0;
+          const existing = (currentMeta.paid_credits as number) || 0;
+          const { error } = await supabase.auth.admin.updateUserById(userId, {
+            user_metadata: { ...currentMeta, paid_credits: existing + addCredits },
+          });
+          if (error) console.error("[Midtrans Webhook] Failed to add paid_credits:", error.message);
+          else console.log(`[Midtrans Webhook] +${addCredits} paid_credits → user ${userId} (total: ${existing + addCredits})`);
+        }
+
+        if (type === "tier") {
+          const { error } = await supabase.auth.admin.updateUserById(userId, {
+            user_metadata: { ...currentMeta, tier: itemId },
+          });
+          if (error) console.error("[Midtrans Webhook] Failed to update user tier:", error.message);
+          else console.log(`[Midtrans Webhook] Updated user ${userId} to tier: ${itemId}`);
         }
       } catch (e) {
         console.error("[Midtrans Webhook] Supabase error:", e);

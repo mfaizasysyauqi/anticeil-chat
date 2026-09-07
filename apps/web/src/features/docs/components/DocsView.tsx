@@ -216,6 +216,7 @@ import { BottomRailMeters } from '../../../shared/components/BottomRailMeters';
 import { ProfileBar } from '../../../shared/components/ProfileBar';
 import { SidebarRail } from '../../../shared/components/SidebarRail';
 import { RailIconButton } from '../../../shared/components/RailIconButton';
+import { DrawerPanelHeader } from '../../../shared/components/DrawerPanelHeader';
 import { SettingsModal } from '../../settings/components/SettingsModal';
 import { CreditLimitModal } from '../../credits/components/CreditLimitModal';
 import { PricingModal } from '../../pricing/components/PricingModal';
@@ -1240,8 +1241,11 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     const apiKeys = useSettingsStore.getState().apiKeys;
     const activeApiKeyConfig = (apiKeys as Record<string, any>)[activeProviderId] || { apiKey: '', isEnabled: false };
 
-    // Credit check & deduction for Anticeil Docs AI generation (1 credit per request)
-    const allowed = useCreditStore.getState().deductCredits('docs', activeProviderId);
+    // Credit check & deduction for Anticeil Docs AI generation with dynamic cost
+    const allowed = useCreditStore.getState().deductCredits('docs', activeProviderId, {
+      modelId: activeModelId,
+      promptLength: promptText.length,
+    });
     if (!allowed) return;
 
     setCurrentPrompt(promptText);
@@ -3070,37 +3074,26 @@ ${exportText}
         onOpenTopup={() => openPricingModal('topup')}
         onOpenTiers={() => openPricingModal('tiers')}
         topContent={
-          <div
+          <Link
+            href="/docs"
+            title="Anticeil Docs"
             style={{
-              height: '48px',
-              width: '100%',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              flexShrink: 0,
+              textDecoration: 'none',
+              transition: 'transform 0.15s ease',
             }}
           >
-            <Link
-              href="/docs"
-              title="Anticeil Docs"
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textDecoration: 'none',
-                transition: 'transform 0.15s ease',
-              }}
-            >
-              <img
-                src="/anticeil-logo.png"
-                alt="Anticeil Logo"
-                style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
-              />
-            </Link>
-          </div>
+            <img
+              src="/anticeil-logo.png"
+              alt="Anticeil Logo"
+              style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
+            />
+          </Link>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', paddingTop: '4px', width: '100%' }}>
@@ -3692,149 +3685,112 @@ ${exportText}
                 {/* TAB 1: FILES TREE */}
                 {activeDrawerTab === 'files' && (
                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                    {/* Drawer Header: Title + New File, New Folder & Collapse Buttons (Exact 48px height) */}
-                    <div
-                      style={{
-                        height: '48px',
-                        boxSizing: 'border-box',
-                        padding: '0 12px',
-                        borderBottom: '1px solid var(--border-subtle)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexShrink: 0,
-                      }}
+                    {/* Drawer Header: Title + Action Buttons (Exact 48px height matching main Sidebar) */}
+                    <DrawerPanelHeader
+                      title={language === 'id' ? 'Struktur File' : 'Project Files'}
+                      onCollapse={toggleSidebar}
+                      collapseLabel={language === 'id' ? 'Tutup Panel' : 'Collapse Panel'}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          {language === 'id' ? 'Struktur File' : 'Project Files'}
+                      {mounted && (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            background: 'var(--bg-subtle)',
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: '999px',
+                            padding: '0 5px',
+                            lineHeight: '15px',
+                            marginRight: '6px',
+                          }}
+                        >
+                          {docFiles.length}
                         </span>
-                        {mounted && (
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              background: 'var(--bg-subtle)',
-                              color: 'var(--text-muted)',
-                              border: '1px solid var(--border-subtle)',
-                              borderRadius: '999px',
-                              padding: '0 5px',
-                              lineHeight: '15px',
-                            }}
-                          >
-                            {docFiles.length}
-                          </span>
-                        )}
-                      </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewSubFileName('');
+                          setNewSubFileExt('.tex');
+                          setIsAddingSubFolder(false);
+                          setAddingInFolder(null);
+                          setIsNewFileModalOpen(true);
+                        }}
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '6px',
+                          backgroundColor: isNewFileModalOpen ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
+                          border: isNewFileModalOpen ? '1px solid rgba(0, 115, 234, 0.3)' : '1px solid transparent',
+                          color: isNewFileModalOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        className="hover-subtle"
+                        title={language === 'id' ? 'Tambah File Baru' : 'New File'}
+                      >
+                        <FilePlus size={14} />
+                      </button>
 
-                      {/* New File, New Folder, Upload & Collapse Buttons */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewSubFileName('');
-                            setNewSubFileExt('.tex');
-                            setIsAddingSubFolder(false);
-                            setAddingInFolder(null);
-                            setIsNewFileModalOpen(true);
-                          }}
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '4px',
-                            backgroundColor: isNewFileModalOpen ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
-                            border: isNewFileModalOpen ? '1px solid rgba(0, 115, 234, 0.3)' : '1px solid transparent',
-                            color: isNewFileModalOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                          className="hover-subtle"
-                          title={language === 'id' ? 'Tambah File Baru' : 'New File'}
-                        >
-                          <FilePlus size={13} />
-                        </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingSubFolder(!isAddingSubFolder);
+                          setAddingInFolder(null);
+                        }}
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '6px',
+                          backgroundColor: isAddingSubFolder ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
+                          border: isAddingSubFolder ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid transparent',
+                          color: isAddingSubFolder ? '#F59E0B' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        className="hover-subtle"
+                        title={language === 'id' ? 'Tambah Folder Baru' : 'New Folder'}
+                      >
+                        <FolderPlus size={14} />
+                      </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsAddingSubFolder(!isAddingSubFolder);
-                            setAddingInFolder(null);
-                          }}
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '4px',
-                            backgroundColor: isAddingSubFolder ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
-                            border: isAddingSubFolder ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid transparent',
-                            color: isAddingSubFolder ? '#F59E0B' : 'var(--text-muted)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                          className="hover-subtle"
-                          title={language === 'id' ? 'Tambah Folder Baru' : 'New Folder'}
-                        >
-                          <FolderPlus size={13} />
-                        </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadedFiles([]);
+                          setIsUploadModalOpen(true);
+                        }}
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '6px',
+                          backgroundColor: 'transparent',
+                          border: '1px solid transparent',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        className="hover-subtle"
+                        title={language === 'id' ? 'Unggah File' : 'Upload Files'}
+                      >
+                        <Upload size={14} />
+                      </button>
+                    </DrawerPanelHeader>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUploadedFiles([]);
-                            setIsUploadModalOpen(true);
-                          }}
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '4px',
-                            backgroundColor: 'transparent',
-                            border: '1px solid transparent',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                          className="hover-subtle"
-                          title={language === 'id' ? 'Unggah File' : 'Upload Files'}
-                        >
-                          <Upload size={13} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={toggleSidebar}
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '4px',
-                            backgroundColor: 'transparent',
-                            border: '1px solid transparent',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                          className="hide-on-drawer hover-subtle"
-                          title={language === 'id' ? 'Tutup Panel' : 'Collapse Panel'}
-                        >
-                          <PanelLeftClose size={13} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Sub-header: Folder Add Input */}
-                    <div style={{ padding: '0 10px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+                    {/* Sub-header: Search & Action Inputs */}
+                    <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {/* Add New Folder Inline Input */}
                       {isAddingSubFolder && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
                           <span style={{ fontSize: '11px', color: '#F59E0B', fontWeight: 600 }}>📁</span>
                           <input
                             type="text"
@@ -3898,16 +3854,14 @@ ${exportText}
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
-                          backgroundColor: 'var(--bg-subtle)',
+                          padding: '5px 8px',
+                          background: 'var(--bg-surface)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          padding: '0 8px',
-                          height: '32px',
-                          boxSizing: 'border-box',
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <Search size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                        <Search size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                         <input
                           type="text"
                           placeholder={language === 'id' ? 'Cari file di proyek ini...' : 'Search project files...'}
@@ -3919,7 +3873,6 @@ ${exportText}
                             border: 'none',
                             outline: 'none',
                             padding: 0,
-                            lineHeight: 1,
                             fontSize: '12px',
                             color: 'var(--text-primary)',
                           }}
@@ -3947,7 +3900,7 @@ ${exportText}
                     </div>
 
                     {/* Overleaf Folder & File Tree */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
                       {filteredSubFiles.length === 0 ? (
                         <div style={{ padding: '24px 12px', textAlign: 'center', fontSize: '11.5px', color: 'var(--text-muted)' }}>
                           {language === 'id' ? 'Tidak ada file yang cocok' : 'No matching files'}
@@ -4444,19 +4397,20 @@ ${exportText}
                         window.addEventListener('mouseup', onUp);
                       }}
                       style={{
-                        height: '5px',
+                        height: '6px',
                         cursor: isOutlineCollapsed ? 'default' : 'row-resize',
                         flexShrink: 0,
-                        backgroundColor: 'var(--border-subtle)',
+                        borderTop: '1px solid var(--border-subtle)',
+                        backgroundColor: 'transparent',
                         transition: 'background 0.15s',
                       }}
-                      className="resize-divider"
+                      className="resize-divider hover-subtle"
                     />
 
                     {/* Outline Section */}
                     <div
                       style={{
-                        height: isOutlineCollapsed ? '32px' : `${outlinePanelHeight}px`,
+                        height: isOutlineCollapsed ? '34px' : `${outlinePanelHeight}px`,
                         flexShrink: 0,
                         display: 'flex',
                         flexDirection: 'column',
@@ -4466,7 +4420,7 @@ ${exportText}
                       {/* Outline Header */}
                       <div
                         style={{
-                          height: '32px',
+                          height: '34px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -4501,7 +4455,7 @@ ${exportText}
 
                       {/* Outline Body */}
                       {!isOutlineCollapsed && (
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 6px' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 10px' }}>
                           {documentHeadings.length === 0 ? (
                             <div style={{ padding: '12px 6px', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                               {language === 'id'
@@ -4570,62 +4524,28 @@ ${exportText}
                 {/* TAB 2: SEARCH & REPLACE */}
                 {activeDrawerTab === 'search' && (
                   <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div
-                      style={{
-                        height: '48px',
-                        boxSizing: 'border-box',
-                        padding: '0 12px',
-                        borderBottom: '1px solid var(--border-subtle)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        {language === 'id' ? 'Pencarian Dokumen' : 'Search & Replace'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={toggleSidebar}
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '5px',
-                          backgroundColor: 'transparent',
-                          border: '1px solid transparent',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                        className="hide-on-drawer hover-subtle"
-                        title={language === 'id' ? 'Tutup Panel' : 'Collapse Panel'}
-                      >
-                        <PanelLeftClose size={13} />
-                      </button>
-                    </div>
+                    <DrawerPanelHeader
+                      title={language === 'id' ? 'Pencarian Dokumen' : 'Search & Replace'}
+                      onCollapse={toggleSidebar}
+                      collapseLabel={language === 'id' ? 'Tutup Panel' : 'Collapse Panel'}
+                    />
 
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column' }}>
                       {/* Find Input */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
-                          backgroundColor: 'var(--bg-subtle)',
+                          padding: '5px 8px',
+                          background: 'var(--bg-surface)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          padding: '0 8px',
-                          height: '32px',
-                          boxSizing: 'border-box',
                           marginBottom: '6px',
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <Search size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                        <Search size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                         <input
                           type="text"
                           placeholder={language === 'id' ? 'Cari kata atau rumus...' : 'Find text or math...'}
@@ -4637,7 +4557,6 @@ ${exportText}
                             border: 'none',
                             outline: 'none',
                             padding: 0,
-                            lineHeight: 1,
                             fontSize: '12px',
                             color: 'var(--text-primary)',
                           }}
@@ -4669,17 +4588,15 @@ ${exportText}
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
-                          backgroundColor: 'var(--bg-subtle)',
+                          padding: '5px 8px',
+                          background: 'var(--bg-surface)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          padding: '0 8px',
-                          height: '32px',
-                          boxSizing: 'border-box',
                           marginBottom: '8px',
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <Replace size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                        <Replace size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                         <input
                           type="text"
                           placeholder={language === 'id' ? 'Ganti dengan...' : 'Replace with...'}
@@ -4691,7 +4608,6 @@ ${exportText}
                             border: 'none',
                             outline: 'none',
                             padding: 0,
-                            lineHeight: 1,
                             fontSize: '12px',
                             color: 'var(--text-primary)',
                           }}
@@ -4881,43 +4797,47 @@ ${exportText}
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0', overflow: 'hidden' }}>
-                      {/* Review Panel Header */}
-                      <div style={{
-                        padding: '10px 12px 8px',
-                        borderBottom: '1px solid var(--border-subtle)',
-                        flexShrink: 0,
-                        backgroundColor: 'var(--bg-sidebar)',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            {language === 'id' ? 'Review & Komentar' : 'Review & Comments'}
-                          </span>
-                          <button
-                            type="button"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={handleTriggerAddComment}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '0 8px',
-                              height: '24px',
-                              borderRadius: '6px',
-                              backgroundColor: 'var(--brand-primary)',
-                              color: '#fff',
-                              border: 'none',
-                              fontSize: '11px',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              transition: 'opacity 0.15s',
-                            }}
-                            title={language === 'id' ? 'Tambah Komentar (Ctrl+Shift+C)' : 'Add Comment (Ctrl+Shift+C)'}
-                          >
-                            <MessageSquarePlus size={12} />
-                            <span>{language === 'id' ? 'Komentar' : 'Comment'}</span>
-                          </button>
-                        </div>
-                        {/* Filter tabs */}
+                      {/* Review Panel Header (48px matching main Sidebar) */}
+                      <DrawerPanelHeader
+                        title={language === 'id' ? 'Review & Komentar' : 'Review & Comments'}
+                        onCollapse={toggleSidebar}
+                        collapseLabel={language === 'id' ? 'Tutup Panel' : 'Collapse Panel'}
+                      >
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleTriggerAddComment}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '0 8px',
+                            height: '24px',
+                            borderRadius: '6px',
+                            backgroundColor: 'var(--brand-primary)',
+                            color: '#fff',
+                            border: 'none',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'opacity 0.15s',
+                          }}
+                          title={language === 'id' ? 'Tambah Komentar (Ctrl+Shift+C)' : 'Add Comment (Ctrl+Shift+C)'}
+                        >
+                          <MessageSquarePlus size={12} />
+                          <span>{language === 'id' ? 'Komentar' : 'Comment'}</span>
+                        </button>
+                      </DrawerPanelHeader>
+
+                      {/* Filter tabs */}
+                      <div
+                        style={{
+                          padding: '8px 10px 6px 10px',
+                          borderBottom: '1px solid var(--border-subtle)',
+                          flexShrink: 0,
+                          backgroundColor: 'var(--bg-sidebar)',
+                        }}
+                      >
                         <div style={{ display: 'flex', gap: '2px', backgroundColor: 'var(--bg-subtle)', borderRadius: '6px', padding: '2px', height: '28px', boxSizing: 'border-box' }}>
                           {(['unresolved', 'resolved', 'all'] as const).map(f => (
                             <button

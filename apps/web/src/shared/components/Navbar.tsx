@@ -23,6 +23,7 @@ import {
   Layers,
   Sparkles,
   Settings as SettingsIcon,
+  BookOpen,
 } from 'lucide-react';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
@@ -147,6 +148,13 @@ export function Navbar({
         onUpdateTitle: (newTitle: string) => {
           if (activeDoc) updateDocumentTitle(activeDoc.id, newTitle);
         },
+      };
+    }
+    if (pathname?.startsWith('/documentation')) {
+      return {
+        icon: <BookOpen size={13.5} color="var(--rail-docs-color)" style={{ flexShrink: 0 }} />,
+        title: language === 'id' ? 'Dokumentasi' : 'Documentation',
+        isEditable: false,
       };
     }
     if (pathname?.startsWith('/settings')) {

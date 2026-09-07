@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef } from "react";
 
@@ -18,8 +18,12 @@ declare global {
   }
 }
 
-const SNAP_JS_URL = "https://app.midtrans.com/snap/snap.js";
 const CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ?? "";
+// Mirror backend logic: sandbox keys do NOT start with "Mid-client-production-"
+const IS_SANDBOX = !CLIENT_KEY.startsWith("Mid-client-production-");
+const SNAP_JS_URL = IS_SANDBOX
+  ? "https://app.sandbox.midtrans.com/snap/snap.js"
+  : "https://app.midtrans.com/snap/snap.js";
 
 export function useMidtrans() {
   const scriptLoaded = useRef(false);

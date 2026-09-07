@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useCreditStore, MAX_DAILY_CREDITS } from '../../features/credits/store/useCreditStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 
@@ -126,6 +127,8 @@ export function BottomRailMeters({
 }: BottomRailMetersProps) {
   const [mounted, setMounted] = useState(false);
   const [hoverCredit, setHoverCredit] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ left: number; top: number; transform: string } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Credit Store
   const dailyCredits = useCreditStore((s) => s.credits) || 0;
@@ -139,6 +142,34 @@ export function BottomRailMeters({
     setMounted(true);
   }, []);
 
+  const handleMouseEnter = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const spaceOnRight = viewportWidth - (rect.right + 12);
+
+      if (spaceOnRight >= 250) {
+        setTooltipPos({
+          left: rect.right + 10,
+          top: rect.top + rect.height / 2,
+          transform: 'translateY(-50%)',
+        });
+      } else {
+        const idealLeft = Math.max(16, Math.min(viewportWidth - 16, rect.left + rect.width / 2));
+        setTooltipPos({
+          left: idealLeft,
+          top: Math.max(10, rect.top - 8),
+          transform: 'translate(-50%, -100%)',
+        });
+      }
+    }
+    setHoverCredit(true);
+  };
+
+  const handleMouseLeave = () => {
+    setHoverCredit(false);
+  };
+
   if (!mounted) return null;
 
   const creditPercentage = Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100));
@@ -149,16 +180,14 @@ export function BottomRailMeters({
       ? 'var(--rail-credit-color, #f59e0b)'
       : 'var(--text-secondary, #94a3b8)';
 
-  // Format compact representation
+  // Label: total usable credits (daily + paid). Ring arc: daily % only (has a clear max)
   const compactCredits = formatCompactNumber(totalCredits, language);
 
-  // Dynamic font sizing based on compact text length
+  // Dynamic font sizing
   const creditFontSize =
-    compactCredits.length <= 2
-      ? '10.5px'
-      : compactCredits.length === 3
-      ? '9.5px'
-      : '8.5px';
+    compactCredits.length <= 2 ? '10.5px'
+    : compactCredits.length === 3 ? '9.5px'
+    : '8.5px';
 
   return (
     <div
@@ -167,7 +196,7 @@ export function BottomRailMeters({
         height: '48px',
         borderTop: '1px solid var(--border-subtle)',
         padding: 0,
-        background: 'var(--bg-main)',
+        background: 'var(--bg-sidebar)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -179,10 +208,11 @@ export function BottomRailMeters({
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {/* ⚡ AI Credit Circular Ring */}
         <button
+          ref={buttonRef}
           type="button"
           onClick={onOpenTopup}
-          onMouseEnter={() => setHoverCredit(true)}
-          onMouseLeave={() => setHoverCredit(false)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           style={{
             background: 'transparent',
             border: 'none',
@@ -215,21 +245,21 @@ export function BottomRailMeters({
           </CircularProgressRing>
         </button>
 
-        {/* Hover Tag / Tooltip (shows full precise count) */}
-        {hoverCredit && (
+        {/* Hover Tag / Tooltip (rendered in Portal to escape drawer stacking & overflow:hidden) */}
+        {hoverCredit && tooltipPos && mounted && typeof document !== 'undefined' && createPortal(
           <div
             style={{
-              position: 'absolute',
-              left: 'calc(100% + 10px)',
-              top: '50%',
-              transform: 'translateY(-50%)',
+              position: 'fixed',
+              left: `${tooltipPos.left}px`,
+              top: `${tooltipPos.top}px`,
+              transform: tooltipPos.transform,
               backgroundColor: 'var(--bg-surface, #18181b)',
               border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
               borderRadius: '8px',
               padding: '5px 10px',
               whiteSpace: 'nowrap',
               boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
-              zIndex: 999999,
+              zIndex: 9999999,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -238,15 +268,18 @@ export function BottomRailMeters({
               color: 'var(--text-primary)',
               animation: 'fadeIn 0.12s ease-out',
               pointerEvents: 'none',
+              maxWidth: 'calc(100vw - 24px)',
+              boxSizing: 'border-box',
             }}
           >
-            <span style={{ color: '#f59e0b' }}>⚡</span>
-            <span>
+            <span style={{ color: '#f59e0b', flexShrink: 0 }}>⚡</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {language === 'id'
-                ? `${totalCredits.toLocaleString()} Kredit AI (Klik untuk Top-up)`
-                : `${totalCredits.toLocaleString()} AI Credits (Click to Top-up)`}
+                ? `${dailyCredits.toLocaleString()} harian${paidCredits > 0 ? ` + ${paidCredits.toLocaleString()} top-up` : ''} · Klik untuk Top-up`
+                : `${dailyCredits.toLocaleString()} daily${paidCredits > 0 ? ` + ${paidCredits.toLocaleString()} top-up` : ''} · Click to Top-up`}
             </span>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

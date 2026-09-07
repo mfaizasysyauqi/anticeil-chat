@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { X, PanelLeftClose } from 'lucide-react';
@@ -43,10 +43,12 @@ export function DrawerPanelHeader({
         height: '48px',
         boxSizing: 'border-box',
         padding: '0 8px 0 12px',
-        display: showClass ? 'none' : 'flex',
+        /* showClass = only visible via CSS class; default display:flex for normal usage */
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         borderBottom: '1px solid var(--border-subtle)',
+        backgroundColor: 'var(--bg-sidebar)',
         flexShrink: 0,
       }}
     >
@@ -87,6 +89,7 @@ export function DrawerPanelHeader({
             type="button"
             onClick={onClose}
             aria-label="Close drawer"
+            className="hover-subtle"
             style={{
               background: 'transparent',
               border: 'none',
@@ -111,6 +114,7 @@ export function DrawerPanelHeader({
             onClick={onCollapse}
             aria-label={collapseLabel ?? 'Collapse sidebar'}
             title={collapseLabel ?? 'Collapse sidebar'}
+            className="hover-subtle"
             style={{
               background: 'transparent',
               border: 'none',

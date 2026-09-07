@@ -49,7 +49,22 @@ export function SidebarRail({
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-        {topContent}
+        {/* Logo slot — must be exactly 48px tall with border-bottom to stay in sync with App Bar and DrawerPanelHeader */}
+        {topContent && (
+          <div
+            style={{
+              width: '100%',
+              height: '48px',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderBottom: '1px solid var(--border-subtle)',
+            }}
+          >
+            {topContent}
+          </div>
+        )}
         {children}
       </div>
 

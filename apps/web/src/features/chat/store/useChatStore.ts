@@ -628,7 +628,12 @@ export const useChatStore = create<ChatState>()(
 
               // Deduct credits on first actual content received from Anticeil provider
               if (!creditDeducted && (chunk.delta || chunk.reasoningDelta) && session.providerId === 'anticeil') {
-                useCreditStore.getState().deductCredits('chat', 'anticeil');
+                const promptLength = apiMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
+                useCreditStore.getState().deductCredits('chat', 'anticeil', {
+                  modelId: session.modelId,
+                  promptLength,
+                  totalTokens: chunk.promptTokens,
+                });
                 creditDeducted = true;
               }
 
@@ -1022,7 +1027,11 @@ export const useChatStore = create<ChatState>()(
 
         // Credit check & deduction for Anticeil Free provider
         if (session.providerId === 'anticeil') {
-          const allowed = useCreditStore.getState().deductCredits('chat', 'anticeil');
+          const promptLength = (updatedMsgs || []).reduce((sum, m) => sum + (m.content?.length || 0), 0);
+          const allowed = useCreditStore.getState().deductCredits('chat', 'anticeil', {
+            modelId: session.modelId,
+            promptLength,
+          });
           if (!allowed) return;
         }
 

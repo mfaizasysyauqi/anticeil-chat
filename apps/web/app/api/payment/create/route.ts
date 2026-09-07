@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
-// Sandbox keys: Mid-server-xxxx (not Mid-production-xxxx)
-const IS_SANDBOX = !MIDTRANS_SERVER_KEY?.startsWith("Mid-server-production");
+// Midtrans production server keys start with "Mid-server-production-"
+const IS_SANDBOX = !MIDTRANS_SERVER_KEY?.startsWith("Mid-server-production-");
 const MIDTRANS_API_URL = IS_SANDBOX
   ? "https://app.sandbox.midtrans.com/snap/v1/transactions"
   : "https://app.midtrans.com/snap/v1/transactions";
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     const orderId = `anticeil-${type}-${itemId}-${Date.now()}`;
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://anticeil.app").replace(/\/$/, "");
 
     const payload = {
       transaction_details: { order_id: orderId, gross_amount: priceIdr },
@@ -73,6 +74,9 @@ export async function POST(req: NextRequest) {
         first_name: userName || "Anticeil",
         last_name: "User",
         email: userEmail || "user@anticeil.app",
+      },
+      callbacks: {
+        finish: `${appUrl}/payment/success?order_id=${orderId}&type=${type}&item=${itemId}`,
       },
       custom_field1: type,
       custom_field2: itemId,

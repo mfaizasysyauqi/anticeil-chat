@@ -236,9 +236,21 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
   const canFit = useStorageStore((s) => s.canFit);
 
   // Handle file upload
+  const MAX_ATTACHMENTS_PER_MESSAGE = 5;
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    if (attachments.length + files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
+      alert(
+        language === 'id'
+          ? `Maksimal hanya dapat melampirkan ${MAX_ATTACHMENTS_PER_MESSAGE} berkas dalam satu pesan.`
+          : `You can attach a maximum of ${MAX_ATTACHMENTS_PER_MESSAGE} files per message.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     setIsParsingFiles(true);
     const newAttachments: FileAttachment[] = [];

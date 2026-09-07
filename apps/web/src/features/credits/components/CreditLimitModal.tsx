@@ -28,6 +28,8 @@ export function CreditLimitModal() {
   const [mounted, setMounted] = useState(false);
   const [countdown, setCountdown] = useState(getTimeUntilMidnight());
 
+  const attemptedCost = useCreditStore((s) => s.attemptedCost);
+
   useEffect(() => {
     setMounted(true);
     const interval = setInterval(() => setCountdown(getTimeUntilMidnight()), 60000);
@@ -36,7 +38,7 @@ export function CreditLimitModal() {
 
   if (!isOpen || !mounted) return null;
 
-  const cost = attemptedAction ? CREDIT_COSTS[attemptedAction] : 1;
+  const cost = attemptedCost ?? (attemptedAction ? CREDIT_COSTS[attemptedAction] : 1);
 
   const actionName =
     attemptedAction === 'chat'
@@ -70,6 +72,8 @@ export function CreditLimitModal() {
         style={{
           width: '100%',
           maxWidth: '460px',
+          maxHeight: '92vh',
+          overflowY: 'auto',
           backgroundColor: 'var(--bg-surface, #18181b)',
           border: '1px solid var(--border-strong, rgba(255,255,255,0.15))',
           borderRadius: '16px',

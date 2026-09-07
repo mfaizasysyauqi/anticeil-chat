@@ -92,6 +92,7 @@ export function PricingModal() {
         setActionId(null);
         return;
       }
+      setPricingModalOpen(false);
       pay(data.token, {
         onSuccess: () => {
           addPaidCredits(pack.credits);
@@ -147,6 +148,7 @@ export function PricingModal() {
         setActionId(null);
         return;
       }
+      setPricingModalOpen(false);
       pay(data.token, {
         onSuccess: async () => {
           await setTier(planId as any);
@@ -185,8 +187,18 @@ export function PricingModal() {
   const useCases = [
     {
       icon: <MessageSquare size={15} color="#38bdf8" />,
-      title: 'Chat & Reasoning',
-      desc: language === 'id' ? '1 kredit / pesan' : '1 credit / message',
+      title: language === 'id' ? 'Fast & Economy Chat' : 'Fast & Economy Chat',
+      desc: language === 'id' ? '1 kredit (Gemini Flash, DeepSeek-V3)' : '1 credit (Gemini Flash, DeepSeek-V3)',
+    },
+    {
+      icon: <Sparkles size={15} color="#fbbf24" />,
+      title: language === 'id' ? 'Deep Reasoning / Code' : 'Deep Reasoning / Code',
+      desc: language === 'id' ? '3 kredit (DeepSeek-R1, Gemini Pro)' : '3 credits (DeepSeek-R1, Gemini Pro)',
+    },
+    {
+      icon: <Zap size={15} color="#f97316" />,
+      title: language === 'id' ? 'Flagship Premium' : 'Flagship Premium',
+      desc: language === 'id' ? '8 kredit (Claude 3.7 Sonnet, GPT-4o)' : '8 credits (Claude 3.7 Sonnet, GPT-4o)',
     },
     {
       icon: <Image size={15} color="#a78bfa" />,
@@ -196,7 +208,7 @@ export function PricingModal() {
     {
       icon: <Music size={15} color="#34d399" />,
       title: 'Audio & Speech',
-      desc: language === 'id' ? '5 kredit / suara' : '5 credits / audio',
+      desc: language === 'id' ? '2 kredit / suara' : '2 credits / audio',
     },
     {
       icon: <Video size={15} color="#f43f5e" />,
@@ -207,6 +219,7 @@ export function PricingModal() {
 
   const content = (
     <div
+      className="anticeil-pricing-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -222,44 +235,112 @@ export function PricingModal() {
       onClick={() => setPricingModalOpen(false)}
     >
       <style>{`
+        .anticeil-pricing-modal {
+          width: 100%;
+          max-width: 1080px;
+          max-height: 90vh;
+          background-color: var(--bg-surface);
+          border: 1px solid var(--border-strong);
+          border-radius: 20px;
+          box-shadow: var(--shadow-2xl, 0 32px 64px -12px rgba(0, 0, 0, 0.7));
+          display: flex;
+          flex-direction: column;
+          color: var(--text-primary);
+          position: relative;
+          overflow: hidden;
+        }
+        .anticeil-pricing-header {
+          padding: 18px 56px 14px 22px;
+          border-bottom: 1px solid var(--border-subtle);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .anticeil-pricing-body {
+          overflow-y: auto;
+          flex: 1;
+          padding: 18px 22px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .anticeil-pricing-footer {
+          padding: 12px 22px;
+          border-top: 1px solid var(--border-subtle);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 10px;
+          font-size: 11px;
+          color: var(--text-muted);
+          background: var(--bg-main);
+        }
         .anticeil-pricing-grid-4 {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 12px;
           align-items: stretch;
         }
+        .anticeil-pricing-segmented {
+          display: flex;
+          background: var(--bg-main);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          padding: 2px;
+          gap: 2px;
+        }
+        .anticeil-pricing-segmented button {
+          flex: 1;
+          justify-content: center;
+        }
         @media (max-width: 960px) {
+          .anticeil-pricing-modal {
+            max-height: 92vh;
+          }
           .anticeil-pricing-grid-4 {
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
+            gap: 12px;
           }
         }
-        @media (max-width: 560px) {
+        @media (max-width: 600px) {
+          .anticeil-pricing-overlay {
+            padding: 8px !important;
+          }
+          .anticeil-pricing-modal {
+            border-radius: 14px;
+            max-height: 95vh;
+          }
+          .anticeil-pricing-header {
+            padding: 14px 44px 12px 14px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+          }
+          .anticeil-pricing-segmented {
+            width: 100%;
+          }
+          .anticeil-pricing-body {
+            padding: 12px 12px;
+          }
+          .anticeil-pricing-footer {
+            padding: 10px 14px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
           .anticeil-pricing-grid-4 {
             grid-template-columns: 1fr;
-            gap: 12px;
+            gap: 10px;
           }
         }
       `}</style>
 
       <div
-        style={{
-          width: '100%',
-          maxWidth: '1080px',
-          maxHeight: '92vh',
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-strong)',
-          borderRadius: '20px',
-          boxShadow: 'var(--shadow-2xl, 0 32px 64px -12px rgba(0, 0, 0, 0.7))',
-          display: 'flex',
-          flexDirection: 'column',
-          color: 'var(--text-primary)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
+        className="anticeil-pricing-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Absolute Top-Right Exit/Close Button (Always pinned in top-right corner on mobile, tablet & desktop) */}
+        {/* Absolute Top-Right Exit/Close Button */}
         <button
           type="button"
           onClick={() => setPricingModalOpen(false)}
@@ -267,15 +348,15 @@ export function PricingModal() {
           title={language === 'id' ? 'Tutup' : 'Close'}
           style={{
             position: 'absolute',
-            top: '16px',
-            right: '18px',
+            top: '14px',
+            right: '14px',
             zIndex: 30,
             background: 'var(--bg-subtle)',
             border: '1px solid var(--border-subtle)',
             color: 'var(--text-secondary)',
             cursor: 'pointer',
-            padding: '7px',
-            borderRadius: '9px',
+            padding: '6px',
+            borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -296,17 +377,7 @@ export function PricingModal() {
         </button>
 
         {/* Header */}
-        <div
-          style={{
-            padding: '18px 60px 14px 22px',
-            borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap',
-          }}
-        >
+        <div className="anticeil-pricing-header">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div
@@ -344,16 +415,7 @@ export function PricingModal() {
             }}
           >
             {/* View Switcher: Top-up vs Tiers */}
-            <div
-              style={{
-                display: 'flex',
-                background: 'var(--bg-main)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                padding: '2px',
-                gap: '2px',
-              }}
-            >
+            <div className="anticeil-pricing-segmented">
               <button
                 type="button"
                 onClick={() => setActiveTab('topup')}
@@ -405,7 +467,7 @@ export function PricingModal() {
         {/* Success Alert */}
         {successMsg && (
           <div style={{
-            margin: '12px 22px 0',
+            margin: '12px 14px 0',
             padding: '10px 14px',
             borderRadius: '8px',
             background: 'rgba(0, 200, 117, 0.15)',
@@ -425,7 +487,7 @@ export function PricingModal() {
         {/* Error Alert */}
         {errorMsg && (
           <div style={{
-            margin: '12px 22px 0',
+            margin: '12px 14px 0',
             padding: '10px 14px',
             borderRadius: '8px',
             background: 'rgba(239, 68, 68, 0.12)',
@@ -443,18 +505,11 @@ export function PricingModal() {
         )}
 
         {/* Modal Body with smooth vertical scroll */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '18px 22px' }}>
+        <div className="anticeil-pricing-body">
           {/* ── TAB 1: TOP-UP PACKS (Chatwoot Captain AI Style) ── */}
           {activeTab === 'topup' && (
             <div>
-              <div
-                className="anticeil-pricing-grid-4"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '12px',
-                }}
-              >
+              <div className="anticeil-pricing-grid-4">
                 {CREDIT_PACKS.map((pack) => {
                   const isBusy = actionId === pack.id;
                   const priceStr = `Rp ${pack.priceIdr.toLocaleString('id-ID')}`;
@@ -579,7 +634,7 @@ export function PricingModal() {
                 </div>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
                   gap: '8px',
                 }}>
                   {useCases.map((uc, i) => (
@@ -620,18 +675,7 @@ export function PricingModal() {
         </div>
 
         {/* Footer info */}
-        <div style={{
-          padding: '12px 22px',
-          borderTop: '1px solid var(--border-subtle)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '10px',
-          fontSize: '11px',
-          color: 'var(--text-muted)',
-          background: 'var(--bg-main)',
-        }}>
+        <div className="anticeil-pricing-footer">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Sparkles size={13} color="var(--accent-success, #10b981)" />
             <span>

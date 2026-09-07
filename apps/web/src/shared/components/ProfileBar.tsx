@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import {
   MoreHorizontal,
   KeyRound,
@@ -8,7 +9,9 @@ import {
   Database,
   Zap,
   LogOut,
+  HelpCircle,
 } from 'lucide-react';
+
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useCreditStore } from '../../features/credits/store/useCreditStore';
@@ -63,9 +66,14 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
       style={{
         position: 'relative',
         width: '100%',
-        padding: '8px 10px',
+        height: '48px',
+        boxSizing: 'border-box',
+        padding: '0 4px',
+        display: 'flex',
+        alignItems: 'center',
         borderTop: '1px solid var(--border-subtle)',
         background: 'var(--bg-sidebar)',
+        flexShrink: 0,
         ...style,
       }}
     >
@@ -146,6 +154,18 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
             <span>{language === 'id' ? 'Database & Cadangan' : 'Database & Backup'}</span>
           </button>
 
+          {/* Documentation & Help */}
+          <Link
+            href="/documentation"
+            onClick={() => handleToggleMenu(false)}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', textDecoration: 'none', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, width: '100%', boxSizing: 'border-box', transition: 'background 0.15s ease' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <HelpCircle size={14} color="var(--text-secondary)" />
+            <span>{language === 'id' ? 'Dokumentasi & Panduan' : 'Documentation & Guide'}</span>
+          </Link>
+
           {/* Divider */}
           <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '3px 0' }} />
 
@@ -202,11 +222,10 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
         style={{
           width: '100%',
           minWidth: 0,
-          overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          padding: '6px 8px',
+          padding: '4px 8px',
           borderRadius: 'var(--radius-md, 8px)',
           background: isProfileMenuOpen ? 'var(--bg-subtle)' : 'transparent',
           border: 'none',
@@ -227,7 +246,6 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
               borderRadius: '50%',
               objectFit: 'cover',
               flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
             }}
           />
         ) : (
@@ -244,7 +262,6 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
               fontSize: '12.5px',
               fontWeight: 700,
               flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(0, 115, 234, 0.3)',
             }}
           >
             {(displayName[0] || '?').toUpperCase()}
@@ -252,44 +269,23 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
         )}
 
         <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, width: '100%' }}>
-            <span
-              style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              {displayName}
+          {/* Row 1: name only — truncates cleanly */}
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {displayName}
+          </div>
+          {/* Row 2: storage label + tier badge — both compact */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+              {getTierStorageName(tier, language as 'en' | 'id')}
             </span>
             {(() => {
               const badge = getTierBadgeStyle(tier);
               return (
-                <span
-                  style={{
-                    fontSize: '9.5px',
-                    fontWeight: 800,
-                    padding: '1px 5px',
-                    borderRadius: '4px',
-                    background: badge.background,
-                    color: badge.color,
-                    border: badge.border,
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
+                <span style={{ fontSize: '8.5px', fontWeight: 800, padding: '1px 4px', borderRadius: '3px', background: badge.background, color: badge.color, border: badge.border, flexShrink: 0, whiteSpace: 'nowrap', lineHeight: '14px' }}>
                   {badge.label}
                 </span>
               );
             })()}
-          </div>
-          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {getTierStorageName(tier, language as 'en' | 'id')}
           </div>
         </div>
 

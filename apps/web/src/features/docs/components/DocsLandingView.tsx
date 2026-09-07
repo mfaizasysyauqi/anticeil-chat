@@ -343,7 +343,12 @@ Every document MUST have a dedicated cover page that is centered horizontally an
 
           // Deduct credits on first actual content received
           if (!creditDeducted && (chunk.delta || chunk.reasoningDelta) && providerId === 'anticeil') {
-            useCreditStore.getState().deductCredits('docs', 'anticeil');
+            const promptLength = apiMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
+            useCreditStore.getState().deductCredits('docs', 'anticeil', {
+              modelId: activeModelId,
+              promptLength,
+              totalTokens: chunk.promptTokens,
+            });
             creditDeducted = true;
           }
 

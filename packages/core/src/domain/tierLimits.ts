@@ -1,7 +1,7 @@
 import { UserTier } from '../types';
 
 /**
- * Request-Based AI Credit Costs
+ * Request-Based AI Credit Base Costs
  * Standardized across all Anticeil features for the built-in free/default provider.
  * BYOK / personal keys / Ollama / Enterprise BYOD cost 0 credits.
  */
@@ -15,6 +15,92 @@ export const CREDIT_COSTS = {
 } as const;
 
 export type CreditActionType = keyof typeof CREDIT_COSTS;
+
+/**
+ * Model Tier Multiplier (Smart Weighting):
+ * - Fast & Economy (Gemini Flash, DeepSeek-V3, Llama 3.3, Qwen 27B): 1x
+ * - Deep Reasoning & Heavy Coder (DeepSeek-R1, Gemini Pro, Qwen 72B, Haiku, 4o-mini): 3x
+ * - Flagship Premium (Claude 3.7 / 3.5 Sonnet, GPT-4o, o3-mini): 8x
+ */
+export function getModelCreditWeight(modelId?: string): number {
+  if (!modelId) return 1;
+  const id = modelId.toLowerCase();
+
+  // Tier 3: Flagship Premium (8x weight)
+  if (
+    id.includes('claude-3-7') ||
+    id.includes('claude-3.7') ||
+    id.includes('claude-3-5-sonnet') ||
+    id.includes('claude-3.5-sonnet') ||
+    id.includes('claude-3-opus') ||
+    id.includes('gpt-4o') && !id.includes('mini') ||
+    id.includes('gpt-4-turbo') ||
+    id.includes('o1') ||
+    id.includes('o3-mini')
+  ) {
+    return 8;
+  }
+
+  // Tier 2: Deep Reasoning & Heavy Coder (3x weight)
+  if (
+    id.includes('deepseek-r1') ||
+    id.includes('deepseek-reasoner') ||
+    id.includes('gemini-1.5-pro') ||
+    id.includes('gemini-2.5-pro') ||
+    id.includes('gemini-pro') ||
+    id.includes('claude-3-5-haiku') ||
+    id.includes('claude-3-haiku') ||
+    id.includes('gpt-4o-mini') ||
+    id.includes('coder') ||
+    id.includes('72b')
+  ) {
+    return 3;
+  }
+
+  // Tier 1: Fast & Economy (Default 1x weight)
+  return 1;
+}
+
+export const BASE_CONTEXT_TOKEN_CAP = 4000; // 4k tokens included in standard request (~16,000 chars)
+
+export interface CalculateCreditOptions {
+  modelId?: string;
+  promptLength?: number; // Raw character count of prompt + context
+  totalTokens?: number;  // Explicit token count if available
+}
+
+/**
+ * Calculates dynamic credit deduction:
+ * [Base Cost * Model Weight] + [Extra Context Surcharge: +1 credit per 4,000 extra tokens]
+ */
+export function calculateDynamicCreditCost(
+  action: CreditActionType,
+  options?: CalculateCreditOptions
+): number {
+  const baseCost = CREDIT_COSTS[action] ?? 1;
+
+  // Non-text multimodal generation actions have fixed predefined action credits
+  if (action === 'audio' || action === 'image' || action === 'video' || action === 'scrape') {
+    return baseCost;
+  }
+
+  const modelWeight = getModelCreditWeight(options?.modelId);
+  const weightedBaseCost = baseCost * modelWeight;
+
+  // Context soft-cap: calculate extra tokens beyond 4,000
+  let estimatedTokens = 0;
+  if (typeof options?.totalTokens === 'number' && options.totalTokens > 0) {
+    estimatedTokens = options.totalTokens;
+  } else if (typeof options?.promptLength === 'number' && options.promptLength > 0) {
+    // 1 token ≈ 4 characters
+    estimatedTokens = Math.ceil(options.promptLength / 4);
+  }
+
+  const extraTokens = Math.max(0, estimatedTokens - BASE_CONTEXT_TOKEN_CAP);
+  const surcharge = Math.floor(extraTokens / BASE_CONTEXT_TOKEN_CAP);
+
+  return Math.max(1, weightedBaseCost + surcharge);
+}
 
 export interface TierAiLimitConfig {
   dailyCredits: number;
@@ -75,6 +161,9 @@ export function isBYOKProvider(providerId?: string): boolean {
   return providerId !== 'anticeil' && !providerId.startsWith('anticeil-');
 }
 
-export function getActionCreditCost(action: CreditActionType): number {
-  return CREDIT_COSTS[action] ?? 1;
+export function getActionCreditCost(
+  action: CreditActionType,
+  options?: CalculateCreditOptions
+): number {
+  return calculateDynamicCreditCost(action, options);
 }

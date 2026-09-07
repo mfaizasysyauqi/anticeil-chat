@@ -245,6 +245,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           import('@/features/chat/store/useProjectStore').then(({ useProjectStore }) => {
             useProjectStore.getState().fetchFolders(session.access_token);
           });
+          // Sync paid AI credits from Supabase (overrides stale localStorage value)
+          import('../../credits/store/useCreditStore').then(({ useCreditStore }) => {
+            useCreditStore.getState().loadPaidCreditsFromSupabase();
+          });
         } else {
           // If no active session returned by Supabase, check if we had cached credentials or verify
           const { data: userData } = await supabase.auth.getUser();
