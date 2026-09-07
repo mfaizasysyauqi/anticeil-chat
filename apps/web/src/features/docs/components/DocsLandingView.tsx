@@ -17,8 +17,6 @@ import {
   FileCode,
   Bot,
   User,
-  Pencil,
-  Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDocsStore, DocFormat } from '../store/useDocsStore';
@@ -26,6 +24,12 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { useCoAuthorHistoryStore, CoAuthorMessage } from '../store/useCoAuthorHistoryStore';
+import { useCoAuthorEditActions } from '../hooks/useCoAuthorEditActions';
+import {
+  CoAuthorEditButton,
+  CoAuthorEditTextarea,
+  CoAuthorUndoToast,
+} from './CoAuthorEditActions';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, getModelById, isCloudTier, cleanAgenticStream } from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
@@ -87,17 +91,6 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
   const [messages, setMessages] = useState<CoAuthorMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamingMsgIdRef = useRef<string | null>(null);
-
-  // ── Edit & Delete State ──────────────────────────────────────────────────
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [editingContent, setEditingContent] = useState<string>('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [undoToast, setUndoToast] = useState<{
-    messageId: string;
-    count: number;
-    timeoutId: ReturnType<typeof setTimeout> | null;
-  } | null>(null);
-  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const activeProject = docFolders.find((p) => p.id === activeProjectId);
 
@@ -469,128 +462,13 @@ Every document MUST have a dedicated cover page that is centered horizontally an
     handleSendPrompt(prompt.trim());
   };
 
-  // ── Edit & Delete Handlers ─────────────────────────────────────────────
-
-  const handleStartEdit = (messageId: string, currentContent: string) => {
-    setEditingMessageId(messageId);
-    setEditingContent(currentContent);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingMessageId(null);
-    setEditingContent('');
-  };
-
-  const handleSaveEdit = async () => {
-    if (!activeDoc || !editingMessageId || !editingContent.trim()) return;
-
-    const newContent = editingContent.trim();
-
-    // Call store to edit message and delete subsequent messages
-    historyStore.editMessage(activeDoc.id, editingMessageId, newContent);
-
-    // Sync to cloud for starter+ users
-    if (isCloudUser && authSession?.access_token) {
-      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
-    }
-
-    // Update local state
-    setMessages((prev) => {
-      const msgIndex = prev.findIndex((m) => m.id === editingMessageId);
-      if (msgIndex === -1) return prev;
-
-      const updated = [...prev];
-      updated[msgIndex] = {
-        ...updated[msgIndex],
-        content: newContent,
-        isEdited: true,
-      };
-
-      // Remove messages after this one
-      return updated.slice(0, msgIndex + 1);
-    });
-
-    setEditingMessageId(null);
-    setEditingContent('');
-
-    // Re-send the edited prompt to generate new response
-    await handleSendPrompt(newContent);
-  };
-
-  const handleDeleteAfter = (messageId: string) => {
-    setDeleteConfirmId(messageId);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!activeDoc || !deleteConfirmId) return;
-
-    const msgIndex = messages.findIndex((m) => m.id === deleteConfirmId);
-    if (msgIndex === -1) return;
-
-    const deletedCount = messages.length - msgIndex;
-
-    // Delete from store
-    historyStore.deleteAfter(activeDoc.id, deleteConfirmId);
-
-    // Sync to cloud for starter+ users
-    if (isCloudUser && authSession?.access_token) {
-      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
-    }
-
-    // Update local messages
-    setMessages((prev) => prev.slice(0, msgIndex));
-
-    // Close confirmation
-    setDeleteConfirmId(null);
-
-    // Show undo toast
-    showUndoToast(deleteConfirmId, deletedCount);
-  };
-
-  const showUndoToast = (messageId: string, count: number) => {
-    if (undoToast?.timeoutId) {
-      clearTimeout(undoToast.timeoutId);
-    }
-
-    const timeoutId = setTimeout(() => {
-      setUndoToast(null);
-    }, 8000);
-
-    setUndoToast({ messageId, count, timeoutId });
-  };
-
-  const handleUndoDelete = () => {
-    if (!activeDoc || !undoToast) return;
-
-    const success = historyStore.undoDelete(activeDoc.id, undoToast.messageId);
-    if (!success) return;
-
-    // Sync to cloud
-    if (isCloudUser && authSession?.access_token) {
-      historyStore.syncToCloud(activeDoc.id, authSession.access_token);
-    }
-
-    // Refresh messages from store
-    const session = historyStore.getSession(activeDoc.id);
-    if (session) {
-      setMessages(session.messages);
-    }
-
-    // Clear undo toast
-    if (undoToast.timeoutId) {
-      clearTimeout(undoToast.timeoutId);
-    }
-    setUndoToast(null);
-  };
-
-  // Clear undo toast timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (undoToast?.timeoutId) {
-        clearTimeout(undoToast.timeoutId);
-      }
-    };
-  }, [undoToast]);
+  // ── Edit & Undo Hook (reusable logic - must be after handleSendPrompt) ──
+  const editActions = useCoAuthorEditActions({
+    activeDocId,
+    messages,
+    setMessages,
+    onEditComplete: handleSendPrompt,
+  });
 
   const formatOptions: { id: DocFormat; label: string; icon: React.ReactNode }[] = [
     {
@@ -1054,83 +932,23 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                 const isUserMsg = msg.role === 'user';
                 const isAssistant = msg.role === 'assistant';
                 const isStreamingThis = isGenerating && msg.id === streamingMsgIdRef.current;
-                const isLastMsg = index === messages.length - 1;
-                const isEditingThis = editingMessageId === msg.id;
-                const assistantMsg = isAssistant ? msg : messages[index + 1];
+                const isEditingThis = editActions.editingMessageId === msg.id;
 
                 return (
                   <div key={`${msg.id}_${index}`} style={{ width: '100%' }}>
                     {/* Edit Mode: Inline Textarea */}
                     {isEditingThis ? (
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px',
-                          background: 'var(--bg-surface)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '12px',
-                          padding: '12px',
-                        }}
-                      >
-                        <textarea
-                          ref={editTextareaRef}
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                          rows={3}
-                          style={{
-                            width: '100%',
-                            background: 'var(--bg-main)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '8px',
-                            padding: '10px',
-                            color: 'var(--text-primary)',
-                            fontSize: '13px',
-                            fontFamily: 'inherit',
-                            resize: 'vertical',
-                            outline: 'none',
-                          }}
-                          autoFocus
-                        />
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                          <button
-                            type="button"
-                            onClick={handleCancelEdit}
-                            style={{
-                              padding: '6px 12px',
-                              borderRadius: '6px',
-                              border: '1px solid var(--border-subtle)',
-                              background: 'transparent',
-                              color: 'var(--text-secondary)',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {language === 'id' ? 'Batal' : 'Cancel'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSaveEdit}
-                            disabled={!editingContent.trim()}
-                            style={{
-                              padding: '6px 12px',
-                              borderRadius: '6px',
-                              border: 'none',
-                              background: 'var(--brand-primary)',
-                              color: '#fff',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              cursor: editingContent.trim() ? 'pointer' : 'not-allowed',
-                              opacity: editingContent.trim() ? 1 : 0.5,
-                            }}
-                          >
-                            {language === 'id' ? 'Simpan & Kirim' : 'Save & Send'}
-                          </button>
-                        </div>
-                      </div>
+                      <CoAuthorEditTextarea
+                        value={editActions.editingContent}
+                        onChange={editActions.setEditingContent}
+                        onSave={editActions.handleSaveEdit}
+                        onCancel={editActions.handleCancelEdit}
+                        language={language}
+                        textareaRef={editActions.editTextareaRef}
+                      />
                     ) : (
                       <>
-                        {/* User Message with Edit/Delete Buttons */}
+                        {/* User Message with Edit Button */}
                         {isUserMsg && (
                           <div style={{ position: 'relative' }}>
                             <StudioChatMessage
@@ -1140,59 +958,27 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                               isStreaming={false}
                               language={language}
                             />
-                            {/* Hover Action Buttons */}
+                            {/* Hover Edit Button */}
                             <div
                               style={{
                                 position: 'absolute',
                                 top: '8px',
                                 right: '8px',
-                                display: 'flex',
-                                gap: '4px',
                                 opacity: 0,
                                 transition: 'opacity 0.15s',
                               }}
                               className="user-msg-actions"
                             >
-                              <button
-                                type="button"
-                                onClick={() => handleStartEdit(msg.id, msg.content)}
-                                title={language === 'id' ? 'Edit prompt' : 'Edit prompt'}
-                                style={{
-                                  padding: '4px',
-                                  borderRadius: '4px',
-                                  border: 'none',
-                                  background: 'var(--bg-surface)',
-                                  color: 'var(--text-secondary)',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <Pencil size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteAfter(msg.id)}
-                                title={language === 'id' ? 'Hapus prompt dan response setelahnya' : 'Delete prompt and responses after'}
-                                style={{
-                                  padding: '4px',
-                                  borderRadius: '4px',
-                                  border: 'none',
-                                  background: 'var(--bg-surface)',
-                                  color: '#EF4444',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              <CoAuthorEditButton
+                                onClick={() => editActions.handleStartEdit(msg.id, msg.content)}
+                                language={language}
+                              />
                             </div>
                           </div>
                         )}
 
                         {/* Assistant Message */}
-                        {!isUserMsg && editingMessageId !== msg.id && (
+                        {!isUserMsg && (
                           <StudioChatMessage
                             id={msg.id}
                             role={msg.role}
@@ -1359,146 +1145,13 @@ Every document MUST have a dedicated cover page that is centered horizontally an
         <ModelSelectorModal onClose={() => setIsModelSelectorOpen(false)} />
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div
-          onClick={() => setDeleteConfirmId(null)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '400px',
-              width: '90%',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-            }}
-          >
-            <h3
-              style={{
-                margin: '0 0 12px 0',
-                fontSize: '16px',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-              }}
-            >
-              {language === 'id' ? 'Hapus Prompt & Response?' : 'Delete Prompt & Response?'}
-            </h3>
-            <p
-              style={{
-                margin: '0 0 20px 0',
-                fontSize: '13px',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.5,
-              }}
-            >
-              {language === 'id'
-                ? 'Semua response AI setelah prompt ini akan dihapus. Anda dapat mengembalikan dengan tombol Undo.'
-                : 'All AI responses after this prompt will be deleted. You can restore them with the Undo button.'}
-            </p>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmId(null)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-subtle)',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-secondary)',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {language === 'id' ? 'Batal' : 'Cancel'}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: '#EF4444',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {language === 'id' ? 'Hapus' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Undo Toast Notification */}
-      {undoToast && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-            zIndex: 9998,
-            animation: 'fadeIn 0.3s ease-out',
-          }}
-        >
-          <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-            {language === 'id'
-              ? `${undoToast.count} pesan dihapus`
-              : `${undoToast.count} message${undoToast.count > 1 ? 's' : ''} deleted`}
-          </span>
-          <button
-            type="button"
-            onClick={handleUndoDelete}
-            style={{
-              padding: '4px 12px',
-              borderRadius: '6px',
-              border: '1px solid var(--brand-primary)',
-              backgroundColor: 'transparent',
-              color: 'var(--brand-primary)',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--brand-primary)';
-              e.currentTarget.style.color = '#FFFFFF';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = 'var(--brand-primary)';
-            }}
-          >
-            {language === 'id' ? 'Batalkan' : 'Undo'}
-          </button>
-        </div>
+      {/* Undo Toast - Claude-style: appears after edit/delete */}
+      {editActions.undoToast && (
+        <CoAuthorUndoToast
+          state={editActions.undoToast}
+          onUndo={editActions.handleUndoDelete}
+          language={language}
+        />
       )}
 
       {/* CSS for hover actions */}
