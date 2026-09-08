@@ -535,7 +535,6 @@ export function AIChatBubble({
   auditBadge,
   agentSteps,
   actions,
-  reasoningContent,
   attachments,
   onCopy,
   onEdit,
