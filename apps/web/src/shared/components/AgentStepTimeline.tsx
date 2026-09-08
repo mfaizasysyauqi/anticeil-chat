@@ -472,7 +472,7 @@ export function AgentStepTimeline({
             paddingLeft: '12px',
             borderLeft: '2px solid var(--border-subtle)',
             marginLeft: '2px',
-            paddingBottom: open ? '4px' : '0px',
+            paddingBottom: isGroupExpanded ? '4px' : '0px',
           }}
         >
           {steps.map((step) => (
