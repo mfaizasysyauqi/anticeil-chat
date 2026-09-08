@@ -468,10 +468,11 @@ export function AgentStepTimeline({
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '6px',
-            paddingLeft: '10px',
-            borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
-            marginTop: '2px',
+            gap: '10px',
+            paddingLeft: '12px',
+            borderLeft: '2px solid var(--border-subtle)',
+            marginLeft: '2px',
+            paddingBottom: open ? '4px' : '0px',
           }}
         >
           {steps.map((step) => (
