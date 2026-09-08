@@ -142,9 +142,8 @@ export function AgentTimeline({
           overflow: "hidden",
           maxHeight: open ? "800px" : "0px",
           transition: "max-height 0.3s ease",
-          borderLeft: "2px solid var(--border-subtle)",
-          paddingLeft: "12px",
-          marginLeft: "2px",
+          borderLeft: "none",
+          paddingLeft: "0px",
           paddingBottom: open ? "4px" : "0px",
         }}
       >
