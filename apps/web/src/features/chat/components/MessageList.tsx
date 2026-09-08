@@ -10,7 +10,7 @@ import {
   ArrowUpRight,
   KeyRound,
 } from 'lucide-react';
-import { MessageBubble } from './MessageBubble';
+import { AIChatBubble } from '../../../shared/components/AIChatBubble';
 import { useChatStore } from '../store/useChatStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation, getModelById, getProviderById } from '@anticeil/core';
@@ -30,6 +30,8 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
   const activeModel = getModelById(activeSession?.modelId || '');
   const activeProvider = activeSession?.providerId ? getProviderById(activeSession.providerId) : undefined;
   const isKeyConfigured = activeSession ? hasConfiguredKey(activeSession.providerId) : true;
@@ -247,7 +249,31 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
     >
       <div className="page-content-wrapper" style={{ gap: 'var(--space-lg)' }}>
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} sessionId={activeSession?.id ?? ''} />
+          <AIChatBubble
+            key={msg.id}
+            role={msg.role}
+            content={msg.content}
+            reasoningContent={msg.reasoningContent}
+            agentSteps={msg.agentSteps}
+            variant={msg.role === 'user' ? 'coauthor' : 'assistant'}
+            assistantName="AI Assistant"
+            assistantColor="var(--brand-primary)"
+            language={language === 'id' ? 'id' : 'en'}
+            timestamp={msg.timestamp}
+            isEditing={msg.role === 'user' && editingMsgId === msg.id}
+            editContent={editingMsgId === msg.id ? editingContent : undefined}
+            onCopy={() => navigator.clipboard.writeText(msg.content)}
+            onEdit={msg.role === 'user' ? () => { setEditingMsgId(msg.id); setEditingContent(msg.content); } : undefined}
+            onSaveEdit={async (newContent) => {
+              if (activeSession) {
+                await useChatStore.getState().editMessage(activeSession.id, msg.id, newContent);
+              }
+              setEditingMsgId(null);
+              setEditingContent('');
+            }}
+            onCancelEdit={() => { setEditingMsgId(null); setEditingContent(''); }}
+            onUndo={() => {/* undo via store */}}
+          />
         ))}
       </div>
     </div>

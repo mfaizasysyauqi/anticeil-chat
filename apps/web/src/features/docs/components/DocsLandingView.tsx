@@ -15,8 +15,6 @@ import {
   Layers,
   Gauge,
   FileCode,
-  Bot,
-  User,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDocsStore, DocFormat } from '../store/useDocsStore';
@@ -25,7 +23,6 @@ import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { useCoAuthorHistoryStore, CoAuthorMessage } from '../store/useCoAuthorHistoryStore';
 import { useCoAuthorEditActions } from '../hooks/useCoAuthorEditActions';
-import { CoAuthorEditTextarea, CoAuthorUndoToast } from './CoAuthorEditActions';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, getModelById, isCloudTier, cleanAgenticStream } from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
@@ -33,7 +30,7 @@ import { PromptBar, PromptAttachment } from '../../../shared/components/PromptBa
 import { DropdownSelect } from '../../../shared/components/DropdownSelect';
 import { ThinkingTimeline } from '../../chat/components/ThinkingTimeline';
 import { MarkdownRenderer } from '../../../shared/components/MarkdownRenderer';
-import { StudioChatMessage } from '../../../shared/components/StudioChatMessage';
+import { AIChatBubble } from '../../../shared/components/AIChatBubble';
 import { InteractiveDocCard } from './shared/InteractiveDocCard';
 import { executeDocAgentActions, extractCleanContent, stripAgentActionTags } from '../utils/docAgentUtils';
 
@@ -930,42 +927,35 @@ Every document MUST have a dedicated cover page that is centered horizontally an
 
                 return (
                   <div key={`${msg.id}_${index}`} style={{ width: '100%' }}>
-                    {/* Edit Mode: Inline Textarea */}
-                    {isEditingThis ? (
-                      <CoAuthorEditTextarea
-                        value={editActions.editingContent}
-                        onChange={editActions.setEditingContent}
-                        onSave={async () => {
-                          const newPrompt = await editActions.handleSaveEdit();
-                          if (newPrompt) await handleSendPrompt(newPrompt);
-                        }}
-                        onCancel={editActions.handleCancelEdit}
-                        language={language}
-                        textareaRef={editActions.editTextareaRef}
-                      />
-                    ) : (
-                      <StudioChatMessage
-                        id={msg.id}
-                        role={msg.role}
-                        content={isUserMsg ? msg.content : stripAgentActionTags(msg.content)}
-                        reasoningContent={msg.reasoningContent}
-                        isStreaming={isStreamingThis}
-                        assistantName="AI Co-Author"
-                        assistantColor={activeColor}
-                        language={language}
-                        onEdit={isUserMsg ? () => editActions.handleStartEdit(msg.id, msg.content) : undefined}
-                        extraContent={
-                          !isUserMsg && activeDoc && (activeDoc.content.length > 10 || (msg.content && msg.content.length > 30)) ? (
-                            <InteractiveDocCard
-                              doc={activeDoc}
-                              onOpenEditor={() => handleOpenEditor(activeDoc.id)}
-                              language={language}
-                              isGenerating={isStreamingThis}
-                            />
-                          ) : undefined
-                        }
-                      />
-                    )}
+                    <AIChatBubble
+                      role={msg.role}
+                      content={isUserMsg ? msg.content : stripAgentActionTags(msg.content)}
+                      reasoningContent={msg.reasoningContent}
+                      isStreaming={isStreamingThis}
+                      assistantName="AI Co-Author"
+                      assistantColor={activeColor}
+                      language={language}
+                      variant="coauthor"
+                      isEditing={isUserMsg && isEditingThis}
+                      editContent={isUserMsg && isEditingThis ? editActions.editingContent : undefined}
+                      onEdit={isUserMsg && !isGenerating ? () => editActions.handleStartEdit(msg.id, msg.content) : undefined}
+                      onSaveEdit={async (newContent) => {
+                        const newPrompt = await editActions.handleSaveEdit(newContent);
+                        if (newPrompt) await handleSendPrompt(newPrompt);
+                      }}
+                      onCancelEdit={editActions.handleCancelEdit}
+                      auditBadge={msg.isEdited ? (language === 'id' ? '[Diedit]' : '[Edited]') : undefined}
+                      extraContent={
+                        !isUserMsg && activeDoc && (activeDoc.content.length > 10 || (msg.content && msg.content.length > 30)) ? (
+                          <InteractiveDocCard
+                            doc={activeDoc}
+                            onOpenEditor={() => handleOpenEditor(activeDoc.id)}
+                            language={language}
+                            isGenerating={isStreamingThis}
+                          />
+                        ) : undefined
+                      }
+                    />
                   </div>
                 );
               })}
@@ -1111,11 +1101,41 @@ Every document MUST have a dedicated cover page that is centered horizontally an
 
       {/* Undo Toast - Claude-style: appears after edit/delete */}
       {editActions.undoToast && (
-        <CoAuthorUndoToast
-          state={editActions.undoToast}
-          onUndo={editActions.handleUndoDelete}
-          language={language}
-        />
+        <div style={{
+          position: 'fixed',
+          bottom: '80px',
+          right: '24px',
+          background: 'var(--bg-surface, #fff)',
+          border: '1px solid var(--border-subtle, #e5e5e5)',
+          borderRadius: '10px',
+          padding: '14px 18px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          zIndex: 999,
+          maxWidth: '320px',
+        }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: 'var(--text-primary)' }}>
+            {language === 'id' ? 'Perubahan dihapus' : 'Changes deleted'}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            {editActions.undoToast.count} {language === 'id' ? 'pesan' : 'message(s)'}
+          </div>
+          <button
+            type="button"
+            onClick={editActions.handleUndoDelete}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              background: 'var(--brand-primary, #7C3AED)',
+              color: '#fff',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {language === 'id' ? 'Batalkan' : 'Undo'}
+          </button>
+        </div>
       )}
 
       {/* CSS for hover actions */}

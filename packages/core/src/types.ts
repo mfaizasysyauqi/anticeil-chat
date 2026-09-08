@@ -84,6 +84,15 @@ export interface FileAttachment {
   isImage?: boolean;
 }
 
+export interface AgentStep {
+  id: string;
+  phase: 'reasoning' | 'tool_call' | 'synthesis' | 'result';
+  title: string;
+  content?: string;
+  timestamp: number;
+  badge?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sessionId: string;
@@ -103,6 +112,7 @@ export interface ChatMessage {
   imageUrl?: string; // Generated image URL for text-to-image output
   videoUrl?: string; // Generated video URL for text-to-video output
   toolResults?: import('./domain/connectors/types').ToolCallResult[];
+  agentSteps?: AgentStep[];
   // Edit-branch versioning: stores all past versions of this user message
   versions?: string[];
   versionIndex?: number;

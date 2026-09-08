@@ -70,7 +70,7 @@ import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
 import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
 import { ConnectorBrandIcon } from '../../connectors/components/ConnectorLogos';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
-import { StudioChatMessage } from '../../../shared/components/StudioChatMessage';
+import { AIChatBubble } from '../../../shared/components/AIChatBubble';
 import { InteractiveDocCard } from './shared/InteractiveDocCard';
 import { DocsVersionHistoryModal } from './DocsVersionHistoryModal';
 import {
@@ -1094,11 +1094,11 @@ After emitting the action tags, provide a brief, polite explanation of what was 
 
           if (isWelcomeMsg) {
             return (
-              <StudioChatMessage
+              <AIChatBubble
                 key={msg.id}
-                id={msg.id}
                 role="assistant"
                 content={msg.content}
+                variant="coauthor"
                 assistantName="AI Co-Author"
                 assistantColor="var(--brand-primary)"
                 language={language === 'id' ? 'id' : 'en'}
@@ -1117,107 +1117,31 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                 width: '100%',
               }}
             >
-              {/* Edit Mode: Inline Textarea */}
-              {editingMessageId === msg.id ? (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    border: '2px solid var(--brand-primary)',
-                    backgroundColor: 'var(--bg-surface)',
-                  }}
-                >
-                  <textarea
-                    ref={editTextareaRef}
-                    value={editingContent}
-                    onChange={(e) => setEditingContent(e.target.value)}
-                    style={{
-                      width: '100%',
-                      minHeight: '80px',
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'var(--bg-main)',
-                      color: 'var(--text-primary)',
-                      fontSize: '13px',
-                      fontFamily: 'inherit',
-                      lineHeight: 1.5,
-                      resize: 'vertical',
-                    }}
-                    placeholder={language === 'id' ? 'Edit prompt...' : 'Edit prompt...'}
-                  />
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-subtle)',
-                        backgroundColor: 'transparent',
-                        color: 'var(--text-secondary)',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {language === 'id' ? 'Batal' : 'Cancel'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const newPrompt = await handleSaveEdit();
-                        if (newPrompt) await handleSend(newPrompt);
-                      }}
-                      disabled={!editingContent.trim()}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        backgroundColor: 'var(--brand-primary)',
-                        color: '#FFFFFF',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: editingContent.trim() ? 'pointer' : 'not-allowed',
-                        opacity: editingContent.trim() ? 1 : 0.5,
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {language === 'id' ? 'Simpan & Kirim Ulang' : 'Save & Resend'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* User Prompt with Edit/Delete Buttons */}
-                  <div style={{ position: 'relative' }}>
-                    <StudioChatMessage
-                      id={msg.id}
-                      role="user"
-                      content={msg.content}
-                      timestamp={msg.timestamp}
-                      isSticky={true}
-                      language={language === 'id' ? 'id' : 'en'}
-                      onEdit={!isGenerating ? () => handleStartEdit(msg.id, msg.content) : undefined}
-                    />
-                  </div>
-                </>
-              )}
+              {/* User Prompt — AIChatBubble handles both view and edit mode via isEditing prop */}
+              <AIChatBubble
+                role="user"
+                content={msg.content}
+                timestamp={msg.timestamp}
+                variant="coauthor"
+                language={language === 'id' ? 'id' : 'en'}
+                isEditing={editingMessageId === msg.id}
+                editContent={editingMessageId === msg.id ? editingContent : undefined}
+                onEdit={!isGenerating ? () => handleStartEdit(msg.id, msg.content) : undefined}
+                onSaveEdit={async (newContent) => {
+                  const newPrompt = await handleSaveEdit(newContent);
+                  if (newPrompt) await handleSend(newPrompt);
+                }}
+                onCancelEdit={handleCancelEdit}
+                isReverted={false}
+              />
 
               {/* Assistant Output Response for this Turn */}
               {assistantMsg && editingMessageId !== msg.id && (
-                <StudioChatMessage
-                  id={assistantMsg.id}
+                <AIChatBubble
                   role="assistant"
                   content={stripAgentActionTags(assistantMsg.content)}
                   reasoningContent={assistantMsg.reasoningContent}
-                  actions={assistantMsg.actions}
-                  docId={activeDoc?.id}
-                  onOpenVersionHistory={() => setIsVersionModalOpen(true)}
+                  variant="coauthor"
                   isStreaming={isAssistantStreaming}
                   assistantName="AI Co-Author"
                   assistantColor="var(--brand-primary)"

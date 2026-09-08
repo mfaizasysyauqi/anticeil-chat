@@ -23,6 +23,7 @@ export interface CoAuthorMessage {
   timestamp: number;
   originalContent?: string; // Track original for edit/undo
   isEdited?: boolean;
+  agentSteps?: import('@anticeil/core').AgentStep[];
 }
 
 export interface CoAuthorSession {

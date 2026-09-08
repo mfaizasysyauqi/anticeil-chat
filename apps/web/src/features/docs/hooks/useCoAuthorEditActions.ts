@@ -49,10 +49,11 @@ export function useCoAuthorEditActions({
     setEditingContent('');
   };
 
-  const handleSaveEdit = async (): Promise<string | undefined> => {
-    if (!activeDocId || !editingMessageId || !editingContent.trim()) return;
+  const handleSaveEdit = async (overrideContent?: string): Promise<string | undefined> => {
+    const contentToUse = (overrideContent ?? editingContent).trim();
+    if (!activeDocId || !editingMessageId || !contentToUse) return;
 
-    const newContent = editingContent.trim();
+    const newContent = contentToUse;
 
     // Call store to edit message and delete subsequent messages
     historyStore.editMessage(activeDocId, editingMessageId, newContent);
