@@ -18,7 +18,7 @@ import {
   ThumbsDown,
 } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import { AgentTimeline } from './AgentTimeline';
+import { AgentStepTimeline } from './AgentStepTimeline';
 import { getTranslation } from '@anticeil/core';
 
 // ============================================
@@ -55,6 +55,7 @@ export interface AIChatBubbleProps {
   /** Small audit badge for edited / deleted / undone state */
   auditBadge?: string;
   agentSteps?: import('@anticeil/core').AgentStep[];
+  actions?: Array<{ type: string; name: string }>;
   attachments?: Array<{
     id: string;
     name: string;
@@ -533,6 +534,8 @@ export function AIChatBubble({
 
   auditBadge,
   agentSteps,
+  actions,
+  reasoningContent,
   attachments,
   onCopy,
   onEdit,
@@ -797,20 +800,14 @@ export function AIChatBubble({
                   </div>
                 )}
 
-                {/* Timeline Component — above output */}
-                {!isUser && agentSteps && agentSteps.length > 0 && (
-                  <AgentTimeline
-                    steps={agentSteps.map((s, idx, arr) => ({
-                      id: s.id,
-                      phase: (s.phase as import('./AgentTimeline').AgentPhase) || "reasoning",
-                      title: s.title,
-                      description: s.content,
-                      status: (idx === arr.length - 1 && isStreaming) ? "active" : (s.phase === "result" || (idx === arr.length - 1 && !isStreaming)) ? "complete" : "pending",
-                      timestamp: s.timestamp,
-                      badge: s.badge,
-                    }))}
-                    defaultOpen={isStreaming ?? false}
-                    title={language === 'id' ? 'Timeline Agen' : 'Agent Timeline'}
+                {/* Timeline Component — above output (consistent with chat page) */}
+                {!isUser && (agentSteps || reasoningContent || actions) && (
+                  <AgentStepTimeline
+                    steps={agentSteps}
+                    reasoningContent={reasoningContent}
+                    actions={actions}
+                    isStreaming={isStreaming ?? false}
+                    language={language === 'id' ? 'id' : 'en'}
                   />
                 )}
 
