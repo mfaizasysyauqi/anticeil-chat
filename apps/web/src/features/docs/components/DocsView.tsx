@@ -270,7 +270,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
 
   const effectiveDocId = initialDocId || activeDocId;
-  const activeDoc = documents.find((d) => d.id === effectiveDocId) || documents[0];
+  const pathname = router.pathname || router.asPath || '';
+  const activeDoc = documents.find((d) => d.id === effectiveDocId) || (pathname === '/docs' ? null : documents[0]);
 
   // Active sub-file in the Overleaf multi-file tree
   const docFiles = activeDoc?.files || [];

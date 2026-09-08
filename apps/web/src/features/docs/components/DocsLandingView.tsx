@@ -131,7 +131,7 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
 
   const [attachments, setAttachments] = useState<PromptAttachment[]>([]);
 
-  const handleSendPrompt = async (promptText: string) => {
+  const handleSendPrompt = async (promptText: string, fromEdit?: boolean) => {
     const text = promptText.trim();
     if ((!text && attachments.length === 0) || isGenerating) return;
 
@@ -187,7 +187,7 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
       };
     }
 
-    const userMsgId = 'u_' + Date.now();
+    const userMsgId = fromEdit ? null : 'u_' + Date.now();
     const assistantMsgId = 'a_' + Date.now();
     streamingMsgIdRef.current = assistantMsgId;
 
@@ -197,25 +197,45 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
         : text
       : `📎 *[Attached ${currentAttachments.length} file(s): ${currentAttachments.map((a) => a.name).join(', ')}]*`;
 
-    const userMsg: CoAuthorMessage = {
-      id: userMsgId,
-      role: 'user',
-      content: displayUserContent,
-      timestamp: Date.now(),
-    };
-
-    const assistantMsg: CoAuthorMessage = {
-      id: assistantMsgId,
-      role: 'assistant',
-      content: '',
-      reasoningContent: '',
-      timestamp: Date.now() + 1,
-    };
-
-    const updatedHistory = [...messages, userMsg, assistantMsg];
-    setMessages(updatedHistory);
-    historyStore.saveMessage(targetDocId, targetDoc.title, userMsg);
-    historyStore.saveMessage(targetDocId, targetDoc.title, assistantMsg);
+    let updatedHistory;
+    if (fromEdit) {
+      // Only append assistant message; edited user msg already in messages
+      const assistantMsg: CoAuthorMessage = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        reasoningContent: '',
+        timestamp: Date.now() + 1,
+      };
+      updatedHistory = [...messages];
+      // Find edited user message by content (saved prompt) and keep only up to it
+      const editedMsgIndex = updatedHistory.findIndex((m) => m.role === 'user' && m.content === text);
+      if (editedMsgIndex >= 0) {
+        updatedHistory = updatedHistory.slice(0, editedMsgIndex + 1);
+      }
+      updatedHistory.push(assistantMsg);
+      setMessages(updatedHistory);
+    } else {
+      const userMsg: CoAuthorMessage = {
+        id: userMsgId!,
+        role: 'user',
+        content: displayUserContent,
+        timestamp: Date.now(),
+      };
+      const assistantMsg: CoAuthorMessage = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        reasoningContent: '',
+        timestamp: Date.now() + 1,
+      };
+      updatedHistory = [...messages, userMsg, assistantMsg];
+      setMessages(updatedHistory);
+      historyStore.saveMessage(targetDocId, targetDoc.title, userMsg);
+    }
+    if (fromEdit) {
+      historyStore.saveMessage(targetDocId, targetDoc.title, { id: assistantMsgId, role: 'assistant', content: '', timestamp: Date.now() + 1 });
+    }
     setIsGenerating(true);
 
     const activeApiKeyConfig = (apiKeys as Record<string, any>)[providerId] || { apiKey: '', isEnabled: false };
@@ -368,12 +388,23 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                   content: cleanContent || fullResponse,
                   reasoningContent: reasoningContent || fullReasoning,
                   timestamp: Date.now(),
+                  agentSteps: [
+                    { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Generating…', content: (cleanContent || fullResponse).slice(0, 60), timestamp: Date.now() },
+                  ],
                 },
               ];
             }
             return prev.map((msg) =>
               msg.id === assistantMsgId
-                ? { ...msg, content: cleanContent || fullResponse, reasoningContent: reasoningContent || fullReasoning }
+                ? {
+                    ...msg,
+                    content: cleanContent || fullResponse,
+                    reasoningContent: reasoningContent || fullReasoning,
+                    agentSteps: [
+                      ...(reasoningContent || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (reasoningContent || fullReasoning).slice(0, 120), timestamp: Date.now() }] : []),
+                      { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Generating…', content: (cleanContent || fullResponse).slice(0, 80), timestamp: Date.now() },
+                    ],
+                  }
                 : msg
             );
           });
@@ -416,6 +447,11 @@ Every document MUST have a dedicated cover page that is centered horizontally an
           content: finalContent || fullResponse,
           reasoningContent: finalReasoning || fullReasoning || undefined,
           timestamp: Date.now(),
+          agentSteps: [
+            ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
+            { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Composing response', content: (finalContent || fullResponse).slice(0, 100), timestamp: Date.now() },
+            { id: 'step-result', phase: 'result' as const, title: 'Done', content: `${(finalContent || fullResponse).split(' ').length} words generated`, timestamp: Date.now() },
+          ],
         };
         historyStore.saveMessage(targetDocId, targetDoc.title, finalMsg);
 
@@ -941,13 +977,15 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                       editContent={isUserMsg && isEditingThis ? editActions.editingContent : undefined}
                       onEdit={isUserMsg && !isGenerating ? () => editActions.handleStartEdit(msg.id, msg.content) : undefined}
                       onSaveEdit={async (newContent) => {
-                        const newPrompt = await editActions.handleSaveEdit(newContent);
-                        if (newPrompt) await handleSendPrompt(newPrompt);
+                        const saved = await editActions.handleSaveEdit(newContent);
+                        if (saved) {
+                          await handleSendPrompt(saved, true);
+                        }
                       }}
                       onCancelEdit={editActions.handleCancelEdit}
-                      auditBadge={msg.isEdited ? (language === 'id' ? '[Diedit]' : '[Edited]') : undefined}
+                      auditBadge={undefined}
                       extraContent={
-                        !isUserMsg && activeDoc && (activeDoc.content.length > 10 || (msg.content && msg.content.length > 30)) ? (
+                        !isUserMsg && activeDoc && index === messages.length - 1 ? (
                           <InteractiveDocCard
                             doc={activeDoc}
                             onOpenEditor={() => handleOpenEditor(activeDoc.id)}

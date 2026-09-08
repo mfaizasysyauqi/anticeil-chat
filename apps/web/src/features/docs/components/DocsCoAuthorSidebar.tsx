@@ -426,12 +426,15 @@ export function DocsCoAuthorSidebar({
   // ── Edit & Undo Hook (reusable logic) ───────────────────────────────────
   // Note: hook needs messages/state that comes after, so defined later
 
-  const handleSend = async (customPrompt?: string) => {
+  const handleSend = async (customPrompt?: string, fromEdit?: boolean) => {
     let rawPrompt = customPrompt || inputPrompt.trim();
     if ((!rawPrompt && attachments.length === 0) || isGenerating) return;
 
     let promptToSend = rawPrompt;
-    if (attachments.length > 0) {
+    if (fromEdit) {
+      // When editing, ignore leftover attachments; edited content is the prompt to match
+      promptToSend = rawPrompt;
+    } else if (attachments.length > 0) {
       const attSummary = attachments
         .map((att) => {
           if (att.isImage) {
@@ -461,21 +464,28 @@ export function DocsCoAuthorSidebar({
 
     const snapshotId = activeDoc ? createDocSnapshot(activeDoc.id, promptToSend.slice(0, 35)) : undefined;
 
-    const userMsgId = 'u_' + Date.now();
     const assistantMsgId = 'a_' + Date.now();
-    streamingMsgIdRef.current = assistantMsgId;
-
-    const userMsg = { id: userMsgId, role: 'user' as const, content: promptToSend, timestamp: Date.now() };
     const assistantMsg = { id: assistantMsgId, role: 'assistant' as const, content: '', reasoningContent: '', snapshotId, timestamp: Date.now() + 1 };
 
-    const newHistory = [...messages, userMsg, assistantMsg];
-
-    // Save user message to history immediately
-    if (activeDoc) {
-      historyStore.saveMessage(activeDoc.id, activeDoc.title, { ...userMsg });
+    if (fromEdit) {
+      // Edit flow: edited prompt already in messages; only append assistant response.
+      // Find edited user message by content (saved prompt) and slice to keep only up to it,
+      // so old assistant responses after edited prompt are removed.
+      streamingMsgIdRef.current = assistantMsgId;
+      setMessages((prev) => {
+        const editedMsgIndex = prev.findIndex((m) => m.role === 'user' && m.content === promptToSend);
+        const cleanPrev = editedMsgIndex >= 0 ? prev.slice(0, editedMsgIndex + 1) : prev;
+        return [...cleanPrev, assistantMsg];
+      });
+    } else {
+      const userMsgId = 'u_' + Date.now();
+      const userMsg = { id: userMsgId, role: 'user' as const, content: promptToSend, timestamp: Date.now() };
+      setMessages([...messages, userMsg, assistantMsg]);
+      streamingMsgIdRef.current = assistantMsgId;
+      if (activeDoc) {
+        historyStore.saveMessage(activeDoc.id, activeDoc.title, { ...userMsg });
+      }
     }
-
-    setMessages(newHistory);
     setIsGenerating(true);
 
     const subFiles = activeDoc?.files || [];
@@ -707,7 +717,8 @@ After emitting the action tags, provide a brief, polite explanation of what was 
 
     // Sliding window: send only last 10 messages to avoid 413 / ITPM limits
     const CONTEXT_WINDOW = 10;
-    const historyForApi = newHistory.filter((m) => m.id !== assistantMsgId);
+    const historySnapshot = fromEdit ? messages : [...messages, assistantMsg];
+    const historyForApi = historySnapshot.filter((m: any) => m.id !== assistantMsgId);
     const windowedHistory =
       historyForApi.length > CONTEXT_WINDOW
         ? historyForApi.slice(-CONTEXT_WINDOW)
@@ -770,6 +781,10 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                     ...msg,
                     content: cleanContent,
                     reasoningContent: streamReasoning || fullReasoning || undefined,
+                    agentSteps: [
+                      ...(streamReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (streamReasoning || fullReasoning).slice(0, 120), timestamp: Date.now() }] : []),
+                      { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Generating…', content: cleanContent.slice(0, 100), timestamp: Date.now() },
+                    ],
                   }
                 : msg
             )
@@ -857,6 +872,12 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                 content: finalCleanContent,
                 reasoningContent: finalReasoning || fullReasoning || undefined,
                 actions: executedActions.length > 0 ? executedActions : undefined,
+                agentSteps: [
+                  ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
+                  ...(executedActions.length > 0 ? [{ id: 'step-tool', phase: 'tool_call' as const, title: 'Document Actions', content: executedActions.map((a: { type: string; name: string }) => `[${a.type}] ${a.name}`).join(', '), timestamp: Date.now() }] : []),
+                  { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Composing response', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
+                  { id: 'step-result', phase: 'result' as const, title: 'Done', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
+                ],
               }
             : msg
         )
@@ -872,6 +893,12 @@ After emitting the action tags, provide a brief, polite explanation of what was 
           actions: executedActions.length > 0 ? executedActions : undefined,
           snapshotId,
           timestamp: Date.now(),
+          agentSteps: [
+            ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
+            ...(executedActions.length > 0 ? [{ id: 'step-tool', phase: 'tool_call' as const, title: 'Document Actions', content: executedActions.map((a: { type: string; name: string }) => `[${a.type}] ${a.name}`).join(', '), timestamp: Date.now() }] : []),
+            { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Composing response', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
+            { id: 'step-result', phase: 'result' as const, title: 'Done', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
+          ],
         };
         historyStore.saveMessage(activeDoc.id, activeDoc.title, finalMsg);
 
@@ -1129,8 +1156,10 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                 editContent={editingMessageId === msg.id ? editingContent : undefined}
                 onEdit={!isGenerating ? () => handleStartEdit(msg.id, msg.content) : undefined}
                 onSaveEdit={async (newContent) => {
-                  const newPrompt = await handleSaveEdit(newContent);
-                  if (newPrompt) await handleSend(newPrompt);
+                  const saved = await handleSaveEdit(newContent);
+                  if (saved) {
+                    handleSend(saved, true);
+                  }
                 }}
                 onCancelEdit={handleCancelEdit}
                 isReverted={false}
@@ -1148,8 +1177,9 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                   assistantName="AI Co-Author"
                   assistantColor="var(--brand-primary)"
                   language={language === 'id' ? 'id' : 'en'}
+                  auditBadge={undefined}
                   extraContent={
-                    activeDoc && (index >= messages.length - 2 || assistantMsg.content.length > 80) ? (
+                    activeDoc && index === messages.length - 1 ? (
                       <InteractiveDocCard
                         doc={activeDoc}
                         onOpenEditor={() => {

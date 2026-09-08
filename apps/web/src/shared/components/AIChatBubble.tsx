@@ -7,7 +7,6 @@ import {
   Copy,
   Check,
   Sparkles,
-  RotateCcw,
   ChevronDown,
   ChevronUp,
   Pencil,
@@ -17,13 +16,9 @@ import {
   Image as ImageIcon,
   ThumbsUp,
   ThumbsDown,
-  Clock,
-  Wrench,
-  BrainCircuit,
-  FileSearch,
-  CheckCircle2,
 } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { AgentTimeline } from './AgentTimeline';
 import { getTranslation } from '@anticeil/core';
 
 // ============================================
@@ -824,109 +819,21 @@ export function AIChatBubble({
       {/* Extra Footer */}
       {extraFooter && <div style={{ width: '100%' }}>{extraFooter}</div>}
 
-      {/* Timeline Component */}
+      {/* Timeline Component (reusable AgentTimeline for shadcn-style look) */}
       {!isUser && agentSteps && agentSteps.length > 0 && (
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '100%',
-            marginTop: '8px',
-            borderLeft: '2px solid var(--border-subtle)',
-            paddingLeft: '12px',
-            paddingBottom: '4px',
-            animation: isTimelineExpanded ? 'fadeIn 0.25s ease-out' : 'fadeIn 0.15s ease-out',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              padding: '2px 4px',
-              borderRadius: 'var(--radius-sm)',
-              userSelect: 'none',
-            }}
-            onClick={() => setIsTimelineExpanded(!isTimelineExpanded)}
-            role="button"
-            aria-label="Toggle timeline"
-          >
-            <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              Agent Timeline
-            </span>
-            {isTimelineExpanded ? <ChevronUp size={12} color="var(--text-muted)" /> : <ChevronDown size={12} color="var(--text-muted)" />}
-          </div>
-
-          <div
-            style={{
-              overflow: 'hidden',
-              maxHeight: isTimelineExpanded ? '600px' : '0px',
-              transition: 'max-height 0.25s ease',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '6px' }}>
-              {agentSteps.map((step) => (
-                <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', animation: 'fadeIn 0.2s ease-out' }}>
-                  <div style={{
-                    flexShrink: 0,
-                    width: '22px',
-                    height: '22px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: step.phase === 'reasoning' ? 'rgba(162,93,220,0.12)' :
-                                step.phase === 'tool_call' ? 'rgba(0,115,234,0.12)' :
-                                step.phase === 'synthesis' ? 'rgba(253,171,61,0.12)' :
-                                'rgba(0,200,117,0.12)',
-                    border: '1px solid ' + (step.phase === 'reasoning' ? 'rgba(162,93,220,0.25)' :
-                                          step.phase === 'tool_call' ? 'rgba(0,115,234,0.25)' :
-                                          step.phase === 'synthesis' ? 'rgba(253,171,61,0.25)' :
-                                          'rgba(0,200,117,0.25)'),
-                    color: step.phase === 'reasoning' ? 'var(--accent-reasoning)' :
-                           step.phase === 'tool_call' ? 'var(--brand-primary)' :
-                           step.phase === 'synthesis' ? 'var(--accent-warning)' :
-                           'var(--accent-success)',
-                  }}>
-                    {step.phase === 'reasoning' ? <BrainCircuit size={12} /> :
-                     step.phase === 'tool_call' ? <Wrench size={12} /> :
-                     step.phase === 'synthesis' ? <FileSearch size={12} /> :
-                     <CheckCircle2 size={12} />}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {step.title}
-                      {step.badge && (
-                        <span style={{
-                          marginLeft: '6px',
-                          fontSize: '9px',
-                          fontWeight: 700,
-                          padding: '1px 4px',
-                          borderRadius: 'var(--radius-full)',
-                          background: 'rgba(0,115,234,0.08)',
-                          color: 'var(--brand-primary)',
-                          letterSpacing: '0.02em',
-                        }}>
-                          {step.badge}
-                        </span>
-                      )}
-                    </div>
-                    {step.content ? (
-                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4, wordBreak: 'break-word' }}>
-                        {step.content}
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>
-                    )}
-                    <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {new Date(step.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <AgentTimeline
+          steps={agentSteps.map((s, idx, arr) => ({
+            id: s.id,
+            phase: (s.phase as import('./AgentTimeline').AgentPhase) || "reasoning",
+            title: s.title,
+            description: s.content,
+            status: (idx === arr.length - 1 && isStreaming) ? "active" : (s.phase === "result" || (idx === arr.length - 1 && !isStreaming)) ? "complete" : "pending",
+            timestamp: s.timestamp,
+            badge: s.badge,
+          }))}
+          defaultOpen={isStreaming ?? false}
+          title={language === 'id' ? 'Timeline Agen' : 'Agent Timeline'}
+        />
       )}
 
       {/* Action Bar */}
@@ -1043,7 +950,7 @@ export function CoAuthorMessageBubble({
   content,
   isStreaming = false,
   timestamp,
-
+  isReverted,
   variant = 'coauthor',
   language = 'id',
   onCopy,
