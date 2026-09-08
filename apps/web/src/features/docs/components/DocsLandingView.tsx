@@ -448,9 +448,9 @@ Every document MUST have a dedicated cover page that is centered horizontally an
           reasoningContent: finalReasoning || fullReasoning || undefined,
           timestamp: Date.now(),
           agentSteps: [
-            ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
-            { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Composing response', content: (finalContent || fullResponse).slice(0, 100), timestamp: Date.now() },
-            { id: 'step-result', phase: 'result' as const, title: 'Done', content: `${(finalContent || fullResponse).split(' ').length} words generated`, timestamp: Date.now() },
+            ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'thinking' as const, title: 'Thinking', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
+            { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Synthesis', content: (finalContent || fullResponse).slice(0, 100), timestamp: Date.now() },
+            { id: 'step-result', phase: 'result' as const, title: 'Result', content: `${(finalContent || fullResponse).split(' ').length} words generated`, timestamp: Date.now() },
           ],
         };
         historyStore.saveMessage(targetDocId, targetDoc.title, finalMsg);

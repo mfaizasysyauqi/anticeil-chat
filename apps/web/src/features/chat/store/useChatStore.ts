@@ -650,6 +650,114 @@ export const useChatStore = create<ChatState>()(
                   isDone
                 );
 
+                const buildAgentSteps = (msg?: any): import('@anticeil/core').AgentStep[] => {
+                  const steps: import('@anticeil/core').AgentStep[] = [];
+
+                  // 1. Connectors / MCP
+                  if (activeConnectorIds && activeConnectorIds.length > 0) {
+                    steps.push({
+                      id: 'step-connector',
+                      phase: 'connector',
+                      title: `Connectors & MCP (${activeConnectorIds.map((id) => id.charAt(0).toUpperCase() + id.slice(1)).join(', ')})`,
+                      content: `Active connectors: ${activeConnectorIds.join(', ')}`,
+                      timestamp: Date.now(),
+                    });
+                  }
+
+                  // 2. Web Search
+                  if (shouldWebSearch && cleanUserQuery && !hasActiveConnectors) {
+                    steps.push({
+                      id: 'step-websearch',
+                      phase: 'web_search',
+                      title: `Web Search: "${cleanUserQuery.slice(0, 28)}${cleanUserQuery.length > 28 ? '...' : ''}"`,
+                      content: 'Browsing search indices for real-time information',
+                      timestamp: Date.now(),
+                    });
+                  }
+
+                  // 3. Read (scraped URLs or attachments)
+                  if (urlMatches && urlMatches.length > 0) {
+                    urlMatches.slice(0, 3).forEach((u, idx) => {
+                      try {
+                        const hostname = new URL(u).hostname;
+                        steps.push({
+                          id: `step-read-${idx}`,
+                          phase: 'read',
+                          title: `Read: ${hostname}`,
+                          content: `Extracted content from ${u}`,
+                          timestamp: Date.now(),
+                        });
+                      } catch {
+                        steps.push({
+                          id: `step-read-${idx}`,
+                          phase: 'read',
+                          title: `Read: Web source`,
+                          content: u,
+                          timestamp: Date.now(),
+                        });
+                      }
+                    });
+                  } else if (attachments && attachments.length > 0) {
+                    attachments.slice(0, 3).forEach((att, idx) => {
+                      steps.push({
+                        id: `step-read-att-${idx}`,
+                        phase: 'read',
+                        title: `Read: ${att.name}`,
+                        content: `${att.type} (${Math.round(att.size / 1024)} KB)`,
+                        timestamp: Date.now(),
+                      });
+                    });
+                  }
+
+                  // 4. Tools / Function calls
+                  const currentToolResults = msg?.toolResults;
+                  if (currentToolResults && currentToolResults.length > 0) {
+                    currentToolResults.forEach((t: any, idx: number) => {
+                      steps.push({
+                        id: `step-tool-${idx}`,
+                        phase: 'tool_call',
+                        title: `Tool: ${t.toolName}`,
+                        content: t.summary || `Status: ${t.status}`,
+                        timestamp: Date.now(),
+                      });
+                    });
+                  }
+
+                  // 5. Reasoning / Thinking
+                  if (reasoningContent) {
+                    const durationSec = Math.max(1, Math.floor(reasoningContent.length / 100));
+                    steps.push({
+                      id: 'step-reasoning',
+                      phase: 'reasoning',
+                      title: `Thinking (${durationSec}s)`,
+                      content: reasoningContent,
+                      timestamp: Date.now(),
+                    });
+                  }
+
+                  // 6. Synthesis
+                  steps.push({
+                    id: 'step-synthesis',
+                    phase: 'synthesis',
+                    title: 'Synthesis',
+                    content: cleanContent.slice(0, 120),
+                    timestamp: Date.now(),
+                  });
+
+                  // 7. Result
+                  if (isDone) {
+                    steps.push({
+                      id: 'step-result',
+                      phase: 'result',
+                      title: 'Result',
+                      content: cleanContent.slice(0, 80),
+                      timestamp: Date.now(),
+                    });
+                  }
+
+                  return steps;
+                };
+
                 set((s) => ({
                   messages: {
                     ...s.messages,
@@ -659,12 +767,7 @@ export const useChatStore = create<ChatState>()(
                             ...m,
                             content: cleanContent,
                             reasoningContent: reasoningContent || undefined,
-                            agentSteps: [
-                              ...(reasoningContent ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: reasoningContent, timestamp: Date.now() }] : []),
-                              ...(m.toolResults && m.toolResults.length > 0 ? [{ id: 'step-tool', phase: 'tool_call' as const, title: 'Tool Execution', content: m.toolResults.map((t: any) => `[${t.toolName}] ${t.status}`).join(', '), timestamp: Date.now() }] : []),
-                              { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Synthesis', content: cleanContent.slice(0, 120), timestamp: Date.now() },
-                              ...(isDone ? [{ id: 'step-result', phase: 'result' as const, title: 'Result', content: cleanContent.slice(0, 80), timestamp: Date.now() }] : []),
-                            ],
+                            agentSteps: buildAgentSteps(m),
                             status: isDone ? 'done' : 'streaming',
                             tokensUsed: {
                               prompt: promptTokensCount,

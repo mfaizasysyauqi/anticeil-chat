@@ -86,7 +86,24 @@ export interface FileAttachment {
 
 export interface AgentStep {
   id: string;
-  phase: 'reasoning' | 'tool_call' | 'synthesis' | 'result';
+  phase:
+    | 'plan'
+    | 'design'
+    | 'code'
+    | 'test'
+    | 'deploy'
+    | 'done'
+    | 'reasoning'
+    | 'thinking'
+    | 'tool_call'
+    | 'tool'
+    | 'web_search'
+    | 'read'
+    | 'edit'
+    | 'mcp'
+    | 'connector'
+    | 'synthesis'
+    | 'result';
   title: string;
   content?: string;
   timestamp: number;

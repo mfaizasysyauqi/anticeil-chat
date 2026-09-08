@@ -25,6 +25,15 @@ import { getTranslation } from '@anticeil/core';
 // Types
 // ============================================
 
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  type?: string;
+  size?: number;
+  isImage?: boolean;
+  content?: string;
+}
+
 export interface AIChatBubbleProps {
   /** Message role: 'user' or 'assistant' */
   role: 'user' | 'assistant';
@@ -56,14 +65,7 @@ export interface AIChatBubbleProps {
   auditBadge?: string;
   agentSteps?: import('@anticeil/core').AgentStep[];
   actions?: Array<{ type: string; name: string }>;
-  attachments?: Array<{
-    id: string;
-    name: string;
-    type?: string;
-    size?: number;
-    isImage?: boolean;
-    content?: string;
-  }>;
+  attachments?: ChatAttachment[];
   // Callbacks
   onCopy?: () => void;
   onEdit?: () => void;
@@ -137,7 +139,7 @@ function AttachmentChip({
   attachment,
   language = 'id',
 }: {
-  attachment: AIChatBubbleProps['attachments'] extends (infer T)[] ? T : never;
+  attachment: ChatAttachment;
   language?: 'id' | 'en';
 }) {
   const getIcon = () => {
@@ -781,25 +783,7 @@ export function AIChatBubble({
               />
             ) : (
               <>
-                {/* Reasoning/Thinking display */}
-                {reasoningContent && (
-                  <div
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--text-muted)',
-                      fontStyle: 'italic',
-                      padding: '8px 12px',
-                      background: 'var(--bg-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      marginBottom: '8px',
-                      borderLeft: '3px solid var(--brand-primary)',
-                    }}
-                  >
-                    {reasoningContent}
-                  </div>
-                )}
-
-                {/* Timeline Component — above output (consistent with chat page) */}
+                {/* Timeline Component — above output (unified across AI Assistant & AI Co-Author) */}
                 {!isUser && (agentSteps || reasoningContent || actions) && (
                   <AgentStepTimeline
                     steps={agentSteps}

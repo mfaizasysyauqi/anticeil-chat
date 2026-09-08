@@ -873,10 +873,16 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                 reasoningContent: finalReasoning || fullReasoning || undefined,
                 actions: executedActions.length > 0 ? executedActions : undefined,
                 agentSteps: [
-                  ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
-                  ...(executedActions.length > 0 ? [{ id: 'step-tool', phase: 'tool_call' as const, title: 'Document Actions', content: executedActions.map((a: { type: string; name: string }) => `[${a.type}] ${a.name}`).join(', '), timestamp: Date.now() }] : []),
-                  { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Composing response', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
-                  { id: 'step-result', phase: 'result' as const, title: 'Done', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
+                  ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'thinking' as const, title: 'Thinking', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
+                  ...executedActions.map((a: { type: string; name: string }, i: number) => ({
+                    id: `step-doc-${i}`,
+                    phase: (a.type === 'checked' ? 'result' : 'edit') as 'result' | 'edit',
+                    title: `${a.type === 'checked' ? 'Checked' : 'Edited'}: ${a.name}`,
+                    content: `Applied ${a.type} on ${a.name}`,
+                    timestamp: Date.now(),
+                  })),
+                  { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Synthesis', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
+                  { id: 'step-result', phase: 'result' as const, title: 'Result', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
                 ],
               }
             : msg
@@ -894,10 +900,16 @@ After emitting the action tags, provide a brief, polite explanation of what was 
           snapshotId,
           timestamp: Date.now(),
           agentSteps: [
-            ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
-            ...(executedActions.length > 0 ? [{ id: 'step-tool', phase: 'tool_call' as const, title: 'Document Actions', content: executedActions.map((a: { type: string; name: string }) => `[${a.type}] ${a.name}`).join(', '), timestamp: Date.now() }] : []),
-            { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Composing response', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
-            { id: 'step-result', phase: 'result' as const, title: 'Done', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
+            ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'thinking' as const, title: 'Thinking', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
+            ...executedActions.map((a: { type: string; name: string }, i: number) => ({
+              id: `step-doc-${i}`,
+              phase: (a.type === 'checked' ? 'result' : 'edit') as 'result' | 'edit',
+              title: `${a.type === 'checked' ? 'Checked' : 'Edited'}: ${a.name}`,
+              content: `Applied ${a.type} on ${a.name}`,
+              timestamp: Date.now(),
+            })),
+            { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Synthesis', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
+            { id: 'step-result', phase: 'result' as const, title: 'Result', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
           ],
         };
         historyStore.saveMessage(activeDoc.id, activeDoc.title, finalMsg);

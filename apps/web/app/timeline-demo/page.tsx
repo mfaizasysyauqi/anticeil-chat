@@ -17,6 +17,7 @@ import {
   TimelineGroup,
   TimelineStep,
 } from '@/shared/components/Timeline';
+import { TimelineDemo } from '@/components/ui/timeline-demo';
 
 // ─── Demo Data ───────────────────────────────────────────────────────────────
 
@@ -109,6 +110,11 @@ export default function TimelineDemoPage() {
 
         {/* Demo grid */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+
+          {/* 0. Shadcn UI Component Demo */}
+          <Card title="Shadcn CVA UI Component — Plan, Design, Code, Test, Deploy">
+            <TimelineDemo />
+          </Card>
 
           {/* 1. Chat Thinking — compact */}
           <Card title="ChatPage — AI Thinking (compact mode)">
