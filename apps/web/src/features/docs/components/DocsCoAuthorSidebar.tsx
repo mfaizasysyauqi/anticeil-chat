@@ -1121,6 +1121,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
               <AIChatBubble
                 role="user"
                 content={msg.content}
+                agentSteps={msg.agentSteps}
                 timestamp={msg.timestamp}
                 variant="coauthor"
                 language={language === 'id' ? 'id' : 'en'}
@@ -1141,6 +1142,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                   role="assistant"
                   content={stripAgentActionTags(assistantMsg.content)}
                   reasoningContent={assistantMsg.reasoningContent}
+                  agentSteps={assistantMsg?.agentSteps}
                   variant="coauthor"
                   isStreaming={isAssistantStreaming}
                   assistantName="AI Co-Author"

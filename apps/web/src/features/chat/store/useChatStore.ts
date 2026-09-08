@@ -659,6 +659,13 @@ export const useChatStore = create<ChatState>()(
                             ...m,
                             content: cleanContent,
                             reasoningContent: reasoningContent || undefined,
+                            agentSteps: reasoningContent || (m.toolResults && m.toolResults.length > 0)
+                              ? [
+                                  ...(reasoningContent ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: reasoningContent, timestamp: Date.now() }] : []),
+                                  ...(m.toolResults && m.toolResults.length > 0 ? [{ id: 'step-tool', phase: 'tool_call' as const, title: 'Tool Execution', content: m.toolResults.map((t: any) => `[${t.toolName}] ${t.status}`).join(', '), timestamp: Date.now() }] : []),
+                                  { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Synthesis', content: cleanContent.slice(0, 120), timestamp: Date.now() },
+                                ]
+                              : undefined,
                             status: isDone ? 'done' : 'streaming',
                             tokensUsed: {
                               prompt: promptTokensCount,

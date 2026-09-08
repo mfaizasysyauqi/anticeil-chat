@@ -931,6 +931,7 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                       role={msg.role}
                       content={isUserMsg ? msg.content : stripAgentActionTags(msg.content)}
                       reasoningContent={msg.reasoningContent}
+                      agentSteps={msg.agentSteps}
                       isStreaming={isStreamingThis}
                       assistantName="AI Co-Author"
                       assistantColor={activeColor}
