@@ -797,6 +797,23 @@ export function AIChatBubble({
                   </div>
                 )}
 
+                {/* Timeline Component — above output */}
+                {!isUser && agentSteps && agentSteps.length > 0 && (
+                  <AgentTimeline
+                    steps={agentSteps.map((s, idx, arr) => ({
+                      id: s.id,
+                      phase: (s.phase as import('./AgentTimeline').AgentPhase) || "reasoning",
+                      title: s.title,
+                      description: s.content,
+                      status: (idx === arr.length - 1 && isStreaming) ? "active" : (s.phase === "result" || (idx === arr.length - 1 && !isStreaming)) ? "complete" : "pending",
+                      timestamp: s.timestamp,
+                      badge: s.badge,
+                    }))}
+                    defaultOpen={isStreaming ?? false}
+                    title={language === 'id' ? 'Timeline Agen' : 'Agent Timeline'}
+                  />
+                )}
+
                 {/* Assistant Content or Streaming */}
                 {content ? (
                   <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
@@ -818,23 +835,6 @@ export function AIChatBubble({
 
       {/* Extra Footer */}
       {extraFooter && <div style={{ width: '100%' }}>{extraFooter}</div>}
-
-      {/* Timeline Component (reusable AgentTimeline for shadcn-style look) */}
-      {!isUser && agentSteps && agentSteps.length > 0 && (
-        <AgentTimeline
-          steps={agentSteps.map((s, idx, arr) => ({
-            id: s.id,
-            phase: (s.phase as import('./AgentTimeline').AgentPhase) || "reasoning",
-            title: s.title,
-            description: s.content,
-            status: (idx === arr.length - 1 && isStreaming) ? "active" : (s.phase === "result" || (idx === arr.length - 1 && !isStreaming)) ? "complete" : "pending",
-            timestamp: s.timestamp,
-            badge: s.badge,
-          }))}
-          defaultOpen={isStreaming ?? false}
-          title={language === 'id' ? 'Timeline Agen' : 'Agent Timeline'}
-        />
-      )}
 
       {/* Action Bar */}
       {!isUser && content && !isStreaming && (
