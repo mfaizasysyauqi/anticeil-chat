@@ -23,14 +23,17 @@ import { useStorageStore } from '../../storage/store/useStorageStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useImageStore } from '../../image/store/useImageStore';
 import { PromptBar } from '../../../shared/components/PromptBar';
+import { StarterCardGrid } from '../../../shared/components/StarterCardGrid';
 import { AIChatBubble } from '../../../shared/components/AIChatBubble';
 import { AgentTimelineStep } from '../../../shared/components/AgentStepTimeline';
 import { ImageModelSelectorModal, IMAGE_PROVIDERS } from '../../image/components/ImageModelSelectorModal';
 import { MediaCanvasPanel } from './MediaCanvasPanel';
 import { synthesizeContextualPrompt } from '../utils/promptContextSynthesizer';
+import { getTranslation } from '@anticeil/core';
 
 export function MediaLandingView() {
   const { language } = useSettingsStore();
+  const t = getTranslation(language);
   const [prompt, setPrompt] = useState('');
   const [isModelModalOpen, setIsModelModalOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('flux');
@@ -87,10 +90,8 @@ export function MediaLandingView() {
       icon: Palette,
       color: '#A25DDC',
       badgeBg: 'rgba(162, 93, 220, 0.12)',
-      title: language === 'id' ? 'Kota Cyberpunk Hujan Neon' : 'Rainy Cyberpunk Neon City',
-      prompt: language === 'id'
-        ? 'Pemandangan kota cyberpunk futuristik di malam hari dengan genangan air memantulkan lampu neon ungu dan mobil terbang melayang.'
-        : 'Futuristic cyberpunk cityscape at night with wet streets reflecting purple neon lights and flying cars.',
+      title: t.media.starterCyberpunkTitle,
+      prompt: t.media.starterCyberpunkPrompt,
       style: 'Cyberpunk',
       ratio: '16:9',
     },
@@ -99,10 +100,8 @@ export function MediaLandingView() {
       icon: Sparkles,
       color: '#0073EA',
       badgeBg: 'rgba(0, 115, 234, 0.12)',
-      title: language === 'id' ? 'Potret Studio 8K Sinematik' : '8K Cinematic Studio Portrait',
-      prompt: language === 'id'
-        ? 'Foto potret close-up studio 8K ultra realistis dengan pencahayaan dramatis, detail tekstur kulit sempurna, dan kedalaman fokus bokeh.'
-        : 'Ultra-realistic 8K close-up studio portrait with dramatic rim lighting, sharp facial details, and smooth bokeh depth.',
+      title: t.media.starterPhotoTitle,
+      prompt: t.media.starterPhotoPrompt,
       style: 'Photorealistic',
       ratio: '1:1',
     },
@@ -110,11 +109,9 @@ export function MediaLandingView() {
       category: '3D Render',
       icon: Wand2,
       color: '#10B981',
-      badgeBg: 'rgba(16, 185, 129, 0.12)',
-      title: language === 'id' ? 'Kamar Gamer Isometrik 3D' : '3D Isometric Cozy Room',
-      prompt: language === 'id'
-        ? 'Desain kamar tidur gamer isometrik 3D estetik dengan setup monitor ultrawide, tanaman hias, rak buku, dan lampu warm cozy.'
-        : 'Charming 3D isometric cozy gamer bedroom setup with ultrawide monitors, indoor plants, bookshelves, and warm ambient lighting.',
+      badgeBg: 'rgba(162, 93, 220, 0.12)',
+      title: t.media.starter3DTitle,
+      prompt: t.media.starter3DPrompt,
       style: '3D Render',
       ratio: '16:9',
     },
@@ -123,10 +120,8 @@ export function MediaLandingView() {
       icon: Ratio,
       color: '#EC4899',
       badgeBg: 'rgba(236, 72, 153, 0.12)',
-      title: language === 'id' ? 'Kuil Fantasi Mengambang di Langit' : 'Floating Fantasy Sky Temple',
-      prompt: language === 'id'
-        ? 'Kuil kuno megah mengambang di atas awan saat matahari terbenam dengan pohon sakura bercahaya dan efek cahaya mistis keemasan.'
-        : 'Majestic ancient temple floating above clouds during sunset with glowing sakura petals and mystical golden hour rays.',
+      title: t.media.starterFantasyTitle,
+      prompt: t.media.starterFantasyPrompt,
       style: 'Anime / Manga',
       ratio: '16:9',
     },
@@ -312,174 +307,104 @@ export function MediaLandingView() {
           ref={scrollRef}
           className="page-scroll-container"
           style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '16px 20px 20px 20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            maxWidth: '860px',
-            width: '100%',
-            margin: '0 auto',
-            boxSizing: 'border-box',
-            minHeight: 0,
+            justifyContent: (!activeProject || activeProject.revisions.length === 0) && !isGenerating ? 'center' : 'flex-start',
           }}
         >
           {/* Welcome Card & Inspiration Bento if no revisions */}
-          {(!activeProject || activeProject.revisions.length === 0) && !isGenerating && (
+          {(!activeProject || activeProject.revisions.length === 0) && !isGenerating ? (
             <div
+              className="page-content-wrapper"
               style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                padding: '24px 16px 20px',
-                color: 'var(--text-muted)',
-                margin: 'auto 0',
+                gap: 'var(--space-xl)',
+                padding: 'var(--space-2xl) 0',
               }}
             >
               {/* Minimalist Editorial Hero Greeting */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-full, 9999px)',
-                  background: 'var(--bg-subtle)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: 'var(--font-xs, 12px)',
-                  fontWeight: 600,
-                  color: 'var(--text-secondary)',
-                  marginBottom: '16px',
-                }}
-              >
-                <span
+              <div style={{ textAlign: 'center' }}>
+                <div
                   style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: '#A25DDC',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    fontSize: 'var(--font-xs)',
+                    fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                    marginBottom: 'var(--space-lg)',
                   }}
-                />
-                <span>
-                  {language === 'id'
-                    ? '100% Neural Generation • Multi-Model Image Studio'
-                    : '100% Neural Generation • Multi-Model Image Studio'}
-                </span>
-              </div>
+                >
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: '#A25DDC',
+                    }}
+                  />
+                  <span>{t.media.heroBadge}</span>
+                </div>
 
-              <h1
-                style={{
-                  fontSize: 'var(--font-3xl, 26px)',
-                  fontWeight: 700,
-                  letterSpacing: '-0.03em',
-                  color: 'var(--text-primary)',
-                  marginBottom: '8px',
-                }}
-              >
-                {language === 'id' ? 'Where should we begin?' : 'Where should we begin?'}
-              </h1>
-              <p
-                style={{
-                  fontSize: 'var(--font-md, 13.5px)',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.5,
-                  maxWidth: '520px',
-                  margin: '0 auto 24px',
-                }}
-              >
-                {language === 'id'
-                  ? 'Hasilkan gambar & ilustrasi definisi tinggi langsung dari browser Anda dengan model multimodal dan revisi kontekstual.'
-                  : 'Generate high-definition images directly from your browser with multimodal models and contextual revisions.'}
-              </p>
+                <h1
+                  style={{
+                    fontSize: 'var(--font-3xl)',
+                    fontWeight: 700,
+                    letterSpacing: '-0.03em',
+                    color: 'var(--text-primary)',
+                    marginBottom: 'var(--space-sm)',
+                  }}
+                >
+                  {t.media.heroTitle}
+                </h1>
+                <p
+                  style={{
+                    fontSize: 'var(--font-md)',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                    margin: 0,
+                  }}
+                >
+                  {t.media.heroSubtitle}
+                </p>
+              </div>
 
               {/* Curated Bento Starter Cards (2x2 grid) */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '10px',
-                  width: '100%',
-                  maxWidth: '720px',
-                  textAlign: 'left',
-                }}
-              >
-                {starterCards.map((card, i) => {
-                  const Icon = card.icon;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => {
-                        setPrompt(card.prompt);
-                        setSelectedStyle(card.style);
-                        setSelectedRatio(card.ratio);
-                      }}
-                      className="hover-card"
+              <StarterCardGrid
+                header={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px' }}>
+                    <Sparkles size={14} color="#A25DDC" />
+                    <span
                       style={{
-                        padding: '14px 16px',
-                        borderRadius: 'var(--radius-lg, 12px)',
-                        background: 'var(--bg-surface)',
-                        border: '1px solid var(--border-subtle)',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '8px',
-                        boxShadow: 'var(--inner-glow, none)',
-                        transition: 'all 0.15s ease',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: 'var(--text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            color: card.color,
-                            background: card.badgeBg,
-                            padding: '3px 8px',
-                            borderRadius: 'var(--radius-full, 9999px)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                          }}
-                        >
-                          <Icon size={12} color={card.color} />
-                          {card.category}
-                        </span>
-                        <ArrowUpRight size={13} color="var(--text-muted)" />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
-                          {card.title}
-                        </div>
-                        <span
-                          style={{
-                            fontSize: '12px',
-                            color: 'var(--text-secondary)',
-                            lineHeight: 1.4,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {card.prompt}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      {t.media.starterTemplates}
+                    </span>
+                  </div>
+                }
+                cards={starterCards}
+                onSelect={(card) => {
+                  setPrompt(card.prompt);
+                  setSelectedStyle(card.style);
+                  setSelectedRatio(card.ratio);
+                }}
+              />
             </div>
-          )}
-
-          {/* Active Project Revisions Conversation Thread (DRY using AIChatBubble) */}
-          {activeProject?.revisions.map((rev, idx) => {
+          ) : (
+            <div
+              className="page-content-wrapper"
+              style={{
+                gap: 'var(--space-lg)',
+                padding: 'var(--space-2xl) 0',
+              }}
+            >
+              {activeProject?.revisions.map((rev, idx) => {
             const isLatest = idx === activeProject.revisions.length - 1;
             const isCurrentlySelected = activeRevision?.id === rev.id;
             const parentRev = rev.revisedFromId ? activeProject.revisions.find((r) => r.id === rev.revisedFromId) : null;
@@ -834,37 +759,21 @@ export function MediaLandingView() {
               }
             />
           )}
+            </div>
+          )}
         </div>
 
-        {/* Docked Bottom PromptBar Container (DRY matching DocsStudio & Chat) */}
-        <div
-          style={{
-            width: '100%',
-            padding: '8px 16px 14px',
-            backgroundColor: 'var(--bg-main)',
-            borderTop: '1px solid var(--border-subtle)',
-            display: 'flex',
-            justifyContent: 'center',
-            flexShrink: 0,
-            zIndex: 10,
-            boxSizing: 'border-box',
-          }}
-        >
-          <div style={{ maxWidth: '860px', width: '100%' }}>
-            <PromptBar
-              prompt={prompt}
+        {/* Docked Bottom PromptBar (DRY matching DocsStudio & Chat) */}
+        <PromptBar
+          prompt={prompt}
               onPromptChange={setPrompt}
               onSubmit={() => handleSendPrompt()}
               isGenerating={isGenerating}
               onStop={() => setIsGenerating(false)}
               placeholder={
                 activeRevision
-                  ? (language === 'id'
-                      ? `Revisi v${activeRevision.version} (misal: "buat agar jadi warna biru", "tambah kacamata")...`
-                      : `Revise v${activeRevision.version} (e.g. "make it blue", "add sunglasses")...`)
-                  : (language === 'id'
-                      ? 'Deskripsikan gambar/media yang ingin dibuat...'
-                      : 'Describe the image/media you want to generate...')
+                  ? t.media.revisePlaceholder.replace('{version}', String(activeRevision.version))
+                  : t.media.placeholder
               }
               modelDisplayName={shortModelName}
               onModelSelectorOpen={() => setIsModelModalOpen(true)}
@@ -939,9 +848,7 @@ export function MediaLandingView() {
                   </button>
                 </div>
               }
-            />
-          </div>
-        </div>
+        />
       </div>
 
       {/* ── Right Canvas Panel (Live Preview, Before/After Slider, Downloads) ── */}

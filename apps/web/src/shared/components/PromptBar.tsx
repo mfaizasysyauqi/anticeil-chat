@@ -200,70 +200,83 @@ export function PromptBar({
 
   return (
     <div
+      className="chat-input-container"
       style={{
-        position: 'relative',
-        padding: '0 16px 16px 16px',
+        padding: 'var(--space-sm) var(--page-pad-x) var(--space-xl) var(--page-pad-x)',
+        background: 'transparent',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         width: '100%',
-        maxWidth: '840px',
-        margin: '0 auto',
+        boxSizing: 'border-box',
         flexShrink: 0,
       }}
     >
-      {/* Warning banner */}
-      {warningMessage && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '-36px',
-            left: '16px',
-            right: '16px',
-            padding: '6px 12px',
-            backgroundColor: 'rgba(239, 68, 68, 0.12)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '8px',
-            color: '#EF4444',
-            fontSize: '12px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            zIndex: 10,
-          }}
-        >
-          <AlertCircle size={14} />
-          <span>{warningMessage}</span>
-        </div>
-      )}
-
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept="image/*,.pdf,.txt,.csv,.json,.bib,.md,.tex,.typ"
-        onChange={(e) => {
-          if (e.target.files) processFiles(e.target.files);
-          e.target.value = '';
-        }}
-        style={{ display: 'none' }}
-      />
-
-      <form
-        onSubmit={handleFormSubmit}
+      <div
+        className="chat-input-wrapper"
         style={{
-          background: 'var(--bg-input, var(--bg-surface))',
-          border: `1px solid ${
-            isFocused ? 'var(--border-strong)' : 'var(--border-subtle)'
-          }`,
-          borderRadius: 'var(--radius-xl, 16px)',
-          boxShadow: 'none',
-          padding: '8px 12px 10px 12px',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'all 0.2s ease',
+          width: '100%',
+          maxWidth: '860px',
           position: 'relative',
         }}
       >
+        {/* Warning banner */}
+        {warningMessage && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '-36px',
+              left: '0',
+              right: '0',
+              padding: '6px 12px',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              color: '#EF4444',
+              fontSize: '12px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              zIndex: 10,
+            }}
+          >
+            <AlertCircle size={14} />
+            <span>{warningMessage}</span>
+          </div>
+        )}
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,.pdf,.txt,.csv,.json,.bib,.md,.tex,.typ"
+          onChange={(e) => {
+            if (e.target.files) processFiles(e.target.files);
+            e.target.value = '';
+          }}
+          style={{ display: 'none' }}
+        />
+
+        <form
+          onSubmit={handleFormSubmit}
+          style={{
+            background: 'var(--bg-input, var(--bg-surface))',
+            border: `1px solid ${
+              isFocused ? 'var(--border-strong)' : 'var(--border-subtle)'
+            }`,
+            borderRadius: 'var(--radius-xl, 16px)',
+            boxShadow: 'none',
+            padding: '10px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'all 0.2s ease',
+            position: 'relative',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
         {/* Attachment Previews Bar */}
         {attachments.length > 0 && (
           <div
@@ -543,6 +556,7 @@ export function PromptBar({
           </div>
         </div>
       </form>
+      </div>
     </div>
   );
 }

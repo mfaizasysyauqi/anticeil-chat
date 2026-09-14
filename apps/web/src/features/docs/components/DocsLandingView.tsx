@@ -30,6 +30,7 @@ import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, getModelById, isCloudTier, cleanAgenticStream } from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
 import { PromptBar, PromptAttachment } from '../../../shared/components/PromptBar';
+import { StarterCardGrid } from '../../../shared/components/StarterCardGrid';
 import { DropdownSelect } from '../../../shared/components/DropdownSelect';
 import { ThinkingTimeline } from '../../chat/components/ThinkingTimeline';
 import { MarkdownRenderer } from '../../../shared/components/MarkdownRenderer';
@@ -897,100 +898,31 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                 </div>
 
                 {/* Starter Templates & Creative Prompts (2x2 Grid) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px' }}>
-                    <Sparkles size={14} color={activeColor} />
-                    <span
-                      style={{
-                        fontSize: '11.5px',
-                        fontWeight: 700,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
-                      }}
-                    >
-                      {language === 'id' ? 'Templat & Ide Prompt AI' : 'Starter Templates & Prompts'}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)',
-                      gap: 'var(--space-sm)',
-                      width: '100%',
-                    }}
-                  >
-                    {starterCards.map((card, i) => {
-                      const Icon = card.icon;
-                      return (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => {
-                            setSelectedFormat(card.format);
-                            const match = docs.find((d) => d.format === card.format);
-                            if (match) setActiveDocId(match.id);
-                            handleSendPrompt(card.prompt);
-                          }}
-                          className="hover-card"
-                          style={{
-                            padding: 'var(--space-md) var(--space-lg)',
-                            borderRadius: 'var(--radius-lg)',
-                            background: 'var(--bg-surface)',
-                            border: '1px solid var(--border-subtle)',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                            gap: 'var(--space-sm)',
-                            boxShadow: 'var(--inner-glow)',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span
-                              style={{
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                color: card.color,
-                                background: card.badgeBg,
-                                padding: '3px 8px',
-                                borderRadius: 'var(--radius-full)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                              }}
-                            >
-                              <Icon size={12} color={card.color} />
-                              {card.category}
-                            </span>
-                            <ArrowUpRight size={13} color="var(--text-muted)" />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
-                              {card.title}
-                            </div>
-                            <span
-                              style={{
-                                fontSize: '12px',
-                                color: 'var(--text-secondary)',
-                                lineHeight: 1.4,
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              {card.prompt}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                <StarterCardGrid
+                  header={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px' }}>
+                      <Sparkles size={14} color={activeColor} />
+                      <span
+                        style={{
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          color: 'var(--text-muted)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {language === 'id' ? 'Templat & Ide Prompt AI' : 'Starter Templates & Prompts'}
+                      </span>
+                    </div>
+                  }
+                  cards={starterCards}
+                  onSelect={(card) => {
+                    setSelectedFormat(card.format);
+                    const match = docs.find((d) => d.format === card.format);
+                    if (match) setActiveDocId(match.id);
+                    handleSendPrompt(card.prompt);
+                  }}
+                />
               </>
             )}
 

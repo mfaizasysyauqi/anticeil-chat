@@ -13,6 +13,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { AIChatBubble } from '../../../shared/components/AIChatBubble';
+import { StarterCardGrid } from '../../../shared/components/StarterCardGrid';
 import { useChatStore } from '../store/useChatStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { getTranslation, getModelById, getProviderById } from '@anticeil/core';
@@ -58,6 +59,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
       icon: Code,
       color: 'var(--brand-primary)',
       badgeBg: 'rgba(0, 115, 234, 0.12)',
+      title: t.chat.starterCodeTitle,
       prompt: t.chat.starterCodePrompt,
     },
     {
@@ -65,6 +67,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
       icon: Cpu,
       color: 'var(--accent-reasoning)',
       badgeBg: 'rgba(162, 93, 220, 0.12)',
+      title: t.chat.starterAnalysisTitle,
       prompt: t.chat.starterAnalysisPrompt,
     },
     {
@@ -72,6 +75,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
       icon: PenTool,
       color: 'var(--accent-warning)',
       badgeBg: 'rgba(253, 171, 61, 0.12)',
+      title: t.chat.starterWritingTitle,
       prompt: t.chat.starterWritingPrompt,
     },
     {
@@ -79,6 +83,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
       icon: Sparkles,
       color: 'var(--accent-success)',
       badgeBg: 'rgba(0, 200, 117, 0.12)',
+      title: t.chat.starterCreativeTitle,
       prompt: t.chat.starterCreativePrompt,
     },
   ];
@@ -178,67 +183,26 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
           )}
 
           {/* Curated Bento Starter Cards */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 'var(--space-sm)',
-            }}
-          >
-            {starterCards.map((card, i) => {
-              const Icon = card.icon;
-              return (
-                <button
-                  key={i}
-                  onClick={() => onSelectStarter(card.prompt)}
-                  className="hover-card"
+          <StarterCardGrid
+            header={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px' }}>
+                <Sparkles size={14} color="var(--brand-primary)" />
+                <span
                   style={{
-                    padding: 'var(--space-md) var(--space-lg)',
-                    borderRadius: 'var(--radius-lg)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: 'var(--space-sm)',
-                    boxShadow: 'var(--inner-glow)',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        color: card.color,
-                        background: card.badgeBg,
-                        padding: '3px 8px',
-                        borderRadius: 'var(--radius-full)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                      }}
-                    >
-                      <Icon size={12} color={card.color} />
-                      {card.category}
-                    </span>
-                    <ArrowUpRight size={13} color="var(--text-muted)" />
-                  </div>
-                  <span
-                    style={{
-                      fontSize: 'var(--font-base)',
-                      color: 'var(--text-primary)',
-                      lineHeight: 1.45,
-                      fontWeight: 450,
-                    }}
-                  >
-                    {card.prompt}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  {t.chat.starterTemplates}
+                </span>
+              </div>
+            }
+            cards={starterCards}
+            onSelect={(card) => onSelectStarter(card.prompt)}
+          />
         </div>
       </div>
     );
