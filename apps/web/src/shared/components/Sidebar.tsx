@@ -79,6 +79,7 @@ import { FolderFileDrawer } from '../../features/storage/components/FolderFileDr
 import { useCreditStore } from '../../features/credits/store/useCreditStore';
 import { MediaDetailModal } from './MediaDetailModal';
 import { createClient } from '../utils/supabase/client';
+import { useMediaEditorStore } from '../../features/media/store/useMediaEditorStore';
 import { DOC_CATEGORIES, ALL_DOC_SECTIONS } from '../../features/documentation/data';
 import { DocSidebar } from '../../features/documentation/components/DocSidebar';
 
@@ -100,6 +101,8 @@ interface ImagineHistoryItem {
   collectionId?: string;
   isPinned?: boolean;
   type?: 'image' | 'video' | 'audio';
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 // ─── FolderMenu ───────────────────────────────────────────────────────────────
@@ -475,6 +478,15 @@ function ImagineFolderMenu({ col, language, renameCollection, deleteCollection, 
 }
 
 // ─── ImagineItemMenu ──────────────────────────────────────────────────────────
+function getFormattedMediaTime(timestamp?: number, lang: string = 'id'): string {
+  if (!timestamp) return lang === 'id' ? 'Baru saja' : 'Just now';
+  const diff = Date.now() - timestamp;
+  if (diff < 60000) return lang === 'id' ? 'Baru saja' : 'Just now';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
+  return new Date(timestamp).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { month: 'short', day: 'numeric' });
+}
+
 interface ImagineItemMenuProps {
   item: ImagineHistoryItem;
   language: string;
@@ -492,7 +504,9 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const portalRef = React.useRef<HTMLDivElement>(null);
 
+  const mediaProject = useMediaEditorStore((s) => s.projects).find((p) => p.id === item.id);
   const fullMediaItem = useImageStore((s) => s.items).find((i) => i.id === item.id);
+  const mediaUrl = fullMediaItem?.url || mediaProject?.revisions[mediaProject.revisions.length - 1]?.url;
 
   const handleCopyPrompt = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -508,21 +522,21 @@ function ImagineItemMenu({ item, language, collections, togglePin, moveToCollect
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (fullMediaItem?.url) {
+    if (mediaUrl) {
       try {
-        const res = await fetch(fullMediaItem.url);
+        const res = await fetch(mediaUrl);
         const blob = await res.blob();
         const ext = item.type === 'video' ? 'mp4' : item.type === 'audio' ? 'mp3' : 'png';
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `anticeil-${item.type}-${item.id.slice(0, 8)}.${ext}`;
+        a.download = `anticeil-${item.type || 'media'}-${item.id.slice(0, 8)}.${ext}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } catch {
-        window.open(fullMediaItem.url, '_blank');
+        window.open(mediaUrl, '_blank');
       }
     }
     setOpen(false);
@@ -1442,19 +1456,52 @@ export function Sidebar({
   const [newImagineCollectionName, setNewImagineCollectionName] = useState('');
   const [selectedMediaItem, setSelectedMediaItem] = useState<any>(null);
 
+  // Media Editor store projects (Sessions for Media Studio)
+  const mediaProjects = useMediaEditorStore((s) => s.projects);
+  const activeMediaProjectId = useMediaEditorStore((s) => s.activeProjectId);
+  const toggleMediaProjectPin = useMediaEditorStore((s) => s.toggleProjectPin);
+  const moveMediaProjectToCollection = useMediaEditorStore((s) => s.moveProjectToCollection);
+  const deleteMediaProject = useMediaEditorStore((s) => s.deleteProject);
+  const renameMediaProject = useMediaEditorStore((s) => s.renameProject);
+
   // Real image history from store
   const imagineItems = useImageStore((s) => s.items);
   const toggleImaginePin = useImageStore((s) => s.togglePin);
   const moveImagineToCollection = useImageStore((s) => s.moveToCollection);
-  const imagineHistory: ImagineHistoryItem[] = imagineItems.map((item) => ({
-    id: item.id,
-    prompt: item.prompt,
-    style: item.style || item.type || 'Media',
-    time: item.createdAtLabel,
-    collectionId: item.collectionId ?? undefined,
-    isPinned: item.isPinned,
-    type: item.type,
-  }));
+  const removeImagineItem = useImageStore((s) => s.removeItem);
+  const language = useSettingsStore((s) => s.language);
+
+  const imagineHistory: ImagineHistoryItem[] = useMemo(() => {
+    if (isImage) {
+      return mediaProjects.map((proj) => {
+        const latestRev = proj.revisions[proj.revisions.length - 1];
+        const revCountLabel = proj.revisions.length > 1 ? `v${proj.revisions.length}` : 'v1';
+        return {
+          id: proj.id,
+          prompt: proj.title || latestRev?.prompt || 'Media Session',
+          style: `${revCountLabel} • ${latestRev?.style || 'Photorealistic'}`,
+          time: latestRev?.createdAt ? getFormattedMediaTime(latestRev.createdAt, language) : 'Just now',
+          collectionId: proj.collectionId ?? undefined,
+          isPinned: !!proj.isPinned,
+          type: 'image' as const,
+          createdAt: proj.createdAt,
+          updatedAt: proj.updatedAt || proj.createdAt,
+        };
+      });
+    }
+
+    return imagineItems.map((item) => ({
+      id: item.id,
+      prompt: item.prompt,
+      style: item.style || item.type || 'Media',
+      time: item.createdAtLabel,
+      collectionId: item.collectionId ?? undefined,
+      isPinned: item.isPinned,
+      type: item.type,
+      createdAt: new Date(item.createdAt).getTime() || Date.now(),
+      updatedAt: new Date(item.createdAt).getTime() || Date.now(),
+    }));
+  }, [isImage, mediaProjects, imagineItems, language]);
 
   const mediaAccentColor = isVideo ? '#fb7185' : isAudio ? '#60a5fa' : 'var(--rail-media-color)';
   const mediaBadgeBg = isVideo ? 'rgba(251, 113, 133, 0.15)' : isAudio ? 'rgba(96, 165, 250, 0.15)' : 'var(--rail-media-bg)';
@@ -1488,8 +1535,6 @@ export function Sidebar({
   const deleteImageCollection = useWorkspaceStore((s) => s.deleteImageCollection);
   const addFileToImageCollection = useWorkspaceStore((s) => s.addFileToImageCollection);
   const removeFileFromImageCollection = useWorkspaceStore((s) => s.removeFileFromImageCollection);
-
-  const removeImagineItem = useImageStore((s) => s.removeItem);
 
   const documentCategories = useWorkspaceStore((s) => s.documentCategories);
   const activeDocumentCategoryId = useWorkspaceStore((s) => s.activeDocumentCategoryId);
@@ -1560,7 +1605,6 @@ export function Sidebar({
 
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
-  const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
@@ -2590,6 +2634,8 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => {
+                  useMediaEditorStore.getState().setActiveProject(null);
+                  useMediaEditorStore.getState().setIsCanvasOpen(false);
                   router.push('/media?tab=image');
                   if (onCloseMobile) onCloseMobile();
                 }}
@@ -2615,33 +2661,7 @@ export function Sidebar({
                 <span>{language === 'id' ? 'Gambar Baru' : 'New Image'}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  router.push('/media?tab=video');
-                  if (onCloseMobile) onCloseMobile();
-                }}
-                className="clickable-pill"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-md, 6px)',
-                  background: isVideo ? 'rgba(251, 113, 133, 0.12)' : 'transparent',
-                  border: isVideo ? '1px solid rgba(251, 113, 133, 0.3)' : '1px solid transparent',
-                  color: isVideo ? '#fb7185' : 'var(--text-primary)',
-                  fontSize: '12.5px',
-                  fontWeight: isVideo ? 600 : 500,
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Film size={14} color="#fb7185" />
-                <span>{language === 'id' ? 'Video Baru' : 'New Video'}</span>
-              </button>
+
 
               <button
                 type="button"
@@ -2712,12 +2732,8 @@ export function Sidebar({
                     key={format}
                     type="button"
                     onClick={() => {
-                      if (selectedDocFormat !== format) {
-                        setSelectedDocFormat(format);
-                      }
-                      if (activeDocId !== null) {
-                        setActiveDocId(null);
-                      }
+                      setSelectedDocFormat(format);
+                      setActiveDocId(null);
                       if (pathname !== '/docs') {
                         router.push('/docs');
                       }
@@ -3473,70 +3489,137 @@ export function Sidebar({
                             >
                               {language === 'id' ? group.labelId : group.labelEn}
                             </div>
-                            {group.items.map((item) => (
-                              <div
-                                key={item.id}
-                                className="clickable-pill"
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  padding: '5px 8px',
-                                  borderRadius: 'var(--radius-sm, 6px)',
-                                  background: item.isPinned ? mediaPinnedBg : 'transparent',
-                                  color: 'var(--text-secondary)',
-                                  fontSize: '12px',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
-                                  position: 'relative',
-                                }}
-                              >
-                                {/* Type icon & Title */}
+                            {group.items.map((item) => {
+                              const isSelected = item.type === 'image' ? activeMediaProjectId === item.id : false;
+                              return (
                                 <div
-                                  onClick={() => {
-                                    const fullItem = imagineItems.find((i) => i.id === item.id);
-                                    if (fullItem) {
-                                      setSelectedMediaItem(fullItem);
-                                    }
+                                  key={item.id}
+                                  className="clickable-pill"
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '5px 8px',
+                                    borderRadius: 'var(--radius-sm, 6px)',
+                                    background: isSelected ? 'var(--bg-subtle)' : item.isPinned ? mediaPinnedBg : 'transparent',
+                                    color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    fontSize: '12px',
+                                    fontWeight: isSelected ? 600 : 400,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                    position: 'relative',
                                   }}
-                                  style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
                                 >
-                                  {item.type === 'video' ? (
-                                    <Film size={13} color="#fb7185" style={{ flexShrink: 0 }} />
-                                  ) : item.type === 'audio' ? (
-                                    <Music size={13} color="#60a5fa" style={{ flexShrink: 0 }} />
-                                  ) : (
-                                    <ImageIcon size={13} color="var(--rail-media-color)" style={{ flexShrink: 0 }} />
-                                  )}
-                                  <div style={{ minWidth: 0, flex: 1 }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      {item.isPinned && <Pin size={9} color={mediaAccentColor} style={{ flexShrink: 0 }} />}
-                                      <span>{item.prompt}</span>
-                                    </div>
-                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                      <span>{item.style}</span>
-                                      <span>•</span>
-                                      <span>{item.time}</span>
-                                      {item.collectionId && (
-                                        <span style={{ background: mediaBadgeBg, color: mediaAccentColor, padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
-                                          {imageCollections.find((c) => c.id === item.collectionId)?.name || '📁'}
-                                        </span>
-                                      )}
+                                  {/* Type icon & Title */}
+                                  <div
+                                    onClick={() => {
+                                      const store = useMediaEditorStore.getState();
+                                      if (item.type === 'video') {
+                                        const proj = store.projects.find((p) => p.id === item.id);
+                                        if (proj) {
+                                          store.setActiveProject(proj.id);
+                                          store.setActiveRevision(proj.id, proj.activeRevisionId || proj.revisions[proj.revisions.length - 1].id);
+                                          store.setIsCanvasOpen(true);
+                                        } else {
+                                          const fullItem = imagineItems.find((i) => i.id === item.id);
+                                          if (fullItem) {
+                                            const newProjId = store.createProject({
+                                              prompt: fullItem.prompt,
+                                              url: fullItem.url,
+                                              model: fullItem.model || 'Luma Ray 2',
+                                              style: 'Cinematic Video',
+                                              ratio: fullItem.ratio || '16:9',
+                                              seed: 0,
+                                              title: fullItem.prompt.slice(0, 36),
+                                              mediaType: 'video',
+                                            });
+                                            store.setActiveProject(newProjId);
+                                            store.setIsCanvasOpen(true);
+                                          }
+                                        }
+                                        if (pathname !== '/media' && pathname !== '/video') {
+                                          router.push('/video');
+                                        }
+                                        if (onCloseMobile) onCloseMobile();
+                                      } else if (item.type === 'audio') {
+                                        const proj = store.projects.find((p) => p.id === item.id);
+                                        if (proj) {
+                                          store.setActiveProject(proj.id);
+                                          store.setActiveRevision(proj.id, proj.activeRevisionId || proj.revisions[proj.revisions.length - 1].id);
+                                          store.setIsCanvasOpen(true);
+                                        } else {
+                                          const fullItem = imagineItems.find((i) => i.id === item.id);
+                                          if (fullItem) {
+                                            const newProjId = store.createProject({
+                                              prompt: fullItem.prompt,
+                                              url: fullItem.url,
+                                              model: fullItem.model || 'Anticeil Studio',
+                                              style: 'Audio',
+                                              ratio: '1:1',
+                                              seed: 0,
+                                              title: fullItem.prompt.slice(0, 36),
+                                              mediaType: 'audio',
+                                            });
+                                            store.setActiveProject(newProjId);
+                                            store.setIsCanvasOpen(true);
+                                          }
+                                        }
+                                        if (pathname !== '/media' && pathname !== '/audio') {
+                                          router.push('/audio');
+                                        }
+                                        if (onCloseMobile) onCloseMobile();
+                                      } else {
+                                        const proj = store.projects.find((p) => p.id === item.id);
+                                        if (proj) {
+                                          store.setActiveProject(proj.id);
+                                          store.setActiveRevision(proj.id, proj.activeRevisionId || proj.revisions[proj.revisions.length - 1].id);
+                                          store.setIsCanvasOpen(true);
+                                        }
+                                        if (pathname !== '/media') {
+                                          router.push('/media');
+                                        }
+                                        if (onCloseMobile) onCloseMobile();
+                                      }
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
+                                  >
+                                    {item.type === 'video' ? (
+                                      <Film size={13} color="#fb7185" style={{ flexShrink: 0 }} />
+                                    ) : item.type === 'audio' ? (
+                                      <Music size={13} color="#60a5fa" style={{ flexShrink: 0 }} />
+                                    ) : (
+                                      <ImageIcon size={13} color="var(--rail-media-color)" style={{ flexShrink: 0 }} />
+                                    )}
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: isSelected ? 650 : 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {item.isPinned && <Pin size={9} color={mediaAccentColor} style={{ flexShrink: 0 }} />}
+                                        <span>{item.prompt}</span>
+                                      </div>
+                                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <span>{item.style}</span>
+                                        <span>•</span>
+                                        <span>{item.time}</span>
+                                        {item.collectionId && (
+                                          <span style={{ background: mediaBadgeBg, color: mediaAccentColor, padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
+                                            {imageCollections.find((c) => c.id === item.collectionId)?.name || '📁'}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
 
-                                {/* Three-dot menu for Media item */}
-                                <ImagineItemMenu
-                                  item={item}
-                                  language={language}
-                                  collections={imageCollections.filter((c) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id))}
-                                  togglePin={toggleImaginePin}
-                                  moveToCollection={moveImagineToCollection}
-                                  removeItem={removeImagineItem}
-                                />
-                              </div>
-                            ))}
+                                  {/* Three-dot menu for Media item */}
+                                  <ImagineItemMenu
+                                    item={item}
+                                    language={language}
+                                    collections={imageCollections.filter((c) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id))}
+                                    togglePin={item.type === 'image' ? toggleMediaProjectPin : toggleImaginePin}
+                                    moveToCollection={item.type === 'image' ? moveMediaProjectToCollection : moveImagineToCollection}
+                                    removeItem={item.type === 'image' ? deleteMediaProject : removeImagineItem}
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
                         ));
                       })()
@@ -3848,7 +3931,7 @@ export function Sidebar({
       <MediaDetailModal
         item={selectedMediaItem}
         onClose={() => setSelectedMediaItem(null)}
-        onDelete={(id) => { removeImagineItem(id); setSelectedMediaItem(null); }}
+        onDelete={(id: string) => { removeImagineItem(id); setSelectedMediaItem(null); }}
         language={language as 'en' | 'id'}
       />
     </aside>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Columns,
@@ -37,6 +37,7 @@ export function DocLayoutOptionsDropdown({
 }: DocLayoutOptionsDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -76,6 +77,12 @@ export function DocLayoutOptionsDropdown({
   };
 
   useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (
@@ -93,17 +100,19 @@ export function DocLayoutOptionsDropdown({
     }
   }, [isOpen]);
 
-  const handleSelectView = (newMode: DocsViewMode) => {
-    setViewMode(newMode);
+  const handleSelectView = useCallback((newMode: DocsViewMode) => {
+    // On mobile/tablet: split → fallback to preview
+    const resolvedMode: DocsViewMode = (newMode === 'split' && isMobile) ? 'preview' : newMode;
+    setViewMode(resolvedMode);
     if (mode === 'ai-coauthor') {
-      if (newMode === 'code') {
+      if (resolvedMode === 'code') {
         setIsCanvasOpen(false);
       } else {
         setIsCanvasOpen(true);
       }
     }
     setIsOpen(false);
-  };
+  }, [isMobile, mode, setViewMode, setIsCanvasOpen]);
 
   const handleOpenPdfTab = () => {
     if (onOpenSeparateTab) {
@@ -125,7 +134,8 @@ export function DocLayoutOptionsDropdown({
 
   // Button icon based on active view mode
   const renderTriggerIcon = () => {
-    if (currentView === 'split') {
+    // On mobile, split isn't available — use Eye as fallback
+    if (currentView === 'split' && !isMobile) {
       return <Columns size={compact ? 14 : 16} />;
     }
     if (currentView === 'code') {
@@ -164,15 +174,15 @@ export function DocLayoutOptionsDropdown({
         style={{
           width: compact ? '28px' : '32px',
           height: compact ? '28px' : '32px',
-          borderRadius: compact ? '6px' : '50%',
-          backgroundColor: isOpen ? 'var(--bg-subtle)' : 'transparent',
-          border: isOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
-          color: isOpen ? 'var(--brand-primary)' : 'var(--text-primary)',
+          borderRadius: compact ? '6px' : '6px',
+          backgroundColor: 'transparent',
+          border: 'none',
+          color: isOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          transition: 'all 0.15s ease',
+          transition: 'color 0.15s ease',
           flexShrink: 0,
           ...buttonStyle,
         }}
@@ -214,40 +224,42 @@ export function DocLayoutOptionsDropdown({
             {language === 'id' ? 'Opsi tata letak' : 'Layout options'}
           </div>
 
-          {/* 1. Split view */}
-          <button
-            type="button"
-            onClick={() => handleSelectView('split')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '9px',
-              padding: '7px 10px',
-              borderRadius: '5px',
-              border: 'none',
-              backgroundColor: currentView === 'split' ? '#15803d' : 'transparent',
-              color: currentView === 'split' ? '#ffffff' : 'var(--text-primary)',
-              fontSize: '13px',
-              fontWeight: currentView === 'split' ? 600 : 500,
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left',
-              transition: 'all 0.12s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (currentView !== 'split') e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-            }}
-            onMouseLeave={(e) => {
-              if (currentView !== 'split') e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            {currentView === 'split' ? (
-              <Check size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
-            ) : (
-              <Columns size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
-            )}
-            <span>{language === 'id' ? 'Tampilan terpisah' : 'Split view'}</span>
-          </button>
+          {/* 1. Split view — hidden on mobile/tablet */}
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => handleSelectView('split')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '9px',
+                padding: '7px 10px',
+                borderRadius: '5px',
+                border: 'none',
+                backgroundColor: currentView === 'split' ? '#15803d' : 'transparent',
+                color: currentView === 'split' ? '#ffffff' : 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: currentView === 'split' ? 600 : 500,
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'all 0.12s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (currentView !== 'split') e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                if (currentView !== 'split') e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              {currentView === 'split' ? (
+                <Check size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
+              ) : (
+                <Columns size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
+              )}
+              <span>{language === 'id' ? 'Tampilan terpisah' : 'Split view'}</span>
+            </button>
+          )}
 
           {/* 2. Code Editor / AI Co-Author only */}
           <button

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Menu,
   MoreVertical,
@@ -28,13 +28,15 @@ import {
 } from 'lucide-react';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
-import { useBuildStore } from '../../features/chat/store/useBuildStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useDocsStore } from '../../features/docs/store/useDocsStore';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { DocModeSwitcher } from '../../features/docs/components/shared/DocModeSwitcher';
 import { DocLayoutOptionsDropdown } from '../../features/docs/components/shared/DocLayoutOptionsDropdown';
+import { MediaLayoutOptionsDropdown } from '../../features/media/components/MediaLayoutOptionsDropdown';
+import { AudioModeDropdown } from '../../features/audio/components/AudioModeDropdown';
+import { ChatLayoutOptionsDropdown } from '../../features/chat/components/ChatLayoutOptionsDropdown';
 import { getTranslation } from '@anticeil/core';
 
 interface NavbarProps {
@@ -50,6 +52,8 @@ export function Navbar({
   onToggleDesktopSidebar,
 }: NavbarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isAudio = pathname === '/audio' || (pathname?.startsWith('/media') && searchParams?.get('tab') === 'audio');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProjectSubmenuOpen, setIsProjectSubmenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -58,9 +62,6 @@ export function Navbar({
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const user = useAuthStore((s) => s.user);
   const initializeAuth = useAuthStore((s) => s.initializeAuth);
-
-  const isBuildOpen = useBuildStore((s) => s.isOpen);
-  const toggleBuild = useBuildStore((s) => s.toggle);
 
   const activeSessionId = useChatStore((s) => s.activeSessionId);
   const sessions = useChatStore((s) => s.sessions);
@@ -322,7 +323,7 @@ export function Navbar({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 var(--page-pad-x, 16px) 0 12px',
+        padding: '0 7px 0 12px',
         zIndex: 20,
       }}
     >
@@ -458,30 +459,22 @@ export function Navbar({
           </div>
         )}
 
-        {/* Build Mode Quick Toggle Button — only on /chat */}
+        {/* Media Studio: Audio gets AudioModeDropdown, Image/Video gets MediaLayoutOptionsDropdown */}
+        {(pathname?.startsWith('/media') || pathname === '/audio' || pathname === '/video' || pathname === '/image') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {isAudio ? (
+              <AudioModeDropdown compact />
+            ) : (
+              <MediaLayoutOptionsDropdown compact />
+            )}
+          </div>
+        )}
+
+        {/* Chat Studio Layout Options Dropdown (Split view, Chat only, Canvas only) */}
         {pathname === '/chat' && (
-          <button
-            type="button"
-            onClick={toggleBuild}
-            title={t.buildMode.title}
-            className="hover-subtle"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '28px',
-              height: '28px',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              color: isBuildOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              flexShrink: 0,
-            }}
-          >
-            <Zap size={14} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ChatLayoutOptionsDropdown compact />
+          </div>
         )}
 
 

@@ -5,31 +5,46 @@ import { useSearchParams, usePathname } from 'next/navigation';
 import { ImageView } from '../../image/components/ImageView';
 import { VideoView } from '../../video/components/VideoView';
 import { AudioView } from '../../audio/components/AudioView';
+import { MediaLandingView } from './MediaLandingView';
+import { useMediaEditorStore } from '../store/useMediaEditorStore';
 
-export type MediaStudioTab = 'image' | 'video' | 'audio';
+export type MediaStudioTab = 'canvas' | 'video' | 'audio';
+
+function resolveTab(tab: string | null, pathname: string): MediaStudioTab {
+  if (tab === 'audio' || pathname === '/audio') return 'audio';
+  return 'canvas';
+}
 
 export function MediaStudioView() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Tab from search params or default to 'image'
-  const tabParam = searchParams.get('tab') as MediaStudioTab | null;
-  const initialTab: MediaStudioTab =
-    tabParam === 'video' || tabParam === 'audio' || tabParam === 'image'
-      ? tabParam
-      : pathname === '/video'
-      ? 'video'
-      : pathname === '/audio'
-      ? 'audio'
-      : 'image';
+  const tabParam = searchParams.get('tab');
+  const initialTab = resolveTab(tabParam, pathname);
 
   const [activeTab, setActiveTab] = useState<MediaStudioTab>(initialTab);
 
   useEffect(() => {
-    if (tabParam && (tabParam === 'image' || tabParam === 'video' || tabParam === 'audio')) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
+    const resolved = resolveTab(tabParam, pathname);
+    setActiveTab(resolved);
+  }, [tabParam, pathname]);
+
+  // Auto-switch from split → canvas-only on mobile/tablet (< 1024px)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        const { isCanvasOpen, viewMode, setViewMode, projects, activeProjectId } = useMediaEditorStore.getState();
+        const activeProj = projects.find((p) => p.id === activeProjectId) || projects[0];
+        // Split = canvas open + viewMode not 'canvas'
+        if (isCanvasOpen && viewMode !== 'canvas' && activeProj && activeProj.revisions.length > 0) {
+          setViewMode('canvas');
+        }
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize(); // run on mount
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div
@@ -43,7 +58,7 @@ export function MediaStudioView() {
       }}
     >
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
-        {activeTab === 'image' && <ImageView />}
+        {activeTab === 'canvas' && <MediaLandingView />}
         {activeTab === 'video' && <VideoView />}
         {activeTab === 'audio' && <AudioView />}
       </div>

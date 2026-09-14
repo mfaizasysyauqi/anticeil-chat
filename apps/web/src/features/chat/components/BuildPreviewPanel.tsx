@@ -843,21 +843,18 @@ export function BuildPreviewPanel() {
       className="build-preview-panel"
       style={{
         width: isFullscreen ? '100%' : `${panelWidth}px`,
-        minWidth: isFullscreen ? '100%' : '320px',
+        minWidth: isFullscreen ? 0 : '320px',
         maxWidth: isFullscreen ? '100%' : 'calc(100% - 340px)',
+        flex: isFullscreen ? 1 : 'none',
         height: '100%',
         backgroundColor: 'var(--bg-surface)',
-        borderLeft: '1px solid var(--border-strong)',
+        borderLeft: isFullscreen ? 'none' : '1px solid var(--border-strong)',
         display: 'flex',
         flexDirection: 'column',
-        position: isFullscreen ? 'fixed' : 'relative',
-        top: isFullscreen ? 0 : 'auto',
-        left: isFullscreen ? 0 : 'auto',
-        right: isFullscreen ? 0 : 'auto',
-        bottom: isFullscreen ? 0 : 'auto',
-        zIndex: isFullscreen ? 999 : 20,
-        boxShadow: 'var(--shadow-lg)',
-        flexShrink: 0,
+        position: 'relative',
+        zIndex: 20,
+        boxShadow: isFullscreen ? 'none' : 'var(--shadow-lg)',
+        flexShrink: isFullscreen ? 1 : 0,
         boxSizing: 'border-box',
       }}
     >

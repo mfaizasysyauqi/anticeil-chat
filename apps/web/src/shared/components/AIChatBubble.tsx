@@ -328,9 +328,7 @@ function MessageActionBar({
   onFeedback?: (type: 'up' | 'down') => void;
   onRemove?: () => void;
 }) {
-  const formattedTime = timestamp
-    ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : '';
+
 
   const actionButtonStyle = {
     background: 'transparent',
@@ -349,8 +347,8 @@ function MessageActionBar({
       style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
+        justifyContent: role === 'user' ? 'flex-end' : 'space-between',
+        width: role === 'user' ? 'fit-content' : '100%',
         marginTop: role === 'assistant' ? '4px' : '2px',
         opacity: isHovered ? 1 : 0,
         pointerEvents: isHovered ? 'auto' : 'none',
@@ -359,11 +357,8 @@ function MessageActionBar({
       }}
     >
       {role === 'user' ? (
-        // User: timestamp on left (align start), actions + version switcher on right (align end)
+        // User: actions + version switcher on right (align end)
         <>
-          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', opacity: 0.75 }}>
-            {formattedTime}
-          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {hasMultipleVersions && (
               <div
@@ -441,11 +436,8 @@ function MessageActionBar({
           </div>
         </>
       ) : (
-        // Assistant: timestamp on left, actions on right (same layout as MessageBubble.tsx)
+        // Assistant: actions on right
         <>
-          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', opacity: 0.75, marginRight: '8px' }}>
-            {formattedTime}
-          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {showCopy && (
               <button
@@ -946,9 +938,9 @@ export function AIChatBubble({
             )}
           </div>
 
-          {/* User Action Bar (underneath bubble, matching bubble width) */}
+          {/* User Action Bar (underneath bubble, floating naturally) */}
           {!isEditing && (
-            <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 4px' }}>
+            <div style={{ padding: '0 4px' }}>
               <MessageActionBar
                 role={role}
                 language={language}

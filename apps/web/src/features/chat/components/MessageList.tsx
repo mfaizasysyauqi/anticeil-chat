@@ -265,7 +265,7 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
             agentSteps={msg.agentSteps}
             variant={msg.role === 'user' ? 'coauthor' : 'assistant'}
             assistantName="AI Assistant"
-            assistantColor="var(--brand-primary)"
+            assistantColor="var(--rail-chat-color, #f97316)"
             language={language === 'id' ? 'id' : 'en'}
             timestamp={msg.timestamp}
             isEditing={msg.role === 'user' && editingMsgId === msg.id}

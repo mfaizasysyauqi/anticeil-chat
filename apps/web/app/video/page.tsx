@@ -1,15 +1,15 @@
 'use client';
 
-import React, { Suspense } from 'react';
-import { AppShell } from '../../src/shared/components/AppShell';
-import { MediaStudioView } from '../../src/features/media/components/MediaStudioView';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function VideoPage() {
-  return (
-    <AppShell showSidebar={true}>
-      <Suspense fallback={<div style={{ padding: '24px', color: 'var(--text-muted)' }}>Loading...</div>}>
-        <MediaStudioView />
-      </Suspense>
-    </AppShell>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/image');
+  }, [router]);
+
+  return null;
 }
+

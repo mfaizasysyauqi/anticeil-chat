@@ -137,7 +137,7 @@ chart1 = bar | title: "Expense Comparison Q1 vs Q2", x: A, series: [B, C], posit
 `;
 
 function normalizeToAntsheet(rawContent?: string): string {
-  if (!rawContent || !rawContent.trim()) return DEFAULT_STARTER_ANTSHEET;
+  if (!rawContent || !rawContent.trim()) return '';
   const trimmed = rawContent.trim();
 
   const isAlreadyAntsheet =
@@ -208,11 +208,27 @@ export function DocsSpreadsheetView({
   const setCommentDomPositions = useDocsStore((s) => s.setCommentDomPositions);
   const registerActiveTextarea = useDocsStore((s) => s.registerActiveTextarea);
 
-  const activeDoc = documents.find((d) => d.id === activeDocId);
+  const activeDoc = useMemo(() => {
+    if (activeDocId) {
+      const match = documents.find((d) => d.id === activeDocId && d.format === 'sheet');
+      if (match) return match;
+    }
+    const anySheet = documents.find((d) => d.format === 'sheet');
+    if (anySheet) return anySheet;
+    return documents.find((d) => d.id === activeDocId) || null;
+  }, [activeDocId, documents]);
+
   const docFiles = activeDoc?.files || [];
   const activeSubFile = docFiles.find((f) => f.id === activeDoc?.activeFileId) || docFiles[0];
 
   const [code,           setCode]           = useState(() => normalizeToAntsheet(activeDoc?.content));
+
+  useEffect(() => {
+    const normalized = normalizeToAntsheet(activeDoc?.content);
+    setCode(normalized);
+    setPreviewContent(normalized);
+  }, [activeDoc?.id, activeDoc?.content]);
+
   const [copied,         setCopied]         = useState(false);
   const [internalViewMode, setInternalViewMode] = useState<'split' | 'code' | 'preview'>('split');
   const viewMode = propViewMode ?? internalViewMode;
@@ -1181,7 +1197,7 @@ export function DocsSpreadsheetView({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0 var(--page-pad-x, 16px) 0 8px',
+              padding: '0 7px 0 8px',
               flexShrink: 0,
               fontSize: '12px',
               userSelect: 'none',

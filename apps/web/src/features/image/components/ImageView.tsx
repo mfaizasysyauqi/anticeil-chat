@@ -40,6 +40,8 @@ import { getTranslation } from '@anticeil/core';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
 import { DropdownSelect } from '../../../shared/components/DropdownSelect';
 import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
+import { useMediaEditorStore } from '../../media/store/useMediaEditorStore';
+import { MediaCanvasPanel } from '../../media/components/MediaCanvasPanel';
 
 type MediaMode = 'image' | 'video' | 'audio';
 
@@ -496,8 +498,30 @@ export function ImageView() {
     imageItems.filter((i) => i.type === 'image') as Array<ImageItem & { isPinned: boolean; collectionId: string | null }>
   );
 
-  // Media detail modal state
+  // Media detail modal state (gallery card clicks only — not auto-opened after generation)
   const [selectedMediaItem, setSelectedMediaItem] = useState<(typeof imageItems)[0] | null>(null);
+
+  // Media editor store — used to show generated image in the shared canvas panel
+  const {
+    createProject,
+    addRevision,
+    activeProjectId,
+    projects,
+    isCanvasOpen,
+    setIsCanvasOpen,
+    viewMode,
+  } = useMediaEditorStore();
+  const activeProject = projects.find((p) => p.id === activeProjectId) || (projects.length > 0 ? projects[0] : null);
+  const activeRevision =
+    activeProject?.revisions.find((r) => r.id === activeProject.activeRevisionId) ||
+    activeProject?.revisions[activeProject.revisions.length - 1] ||
+    null;
+  const prevRevision =
+    activeRevision && activeProject
+      ? (activeProject.revisions[
+          activeProject.revisions.findIndex((r) => r.id === activeRevision.id) - 1
+        ] ?? null)
+      : null;
 
   // Load history from Supabase once on mount
   useEffect(() => {
@@ -586,7 +610,29 @@ export function ImageView() {
           collectionId: null,
         };
         addImageItem(newItem);
-        setSelectedMediaItem(newItem);
+        // Open canvas panel instead of modal
+        if (activeProject && activeRevision) {
+          addRevision(activeProject.id, {
+            prompt: prompt.trim(),
+            url: finalUrl,
+            revisionInstruction: '',
+            model: currentModelInfo.name,
+            style: selectedStyle,
+            ratio: selectedRatio,
+            seed: 0,
+            revisedFromId: activeRevision.id,
+          });
+        } else {
+          createProject({
+            prompt: prompt.trim(),
+            url: finalUrl,
+            model: currentModelInfo.name,
+            style: selectedStyle,
+            ratio: selectedRatio,
+            seed: 0,
+          });
+        }
+        setIsCanvasOpen(true);
 
         addUsage(estimatedBytes, 'images');
         if (session?.access_token) {
@@ -677,13 +723,14 @@ export function ImageView() {
       style={{
         flex: 1,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         height: '100%',
         width: '100%',
-        position: 'relative',
         overflow: 'hidden',
       }}
     >
+      {/* Left: gallery + prompt bar */}
+      <div style={{ flex: 1, display: isCanvasOpen && viewMode === 'canvas' ? 'none' : 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
       <ImageModelSelectorModal
         isOpen={isModelSelectorOpen}
         onClose={() => setIsModelSelectorOpen(false)}
@@ -885,11 +932,22 @@ export function ImageView() {
         }
       />
 
-      {/* Media Detail Modal */}
+      {/* Media Detail Modal — gallery card clicks only */}
       <MediaDetailModal
         item={selectedMediaItem}
         onClose={() => setSelectedMediaItem(null)}
         onDelete={(id) => { removeImageItem(id); setSelectedMediaItem(null); }}
+        language={language as 'en' | 'id'}
+      />
+      </div>{/* end left column */}
+
+      {/* Right: Canvas Panel — shows generated image inline (no modal) */}
+      <MediaCanvasPanel
+        isOpen={isCanvasOpen}
+        onClose={() => setIsCanvasOpen(false)}
+        activeProject={activeProject}
+        activeRevision={activeRevision}
+        prevRevision={prevRevision}
         language={language as 'en' | 'id'}
       />
     </div>

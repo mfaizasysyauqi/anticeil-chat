@@ -36,8 +36,9 @@ import { DropdownSelect } from '../../../shared/components/DropdownSelect';
 import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
 import { MarkdownRenderer } from '../../../shared/components/MarkdownRenderer';
 import { generateProceduralMusic, generateSpeechAudio } from '../utils/audioGenerator';
-
-type AudioTab = 'music' | 'tts' | 'stt';
+import { useMediaEditorStore, getMediaType, MediaRevision } from '../../media/store/useMediaEditorStore';
+import { MediaCanvasPanel } from '../../media/components/MediaCanvasPanel';
+import { useAudioStore, AudioTab } from '../store/useAudioStore';
 
 const TABS: { id: AudioTab; icon: React.ReactNode; labelId: string; labelEn: string }[] = [
   { id: 'music', icon: <Music size={15} />, labelId: 'Musik', labelEn: 'Music' },
@@ -52,7 +53,8 @@ export function AudioView() {
   const user = useAuthStore((s) => s.user);
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
 
-  const [activeTab, setActiveTab] = useState<AudioTab>('music');
+  const activeTab = useAudioStore((s) => s.activeTab);
+  const setActiveTab = useAudioStore((s) => s.setActiveTab);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('gadis');
@@ -112,6 +114,50 @@ export function AudioView() {
   const addImageItem = useImageStore((s) => s.addItem);
   const removeImageItem = useImageStore((s) => s.removeItem);
   const hydrateFromApi = useImageStore((s) => s.hydrateFromApi);
+
+  const {
+    createProject,
+    addRevision,
+    activeProjectId,
+    projects,
+    isCanvasOpen,
+    setIsCanvasOpen,
+    viewMode,
+  } = useMediaEditorStore();
+
+  // In Audio Studio, strictly match projects that contain audio revisions
+  const audioProjects = projects.filter((p) =>
+    p.revisions?.some((r) => getMediaType(r.url, r.mediaType) === 'audio')
+  );
+
+  const activeProject =
+    audioProjects.find((p) => p.id === activeProjectId) ||
+    (audioProjects.length > 0 ? audioProjects[0] : null);
+
+  const activeRevision =
+    activeProject?.revisions.find((r) => r.id === activeProject.activeRevisionId) ||
+    activeProject?.revisions[activeProject.revisions.length - 1] ||
+    null;
+
+  const imageItems = useImageStore((s) => s.items);
+  const latestAudioItem = imageItems.find((item) => item.type === 'audio');
+
+  const resolvedActiveRevision: MediaRevision | null =
+    activeRevision ||
+    (latestAudioItem
+      ? {
+          id: latestAudioItem.id,
+          version: 1,
+          url: latestAudioItem.url,
+          prompt: latestAudioItem.prompt,
+          mediaType: 'audio',
+          model: latestAudioItem.model || 'Anticeil Studio',
+          style: 'Audio',
+          ratio: '1:1',
+          seed: 0,
+          createdAt: Date.now(),
+        }
+      : null);
 
   // Load history from Supabase once on mount
   useEffect(() => {
@@ -254,6 +300,33 @@ export function AudioView() {
       };
       addImageItem(newItem);
       setSelectedMediaItem(newItem);
+
+      // Open canvas preview panel with generated audio
+      if (activeProject && activeRevision) {
+        addRevision(activeProject.id, {
+          prompt: prompt.trim(),
+          url: finalUrl,
+          revisionInstruction: '',
+          model: currentModelInfo?.name || 'Anticeil Studio',
+          style: category === 'speech' ? 'Text-to-Speech' : 'Music Generation',
+          ratio: '1:1',
+          seed: 0,
+          revisedFromId: activeRevision.id,
+          mediaType: 'audio',
+        });
+      } else {
+        createProject({
+          prompt: prompt.trim(),
+          url: finalUrl,
+          model: currentModelInfo?.name || 'Anticeil Studio',
+          style: category === 'speech' ? 'Text-to-Speech' : 'Music Generation',
+          ratio: '1:1',
+          seed: 0,
+          title: prompt.trim().slice(0, 36),
+          mediaType: 'audio',
+        });
+      }
+      setIsCanvasOpen(true);
 
       addUsage(estimatedBytes, 'audio');
       if (session?.access_token) {
@@ -409,16 +482,31 @@ export function AudioView() {
 
   const hasActiveSttSession = activeTab === 'stt' && (Boolean(sttTranscript) || isRecording || isTranscribingFile);
 
+  const generatedAudios = useImageStore((s) => s.items).filter((i) => i.type === 'audio');
+
   return (
     <div
       style={{
         flex: 1,
         display: 'flex',
+        flexDirection: 'row',
+        height: '100%',
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+    {/* Left: main audio content */}
+    <div
+      style={{
+        flex: 1,
+        display: isCanvasOpen && viewMode === 'canvas' ? 'none' : 'flex',
         flexDirection: 'column',
         height: '100%',
         width: '100%',
         position: 'relative',
         overflow: 'hidden',
+        minWidth: 0,
       }}
     >
       {/* Modal */}
@@ -1287,6 +1375,29 @@ export function AudioView() {
         item={selectedMediaItem}
         onClose={() => setSelectedMediaItem(null)}
         onDelete={(id) => { removeImageItem(id); setSelectedMediaItem(null); }}
+        language={language as 'en' | 'id'}
+      />
+    </div>
+
+      {/* Right: Canvas Panel — live audio preview */}
+      <MediaCanvasPanel
+        isOpen={isCanvasOpen}
+        onClose={() => setIsCanvasOpen(false)}
+        activeProject={
+          activeProject ||
+          (latestAudioItem && resolvedActiveRevision
+            ? {
+                id: 'audio_virtual',
+                title: latestAudioItem.prompt.slice(0, 36) || 'Audio Preview',
+                revisions: [resolvedActiveRevision],
+                activeRevisionId: latestAudioItem.id,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              }
+            : null)
+        }
+        activeRevision={resolvedActiveRevision}
+        prevRevision={null}
         language={language as 'en' | 'id'}
       />
     </div>

@@ -85,26 +85,53 @@ export function DocsSlideView({
   const setCommentDomPositions = useDocsStore((s) => s.setCommentDomPositions);
   const registerActiveTextarea = useDocsStore((s) => s.registerActiveTextarea);
 
-  const activeDoc = documents.find((d) => d.id === activeDocId);
+  const DEFAULT_STARTER_SLIDE = `---
+# Anticeil Presentation
+## Slide 1: Introduction
+Welcome to Anticeil Presentation Studio.
+- High performance slides
+- Markdown & Code integration
+- Interactive presenter stage
 
-  if (!activeDoc) {
-    return (
-      <SplashScreen
-        title="Anticeil Slide"
-        subtitle={
-          language === 'id'
-            ? 'Memuat Presentation Engine & Slide Stage...'
-            : 'Loading Presentation Engine & Slide Stage...'
-        }
-      />
-    );
-  }
+---
+# Slide 2: Key Features
+- Clean layout & typography
+- Dark & light theme support
+- Live synchronization
+`;
+
+  const activeDoc = useMemo(() => {
+    if (activeDocId) {
+      const match = documents.find((d) => d.id === activeDocId && d.format === 'slide');
+      if (match) return match;
+    }
+    const anySlide = documents.find((d) => d.format === 'slide');
+    if (anySlide) return anySlide;
+    const current = documents.find((d) => d.id === activeDocId);
+    if (current && current.format === 'slide') return current;
+    return {
+      id: 'default_slide',
+      title: language === 'id' ? 'Slide Presentasi Baru' : 'New Presentation Slide',
+      content: DEFAULT_STARTER_SLIDE,
+      format: 'slide' as const,
+      updatedAt: Date.now(),
+      files: [{ id: 'main_slide', name: 'main.slide', content: DEFAULT_STARTER_SLIDE, isMain: true, createdAt: Date.now(), updatedAt: Date.now() }],
+      activeFileId: 'main_slide',
+    };
+  }, [activeDocId, documents, language]);
+
   const docFiles = activeDoc?.files || [];
   const activeSubFile = docFiles.find((f) => f.id === activeDoc?.activeFileId) || docFiles[0];
   const activeFileName = activeSubFile?.name || activeDoc?.title || 'main.slide';
 
   // Content state
   const [code, setCode] = useState(() => activeDoc?.content || '');
+
+  useEffect(() => {
+    const newCode = activeDoc?.content || '';
+    setCode(newCode);
+    setPreviewContent(newCode);
+  }, [activeDoc?.id, activeDoc?.content]);
   const [previewContent, setPreviewContent] = useState(code);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);

@@ -21,6 +21,8 @@ import { buildDocumentPreviewHtml } from '../utils/docPreviewBuilder';
 
 import { previewActionBarStyle } from '../styles/editorSharedStyles';
 import { SplitResizeDivider, DocLogsDrawer, DocExportDropdown, RecompileSplitButton } from './shared';
+import { DocsSpreadsheetView } from './DocsSpreadsheetView';
+import { DocsSlideView } from './DocsSlideView';
 
 /** Shared style for icon buttons — matches Navbar app bar 28×28 */
 const iconBtnStyle: React.CSSProperties = {
@@ -43,10 +45,26 @@ export function DocsCanvasPanel() {
   const setIsCanvasOpen = useDocsStore((s) => s.setIsCanvasOpen);
   const viewMode = useDocsStore((s) => s.viewMode);
   const setCopilotPendingPrompt = useDocsStore((s) => s.setCopilotPendingPrompt);
+  const selectedFormat = useDocsStore((s) => s.selectedFormat);
 
   const activeDocId = useDocsStore((s) => s.activeDocId);
   const documents = useDocsStore((s) => s.documents);
-  const activeDoc = documents.find((d) => d.id === activeDocId) || documents[0] || null;
+
+  const activeDoc = useMemo(() => {
+    if (activeDocId) {
+      const current = documents.find((d) => d.id === activeDocId);
+      if (current && (!selectedFormat || current.format === selectedFormat)) {
+        return current;
+      }
+    }
+    if (selectedFormat) {
+      const match = documents.find((d) => d.format === selectedFormat);
+      if (match) return match;
+    }
+    return documents.find((d) => d.id === activeDocId) || documents[0] || null;
+  }, [activeDocId, documents, selectedFormat]);
+
+  const effectiveFormat = (selectedFormat || activeDoc?.format || 'latex') as 'latex' | 'typst' | 'sheet' | 'slide';
 
   const language = useSettingsStore((s) => (s.language === 'id' ? 'id' : 'en'));
   const theme = useSettingsStore((s) => s.theme);
@@ -330,12 +348,22 @@ export function DocsCanvasPanel() {
           zIndex: 9,
         }}
       >
+        {effectiveFormat === 'sheet' ? (
+          <div style={{ flex: 1, height: '100%', width: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <DocsSpreadsheetView viewMode="preview" isFocusMode={false} />
+          </div>
+        ) : effectiveFormat === 'slide' ? (
+          <div style={{ flex: 1, height: '100%', width: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <DocsSlideView viewMode="preview" isFocusMode={false} />
+          </div>
+        ) : (
+          <>
         {/* ── Top Preview Toolbar (36px, matching Code Editor preview bar) ── */}
         <div
           className="hide-scrollbar"
           style={{
             ...previewActionBarStyle,
-            padding: '0 var(--page-pad-x, 16px) 0 8px',
+            padding: '0 7px 0 8px',
             backgroundColor: 'var(--bg-main)',
             height: '36px',
           }}
@@ -683,6 +711,8 @@ export function DocsCanvasPanel() {
             title="Docs Live Preview"
           />
         </div>
+          </>
+        )}
       </aside>
     </>
   );

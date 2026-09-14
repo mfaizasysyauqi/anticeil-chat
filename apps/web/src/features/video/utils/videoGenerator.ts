@@ -3,6 +3,73 @@
  * Generates playable MP4/WebM videos with cinematic camera motion & visuals.
  */
 
+async function fetchBaseImage(prompt: string, width: number, height: number): Promise<{ img: HTMLImageElement; blobUrl: string } | null> {
+  const seed = Math.floor(Math.random() * 999999);
+
+  // 1. Try internal server proxy first (guarantees zero CORS blocking & fast multi-model retry)
+  try {
+    const proxyUrl = `/api/imagine/proxy-image?prompt=${encodeURIComponent(prompt)}&width=${width}&height=${height}&seed=${seed}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 22000);
+    const res = await fetch(proxyUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const blob = await res.blob();
+      if (blob && blob.size > 1500) {
+        const blobUrl = URL.createObjectURL(blob);
+        const img = new Image();
+        const loaded = await new Promise<boolean>((resolve) => {
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          img.src = blobUrl;
+        });
+        if (loaded) {
+          return { img, blobUrl };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[VideoGenerator] Server proxy fetch failed, trying direct:', err);
+  }
+
+  // 2. Direct Pollinations fetch fallback
+  const enhancedPrompt = encodeURIComponent(`${prompt}, cinematic film still, ultra realistic 8k, master photography, highly detailed, photorealistic`);
+  const directUrls = [
+    `https://image.pollinations.ai/prompt/${enhancedPrompt}?width=${width}&height=${height}&model=turbo&nologo=true&seed=${seed}`,
+    `https://image.pollinations.ai/prompt/${enhancedPrompt}?width=${width}&height=${height}&model=flux&nologo=true&seed=${seed}`,
+  ];
+
+  for (const url of directUrls) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob && blob.size > 1500) {
+          const blobUrl = URL.createObjectURL(blob);
+          const img = new Image();
+          const loaded = await new Promise<boolean>((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = blobUrl;
+          });
+          if (loaded) {
+            return { img, blobUrl };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[VideoGenerator] Direct fetch failed:', e);
+    }
+  }
+
+  return null;
+}
+
 export async function generateCinematicVideo(
   prompt: string,
   ratio: string = '16:9',
@@ -10,11 +77,11 @@ export async function generateCinematicVideo(
   modelName: string = 'Luma Ray 2'
 ): Promise<{ url: string; blob: Blob; previewImageUrl: string }> {
   // Determine dimensions
-  let width = 640;
-  let height = 360;
+  let width = 768;
+  let height = 432;
   if (ratio === '9:16') {
-    width = 360;
-    height = 640;
+    width = 432;
+    height = 768;
   } else if (ratio === '1:1') {
     width = 512;
     height = 512;
@@ -22,26 +89,14 @@ export async function generateCinematicVideo(
     width = 640;
     height = 480;
   } else if (ratio === '3:2') {
-    width = 640;
-    height = 426;
+    width = 720;
+    height = 480;
   }
 
-  // Generate high quality base visual via Pollinations (free, client direct)
-  const encodedPrompt = encodeURIComponent(`${prompt}, cinematic video frame, hyperrealistic 8k, motion picture`);
-  const previewImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=flux&nologo=true&seed=${Math.floor(Math.random() * 99999)}`;
-
-  // Load image into an Image element with CORS handling
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-
-  const imgLoaded = new Promise<HTMLImageElement | null>((resolve) => {
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = previewImageUrl;
-    setTimeout(() => resolve(null), 7000); // 7s timeout fallback
-  });
-
-  const loadedImg = await imgLoaded;
+  // Fetch real base visual
+  const imageResult = await fetchBaseImage(prompt, width, height);
+  const loadedImg = imageResult?.img || null;
+  const previewImageUrl = imageResult?.blobUrl || '';
 
   // Setup Canvas for video rendering
   const canvas = document.createElement('canvas');
@@ -51,14 +106,14 @@ export async function generateCinematicVideo(
 
   // Particle systems for atmospheric depth
   const particles: Array<{ x: number; y: number; vx: number; vy: number; size: number; alpha: number }> = [];
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 35; i++) {
     particles.push({
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.8,
-      vy: -Math.random() * 1.2 - 0.3,
-      size: Math.random() * 2.5 + 0.5,
-      alpha: Math.random() * 0.6 + 0.2,
+      vx: (Math.random() - 0.5) * 0.7,
+      vy: -Math.random() * 0.9 - 0.2,
+      size: Math.random() * 2.2 + 0.6,
+      alpha: Math.random() * 0.5 + 0.2,
     });
   }
 
@@ -67,13 +122,13 @@ export async function generateCinematicVideo(
   const chunks: Blob[] = [];
 
   let mimeType = 'video/webm;codecs=vp9';
-  if (!MediaRecorder.isTypeSupported(mimeType)) {
+  if (typeof MediaRecorder !== 'undefined' && !MediaRecorder.isTypeSupported(mimeType)) {
     mimeType = 'video/webm';
   }
 
   const mediaRecorder = new MediaRecorder(stream, {
     mimeType,
-    videoBitsPerSecond: 2500000,
+    videoBitsPerSecond: 3000000,
   });
 
   mediaRecorder.ondataavailable = (e) => {
@@ -99,14 +154,14 @@ export async function generateCinematicVideo(
       const progress = currentFrame / totalFrames; // 0 to 1
 
       // 1. Draw Background / Base Imagery with dynamic cinematic zoom & pan
-      ctx.fillStyle = '#0a0a0c';
+      ctx.fillStyle = '#050508';
       ctx.fillRect(0, 0, width, height);
 
       if (loadedImg) {
-        // Slow cinematic zoom-in (1.0 to 1.15) & slight horizontal pan
-        const zoom = 1.0 + progress * 0.14;
-        const panX = Math.sin(progress * Math.PI) * 18;
-        const panY = Math.cos(progress * Math.PI) * 8;
+        // Slow cinematic zoom-in (1.0 to 1.15) & smooth sinusoidal pan
+        const zoom = 1.0 + progress * 0.15;
+        const panX = Math.sin(progress * Math.PI) * 22;
+        const panY = Math.cos(progress * Math.PI) * 10;
 
         const dw = width * zoom;
         const dh = height * zoom;
@@ -114,36 +169,46 @@ export async function generateCinematicVideo(
         const dy = (height - dh) / 2 + panY;
 
         ctx.drawImage(loadedImg, dx, dy, dw, dh);
+
+        // Subtle dynamic lighting glow sweep
+        const lightX = width * (0.2 + progress * 0.6);
+        const lightY = height * 0.3;
+        const sweepGlow = ctx.createRadialGradient(lightX, lightY, 10, lightX, lightY, width * 0.6);
+        sweepGlow.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+        sweepGlow.addColorStop(0.5, 'rgba(255, 230, 200, 0.03)');
+        sweepGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = sweepGlow;
+        ctx.fillRect(0, 0, width, height);
       } else {
-        // Fallback atmospheric gradient background
+        // Fallback procedural atmospheric scene
         const grad = ctx.createLinearGradient(0, 0, width, height);
-        grad.addColorStop(0, '#181824');
-        grad.addColorStop(0.5, '#2d1b4e');
-        grad.addColorStop(1, '#0e0e14');
+        grad.addColorStop(0, '#0f172a');
+        grad.addColorStop(0.5, '#1e1b4b');
+        grad.addColorStop(1, '#090d16');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.font = 'bold 15px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(prompt.slice(0, 30), width / 2, height / 2);
+        ctx.fillText(prompt.slice(0, 32), width / 2, height / 2);
       }
 
-      // 2. Cinematic lighting flare / vignette
+      // 2. Cinematic lighting vignette
       const vignette = ctx.createRadialGradient(
         width / 2,
         height / 2,
-        Math.min(width, height) * 0.3,
+        Math.min(width, height) * 0.35,
         width / 2,
         height / 2,
         Math.max(width, height) * 0.75
       );
       vignette.addColorStop(0, 'rgba(0,0,0,0)');
-      vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
+      vignette.addColorStop(1, 'rgba(0,0,0,0.5)');
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, width, height);
 
-      // 3. Floating atmospheric particles
+      // 3. Floating atmospheric depth particles
       ctx.fillStyle = '#ffffff';
       particles.forEach((p) => {
         p.x += p.vx;

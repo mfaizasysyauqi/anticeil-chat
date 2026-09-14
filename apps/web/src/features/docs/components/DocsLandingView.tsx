@@ -929,6 +929,8 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                           type="button"
                           onClick={() => {
                             setSelectedFormat(card.format);
+                            const match = docs.find((d) => d.format === card.format);
+                            if (match) setActiveDocId(match.id);
                             handleSendPrompt(card.prompt);
                           }}
                           className="hover-card"
@@ -1175,9 +1177,19 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                     },
                   ]}
                   onChange={(cat) => {
-                    if (cat === 'sheet') setSelectedFormat('sheet');
-                    else if (cat === 'slide') setSelectedFormat('slide');
-                    else setSelectedFormat(selectedEngine);
+                    if (cat === 'sheet') {
+                      setSelectedFormat('sheet');
+                      const match = docs.find((d) => d.format === 'sheet');
+                      if (match) setActiveDocId(match.id);
+                    } else if (cat === 'slide') {
+                      setSelectedFormat('slide');
+                      const match = docs.find((d) => d.format === 'slide');
+                      if (match) setActiveDocId(match.id);
+                    } else {
+                      setSelectedFormat(selectedEngine);
+                      const match = docs.find((d) => d.format === 'latex' || d.format === 'typst');
+                      if (match) setActiveDocId(match.id);
+                    }
                   }}
                   brandColor={activeColor}
                 />

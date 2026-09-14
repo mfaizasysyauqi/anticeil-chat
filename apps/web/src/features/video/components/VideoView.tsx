@@ -27,10 +27,10 @@ import { VideoModelSelectorModal, VIDEO_PROVIDERS } from './VideoModelSelectorMo
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { MediaPromptForm } from '../../../shared/components/MediaPromptForm';
 import { DropdownSelect } from '../../../shared/components/DropdownSelect';
-import { MediaDetailModal } from '../../../shared/components/MediaDetailModal';
-import { MediaCardMenu } from '../../image/components/ImageView';
 import { useWorkspaceStore } from '../../storage/store/useWorkspaceStore';
 import { generateCinematicVideo } from '../utils/videoGenerator';
+import { useMediaEditorStore, getMediaType, MediaRevision } from '../../media/store/useMediaEditorStore';
+import { MediaCanvasPanel } from '../../media/components/MediaCanvasPanel';
 
 export function VideoView() {
   const language = useSettingsStore((s) => s.language);
@@ -49,6 +49,37 @@ export function VideoView() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
+  const {
+    createProject,
+    addRevision,
+    activeProjectId,
+    projects,
+    isCanvasOpen,
+    setIsCanvasOpen,
+    viewMode,
+  } = useMediaEditorStore();
+
+  // In Video Studio, strictly match projects that contain video revisions
+  const videoProjects = projects.filter((p) =>
+    p.revisions?.some((r) => getMediaType(r.url, r.mediaType) === 'video')
+  );
+
+  const activeProject =
+    videoProjects.find((p) => p.id === activeProjectId) ||
+    (videoProjects.length > 0 ? videoProjects[0] : null);
+
+  const activeRevision =
+    activeProject?.revisions.find((r) => r.id === activeProject.activeRevisionId) ||
+    activeProject?.revisions[activeProject.revisions.length - 1] ||
+    null;
+
+  const prevRevision =
+    activeRevision && activeProject
+      ? (activeProject.revisions[
+          activeProject.revisions.findIndex((r) => r.id === activeRevision.id) - 1
+        ] ?? null)
+      : null;
+
   const ratios = ['1:1', '16:9', '9:16', '4:3', '3:2'];
   const durations = ['3s', '5s', '10s'];
 
@@ -64,9 +95,25 @@ export function VideoView() {
   const imageItems = useImageStore((s) => s.items);
   const imageCollections = useWorkspaceStore((s) => s.imageCollections);
 
-  const generatedVideos = imageItems
-    .filter((i) => i.type === 'video')
-    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+  // Fallback: If no activeRevision in projects, check if useImageStore has recent video items
+  const latestVideoItem = imageItems.find((item) => item.type === 'video');
+
+  const resolvedActiveRevision: MediaRevision | null =
+    activeRevision ||
+    (latestVideoItem
+      ? {
+          id: latestVideoItem.id,
+          version: 1,
+          url: latestVideoItem.url,
+          prompt: latestVideoItem.prompt,
+          mediaType: 'video',
+          model: latestVideoItem.model || 'Luma Ray 2',
+          style: 'Cinematic Video',
+          ratio: latestVideoItem.ratio || '16:9',
+          seed: 0,
+          createdAt: Date.now(),
+        }
+      : null);
 
   // Load history from Supabase once on mount
   useEffect(() => {
@@ -98,50 +145,31 @@ export function VideoView() {
     }
 
     // Credit check & deduction for Anticeil Free video models
-    const isAnticeilFree = currentProvider?.id === 'anticeil' || currentModelInfo?.keyType === 'free';
+    const isAnticeilFree = currentModelInfo?.keyType === 'free';
     if (isAnticeilFree) {
-      const allowed = useCreditStore.getState().deductCredits('video', 'anticeil');
-      if (!allowed) return;
+      const allowed = useCreditStore.getState().canAfford('video', 'anticeil');
+      if (!allowed) {
+        useCreditStore.getState().setLimitModalOpen(true, 'video');
+        return;
+      }
     }
 
+    let creditDeducted = false;
     setIsGenerating(true);
     try {
-      const durSec = parseInt(selectedDuration, 10) || 5;
-      const { url: directVideoUrl, blob } = await generateCinematicVideo(
+      if (isAnticeilFree) {
+        useCreditStore.getState().deductCredits('video', 'anticeil');
+        creditDeducted = true;
+      }
+
+      const durationSec = parseInt(selectedDuration, 10) || 5;
+      const videoResult = await generateCinematicVideo(
         prompt.trim(),
         selectedRatio,
-        durSec,
+        durationSec,
         currentModelInfo?.name || 'Luma Ray 2'
       );
-
-      let finalUrl = directVideoUrl;
-
-      // Attempt to persist to R2 & Supabase
-      try {
-        const res = await fetch('/api/imagine/save-media', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-          },
-          body: JSON.stringify({
-            type: 'video',
-            prompt: prompt.trim(),
-            mediaUrl: directVideoUrl,
-            metadata: {
-              ratio: selectedRatio,
-              duration: selectedDuration,
-              model: currentModelInfo?.name || 'Luma Ray 2',
-            },
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.url) finalUrl = data.url;
-        }
-      } catch (err) {
-        console.warn('[Video] Failed to upload video to R2, using direct url:', err);
-      }
+      const finalUrl = videoResult.url;
 
       const nowIso = new Date().toISOString();
       const newItem = {
@@ -158,7 +186,33 @@ export function VideoView() {
         collectionId: null,
       };
       addImageItem(newItem);
-      setSelectedMediaItem(newItem);
+
+      // Open canvas preview panel with generated video
+      if (activeProject && activeRevision) {
+        addRevision(activeProject.id, {
+          prompt: prompt.trim(),
+          url: finalUrl,
+          revisionInstruction: '',
+          model: currentModelInfo?.name || 'Luma Ray 2',
+          style: 'Cinematic Video',
+          ratio: selectedRatio,
+          seed: 0,
+          revisedFromId: activeRevision.id,
+          mediaType: 'video',
+        });
+      } else {
+        createProject({
+          prompt: prompt.trim(),
+          url: finalUrl,
+          model: currentModelInfo?.name || 'Luma Ray 2',
+          style: 'Cinematic Video',
+          ratio: selectedRatio,
+          seed: 0,
+          title: prompt.trim().slice(0, 36),
+          mediaType: 'video',
+        });
+      }
+      setIsCanvasOpen(true);
 
       addUsage(estimatedBytes, 'images');
       if (session?.access_token) {
@@ -168,6 +222,9 @@ export function VideoView() {
       setPrompt('');
     } catch (err: any) {
       console.error('[Video Generation Error]', err);
+      if (creditDeducted && isAnticeilFree) {
+        useCreditStore.getState().refundCredits('video', 'anticeil');
+      }
       alert(language === 'id' ? 'Gagal membuat video. Silakan coba lagi.' : 'Failed to generate video.');
     } finally {
       setIsGenerating(false);
@@ -247,222 +304,247 @@ export function VideoView() {
   return (
     <div
       style={{
-        flex: 1,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         height: '100%',
         width: '100%',
-        position: 'relative',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
-      <VideoModelSelectorModal
-        isOpen={isModelSelectorOpen}
-        onClose={() => setIsModelSelectorOpen(false)}
-        selectedModelId={selectedModel}
-        onSelectModel={(id) => setSelectedModel(id)}
-      />
+      <div
+        style={{
+          flex: 1,
+          display: isCanvasOpen && viewMode === 'canvas' ? 'none' : 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minWidth: 0,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <VideoModelSelectorModal
+          isOpen={isModelSelectorOpen}
+          onClose={() => setIsModelSelectorOpen(false)}
+          selectedModelId={selectedModel}
+          onSelectModel={(id) => setSelectedModel(id)}
+        />
 
-      {/* ── Scrollable Upper Area (Hero + Starters) ── */}
-      <div className="page-scroll-container" style={{ flex: 1, overflowY: 'auto', justifyContent: 'center' }}>
-        <div className="page-content-wrapper" style={{ gap: 'var(--space-xl)', padding: 'var(--space-2xl) 0' }}>
-          {/* Minimalist Editorial Hero Greeting */}
-          <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: 'var(--font-xs)',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-lg)',
-              }}
-            >
-              <span
+        {/* ── Scrollable Upper Area (Hero + Starters) ── */}
+        <div className="page-scroll-container" style={{ flex: 1, overflowY: 'auto', justifyContent: 'center' }}>
+          <div className="page-content-wrapper" style={{ gap: 'var(--space-xl)', padding: 'var(--space-2xl) 0' }}>
+            {/* Minimalist Editorial Hero Greeting */}
+            <div style={{ textAlign: 'center' }}>
+              <div
                 style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#fb7185',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: 'var(--font-xs)',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: 'var(--space-lg)',
                 }}
-              />
-              <span>
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: '#fb7185',
+                  }}
+                />
+                <span>
+                  {language === 'id'
+                    ? '100% Neural Generation • Multi-Model Video Studio'
+                    : '100% Neural Generation • Multi-Model Video Studio'}
+                </span>
+              </div>
+
+              <h1
+                style={{
+                  fontSize: 'var(--font-3xl)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.03em',
+                  color: 'var(--text-primary)',
+                  marginBottom: 'var(--space-sm)',
+                }}
+              >
+                {language === 'id' ? 'Where should we begin?' : 'Where should we begin?'}
+              </h1>
+              <p
+                style={{
+                  fontSize: 'var(--font-md)',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}
+              >
                 {language === 'id'
-                  ? '100% Neural Generation • Multi-Model Video Studio'
-                  : '100% Neural Generation • Multi-Model Video Studio'}
-              </span>
+                  ? 'Buat video sinematik berkualitas tinggi dari prompt teks dengan AI generatif.'
+                  : 'Generate high-resolution video art, cinematic clips, and motion content from text.'}
+              </p>
             </div>
 
-            <h1
-              style={{
-                fontSize: 'var(--font-3xl)',
-                fontWeight: 700,
-                letterSpacing: '-0.03em',
-                color: 'var(--text-primary)',
-                marginBottom: 'var(--space-sm)',
-              }}
-            >
-              {language === 'id' ? 'Where should we begin?' : 'Where should we begin?'}
-            </h1>
-            <p
-              style={{
-                fontSize: 'var(--font-md)',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.5,
-                margin: 0,
-              }}
-            >
-              {language === 'id'
-                ? 'Buat video sinematik berkualitas tinggi dari prompt teks dengan AI generatif.'
-                : 'Generate high-resolution video art, cinematic clips, and motion content from text.'}
-            </p>
-          </div>
-
-          {/* Curated Bento Starter Cards (2x2 grid) */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 'var(--space-sm)',
-              width: '100%',
-            }}
-          >
-            {videoStarters.map((card, i) => {
-              const Icon = card.icon;
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    setPrompt(card.prompt);
-                    setSelectedRatio(card.ratio);
-                    setSelectedDuration(card.duration);
-                  }}
-                  className="hover-card"
-                  style={{
-                    padding: 'var(--space-md) var(--space-lg)',
-                    borderRadius: 'var(--radius-lg)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: 'var(--space-sm)',
-                    boxShadow: 'var(--inner-glow)',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        color: card.color,
-                        background: card.badgeBg,
-                        padding: '3px 8px',
-                        borderRadius: 'var(--radius-full)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                      }}
-                    >
-                      <Icon size={12} color={card.color} />
-                      {card.category}
-                    </span>
-                    <ArrowUpRight size={13} color="var(--text-muted)" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
-                      {card.title}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: '12px',
-                        color: 'var(--text-secondary)',
-                        lineHeight: 1.4,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {card.prompt}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Docked Bottom Prompt Bar ── */}
-      <MediaPromptForm
-        prompt={prompt}
-        onPromptChange={setPrompt}
-        onSubmit={handleGenerate}
-        isGenerating={isGenerating}
-        placeholder={
-          language === 'id'
-            ? 'Deskripsikan video yang ingin dibuat...'
-            : 'Describe the video you want to generate...'
-        }
-        modelDisplayName={modelDisplayName}
-        onModelSelectorOpen={() => {
-          if (!user) {
-            openAuthModal('login');
-            return;
-          }
-          setIsModelSelectorOpen(true);
-        }}
-        language={language as 'en' | 'id'}
-        brandColor="#fb7185"
-        additionalControls={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* Ratio Dropdown Selector */}
-            <DropdownSelect
-              value={selectedRatio}
-              options={ratios}
-              onChange={setSelectedRatio}
-              icon={<Ratio size={13} color="var(--text-muted)" />}
-              brandColor="#fb7185"
-            />
-
-            {/* Distinct Vertical Separator */}
+            {/* Curated Bento Starter Cards (2x2 grid) */}
             <div
               style={{
-                width: '1px',
-                height: '16px',
-                backgroundColor: 'var(--border-subtle)',
-                margin: '0 2px',
-                flexShrink: 0,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 'var(--space-sm)',
+                width: '100%',
               }}
-            />
-
-            {/* Duration Dropdown Selector */}
-            <DropdownSelect
-              value={selectedDuration}
-              options={durations}
-              onChange={setSelectedDuration}
-              icon={<Clock size={13} color="var(--text-muted)" />}
-              brandColor="#fb7185"
-            />
+            >
+              {videoStarters.map((card, i) => {
+                const Icon = card.icon;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setPrompt(card.prompt);
+                      setSelectedRatio(card.ratio);
+                      setSelectedDuration(card.duration);
+                    }}
+                    className="hover-card"
+                    style={{
+                      padding: 'var(--space-md) var(--space-lg)',
+                      borderRadius: 'var(--radius-lg)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: 'var(--space-sm)',
+                      boxShadow: 'var(--inner-glow)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: card.color,
+                          background: card.badgeBg,
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <Icon size={12} color={card.color} />
+                        {card.category}
+                      </span>
+                      <ArrowUpRight size={13} color="var(--text-muted)" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
+                        {card.title}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          color: 'var(--text-secondary)',
+                          lineHeight: 1.4,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {card.prompt}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        }
-      />
+        </div>
 
-      {/* Media Detail Modal */}
-      <MediaDetailModal
-        item={selectedMediaItem}
-        onClose={() => setSelectedMediaItem(null)}
-        onDelete={(id) => { removeImageItem(id); setSelectedMediaItem(null); }}
+        {/* ── Docked Bottom Prompt Bar ── */}
+        <MediaPromptForm
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          onSubmit={handleGenerate}
+          isGenerating={isGenerating}
+          placeholder={
+            language === 'id'
+              ? 'Deskripsikan video yang ingin dibuat...'
+              : 'Describe the video you want to generate...'
+          }
+          modelDisplayName={modelDisplayName}
+          onModelSelectorOpen={() => {
+            if (!user) {
+              openAuthModal('login');
+              return;
+            }
+            setIsModelSelectorOpen(true);
+          }}
+          language={language as 'en' | 'id'}
+          brandColor="#fb7185"
+          additionalControls={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Ratio Dropdown Selector */}
+              <DropdownSelect
+                value={selectedRatio}
+                options={ratios}
+                onChange={setSelectedRatio}
+                icon={<Ratio size={13} color="var(--text-muted)" />}
+                brandColor="#fb7185"
+              />
+
+              {/* Distinct Vertical Separator */}
+              <div
+                style={{
+                  width: '1px',
+                  height: '16px',
+                  backgroundColor: 'var(--border-subtle)',
+                  margin: '0 2px',
+                  flexShrink: 0,
+                }}
+              />
+
+              {/* Duration Dropdown Selector */}
+              <DropdownSelect
+                value={selectedDuration}
+                options={durations}
+                onChange={setSelectedDuration}
+                icon={<Clock size={13} color="var(--text-muted)" />}
+                brandColor="#fb7185"
+              />
+            </div>
+          }
+        />
+      </div>
+
+      {/* Right: Canvas Panel — live video preview & player */}
+      <MediaCanvasPanel
+        isOpen={isCanvasOpen}
+        onClose={() => setIsCanvasOpen(false)}
+        activeProject={
+          activeProject ||
+          (latestVideoItem && resolvedActiveRevision
+            ? {
+                id: 'video_virtual',
+                title: latestVideoItem.prompt.slice(0, 36) || 'Cinematic Video',
+                revisions: [resolvedActiveRevision],
+                activeRevisionId: latestVideoItem.id,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              }
+            : null)
+        }
+        activeRevision={resolvedActiveRevision}
+        prevRevision={prevRevision}
         language={language as 'en' | 'id'}
       />
     </div>

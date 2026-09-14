@@ -275,7 +275,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const effectiveDocId = initialDocId || activeDocId;
   const currentPath = usePathname();
   const pathname = currentPath || '';
-  const activeDoc = documents.find((d) => d.id === effectiveDocId) || (pathname === '/docs' ? null : documents[0]);
+  const activeDoc = effectiveDocId ? (documents.find((d) => d.id === effectiveDocId) || null) : null;
 
   // Active sub-file in the Overleaf multi-file tree
   const docFiles = activeDoc?.files || [];
@@ -321,6 +321,22 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     setMounted(true);
     useAuthStore.getState().initializeAuth();
   }, []);
+
+  // Auto-switch from split → preview-only on mobile/tablet (< 1024px)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        const { viewMode, setViewMode } = useDocsStore.getState();
+        if (viewMode === 'split') {
+          setViewMode('preview');
+        }
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
 
   // Bottom drawer footer widget state (Stats collapsed by default)
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
@@ -2987,7 +3003,7 @@ ${exportText}
   }
 
   // ── PHASE 1: LANDING VIEW ──
-  if (!initialDocId && studioPhase === 'landing') {
+  if (!initialDocId && (studioPhase === 'landing' || !activeDoc)) {
     return <DocsLandingView onStartGenerate={handleStartGenerate} />;
   }
 
@@ -3144,7 +3160,7 @@ ${exportText}
           style={{
             height: '48px',
             boxSizing: 'border-box',
-            padding: '0 var(--page-pad-x, 16px) 0 12px',
+            padding: '0 7px 0 12px',
             borderBottom: '1px solid var(--border-subtle)',
             backgroundColor: 'var(--bg-main)',
             display: 'flex',
@@ -6483,7 +6499,7 @@ ${exportText}
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0 var(--page-pad-x, 16px) 0 8px',
+                    padding: '0 7px 0 8px',
                     flexShrink: 0,
                     fontSize: '12px',
                     userSelect: 'none',

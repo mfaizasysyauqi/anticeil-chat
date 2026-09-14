@@ -1,14 +1,36 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { BuildPreviewPanel } from './BuildPreviewPanel';
 import { useChatStore } from '../store/useChatStore';
+import { useBuildStore } from '../store/useBuildStore';
 
 export function ChatView() {
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const isBuildOpen = useBuildStore((s) => s.isOpen);
+  const isFullscreen = useBuildStore((s) => s.isFullscreen);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-switch to canvas-only on mobile/tablet (< 1024px) when in split mode
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        const { isOpen, isFullscreen: fs } = useBuildStore.getState();
+        // In split view (open but not fullscreen) → force fullscreen/canvas-only
+        if (isOpen && !fs) {
+          useBuildStore.setState({ isFullscreen: true });
+        }
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    // Run once on mount too
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const showChatStream = !isBuildOpen || !isFullscreen;
 
   const handleSend = (text: string, attachments?: any[]) => {
     sendMessage(text, attachments);
@@ -31,20 +53,22 @@ export function ChatView() {
       }}
     >
       {/* Left Chat Stream */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          minWidth: 0,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <MessageList onSelectStarter={handleSelectStarter} />
-        <ChatInput onSend={handleSend} inputRef={inputRef} />
-      </div>
+      {showChatStream && (
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            minWidth: 0,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <MessageList onSelectStarter={handleSelectStarter} />
+          <ChatInput onSend={handleSend} inputRef={inputRef} />
+        </div>
+      )}
 
       {/* Right Live Sandbox / Build Mode Panel */}
       <BuildPreviewPanel />

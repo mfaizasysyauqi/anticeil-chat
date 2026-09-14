@@ -172,15 +172,23 @@ export function BottomRailMeters({
 
   if (!mounted) return null;
 
-  const creditPercentage = Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100));
+  const creditPercentage =
+    paidCredits > 0
+      ? 100
+      : Math.min(100, Math.max(0, (dailyCredits / maxCredits) * 100));
+
   const creditColor =
     totalCredits === 0
       ? 'var(--accent-danger, #ef4444)'
+      : paidCredits > 0
+      ? 'var(--rail-credit-color, #f59e0b)'
       : hoverCredit
       ? 'var(--rail-credit-color, #f59e0b)'
+      : dailyCredits <= 5
+      ? 'var(--accent-danger, #ef4444)'
       : 'var(--text-secondary, #94a3b8)';
 
-  // Label: total usable credits (daily + paid). Ring arc: daily % only (has a clear max)
+  // Label: total usable credits (daily + paid)
   const compactCredits = formatCompactNumber(totalCredits, language);
 
   // Dynamic font sizing

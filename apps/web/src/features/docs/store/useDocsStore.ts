@@ -1258,10 +1258,14 @@ Mulai menulis dokumen LaTeX Anda di sini. Gunakan formula matematika $E = mc^2$,
           : get().activeDocId;
       const nextPhase: StudioPhase = remaining.length === 0 ? 'landing' : get().studioPhase;
 
-      set({ documents: remaining, activeDocId: nextActiveId, studioPhase: nextPhase });
+      // Clean up snapshots for the deleted doc
+      const { [id]: _removed, ...remainingSnapshots } = get().docSnapshots;
+
+      set({ documents: remaining, activeDocId: nextActiveId, studioPhase: nextPhase, docSnapshots: remainingSnapshots });
       saveToStorage(remaining);
       saveActiveDocIdToStorage(nextActiveId);
       savePhaseToStorage(nextPhase);
+      saveSnapshotsToStorage(remainingSnapshots);
     },
 
     togglePin: (id: string) => {
