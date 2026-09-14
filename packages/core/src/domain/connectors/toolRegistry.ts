@@ -729,6 +729,55 @@ export const CONNECTOR_TOOLS: ConnectorToolDefinition[] = [
       required: ['prompt'],
     },
   },
+
+  // --- CUSTOM WEBHOOK TOOLS ---
+  {
+    name: 'custom_webhook_send',
+    connectorId: 'custom_webhook',
+    description: 'Send an HTTP request (POST, GET, PUT, DELETE, PATCH) to a custom REST API or webhook endpoint.',
+    parameters: {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description: 'The target webhook or REST API URL',
+          required: true,
+        },
+        method: {
+          type: 'string',
+          description: 'HTTP method: GET, POST, PUT, DELETE, PATCH (default POST)',
+          enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+        },
+        headers: {
+          type: 'object',
+          description: 'Optional custom headers key-value map (e.g. {"Authorization": "Bearer ...", "X-Custom": "..."})',
+        },
+        payload: {
+          type: 'object',
+          description: 'JSON request payload body for POST/PUT/PATCH',
+        },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'custom_webhook_trigger',
+    connectorId: 'custom_webhook',
+    description: 'Trigger the configured default workspace webhook endpoint with custom event and data payload.',
+    parameters: {
+      type: 'object',
+      properties: {
+        event: {
+          type: 'string',
+          description: 'Event name or action type (e.g. "deploy", "notify", "sync")',
+        },
+        data: {
+          type: 'object',
+          description: 'Event data / payload to transmit',
+        },
+      },
+    },
+  },
 ];
 
 export async function executeConnectorTool(
@@ -739,6 +788,9 @@ export async function executeConnectorTool(
     drive?: GoogleDriveConnectorClient;
     notion?: NotionConnectorClient;
     github?: GitHubConnectorClient;
+    customWebhookUrl?: string;
+    customWebhookToken?: string;
+    customWebhookHeaders?: Record<string, string>;
   }
 ): Promise<ToolCallResult> {
   const { id, name, arguments: args } = toolCall;
@@ -1189,6 +1241,55 @@ export async function executeConnectorTool(
       }
     }
 
+    // 7. Custom Webhook Tools
+    if (toolDef.connectorId === 'custom_webhook') {
+      const targetUrl = args.url || clients.customWebhookUrl;
+      if (!targetUrl) {
+        throw new Error('No webhook URL specified. Please provide a url or configure the Custom Webhook connector.');
+      }
+
+      const method = (args.method || 'POST').toUpperCase();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(clients.customWebhookHeaders || {}),
+        ...(clients.customWebhookToken ? { Authorization: `Bearer ${clients.customWebhookToken}` } : {}),
+        ...(args.headers || {}),
+      };
+
+      const payload = args.payload ?? (args.event || args.data ? { event: args.event, data: args.data } : args);
+      const body = ['GET', 'HEAD'].includes(method) ? undefined : JSON.stringify(payload);
+
+      let resData: any;
+      try {
+        const response = await fetch(targetUrl, {
+          method,
+          headers,
+          body,
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          resData = await response.json();
+        } else {
+          resData = await response.text();
+        }
+
+        return {
+          toolCallId: id,
+          toolName: name,
+          connectorId: 'custom_webhook',
+          status: response.ok ? 'success' : 'error',
+          data: resData,
+          summary: response.ok
+            ? `Webhook [${method}] to ${targetUrl} succeeded with status ${response.status}.`
+            : `Webhook [${method}] to ${targetUrl} failed with status ${response.status}.`,
+          executedAt: Date.now(),
+        };
+      } catch (fetchErr: any) {
+        throw new Error(`Failed to send webhook request to ${targetUrl}: ${fetchErr.message}`);
+      }
+    }
+
     throw new Error(`Unhandled tool: ${name}`);
   } catch (err: any) {
     return {
@@ -1208,16 +1309,19 @@ export async function executeConnectorTool(
  */
 export function generateConnectorsSystemInstruction(
   activeConnectors: ConnectorId[],
-  currentDateTime: string = new Date().toISOString()
+  currentDateTime: string = new Date().toISOString(),
+  extraToolsSummary?: string
 ): string {
-  if (activeConnectors.length === 0) return '';
+  if (activeConnectors.length === 0 && !extraToolsSummary) return '';
 
   const relevantTools = CONNECTOR_TOOLS.filter((t) => activeConnectors.includes(t.connectorId));
-  if (relevantTools.length === 0) return '';
+  if (relevantTools.length === 0 && !extraToolsSummary) return '';
 
-  const toolsSummary = relevantTools
+  const defaultToolsSummary = relevantTools
     .map((t) => `- **${t.name}**: ${t.description}\n  Parameters: ${JSON.stringify(t.parameters.properties)}`)
     .join('\n');
+
+  const toolsSummary = [defaultToolsSummary, extraToolsSummary].filter(Boolean).join('\n\n');
 
   return `[ANTICEIL WORKSPACE CONNECTORS — ACTIVE]
 Current Time: ${currentDateTime}

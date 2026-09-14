@@ -349,32 +349,33 @@ function MessageActionBar({
       style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: role === 'user' ? 'flex-end' : 'space-between',
+        justifyContent: 'space-between',
         width: '100%',
         marginTop: role === 'assistant' ? '4px' : '2px',
-        opacity: isHovered || hasMultipleVersions ? 1 : 0.01,
-        pointerEvents: isHovered || hasMultipleVersions ? 'auto' : 'none',
+        opacity: isHovered ? 1 : 0,
+        pointerEvents: isHovered ? 'auto' : 'none',
         transition: 'opacity 0.15s ease-in-out',
         userSelect: 'none',
       }}
     >
       {role === 'user' ? (
-        // User: version switcher on left of timestamp, timestamp, then actions
+        // User: timestamp on left (align start), actions + version switcher on right (align end)
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', opacity: 0.75 }}>
+            {formattedTime}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {hasMultipleVersions && (
               <div
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '2px',
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: '9999px',
-                  padding: '1px 4px',
-                  fontSize: '10px',
-                  color: 'var(--text-secondary, #9CA3AF)',
-                  marginRight: '2px',
+                  gap: '1px',
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
                 }}
               >
                 <button
@@ -384,15 +385,16 @@ function MessageActionBar({
                   title={language === 'id' ? 'Versi sebelumnya' : 'Previous version'}
                   style={{
                     ...actionButtonStyle,
-                    color: versionIndex <= 0 ? 'var(--text-muted, #6B7280)' : 'var(--text-primary, #FFFFFF)',
-                    opacity: versionIndex <= 0 ? 0.35 : 1,
+                    color: 'var(--text-muted)',
+                    opacity: versionIndex <= 0 ? 0.3 : 0.85,
                     cursor: versionIndex <= 0 ? 'default' : 'pointer',
-                    padding: '1px',
+                    padding: '2px',
+                    borderRadius: '4px',
                   }}
                 >
-                  <ChevronLeft size={11} />
+                  <ChevronLeft size={13} />
                 </button>
-                <span style={{ fontWeight: 600, fontSize: '10px', padding: '0 2px' }}>
+                <span style={{ fontWeight: 500, fontSize: '11px', padding: '0 2px', letterSpacing: '-0.02em', color: 'var(--text-muted)' }}>
                   {versionIndex + 1}/{versions.length}
                 </span>
                 <button
@@ -402,32 +404,17 @@ function MessageActionBar({
                   title={language === 'id' ? 'Versi berikutnya' : 'Next version'}
                   style={{
                     ...actionButtonStyle,
-                    color: versionIndex >= versions.length - 1 ? 'var(--text-muted, #6B7280)' : 'var(--text-primary, #FFFFFF)',
-                    opacity: versionIndex >= versions.length - 1 ? 0.35 : 1,
+                    color: 'var(--text-muted)',
+                    opacity: versionIndex >= versions.length - 1 ? 0.3 : 0.85,
                     cursor: versionIndex >= versions.length - 1 ? 'default' : 'pointer',
-                    padding: '1px',
+                    padding: '2px',
+                    borderRadius: '4px',
                   }}
                 >
-                  <ChevronRight size={11} />
+                  <ChevronRight size={13} />
                 </button>
               </div>
             )}
-            {timestamp && (
-              <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', opacity: 0.75, marginRight: '4px' }}>
-                {formattedTime}
-              </span>
-            )}
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              opacity: isHovered ? 1 : 0,
-              pointerEvents: isHovered ? 'auto' : 'none',
-              transition: 'opacity 0.15s ease',
-            }}
-          >
             {showCopy && (
               <button
                 type="button"
@@ -784,235 +771,270 @@ export function AIChatBubble({
         />
       )}
 
-      {/* Main Bubble */}
-      <div
-        ref={bubbleRef}
-        style={{
-          maxWidth: isUser ? '90%' : '100%',
-          width: isUser ? 'fit-content' : '100%',
-          boxSizing: 'border-box',
-          borderRadius: isUser ? 'var(--radius-xl)' : '0',
-          padding: isUser ? '10px 16px' : '2px 0',
-          background: isUser ? 'var(--bg-user-bubble)' : 'transparent',
-          border: isUser ? '1px solid var(--border-subtle)' : 'none',
-          boxShadow: isUser ? 'var(--shadow-sm)' : 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          position: 'relative',
-        }}
-      >
-        {/* Audit Badge */}
-        {auditBadge && (
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '10px',
-            fontWeight: 600,
-            padding: '2px 6px',
-            borderRadius: 'var(--radius-full)',
-            background: 'rgba(0,115,234,0.08)',
-            color: 'var(--brand-primary)',
-            border: '1px solid rgba(0,115,234,0.15)',
-            letterSpacing: '0.03em',
-            alignSelf: 'flex-start',
-            marginBottom: '2px',
-          }}>
-            {auditBadge}
-          </span>
-        )}
-
-        {/* Edit Mode with Dual Grid Mirror for identical width & natural expanded height */}
-        {isUser && isEditing ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', position: 'relative', width: '100%', minWidth: '180px' }}>
-              {/* Invisible mirror determining exact natural width & height based on text content */}
-              <div
-                aria-hidden
+      {/* User Bubble & Action Bar (bound to bubble width) */}
+      {isUser ? (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            maxWidth: '90%',
+            width: 'fit-content',
+            gap: '2px',
+          }}
+        >
+          {/* Main User Bubble */}
+          <div
+            ref={bubbleRef}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              borderRadius: 'var(--radius-xl)',
+              padding: '10px 16px',
+              background: 'var(--bg-user-bubble)',
+              border: '1px solid var(--border-subtle)',
+              boxShadow: 'var(--shadow-sm)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              position: 'relative',
+            }}
+          >
+            {/* Audit Badge */}
+            {auditBadge && (
+              <span
                 style={{
-                  gridArea: '1 / 1 / 2 / 2',
-                  visibility: 'hidden',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  fontSize: '12.5px',
-                  lineHeight: 1.45,
-                  fontFamily: 'inherit',
-                  padding: 0,
-                  margin: 0,
-                  minHeight: '20px',
-                  pointerEvents: 'none',
-                }}
-              >
-                {localEditContent ? `${localEditContent} ` : ' '}
-              </div>
-
-              {/* Active borderless textarea perfectly matching the exact mirror space */}
-              <textarea
-                ref={editTextareaRef}
-                value={localEditContent}
-                onChange={(e) => setLocalEditContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSaveEdit();
-                  }
-                  if (e.key === 'Escape') onCancelEdit?.();
-                }}
-                style={{
-                  gridArea: '1 / 1 / 2 / 2',
-                  width: '100%',
-                  height: '100%',
-                  boxSizing: 'border-box',
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  padding: 0,
-                  margin: 0,
-                  color: 'var(--text-primary)',
-                  fontSize: '12.5px',
-                  lineHeight: 1.45,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  resize: 'none',
-                  overflow: 'hidden',
-                  fontFamily: 'inherit',
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '2px' }}>
-              <button
-                type="button"
-                onClick={onCancelEdit}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md, 6px)',
-                  color: 'var(--text-secondary, #9CA3AF)',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  padding: '4px 8px',
-                  cursor: 'pointer',
-                  transition: 'color 0.15s ease',
-                }}
-              >
-                {t.common.cancel}
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveEdit}
-                style={{
-                  background: 'var(--brand-primary, #6366F1)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md, 6px)',
-                  color: '#FFFFFF',
-                  fontSize: '12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '10px',
                   fontWeight: 600,
-                  padding: '4px 12px',
-                  cursor: 'pointer',
-                  transition: 'opacity 0.15s ease',
+                  padding: '2px 6px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'rgba(0,115,234,0.08)',
+                  color: 'var(--brand-primary)',
+                  border: '1px solid rgba(0,115,234,0.15)',
+                  letterSpacing: '0.03em',
+                  alignSelf: 'flex-start',
+                  marginBottom: '2px',
                 }}
               >
-                {t.common.saveAndSubmit}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Attachments */}
-            {isUser && attachments && attachments.length > 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '6px',
-                  marginBottom: '4px',
-                }}
-              >
-                {attachments.map((att) => (
-                  <AttachmentChip key={att.id} attachment={att} language={language} />
-                ))}
-              </div>
+                {auditBadge}
+              </span>
             )}
 
-            {/* Message Content */}
-            {isUser ? (
-              <ExpandablePrompt
-                content={content}
-                isExpanded={isPromptExpanded}
-                onToggle={() => setIsPromptExpanded(!isPromptExpanded)}
-                language={language}
-              />
+            {/* Edit Mode with Dual Grid Mirror for identical width & natural expanded height */}
+            {isEditing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', position: 'relative', width: '100%', minWidth: '180px' }}>
+                  {/* Invisible mirror determining exact natural width & height based on text content */}
+                  <div
+                    aria-hidden
+                    style={{
+                      gridArea: '1 / 1 / 2 / 2',
+                      visibility: 'hidden',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      fontSize: '12.5px',
+                      lineHeight: 1.45,
+                      fontFamily: 'inherit',
+                      padding: 0,
+                      margin: 0,
+                      minHeight: '20px',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {localEditContent ? `${localEditContent} ` : ' '}
+                  </div>
+
+                  {/* Active borderless textarea perfectly matching the exact mirror space */}
+                  <textarea
+                    ref={editTextareaRef}
+                    value={localEditContent}
+                    onChange={(e) => setLocalEditContent(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSaveEdit();
+                      }
+                      if (e.key === 'Escape') onCancelEdit?.();
+                    }}
+                    style={{
+                      gridArea: '1 / 1 / 2 / 2',
+                      width: '100%',
+                      height: '100%',
+                      boxSizing: 'border-box',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      padding: 0,
+                      margin: 0,
+                      color: 'var(--text-primary)',
+                      fontSize: '12.5px',
+                      lineHeight: 1.45,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      resize: 'none',
+                      overflow: 'hidden',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '2px' }}>
+                  <button
+                    type="button"
+                    onClick={onCancelEdit}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 'var(--radius-md, 6px)',
+                      color: 'var(--text-secondary, #9CA3AF)',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      transition: 'color 0.15s ease',
+                    }}
+                  >
+                    {t.common.cancel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveEdit}
+                    style={{
+                      background: 'var(--brand-primary, #6366F1)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-md, 6px)',
+                      color: '#FFFFFF',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      padding: '4px 12px',
+                      cursor: 'pointer',
+                      transition: 'opacity 0.15s ease',
+                    }}
+                  >
+                    {t.common.saveAndSubmit}
+                  </button>
+                </div>
+              </div>
             ) : (
               <>
-                {/* Timeline Component — above output (unified across AI Assistant & AI Co-Author) */}
-                {!isUser && (agentSteps || reasoningContent || actions) && (
-                  <AgentStepTimeline
-                    steps={agentSteps}
-                    reasoningContent={reasoningContent}
-                    actions={actions}
-                    isStreaming={isStreaming ?? false}
-                    language={language === 'id' ? 'id' : 'en'}
-                    docId={docId}
-                    onOpenFile={onOpenFile}
-                  />
+                {/* Attachments */}
+                {attachments && attachments.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    {attachments.map((att) => (
+                      <AttachmentChip key={att.id} attachment={att} language={language} />
+                    ))}
+                  </div>
                 )}
 
-                {/* Assistant Content or Streaming */}
-                {content ? (
-                  <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-                    <MarkdownRenderer content={content} />
-                  </div>
-                ) : isStreaming ? (
-                  <StreamingIndicator language={language} />
-                ) : null}
+                {/* Message Content */}
+                <ExpandablePrompt
+                  content={content}
+                  isExpanded={isPromptExpanded}
+                  onToggle={() => setIsPromptExpanded(!isPromptExpanded)}
+                  language={language}
+                />
               </>
             )}
+          </div>
+
+          {/* User Action Bar (underneath bubble, matching bubble width) */}
+          {!isEditing && (
+            <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 4px' }}>
+              <MessageActionBar
+                role={role}
+                language={language}
+                isHovered={isHovered}
+                timestamp={timestamp}
+                copied={copied}
+                feedback={null}
+                variant={variant}
+                showCopy={true}
+                showEdit={variant === 'coauthor' || variant === 'assistant'}
+                versions={versions}
+                versionIndex={versionIndex}
+                onNavigateVersion={onNavigateVersion}
+                onCopy={handleCopy}
+                onEdit={onEdit}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Assistant Bubble & Action Bar (full width) */
+        <>
+          {/* Main Assistant Bubble */}
+          <div
+            ref={bubbleRef}
+            style={{
+              maxWidth: '100%',
+              width: '100%',
+              boxSizing: 'border-box',
+              borderRadius: '0',
+              padding: '2px 0',
+              background: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              position: 'relative',
+            }}
+          >
+            {/* Timeline Component — above output (unified across AI Assistant & AI Co-Author) */}
+            {(agentSteps || reasoningContent || actions) && (
+              <AgentStepTimeline
+                steps={agentSteps}
+                reasoningContent={reasoningContent}
+                actions={actions}
+                isStreaming={isStreaming ?? false}
+                language={language === 'id' ? 'id' : 'en'}
+                docId={docId}
+                onOpenFile={onOpenFile}
+              />
+            )}
+
+            {/* Assistant Content or Streaming */}
+            {content ? (
+              <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                <MarkdownRenderer content={content} />
+              </div>
+            ) : isStreaming ? (
+              <StreamingIndicator language={language} />
+            ) : null}
 
             {/* Extra Content */}
-            {extraContent && !isUser && !isStreaming && (
+            {extraContent && !isStreaming && (
               <div style={{ width: '100%', marginTop: '4px' }}>{extraContent}</div>
             )}
-          </>
-        )}
-      </div>
+          </div>
 
-      {/* Extra Footer */}
-      {extraFooter && <div style={{ width: '100%' }}>{extraFooter}</div>}
+          {/* Extra Footer */}
+          {extraFooter && <div style={{ width: '100%' }}>{extraFooter}</div>}
 
-      {/* Action Bar */}
-      {!isUser && content && !isStreaming && (
-        <MessageActionBar
-          role={role}
-          language={language}
-          isHovered={isHovered}
-          timestamp={timestamp}
-          copied={copied}
-          feedback={feedback}
-          variant={variant}
-          onCopy={handleCopy}
-          onFeedback={handleFeedback}
-        />
-      )}
-
-      {/* User Action Bar */}
-      {isUser && !isEditing && (
-        <MessageActionBar
-          role={role}
-          language={language}
-          isHovered={isHovered}
-          timestamp={timestamp}
-          copied={copied}
-          feedback={null}
-          variant={variant}
-          showCopy={true}
-          showEdit={variant === 'coauthor' || variant === 'assistant'}
-          versions={versions}
-          versionIndex={versionIndex}
-          onNavigateVersion={onNavigateVersion}
-          onCopy={handleCopy}
-          onEdit={onEdit}
-        />
+          {/* Assistant Action Bar */}
+          {content && !isStreaming && (
+            <MessageActionBar
+              role={role}
+              language={language}
+              isHovered={isHovered}
+              timestamp={timestamp}
+              copied={copied}
+              feedback={feedback}
+              variant={variant}
+              onCopy={handleCopy}
+              onFeedback={handleFeedback}
+            />
+          )}
+        </>
       )}
     </div>
   );

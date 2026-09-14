@@ -32,6 +32,7 @@ export interface ConnectorConfig {
   scopes: string[];
   account?: ConnectorAccount;
   lastSyncedAt?: number;
+  baseUrl?: string;
   selectedModelId?: string;
   selectedMcpServers?: string[]; // Smithery: list of enabled MCP server qualifiedNames
   error?: string;

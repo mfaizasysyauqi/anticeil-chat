@@ -111,6 +111,10 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const [tokenSuccessMsg, setTokenSuccessMsg] = useState<string | null>(null);
   const [isMediaModelModalOpen, setIsMediaModelModalOpen] = useState(false);
 
+  // ── Custom Webhook form state ──────────────────────────────────────────────
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookToken, setWebhookToken] = useState('');
+
   // ── Smithery MCP server picker state ──────────────────────────────────────
   const setSmitheryServers = useConnectorsStore((s) => s.setSmitheryServers);
   const [smitheryServers, setSmitheryServerList] = useState<SmitheryServer[]>([]);
@@ -157,6 +161,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const providerLabel = PROVIDER_LABEL[selectedConnectorId];
   const isGoogleService = ['gmail', 'calendar', 'google_drive'].includes(selectedConnectorId);
   const isAnticeilMedia = ['anticeil_image', 'anticeil_video', 'anticeil_audio'].includes(selectedConnectorId);
+  const isCustomWebhook = selectedConnectorId === 'custom_webhook';
 
   const handleConnectOAuth = () => {
     if (!provider) return;
@@ -204,11 +209,31 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const handleDisconnect = () => {
     disconnectConnector(selectedConnectorId);
     setTokenSuccessMsg(null);
+    if (selectedConnectorId === 'custom_webhook') {
+      setWebhookUrl('');
+      setWebhookToken('');
+    }
   };
 
   const handleDisconnectAllGoogle = () => {
     disconnectAllGoogle();
     setTokenSuccessMsg(null);
+  };
+
+  const handleSaveWebhook = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = webhookUrl.trim();
+    if (!url) return;
+    const token = webhookToken.trim() || undefined;
+    updateConnector('custom_webhook', {
+      baseUrl: url,
+      accessToken: token,
+      status: 'connected',
+      isEnabled: true,
+      account: { name: 'Custom Webhook', email: url },
+    });
+    setTokenSuccessMsg('Webhook berhasil dikonfigurasi!');
+    setTimeout(() => setTokenSuccessMsg(null), 4000);
   };
 
   const modalContent = (
@@ -741,6 +766,116 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                 </div>
               )}
 
+              {/* Custom Webhook Configuration */}
+              {isCustomWebhook && (
+                <form
+                  onSubmit={handleSaveWebhook}
+                  style={{
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: 'var(--bg-subtle)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Header */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 14px',
+                      borderBottom: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <Key size={14} color="var(--brand-primary)" />
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {language === 'id' ? 'Konfigurasi Webhook' : 'Webhook Configuration'}
+                    </span>
+                  </div>
+
+                  <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                      {language === 'id'
+                        ? 'Masukkan URL endpoint webhook atau REST API Anda. Bearer token bersifat opsional.'
+                        : 'Enter your webhook or REST API endpoint URL. Bearer token is optional.'}
+                    </p>
+
+                    {/* URL field */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        {language === 'id' ? 'URL Endpoint *' : 'Endpoint URL *'}
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://hooks.example.com/my-webhook"
+                        value={webhookUrl || current.baseUrl || ''}
+                        onChange={(e) => setWebhookUrl(e.target.value)}
+                        required
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-strong)',
+                          backgroundColor: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                          fontSize: '12px',
+                          fontFamily: 'monospace',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    {/* Bearer Token field */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        {language === 'id' ? 'Bearer Token (opsional)' : 'Bearer Token (optional)'}
+                      </label>
+                      <input
+                        type="password"
+                        placeholder={language === 'id' ? 'Token otorisasi...' : 'Authorization token...'}
+                        value={webhookToken || (isConnected ? '••••••••' : '')}
+                        onChange={(e) => setWebhookToken(e.target.value)}
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-strong)',
+                          backgroundColor: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                          fontSize: '12px',
+                          fontFamily: 'monospace',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        type="submit"
+                        disabled={!(webhookUrl.trim() || current.baseUrl)}
+                        style={{
+                          padding: '7px 16px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: (webhookUrl.trim() || current.baseUrl)
+                            ? 'var(--brand-primary)'
+                            : 'var(--bg-subtle)',
+                          color: (webhookUrl.trim() || current.baseUrl) ? '#FFFFFF' : 'var(--text-muted)',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: (webhookUrl.trim() || current.baseUrl) ? 'pointer' : 'not-allowed',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {language === 'id' ? 'Simpan & Hubungkan' : 'Save & Connect'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
               {/* OAuth Connect Card (when disconnected) */}
               {!isConnected && provider && (
                 <div
@@ -819,7 +954,8 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                 </div>
               )}
 
-              {/* Direct Token / API Key Input Section (Accordion) */}
+              {/* Direct Token / API Key Input Section (Accordion) — hidden for custom_webhook */}
+              {!isCustomWebhook && (
               <div
                 style={{
                   border: '1px solid var(--border-subtle)',
@@ -976,6 +1112,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                   </form>
                 )}
               </div>
+              )}
 
               {/* Scopes & Permissions Card */}
               <div

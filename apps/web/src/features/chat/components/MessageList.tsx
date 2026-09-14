@@ -343,7 +343,7 @@ function CompactedMemoryDivider({
       >
         <Sparkles size={11} style={{ color: '#818CF8' }} />
         <span>
-          ✦ Context Compacted {count ? `(${count} ${language === 'id' ? 'pesan diringkas' : 'messages summarized'})` : ''}
+          Context Compacted {count ? `(${count} ${language === 'id' ? 'pesan diringkas' : 'messages summarized'})` : ''}
         </span>
         {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
       </button>

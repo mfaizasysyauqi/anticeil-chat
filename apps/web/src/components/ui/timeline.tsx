@@ -90,36 +90,38 @@ interface TimelineDotProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const DOT_STYLES: Record<string, React.CSSProperties> = {
   default: {
-    backgroundColor: 'transparent',
-    border: '1.5px solid rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    border: '1.5px solid rgba(255, 255, 255, 0.16)',
+    color: 'var(--text-muted, #9CA3AF)',
   },
   current: {
-    backgroundColor: 'var(--bg-main, #171717)',
-    border: '2px solid rgba(255,255,255,0.9)',
-    color: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+    border: '1.5px solid var(--brand-primary, #6366F1)',
+    color: 'var(--brand-primary, #818CF8)',
+    boxShadow: '0 0 8px rgba(99, 102, 241, 0.35)',
   },
   done: {
-    backgroundColor: 'var(--text-primary, #f5f5f5)',
-    border: '2px solid var(--text-primary, #f5f5f5)',
-    color: 'var(--bg-main, #171717)',
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    border: '1.5px solid rgba(99, 102, 241, 0.45)',
+    color: 'var(--brand-primary, #818CF8)',
   },
   error: {
-    backgroundColor: '#ef4444',
-    border: '2px solid #ef4444',
-    color: '#fff',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    border: '1.5px solid rgba(239, 68, 68, 0.45)',
+    color: '#F87171',
   },
   custom: {
-    backgroundColor: 'transparent',
-    border: '1.5px solid rgba(255,255,255,0.25)',
-    color: 'var(--text-primary, #f5f5f5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    border: '1.5px solid rgba(255, 255, 255, 0.16)',
+    color: 'var(--text-secondary, #D1D5DB)',
   },
 }
 
 function DotIcon({ status }: { status: TimelineDotProps['status'] }) {
   switch (status) {
-    case 'done':    return <Check    style={{ width: 10, height: 10, strokeWidth: 3, flexShrink: 0 }} />
-    case 'error':   return <X        style={{ width: 10, height: 10, strokeWidth: 3, flexShrink: 0 }} />
-    case 'current': return <Circle   style={{ width: 6,  height: 6,  fill: 'currentColor', flexShrink: 0 }} />
+    case 'done':    return <Check    style={{ width: 8.5, height: 8.5, strokeWidth: 2.5, flexShrink: 0 }} />
+    case 'error':   return <X        style={{ width: 8.5, height: 8.5, strokeWidth: 2.5, flexShrink: 0 }} />
+    case 'current': return <Circle   style={{ width: 5,   height: 5,   fill: 'currentColor', flexShrink: 0 }} />
     default:        return null
   }
 }
@@ -178,14 +180,14 @@ const TimelineLine = React.forwardRef<HTMLHRElement, TimelineLineProps>(
           gridRow: '2 / 3',
           margin: '0 auto',
           display: 'block',
-          width: 2,
+          width: 1.5,
           height: '100%',
-          minHeight: 14,
+          minHeight: 12,
           border: 'none',
           borderRadius: 9999,
           backgroundColor: done
-            ? 'var(--text-primary, #f5f5f5)'
-            : 'rgba(255,255,255,0.13)',
+            ? 'var(--border-strong, rgba(255, 255, 255, 0.22))'
+            : 'var(--border-subtle, rgba(255, 255, 255, 0.08))',
           ...style,
         }}
         {...props}

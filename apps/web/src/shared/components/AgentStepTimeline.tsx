@@ -308,6 +308,115 @@ function getDotStatus(step: AgentTimelineStep): 'done' | 'current' | 'default' |
   return 'done';
 }
 
+/** Compute rich semantic categorical color and border for each agent step dot */
+export function getSemanticStepDotStyle(step: AgentTimelineStep): React.CSSProperties {
+  if (step.status === 'error') {
+    return {
+      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+      border: '1.5px solid rgba(239, 68, 68, 0.6)',
+      color: '#F87171',
+    };
+  }
+
+  if (step.status === 'running' || step.isStreaming) {
+    return {
+      backgroundColor: 'rgba(99, 102, 241, 0.25)',
+      border: '1.5px solid var(--brand-primary, #6366F1)',
+      color: 'var(--brand-primary, #818CF8)',
+      boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)',
+    };
+  }
+
+  // 1. Thinking / Reasoning / CoT -> Purple / Violet
+  if (step.type === 'thought' || step.type === 'thinking') {
+    return {
+      backgroundColor: 'rgba(168, 85, 247, 0.15)',
+      border: '1.5px solid rgba(168, 85, 247, 0.55)',
+      color: '#C084FC',
+    };
+  }
+
+  // 2. Web search / Citations -> Cyan / Sky Blue
+  if (['web_search', 'searching', 'search'].includes(step.type)) {
+    return {
+      backgroundColor: 'rgba(6, 182, 212, 0.15)',
+      border: '1.5px solid rgba(6, 182, 212, 0.55)',
+      color: '#22D3EE',
+    };
+  }
+
+  // 3. File CRUD:
+  if (step.type === 'create_file' || step.actionType === 'create') {
+    return {
+      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+      border: '1.5px solid rgba(16, 185, 129, 0.55)',
+      color: '#34D399',
+    };
+  }
+  if (step.type === 'delete_file' || step.actionType === 'delete') {
+    return {
+      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+      border: '1.5px solid rgba(239, 68, 68, 0.55)',
+      color: '#F87171',
+    };
+  }
+  if (step.type === 'edit_file' || step.type === 'edited' || step.type === 'edit' || step.actionType === 'modify' || step.type === 'crud') {
+    return {
+      backgroundColor: 'rgba(59, 130, 246, 0.15)',
+      border: '1.5px solid rgba(59, 130, 246, 0.55)',
+      color: '#60A5FA',
+    };
+  }
+  if (step.type === 'read_file' || step.type === 'read' || step.actionType === 'read') {
+    return {
+      backgroundColor: 'rgba(148, 163, 184, 0.15)',
+      border: '1.5px solid rgba(148, 163, 184, 0.45)',
+      color: '#94A3B8',
+    };
+  }
+
+  // 4. Tools / MCP / Terminal -> Amber / Orange
+  if (['tool', 'mcp', 'connector', 'ran', 'terminal', 'command'].includes(step.type)) {
+    return {
+      backgroundColor: 'rgba(249, 115, 22, 0.15)',
+      border: '1.5px solid rgba(249, 115, 22, 0.55)',
+      color: '#FB923C',
+    };
+  }
+
+  // 5. Database -> Emerald / Cyan
+  if (['database', 'db_query', 'db_mutation'].includes(step.type)) {
+    return {
+      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+      border: '1.5px solid rgba(16, 185, 129, 0.55)',
+      color: '#34D399',
+    };
+  }
+
+  // 6. Synthesis / Result / Done -> Emerald Green
+  if (step.type === 'result' || step.type === 'done' || step.type === 'checked') {
+    return {
+      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+      border: '1.5px solid rgba(16, 185, 129, 0.55)',
+      color: '#34D399',
+    };
+  }
+  if (step.type === 'synthesis' || step.type === 'analyzed' || step.type === 'explored') {
+    return {
+      backgroundColor: 'rgba(99, 102, 241, 0.15)',
+      border: '1.5px solid rgba(99, 102, 241, 0.55)',
+      color: '#818CF8',
+    };
+  }
+
+  // Default fallback
+  return {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1.5px solid rgba(255, 255, 255, 0.2)',
+    color: 'var(--text-secondary, #D1D5DB)',
+  };
+}
+
 // ─── Specialized Item Renderers ──────────────────────────────────────────────
 
 /**
@@ -339,13 +448,16 @@ function ThoughtStepItem({ step, isLast }: { step: AgentTimelineStep; isLast: bo
         </button>
       </TimelineHeading>
       <TimelineDot
-        status={getDotStatus(step)}
+        status="custom"
+        style={getSemanticStepDotStyle(step)}
         customIcon={
           isRunning ? (
-            <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={9} style={{ animation: 'spin 1s linear infinite' }} />
           ) : step.status === 'error' ? (
-            <AlertCircle size={10} style={{ color: '#ef4444' }} />
-          ) : undefined
+            <AlertCircle size={9} style={{ color: '#ef4444' }} />
+          ) : (
+            <Sparkles style={{ width: 8.5, height: 8.5, strokeWidth: 2.5, flexShrink: 0 }} />
+          )
         }
       />
       {!isLast && <TimelineLine done={step.status !== 'pending'} />}
@@ -395,9 +507,9 @@ function MCPStepItem({ step, isLast }: { step: AgentTimelineStep; isLast: boolea
               borderRadius: '4px',
               fontSize: '10px',
               fontWeight: 600,
-              backgroundColor: 'rgba(147, 51, 234, 0.15)',
-              color: '#C084FC',
-              border: '1px solid rgba(147, 51, 234, 0.3)',
+              backgroundColor: 'rgba(249, 115, 22, 0.15)',
+              color: '#FB923C',
+              border: '1px solid rgba(249, 115, 22, 0.35)',
             }}
           >
             {server}
@@ -422,7 +534,8 @@ function MCPStepItem({ step, isLast }: { step: AgentTimelineStep; isLast: boolea
         </div>
       </TimelineHeading>
       <TimelineDot
-        status={getDotStatus(step)}
+        status="custom"
+        style={getSemanticStepDotStyle(step)}
         customIcon={<Plug style={ICON_STYLE} />}
       />
       {!isLast && <TimelineLine done={step.status !== 'pending'} />}
@@ -505,7 +618,8 @@ function WebSearchStepItem({ step, isLast }: { step: AgentTimelineStep; isLast: 
         </div>
       </TimelineHeading>
       <TimelineDot
-        status={getDotStatus(step)}
+        status="custom"
+        style={getSemanticStepDotStyle(step)}
         customIcon={<Globe style={ICON_STYLE} />}
       />
       {!isLast && <TimelineLine done={step.status !== 'pending'} />}
@@ -650,7 +764,8 @@ function FileCrudStepItem({
         </div>
       </TimelineHeading>
       <TimelineDot
-        status={getDotStatus(step)}
+        status="custom"
+        style={getSemanticStepDotStyle(step)}
         customIcon={
           actionType === 'create' ? (
             <FilePlus style={ICON_STYLE} />
@@ -741,7 +856,7 @@ function TimelineStepItem({
       <TimelineHeading side="right" variant="primary" className="text-xs font-medium truncate w-full">
         {step.title}
       </TimelineHeading>
-      <TimelineDot status={getDotStatus(step)} customIcon={iconEl} />
+      <TimelineDot status="custom" style={getSemanticStepDotStyle(step)} customIcon={iconEl} />
       {!isLast && <TimelineLine done={step.status !== 'pending'} />}
       <TimelineContent side="right">
         {isTool ? (
@@ -785,8 +900,10 @@ function TimelineStepItem({
 /**
  * Reusable Antigravity Agent Step & Thought Execution Timeline Component.
  *
- * Supports lifecycle phases (plan → design → code → test → deploy → done),
- * reasoning (CoT), MCP tools, web search citations, file CRUD & inline diffs, database ops, and synthesis.
+ * Implements the Hybrid 1-Line Collapsible + Nested Tree Architecture:
+ * - 1-Line Compact Summary Pill (default when finished, avoids cluttering the chat)
+ * - Auto-expands during streaming for real-time visibility
+ * - Clickable to expand/collapse the full nested step-by-step breakdown & diff previews
  */
 export function AgentStepTimeline({
   steps: customSteps,
@@ -795,6 +912,7 @@ export function AgentStepTimeline({
   isStreaming = false,
   docId,
   onOpenFile,
+  language = 'id',
 }: AgentStepTimelineProps) {
   const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
   const documents = useDocsStore((s) => s.documents);
@@ -808,6 +926,15 @@ export function AgentStepTimeline({
     }
     return parseReasoningAndActionsToSteps(reasoningContent, actions, isStreaming);
   }, [customSteps, reasoningContent, actions, isStreaming]);
+
+  // Expand by default if streaming, otherwise start collapsed for a clean 1-line view
+  const [isExpanded, setIsExpanded] = useState(isStreaming);
+
+  React.useEffect(() => {
+    if (isStreaming) {
+      setIsExpanded(true);
+    }
+  }, [isStreaming]);
 
   if (steps.length === 0 && !isStreaming) return null;
 
@@ -831,31 +958,142 @@ export function AgentStepTimeline({
     }
   };
 
+  // Compute 1-line summary highlights
+  const summaryText = useMemo(() => {
+    if (isStreaming) {
+      const runningStep = steps.find((s) => s.status === 'running') || steps[steps.length - 1];
+      if (runningStep) {
+        return language === 'id'
+          ? `Sedang menjalankan: ${runningStep.title}`
+          : `Executing: ${runningStep.title}`;
+      }
+      return language === 'id' ? 'Sedang memproses langkah agen...' : 'Processing agent steps...';
+    }
+
+    const fileOpsCount = steps.filter((s) =>
+      ['create_file', 'edit_file', 'delete_file', 'edited', 'edit', 'crud'].includes(s.type) || Boolean(s.fileName)
+    ).length;
+    const toolOpsCount = steps.filter((s) => ['tool', 'mcp', 'connector', 'ran', 'terminal'].includes(s.type)).length;
+    const searchOpsCount = steps.filter((s) => ['web_search', 'searching', 'search'].includes(s.type)).length;
+    const hasThought = steps.some((s) => ['thought', 'thinking'].includes(s.type));
+
+    const parts: string[] = [];
+    if (hasThought) parts.push('Thinking');
+    if (fileOpsCount > 0) parts.push(language === 'id' ? `${fileOpsCount} file` : `${fileOpsCount} files`);
+    if (searchOpsCount > 0) parts.push(language === 'id' ? `${searchOpsCount} web search` : `${searchOpsCount} searches`);
+    if (toolOpsCount > 0) parts.push(language === 'id' ? `${toolOpsCount} tool` : `${toolOpsCount} tools`);
+
+    const detailsStr = parts.length > 0 ? ` (${parts.join(', ')})` : '';
+    return language === 'id'
+      ? `${steps.length} langkah agen selesai${detailsStr}`
+      : `${steps.length} agent steps completed${detailsStr}`;
+  }, [steps, isStreaming, language]);
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        margin: '2px 0 8px 0',
+        margin: '4px 0 8px 0',
         padding: 0,
         fontSize: '12px',
         fontFamily: 'inherit',
       }}
     >
-      <Timeline positions="left">
-        {steps.map((step, idx) => {
-          const isLast = idx === steps.length - 1;
-          return (
-            <TimelineStepItem
-              key={step.id || `step_${idx}`}
-              step={step}
-              isLast={isLast}
-              onClickFile={() => handleFileClick(step)}
-            />
-          );
-        })}
-      </Timeline>
+      {/* 1-Line Hybrid Summary Pill Toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: isExpanded ? '8px' : '0' }}>
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '2px 0',
+            background: 'transparent',
+            border: 'none',
+            color: isStreaming ? 'var(--brand-primary, #818CF8)' : 'var(--text-secondary, #9CA3AF)',
+            fontSize: '11.5px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'color 0.15s ease',
+            userSelect: 'none',
+            maxWidth: '100%',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary, #FFFFFF)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = isStreaming
+              ? 'var(--brand-primary, #818CF8)'
+              : 'var(--text-secondary, #9CA3AF)';
+          }}
+        >
+          {isStreaming ? (
+            <Loader2 size={12} className="animate-spin" style={{ color: 'var(--brand-primary, #818CF8)', flexShrink: 0 }} />
+          ) : (
+            <Sparkles size={12} style={{ color: 'var(--brand-primary, #818CF8)', flexShrink: 0 }} />
+          )}
+
+          <span
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '380px',
+            }}
+          >
+            {summaryText}
+          </span>
+
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px',
+              fontSize: '10.5px',
+              color: 'var(--text-muted, #6B7280)',
+              marginLeft: '4px',
+            }}
+          >
+            {isExpanded
+              ? language === 'id'
+                ? 'Tutup'
+                : 'Hide'
+              : language === 'id'
+              ? 'Detail'
+              : 'Details'}
+            {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+          </span>
+        </button>
+      </div>
+
+      {/* Nested Step-by-Step Tree (renders when expanded) */}
+      {isExpanded && (
+        <div
+          style={{
+            paddingLeft: '2px',
+            paddingTop: '6px',
+            animation: 'fadeIn 0.15s ease-out',
+            width: '100%',
+          }}
+        >
+          <Timeline positions="left">
+            {steps.map((step, idx) => {
+              const isLast = idx === steps.length - 1;
+              return (
+                <TimelineStepItem
+                  key={step.id || `step_${idx}`}
+                  step={step}
+                  isLast={isLast}
+                  onClickFile={() => handleFileClick(step)}
+                />
+              );
+            })}
+          </Timeline>
+        </div>
+      )}
     </div>
   );
 }

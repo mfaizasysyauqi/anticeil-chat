@@ -236,6 +236,7 @@ export const useConnectorsStore = create<ConnectorsState>()(
               ...state.connectors[id],
               accessToken: undefined,
               refreshToken: undefined,
+              baseUrl: undefined,
               status: 'disconnected',
               isEnabled: false,
               isSandboxMode: false,

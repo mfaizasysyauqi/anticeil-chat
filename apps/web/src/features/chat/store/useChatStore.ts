@@ -27,6 +27,13 @@ import { useConnectorsStore } from '../../connectors/store/useConnectorsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useCreditStore } from '../../credits/store/useCreditStore';
 import { useBuildStore } from './useBuildStore';
+import {
+  fetchActiveSmitheryTools,
+  formatSmitheryToolName,
+  registerSmitheryToolMapping,
+  resolveSmitheryTool,
+  executeSmitheryTool,
+} from '../data/smitheryClient';
 
 interface ChatState {
   sessions: ChatSession[];
@@ -644,7 +651,46 @@ export const useChatStore = create<ChatState>()(
         // Connectors Setup
         const connectorsStore = useConnectorsStore.getState();
         const activeConnectorIds = connectorsStore.activeConnectorIds;
-        const connectorsInstruction = generateConnectorsSystemInstruction(activeConnectorIds);
+
+        // Fetch dynamic Smithery MCP tools if Smithery connector is active
+        let smitheryToolsInstruction = '';
+        const smitheryConfig = connectorsStore.connectors.smithery;
+        if (
+          activeConnectorIds.includes('smithery') &&
+          smitheryConfig?.accessToken &&
+          smitheryConfig.selectedMcpServers &&
+          smitheryConfig.selectedMcpServers.length > 0
+        ) {
+          try {
+            const serverToolsList = await fetchActiveSmitheryTools(
+              smitheryConfig.selectedMcpServers,
+              smitheryConfig.accessToken
+            );
+
+            const toolEntries: string[] = [];
+            for (const item of serverToolsList) {
+              for (const tool of item.tools) {
+                const mappedName = formatSmitheryToolName(item.serverName, tool.name);
+                registerSmitheryToolMapping(mappedName, item.serverName, tool.name);
+                toolEntries.push(
+                  `- **${mappedName}** (Server: \`${item.serverName}\`, Tool: \`${tool.name}\`): ${tool.description || 'Custom MCP tool'}\n  Parameters: ${JSON.stringify(tool.inputSchema?.properties || {})}`
+                );
+              }
+            }
+
+            if (toolEntries.length > 0) {
+              smitheryToolsInstruction = `### Dynamic Smithery MCP Server Tools\n${toolEntries.join('\n')}`;
+            }
+          } catch (mcpErr) {
+            console.warn('[Anticeil] Failed to fetch Smithery MCP tools:', mcpErr);
+          }
+        }
+
+        const connectorsInstruction = generateConnectorsSystemInstruction(
+          activeConnectorIds,
+          new Date().toISOString(),
+          smitheryToolsInstruction
+        );
 
         const compactedContextInstruction = compactedMemoryBlock
           ? `\n\n<compacted_conversation_memory>\nThe following is a structured memory checkpoint of earlier conversation turns in this thread. Maintain continuity with these facts and decisions:\n${compactedMemoryBlock}\n</compacted_conversation_memory>`
@@ -920,13 +966,46 @@ export const useChatStore = create<ChatState>()(
             const executedResults: ToolCallResult[] = [];
 
             for (const toolCall of toolCalls) {
-              const res = await executeConnectorTool(toolCall, {
-                gmail: connectorsStore.getGmailClient(),
-                calendar: connectorsStore.getCalendarClient(),
-                drive: connectorsStore.getDriveClient(),
-                notion: connectorsStore.getNotionClient(),
-                github: connectorsStore.getGitHubClient(),
-              });
+              const smitheryResolution = resolveSmitheryTool(toolCall.name);
+              const smitheryKey = connectorsStore.connectors.smithery?.accessToken;
+
+              let res: ToolCallResult;
+
+              if (smitheryResolution && smitheryKey) {
+                res = await executeSmitheryTool(
+                  smitheryResolution.serverName,
+                  smitheryResolution.originalToolName,
+                  (toolCall.arguments as Record<string, unknown>) || {},
+                  smitheryKey,
+                  toolCall.id
+                );
+              } else if (
+                (toolCall.name.startsWith('smithery_') || toolCall.name.startsWith('mcp_')) &&
+                smitheryKey &&
+                connectorsStore.connectors.smithery?.selectedMcpServers?.[0]
+              ) {
+                const defaultServer = connectorsStore.connectors.smithery.selectedMcpServers[0];
+                const rawName = toolCall.name.replace(/^(mcp_[^_]+_|smithery_)/, '');
+                res = await executeSmitheryTool(
+                  defaultServer,
+                  rawName || toolCall.name,
+                  (toolCall.arguments as Record<string, unknown>) || {},
+                  smitheryKey,
+                  toolCall.id
+                );
+              } else {
+                const customWebhookConfig = connectorsStore.connectors.custom_webhook;
+                res = await executeConnectorTool(toolCall, {
+                  gmail: connectorsStore.getGmailClient(),
+                  calendar: connectorsStore.getCalendarClient(),
+                  drive: connectorsStore.getDriveClient(),
+                  notion: connectorsStore.getNotionClient(),
+                  github: connectorsStore.getGitHubClient(),
+                  customWebhookUrl: customWebhookConfig?.baseUrl || customWebhookConfig?.accessToken,
+                  customWebhookToken: customWebhookConfig?.baseUrl ? customWebhookConfig?.accessToken : undefined,
+                });
+              }
+
               connectorsStore.recordToolExecution(res);
               executedResults.push(res);
             }
@@ -1125,9 +1204,16 @@ export const useChatStore = create<ChatState>()(
           const nextVIdx = direction === 'prev' ? currentVIdx - 1 : currentVIdx + 1;
           if (nextVIdx < 0 || nextVIdx >= versions.length) return {};
 
+          const targetTimestamp = userMsg.versionTimestamps?.[nextVIdx] ?? userMsg.timestamp;
+
           const newMsgs = msgs.map((m, idx) => {
             if (idx === userIdx) {
-              return { ...m, content: versions[nextVIdx], versionIndex: nextVIdx };
+              return {
+                ...m,
+                content: versions[nextVIdx],
+                versionIndex: nextVIdx,
+                timestamp: targetTimestamp,
+              };
             }
             // Paired assistant message (next in array) — swap to the branched content
             if (idx === userIdx + 1 && m.role === 'assistant') {
@@ -1138,6 +1224,7 @@ export const useChatStore = create<ChatState>()(
                   ...m,
                   content: branchContent,
                   reasoningContent: m.branchReasoningContents?.[nextVIdx] ?? undefined,
+                  timestamp: m.branchTimestamps?.[nextVIdx] ?? m.timestamp,
                 };
               }
             }
@@ -1157,10 +1244,13 @@ export const useChatStore = create<ChatState>()(
 
         const userMsg = msgs[userIdx];
         const oldVersions = userMsg.versions || [userMsg.content];
+        const oldTimestamps = userMsg.versionTimestamps || [userMsg.timestamp];
         const oldVIdx = userMsg.versionIndex ?? 0;
 
+        const now = Date.now();
         // If the very first entry equals current content it's already there; append new
         const allVersions = [...oldVersions, newContent];
+        const allTimestamps = [...oldTimestamps, now];
         const newVIdx = allVersions.length - 1;
 
         // Update user message + clear assistant response after it
@@ -1170,29 +1260,41 @@ export const useChatStore = create<ChatState>()(
         // so navigating back to that version restores the correct answer.
         const existingBranchContents: Record<number, string> = { ...(assistantMsg?.branchContents ?? {}) };
         const existingBranchReasoning: Record<number, string> = { ...(assistantMsg?.branchReasoningContents ?? {}) };
+        const existingBranchTimestamps: Record<number, number> = { ...(assistantMsg?.branchTimestamps ?? {}) };
         if (assistantMsg?.content) {
           existingBranchContents[oldVIdx] = assistantMsg.content;
         }
         if (assistantMsg?.reasoningContent) {
           existingBranchReasoning[oldVIdx] = assistantMsg.reasoningContent;
         }
+        if (assistantMsg?.timestamp) {
+          existingBranchTimestamps[oldVIdx] = assistantMsg.timestamp;
+        }
 
         // Create a new streaming placeholder assistant message
-        const newAssistantId = `msg-ai-edit-${Date.now()}`;
+        const newAssistantId = `msg-ai-edit-${now}`;
         const newAssistantMsg: ChatMessage = {
           id: newAssistantId,
           sessionId,
           role: 'assistant',
           content: '',
-          timestamp: Date.now(),
+          timestamp: now,
           status: 'streaming',
           branchContents: existingBranchContents,
           branchReasoningContents: existingBranchReasoning,
+          branchTimestamps: existingBranchTimestamps,
         };
 
         const updatedMsgs = [
           ...msgs.slice(0, userIdx),
-          { ...userMsg, content: newContent, versions: allVersions, versionIndex: newVIdx },
+          {
+            ...userMsg,
+            content: newContent,
+            timestamp: now,
+            versions: allVersions,
+            versionIndex: newVIdx,
+            versionTimestamps: allTimestamps,
+          },
           newAssistantMsg,
           // Keep messages after the assistant (if any) — though usually it's last
           ...msgs.slice(userIdx + (assistantMsg ? 2 : 1)),

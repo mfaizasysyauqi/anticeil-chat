@@ -133,9 +133,11 @@ export interface ChatMessage {
   // Edit-branch versioning: stores all past versions of this user message
   versions?: string[];
   versionIndex?: number;
+  versionTimestamps?: number[];
   // For assistant messages: maps versionIndex -> content (parallel branches)
   branchContents?: Record<number, string>;
   branchReasoningContents?: Record<number, string>;
+  branchTimestamps?: Record<number, number>;
 }
 
 export interface ChatSession {
