@@ -121,10 +121,14 @@ export async function POST(req: NextRequest) {
           image_url: m.imageUrl || null,
           video_url: m.videoUrl || null,
           tool_results: m.toolResults || null,
+          agent_steps: m.agentSteps || null,
           versions: m.versions || null,
           version_index: m.versionIndex ?? 0,
+          version_timestamps: m.versionTimestamps || null,
+          branch_messages: m.branchMessages || null,
           branch_contents: m.branchContents || null,
           branch_reasoning_contents: m.branchReasoningContents || null,
+          branch_timestamps: m.branchTimestamps || null,
           created_at: new Date(m.timestamp || Date.now()).toISOString(),
         });
       }

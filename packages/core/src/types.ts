@@ -134,6 +134,8 @@ export interface ChatMessage {
   versions?: string[];
   versionIndex?: number;
   versionTimestamps?: number[];
+  // For user messages: stores entire downstream message tree per branch version
+  branchMessages?: Record<number, ChatMessage[]>;
   // For assistant messages: maps versionIndex -> content (parallel branches)
   branchContents?: Record<number, string>;
   branchReasoningContents?: Record<number, string>;

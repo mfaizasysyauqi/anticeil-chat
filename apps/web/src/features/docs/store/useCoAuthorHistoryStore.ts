@@ -24,6 +24,13 @@ export interface CoAuthorMessage {
   originalContent?: string; // Track original for edit/undo
   isEdited?: boolean;
   agentSteps?: import('@anticeil/core').AgentStep[];
+  versions?: string[];
+  versionIndex?: number;
+  versionTimestamps?: number[];
+  branchMessages?: Record<number, CoAuthorMessage[]>;
+  branchContents?: Record<number, string>;
+  branchReasoningContents?: Record<number, string>;
+  branchTimestamps?: Record<number, number>;
 }
 
 export interface CoAuthorSession {

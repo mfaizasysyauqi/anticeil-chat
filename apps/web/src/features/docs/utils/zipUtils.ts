@@ -147,85 +147,59 @@ function sanitizeFolderName(title: string): string {
 }
 
 /**
- * Packs a document into a ZIP containing a root folder and files with the format's canonical extension:
- * - Document -> folder with .tex (or .md)
- * - Slide    -> folder with .md
- * - Sheet    -> folder with .antsheet
+/**
+ * Packs a document project into a ZIP containing a root folder and files with canonical folder structure & extensions:
+ * - LaTeX -> folder with .tex, .bib, .sty, subfiles, etc.
+ * - Typst -> folder with .typ, subfiles, etc.
+ * - Sheet -> folder with .antsheet, .csv, etc.
+ * - Slide -> folder with .slide, .md, etc.
+ * - Markdown -> folder with .md, subfiles, etc.
  */
 export function downloadDocAsZip(doc: DocItem): void {
   const folderName = sanitizeFolderName(doc.title || 'anticeil_project');
   const zipFiles: ZipFileInput[] = [];
 
   const subFiles = doc.files && doc.files.length > 0 ? doc.files : [];
+  const format = doc.format || 'latex';
 
-  if (doc.format === 'slide') {
-    if (subFiles.length > 0) {
-      subFiles.forEach((file) => {
-        let name = file.name.replace(/\\/g, '/');
-        if (name.endsWith('.slide')) {
-          name = name.replace(/\.slide$/, '.md');
-        }
-        zipFiles.push({
-          name: `${folderName}/${name}`,
-          content: file.content || (file.isMain ? doc.content : ''),
-        });
-      });
-    } else {
+  let defaultMainName = 'main.tex';
+  if (format === 'typst') {
+    defaultMainName = 'main.typ';
+  } else if (format === 'sheet') {
+    defaultMainName = 'sheet1.antsheet';
+  } else if (format === 'slide') {
+    defaultMainName = 'main.slide';
+  } else if (format === 'markdown') {
+    defaultMainName = 'main.md';
+  }
+
+  if (subFiles.length > 0) {
+    const includedNames = new Set<string>();
+
+    subFiles.forEach((file) => {
+      const cleanName = file.name.replace(/\\/g, '/');
+      const fileContent = file.content || (file.isMain ? doc.content : '') || '';
       zipFiles.push({
-        name: `${folderName}/main.md`,
-        content: doc.content || '# Slide Presentasi\n\n---',
+        name: `${folderName}/${cleanName}`,
+        content: fileContent,
       });
-    }
-  } else if (doc.format === 'sheet') {
-    if (subFiles.length > 0) {
-      subFiles.forEach((file) => {
-        let name = file.name.replace(/\\/g, '/');
-        if (name.endsWith('.csv')) {
-          name = name.replace(/\.csv$/, '.antsheet');
-        } else if (!name.endsWith('.antsheet') && !name.endsWith('.txt')) {
-          name = `${name}.antsheet`;
-        }
-        zipFiles.push({
-          name: `${folderName}/${name}`,
-          content: file.content || (file.isMain ? doc.content : ''),
-        });
-      });
-    } else {
+      includedNames.add(cleanName);
+    });
+
+    // If main file wasn't explicitly included in subFiles list, add it
+    const hasMain = subFiles.some((f) => f.isMain) || includedNames.has(defaultMainName);
+    if (!hasMain && doc.content) {
       zipFiles.push({
-        name: `${folderName}/sheet1.antsheet`,
-        content: doc.content || '# Sheet1\n\n## Data\nA1 = "Sample Data"\n',
+        name: `${folderName}/${defaultMainName}`,
+        content: doc.content,
       });
     }
   } else {
-    // Document (LaTeX or Markdown)
-    const isLatex = doc.format === 'latex' || (subFiles.some((f) => f.name.endsWith('.tex')));
-    const defaultExt = isLatex ? '.tex' : '.md';
-    const defaultMainName = isLatex ? 'main.tex' : 'main.md';
-
-    if (subFiles.length > 0) {
-      subFiles.forEach((file) => {
-        const name = file.name.replace(/\\/g, '/');
-        const fileContent = file.isMain && !file.content ? doc.content : file.content;
-        zipFiles.push({
-          name: `${folderName}/${name}`,
-          content: fileContent || '',
-        });
-      });
-
-      // Ensure main file exists
-      const hasMain = subFiles.some((f) => f.isMain || f.name === defaultMainName);
-      if (!hasMain) {
-        zipFiles.push({
-          name: `${folderName}/${defaultMainName}`,
-          content: doc.content || '',
-        });
-      }
-    } else {
-      zipFiles.push({
-        name: `${folderName}/${defaultMainName}`,
-        content: doc.content || '',
-      });
-    }
+    // Single-file project
+    zipFiles.push({
+      name: `${folderName}/${defaultMainName}`,
+      content: doc.content || '',
+    });
   }
 
   const zipBlob = createZipBlob(zipFiles);

@@ -12,9 +12,12 @@ import {
   FolderOpen,
   X,
   ArrowUpRight,
-  Layers,
   Gauge,
   FileCode,
+  Zap,
+  Eye,
+  ArrowRight,
+  Layers,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDocsStore, DocFormat } from '../store/useDocsStore';
@@ -31,7 +34,7 @@ import { DropdownSelect } from '../../../shared/components/DropdownSelect';
 import { ThinkingTimeline } from '../../chat/components/ThinkingTimeline';
 import { MarkdownRenderer } from '../../../shared/components/MarkdownRenderer';
 import { AIChatBubble } from '../../../shared/components/AIChatBubble';
-import { InteractiveDocCard } from './shared/InteractiveDocCard';
+import { DocsCanvasPanel } from './DocsCanvasPanel';
 import { executeDocAgentActions, extractCleanContent, stripAgentActionTags } from '../utils/docAgentUtils';
 
 interface DocsLandingViewProps {
@@ -55,6 +58,8 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
   const setActiveDocId = useDocsStore((s) => s.setActiveDocId);
   const selectedFormat = useDocsStore((s) => s.selectedFormat);
   const setSelectedFormat = useDocsStore((s) => s.setSelectedFormat);
+  const viewMode = useDocsStore((s) => s.viewMode);
+  const isCanvasOpen = useDocsStore((s) => s.isCanvasOpen);
 
   const selectedCategory: 'doc' | 'slide' | 'sheet' =
     selectedFormat === 'sheet' ? 'sheet' : selectedFormat === 'slide' ? 'slide' : 'doc';
@@ -135,10 +140,27 @@ export function DocsLandingView({ onStartGenerate }: DocsLandingViewProps) {
     const text = promptText.trim();
     if ((!text && attachments.length === 0) || isGenerating) return;
 
+    // Determine action-based credit type:
+    // - If from diagnostic fix -> 'fix' (1 credit)
+    // - If from edit or follow-up conversation -> 'edit' (1 credit)
+    // - If initial new document generation -> 'create' (3 credits)
+    const isDiagnosticFix =
+      text.toLowerCase().includes('error kompilasi') ||
+      text.toLowerCase().includes('compilation error');
+    const isFirstDocGen = messages.length === 0 || !activeDoc?.content;
+    const docsAction: 'create' | 'edit' | 'fix' = isDiagnosticFix
+      ? 'fix'
+      : isFirstDocGen
+      ? 'create'
+      : 'edit';
+
     // Check credits upfront (do not deduct until generation succeeds)
     const providerId = activeProviderId || 'anticeil';
     if (providerId === 'anticeil') {
-      const allowed = useCreditStore.getState().canAfford('docs', 'anticeil');
+      const allowed = useCreditStore.getState().canAfford('docs', 'anticeil', {
+        modelId: activeModelId,
+        docsAction,
+      });
       if (!allowed) {
         useCreditStore.getState().setLimitModalOpen(true, 'docs');
         return;
@@ -367,6 +389,7 @@ Every document MUST have a dedicated cover page that is centered horizontally an
               modelId: activeModelId,
               promptLength,
               totalTokens: chunk.promptTokens,
+              docsAction,
             });
             creditDeducted = true;
           }
@@ -438,6 +461,7 @@ Every document MUST have a dedicated cover page that is centered horizontally an
             updateDocumentContent(targetDocId, finalCleanCode);
           }
         }
+        useDocsStore.getState().setIsCanvasOpen(true);
       }
 
       if (targetDocId && targetDoc) {
@@ -463,7 +487,10 @@ Every document MUST have a dedicated cover page that is centered horizontally an
       console.warn('[DocsLandingView] Streaming error:', err);
       // If credits were deducted but generation failed, refund them immediately
       if (creditDeducted && providerId === 'anticeil') {
-        useCreditStore.getState().refundCredits('docs', 'anticeil');
+        useCreditStore.getState().refundCredits('docs', 'anticeil', {
+          modelId: activeModelId,
+          docsAction,
+        });
       }
 
       setMessages((prev) =>
@@ -742,397 +769,490 @@ Every document MUST have a dedicated cover page that is centered horizontally an
       style={{
         flex: 1,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         height: '100%',
         width: '100%',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      {/* ── Scrollable Upper / Middle Area ── */}
+      {/* ── Left Chat & Prompt Bar Column ── */}
       <div
-        ref={scrollRef}
-        className="page-scroll-container"
         style={{
           flex: 1,
-          overflowY: 'auto',
-          justifyContent: hasMessages ? 'flex-start' : 'center',
+          display: isCanvasOpen && viewMode === 'preview' ? 'none' : 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minWidth: 0,
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* ── Scrollable Upper / Middle Area ── */}
         <div
-          className="page-content-wrapper"
+          ref={scrollRef}
+          className="page-scroll-container"
           style={{
-            gap: hasMessages ? 'var(--space-lg)' : 'var(--space-xl)',
-            padding: 'var(--space-2xl) 0',
+            flex: 1,
+            overflowY: 'auto',
+            justifyContent: hasMessages ? 'flex-start' : 'center',
           }}
         >
-          {/* EMPTY STATE: Minimalist Editorial Hero Greeting + Starter Cards */}
-          {!hasMessages && (
-            <>
-              <div style={{ textAlign: 'center' }}>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '4px 10px',
-                    borderRadius: 'var(--radius-full)',
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-subtle)',
-                    fontSize: 'var(--font-xs)',
-                    fontWeight: 600,
-                    color: 'var(--text-secondary)',
-                    marginBottom: 'var(--space-lg)',
-                  }}
-                >
-                  <span
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: activeColor,
-                    }}
-                  />
-                  <span>{heroBadge}</span>
-                </div>
-
-                <h1
-                  style={{
-                    fontSize: 'var(--font-3xl)',
-                    fontWeight: 700,
-                    letterSpacing: '-0.03em',
-                    color: 'var(--text-primary)',
-                    marginBottom: 'var(--space-sm)',
-                  }}
-                >
-                  {heroTitle}
-                </h1>
-                <p
-                  style={{
-                    fontSize: 'var(--font-md)',
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.5,
-                    margin: 0,
-                  }}
-                >
-                  {heroSubtitle}
-                </p>
-
-                {/* Active Project Scope Pill if selected */}
-                {activeProject && (
+          <div
+            className="page-content-wrapper"
+            style={{
+              gap: hasMessages ? 'var(--space-lg)' : 'var(--space-xl)',
+              padding: 'var(--space-2xl) 0',
+            }}
+          >
+            {/* EMPTY STATE: Minimalist Editorial Hero Greeting + Starter Cards */}
+            {!hasMessages && (
+              <>
+                <div style={{ textAlign: 'center' }}>
                   <div
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '4px 12px',
-                      background: 'rgba(0, 115, 234, 0.1)',
-                      border: '1px solid rgba(0, 115, 234, 0.25)',
-                      borderRadius: '20px',
-                      color: 'var(--brand-primary)',
-                      fontSize: '12px',
+                      gap: '6px',
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'var(--bg-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      fontSize: 'var(--font-xs)',
                       fontWeight: 600,
-                      marginTop: '12px',
+                      color: 'var(--text-secondary)',
+                      marginBottom: 'var(--space-lg)',
                     }}
                   >
-                    <FolderOpen size={13} />
-                    <span>{language === 'id' ? `Folder: ${activeProject.name}` : `Folder: ${activeProject.name}`}</span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveProjectId(null)}
-                      title={language === 'id' ? 'Lepas Filter Folder' : 'Clear Folder Filter'}
+                    <span
                       style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: 0,
-                        display: 'flex',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: activeColor,
+                      }}
+                    />
+                    <span>{heroBadge}</span>
+                  </div>
+
+                  <h1
+                    style={{
+                      fontSize: 'var(--font-3xl)',
+                      fontWeight: 700,
+                      letterSpacing: '-0.03em',
+                      color: 'var(--text-primary)',
+                      marginBottom: 'var(--space-sm)',
+                    }}
+                  >
+                    {heroTitle}
+                  </h1>
+                  <p
+                    style={{
+                      fontSize: 'var(--font-md)',
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.5,
+                      margin: 0,
+                    }}
+                  >
+                    {heroSubtitle}
+                  </p>
+
+                  {/* Active Project Scope Pill if selected */}
+                  {activeProject && (
+                    <div
+                      style={{
+                        display: 'inline-flex',
                         alignItems: 'center',
+                        gap: '8px',
+                        padding: '4px 12px',
+                        background: 'rgba(0, 115, 234, 0.1)',
+                        border: '1px solid rgba(0, 115, 234, 0.25)',
+                        borderRadius: '20px',
+                        color: 'var(--brand-primary)',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        marginTop: '12px',
                       }}
                     >
-                      <X size={12} />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Starter Templates & Creative Prompts (2x2 Grid) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px' }}>
-                  <Sparkles size={14} color={activeColor} />
-                  <span
-                    style={{
-                      fontSize: '11.5px',
-                      fontWeight: 700,
-                      color: 'var(--text-muted)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    {language === 'id' ? 'Templat & Ide Prompt AI' : 'Starter Templates & Prompts'}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: 'var(--space-sm)',
-                    width: '100%',
-                  }}
-                >
-                  {starterCards.map((card, i) => {
-                    const Icon = card.icon;
-                    return (
+                      <FolderOpen size={13} />
+                      <span>{language === 'id' ? `Folder: ${activeProject.name}` : `Folder: ${activeProject.name}`}</span>
                       <button
-                        key={i}
                         type="button"
-                        onClick={() => {
-                          setSelectedFormat(card.format);
-                          handleSendPrompt(card.prompt);
-                        }}
-                        className="hover-card"
+                        onClick={() => setActiveProjectId(null)}
+                        title={language === 'id' ? 'Lepas Filter Folder' : 'Clear Folder Filter'}
                         style={{
-                          padding: 'var(--space-md) var(--space-lg)',
-                          borderRadius: 'var(--radius-lg)',
-                          background: 'var(--bg-surface)',
-                          border: '1px solid var(--border-subtle)',
-                          textAlign: 'left',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
                           cursor: 'pointer',
+                          padding: 0,
                           display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: 'var(--space-sm)',
-                          boxShadow: 'var(--inner-glow)',
-                          transition: 'all 0.15s ease',
+                          alignItems: 'center',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              color: card.color,
-                              background: card.badgeBg,
-                              padding: '3px 8px',
-                              borderRadius: 'var(--radius-full)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                            }}
-                          >
-                            <Icon size={12} color={card.color} />
-                            {card.category}
-                          </span>
-                          <ArrowUpRight size={13} color="var(--text-muted)" />
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
-                            {card.title}
-                          </div>
-                          <span
-                            style={{
-                              fontSize: '12px',
-                              color: 'var(--text-secondary)',
-                              lineHeight: 1.4,
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            {card.prompt}
-                          </span>
-                        </div>
+                        <X size={12} />
                       </button>
-                    );
-                  })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </>
-          )}
 
-          {/* ACTIVE CHAT-FIRST STREAM VIEW (Kimi / Claude Artifacts Style) */}
-          {hasMessages && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)', width: '100%' }}>
-              {messages.map((msg, index) => {
-                const isUserMsg = msg.role === 'user';
-                const isStreamingThis = isGenerating && msg.id === streamingMsgIdRef.current;
-                const isEditingThis = editActions.editingMessageId === msg.id;
-
-                return (
-                  <div key={`${msg.id}_${index}`} style={{ width: '100%' }}>
-                    <AIChatBubble
-                      role={msg.role}
-                      content={isUserMsg ? msg.content : stripAgentActionTags(msg.content)}
-                      reasoningContent={msg.reasoningContent}
-                      agentSteps={msg.agentSteps}
-                      isStreaming={isStreamingThis}
-                      assistantName="AI Co-Author"
-                      assistantColor={activeColor}
-                      language={language}
-                      variant="coauthor"
-                      isEditing={isUserMsg && isEditingThis}
-                      editContent={isUserMsg && isEditingThis ? editActions.editingContent : undefined}
-                      onEdit={isUserMsg && !isGenerating ? () => editActions.handleStartEdit(msg.id, msg.content) : undefined}
-                      onSaveEdit={async (newContent) => {
-                        const saved = await editActions.handleSaveEdit(newContent);
-                        if (saved) {
-                          await handleSendPrompt(saved, true);
-                        }
+                {/* Starter Templates & Creative Prompts (2x2 Grid) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px' }}>
+                    <Sparkles size={14} color={activeColor} />
+                    <span
+                      style={{
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: 'var(--text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
                       }}
-                      onCancelEdit={editActions.handleCancelEdit}
-                      auditBadge={undefined}
-                      extraContent={
-                        !isUserMsg && activeDoc && index === messages.length - 1 ? (
-                          <InteractiveDocCard
-                            doc={activeDoc}
-                            onOpenEditor={() => handleOpenEditor(activeDoc.id)}
-                            language={language}
-                            isGenerating={isStreamingThis}
-                          />
-                        ) : undefined
-                      }
-                    />
+                    >
+                      {language === 'id' ? 'Templat & Ide Prompt AI' : 'Starter Templates & Prompts'}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          )}
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: 'var(--space-sm)',
+                      width: '100%',
+                    }}
+                  >
+                    {starterCards.map((card, i) => {
+                      const Icon = card.icon;
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setSelectedFormat(card.format);
+                            handleSendPrompt(card.prompt);
+                          }}
+                          className="hover-card"
+                          style={{
+                            padding: 'var(--space-md) var(--space-lg)',
+                            borderRadius: 'var(--radius-lg)',
+                            background: 'var(--bg-surface)',
+                            border: '1px solid var(--border-subtle)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: 'var(--space-sm)',
+                            boxShadow: 'var(--inner-glow)',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: card.color,
+                                background: card.badgeBg,
+                                padding: '3px 8px',
+                                borderRadius: 'var(--radius-full)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                              }}
+                            >
+                              <Icon size={12} color={card.color} />
+                              {card.category}
+                            </span>
+                            <ArrowUpRight size={13} color="var(--text-muted)" />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '3px' }}>
+                              {card.title}
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '12px',
+                                color: 'var(--text-secondary)',
+                                lineHeight: 1.4,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {card.prompt}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ACTIVE CHAT-FIRST STREAM VIEW */}
+            {hasMessages && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)', width: '100%' }}>
+                {messages.map((msg, index) => {
+                  const isUserMsg = msg.role === 'user';
+                  const isStreamingThis = isGenerating && msg.id === streamingMsgIdRef.current;
+                  const isEditingThis = editActions.editingMessageId === msg.id;
+
+                  return (
+                    <div key={`${msg.id}_${index}`} style={{ width: '100%' }}>
+                      <AIChatBubble
+                        role={msg.role}
+                        content={isUserMsg ? msg.content : stripAgentActionTags(msg.content)}
+                        reasoningContent={msg.reasoningContent}
+                        agentSteps={msg.agentSteps}
+                        isStreaming={isStreamingThis}
+                        assistantName="AI Co-Author"
+                        assistantColor={activeColor}
+                        language={language}
+                        variant="coauthor"
+                        timestamp={msg.timestamp}
+                        isEditing={isUserMsg && isEditingThis}
+                        editContent={isUserMsg && isEditingThis ? editActions.editingContent : undefined}
+                        onEdit={isUserMsg && !isGenerating ? () => editActions.handleStartEdit(msg.id, msg.content) : undefined}
+                        onSaveEdit={async (newContent) => {
+                          const saved = await editActions.handleSaveEdit(newContent);
+                          if (saved) {
+                            await handleSendPrompt(saved, true);
+                          }
+                        }}
+                        onCancelEdit={editActions.handleCancelEdit}
+                        onCopy={() => navigator.clipboard.writeText(msg.content)}
+                        versions={msg.versions}
+                        versionIndex={msg.versionIndex ?? 0}
+                        auditBadge={undefined}
+                        extraContent={
+                          !isUserMsg && activeDoc && index === messages.length - 1 ? (
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '8px 14px',
+                                borderRadius: '10px',
+                                background: 'var(--bg-surface)',
+                                border: '1px solid var(--border-subtle)',
+                                marginTop: '8px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Zap size={14} color="var(--brand-primary, #0073EA)" />
+                                <span style={{ fontSize: '12px', fontWeight: 650, color: 'var(--text-primary)' }}>
+                                  {activeDoc.title || (language === 'id' ? 'Dokumen' : 'Document')}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: '10px',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: 'var(--bg-subtle)',
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {activeDoc.format.toUpperCase()}
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => useDocsStore.getState().setIsCanvasOpen(true)}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: 'var(--bg-subtle)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '11.5px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <Eye size={12} color="var(--brand-primary, #0073EA)" />
+                                  {language === 'id' ? 'Buka Pratinjau' : 'Open Preview'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditor(activeDoc.id)}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    background: 'var(--brand-primary, #0073EA)',
+                                    color: '#fff',
+                                    fontSize: '11.5px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <span>{language === 'id' ? 'Code Editor' : 'Code Editor'}</span>
+                                  <ArrowRight size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : undefined
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* ── Docked Bottom Prompt Bar (Matching ChatInput exactly) ── */}
-      <PromptBar
-        prompt={prompt}
-        onPromptChange={setPrompt}
-        attachments={attachments}
-        onAttachmentsChange={setAttachments}
-        onSubmit={handleSubmit}
-        disabled={isGenerating}
-        placeholder={
-          activeProject
-            ? language === 'id'
-              ? `Buatkan ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'dokumen'} untuk folder "${activeProject.name}"...`
-              : `Draft a ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'document'} for folder "${activeProject.name}"...`
-            : language === 'id'
-            ? `Ketik prompt atau deskripsikan ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'dokumen'} yang ingin dibuat...`
-            : `Ask anything or describe the ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'document'} to create...`
-        }
-        modelDisplayName={modelDisplayName}
-        onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
-        submitTooltip={
-          selectedFormat === 'sheet'
-            ? language === 'id'
-              ? 'Buat Spreadsheet'
-              : 'Generate Spreadsheet'
-            : selectedFormat === 'slide'
-            ? language === 'id'
-              ? 'Buat Slide'
-              : 'Generate Slide'
-            : language === 'id'
-            ? 'Buat Dokumen'
-            : 'Generate Document'
-        }
-        leftControls={
-          !hasMessages ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {/* Category Dropdown: Document vs Slide vs Spreadsheet */}
-              <DropdownSelect
-                value={selectedCategory}
-                options={[
-                  {
-                    value: 'doc',
-                    label: language === 'id' ? 'Dokumen' : 'Document',
-                    icon: <FileText size={13} color="var(--brand-primary, #0073EA)" />,
-                  },
-                  {
-                    value: 'slide',
-                    label: language === 'id' ? 'Slide Deck' : 'Slide Deck',
-                    icon: <Presentation size={13} color="var(--brand-secondary, #8B5CF6)" />,
-                  },
-                  {
-                    value: 'sheet',
-                    label: language === 'id' ? 'Spreadsheet' : 'Spreadsheet',
-                    icon: <Table size={13} color="var(--accent-success, #10B981)" />,
-                  },
-                ]}
-                onChange={(cat) => {
-                  if (cat === 'sheet') setSelectedFormat('sheet');
-                  else if (cat === 'slide') setSelectedFormat('slide');
-                  else setSelectedFormat(selectedEngine);
-                }}
-                brandColor={activeColor}
-              />
-
-              {/* Engine Dropdown: LaTeX vs Typst (Only for Document category) */}
-              {selectedCategory === 'doc' && (
+        {/* ── Docked Bottom Prompt Bar (Matching ChatInput exactly) ── */}
+        <PromptBar
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          attachments={attachments}
+          onAttachmentsChange={setAttachments}
+          onSubmit={handleSubmit}
+          disabled={isGenerating}
+          placeholder={
+            activeProject
+              ? language === 'id'
+                ? `Buatkan ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'dokumen'} untuk folder "${activeProject.name}"...`
+                : `Draft a ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'document'} for folder "${activeProject.name}"...`
+              : language === 'id'
+              ? `Ketik prompt atau deskripsikan ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'dokumen'} yang ingin dibuat...`
+              : `Ask anything or describe the ${selectedFormat === 'sheet' ? 'spreadsheet' : selectedFormat === 'slide' ? 'slide' : 'document'} to create...`
+          }
+          modelDisplayName={modelDisplayName}
+          onModelSelectorOpen={() => setIsModelSelectorOpen(true)}
+          submitTooltip={
+            selectedFormat === 'sheet'
+              ? language === 'id'
+                ? 'Buat Spreadsheet'
+                : 'Generate Spreadsheet'
+              : selectedFormat === 'slide'
+              ? language === 'id'
+                ? 'Buat Slide'
+                : 'Generate Slide'
+              : language === 'id'
+              ? 'Buat Dokumen'
+              : 'Generate Document'
+          }
+          leftControls={
+            !hasMessages ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {/* Category Dropdown: Document vs Slide vs Spreadsheet */}
                 <DropdownSelect
-                  value={selectedEngine}
+                  value={selectedCategory}
                   options={[
                     {
-                      value: 'latex',
-                      label: 'LaTeX (.tex)',
-                      icon: <FileCode size={13} color="var(--brand-secondary, #8B5CF6)" />,
+                      value: 'doc',
+                      label: language === 'id' ? 'Dokumen' : 'Document',
+                      icon: <FileText size={13} color="var(--brand-primary, #0073EA)" />,
                     },
                     {
-                      value: 'typst',
-                      label: 'Typst (.typ)',
-                      icon: <Sparkles size={13} color="var(--accent-success, #10B981)" />,
+                      value: 'slide',
+                      label: language === 'id' ? 'Slide Deck' : 'Slide Deck',
+                      icon: <Presentation size={13} color="var(--brand-secondary, #8B5CF6)" />,
+                    },
+                    {
+                      value: 'sheet',
+                      label: language === 'id' ? 'Spreadsheet' : 'Spreadsheet',
+                      icon: <Table size={13} color="var(--accent-success, #10B981)" />,
                     },
                   ]}
-                  onChange={(eng) => setSelectedFormat(eng as DocFormat)}
-                  brandColor="var(--brand-secondary, #8B5CF6)"
+                  onChange={(cat) => {
+                    if (cat === 'sheet') setSelectedFormat('sheet');
+                    else if (cat === 'slide') setSelectedFormat('slide');
+                    else setSelectedFormat(selectedEngine);
+                  }}
+                  brandColor={activeColor}
                 />
-              )}
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                backgroundColor: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-primary)',
-                fontSize: '12px',
-                fontWeight: 650,
-              }}
-            >
-              {selectedFormat === 'typst' ? (
-                <>
-                  <FileText size={13} color="var(--brand-primary)" />
-                  <span>{language === 'id' ? 'Dokumen' : 'Document'}</span>
-                  <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>•</span>
-                  <Sparkles size={13} color="var(--accent-success, #10B981)" />
-                  <span>{language === 'id' ? 'Engine Typst' : 'Typst Engine'}</span>
-                </>
-              ) : selectedFormat === 'latex' ? (
-                <>
-                  <FileText size={13} color="var(--brand-primary)" />
-                  <span>{language === 'id' ? 'Dokumen' : 'Document'}</span>
-                  <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>•</span>
-                  <FileCode size={13} color="var(--brand-secondary, #8B5CF6)" />
-                  <span>{language === 'id' ? 'Engine LaTeX' : 'LaTeX Engine'}</span>
-                </>
-              ) : selectedFormat === 'sheet' ? (
-                <>
-                  <Table size={13} color="var(--accent-success, #10B981)" />
-                  <span>Spreadsheet</span>
-                </>
-              ) : (
-                <>
-                  <Presentation size={13} color="var(--brand-secondary, #8B5CF6)" />
-                  <span>{language === 'id' ? 'Slide Presentasi' : 'Slide Deck'}</span>
-                </>
-              )}
-            </div>
-          )
-        }
-      />
+
+                {/* Engine Dropdown: LaTeX vs Typst (Only for Document category) */}
+                {selectedCategory === 'doc' && (
+                  <DropdownSelect
+                    value={selectedEngine}
+                    options={[
+                      {
+                        value: 'latex',
+                        label: 'LaTeX (.tex)',
+                        icon: <FileCode size={13} color="var(--brand-secondary, #8B5CF6)" />,
+                      },
+                      {
+                        value: 'typst',
+                        label: 'Typst (.typ)',
+                        icon: <Sparkles size={13} color="var(--accent-success, #10B981)" />,
+                      },
+                    ]}
+                    onChange={(eng) => setSelectedFormat(eng as DocFormat)}
+                    brandColor="var(--brand-secondary, #8B5CF6)"
+                  />
+                )}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                  fontSize: '12px',
+                  fontWeight: 650,
+                }}
+              >
+                {selectedFormat === 'typst' ? (
+                  <>
+                    <FileText size={13} color="var(--brand-primary)" />
+                    <span>{language === 'id' ? 'Dokumen' : 'Document'}</span>
+                    <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>•</span>
+                    <Sparkles size={13} color="var(--accent-success, #10B981)" />
+                    <span>{language === 'id' ? 'Engine Typst' : 'Typst Engine'}</span>
+                  </>
+                ) : selectedFormat === 'latex' ? (
+                  <>
+                    <FileText size={13} color="var(--brand-primary)" />
+                    <span>{language === 'id' ? 'Dokumen' : 'Document'}</span>
+                    <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>•</span>
+                    <FileCode size={13} color="var(--brand-secondary, #8B5CF6)" />
+                    <span>{language === 'id' ? 'Engine LaTeX' : 'LaTeX Engine'}</span>
+                  </>
+                ) : selectedFormat === 'sheet' ? (
+                  <>
+                    <Table size={13} color="var(--accent-success, #10B981)" />
+                    <span>Spreadsheet</span>
+                  </>
+                ) : (
+                  <>
+                    <Presentation size={13} color="var(--brand-secondary, #8B5CF6)" />
+                    <span>{language === 'id' ? 'Slide Presentasi' : 'Slide Deck'}</span>
+                  </>
+                )}
+              </div>
+            )
+          }
+        />
+      </div>
+
+      {/* ── Right Canvas Panel (Live Preview, Code, Downloads, Full Height) ── */}
+      <DocsCanvasPanel />
 
       {isModelSelectorOpen && (
         <ModelSelectorModal onClose={() => setIsModelSelectorOpen(false)} />

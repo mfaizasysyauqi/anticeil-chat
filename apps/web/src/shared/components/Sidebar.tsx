@@ -3032,7 +3032,7 @@ export function Sidebar({
                                   onSelect={() => {
                                     setActiveProjectId(folder.id);
                                     setActiveDocId(doc.id);
-                                    router.push('/docs/' + doc.id);
+                                    router.push('/docs');
                                     if (onCloseMobile) onCloseMobile();
                                   }}
                                   onRename={(id, title) => updateDocumentTitle(id, title)}
@@ -3056,7 +3056,7 @@ export function Sidebar({
                                   : (language === 'id' ? 'Dokumen Baru' : 'New Document');
                                 const newId = createDocument(defaultTitle, undefined, newFormat, folder.id);
                                 setActiveDocId(newId);
-                                router.push('/docs/' + newId);
+                                router.push('/docs');
                                 if (onCloseMobile) onCloseMobile();
                               }}
                               className="clickable-pill"
@@ -3231,7 +3231,7 @@ export function Sidebar({
                                   onSelect={() => {
                                     setActiveProjectId(null);
                                     setActiveDocId(doc.id);
-                                    router.push('/docs/' + doc.id);
+                                    router.push('/docs');
                                     if (onCloseMobile) onCloseMobile();
                                   }}
                                   onRename={(id, title) => updateDocumentTitle(id, title)}

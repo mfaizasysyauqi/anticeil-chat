@@ -114,8 +114,14 @@ interface DocsState {
   editorFontSize: number;
   isCopilotOpen: boolean;
   isSidebarOpen: boolean;
+  isCanvasOpen: boolean;
+  canvasViewMode: 'preview' | 'code';
   generatingProgress: number;
   generatingStep: string;
+
+  setIsCanvasOpen: (open: boolean) => void;
+  toggleCanvas: () => void;
+  setCanvasViewMode: (mode: 'preview' | 'code') => void;
 
   // Folder Actions (Isolated from Chat)
   createFolder: (name: string) => string;
@@ -452,6 +458,8 @@ export const useDocsStore = create<DocsState>((set, get) => {
     editorFontSize: 13,
     isCopilotOpen: true,
     isSidebarOpen: true,
+    isCanvasOpen: false,
+    canvasViewMode: 'preview',
     generatingProgress: 0,
     generatingStep: '',
 
@@ -1632,6 +1640,12 @@ Mulai menulis dokumen LaTeX Anda di sini. Gunakan formula matematika $E = mc^2$,
     toggleCopilot: () => set((s) => ({ isCopilotOpen: !s.isCopilotOpen })),
 
     toggleSidebar: () => set((s) => ({ isSidebarOpen: !s.isSidebarOpen })),
+
+    setIsCanvasOpen: (open: boolean) => set({ isCanvasOpen: open }),
+
+    toggleCanvas: () => set((s) => ({ isCanvasOpen: !s.isCanvasOpen })),
+
+    setCanvasViewMode: (mode: 'preview' | 'code') => set({ canvasViewMode: mode }),
 
     setGeneratingStatus: (progress: number, step: string) =>
       set({ generatingProgress: progress, generatingStep: step }),

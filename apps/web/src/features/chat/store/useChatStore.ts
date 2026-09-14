@@ -1204,32 +1204,33 @@ export const useChatStore = create<ChatState>()(
           const nextVIdx = direction === 'prev' ? currentVIdx - 1 : currentVIdx + 1;
           if (nextVIdx < 0 || nextVIdx >= versions.length) return {};
 
+          // 1. Snapshot the CURRENT downstream trail for currentVIdx
+          const currentDownstream = msgs.slice(userIdx + 1);
+          const branchMessages: Record<number, ChatMessage[]> = {
+            ...(userMsg.branchMessages ?? {}),
+            [currentVIdx]: currentDownstream,
+          };
+
+          // 2. Retrieve downstream trail for the target nextVIdx
+          const targetDownstream = branchMessages[nextVIdx] || [];
           const targetTimestamp = userMsg.versionTimestamps?.[nextVIdx] ?? userMsg.timestamp;
 
-          const newMsgs = msgs.map((m, idx) => {
-            if (idx === userIdx) {
-              return {
-                ...m,
-                content: versions[nextVIdx],
-                versionIndex: nextVIdx,
-                timestamp: targetTimestamp,
-              };
-            }
-            // Paired assistant message (next in array) — swap to the branched content
-            if (idx === userIdx + 1 && m.role === 'assistant') {
-              const branchContent = m.branchContents?.[nextVIdx];
-              // Only switch if we have saved content for that version
-              if (branchContent !== undefined) {
-                return {
-                  ...m,
-                  content: branchContent,
-                  reasoningContent: m.branchReasoningContents?.[nextVIdx] ?? undefined,
-                  timestamp: m.branchTimestamps?.[nextVIdx] ?? m.timestamp,
-                };
-              }
-            }
-            return m;
-          });
+          // 3. Construct updated user message
+          const updatedUserMsg: ChatMessage = {
+            ...userMsg,
+            content: versions[nextVIdx],
+            versionIndex: nextVIdx,
+            timestamp: targetTimestamp,
+            branchMessages,
+          };
+
+          // 4. Construct complete thread: messages before user + updatedUser + targetDownstream
+          const newMsgs = [
+            ...msgs.slice(0, userIdx),
+            updatedUserMsg,
+            ...targetDownstream,
+          ];
+
           return { messages: { ...state.messages, [sessionId]: newMsgs } };
         });
       },
@@ -1253,25 +1254,14 @@ export const useChatStore = create<ChatState>()(
         const allTimestamps = [...oldTimestamps, now];
         const newVIdx = allVersions.length - 1;
 
-        // Update user message + clear assistant response after it
-        const assistantMsg = msgs[userIdx + 1]?.role === 'assistant' ? msgs[userIdx + 1] : null;
+        // Snapshot all downstream messages that occurred after userMsg on oldVIdx
+        const downstreamMessages = msgs.slice(userIdx + 1);
+        const existingBranchMessages: Record<number, ChatMessage[]> = {
+          ...(userMsg.branchMessages ?? {}),
+          [oldVIdx]: downstreamMessages,
+        };
 
-        // Snapshot the existing branch data and save the OLD response under oldVIdx
-        // so navigating back to that version restores the correct answer.
-        const existingBranchContents: Record<number, string> = { ...(assistantMsg?.branchContents ?? {}) };
-        const existingBranchReasoning: Record<number, string> = { ...(assistantMsg?.branchReasoningContents ?? {}) };
-        const existingBranchTimestamps: Record<number, number> = { ...(assistantMsg?.branchTimestamps ?? {}) };
-        if (assistantMsg?.content) {
-          existingBranchContents[oldVIdx] = assistantMsg.content;
-        }
-        if (assistantMsg?.reasoningContent) {
-          existingBranchReasoning[oldVIdx] = assistantMsg.reasoningContent;
-        }
-        if (assistantMsg?.timestamp) {
-          existingBranchTimestamps[oldVIdx] = assistantMsg.timestamp;
-        }
-
-        // Create a new streaming placeholder assistant message
+        // Create a new streaming placeholder assistant message for the new branch
         const newAssistantId = `msg-ai-edit-${now}`;
         const newAssistantMsg: ChatMessage = {
           id: newAssistantId,
@@ -1280,24 +1270,23 @@ export const useChatStore = create<ChatState>()(
           content: '',
           timestamp: now,
           status: 'streaming',
-          branchContents: existingBranchContents,
-          branchReasoningContents: existingBranchReasoning,
-          branchTimestamps: existingBranchTimestamps,
+        };
+
+        // On the new branch, clear old downstream messages (they are safely stored in branchMessages[oldVIdx])
+        const updatedUserMsg: ChatMessage = {
+          ...userMsg,
+          content: newContent,
+          timestamp: now,
+          versions: allVersions,
+          versionIndex: newVIdx,
+          versionTimestamps: allTimestamps,
+          branchMessages: existingBranchMessages,
         };
 
         const updatedMsgs = [
           ...msgs.slice(0, userIdx),
-          {
-            ...userMsg,
-            content: newContent,
-            timestamp: now,
-            versions: allVersions,
-            versionIndex: newVIdx,
-            versionTimestamps: allTimestamps,
-          },
+          updatedUserMsg,
           newAssistantMsg,
-          // Keep messages after the assistant (if any) — though usually it's last
-          ...msgs.slice(userIdx + (assistantMsg ? 2 : 1)),
         ];
 
         const session = state.sessions.find((s) => s.id === sessionId);

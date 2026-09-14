@@ -24,6 +24,7 @@ import {
   Sparkles,
   Settings as SettingsIcon,
   BookOpen,
+  Eye,
 } from 'lucide-react';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
@@ -32,6 +33,8 @@ import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useDocsStore } from '../../features/docs/store/useDocsStore';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
+import { DocModeSwitcher } from '../../features/docs/components/shared/DocModeSwitcher';
+import { DocLayoutOptionsDropdown } from '../../features/docs/components/shared/DocLayoutOptionsDropdown';
 import { getTranslation } from '@anticeil/core';
 
 interface NavbarProps {
@@ -85,6 +88,8 @@ export function Navbar({
   const activeDoc = docs.find((d) => d.id === activeDocId);
   const selectedDocFormat = useDocsStore((s) => s.selectedFormat);
   const updateDocumentTitle = useDocsStore((s) => s.updateDocumentTitle);
+  const isDocsCanvasOpen = useDocsStore((s) => s.isCanvasOpen);
+  const toggleDocsCanvas = useDocsStore((s) => s.toggleCanvas);
   const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
   const imageCollections = useWorkspaceStore((s) => s.imageCollections);
   const activeCollection = imageCollections.find((c) => c.id === activeImageCollectionId);
@@ -433,35 +438,49 @@ export function Navbar({
         </div>
       </div>
 
-      {/* Right: Build Mode Toggle (only /chat) & Action Menu (All Pages) */}
+      {/* Right: Build Mode Toggle (only /chat) & Docs Mode Switcher (only /docs) & Action Menu (All Pages) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        {/* Docs Studio Mode Switcher: AI Co-Author vs Code Editor */}
+        {pathname?.startsWith('/docs') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <DocModeSwitcher
+              activeDocId={activeDoc?.id}
+              compact
+            />
+
+            {/* Docs Studio Layout Options Dropdown (Split view, AI Co-Author only, PDF only, etc.) */}
+            {pathname === '/docs' && (
+              <DocLayoutOptionsDropdown
+                mode="ai-coauthor"
+                compact
+              />
+            )}
+          </div>
+        )}
+
         {/* Build Mode Quick Toggle Button — only on /chat */}
         {pathname === '/chat' && (
           <button
             type="button"
             onClick={toggleBuild}
             title={t.buildMode.title}
-            className="clickable-pill"
+            className="hover-subtle"
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: '32px',
-              padding: '0 10px',
-              boxSizing: 'border-box',
-              background: isBuildOpen ? 'var(--brand-subtle, rgba(0, 115, 234, 0.15))' : 'transparent',
-              border: isBuildOpen ? '1px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              color: isBuildOpen ? 'var(--brand-primary)' : 'var(--text-secondary)',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '6px',
+              color: isBuildOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
               cursor: 'pointer',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              gap: '5px',
               transition: 'all 0.15s ease',
+              flexShrink: 0,
             }}
           >
-            <Zap size={14} color={isBuildOpen ? 'var(--brand-primary)' : 'currentColor'} />
-            <span className="hide-on-mobile">{t.buildMode.title}</span>
+            <Zap size={14} />
           </button>
         )}
 
@@ -472,22 +491,22 @@ export function Navbar({
           <button
             onClick={() => setIsMenuOpen((prev) => !prev)}
             aria-label="Actions"
-            className="clickable-pill"
+            className="hover-subtle"
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '32px',
-              height: '32px',
-              background: isMenuOpen ? 'var(--bg-subtle)' : 'transparent',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-secondary)',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '6px',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
               flexShrink: 0,
             }}
           >
-            <MoreVertical size={16} />
+            <MoreVertical size={15} />
           </button>
 
           {/* Context Menu: Content Adapts to Active Feature */}

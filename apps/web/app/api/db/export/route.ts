@@ -107,10 +107,14 @@ export async function GET(req: NextRequest) {
           imageUrl: m.image_url || undefined,
           videoUrl: m.video_url || undefined,
           toolResults: m.tool_results || undefined,
+          agentSteps: m.agent_steps || undefined,
           versions: m.versions || undefined,
           versionIndex: m.version_index ?? 0,
+          versionTimestamps: m.version_timestamps || undefined,
+          branchMessages: m.branch_messages || undefined,
           branchContents: m.branch_contents || undefined,
           branchReasoningContents: m.branch_reasoning_contents || undefined,
+          branchTimestamps: m.branch_timestamps || undefined,
         };
         if (!messagesBySession[m.session_id]) {
           messagesBySession[m.session_id] = [];

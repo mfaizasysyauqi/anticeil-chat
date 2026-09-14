@@ -113,12 +113,21 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
   image_url TEXT,
   video_url TEXT,
   tool_results JSONB,
+  agent_steps JSONB,
   versions JSONB,
   version_index INTEGER DEFAULT 0,
+  version_timestamps JSONB,
+  branch_messages JSONB,
   branch_contents JSONB,
   branch_reasoning_contents JSONB,
+  branch_timestamps JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS agent_steps JSONB;
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS version_timestamps JSONB;
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS branch_messages JSONB;
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS branch_timestamps JSONB;
 
 -- 4. Project Folders Table
 CREATE TABLE IF NOT EXISTS public.project_folders (

@@ -1181,7 +1181,7 @@ export function DocsSpreadsheetView({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0 8px',
+              padding: '0 var(--page-pad-x, 16px) 0 8px',
               flexShrink: 0,
               fontSize: '12px',
               userSelect: 'none',

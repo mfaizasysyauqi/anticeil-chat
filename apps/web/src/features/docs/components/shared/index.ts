@@ -4,3 +4,6 @@ export * from './RecompileSplitButton';
 export * from './FocusModeOverlay';
 export * from './InteractiveDocCard';
 export * from './DocVisualEditor';
+export * from './DocLayoutOptionsDropdown';
+export * from './DocLogsDrawer';
+export * from './DocExportDropdown';

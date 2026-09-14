@@ -448,9 +448,12 @@ export function DocsCoAuthorSidebar({
         : `--- MEDIA/BERKAS TERLAMPIR ---\n${attSummary}`;
     }
 
-    // Credit check for Anticeil Docs AI (1 credit per request) — do not deduct until response arrives
+    // Credit check for Anticeil Docs AI (1 credit per co-author edit) — do not deduct until response arrives
     if (selectedProviderId === 'anticeil') {
-      const allowed = useCreditStore.getState().canAfford('docs', 'anticeil');
+      const allowed = useCreditStore.getState().canAfford('docs', 'anticeil', {
+        modelId: selectedModelId,
+        docsAction: 'edit',
+      });
       if (!allowed) {
         useCreditStore.getState().setLimitModalOpen(true, 'docs');
         return;
@@ -735,11 +738,11 @@ After emitting the action tags, provide a brief, polite explanation of what was 
 
     const keyConfig = apiKeys[selectedProviderId] || { apiKey: '', isEnabled: true };
     const userTier = useAuthStore.getState().tier;
+    let creditDeducted = false;
 
     try {
       let fullResponse = '';
       let fullReasoning = '';
-      let creditDeducted = false;
 
       await streamBYOKChat({
         providerId: selectedProviderId,
@@ -764,6 +767,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
               modelId: selectedModelId,
               promptLength,
               totalTokens: chunk.promptTokens,
+              docsAction: 'edit',
             });
             creditDeducted = true;
           }
@@ -921,6 +925,13 @@ After emitting the action tags, provide a brief, polite explanation of what was 
       }
     } catch (err) {
       console.warn('[DocsCoAuthor] Streaming error:', err);
+      // If credits were deducted but generation failed, refund them immediately
+      if (creditDeducted && selectedProviderId === 'anticeil') {
+        useCreditStore.getState().refundCredits('docs', 'anticeil', {
+          modelId: selectedModelId,
+          docsAction: 'edit',
+        });
+      }
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -1141,6 +1152,8 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                 assistantName="AI Co-Author"
                 assistantColor="var(--brand-primary)"
                 language={language === 'id' ? 'id' : 'en'}
+                timestamp={msg.timestamp || Date.now()}
+                onCopy={() => handleCopy(msg.content, msg.id)}
               />
             );
           }
@@ -1174,6 +1187,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                   }
                 }}
                 onCancelEdit={handleCancelEdit}
+                onCopy={() => handleCopy(msg.content, msg.id)}
                 isReverted={false}
               />
 
@@ -1189,6 +1203,8 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                   assistantName="AI Co-Author"
                   assistantColor="var(--brand-primary)"
                   language={language === 'id' ? 'id' : 'en'}
+                  timestamp={assistantMsg.timestamp || Date.now()}
+                  onCopy={() => handleCopy(assistantMsg.content, assistantMsg.id)}
                   auditBadge={undefined}
                   extraContent={
                     activeDoc && index === messages.length - 1 ? (

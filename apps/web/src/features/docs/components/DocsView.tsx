@@ -91,6 +91,8 @@ import { DocVisualEditor } from './shared/DocVisualEditor';
 import { SplitResizeDivider } from './shared/SplitResizeDivider';
 import { RecompileSplitButton } from './shared/RecompileSplitButton';
 import { FocusModeOverlay } from './shared/FocusModeOverlay';
+import { DocModeSwitcher } from './shared/DocModeSwitcher';
+import { DocLayoutOptionsDropdown } from './shared/DocLayoutOptionsDropdown';
 import { downloadDocAsZip } from '../utils/zipUtils';
 
 
@@ -222,7 +224,7 @@ import { CreditLimitModal } from '../../credits/components/CreditLimitModal';
 import { PricingModal } from '../../pricing/components/PricingModal';
 import { AuthModal } from '../../auth/components/AuthModal';
 import { getBundledDocContent } from '../utils/docResolver';
-import { lintDocumentContent, DocDiagnostic } from '../utils/docLinter';
+import { DocDiagnostic, computeDocLintResults, normalizeRuntimeError } from '../utils/docLinter';
 import { compileLatexToHtml } from '../utils/latexCompiler';
 import { compileTypstToHtml } from '../utils/typstCompiler';
 import { DocsCoAuthorSidebar } from './DocsCoAuthorSidebar';
@@ -232,6 +234,7 @@ import { DocsGeneratingView } from './DocsGeneratingView';
 import { DocsSpreadsheetView } from './DocsSpreadsheetView';
 import { DocsSlideView } from './DocsSlideView';
 import { DocsVersionHistoryModal } from './DocsVersionHistoryModal';
+import { DocLogsDrawer, DocExportDropdown } from './shared';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, LLMProviderId } from '@anticeil/core';
 
@@ -448,17 +451,10 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
       }
       if (e.data?.type === 'DOCS_PREVIEW_ERROR') {
         const errorMsg = e.data.message || 'Error executing preview scripts';
-        setPreviewRuntimeErrors([
-          {
-            id: `runtime_${Date.now()}`,
-            type: 'error',
-            line: e.data.lineno || 1,
-            column: e.data.colno,
-            fileName: 'Preview Window',
-            message: `[Preview Error] ${errorMsg}`,
-            suggestion: 'Periksa sintaks dokumen, karakter terlarang, atau rumus KaTeX.',
-          },
-        ]);
+        const err = normalizeRuntimeError(errorMsg, e.data.lineno, e.data.colno);
+        if (err) {
+          setPreviewRuntimeErrors([err]);
+        }
       }
       if (e.data?.type === 'DOCS_PREVIEW_READY') {
         setPreviewRuntimeErrors([]);
@@ -1439,63 +1435,19 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
     return { words, chars, lines };
   }, [bundledContent, activeDoc?.content]);
 
-  // Compilation & Linter diagnostics (Errors, Warnings, Info)
+  // Compilation & Linter diagnostics (Errors, Warnings, Info) — 100% DRY shared via computeDocLintResults
   const lintResults = useMemo(() => {
-    const text = activeSubFile?.content ?? activeDoc?.content ?? '';
-    const activeFileName = activeSubFile?.name || (activeDoc?.format === 'typst' ? 'main.typ' : activeDoc?.format === 'slide' ? 'main.slide' : activeDoc?.format === 'sheet' ? 'sheet1.antsheet' : 'main.tex');
-    const isTypst = activeDoc?.format === 'typst' || activeFileName.endsWith('.typ') || text.includes('#set page') || text.includes('#grid(') || text.includes('#block(');
-    
-    // 1. Run multi-format static linter
-    const staticLint = lintDocumentContent(text, docFiles, activeFileName);
-
-    let typstErrors: DocDiagnostic[] = [];
-    let typstWarnings: DocDiagnostic[] = [];
-    let typstInfos: DocDiagnostic[] = [];
-
-    // 2. Run AST/Compiler-specific diagnostics for Typst
-    if (isTypst && text.trim()) {
-      const typstResult = compileTypstToHtml(text, activeDoc?.title, docFiles);
-      typstErrors = typstResult.diagnostics.filter((d) => d.type === 'error') as DocDiagnostic[];
-      typstWarnings = typstResult.diagnostics.filter((d) => d.type === 'warning') as DocDiagnostic[];
-      typstInfos = typstResult.diagnostics.filter((d) => d.type === 'info') as DocDiagnostic[];
-    }
-
-    const allErrors = [...previewRuntimeErrors, ...typstErrors, ...staticLint.errors];
-    const allWarnings = [...typstWarnings, ...staticLint.warnings];
-    const allInfos = [...typstInfos, ...staticLint.infos];
-
-    // Deduplicate diagnostics by line and message
-    const seenErrors = new Set<string>();
-    const uniqueErrors = allErrors.filter((d) => {
-      const key = `${d.line}_${d.message}`;
-      if (seenErrors.has(key)) return false;
-      seenErrors.add(key);
-      return true;
-    });
-
-    const seenWarnings = new Set<string>();
-    const uniqueWarnings = allWarnings.filter((d) => {
-      const key = `${d.line}_${d.message}`;
-      if (seenWarnings.has(key)) return false;
-      seenWarnings.add(key);
-      return true;
-    });
-
-    const seenInfos = new Set<string>();
-    const uniqueInfos = allInfos.filter((d) => {
-      const key = `${d.line}_${d.message}`;
-      if (seenInfos.has(key)) return false;
-      seenInfos.add(key);
-      return true;
-    });
-
-    return {
-      errors: uniqueErrors,
-      warnings: uniqueWarnings,
-      infos: uniqueInfos,
-      totalLogs: uniqueErrors.length + uniqueWarnings.length + uniqueInfos.length,
-    };
-  }, [activeSubFile?.content, activeDoc?.content, docFiles, activeSubFile?.name, previewRuntimeErrors, activeDoc?.format, activeDoc?.title]);
+    const activeFileName =
+      activeSubFile?.name ||
+      (activeDoc?.format === 'typst'
+        ? 'main.typ'
+        : activeDoc?.format === 'slide'
+        ? 'main.slide'
+        : activeDoc?.format === 'sheet'
+        ? 'sheet1.antsheet'
+        : 'main.tex');
+    return computeDocLintResults(activeDoc, activeFileName, previewRuntimeErrors, docFiles);
+  }, [activeDoc, activeSubFile?.name, previewRuntimeErrors, docFiles]);
 
   const handleRecompile = () => {
     setIsRecompiling(true);
@@ -3312,8 +3264,15 @@ ${exportText}
             )}
           </div>
 
-          {/* Right: Hotkeys + History + Overleaf Layout Options + Share (Far Right) */}
+          {/* Right: Mode Switcher + Hotkeys + History + Overleaf Layout Options + Share (Far Right) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            {/* Mode Switcher: AI Co-Author vs Code Editor */}
+            <DocModeSwitcher
+              currentMode="editor"
+              activeDocId={activeDoc?.id}
+              compact
+            />
+
             {/* Hotkeys / Keyboard Shortcuts Button (Overleaf Style) */}
             <button
               type="button"
@@ -3374,265 +3333,27 @@ ${exportText}
               )}
             </button>
 
-            {/* Overleaf-Style Layout Options Button */}
-            <div style={{ position: 'relative', display: 'inline-flex' }}>
-              <button
-                ref={layoutButtonRef}
-                type="button"
-                onClick={toggleLayoutMenu}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: isLayoutMenuOpen ? 'var(--bg-subtle)' : 'transparent',
-                  border: isLayoutMenuOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
-                  color: isLayoutMenuOpen ? 'var(--brand-primary)' : 'var(--text-primary)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                className="hover-subtle"
-                title="Layout options"
-              >
-                {viewMode === 'split' ? (
-                  <Columns size={16} />
-                ) : viewMode === 'code' ? (
-                  <Pencil size={15} />
-                ) : (
-                  <Eye size={16} />
-                )}
-              </button>
-
-              {/* Overleaf-Style Layout Options Popover */}
-              {isLayoutMenuOpen && layoutMenuPos && typeof document !== 'undefined' && createPortal(
-                <div
-                  ref={layoutMenuRef}
-                  onClick={(e) => e.stopPropagation()}
-                  className="animate-fade-in"
-                  style={{
-                    position: 'fixed',
-                    top: `${layoutMenuPos.top}px`,
-                    left: `${layoutMenuPos.left}px`,
-                    width: '235px',
-                    backgroundColor: 'var(--bg-surface)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-strong)',
-                    boxShadow: 'var(--shadow-xl, 0 16px 36px rgba(0,0,0,0.35))',
-                    padding: '6px',
-                    zIndex: 999999999,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                  }}
-                >
-                  <div style={{ padding: '4px 8px 6px', fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                    Layout options
-                  </div>
-
-                  {/* 1. Split view */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setViewMode('split');
-                      setIsLayoutMenuOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '9px',
-                      padding: '7px 10px',
-                      borderRadius: '5px',
-                      border: 'none',
-                      backgroundColor: viewMode === 'split' ? '#15803d' : 'transparent',
-                      color: viewMode === 'split' ? '#ffffff' : 'var(--text-primary)',
-                      fontSize: '13px',
-                      fontWeight: viewMode === 'split' ? 600 : 500,
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                      transition: 'all 0.12s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (viewMode !== 'split') e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (viewMode !== 'split') e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    {viewMode === 'split' ? (
-                      <Check size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
-                    ) : (
-                      <Columns size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
-                    )}
-                    <span>Split view</span>
-                  </button>
-
-                  {/* 2. Editor only */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setViewMode('code');
-                      setIsLayoutMenuOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '9px',
-                      padding: '7px 10px',
-                      borderRadius: '5px',
-                      border: 'none',
-                      backgroundColor: viewMode === 'code' ? '#15803d' : 'transparent',
-                      color: viewMode === 'code' ? '#ffffff' : 'var(--text-primary)',
-                      fontSize: '13px',
-                      fontWeight: viewMode === 'code' ? 600 : 500,
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                      transition: 'all 0.12s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (viewMode !== 'code') e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (viewMode !== 'code') e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    {viewMode === 'code' ? (
-                      <Check size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
-                    ) : (
-                      <Pencil size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
-                    )}
-                    <span>Editor only</span>
-                  </button>
-
-                  {/* 3. PDF only */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setViewMode('preview');
-                      setIsLayoutMenuOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '9px',
-                      padding: '7px 10px',
-                      borderRadius: '5px',
-                      border: 'none',
-                      backgroundColor: viewMode === 'preview' ? '#15803d' : 'transparent',
-                      color: viewMode === 'preview' ? '#ffffff' : 'var(--text-primary)',
-                      fontSize: '13px',
-                      fontWeight: viewMode === 'preview' ? 600 : 500,
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                      transition: 'all 0.12s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (viewMode !== 'preview') e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (viewMode !== 'preview') e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    {viewMode === 'preview' ? (
-                      <Check size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
-                    ) : (
-                      <FileText size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
-                    )}
-                    <span>PDF only</span>
-                  </button>
-
-                  {/* 4. Open PDF in separate tab */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeDoc) {
-                        const newWin = window.open('', '_blank');
-                        if (newWin) {
-                          newWin.document.write(previewHtml);
-                          newWin.document.close();
-                        }
-                      }
-                      setIsLayoutMenuOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '9px',
-                      padding: '7px 10px',
-                      borderRadius: '5px',
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: 'var(--text-primary)',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                      transition: 'all 0.12s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  >
-                    <ExternalLink size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
-                    <span>Open PDF in separate tab</span>
-                  </button>
-
-                  <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-
-                  {/* 5. Focus mode */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsFocusMode(!isFocusMode);
-                      if (!isFocusMode) {
-                        if (isSidebarOpen) toggleSidebar();
-                        if (isCoAuthorOpen) toggleCoAuthor();
-                      }
-                      setIsLayoutMenuOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '7px 10px',
-                      borderRadius: '5px',
-                      border: 'none',
-                      backgroundColor: isFocusMode ? 'rgba(0, 115, 234, 0.12)' : 'transparent',
-                      color: isFocusMode ? 'var(--brand-primary)' : 'var(--text-primary)',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                      transition: 'all 0.12s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isFocusMode) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isFocusMode) e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                      {isFocusMode ? (
-                        <Minimize2 size={14} style={{ flexShrink: 0 }} />
-                      ) : (
-                        <Maximize2 size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
-                      )}
-                      <span>Focus mode</span>
-                    </div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: 500 }}>
-                      Ctrl Shift M
-                    </span>
-                  </button>
-                </div>,
-                document.body
-              )}
-            </div>
+            {/* Overleaf-Style Layout Options Dropdown (Code Editor mode) */}
+            <DocLayoutOptionsDropdown
+              mode="code-editor"
+              isFocusMode={isFocusMode}
+              onToggleFocusMode={() => {
+                setIsFocusMode(!isFocusMode);
+                if (!isFocusMode) {
+                  if (isSidebarOpen) toggleSidebar();
+                  if (isCoAuthorOpen) toggleCoAuthor();
+                }
+              }}
+              onOpenSeparateTab={() => {
+                if (activeDoc) {
+                  const newWin = window.open('', '_blank');
+                  if (newWin) {
+                    newWin.document.write(previewHtml);
+                    newWin.document.close();
+                  }
+                }
+              }}
+            />
 
             {/* Overleaf-Style Green Share Button (Positioned at Far Right) */}
             <button
@@ -6762,7 +6483,7 @@ ${exportText}
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0 8px',
+                    padding: '0 var(--page-pad-x, 16px) 0 8px',
                     flexShrink: 0,
                     fontSize: '12px',
                     userSelect: 'none',
@@ -6850,177 +6571,8 @@ ${exportText}
                       ) : null}
                     </button>
 
-                    {/* Download / Export Options Button & Popover */}
-                    <div style={{ position: 'relative', display: 'inline-flex' }}>
-                      <button
-                        ref={exportButtonRef}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isExportMenuOpen) {
-                            setIsExportMenuOpen(false);
-                          } else {
-                            if (exportButtonRef.current) {
-                              const rect = exportButtonRef.current.getBoundingClientRect();
-                              let left = rect.left;
-                              let top = rect.bottom + 4;
-                              setExportMenuPos({ top, left });
-                            }
-                            setIsExportMenuOpen(true);
-                          }
-                        }}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '5px',
-                          backgroundColor: isExportMenuOpen ? 'var(--bg-subtle)' : 'transparent',
-                          border: isExportMenuOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
-                          color: isExportMenuOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                        className="hover-subtle"
-                        title={language === 'id' ? 'Unduh / Ekspor Dokumen' : 'Download / Export Document'}
-                      >
-                        <Download size={14} />
-                      </button>
-
-                      {/* Export Dropdown Popover */}
-                      {isExportMenuOpen && exportMenuPos && typeof document !== 'undefined' && createPortal(
-                        <div
-                          ref={exportMenuRef}
-                          onClick={(e) => e.stopPropagation()}
-                          className="animate-fade-in"
-                          style={{
-                            position: 'fixed',
-                            top: `${exportMenuPos.top}px`,
-                            left: `${exportMenuPos.left}px`,
-                            width: '200px',
-                            backgroundColor: 'var(--bg-surface)',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border-strong)',
-                            boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.25))',
-                            padding: '4px',
-                            zIndex: 999999999,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '2px',
-                          }}
-                        >
-                          <div style={{ padding: '4px 8px 3px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            {language === 'id' ? 'Opsi Unduh / Ekspor' : 'Download Options'}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (activeDoc) downloadDocAsZip(activeDoc);
-                              setIsExportMenuOpen(false);
-                            }}
-                            className="clickable-pill"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '7px 10px',
-                              borderRadius: '6px',
-                              border: 'none',
-                              background: 'transparent',
-                              color: 'var(--text-primary)',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              cursor: 'pointer',
-                              width: '100%',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <Download size={13} color="#3B82F6" />
-                            <span>Unduh ZIP Project (.zip)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleExportPDF();
-                              setIsExportMenuOpen(false);
-                            }}
-                            className="clickable-pill"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '7px 10px',
-                              borderRadius: '6px',
-                              border: 'none',
-                              background: 'transparent',
-                              color: 'var(--text-primary)',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              cursor: 'pointer',
-                              width: '100%',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <Printer size={13} color="var(--brand-primary)" />
-                            <span>Cetak / Unduh PDF</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleExportMarkdown();
-                              setIsExportMenuOpen(false);
-                            }}
-                            className="clickable-pill"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '7px 10px',
-                              borderRadius: '6px',
-                              border: 'none',
-                              background: 'transparent',
-                              color: 'var(--text-primary)',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              cursor: 'pointer',
-                              width: '100%',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <FileText size={13} color="#10B981" />
-                            <span>File Markdown (.md)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleExportLatex();
-                              setIsExportMenuOpen(false);
-                            }}
-                            className="clickable-pill"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '7px 10px',
-                              borderRadius: '6px',
-                              border: 'none',
-                              background: 'transparent',
-                              color: 'var(--text-primary)',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              cursor: 'pointer',
-                              width: '100%',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <Sigma size={13} color="#8B5CF6" />
-                            <span>File LaTeX (.tex)</span>
-                          </button>
-                        </div>,
-                        document.body
-                      )}
-                    </div>
+                    {/* Download / Export Options Button & Popover (Standardized DRY Shared Component) */}
+                    <DocExportDropdown doc={activeDoc} />
                   </div>
 
                   {/* Right: Invert / Dark theme toggle + Page Navigation + Zoom Controls */}
@@ -7033,14 +6585,15 @@ ${exportText}
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '4px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
                         backgroundColor: isPreviewInverted ? 'var(--bg-subtle)' : 'transparent',
                         border: '1px solid transparent',
                         color: isPreviewInverted ? 'var(--brand-primary)' : 'var(--text-muted)',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
+                        flexShrink: 0,
                       }}
                       className="hover-subtle"
                       title={language === 'id' ? 'Ubah Kontras/Tema Preview' : 'Toggle Preview Theme'}
@@ -7059,12 +6612,13 @@ ${exportText}
                         justifyContent: 'center',
                         width: '24px',
                         height: '24px',
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         backgroundColor: 'transparent',
                         border: '1px solid transparent',
                         color: currentPage <= 1 ? 'var(--border-strong)' : 'var(--text-muted)',
                         cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
                         transition: 'all 0.15s ease',
+                        flexShrink: 0,
                       }}
                       className={currentPage > 1 ? 'hover-subtle' : ''}
                       title="Previous Page"
@@ -7083,12 +6637,13 @@ ${exportText}
                         justifyContent: 'center',
                         width: '24px',
                         height: '24px',
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         backgroundColor: 'transparent',
                         border: '1px solid transparent',
                         color: currentPage >= totalPages ? 'var(--border-strong)' : 'var(--text-muted)',
                         cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
                         transition: 'all 0.15s ease',
+                        flexShrink: 0,
                       }}
                       className={currentPage < totalPages ? 'hover-subtle' : ''}
                       title="Next Page"
@@ -7146,7 +6701,7 @@ ${exportText}
                         height: '24px',
                         padding: 0,
                         flexShrink: 0,
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         backgroundColor: 'transparent',
                         border: '1px solid transparent',
                         color: 'var(--text-muted)',
@@ -7171,7 +6726,7 @@ ${exportText}
                         height: '24px',
                         padding: 0,
                         flexShrink: 0,
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         backgroundColor: 'transparent',
                         border: '1px solid transparent',
                         color: 'var(--text-muted)',
@@ -7282,329 +6837,108 @@ ${exportText}
                         document.body
                       )}
                     </div>
+
+                    <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-subtle)', margin: '0 2px' }} />
+
+                    {/* Buka di AI Co-Author Action (Icon Button Only) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeDoc) {
+                          setActiveDocId(activeDoc.id);
+                        }
+                        router.push('/docs');
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        border: '1px solid transparent',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        flexShrink: 0,
+                      }}
+                      className="hover-subtle"
+                      title={language === 'id' ? 'Buka di AI Co-Author' : 'Open in AI Co-Author'}
+                    >
+                      <Sparkles size={14} />
+                    </button>
+
+                    {/* Close Preview Button */}
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('code')}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        border: '1px solid transparent',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        flexShrink: 0,
+                      }}
+                      className="hover-subtle"
+                      title={language === 'id' ? 'Tutup Preview' : 'Close Preview'}
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Collapsible Log Panel / Drawer */}
-                {isLogDrawerOpen && (
-                  <div
-                    style={{
-                      maxHeight: '260px',
-                      backgroundColor: 'var(--bg-surface)',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      boxShadow: 'var(--shadow-md)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      overflowX: 'hidden',
-                      overflowY: 'auto',
-                      padding: '10px 12px',
-                      zIndex: 20,
-                      boxSizing: 'border-box',
-                      width: '100%',
-                    }}
-                  >
-                    {/* Filter Tabs Header */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '6px',
-                        marginBottom: '8px',
-                        flexWrap: 'wrap',
-                        borderBottom: '1px solid var(--border-subtle)',
-                        paddingBottom: '6px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                        {[
-                          { id: 'all', label: language === 'id' ? 'Semua' : 'All', count: lintResults.totalLogs },
-                          { id: 'errors', label: 'Errors', count: lintResults.errors.length, color: '#EF4444' },
-                          { id: 'warnings', label: 'Warnings', count: lintResults.warnings.length, color: '#F59E0B' },
-                          { id: 'info', label: 'Info', count: lintResults.infos.length, color: 'var(--brand-primary)' },
-                        ].map((tab) => (
-                          <button
-                            key={tab.id}
-                            type="button"
-                            onClick={() => setActiveLogTab(tab.id as any)}
-                            style={{
-                              padding: '2px 7px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              fontWeight: activeLogTab === tab.id ? 700 : 500,
-                              backgroundColor: activeLogTab === tab.id ? 'var(--bg-subtle)' : 'transparent',
-                              border: `1px solid ${activeLogTab === tab.id ? 'var(--border-strong)' : 'transparent'}`,
-                              color: activeLogTab === tab.id ? (tab.color || 'var(--text-primary)') : 'var(--text-muted)',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              transition: 'all 0.15s ease',
-                            }}
-                          >
-                            <span>{tab.label}</span>
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                padding: '0 4px',
-                                borderRadius: '10px',
-                                backgroundColor: activeLogTab === tab.id ? 'var(--border-subtle)' : 'rgba(0,0,0,0.05)',
-                                color: tab.color || 'inherit',
-                                fontWeight: 650,
-                              }}
-                            >
-                              {tab.count}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {lintResults.totalLogs > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const allLogs = [...lintResults.errors, ...lintResults.warnings, ...lintResults.infos];
-                              const logText = allLogs
-                                .map(
-                                  (d) =>
-                                    `- [${d.type.toUpperCase()}] Baris ${d.line} (${d.fileName || 'main.tex'}): ${d.message}${
-                                      d.suggestion ? ` (Saran: ${d.suggestion})` : ''
-                                    }`
-                                )
-                                .join('\n');
-                              const prompt =
-                                language === 'id'
-                                  ? `Tolong bantu saya menganalisis dan memperbarui kode dokumen LaTeX untuk menyelesaikan seluruh log & warning berikut:\n\n${logText}\n\nBerikan penjelasan ringkas serta perbaikan kode lengkap yang siap dipakai.`
-                                  : `Please help me analyze and fix all of the following LaTeX output logs & warnings:\n\n${logText}\n\nProvide a concise explanation and updated complete code.`;
-                              setCoAuthorPendingPrompt(prompt);
-                              setActiveDrawerTab('ai');
-                              if (!isSidebarOpen) toggleSidebar();
-                            }}
-                            style={{
-                              padding: '3px 9px',
-                              borderRadius: '5px',
-                              backgroundColor: 'rgba(0, 115, 234, 0.12)',
-                              border: '1px solid rgba(0, 115, 234, 0.3)',
-                              color: 'var(--brand-primary)',
-                              fontSize: '11px',
-                              fontWeight: 650,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              transition: 'all 0.15s ease',
-                            }}
-                            title={
-                              language === 'id'
-                                ? 'Kirim seluruh log output ke AI Co-Author untuk perbaikan otomatis'
-                                : 'Send all output logs to AI Co-Author'
-                            }
-                          >
-                            <Sparkles size={12} />
-                            <span>{language === 'id' ? 'Kirim Semua Log ke AI' : 'Send All Logs to AI'}</span>
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => setIsLogDrawerOpen(false)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            padding: '2px 4px',
-                            fontSize: '11px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                          }}
-                          title={language === 'id' ? 'Tutup Panel' : 'Close Panel'}
-                        >
-                          <X size={13} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {(() => {
-                      const displayed =
-                        activeLogTab === 'errors'
-                          ? lintResults.errors
-                          : activeLogTab === 'warnings'
-                          ? lintResults.warnings
-                          : activeLogTab === 'info'
-                          ? lintResults.infos
-                          : [...lintResults.errors, ...lintResults.warnings, ...lintResults.infos];
-
-                      if (displayed.length === 0) {
-                        return (
-                          <div style={{ padding: '16px', textAlign: 'center', color: '#10B981', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                            <CheckCircle2 size={15} color="#10B981" />
-                            <span>{language === 'id' ? 'Tidak ada masalah ditemukan. Dokumen bersih!' : 'No issues found. Document is clean!'}</span>
-                          </div>
-                        );
-                      }
-
-                      return displayed.map((d) => (
-                        <div
-                          key={d.id}
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            backgroundColor:
-                              d.type === 'error'
-                                ? 'rgba(239, 68, 68, 0.08)'
-                                : d.type === 'warning'
-                                ? 'rgba(245, 158, 11, 0.08)'
-                                : 'var(--bg-subtle)',
-                            borderLeft: `3px solid ${
-                              d.type === 'error' ? '#EF4444' : d.type === 'warning' ? '#F59E0B' : 'var(--brand-primary)'
-                            }`,
-                            border: `1px solid ${
-                              d.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : d.type === 'warning' ? 'rgba(245, 158, 11, 0.2)' : 'var(--border-subtle)'
-                            }`,
-                            borderLeftWidth: '3px',
-                            marginBottom: '6px',
-                            gap: '6px',
-                            boxSizing: 'border-box',
-                            width: '100%',
-                            minWidth: 0,
-                          }}
-                        >
-                          {/* Card Top Row: Badge + Location + Quick Actions */}
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              flexWrap: 'wrap',
-                              gap: '6px',
-                              width: '100%',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
-                              <span
-                                style={{
-                                  fontSize: '10px',
-                                  fontWeight: 700,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.4px',
-                                  color: d.type === 'error' ? '#EF4444' : d.type === 'warning' ? '#F59E0B' : 'var(--brand-primary)',
-                                  backgroundColor:
-                                    d.type === 'error'
-                                      ? 'rgba(239, 68, 68, 0.12)'
-                                      : d.type === 'warning'
-                                      ? 'rgba(245, 158, 11, 0.12)'
-                                      : 'rgba(0, 115, 234, 0.12)',
-                                  padding: '1px 5px',
-                                  borderRadius: '3px',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {d.type}
-                              </span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                                Baris {d.line} ({d.fileName || 'main.tex'})
-                              </span>
-                            </div>
-
-                            {/* Actions */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0, flexWrap: 'wrap' }}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  jumpToLine(d.line - 1);
-                                }}
-                                style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '4px',
-                                  backgroundColor: 'var(--bg-surface)',
-                                  border: '1px solid var(--border-subtle)',
-                                  color: 'var(--text-primary)',
-                                  fontSize: '11px',
-                                  fontWeight: 500,
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                }}
-                                className="hover-subtle"
-                              >
-                                Lompat ke Baris
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const errorMsg = d.message || '';
-                                  const suggestion = d.suggestion ? `\nSaran: ${d.suggestion}` : '';
-                                  const fileCtx = d.fileName ? ` di file ${d.fileName}` : '';
-                                  const prompt = language === 'id'
-                                    ? `Tolong bantu perbaiki masalah LaTeX berikut${fileCtx} (baris ${d.line}):\n\n[${d.type.toUpperCase()}] ${errorMsg}${suggestion}\n\nBerikan penjelasan ringkas serta kode yang sudah diperbaiki.`
-                                    : `Please help fix this LaTeX issue${fileCtx} (line ${d.line}):\n\n[${d.type.toUpperCase()}] ${errorMsg}${suggestion}\n\nProvide a concise explanation and updated code.`;
-                                  setCoAuthorPendingPrompt(prompt);
-                                  setActiveDrawerTab('ai');
-                                  if (!isSidebarOpen) toggleSidebar();
-                                }}
-                                style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '4px',
-                                  backgroundColor: 'rgba(0, 115, 234, 0.12)',
-                                  border: '1px solid rgba(0, 115, 234, 0.3)',
-                                  color: 'var(--brand-primary)',
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                <Sparkles size={11} />
-                                <span>{language === 'id' ? 'Kirim ke AI' : 'Send to AI'}</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Card Body: Full width message and suggestion */}
-                          <div style={{ width: '100%', minWidth: 0 }}>
-                            <div
-                              style={{
-                                fontSize: '12px',
-                                color: 'var(--text-primary)',
-                                fontWeight: 500,
-                                lineHeight: '1.45',
-                                wordBreak: 'break-word',
-                                overflowWrap: 'anywhere',
-                              }}
-                            >
-                              {d.message}
-                            </div>
-                            {d.suggestion && (
-                              <div
-                                style={{
-                                  fontSize: '11px',
-                                  color: 'var(--text-muted)',
-                                  marginTop: '4px',
-                                  lineHeight: '1.4',
-                                  wordBreak: 'break-word',
-                                  overflowWrap: 'anywhere',
-                                  backgroundColor: 'rgba(0,0,0,0.02)',
-                                  padding: '4px 6px',
-                                  borderRadius: '4px',
-                                  border: '1px dashed var(--border-subtle)',
-                                }}
-                              >
-                                💡 {d.suggestion}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                )}
+                {/* Collapsible Log Panel / Drawer (Standardized DRY Shared Component) */}
+                <DocLogsDrawer
+                  isOpen={isLogDrawerOpen}
+                  onClose={() => setIsLogDrawerOpen(false)}
+                  lintResults={lintResults}
+                  language={language}
+                  onJumpToLine={(line, fileName) => {
+                    if (fileName && fileName !== activeSubFile?.name && activeDoc) {
+                      const target = docFiles.find((f) => f.name === fileName);
+                      if (target) setActiveFileId(activeDoc.id, target.id);
+                    }
+                    jumpToLine(line - 1);
+                  }}
+                  onSendSingleToAI={(d) => {
+                    const errorMsg = d.message || '';
+                    const suggestion = d.suggestion ? `\nSaran: ${d.suggestion}` : '';
+                    const fileCtx = d.fileName ? ` di file ${d.fileName}` : '';
+                    const prompt =
+                      language === 'id'
+                        ? `Tolong bantu perbaiki masalah LaTeX berikut${fileCtx} (baris ${d.line}):\n\n[${d.type.toUpperCase()}] ${errorMsg}${suggestion}\n\nBerikan penjelasan ringkas serta kode yang sudah diperbaiki.`
+                        : `Please help fix this LaTeX issue${fileCtx} (line ${d.line}):\n\n[${d.type.toUpperCase()}] ${errorMsg}${suggestion}\n\nProvide a concise explanation and updated code.`;
+                    setCoAuthorPendingPrompt(prompt);
+                    setActiveDrawerTab('ai');
+                    if (!isSidebarOpen) toggleSidebar();
+                  }}
+                  onSendAllToAI={() => {
+                    const allLogs = [...lintResults.errors, ...lintResults.warnings, ...lintResults.infos];
+                    const logText = allLogs
+                      .map(
+                        (d) =>
+                          `- [${d.type.toUpperCase()}] Baris ${d.line} (${d.fileName || 'main.tex'}): ${d.message}${
+                            d.suggestion ? ` (Saran: ${d.suggestion})` : ''
+                          }`
+                      )
+                      .join('\n');
+                    const prompt =
+                      language === 'id'
+                        ? `Tolong bantu saya menganalisis dan memperbarui kode dokumen LaTeX untuk menyelesaikan seluruh log & warning berikut:\n\n${logText}\n\nBerikan penjelasan ringkas serta perbaikan kode lengkap yang siap dipakai.`
+                        : `Please help me analyze and fix all of the following LaTeX output logs & warnings:\n\n${logText}\n\nProvide a concise explanation and updated complete code.`;
+                    setCoAuthorPendingPrompt(prompt);
+                    setActiveDrawerTab('ai');
+                    if (!isSidebarOpen) toggleSidebar();
+                  }}
+                />
 
                 <iframe
                   key={`preview-${compileVersion}-${effectiveDocId}`}

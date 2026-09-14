@@ -67,6 +67,7 @@ export interface CalculateCreditOptions {
   modelId?: string;
   promptLength?: number; // Raw character count of prompt + context
   totalTokens?: number;  // Explicit token count if available
+  docsAction?: 'create' | 'edit' | 'fix'; // 'create' (full document 3 credits) vs 'edit' / 'fix' (1 credit)
 }
 
 /**
@@ -77,7 +78,20 @@ export function calculateDynamicCreditCost(
   action: CreditActionType,
   options?: CalculateCreditOptions
 ): number {
-  const baseCost = CREDIT_COSTS[action] ?? 1;
+  let baseCost: number = (CREDIT_COSTS[action] as number) ?? 1;
+
+  // Action-based tiering for Docs Studio:
+  // - Full Document Generation (new project / multi-file blueprint) = 3 credits
+  // - Follow-up Co-Author Chat / Section Revision / Diagnostic Error Fix = 1 credit
+  if (action === 'docs') {
+    if (options?.docsAction === 'edit' || options?.docsAction === 'fix') {
+      baseCost = 1;
+    } else if (options?.docsAction === 'create') {
+      baseCost = 3;
+    } else {
+      baseCost = 3; // Default for initial docs generation
+    }
+  }
 
   // Non-text multimodal generation actions have fixed predefined action credits
   if (action === 'audio' || action === 'image' || action === 'video' || action === 'scrape') {

@@ -1,4 +1,5 @@
-import { DocSubFile, DocFormat } from '../store/useDocsStore';
+import { DocSubFile, DocFormat, DocItem } from '../store/useDocsStore';
+import { compileTypstToHtml } from './typstCompiler';
 
 export interface DocDiagnostic {
   id: string;
@@ -1003,3 +1004,154 @@ export function autoFixDocCode(
     remainingErrors: lintResult.errors,
   };
 }
+
+/**
+ * Normalizes iframe postMessage preview runtime errors while filtering
+ * out harmless browser layout/resizer notifications (e.g. ResizeObserver).
+ */
+export function normalizeRuntimeError(
+  message: string,
+  lineno?: number,
+  colno?: number
+): DocDiagnostic | null {
+  if (!message || typeof message !== 'string') return null;
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('resizeobserver') ||
+    lower.includes('script error') ||
+    lower.includes('window.resize')
+  ) {
+    return null;
+  }
+  return {
+    id: `runtime_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    type: 'error',
+    line: lineno || 1,
+    column: colno,
+    fileName: 'Preview Window',
+    message: `[Preview Error] ${message}`,
+    suggestion: 'Periksa sintaks dokumen, karakter terlarang, atau rumus KaTeX.',
+  };
+}
+
+/**
+ * Shared verbose lint computation used by BOTH DocsView (Code Editor)
+ * and DocsCanvasPanel (AI Co-Author preview).
+ *
+ * - Lints every sub-file individually so per-file errors surface correctly.
+ * - Falls back to linting doc.content when there are no sub-files.
+ * - Merges runtimeErrors from the iframe (DOCS_PREVIEW_ERROR messages).
+ * - Deduplicates across all sources by fileName+line+type+message key.
+ * - Ensures 100% unique React keys for diagnostic rendering.
+ */
+export function computeDocLintResults(
+  doc: DocItem | null | undefined,
+  activeFileName?: string,
+  runtimeErrors: DocDiagnostic[] = [],
+  overrideFiles?: DocSubFile[]
+): LintResult {
+  if (!doc) {
+    return { errors: [], warnings: [], infos: [], totalLogs: 0 };
+  }
+
+  const rawDocFiles = overrideFiles || doc.files || [];
+  const defaultFileName =
+    doc.format === 'typst'
+      ? 'main.typ'
+      : doc.format === 'slide'
+      ? 'main.slide'
+      : doc.format === 'sheet'
+      ? 'sheet1.antsheet'
+      : 'main.tex';
+  const primaryFileName = activeFileName || defaultFileName;
+
+  // Deduplicate files by name to prevent multiple processing of same file
+  const uniqueFilesMap = new Map<string, DocSubFile>();
+  for (const f of rawDocFiles) {
+    if (f.name && !uniqueFilesMap.has(f.name)) {
+      uniqueFilesMap.set(f.name, f);
+    }
+  }
+  const docFiles = Array.from(uniqueFilesMap.values());
+
+  let allErrors: DocDiagnostic[] = [...runtimeErrors];
+  let allWarnings: DocDiagnostic[] = [];
+  let allInfos: DocDiagnostic[] = [];
+
+  if (docFiles.length > 0) {
+    // Lint every sub-file individually — exact verbosity and file targeting across both AI Co-Author and Code Editor
+    for (const file of docFiles) {
+      const content = file.content || '';
+      const lint = lintDocumentContent(content, docFiles, file.name);
+      allErrors = [...allErrors, ...lint.errors];
+      allWarnings = [...allWarnings, ...lint.warnings];
+      allInfos = [...allInfos, ...lint.infos];
+
+      // AST/Compiler-specific diagnostics for Typst
+      const isTypst =
+        doc.format === 'typst' ||
+        file.name.endsWith('.typ') ||
+        content.includes('#set page') ||
+        content.includes('#grid(') ||
+        content.includes('#block(');
+
+      if (isTypst && content.trim()) {
+        const typstResult = compileTypstToHtml(content, doc.title, docFiles);
+        allErrors = [...allErrors, ...(typstResult.diagnostics.filter((d) => d.type === 'error') as DocDiagnostic[])];
+        allWarnings = [...allWarnings, ...(typstResult.diagnostics.filter((d) => d.type === 'warning') as DocDiagnostic[])];
+        allInfos = [...allInfos, ...(typstResult.diagnostics.filter((d) => d.type === 'info') as DocDiagnostic[])];
+      }
+    }
+  } else {
+    // Single-file fallback
+    const text = doc.content || '';
+    const lint = lintDocumentContent(text, [], primaryFileName);
+    allErrors = [...allErrors, ...lint.errors];
+    allWarnings = [...allWarnings, ...lint.warnings];
+    allInfos = [...allInfos, ...lint.infos];
+
+    const isTypst =
+      doc.format === 'typst' ||
+      primaryFileName.endsWith('.typ') ||
+      text.includes('#set page') ||
+      text.includes('#grid(') ||
+      text.includes('#block(');
+
+    if (isTypst && text.trim()) {
+      const typstResult = compileTypstToHtml(text, doc.title, []);
+      allErrors = [...allErrors, ...(typstResult.diagnostics.filter((d) => d.type === 'error') as DocDiagnostic[])];
+      allWarnings = [...allWarnings, ...(typstResult.diagnostics.filter((d) => d.type === 'warning') as DocDiagnostic[])];
+      allInfos = [...allInfos, ...(typstResult.diagnostics.filter((d) => d.type === 'info') as DocDiagnostic[])];
+    }
+  }
+
+  // Deduplicate diagnostics by fileName + line + type + message
+  const dedup = <T extends DocDiagnostic>(arr: T[]): T[] => {
+    const seen = new Set<string>();
+    return arr.filter((d) => {
+      const key = `${d.fileName || ''}_${d.line}_${d.type}_${d.message}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const assignUniqueIds = (items: DocDiagnostic[]): DocDiagnostic[] => {
+    return items.map((d, index) => ({
+      ...d,
+      id: `${d.type}_${d.fileName || 'main'}_${d.line || 1}_${d.column || 0}_${index}`,
+    }));
+  };
+
+  const errors = assignUniqueIds(dedup(allErrors));
+  const warnings = assignUniqueIds(dedup(allWarnings));
+  const infos = assignUniqueIds(dedup(allInfos));
+
+  return {
+    errors,
+    warnings,
+    infos,
+    totalLogs: errors.length + warnings.length + infos.length,
+  };
+}
+

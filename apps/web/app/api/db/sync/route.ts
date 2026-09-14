@@ -70,11 +70,15 @@ export async function GET(req: NextRequest) {
           attachments: m.attachments || undefined,
           imageUrl: m.image_url || undefined,
           videoUrl: m.video_url || undefined,
-          toolResults: m.toolResults || undefined,
+          toolResults: m.tool_results || m.toolResults || undefined,
+          agentSteps: m.agent_steps || undefined,
           versions: m.versions || undefined,
           versionIndex: m.version_index ?? 0,
+          versionTimestamps: m.version_timestamps || undefined,
+          branchMessages: m.branch_messages || undefined,
           branchContents: m.branch_contents || undefined,
           branchReasoningContents: m.branch_reasoning_contents || undefined,
+          branchTimestamps: m.branch_timestamps || undefined,
         };
         if (!messagesBySession[m.session_id]) messagesBySession[m.session_id] = [];
         messagesBySession[m.session_id].push(item);
@@ -158,10 +162,14 @@ export async function POST(req: NextRequest) {
         image_url: m.imageUrl || null,
         video_url: m.videoUrl || null,
         tool_results: m.toolResults || null,
+        agent_steps: m.agentSteps || null,
         versions: m.versions || null,
         version_index: m.versionIndex ?? 0,
+        version_timestamps: m.versionTimestamps || null,
+        branch_messages: m.branchMessages || null,
         branch_contents: m.branchContents || null,
         branch_reasoning_contents: m.branchReasoningContents || null,
+        branch_timestamps: m.branchTimestamps || null,
         created_at: new Date(m.timestamp || Date.now()).toISOString(),
       }));
 
