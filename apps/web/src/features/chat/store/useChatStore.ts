@@ -37,6 +37,7 @@ interface ChatState {
 
   // Session Actions
   createSession: (providerId?: LLMProviderId, modelId?: string, systemPrompt?: string) => string;
+  compactSession: (sessionId: string) => Promise<void>;
   selectSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
   updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
@@ -115,6 +116,40 @@ export const useChatStore = create<ChatState>()(
         }));
 
         return newId;
+      },
+
+      compactSession: async (sessionId) => {
+        const state = get();
+        const session = state.sessions.find((s) => s.id === sessionId);
+        const msgs = state.messages[sessionId] || [];
+        if (!session || msgs.length <= 4) return;
+
+        // Take all messages except the latest 4 turns for in-place compaction
+        const older = msgs.slice(0, -4);
+        const summaryPoints = older
+          .filter((m) => m.content?.trim())
+          .map((m) => {
+            const role = m.role === 'user' ? 'User asked' : 'Assistant responded';
+            const snippet = m.content.length > 180 ? `${m.content.slice(0, 177)}...` : m.content;
+            return `- ${role}: ${snippet}`;
+          })
+          .join('\n');
+
+        const existing = session.compactedSummary ? `${session.compactedSummary}\n` : '';
+        const updatedSummary = `${existing}### Previous Context Checkpoint (${older.length} messages):\n${summaryPoints}`;
+
+        set((s) => ({
+          sessions: s.sessions.map((sess) =>
+            sess.id === sessionId
+              ? {
+                  ...sess,
+                  compactedSummary: updatedSummary,
+                  compactedMessageCount: (sess.compactedMessageCount || 0) + older.length,
+                  updatedAt: Date.now(),
+                }
+              : sess
+          ),
+        }));
       },
 
       selectSession: (sessionId) => {
@@ -567,20 +602,57 @@ export const useChatStore = create<ChatState>()(
           }
         }
 
+        // Prepare messages for API with sliding context window + in-place memory compaction
+        // When conversation exceeds 8 messages, compact older turns into session memory
+        // and send sliding window of recent 6 messages + compacted memory checkpoint.
+        const rawHistory = updatedMessages.slice(0, -1);
+        let compactedMemoryBlock = session.compactedSummary || '';
+        let windowedHistory = rawHistory;
+
+        if (rawHistory.length > 8) {
+          const recentCount = 6;
+          const older = rawHistory.slice(0, -recentCount);
+          windowedHistory = rawHistory.slice(-recentCount);
+
+          const autoSummaryPoints = older
+            .filter((m) => m.content?.trim())
+            .map((m) => {
+              const role = m.role === 'user' ? 'User asked' : 'Assistant responded';
+              const snippet = m.content.length > 180 ? `${m.content.slice(0, 177)}...` : m.content;
+              return `- ${role}: ${snippet}`;
+            })
+            .join('\n');
+
+          compactedMemoryBlock = session.compactedSummary
+            ? `${session.compactedSummary}\n${autoSummaryPoints}`
+            : autoSummaryPoints;
+
+          // Update session with compacted memory
+          set((s) => ({
+            sessions: s.sessions.map((sess) =>
+              sess.id === session.id
+                ? {
+                    ...sess,
+                    compactedSummary: compactedMemoryBlock,
+                    compactedMessageCount: (sess.compactedMessageCount || 0) + older.length,
+                  }
+                : sess
+            ),
+          }));
+        }
+
         // Connectors Setup
         const connectorsStore = useConnectorsStore.getState();
         const activeConnectorIds = connectorsStore.activeConnectorIds;
         const connectorsInstruction = generateConnectorsSystemInstruction(activeConnectorIds);
-        // Connector instruction goes FIRST so the model sees it before any session system prompt
-        const effectiveSystemPrompt = [connectorsInstruction, session.systemPrompt]
+
+        const compactedContextInstruction = compactedMemoryBlock
+          ? `\n\n<compacted_conversation_memory>\nThe following is a structured memory checkpoint of earlier conversation turns in this thread. Maintain continuity with these facts and decisions:\n${compactedMemoryBlock}\n</compacted_conversation_memory>`
+          : '';
+
+        const effectiveSystemPrompt = [connectorsInstruction, session.systemPrompt, compactedContextInstruction]
           .filter(Boolean)
           .join('\n\n');
-
-        // Debug: verify connector injection
-        console.debug(
-          '[Anticeil Connectors] activeConnectorIds:', activeConnectorIds,
-          '| systemInstruction chars:', connectorsInstruction.length
-        );
 
         const modelDef = getModelById(session.modelId);
         let accumulatedText = '';
@@ -590,11 +662,6 @@ export const useChatStore = create<ChatState>()(
         );
         let completionTokensCount = 0;
         let lastFlushTime = 0;
-
-        // Prepare messages for API with sliding context window (max 10 recent messages)
-        // to prevent exceeding provider TPM / rate limits (e.g. Groq 8000 TPM limit)
-        const rawHistory = updatedMessages.slice(0, -1);
-        const windowedHistory = rawHistory.length > 10 ? rawHistory.slice(-10) : rawHistory;
 
         const apiMessages = windowedHistory.map((m) => {
           if (m.id === userMessageId) {

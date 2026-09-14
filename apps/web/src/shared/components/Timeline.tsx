@@ -1,28 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
-  ChevronDown,
-  ChevronRight,
-  Check,
-  X,
-  Loader2,
-  Circle,
-} from 'lucide-react';
-
-// ─── Inject spin keyframe once ────────────────────────────────────────────────
-const SPIN_STYLE_ID = 'anticeil-timeline-spin';
-if (typeof document !== 'undefined' && !document.getElementById(SPIN_STYLE_ID)) {
-  const styleEl = document.createElement('style');
-  styleEl.id = SPIN_STYLE_ID;
-  styleEl.textContent = `
-    @keyframes anticeil-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes anticeil-pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-    .anticeil-timeline-spin { animation: anticeil-spin 1s linear infinite; }
-    .anticeil-timeline-pulse { animation: anticeil-pulse-dot 1.5s ease-in-out infinite; }
-  `;
-  document.head.appendChild(styleEl);
-}
+  Timeline as BaseTimeline,
+  TimelineItem,
+  TimelineDot,
+  TimelineLine,
+  TimelineContent,
+  TimelineHeading,
+} from '@/components/ui/timeline';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,280 +51,235 @@ export interface TimelineGroupProps {
   style?: React.CSSProperties;
 }
 
-// ─── Status config ────────────────────────────────────────────────────────────
+// ─── Step Item ────────────────────────────────────────────────────────────────
 
-function useStatusConfig(status: TimelineStatus = 'pending') {
-  switch (status) {
-    case 'done':
-      return {
-        ringBg:     'rgba(16, 185, 129, 0.14)',
-        ringBorder: 'rgba(16, 185, 129, 0.45)',
-        color:      '#10B981',
-        dot:        <Check size={9} strokeWidth={2.5} />,
-        lineColor:  'rgba(16, 185, 129, 0.28)',
-      };
-    case 'error':
-      return {
-        ringBg:     'rgba(239, 68, 68, 0.14)',
-        ringBorder: 'rgba(239, 68, 68, 0.45)',
-        color:      '#EF4444',
-        dot:        <X size={9} strokeWidth={2.5} />,
-        lineColor:  'rgba(239, 68, 68, 0.28)',
-      };
-    case 'current':
-      return {
-        ringBg:     'rgba(99, 102, 241, 0.14)',
-        ringBorder: 'rgba(99, 102, 241, 0.5)',
-        color:      '#6366F1',
-        dot:        <Loader2 size={9} className="anticeil-timeline-spin" />,
-        lineColor:  'rgba(99, 102, 241, 0.28)',
-      };
-    default:
-      return {
-        ringBg:     'rgba(255, 255, 255, 0.04)',
-        ringBorder: 'rgba(255, 255, 255, 0.14)',
-        color:      'var(--text-muted)',
-        dot:        <Circle size={7} strokeWidth={2} />,
-        lineColor:  'rgba(255, 255, 255, 0.08)',
-      };
-  }
-}
-
-// ─── TimelineStepItem ─────────────────────────────────────────────────────────
-
-interface StepItemProps {
+function StepItem({
+  step,
+  isLast,
+  showLine,
+  compact,
+}: {
   step: TimelineStep;
   isLast: boolean;
   showLine: boolean;
   compact: boolean;
-  direction: 'vertical' | 'horizontal';
-}
-
-function TimelineStepItem({ step, isLast, showLine, compact, direction }: StepItemProps) {
+}) {
   const [expanded, setExpanded] = useState(false);
-  const hasDetail = !!step.children;
-  const isClickable = hasDetail || !!step.onClick;
-
-  const cfg = useStatusConfig(step.status);
-  const isVertical = direction === 'vertical';
-
-  const gap = compact ? '10px' : '14px';
-  const dotSize = compact ? '15px' : '18px';
-  const fontSize = compact ? '12px' : '13px';
-  const descSize = compact ? '11px' : '11.5px';
-  const connectorMin = compact ? '8px' : '12px';
+  const hasDetail = Boolean(step.children);
+  const isClickable = hasDetail || Boolean(step.onClick);
 
   const handleClick = () => {
     if (step.onClick) step.onClick();
-    else if (hasDetail) setExpanded((p) => !p);
+    if (hasDetail) setExpanded((p) => !p);
   };
 
-  /* ---------- vertical layout ---------- */
-  if (isVertical) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', position: 'relative' }}>
-        {/* Left column: dot + vertical line */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: dotSize, flexShrink: 0, marginTop: compact ? '5px' : '7px' }}>
-          {/* Dot */}
-          <div
-            onClick={isClickable ? handleClick : undefined}
-            style={{
-              width: dotSize,
-              height: dotSize,
-              borderRadius: '50%',
-              background: cfg.ringBg,
-              border: `1.5px solid ${cfg.ringBorder}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: cfg.color,
-              cursor: isClickable ? 'pointer' : 'default',
-              flexShrink: 0,
-              transition: 'border-color 0.2s, background 0.2s',
-            }}
-          >
-            {step.icon ?? cfg.dot}
-          </div>
+  const dotStatus: 'default' | 'current' | 'done' | 'error' | 'custom' = step.icon
+    ? 'custom'
+    : step.status === 'done'
+    ? 'done'
+    : step.status === 'error'
+    ? 'error'
+    : step.status === 'current'
+    ? 'current'
+    : 'default';
 
-          {/* Vertical connector line */}
-          {showLine && !isLast && (
-            <div style={{
-              width: '1.5px',
-              flex: 1,
-              minHeight: connectorMin,
-              background: cfg.lineColor,
-              marginTop: '3px',
-              borderRadius: '99px',
-              transition: 'background 0.3s',
-            }} />
-          )}
-        </div>
-
-        {/* Right column: content */}
-        <div style={{
-          flex: 1,
-          paddingLeft: '10px',
-          paddingBottom: isLast ? 0 : gap,
-          minWidth: 0,
-        }}>
-          {/* Title row */}
-          <button
-            type="button"
-            onClick={isClickable ? handleClick : undefined}
-            disabled={!isClickable}
-            style={{
-              all: 'unset',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              cursor: isClickable ? 'pointer' : 'default',
-              width: '100%',
-            }}
-          >
-            <span style={{
-              fontSize,
-              fontWeight: step.status === 'current' ? 600 : 500,
-              color: step.status === 'current' ? cfg.color : step.status === 'done' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              lineHeight: 1.45,
-              transition: 'color 0.15s',
-            }}>
-              {step.title}
-            </span>
-
-            {hasDetail && (
-              <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-              </span>
-            )}
-          </button>
-
-          {/* Description */}
-          {step.description && (
-            <p style={{ fontSize: descSize, color: 'var(--text-muted)', margin: '2px 0 0 0', lineHeight: 1.5 }}>
-              {step.description}
-            </p>
-          )}
-
-          {/* Expandable detail panel */}
-          {hasDetail && expanded && (
-            <div style={{
-              marginTop: '8px',
-              padding: compact ? '7px 9px' : '9px 12px',
-              borderRadius: '8px',
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid var(--border-subtle)',
-              fontSize: descSize,
-              color: 'var(--text-secondary)',
-              lineHeight: 1.55,
-            }}>
-              {step.children}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  /* ---------- horizontal layout ---------- */
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, position: 'relative' }}>
-      {/* Top row: line — dot — line */}
-      <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-        {/* Left connector */}
-        {showLine && (
-          <div style={{ flex: 1, height: '1.5px', background: cfg.lineColor, borderRadius: '99px' }} />
-        )}
+    <TimelineItem
+      status={step.status === 'done' ? 'done' : 'default'}
+      style={{ paddingBottom: isLast ? 0 : compact ? 10 : 16 }}
+    >
+      <TimelineDot status={dotStatus} customIcon={step.icon} />
+      {showLine && !isLast && (
+        <TimelineLine
+          done={step.status === 'done'}
+          style={{ minHeight: compact ? 12 : 18 }}
+        />
+      )}
 
-        {/* Dot */}
-        <div
+      <TimelineContent style={{ paddingLeft: 4 }}>
+        <button
+          type="button"
           onClick={isClickable ? handleClick : undefined}
           style={{
-            width: dotSize,
-            height: dotSize,
-            borderRadius: '50%',
-            background: cfg.ringBg,
-            border: `1.5px solid ${cfg.ringBorder}`,
+            all: 'unset',
+            cursor: isClickable ? 'pointer' : 'default',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: cfg.color,
-            cursor: isClickable ? 'pointer' : 'default',
-            flexShrink: 0,
+            gap: 6,
+            width: '100%',
           }}
         >
-          {step.icon ?? cfg.dot}
-        </div>
+          <TimelineHeading
+            style={{
+              fontSize: compact ? '11.5px' : '12.5px',
+              fontWeight: step.status === 'current' ? 600 : 500,
+              color:
+                step.status === 'current'
+                  ? 'var(--brand-primary, #6366F1)'
+                  : step.status === 'done'
+                  ? 'var(--text-primary)'
+                  : 'var(--text-secondary)',
+            }}
+          >
+            {step.title}
+          </TimelineHeading>
 
-        {/* Right connector — hidden for last item */}
-        {showLine && !isLast && (
-          <div style={{ flex: 1, height: '1.5px', background: cfg.lineColor, borderRadius: '99px' }} />
+          {hasDetail && (
+            <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            </span>
+          )}
+        </button>
+
+        {step.description && (
+          <p
+            style={{
+              fontSize: compact ? '10.5px' : '11.5px',
+              color: 'var(--text-muted)',
+              margin: '2px 0 0 0',
+              lineHeight: 1.5,
+            }}
+          >
+            {step.description}
+          </p>
         )}
-        {isLast && <div style={{ flex: 1 }} />}
-      </div>
 
-      {/* Label below dot */}
-      <div style={{ marginTop: '8px', textAlign: 'center', paddingInline: '4px' }}>
-        <span style={{ fontSize: descSize, fontWeight: step.status === 'current' ? 600 : 400, color: step.status === 'current' ? cfg.color : 'var(--text-secondary)' }}>
-          {step.title}
-        </span>
-      </div>
-    </div>
+        {hasDetail && expanded && (
+          <div
+            style={{
+              marginTop: 6,
+              padding: compact ? '6px 8px' : '8px 10px',
+              borderRadius: '8px',
+              background: 'var(--bg-subtle, rgba(255,255,255,0.025))',
+              border: '1px solid var(--border-subtle)',
+              fontSize: compact ? '11px' : '12px',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            {step.children}
+          </div>
+        )}
+      </TimelineContent>
+    </TimelineItem>
   );
 }
 
 // ─── Timeline ─────────────────────────────────────────────────────────────────
 
 /**
- * Reusable Timeline component for Anticeil — ChatPage, DocsPage, AI Co-Author.
- * 100% inline styles, CSS variables, no Tailwind.
- *
- * @example
- * ```tsx
- * <Timeline
- *   steps={[
- *     { id: '1', title: 'Planning',  status: 'done' },
- *     { id: '2', title: 'Executing', status: 'current' },
- *     { id: '3', title: 'Testing',   status: 'pending' },
- *   ]}
- *   compact
- * />
- * ```
+ * Reusable step-based Timeline component for Anticeil.
+ * Built on top of `@/components/ui/timeline` primitives.
  */
-export function Timeline({ steps, direction = 'vertical', showLine = true, compact = false, style }: TimelineProps) {
+export function Timeline({
+  steps,
+  direction = 'vertical',
+  showLine = true,
+  compact = false,
+  style,
+}: TimelineProps) {
   if (!steps.length) return null;
+
+  if (direction === 'horizontal') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          width: '100%',
+          gap: 8,
+          ...style,
+        }}
+      >
+        {steps.map((step, i) => {
+          const isLast = i === steps.length - 1;
+          const dotStatus = step.icon
+            ? 'custom'
+            : step.status === 'done'
+            ? 'done'
+            : step.status === 'error'
+            ? 'error'
+            : step.status === 'current'
+            ? 'current'
+            : 'default';
+
+          return (
+            <div
+              key={step.id}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                flex: 1,
+                position: 'relative',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                {showLine && (
+                  <div
+                    style={{
+                      flex: 1,
+                      height: '1.5px',
+                      background:
+                        step.status === 'done'
+                          ? 'var(--text-primary)'
+                          : 'var(--border-subtle, rgba(255,255,255,0.15))',
+                    }}
+                  />
+                )}
+                <TimelineDot status={dotStatus} customIcon={step.icon} />
+                {showLine && !isLast && (
+                  <div
+                    style={{
+                      flex: 1,
+                      height: '1.5px',
+                      background:
+                        step.status === 'done'
+                          ? 'var(--text-primary)'
+                          : 'var(--border-subtle, rgba(255,255,255,0.15))',
+                    }}
+                  />
+                )}
+                {isLast && <div style={{ flex: 1 }} />}
+              </div>
+              <div style={{ marginTop: 6, textAlign: 'center', paddingInline: 4 }}>
+                <span
+                  style={{
+                    fontSize: compact ? '10.5px' : '11.5px',
+                    fontWeight: step.status === 'current' ? 600 : 400,
+                    color:
+                      step.status === 'current'
+                        ? 'var(--brand-primary, #6366F1)'
+                        : 'var(--text-secondary)',
+                  }}
+                >
+                  {step.title}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: direction === 'vertical' ? 'column' : 'row',
-      alignItems: direction === 'horizontal' ? 'flex-start' : 'stretch',
-      width: '100%',
-      ...style,
-    }}>
+    <BaseTimeline style={style}>
       {steps.map((step, i) => (
-        <TimelineStepItem
+        <StepItem
           key={step.id}
           step={step}
           isLast={i === steps.length - 1}
           showLine={showLine}
           compact={compact}
-          direction={direction}
         />
       ))}
-    </div>
+    </BaseTimeline>
   );
 }
 
 // ─── TimelineGroup ────────────────────────────────────────────────────────────
 
-/**
- * Collapsible Timeline group — mirrors the "Worked for Xs ▶" accordion in
- * Claude and in Anticeil's existing AgentStepTimeline.
- *
- * @example
- * ```tsx
- * <TimelineGroup label="Worked for 8s" steps={steps} defaultExpanded isStreaming />
- * ```
- */
 export function TimelineGroup({
   label,
   steps,
@@ -346,9 +288,8 @@ export function TimelineGroup({
   isStreaming = false,
   style,
 }: TimelineGroupProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [expanded, setExpanded] = useState(defaultExpanded || isStreaming);
 
-  // Auto-expand while streaming, but stay expanded when done (don't auto-collapse)
   useEffect(() => {
     if (isStreaming) {
       setExpanded(true);
@@ -356,8 +297,7 @@ export function TimelineGroup({
   }, [isStreaming]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', ...style }}>
-      {/* Accordion trigger */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
@@ -365,44 +305,44 @@ export function TimelineGroup({
           all: 'unset',
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: 6,
           cursor: 'pointer',
           width: 'fit-content',
           color: 'var(--text-secondary)',
           fontSize: compact ? '12px' : '12.5px',
           fontWeight: 600,
           lineHeight: 1,
-          transition: 'color 0.15s',
           userSelect: 'none',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
       >
         <span>{label}</span>
 
-        {/* Streaming pulse dot */}
         {isStreaming && (
-          <span className="anticeil-timeline-pulse" style={{
-            display: 'inline-block',
-            width: '5px',
-            height: '5px',
-            borderRadius: '50%',
-            background: '#6366F1',
-            boxShadow: '0 0 5px #6366F1',
-          }} />
+          <span
+            style={{
+              display: 'inline-block',
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: '#6366F1',
+              boxShadow: '0 0 5px #6366F1',
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }}
+          />
         )}
 
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
       </button>
 
-      {/* Step list */}
       {expanded && (
-        <div style={{
-          paddingLeft: '10px',
-          marginLeft: '7px',
-          borderLeft: '1px solid var(--border-subtle)',
-          paddingTop: '6px',
-        }}>
+        <div
+          style={{
+            paddingLeft: 10,
+            marginLeft: 7,
+            borderLeft: '1px solid var(--border-subtle)',
+            paddingTop: 6,
+          }}
+        >
           <Timeline steps={steps} compact={compact} />
         </div>
       )}

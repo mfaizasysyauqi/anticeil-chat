@@ -152,6 +152,8 @@ export interface ChatSession {
   maxTokens?: number;
   personaId?: string;
   projectId?: string;
+  compactedSummary?: string;
+  compactedMessageCount?: number;
 }
 
 export interface ProviderApiKeyConfig {

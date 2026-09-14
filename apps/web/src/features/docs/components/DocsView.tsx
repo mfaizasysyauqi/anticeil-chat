@@ -4,7 +4,7 @@ import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { getTierStorageName, getTierBadgeStyle } from '@anticeil/core';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   FileText,
   Plus,
@@ -270,7 +270,8 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const setActiveFileId = useDocsStore((s) => s.setActiveFileId);
 
   const effectiveDocId = initialDocId || activeDocId;
-  const pathname = router.pathname || router.asPath || '';
+  const currentPath = usePathname();
+  const pathname = currentPath || '';
   const activeDoc = documents.find((d) => d.id === effectiveDocId) || (pathname === '/docs' ? null : documents[0]);
 
   // Active sub-file in the Overleaf multi-file tree

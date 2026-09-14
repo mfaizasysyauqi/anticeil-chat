@@ -10,9 +10,9 @@ import { cn } from '@/lib/utils'
 type Positions = 'left' | 'right' | 'center'
 
 const GRID_COLS: Record<Positions, string> = {
-  left:   '20px 1fr',
-  right:  '1fr 20px',
-  center: '1fr 20px 1fr',
+  left:   '14px 1fr',
+  right:  '1fr 14px',
+  center: '1fr 14px 1fr',
 }
 
 const TimelineContext = React.createContext<{ positions: Positions; gridCols: string }>({
@@ -119,7 +119,7 @@ function DotIcon({ status }: { status: TimelineDotProps['status'] }) {
   switch (status) {
     case 'done':    return <Check    style={{ width: 10, height: 10, strokeWidth: 3, flexShrink: 0 }} />
     case 'error':   return <X        style={{ width: 10, height: 10, strokeWidth: 3, flexShrink: 0 }} />
-    case 'current': return <Circle   style={{ width: 7,  height: 7,  fill: 'currentColor', flexShrink: 0 }} />
+    case 'current': return <Circle   style={{ width: 6,  height: 6,  fill: 'currentColor', flexShrink: 0 }} />
     default:        return null
   }
 }
@@ -136,8 +136,8 @@ const TimelineDot = React.forwardRef<HTMLDivElement, TimelineDotProps>(
         style={{
           gridColumn: col,
           gridRow: '1 / 2',
-          width: 20,
-          height: 20,
+          width: 14,
+          height: 14,
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
@@ -180,7 +180,7 @@ const TimelineLine = React.forwardRef<HTMLHRElement, TimelineLineProps>(
           display: 'block',
           width: 2,
           height: '100%',
-          minHeight: 28,
+          minHeight: 14,
           border: 'none',
           borderRadius: 9999,
           backgroundColor: done
@@ -225,7 +225,7 @@ const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
           gridColumn: col,
           gridRow: '2 / 3',
           paddingBottom: 16,
-          paddingTop: 2,
+          paddingTop: 4,
           fontSize: 12,
           lineHeight: 1.55,
           color: 'var(--text-muted, #8e8e8e)',
@@ -272,7 +272,7 @@ const TimelineHeading = React.forwardRef<HTMLParagraphElement, TimelineHeadingPr
           gridColumn: col,
           gridRow: '1 / 2',
           margin: 0,
-          paddingTop: 2,
+          paddingTop: 0,
           fontSize: variant === 'primary' ? 13 : 12,
           fontWeight: variant === 'primary' ? 600 : 400,
           color: 'var(--text-primary, #f5f5f5)',

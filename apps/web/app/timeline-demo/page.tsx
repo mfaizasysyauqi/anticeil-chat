@@ -17,7 +17,7 @@ import {
   TimelineGroup,
   TimelineStep,
 } from '@/shared/components/Timeline';
-import { TimelineDemo } from '@/components/ui/timeline-demo';
+import { AgentStepTimeline } from '@/shared/components/AgentStepTimeline';
 
 // ─── Demo Data ───────────────────────────────────────────────────────────────
 
@@ -111,10 +111,85 @@ export default function TimelineDemoPage() {
         {/* Demo grid */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
-          {/* 0. Shadcn UI Component Demo */}
-          <Card title="Shadcn CVA UI Component — Plan, Design, Code, Test, Deploy">
-            <TimelineDemo />
+          {/* 0. Full Agentic Workflow Demo */}
+          <Card title="Antigravity Full Agentic Workflow (CoT + Search + MCP + CRUD + Terminal)">
+            <AgentStepTimeline
+              steps={[
+                {
+                  id: 's0',
+                  type: 'thought',
+                  title: 'Thinking (3s)',
+                  content: 'User requests updating auth headers and validating MCP schemas. Analyzing workspace dependencies and checking Cloudflare Workers configuration.',
+                  status: 'done',
+                },
+                {
+                  id: 's1',
+                  type: 'web_search',
+                  title: 'Searching Web',
+                  searchQuery: 'Cloudflare Workers Agents SDK durable objects RPC 2026',
+                  sources: [
+                    { title: 'Agents SDK Overview', url: 'https://developers.cloudflare.com/agents/', domain: 'cloudflare.com' },
+                    { title: 'Durable Objects Best Practices', url: 'https://developers.cloudflare.com/durable-objects/', domain: 'cloudflare.com' },
+                  ],
+                  status: 'done',
+                },
+                {
+                  id: 's2',
+                  type: 'mcp',
+                  title: 'Call Tool',
+                  serverName: 'github',
+                  toolName: 'get_file_contents',
+                  toolInput: { owner: 'mfaizasysyauqi', repo: 'anticeil', path: 'packages/core/src/agent.ts' },
+                  toolOutput: { status: 'success', bytes: 4820, ref: 'refs/heads/main' },
+                  status: 'done',
+                },
+                {
+                  id: 's3',
+                  type: 'create_file',
+                  title: 'Created file',
+                  fileName: 'src/features/auth/mcpAuth.ts',
+                  diffAdded: 45,
+                  diffRemoved: 0,
+                  diffPreview: `+ export interface MCPAuthHeader {
++   authorization: string;
++   realm: string;
++ }
++ export function verifyMCPToken(token: string): boolean {
++   return token.startsWith('mcp_sec_');
++ }`,
+                  status: 'done',
+                },
+                {
+                  id: 's4',
+                  type: 'edit_file',
+                  title: 'Modified file',
+                  fileName: 'src/server/router.ts',
+                  diffAdded: 12,
+                  diffRemoved: 4,
+                  diffPreview: `- router.use('/api/mcp', legacyAuth);
++ router.use('/api/mcp', verifyMCPToken);
++ router.get('/api/mcp/health', mcpHealthCheck);`,
+                  status: 'done',
+                },
+                {
+                  id: 's5',
+                  type: 'ran',
+                  title: 'Executed Command',
+                  command: 'pnpm vitest run test/mcp.test.ts',
+                  content: '✓ test/mcp.test.ts (6 tests passed) [142ms]\nAll test suites completed successfully.',
+                  status: 'done',
+                },
+                {
+                  id: 's6',
+                  type: 'deploy',
+                  title: 'Deploying to staging environment...',
+                  status: 'running',
+                  isStreaming: true,
+                },
+              ]}
+            />
           </Card>
+
 
           {/* 1. Chat Thinking — compact */}
           <Card title="ChatPage — AI Thinking (compact mode)">

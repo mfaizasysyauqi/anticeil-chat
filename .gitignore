@@ -46,3 +46,6 @@ build/
 # wrangler / cloudflare dev
 .wrangler/
 **/.wrangler/
+
+# antsheet — separate standalone repo
+antsheet/

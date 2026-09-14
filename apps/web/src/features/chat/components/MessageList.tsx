@@ -9,6 +9,8 @@ import {
   Sparkles,
   ArrowUpRight,
   KeyRound,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { AIChatBubble } from '../../../shared/components/AIChatBubble';
 import { useChatStore } from '../store/useChatStore';
@@ -242,12 +244,18 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
     );
   }
 
+  const compactedSummary = activeSession?.compactedSummary;
+  const compactedCount = activeSession?.compactedMessageCount;
+
   return (
     <div
       ref={scrollRef}
       className="page-scroll-container"
     >
       <div className="page-content-wrapper" style={{ gap: 'var(--space-lg)' }}>
+        {compactedSummary && (
+          <CompactedMemoryDivider summary={compactedSummary} count={compactedCount} language={language} />
+        )}
         {messages.map((msg) => (
           <AIChatBubble
             key={msg.id}
@@ -262,6 +270,13 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
             timestamp={msg.timestamp}
             isEditing={msg.role === 'user' && editingMsgId === msg.id}
             editContent={editingMsgId === msg.id ? editingContent : undefined}
+            versions={msg.versions}
+            versionIndex={msg.versionIndex ?? 0}
+            onNavigateVersion={(direction) => {
+              if (activeSession) {
+                useChatStore.getState().navigateMessageVersion(activeSession.id, msg.id, direction);
+              }
+            }}
             onCopy={() => navigator.clipboard.writeText(msg.content)}
             onEdit={msg.role === 'user' ? () => { setEditingMsgId(msg.id); setEditingContent(msg.content); } : undefined}
             onSaveEdit={async (newContent) => {
@@ -276,6 +291,84 @@ export function MessageList({ onSelectStarter }: MessageListProps) {
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function CompactedMemoryDivider({
+  summary,
+  count,
+  language = 'id',
+}: {
+  summary: string;
+  count?: number;
+  language?: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        margin: '8px 0 12px 0',
+        width: '100%',
+        userSelect: 'none',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 12px',
+          borderRadius: '9999px',
+          background: 'rgba(99, 102, 241, 0.08)',
+          border: '1px solid rgba(99, 102, 241, 0.22)',
+          color: '#818CF8',
+          fontSize: '11px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(99, 102, 241, 0.16)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)';
+        }}
+      >
+        <Sparkles size={11} style={{ color: '#818CF8' }} />
+        <span>
+          ✦ Context Compacted {count ? `(${count} ${language === 'id' ? 'pesan diringkas' : 'messages summarized'})` : ''}
+        </span>
+        {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+      </button>
+
+      {isExpanded && (
+        <div
+          style={{
+            marginTop: '8px',
+            width: '100%',
+            maxWidth: '680px',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            fontSize: '11.5px',
+            lineHeight: 1.55,
+            color: 'var(--text-secondary, #9CA3AF)',
+            whiteSpace: 'pre-wrap',
+            maxHeight: '180px',
+            overflowY: 'auto',
+          }}
+        >
+          {summary}
+        </div>
+      )}
     </div>
   );
 }
