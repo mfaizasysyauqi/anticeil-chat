@@ -60,17 +60,6 @@ const DEFAULT_CONNECTORS: Record<ConnectorId, ConnectorConfig> = {
     selectedModelId: 'imagen-3.0-generate-002',
     scopes: ['image:generate', 'image:edit'],
   },
-  anticeil_video: {
-    id: 'anticeil_video',
-    name: 'Anticeil Video',
-    description: 'Generate AI video clips, motion animations, and video sequences.',
-    icon: '🎬',
-    status: 'connected',
-    isEnabled: true,
-    isSandboxMode: false,
-    selectedModelId: 'luma-dream-machine',
-    scopes: ['video:generate', 'video:render'],
-  },
   anticeil_audio: {
     id: 'anticeil_audio',
     name: 'Anticeil Audio',

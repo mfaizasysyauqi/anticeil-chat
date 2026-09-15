@@ -37,12 +37,16 @@ import {
   Maximize2,
   Minimize2,
   MessageSquarePlus,
+  Share2,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { SplashScreen } from '../../../shared/components/SplashScreen';
 import { CommentBackdrop } from './CommentBackdrop';
 import { selectCommentRange, measureCommentDomPositions } from '../utils/commentUtils';
 import { DocFileTabsBar, SplitResizeDivider, RecompileSplitButton, FocusModeOverlay } from './shared';
+import { useDocModals } from '../hooks/useDocModals';
+import { downloadBlob, downloadText } from '@/shared/utils/downloadUtils';
+import { toast } from '@/shared/hooks/useToast';
 import { useSplitResize } from '../hooks/useSplitResize';
 import { handleStandardEditorKeyDown } from '../utils/editorKeyUtils';
 import { downloadDocAsZip } from '../utils/zipUtils';
@@ -289,6 +293,7 @@ export function DocsSpreadsheetView({
   const [internalFocusMode, setInternalFocusMode] = useState(false);
   const isFocusMode = propFocusMode ?? internalFocusMode;
   const setIsFocusMode = propSetFocusMode ?? setInternalFocusMode;
+  const { isShareModalOpen, setIsShareModalOpen, docModalsElement } = useDocModals(activeDoc);
 
   const downloadButtonRef  = useRef<HTMLButtonElement>(null);
   const sectionButtonRef   = useRef<HTMLButtonElement>(null);
@@ -560,42 +565,33 @@ export function DocsSpreadsheetView({
     }
   };
 
-  const download = (blob: Blob, name: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), { href: url, download: name });
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handleExportXLSX = () => {
     try {
-      download(
+      downloadBlob(
         new Blob([exportToXLSX(parseAntsheet(code)) as any], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         }),
         `${activeDoc?.title || 'spreadsheet'}.xlsx`
       );
     } catch (err) {
-      alert((language === 'id' ? 'Gagal ekspor Excel: ' : 'Failed to export Excel: ') + String(err));
+      toast.error((language === 'id' ? 'Gagal ekspor Excel: ' : 'Failed to export Excel: ') + String(err));
     }
   };
 
   const handleExportCSV = () => {
     try {
-      download(
-        new Blob([exportToCSV(parseAntsheet(code))], { type: 'text/csv;charset=utf-8;' }),
-        `${activeDoc?.title || 'spreadsheet'}.csv`
+      downloadText(
+        exportToCSV(parseAntsheet(code)),
+        `${activeDoc?.title || 'spreadsheet'}.csv`,
+        'text/csv;charset=utf-8;'
       );
     } catch (err) {
-      alert((language === 'id' ? 'Gagal ekspor CSV: ' : 'Failed to export CSV: ') + String(err));
+      toast.error((language === 'id' ? 'Gagal ekspor CSV: ' : 'Failed to export CSV: ') + String(err));
     }
   };
 
   const handleExportAntSheetFile = () => {
-    download(
-      new Blob([code], { type: 'text/plain;charset=utf-8;' }),
-      `${activeDoc?.title || 'spreadsheet'}.antsheet`
-    );
+    downloadText(code, `${activeDoc?.title || 'spreadsheet'}.antsheet`);
   };
 
   const handleCopy = () => {
@@ -1387,6 +1383,29 @@ export function DocsSpreadsheetView({
                   document.body
                 )}
               </div>
+
+              {/* Share View-Only Button */}
+              <button
+                type="button"
+                onClick={() => setIsShareModalOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '5px',
+                  backgroundColor: isShareModalOpen ? 'var(--bg-subtle)' : 'transparent',
+                  border: isShareModalOpen ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                  color: isShareModalOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                className="hover-subtle"
+                title={language === 'id' ? 'Bagikan Spreadsheet (View-Only)' : 'Share Spreadsheet (View-Only)'}
+              >
+                <Share2 size={13.5} />
+              </button>
             </div>
 
         </div>
@@ -1600,6 +1619,8 @@ export function DocsSpreadsheetView({
           </div>
         </div>
       )}
+
+      {docModalsElement}
     </div>
   );
 }

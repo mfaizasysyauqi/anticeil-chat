@@ -33,6 +33,7 @@ import {
   HelpCircle,
   ExternalLink,
   MessageSquarePlus,
+  Share2,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -40,6 +41,7 @@ import { CommentBackdrop } from './CommentBackdrop';
 import { selectCommentRange, measureCommentDomPositions } from '../utils/commentUtils';
 import { SplashScreen } from '../../../shared/components/SplashScreen';
 import { DocFileTabsBar, SplitResizeDivider, RecompileSplitButton, FocusModeOverlay } from './shared';
+import { useDocModals } from '../hooks/useDocModals';
 import { useSplitResize } from '../hooks/useSplitResize';
 import { handleStandardEditorKeyDown } from '../utils/editorKeyUtils';
 import { resolveDocImports } from '../utils/docResolver';
@@ -158,6 +160,7 @@ Welcome to Anticeil Presentation Studio.
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const [isStructureMenuOpen, setIsStructureMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const { isShareModalOpen, setIsShareModalOpen, docModalsElement } = useDocModals(activeDoc);
 
   const downloadButtonRef = useRef<HTMLButtonElement>(null);
   const structureButtonRef = useRef<HTMLButtonElement>(null);
@@ -1528,6 +1531,29 @@ Welcome to Anticeil Presentation Studio.
                   document.body
                 )}
               </div>
+
+              {/* Share View-Only Button */}
+              <button
+                type="button"
+                onClick={() => setIsShareModalOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '5px',
+                  backgroundColor: isShareModalOpen ? 'var(--bg-subtle)' : 'transparent',
+                  border: '1px solid transparent',
+                  color: isShareModalOpen ? 'var(--brand-primary)' : 'var(--text-primary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                className="hover-subtle"
+                title={language === 'id' ? 'Bagikan Slide (View-Only)' : 'Share Slide (View-Only)'}
+              >
+                <Share2 size={13.5} />
+              </button>
             </div>
 
 
@@ -1887,6 +1913,8 @@ Welcome to Anticeil Presentation Studio.
           </div>
         </div>
       )}
+
+      {docModalsElement}
     </div>
   );
 }

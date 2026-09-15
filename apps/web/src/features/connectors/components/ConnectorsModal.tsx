@@ -25,10 +25,9 @@ import { useConnectorsStore } from '../store/useConnectorsStore';
 import { ConnectorId, getTranslation } from '@anticeil/core';
 import { ConnectorBrandIcon } from './ConnectorLogos';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
-import { ImageModelSelectorModal } from '../../image/components/ImageModelSelectorModal';
-import { VideoModelSelectorModal } from '../../video/components/VideoModelSelectorModal';
-import { AudioModelSelectorModal } from '../../audio/components/AudioModelSelectorModal';
 import { listSmitheryServers, SmitheryServer } from '../../../features/chat/data/smitheryClient';
+import { ImageModelSelectorModal } from './ImageModelSelectorModal';
+import { AudioModelSelectorModal } from './AudioModelSelectorModal';
 
 interface ConnectorsModalProps {
   isOpen: boolean;
@@ -56,7 +55,6 @@ const PROVIDER_LABEL: Partial<Record<ConnectorId, string>> = {
 // Canonical connector display order (Anticeil Media first, followed by Google & integrations)
 const CONNECTOR_ORDER: ConnectorId[] = [
   'anticeil_image',
-  'anticeil_video',
   'anticeil_audio',
   'gmail',
   'calendar',
@@ -107,6 +105,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualToken, setManualToken] = useState('');
+  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const [accountEmailInput, setAccountEmailInput] = useState('');
   const [tokenSuccessMsg, setTokenSuccessMsg] = useState<string | null>(null);
   const [isMediaModelModalOpen, setIsMediaModelModalOpen] = useState(false);
@@ -160,7 +159,7 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const provider = OAUTH_PROVIDER[selectedConnectorId];
   const providerLabel = PROVIDER_LABEL[selectedConnectorId];
   const isGoogleService = ['gmail', 'calendar', 'google_drive'].includes(selectedConnectorId);
-  const isAnticeilMedia = ['anticeil_image', 'anticeil_video', 'anticeil_audio'].includes(selectedConnectorId);
+  const isAnticeilMedia = ['anticeil_image', 'anticeil_audio'].includes(selectedConnectorId);
   const isCustomWebhook = selectedConnectorId === 'custom_webhook';
 
   const handleConnectOAuth = () => {
@@ -954,8 +953,37 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                 </div>
               )}
 
-              {/* Direct Token / API Key Input Section (Accordion) — hidden for custom_webhook */}
-              {!isCustomWebhook && (
+              {/* For anticeil_image / anticeil_audio: open BYOK settings dialog */}
+              {isAnticeilMedia && (
+                <button
+                  type="button"
+                  onClick={() => { onClose(); openSettingsTab('keys'); }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    color: 'var(--text-secondary)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+                >
+                  <Key size={14} />
+                  <span>{language === 'id' ? 'Kelola API Key untuk Model AI' : 'Manage API Keys for AI Models'}</span>
+                </button>
+              )}
+
+              {/* Direct Token / API Key Input Section (Accordion) — hidden for custom_webhook and anticeil media */}
+              {!isCustomWebhook && !isAnticeilMedia && (
               <div
                 style={{
                   border: '1px solid var(--border-subtle)',
@@ -1252,21 +1280,9 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
           isOpen={isMediaModelModalOpen}
           onClose={() => setIsMediaModelModalOpen(false)}
           mediaMode="image"
-          selectedModelId={current.selectedModelId || 'imagen-3.0-generate-002'}
+          selectedModelId={current.selectedModelId || 'flux-dev'}
           onSelectModel={(modelId) => {
             updateConnector('anticeil_image', { selectedModelId: modelId });
-            setIsMediaModelModalOpen(false);
-          }}
-        />
-      )}
-
-      {isMediaModelModalOpen && current.id === 'anticeil_video' && (
-        <VideoModelSelectorModal
-          isOpen={isMediaModelModalOpen}
-          onClose={() => setIsMediaModelModalOpen(false)}
-          selectedModelId={current.selectedModelId || 'luma-dream-machine'}
-          onSelectModel={(modelId) => {
-            updateConnector('anticeil_video', { selectedModelId: modelId });
             setIsMediaModelModalOpen(false);
           }}
         />
@@ -1276,13 +1292,14 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
         <AudioModelSelectorModal
           isOpen={isMediaModelModalOpen}
           onClose={() => setIsMediaModelModalOpen(false)}
-          selectedModelId={current.selectedModelId || 'eleven_multilingual_v2'}
+          selectedModelId={current.selectedModelId || 'microsoft-tts'}
           onSelectModel={(modelId) => {
             updateConnector('anticeil_audio', { selectedModelId: modelId });
             setIsMediaModelModalOpen(false);
           }}
         />
       )}
+
     </div>
   );
 

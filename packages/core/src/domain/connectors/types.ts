@@ -7,7 +7,6 @@ export type ConnectorId =
   | 'custom_webhook'
   | 'smithery'
   | 'anticeil_image'
-  | 'anticeil_video'
   | 'anticeil_audio';
 
 export type ConnectorStatus = 'connected' | 'disconnected' | 'connecting' | 'error';

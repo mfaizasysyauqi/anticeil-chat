@@ -25,6 +25,7 @@ import {
 import { useChatStore } from '../store/useChatStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
+import { toast } from '@/shared/hooks/useToast';
 import {
   estimateTokens,
   getTranslation,
@@ -51,12 +52,6 @@ const CONNECTOR_CHIPS: Array<{
     label: 'Image AI',
     bg: 'rgba(16, 185, 129, 0.08)',
     border: 'rgba(16, 185, 129, 0.25)',
-  },
-  {
-    id: 'anticeil_video',
-    label: 'Video AI',
-    bg: 'rgba(139, 92, 246, 0.08)',
-    border: 'rgba(139, 92, 246, 0.25)',
   },
   {
     id: 'anticeil_audio',
@@ -180,7 +175,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
   const toggleSpeechRecognition = () => {
     if (!recognitionRef.current) {
-      alert('Speech Recognition is not supported by your browser.');
+      toast.info('Speech Recognition is not supported by your browser.');
       return;
     }
 
@@ -243,7 +238,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
     if (!files || files.length === 0) return;
 
     if (attachments.length + files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
-      alert(
+      toast.info(
         language === 'id'
           ? `Maksimal hanya dapat melampirkan ${MAX_ATTACHMENTS_PER_MESSAGE} berkas dalam satu pesan.`
           : `You can attach a maximum of ${MAX_ATTACHMENTS_PER_MESSAGE} files per message.`
@@ -258,7 +253,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
 
     for (let i = 0; i < files.length; i++) {
       if (!canFit(files[i].size)) {
-        alert(language === 'id' ? 'Sisa kuota penyimpanan Anda tidak mencukupi untuk berkas ini.' : 'Not enough storage space in your quota.');
+        toast.error(language === 'id' ? 'Sisa kuota penyimpanan Anda tidak mencukupi untuk berkas ini.' : 'Not enough storage space in your quota.');
         continue;
       }
       try {
@@ -266,7 +261,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
         newAttachments.push(parsed);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Gagal memproses berkas';
-        alert(message);
+        toast.error(message);
         console.warn('File validation/parsing error:', message);
       }
     }

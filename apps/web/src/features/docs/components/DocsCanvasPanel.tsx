@@ -12,9 +12,15 @@ import {
   ChevronDown,
   ChevronUp,
   Contrast,
+  Share2,
+  Search,
+  GitPullRequest,
+  Users,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
+import { createClient } from '../../../shared/utils/supabase/client';
 import { DocDiagnostic, computeDocLintResults, normalizeRuntimeError } from '../utils/docLinter';
 import { getDocFileExtension } from '../utils/docDownloadUtils';
 import { buildDocumentPreviewHtml } from '../utils/docPreviewBuilder';
@@ -23,6 +29,7 @@ import { previewActionBarStyle } from '../styles/editorSharedStyles';
 import { SplitResizeDivider, DocLogsDrawer, DocExportDropdown, RecompileSplitButton } from './shared';
 import { DocsSpreadsheetView } from './DocsSpreadsheetView';
 import { DocsSlideView } from './DocsSlideView';
+import { useDocModals } from '../hooks/useDocModals';
 
 /** Shared style for icon buttons — matches Navbar app bar 28×28 */
 const iconBtnStyle: React.CSSProperties = {
@@ -38,6 +45,17 @@ const iconBtnStyle: React.CSSProperties = {
   transition: 'all 0.15s ease',
   flexShrink: 0,
 };
+
+// Stable colors for peer cursors
+const PEER_COLORS = ['#F43F5E','#8B5CF6','#06B6D4','#10B981','#F59E0B','#3B82F6','#EC4899','#14B8A6'];
+
+interface PeerCursor {
+  userId: string;
+  name: string;
+  color: string;
+  x: number; // 0–1 relative to aside
+  y: number;
+}
 
 export function DocsCanvasPanel() {
   const router = useRouter();
@@ -69,6 +87,14 @@ export function DocsCanvasPanel() {
   const language = useSettingsStore((s) => (s.language === 'id' ? 'id' : 'en'));
   const theme = useSettingsStore((s) => s.theme);
 
+  const user = useAuthStore((s) => s.user);
+  const tier = useAuthStore((s) => s.tier);
+  const hasCollaboration = tier !== 'free';
+
+  const [peers, setPeers] = useState<PeerCursor[]>([]);
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
+  const rafRef = useRef<number | null>(null);
+
   const [panelWidth, setPanelWidth] = useState(580);
   const [isDragging, setIsDragging] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -92,6 +118,23 @@ export function DocsCanvasPanel() {
   const [isZoomDropdownOpen, setIsZoomDropdownOpen] = useState<boolean>(false);
   const [zoomDropdownPos, setZoomDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const [isPreviewInverted, setIsPreviewInverted] = useState(false);
+  const {
+    isShareModalOpen,
+    setIsShareModalOpen,
+    isSearchOpen,
+    setIsSearchOpen,
+    isSuggestionsOpen,
+    setIsSuggestionsOpen,
+    isCollaboratorsOpen,
+    setIsCollaboratorsOpen,
+    docModalsElement,
+  } = useDocModals(activeDoc);
+
+  const reviewMode = useDocsStore((s) => s.reviewMode);
+  const pendingSuggestionsCount = useMemo(
+    () => activeDoc?.suggestions?.filter((s) => s.status === 'pending').length || 0,
+    [activeDoc?.suggestions]
+  );
 
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
@@ -100,6 +143,7 @@ export function DocsCanvasPanel() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const zoomButtonRef = useRef<HTMLButtonElement>(null);
   const zoomDropdownRef = useRef<HTMLDivElement>(null);
+  const myColorRef = useRef(PEER_COLORS[Math.floor(Math.random() * PEER_COLORS.length)]);
 
   // Resize drag handler: silky smooth 1:1 mouse follow matching code editor preview
   const handleDragStart = useCallback(
@@ -147,6 +191,69 @@ export function DocsCanvasPanel() {
     },
     [panelWidth]
   );
+
+  // ── Supabase Realtime Presence (non-free tiers only) ──────────────────────
+  useEffect(() => {
+    if (!hasCollaboration || !activeDocId) return;
+
+    const supabase = createClient();
+    const myId = user?.id ?? `anon-${Math.random().toString(36).slice(2)}`;
+    const myName = user?.email?.split('@')[0] ?? 'Guest';
+    const myColor = myColorRef.current;
+
+    const channel = supabase.channel(`doc-presence:${activeDocId}`, {
+      config: { presence: { key: myId } },
+    });
+    channelRef.current = channel;
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<{ name: string; color: string; x: number; y: number }>();
+        const next: PeerCursor[] = [];
+        for (const [uid, entries] of Object.entries(state)) {
+          if (uid === myId) continue;
+          const e = entries[0];
+          if (e) next.push({ userId: uid, name: e.name, color: e.color, x: e.x, y: e.y });
+        }
+        setPeers(next);
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        const leftIds = new Set(leftPresences.map((p: any) => p.key ?? p.userId));
+        setPeers((prev) => prev.filter((p) => !leftIds.has(p.userId)));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ name: myName, color: myColor, x: 0.5, y: 0.5 });
+        }
+      });
+
+    return () => {
+      channel.unsubscribe();
+      channelRef.current = null;
+      setPeers([]);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasCollaboration, activeDocId]);
+
+  // Track this user's cursor on the aside element
+  const handleMouseMoveOnAside = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    if (!hasCollaboration || !channelRef.current || !asideRef.current) return;
+    if (rafRef.current) return;
+    const cx = e.clientX;
+    const cy = e.clientY;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const rect = asideRef.current!.getBoundingClientRect();
+      const x = (cx - rect.left) / rect.width;
+      const y = (cy - rect.top) / rect.height;
+      channelRef.current!.track({
+        name: user?.email?.split('@')[0] ?? 'Guest',
+        color: myColorRef.current,
+        x: Math.max(0, Math.min(1, x)),
+        y: Math.max(0, Math.min(1, y)),
+      });
+    });
+  }, [hasCollaboration, user]);
 
   // Listen to iframe postMessages (pages count, scale, runtime errors)
   useEffect(() => {
@@ -334,6 +441,7 @@ export function DocsCanvasPanel() {
       {/* Main Canvas Panel Container */}
       <aside
         ref={asideRef}
+        onMouseMove={handleMouseMoveOnAside}
         style={{
           width: isPreviewOnly ? '100%' : `${panelWidth}px`,
           flex: isPreviewOnly ? 1 : undefined,
@@ -348,6 +456,41 @@ export function DocsCanvasPanel() {
           zIndex: 9,
         }}
       >
+        {/* ── Peer Cursors Overlay ── */}
+        {hasCollaboration && peers.map((peer) => (
+          <div
+            key={peer.userId}
+            style={{
+              position: 'absolute',
+              left: `${peer.x * 100}%`,
+              top: `${peer.y * 100}%`,
+              transform: 'translate(-2px, -2px)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+              transition: 'left 0.08s linear, top 0.08s linear',
+            }}
+          >
+            {/* Cursor SVG */}
+            <svg width="16" height="20" viewBox="0 0 16 20" fill="none" style={{ display: 'block' }}>
+              <path d="M0 0L0 14L4 10L7 16L9 15L6 9L11 9L0 0Z" fill={peer.color} stroke="white" strokeWidth="1" />
+            </svg>
+            {/* Name label */}
+            <span style={{
+              display: 'block',
+              marginTop: '2px',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              backgroundColor: peer.color,
+              color: '#fff',
+              fontSize: '10px',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            }}>
+              {peer.name}
+            </span>
+          </div>
+        ))}
         {effectiveFormat === 'sheet' ? (
           <div style={{ flex: 1, height: '100%', width: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <DocsSpreadsheetView viewMode="preview" isFocusMode={false} />
@@ -443,6 +586,96 @@ export function DocsCanvasPanel() {
 
             {/* Download / Export Options Button & Popover (Standardized DRY Shared Component) */}
             <DocExportDropdown doc={activeDoc} />
+
+            {/* Share View-Only Button */}
+            <button
+              type="button"
+              onClick={() => setIsShareModalOpen(true)}
+              style={{
+                ...iconBtnStyle,
+                color: 'var(--text-muted)',
+              }}
+              className="hover-subtle"
+              title={language === 'id' ? 'Bagikan Dokumen (View-Only)' : 'Share Document (View-Only)'}
+            >
+              <Share2 size={13.5} />
+            </button>
+
+            {/* In-App Grep / Project Search */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              style={{
+                ...iconBtnStyle,
+                color: 'var(--text-muted)',
+              }}
+              className="hover-subtle"
+              title={language === 'id' ? 'Cari di Seluruh File (Ctrl+Shift+F)' : 'Find in All Files (Ctrl+Shift+F)'}
+            >
+              <Search size={13.5} />
+            </button>
+
+            {/* Track Changes / Suggestions Drawer Button */}
+            <button
+              type="button"
+              onClick={() => setIsSuggestionsOpen((prev) => !prev)}
+              style={{
+                ...iconBtnStyle,
+                position: 'relative',
+                backgroundColor:
+                  isSuggestionsOpen || reviewMode === 'reviewing'
+                    ? 'rgba(59, 130, 246, 0.12)'
+                    : 'transparent',
+                color:
+                  isSuggestionsOpen || reviewMode === 'reviewing' ? '#3B82F6' : 'var(--text-muted)',
+              }}
+              className="hover-subtle"
+              title={
+                language === 'id'
+                  ? `Saran & Perubahan (${pendingSuggestionsCount} menunggu)`
+                  : `Suggestions & Changes (${pendingSuggestionsCount} pending)`
+              }
+            >
+              <GitPullRequest size={13.5} />
+              {pendingSuggestionsCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '2px',
+                    right: '2px',
+                    minWidth: '13px',
+                    height: '13px',
+                    padding: '0 3px',
+                    borderRadius: '7px',
+                    backgroundColor: '#3B82F6',
+                    color: '#fff',
+                    fontSize: '8.5px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                >
+                  {pendingSuggestionsCount > 9 ? '9+' : pendingSuggestionsCount}
+                </span>
+              )}
+            </button>
+
+            {/* Direct Email Collaborators Management */}
+            <button
+              type="button"
+              onClick={() => setIsCollaboratorsOpen(true)}
+              style={{
+                ...iconBtnStyle,
+                position: 'relative',
+                color: (activeDoc?.collaborators?.length || 0) > 0 ? '#10B981' : 'var(--text-muted)',
+              }}
+              className="hover-subtle"
+              title={language === 'id' ? 'Kelola Kolaborator Email' : 'Manage Email Collaborators'}
+            >
+              <Users size={13.5} />
+            </button>
           </div>
 
           {/* Right: Invert Preview + Page Navigation + Zoom Controls + Open in Code Editor + Close Preview */}
@@ -714,6 +947,8 @@ export function DocsCanvasPanel() {
           </>
         )}
       </aside>
+
+      {docModalsElement}
     </>
   );
 }

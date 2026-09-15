@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { toast } from '../hooks/useToast';
 import {
   Search,
   MessageSquare,
@@ -73,13 +74,10 @@ import { RailIconButton } from './RailIconButton';
 import { getTranslation, ChatSession } from '@anticeil/core';
 import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
-import { useImageStore } from '../../features/image/store/useImageStore';
 import { useDocsStore, DocItem } from '../../features/docs/store/useDocsStore';
 import { FolderFileDrawer } from '../../features/storage/components/FolderFileDrawer';
 import { useCreditStore } from '../../features/credits/store/useCreditStore';
-import { MediaDetailModal } from './MediaDetailModal';
 import { createClient } from '../utils/supabase/client';
-import { useMediaEditorStore } from '../../features/media/store/useMediaEditorStore';
 import { DOC_CATEGORIES, ALL_DOC_SECTIONS } from '../../features/documentation/data';
 import { DocSidebar } from '../../features/documentation/components/DocSidebar';
 
@@ -91,18 +89,6 @@ interface SidebarProps {
   onOpenModelSelector?: () => void;
   railOnly?: boolean;
   drawerOnly?: boolean;
-}
-
-interface ImagineHistoryItem {
-  id: string;
-  prompt: string;
-  style: string;
-  time: string;
-  collectionId?: string;
-  isPinned?: boolean;
-  type?: 'image' | 'video' | 'audio';
-  createdAt?: number;
-  updatedAt?: number;
 }
 
 // ─── FolderMenu ───────────────────────────────────────────────────────────────
@@ -288,485 +274,6 @@ function FolderMenu({ proj, language, t, accessToken, renameFolder, deleteFolder
           >
             <Trash2 size={11} />
             <span>{language === 'id' ? 'Hapus folder' : 'Delete folder'}</span>
-          </button>
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
-
-// ─── ImagineFolderMenu ────────────────────────────────────────────────────────
-interface ImagineFolderMenuProps {
-  col: { id: string; name: string };
-  language: string;
-  renameCollection: (id: string, name: string) => void;
-  deleteCollection: (id: string) => void;
-  onOpenUpload: () => void;
-}
-
-function ImagineFolderMenu({ col, language, renameCollection, deleteCollection, onOpenUpload }: ImagineFolderMenuProps) {
-  const [open, setOpen] = React.useState(false);
-  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
-  const [isRenaming, setIsRenaming] = React.useState(false);
-  const [renameText, setRenameText] = React.useState(col.name);
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const portalRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        buttonRef.current && !buttonRef.current.contains(target) &&
-        portalRef.current && !portalRef.current.contains(target)
-      ) {
-        setOpen(false);
-        setIsRenaming(false);
-      }
-    };
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const handleRename = () => {
-    const name = renameText.trim();
-    if (!name) return;
-    renameCollection(col.id, name);
-    setIsRenaming(false);
-    setOpen(false);
-  };
-
-  const toggleMenu = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (open) {
-      setOpen(false);
-    } else {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const menuWidth = 140;
-      const menuHeight = 110;
-      let left = rect.right - menuWidth;
-      if (left < 10) left = 10;
-      let top = rect.bottom + 4;
-      if (top + menuHeight > window.innerHeight) {
-        top = rect.top - menuHeight - 4;
-      }
-      setMenuPosition({ top, left });
-      setOpen(true);
-    }
-  };
-
-  if (isRenaming) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-        <input
-          type="text"
-          value={renameText}
-          onChange={(e) => setRenameText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') { e.stopPropagation(); handleRename(); }
-            if (e.key === 'Escape') { setIsRenaming(false); setOpen(false); }
-          }}
-          autoFocus
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            width: '80px',
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: '4px',
-            padding: '2px 5px',
-            fontSize: '11px',
-            color: 'var(--text-primary)',
-            outline: 'none',
-          }}
-        />
-        <button type="button" onClick={(e) => { e.stopPropagation(); handleRename(); }}
-          style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
-          <Check size={11} />
-        </button>
-        <button type="button" onClick={(e) => { e.stopPropagation(); setIsRenaming(false); setOpen(false); }}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '1px', display: 'flex' }}>
-          <X size={11} />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={toggleMenu}
-        className="session-options-btn"
-        style={{
-          background: 'transparent', border: 'none', color: 'var(--text-muted)',
-          cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center',
-        }}
-      >
-        <MoreHorizontal size={12} />
-      </button>
-
-      {open && menuPosition && typeof document !== 'undefined' && createPortal(
-        <div
-          ref={portalRef}
-          data-foldermenu-portal="true"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'fixed',
-            top: `${menuPosition.top}px`,
-            left: `${menuPosition.left}px`,
-            background: 'var(--bg-surface)',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: 'var(--radius-md, 8px)',
-            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
-            padding: '4px',
-            zIndex: 999999999,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-            minWidth: '140px',
-          }}
-        >
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setRenameText(col.name); setIsRenaming(true); setOpen(false); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-              borderRadius: '4px', border: 'none', background: 'transparent',
-              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Edit2 size={11} />
-            <span>{language === 'id' ? 'Ubah nama' : 'Rename'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenUpload(); setOpen(false); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-              borderRadius: '4px', border: 'none', background: 'transparent',
-              color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Upload size={11} />
-            <span>{language === 'id' ? 'Unggah media' : 'Upload media'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); deleteCollection(col.id); setOpen(false); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-              borderRadius: '4px', border: 'none', background: 'transparent',
-              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Trash2 size={11} />
-            <span>{language === 'id' ? 'Hapus folder' : 'Delete folder'}</span>
-          </button>
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
-
-// ─── ImagineItemMenu ──────────────────────────────────────────────────────────
-function getFormattedMediaTime(timestamp?: number, lang: string = 'id'): string {
-  if (!timestamp) return lang === 'id' ? 'Baru saja' : 'Just now';
-  const diff = Date.now() - timestamp;
-  if (diff < 60000) return lang === 'id' ? 'Baru saja' : 'Just now';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
-  return new Date(timestamp).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { month: 'short', day: 'numeric' });
-}
-
-interface ImagineItemMenuProps {
-  item: ImagineHistoryItem;
-  language: string;
-  collections: Array<{ id: string; name: string }>;
-  togglePin: (id: string) => void;
-  moveToCollection: (id: string, collectionId: string | null) => void;
-  removeItem: (id: string) => void;
-}
-
-function ImagineItemMenu({ item, language, collections, togglePin, moveToCollection, removeItem }: ImagineItemMenuProps) {
-  const [open, setOpen] = React.useState(false);
-  const [folderSubmenuOpen, setFolderSubmenuOpen] = React.useState(false);
-  const [copied, setCopied] = React.useState(false);
-  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const portalRef = React.useRef<HTMLDivElement>(null);
-
-  const mediaProject = useMediaEditorStore((s) => s.projects).find((p) => p.id === item.id);
-  const fullMediaItem = useImageStore((s) => s.items).find((i) => i.id === item.id);
-  const mediaUrl = fullMediaItem?.url || mediaProject?.revisions[mediaProject.revisions.length - 1]?.url;
-
-  const handleCopyPrompt = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(item.prompt);
-      setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-        setOpen(false);
-      }, 1000);
-    } catch {}
-  };
-
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (mediaUrl) {
-      try {
-        const res = await fetch(mediaUrl);
-        const blob = await res.blob();
-        const ext = item.type === 'video' ? 'mp4' : item.type === 'audio' ? 'mp3' : 'png';
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `anticeil-${item.type || 'media'}-${item.id.slice(0, 8)}.${ext}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch {
-        window.open(mediaUrl, '_blank');
-      }
-    }
-    setOpen(false);
-  };
-
-  React.useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        buttonRef.current && !buttonRef.current.contains(target) &&
-        portalRef.current && !portalRef.current.contains(target)
-      ) {
-        setOpen(false);
-        setFolderSubmenuOpen(false);
-      }
-    };
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const toggleMenu = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (open) {
-      setOpen(false);
-      setFolderSubmenuOpen(false);
-    } else {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const menuWidth = 160;
-      const menuHeight = 160;
-      let left = rect.right - menuWidth;
-      if (left < 10) left = 10;
-      let top = rect.bottom + 4;
-      if (top + menuHeight > window.innerHeight) {
-        top = rect.top - menuHeight - 4;
-      }
-      setMenuPosition({ top, left });
-      setOpen(true);
-    }
-  };
-
-  return (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={toggleMenu}
-        className="session-options-btn"
-        style={{
-          background: 'transparent', border: 'none', color: 'var(--text-muted)',
-          cursor: 'pointer', padding: '2px', borderRadius: '4px', display: 'flex', alignItems: 'center',
-        }}
-      >
-        <MoreHorizontal size={12} />
-      </button>
-
-      {open && menuPosition && typeof document !== 'undefined' && createPortal(
-        <div
-          ref={portalRef}
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'fixed',
-            top: `${menuPosition.top}px`,
-            left: `${menuPosition.left}px`,
-            background: 'var(--bg-surface)',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: 'var(--radius-md, 8px)',
-            boxShadow: 'var(--shadow-xl, 0 10px 25px rgba(0,0,0,0.25))',
-            padding: '4px',
-            zIndex: 999999999,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-            minWidth: '155px',
-          }}
-        >
-          {/* Pin / Unpin */}
-          {(() => {
-            const pinColor = item.type === 'video' ? '#fb7185' : item.type === 'audio' ? '#60a5fa' : 'var(--rail-media-color)';
-            return (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); togglePin(item.id); setOpen(false); }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-                  borderRadius: '4px', border: 'none', background: 'transparent',
-                  color: item.isPinned ? pinColor : 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <Pin size={11} fill={item.isPinned ? pinColor : 'none'} color={item.isPinned ? pinColor : 'currentColor'} />
-                <span>{item.isPinned ? (language === 'id' ? 'Lepas sematkan' : 'Unpin') : (language === 'id' ? 'Sematkan' : 'Pin')}</span>
-              </button>
-            );
-          })()}
-
-          {/* Copy Prompt */}
-          <button
-            type="button"
-            onClick={handleCopyPrompt}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-              borderRadius: '4px', border: 'none', background: 'transparent',
-              color: copied ? '#10B981' : 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            {copied ? <Check size={11} color="#10B981" /> : <Copy size={11} />}
-            <span>{copied ? (language === 'id' ? 'Tersalin!' : 'Copied!') : (language === 'id' ? 'Salin Prompt' : 'Copy Prompt')}</span>
-          </button>
-
-          {/* Download File */}
-          {fullMediaItem?.url && (
-            <button
-              type="button"
-              onClick={handleDownload}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-                borderRadius: '4px', border: 'none', background: 'transparent',
-                color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
-              <Download size={11} />
-              <span>{language === 'id' ? 'Unduh Berkas' : 'Download'}</span>
-            </button>
-          )}
-
-          {/* Move to folder */}
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setFolderSubmenuOpen(!folderSubmenuOpen); }}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
-                padding: '5px 8px', borderRadius: '4px', border: 'none', background: 'transparent',
-                color: 'var(--text-primary)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <FolderInput size={11} />
-                <span>{language === 'id' ? 'Pindah ke folder' : 'Move to folder'}</span>
-              </div>
-              <ChevronRight size={10} color="var(--text-muted)" />
-            </button>
-
-            {folderSubmenuOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  right: '100%',
-                  marginRight: '4px',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-strong)',
-                  borderRadius: 'var(--radius-md, 8px)',
-                  boxShadow: 'var(--shadow-xl)',
-                  padding: '4px',
-                  minWidth: '140px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '2px',
-                  zIndex: 1000000000,
-                }}
-              >
-                {item.collectionId && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); moveToCollection(item.id, null); setOpen(false); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-                      borderRadius: '4px', border: 'none', background: 'transparent',
-                      color: 'var(--accent-warning, #eab308)', fontSize: '11px', cursor: 'pointer', textAlign: 'left',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  >
-                    <FolderMinus size={11} />
-                    <span>{language === 'id' ? 'Keluarkan dari folder' : 'Remove from folder'}</span>
-                  </button>
-                )}
-
-                {collections.length === 0 ? (
-                  <div style={{ padding: '6px 8px', fontSize: '10.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    {language === 'id' ? 'Belum ada folder' : 'No folders'}
-                  </div>
-                ) : (
-                  collections.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); moveToCollection(item.id, c.id); setOpen(false); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-                        borderRadius: '4px', border: 'none',
-                        background: item.collectionId === c.id ? 'var(--rail-media-bg)' : 'transparent',
-                        color: item.collectionId === c.id ? 'var(--rail-media-color)' : 'var(--text-primary)',
-                        fontSize: '11px', cursor: 'pointer', textAlign: 'left', fontWeight: item.collectionId === c.id ? 600 : 400,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = item.collectionId === c.id ? 'var(--rail-media-bg)' : 'transparent')}
-                    >
-                      <Folder size={11} />
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Delete */}
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); removeItem(item.id); setOpen(false); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px',
-              borderRadius: '4px', border: 'none', background: 'transparent',
-              color: 'var(--accent-danger)', fontSize: '11.5px', cursor: 'pointer', textAlign: 'left',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Trash2 size={11} />
-            <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
           </button>
         </div>,
         document.body
@@ -1393,14 +900,8 @@ export function Sidebar({
   const session = useAuthStore((s) => s.session);
 
   const searchParams = useSearchParams();
-  const currentTab = searchParams?.get('tab');
-  const isMedia = pathname === '/media' || pathname?.startsWith('/media');
-  const isImage = pathname === '/image' || (isMedia && (!currentTab || currentTab === 'image'));
-  const isVideo = pathname === '/video' || (isMedia && currentTab === 'video');
-  const isAudio = pathname === '/audio' || (isMedia && currentTab === 'audio');
   const isDocs = pathname === '/docs' || pathname?.startsWith('/docs');
   const isDocumentation = pathname === '/documentation' || pathname?.startsWith('/documentation');
-  const isMediaMode = isMedia || pathname === '/image' || pathname === '/video' || pathname === '/audio';
 
   const activeDocSectionId = searchParams?.get('section') || 'intro';
 
@@ -1450,72 +951,6 @@ export function Sidebar({
       .filter((d) => !d.projectId)
       .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || b.updatedAt - a.updatedAt);
   }, [filteredDocs]);
-
-  // Imagine Mode UI States
-  const [isAddingImagineCollection, setIsAddingImagineCollection] = useState(false);
-  const [newImagineCollectionName, setNewImagineCollectionName] = useState('');
-  const [selectedMediaItem, setSelectedMediaItem] = useState<any>(null);
-
-  // Media Editor store projects (Sessions for Media Studio)
-  const mediaProjects = useMediaEditorStore((s) => s.projects);
-  const activeMediaProjectId = useMediaEditorStore((s) => s.activeProjectId);
-  const toggleMediaProjectPin = useMediaEditorStore((s) => s.toggleProjectPin);
-  const moveMediaProjectToCollection = useMediaEditorStore((s) => s.moveProjectToCollection);
-  const deleteMediaProject = useMediaEditorStore((s) => s.deleteProject);
-  const renameMediaProject = useMediaEditorStore((s) => s.renameProject);
-
-  // Real image history from store
-  const imagineItems = useImageStore((s) => s.items);
-  const toggleImaginePin = useImageStore((s) => s.togglePin);
-  const moveImagineToCollection = useImageStore((s) => s.moveToCollection);
-  const removeImagineItem = useImageStore((s) => s.removeItem);
-  const language = useSettingsStore((s) => s.language);
-
-  const imagineHistory: ImagineHistoryItem[] = useMemo(() => {
-    if (isImage) {
-      return mediaProjects.map((proj) => {
-        const latestRev = proj.revisions[proj.revisions.length - 1];
-        const revCountLabel = proj.revisions.length > 1 ? `v${proj.revisions.length}` : 'v1';
-        return {
-          id: proj.id,
-          prompt: proj.title || latestRev?.prompt || 'Media Session',
-          style: `${revCountLabel} • ${latestRev?.style || 'Photorealistic'}`,
-          time: latestRev?.createdAt ? getFormattedMediaTime(latestRev.createdAt, language) : 'Just now',
-          collectionId: proj.collectionId ?? undefined,
-          isPinned: !!proj.isPinned,
-          type: 'image' as const,
-          createdAt: proj.createdAt,
-          updatedAt: proj.updatedAt || proj.createdAt,
-        };
-      });
-    }
-
-    return imagineItems.map((item) => ({
-      id: item.id,
-      prompt: item.prompt,
-      style: item.style || item.type || 'Media',
-      time: item.createdAtLabel,
-      collectionId: item.collectionId ?? undefined,
-      isPinned: item.isPinned,
-      type: item.type,
-      createdAt: new Date(item.createdAt).getTime() || Date.now(),
-      updatedAt: new Date(item.createdAt).getTime() || Date.now(),
-    }));
-  }, [isImage, mediaProjects, imagineItems, language]);
-
-  const mediaAccentColor = isVideo ? '#fb7185' : isAudio ? '#60a5fa' : 'var(--rail-media-color)';
-  const mediaBadgeBg = isVideo ? 'rgba(251, 113, 133, 0.15)' : isAudio ? 'rgba(96, 165, 250, 0.15)' : 'var(--rail-media-bg)';
-  const mediaPinnedBg = isVideo ? 'rgba(251, 113, 133, 0.08)' : isAudio ? 'rgba(96, 165, 250, 0.08)' : 'rgba(56, 189, 248, 0.08)';
-
-  // Strictly isolate history by media type: video on /video, audio on /audio, image on /image
-  const currentMediaHistory = useMemo(() => {
-    return imagineHistory.filter((item) => {
-      if (isVideo) return item.type === 'video';
-      if (isAudio) return item.type === 'audio';
-      if (isImage) return item.type === 'image' || !item.type;
-      return true;
-    });
-  }, [imagineHistory, isVideo, isAudio, isImage]);
 
   // ── Project store (DB-backed via Supabase) ──────────────────────────────────
   const projects = useProjectStore((s) => s.folders);
@@ -1605,6 +1040,7 @@ export function Sidebar({
 
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
+  const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
@@ -1621,8 +1057,6 @@ export function Sidebar({
 
   const drawerTitle = isDocumentation
     ? (language === 'id' ? 'Dokumentasi' : 'Documentation')
-    : isMediaMode
-    ? 'Media Studio'
     : isDocs
     ? 'Docs Studio'
     : (language === 'id' ? 'Percakapan' : 'Chat');
@@ -1726,7 +1160,7 @@ export function Sidebar({
     if (!session.isPinned) {
       const currentPinnedCount = userSessions.filter((s) => s.isPinned).length;
       if (currentPinnedCount >= 3) {
-        alert(language === 'id' ? 'Maksimal 3 obrolan yang dapat disematkan ke paling atas.' : 'Maximum of 3 pinned chats allowed.');
+        toast.info(language === 'id' ? 'Maksimal 3 obrolan yang dapat disematkan ke paling atas.' : 'Maximum of 3 pinned chats allowed.');
         setMenuSessionId(null);
         return;
       }
@@ -2330,10 +1764,7 @@ export function Sidebar({
                 <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: (pathname === '/docs' || pathname.startsWith('/docs')) ? 'rgba(0, 115, 234, 0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <FileText size={17} color={(pathname === '/docs' || pathname.startsWith('/docs')) ? 'var(--brand-primary)' : 'var(--text-muted)'} />
                 </div>
-                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: (pathname === '/media' || pathname.startsWith('/audio') || pathname.startsWith('/image') || pathname.startsWith('/video')) ? 'rgba(162, 93, 220, 0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sparkles size={17} color={(pathname === '/media' || pathname.startsWith('/audio') || pathname.startsWith('/image') || pathname.startsWith('/video')) ? '#A25DDC' : 'var(--text-muted)'} />
                 </div>
-              </div>
             </div>
 
             {/* Bottom Section */}
@@ -2485,14 +1916,7 @@ export function Sidebar({
               isActive={pathname === '/docs' || pathname.startsWith('/docs')}
               colorType="docs"
             />
-            <RailIconButton
-              href="/media"
-              label={t.nav.imagine || 'Media Studio'}
-              icon={<Sparkles size={17} />}
-              isActive={isMediaMode}
-              colorType="media"
-            />
-          </div>
+            </div>
         </SidebarRail>
       )}
 
@@ -2578,15 +2002,7 @@ export function Sidebar({
                 isActive={pathname === '/docs' || pathname.startsWith('/docs')}
                 colorType="docs"
               />
-              <RailIconButton
-                href="/media"
-                onClick={onCloseMobile}
-                label={t.nav.imagine || 'Media Studio'}
-                icon={<Sparkles size={17} />}
-                isActive={isMediaMode}
-                colorType="media"
-              />
-            </div>
+              </div>
           </SidebarRail>
         )}
 
@@ -2629,69 +2045,7 @@ export function Sidebar({
         {/* Primary Action Button (Mode-Aware) */}
         {!isDocumentation && (
           <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {isMediaMode ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  useMediaEditorStore.getState().setActiveProject(null);
-                  useMediaEditorStore.getState().setIsCanvasOpen(false);
-                  router.push('/media?tab=image');
-                  if (onCloseMobile) onCloseMobile();
-                }}
-                className="clickable-pill"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-md, 6px)',
-                  background: isImage ? 'var(--rail-media-bg)' : 'transparent',
-                  border: isImage ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid transparent',
-                  color: isImage ? 'var(--rail-media-color)' : 'var(--text-primary)',
-                  fontSize: '12.5px',
-                  fontWeight: isImage ? 600 : 500,
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <ImageIcon size={14} color="var(--rail-media-color)" />
-                <span>{language === 'id' ? 'Gambar Baru' : 'New Image'}</span>
-              </button>
-
-
-
-              <button
-                type="button"
-                onClick={() => {
-                  router.push('/media?tab=audio');
-                  if (onCloseMobile) onCloseMobile();
-                }}
-                className="clickable-pill"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-md, 6px)',
-                  background: isAudio ? 'rgba(96, 165, 250, 0.12)' : 'transparent',
-                  border: isAudio ? '1px solid rgba(96, 165, 250, 0.3)' : '1px solid transparent',
-                  color: isAudio ? '#60a5fa' : 'var(--text-primary)',
-                  fontSize: '12.5px',
-                  fontWeight: isAudio ? 600 : 500,
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Music size={14} color="#60a5fa" />
-                <span>{language === 'id' ? 'Audio Baru' : 'New Audio'}</span>
-              </button>
-            </div>
-          ) : isDocs ? (
+          {isDocs ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
               {(() => {
                 const activeDoc = docs.find((d) => d.id === activeDocId);
@@ -2791,7 +2145,7 @@ export function Sidebar({
           )}
 
           {/* Connectors & Integrations Shortcut in Chat Mode */}
-          {!isMediaMode && !isDocs && !isDocumentation && (
+          {!isDocumentation && (
             <button
               type="button"
               onClick={() => setIsConnectorsModalOpen(true)}
@@ -2850,19 +2204,7 @@ export function Sidebar({
                     : isSlideDoc
                     ? (language === 'id' ? 'Cari slide & folder...' : 'Search slides & folders...')
                     : (language === 'id' ? 'Cari dokumen & folder...' : 'Search docs & folders...')
-                  : isImage
-                  ? language === 'id'
-                    ? 'Cari prompt gambar...'
-                    : 'Search image prompts...'
-                  : isVideo
-                  ? language === 'id'
-                    ? 'Cari prompt video...'
-                    : 'Search video prompts...'
-                  : isAudio
-                  ? language === 'id'
-                    ? 'Cari prompt audio...'
-                    : 'Search audio prompts...'
-                    : t.sidebar.searchChats
+                  : t.sidebar.searchChats
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -2891,7 +2233,7 @@ export function Sidebar({
           }}
         >
           {/* ─────────────────────────────────────────────────────────────
-           * A. MEDIA MODE SIDEBAR CONTENT (Image/Video/Audio)
+           * A. DOCUMENTATION / DOCS / CHAT SIDEBAR CONTENT
            * ───────────────────────────────────────────────────────────── */}
           {isDocumentation ? (
             <DocSidebar
@@ -3265,369 +2607,6 @@ export function Sidebar({
                 </div>
               )}
             </div>
-          ) : isMediaMode ? (
-            <>
-              {/* Imagine Media Collections */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div
-                  onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '4px 6px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {isVideo 
-                        ? (language === 'id' ? 'Koleksi Video' : 'Video Collections')
-                        : isAudio
-                        ? (language === 'id' ? 'Koleksi Audio' : 'Audio Collections')
-                        : (language === 'id' ? 'Koleksi Gambar' : 'Image Collections')}
-                    </span>
-                    {isProjectsExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
-                  </div>
-                </div>
-
-                {isProjectsExpanded && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                    {imageCollections
-                      .filter((col) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(col.id))
-                      .map((col) => (
-                      <div
-                        key={col.id}
-                        className="clickable-pill"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '7px',
-                          padding: '4px 8px',
-                          borderRadius: 'var(--radius-sm, 6px)',
-                          background: activeImageCollectionId === col.id ? mediaBadgeBg : 'transparent',
-                          color: activeImageCollectionId === col.id ? mediaAccentColor : 'var(--text-secondary)',
-                          fontSize: '12px',
-                          fontWeight: activeImageCollectionId === col.id ? 600 : 400,
-                          cursor: 'pointer',
-                          justifyContent: 'space-between',
-                          position: 'relative',
-                        }}
-                      >
-                        <div
-                          style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}
-                          onClick={() => setActiveImageCollection(activeImageCollectionId === col.id ? null : col.id)}
-                        >
-                          <Folder size={12} color={activeImageCollectionId === col.id ? mediaAccentColor : 'var(--text-muted)'} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{col.name}</span>
-                          {col.files.length > 0 && (
-                            <span style={{ fontSize: '10px', background: mediaAccentColor, color: '#fff', borderRadius: '999px', padding: '0 5px', lineHeight: '16px', flexShrink: 0 }}>
-                              {col.files.length}
-                            </span>
-                          )}
-                          <span style={{ flexShrink: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-                            <ChevronRight size={10} />
-                          </span>
-                        </div>
-
-                        {/* Three-dot menu for Media Collection */}
-                        <ImagineFolderMenu
-                          col={col}
-                          language={language}
-                          renameCollection={renameImageCollection}
-                          deleteCollection={deleteImageCollection}
-                          onOpenUpload={() => setDrawerState({ type: 'imageCollection', id: col.id })}
-                        />
-                      </div>
-                    ))}
-
-                    {isAddingImagineCollection ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px' }}>
-                        <input
-                          type="text"
-                          placeholder={
-                            isVideo
-                              ? (language === 'id' ? 'Nama koleksi video...' : 'Video collection name...')
-                              : isAudio
-                              ? (language === 'id' ? 'Nama koleksi audio...' : 'Audio collection name...')
-                              : (language === 'id' ? 'Nama koleksi gambar...' : 'Image collection name...')
-                          }
-                          value={newImagineCollectionName}
-                          onChange={(e) => setNewImagineCollectionName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              const name = newImagineCollectionName.trim();
-                              if (name && !imageCollections.some((c) => c.name === name)) {
-                                createImageCollection(name);
-                                setNewImagineCollectionName('');
-                                setIsAddingImagineCollection(false);
-                              }
-                            }
-                            if (e.key === 'Escape') setIsAddingImagineCollection(false);
-                          }}
-                          autoFocus
-                          style={{
-                            flex: 1,
-                            background: 'var(--bg-surface)',
-                            border: '1px solid var(--border-strong)',
-                            borderRadius: '4px',
-                            padding: '3px 6px',
-                            fontSize: '11px',
-                            color: 'var(--text-primary)',
-                            outline: 'none',
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const name = newImagineCollectionName.trim();
-                            if (name && !imageCollections.some((c) => c.name === name)) {
-                              createImageCollection(name);
-                              setNewImagineCollectionName('');
-                              setIsAddingImagineCollection(false);
-                            }
-                          }}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--accent-success)', cursor: 'pointer' }}
-                        >
-                          <Check size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsAddingImagineCollection(false)}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setIsAddingImagineCollection(true)}
-                        className="clickable-pill"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '7px',
-                          padding: '4px 8px',
-                          borderRadius: 'var(--radius-sm, 6px)',
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          fontSize: '11.5px',
-                          cursor: 'pointer',
-                          width: '100%',
-                          textAlign: 'left',
-                        }}
-                      >
-                        <Plus size={11} />
-                        <span>
-                          {isVideo
-                            ? (language === 'id' ? 'Tambah koleksi video' : 'Add video collection')
-                            : isAudio
-                            ? (language === 'id' ? 'Tambah koleksi audio' : 'Add audio collection')
-                            : (language === 'id' ? 'Tambah koleksi gambar' : 'Add image collection')}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Media History (Filtered per mode: Video on /video, Audio on /audio, Image on /image) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
-                <div
-                  onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '4px 6px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {isVideo
-                        ? (language === 'id' ? 'Riwayat Video' : 'Video History')
-                        : isAudio
-                        ? (language === 'id' ? 'Riwayat Audio' : 'Audio History')
-                        : (language === 'id' ? 'Riwayat Gambar' : 'Image History')}
-                    </span>
-                    {isHistoryExpanded ? <ChevronDown size={11} color="var(--text-muted)" /> : <ChevronRight size={11} color="var(--text-muted)" />}
-                  </div>
-                </div>
-
-                {isHistoryExpanded && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {currentMediaHistory.length === 0 ? (
-                      <div style={{ padding: '8px 10px', fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                        {isVideo
-                          ? (language === 'id' ? 'Belum ada video dibuat' : 'No videos generated yet')
-                          : isAudio
-                          ? (language === 'id' ? 'Belum ada audio dibuat' : 'No audios generated yet')
-                          : (language === 'id' ? 'Belum ada gambar dibuat' : 'No images generated yet')}
-                      </div>
-                    ) : (
-                      (() => {
-                        const filteredMedia = currentMediaHistory.filter((item) => {
-                          const matchSearch = item.prompt.toLowerCase().includes(searchQuery.toLowerCase()) || item.style.toLowerCase().includes(searchQuery.toLowerCase());
-                          const matchCol = activeImageCollectionId ? item.collectionId === activeImageCollectionId : true;
-                          return matchSearch && matchCol;
-                        });
-
-                        return groupItemsByDate(filteredMedia).map((group) => (
-                          <div key={group.labelEn} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div
-                              style={{
-                                fontSize: '9.5px',
-                                fontWeight: 700,
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.04em',
-                                padding: '4px 6px 2px 4px',
-                              }}
-                            >
-                              {language === 'id' ? group.labelId : group.labelEn}
-                            </div>
-                            {group.items.map((item) => {
-                              const isSelected = item.type === 'image' ? activeMediaProjectId === item.id : false;
-                              return (
-                                <div
-                                  key={item.id}
-                                  className="clickable-pill"
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '5px 8px',
-                                    borderRadius: 'var(--radius-sm, 6px)',
-                                    background: isSelected ? 'var(--bg-subtle)' : item.isPinned ? mediaPinnedBg : 'transparent',
-                                    color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                    fontSize: '12px',
-                                    fontWeight: isSelected ? 600 : 400,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.15s ease',
-                                    position: 'relative',
-                                  }}
-                                >
-                                  {/* Type icon & Title */}
-                                  <div
-                                    onClick={() => {
-                                      const store = useMediaEditorStore.getState();
-                                      if (item.type === 'video') {
-                                        const proj = store.projects.find((p) => p.id === item.id);
-                                        if (proj) {
-                                          store.setActiveProject(proj.id);
-                                          store.setActiveRevision(proj.id, proj.activeRevisionId || proj.revisions[proj.revisions.length - 1].id);
-                                          store.setIsCanvasOpen(true);
-                                        } else {
-                                          const fullItem = imagineItems.find((i) => i.id === item.id);
-                                          if (fullItem) {
-                                            const newProjId = store.createProject({
-                                              prompt: fullItem.prompt,
-                                              url: fullItem.url,
-                                              model: fullItem.model || 'Luma Ray 2',
-                                              style: 'Cinematic Video',
-                                              ratio: fullItem.ratio || '16:9',
-                                              seed: 0,
-                                              title: fullItem.prompt.slice(0, 36),
-                                              mediaType: 'video',
-                                            });
-                                            store.setActiveProject(newProjId);
-                                            store.setIsCanvasOpen(true);
-                                          }
-                                        }
-                                        if (pathname !== '/media' && pathname !== '/video') {
-                                          router.push('/video');
-                                        }
-                                        if (onCloseMobile) onCloseMobile();
-                                      } else if (item.type === 'audio') {
-                                        const proj = store.projects.find((p) => p.id === item.id);
-                                        if (proj) {
-                                          store.setActiveProject(proj.id);
-                                          store.setActiveRevision(proj.id, proj.activeRevisionId || proj.revisions[proj.revisions.length - 1].id);
-                                          store.setIsCanvasOpen(true);
-                                        } else {
-                                          const fullItem = imagineItems.find((i) => i.id === item.id);
-                                          if (fullItem) {
-                                            const newProjId = store.createProject({
-                                              prompt: fullItem.prompt,
-                                              url: fullItem.url,
-                                              model: fullItem.model || 'Anticeil Studio',
-                                              style: 'Audio',
-                                              ratio: '1:1',
-                                              seed: 0,
-                                              title: fullItem.prompt.slice(0, 36),
-                                              mediaType: 'audio',
-                                            });
-                                            store.setActiveProject(newProjId);
-                                            store.setIsCanvasOpen(true);
-                                          }
-                                        }
-                                        if (pathname !== '/media' && pathname !== '/audio') {
-                                          router.push('/audio');
-                                        }
-                                        if (onCloseMobile) onCloseMobile();
-                                      } else {
-                                        const proj = store.projects.find((p) => p.id === item.id);
-                                        if (proj) {
-                                          store.setActiveProject(proj.id);
-                                          store.setActiveRevision(proj.id, proj.activeRevisionId || proj.revisions[proj.revisions.length - 1].id);
-                                          store.setIsCanvasOpen(true);
-                                        }
-                                        if (pathname !== '/media') {
-                                          router.push('/media');
-                                        }
-                                        if (onCloseMobile) onCloseMobile();
-                                      }
-                                    }}
-                                    style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '7px' }}
-                                  >
-                                    {item.type === 'video' ? (
-                                      <Film size={13} color="#fb7185" style={{ flexShrink: 0 }} />
-                                    ) : item.type === 'audio' ? (
-                                      <Music size={13} color="#60a5fa" style={{ flexShrink: 0 }} />
-                                    ) : (
-                                      <ImageIcon size={13} color="var(--rail-media-color)" style={{ flexShrink: 0 }} />
-                                    )}
-                                    <div style={{ minWidth: 0, flex: 1 }}>
-                                      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)', fontWeight: isSelected ? 650 : 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {item.isPinned && <Pin size={9} color={mediaAccentColor} style={{ flexShrink: 0 }} />}
-                                        <span>{item.prompt}</span>
-                                      </div>
-                                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                        <span>{item.style}</span>
-                                        <span>•</span>
-                                        <span>{item.time}</span>
-                                        {item.collectionId && (
-                                          <span style={{ background: mediaBadgeBg, color: mediaAccentColor, padding: '0 4px', borderRadius: '3px', fontSize: '9.5px', fontWeight: 600 }}>
-                                            {imageCollections.find((c) => c.id === item.collectionId)?.name || '📁'}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Three-dot menu for Media item */}
-                                  <ImagineItemMenu
-                                    item={item}
-                                    language={language}
-                                    collections={imageCollections.filter((c) => !['ic_cyberpunk', 'ic_wallpapers', 'ic_mockups'].includes(c.id))}
-                                    togglePin={item.type === 'image' ? toggleMediaProjectPin : toggleImaginePin}
-                                    moveToCollection={item.type === 'image' ? moveMediaProjectToCollection : moveImagineToCollection}
-                                    removeItem={item.type === 'image' ? deleteMediaProject : removeImagineItem}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ));
-                      })()
-                    )}
-                  </div>
-                )}
-              </div>
-            </>
           ) : (
             /* ─────────────────────────────────────────────────────────────
              * D. DEFAULT CHAT MODE SIDEBAR CONTENT
@@ -3928,12 +2907,6 @@ export function Sidebar({
         language={language}
       />
 
-      <MediaDetailModal
-        item={selectedMediaItem}
-        onClose={() => setSelectedMediaItem(null)}
-        onDelete={(id: string) => { removeImagineItem(id); setSelectedMediaItem(null); }}
-        language={language as 'en' | 'id'}
-      />
-    </aside>
+      </aside>
   );
 }

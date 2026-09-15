@@ -235,6 +235,8 @@ import { DocsSpreadsheetView } from './DocsSpreadsheetView';
 import { DocsSlideView } from './DocsSlideView';
 import { DocsVersionHistoryModal } from './DocsVersionHistoryModal';
 import { DocLogsDrawer, DocExportDropdown } from './shared';
+import { useDocModals } from '../hooks/useDocModals';
+import { computeLineDiff } from '../utils/diffUtils';
 import { streamBYOKChat } from '../../chat/data/byokApi';
 import { ChatMessage, LLMProviderId } from '@anticeil/core';
 
@@ -300,6 +302,7 @@ export function DocsView({ initialDocId }: DocsViewProps = {}) {
   const deleteCommentReply = useDocsStore((s) => s.deleteCommentReply);
   const docSnapshots = useDocsStore((s) => s.docSnapshots);
   const user = useAuthStore((s) => s.user);
+  const { docModalsElement } = useDocModals(activeDoc);
 
   const language = useSettingsStore((s) => s.language);
   const theme = useSettingsStore((s) => s.theme);
@@ -6428,10 +6431,29 @@ ${exportText}
                         (el as any)._lastSelection = { start: el.selectionStart, end: el.selectionEnd };
                       }}
                       onChange={(e) => {
+                        const newVal = e.target.value;
+                        const oldVal = activeSubFile?.content ?? activeDoc?.content ?? '';
+                        if (reviewMode === 'reviewing' && activeDoc) {
+                          const diff = computeLineDiff(oldVal, newVal);
+                          if (diff) {
+                            addSuggestion(activeDoc.id, {
+                              docId: activeDoc.id,
+                              subFileId: activeSubFile?.id,
+                              type: diff.type,
+                              fromLine: diff.fromLine,
+                              toLine: diff.toLine,
+                              originalText: diff.originalText,
+                              suggestedText: diff.suggestedText,
+                              authorEmail: user?.email,
+                              authorName: displayName,
+                            });
+                          }
+                          return;
+                        }
                         if (activeDoc && activeSubFile) {
-                          updateSubFileContent(activeDoc.id, activeSubFile.id, e.target.value);
+                          updateSubFileContent(activeDoc.id, activeSubFile.id, newVal);
                         } else if (activeDoc) {
-                          updateDocumentContent(activeDoc.id, e.target.value);
+                          updateDocumentContent(activeDoc.id, newVal);
                         }
                       }}
                       placeholder={`Ketik isi file ${activeSubFile?.name || 'main.tex'} di sini...`}
@@ -8031,6 +8053,8 @@ ${exportText}
         </div>,
         document.body
       )}
+
+      {docModalsElement}
     </div>
   );
 }

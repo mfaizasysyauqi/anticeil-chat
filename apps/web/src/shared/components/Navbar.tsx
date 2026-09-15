@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { toast } from '../hooks/useToast';
 import {
   Menu,
   MoreVertical,
@@ -15,13 +16,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageSquare,
-  Image as ImageIcon,
-  Video,
-  Headphones,
   FileText,
   Table as TableIcon,
   Layers,
-  Sparkles,
   Settings as SettingsIcon,
   BookOpen,
   Eye,
@@ -31,11 +28,8 @@ import { useAuthStore } from '../../features/auth/store/useAuthStore';
 import { useChatStore } from '../../features/chat/store/useChatStore';
 import { useProjectStore } from '../../features/chat/store/useProjectStore';
 import { useDocsStore } from '../../features/docs/store/useDocsStore';
-import { useWorkspaceStore } from '../../features/storage/store/useWorkspaceStore';
 import { DocModeSwitcher } from '../../features/docs/components/shared/DocModeSwitcher';
 import { DocLayoutOptionsDropdown } from '../../features/docs/components/shared/DocLayoutOptionsDropdown';
-import { MediaLayoutOptionsDropdown } from '../../features/media/components/MediaLayoutOptionsDropdown';
-import { AudioModeDropdown } from '../../features/audio/components/AudioModeDropdown';
 import { ChatLayoutOptionsDropdown } from '../../features/chat/components/ChatLayoutOptionsDropdown';
 import { getTranslation } from '@anticeil/core';
 
@@ -52,8 +46,6 @@ export function Navbar({
   onToggleDesktopSidebar,
 }: NavbarProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const isAudio = pathname === '/audio' || (pathname?.startsWith('/media') && searchParams?.get('tab') === 'audio');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProjectSubmenuOpen, setIsProjectSubmenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -91,9 +83,6 @@ export function Navbar({
   const updateDocumentTitle = useDocsStore((s) => s.updateDocumentTitle);
   const isDocsCanvasOpen = useDocsStore((s) => s.isCanvasOpen);
   const toggleDocsCanvas = useDocsStore((s) => s.toggleCanvas);
-  const activeImageCollectionId = useWorkspaceStore((s) => s.activeImageCollectionId);
-  const imageCollections = useWorkspaceStore((s) => s.imageCollections);
-  const activeCollection = imageCollections.find((c) => c.id === activeImageCollectionId);
   const t = getTranslation(language);
 
   const [mounted, setMounted] = React.useState(false);
@@ -103,34 +92,6 @@ export function Navbar({
 
   // Dynamic Route Breadcrumb Metadata
   const routeMeta = React.useMemo(() => {
-    if (pathname?.startsWith('/image')) {
-      return {
-        icon: <ImageIcon size={13.5} color="#8B5CF6" style={{ flexShrink: 0 }} />,
-        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Gambar Baru' : 'New Image'),
-        isEditable: false,
-      };
-    }
-    if (pathname?.startsWith('/video')) {
-      return {
-        icon: <Video size={13.5} color="#EC4899" style={{ flexShrink: 0 }} />,
-        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Video Baru' : 'New Video'),
-        isEditable: false,
-      };
-    }
-    if (pathname?.startsWith('/audio')) {
-      return {
-        icon: <Headphones size={13.5} color="#F59E0B" style={{ flexShrink: 0 }} />,
-        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Audio Baru' : 'New Audio'),
-        isEditable: false,
-      };
-    }
-    if (pathname?.startsWith('/media')) {
-      return {
-        icon: <Sparkles size={13.5} color="var(--rail-media-color)" style={{ flexShrink: 0 }} />,
-        title: (mounted && activeCollection?.name) || (language === 'id' ? 'Media Baru' : 'New Media'),
-        isEditable: false,
-      };
-    }
     if (pathname?.startsWith('/docs')) {
       const format = activeDoc?.format || selectedDocFormat || 'latex';
       const defaultTitle = format === 'sheet'
@@ -179,7 +140,7 @@ export function Navbar({
         if (activeSession) updateSession(activeSession.id, { title: newTitle });
       },
     };
-  }, [pathname, activeDoc, activeSession, activeCollection, mounted, language, updateDocumentTitle, updateSession]);
+  }, [pathname, activeDoc, activeSession, mounted, language, updateDocumentTitle, updateSession]);
 
   const [hasMounted, setHasMounted] = useState(false);
   useEffect(() => { setHasMounted(true); }, []);
@@ -207,7 +168,7 @@ export function Navbar({
       if (!activeSession.isPinned) {
         const currentPinnedCount = sessions.filter((s) => s.isPinned).length;
         if (currentPinnedCount >= 3) {
-          alert(language === 'id' ? 'Maksimal 3 obrolan yang dapat disematkan ke atas.' : 'Maximum of 3 pinned chats allowed.');
+          toast.info(language === 'id' ? 'Maksimal 3 obrolan yang dapat disematkan ke atas.' : 'Maximum of 3 pinned chats allowed.');
           setIsMenuOpen(false);
           return;
         }
@@ -459,17 +420,6 @@ export function Navbar({
           </div>
         )}
 
-        {/* Media Studio: Audio gets AudioModeDropdown, Image/Video gets MediaLayoutOptionsDropdown */}
-        {(pathname?.startsWith('/media') || pathname === '/audio' || pathname === '/video' || pathname === '/image') && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {isAudio ? (
-              <AudioModeDropdown compact />
-            ) : (
-              <MediaLayoutOptionsDropdown compact />
-            )}
-          </div>
-        )}
-
         {/* Chat Studio Layout Options Dropdown (Split view, Chat only, Canvas only) */}
         {pathname === '/chat' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -714,8 +664,6 @@ export function Navbar({
                 <span>
                   {pathname === '/chat'
                     ? language === 'id' ? 'Hapus Obrolan' : 'Delete Chat'
-                    : pathname === '/imagine'
-                    ? language === 'id' ? 'Hapus Gambar' : 'Delete Images'
                     : language === 'id' ? 'Reset Halaman' : 'Reset Page'}
                 </span>
               </button>

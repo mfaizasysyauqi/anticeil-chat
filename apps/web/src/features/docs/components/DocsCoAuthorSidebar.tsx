@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { isCloudTier } from '@anticeil/core';
+import { toast } from '@/shared/hooks/useToast';
 
 // Inject slideUp animation keyframes
 if (typeof document !== 'undefined' && !document.getElementById('docs-coauthor-slideup')) {
@@ -80,6 +81,7 @@ import {
   ExecutedAgentAction,
   autoRepairLatexContent,
 } from '../utils/docAgentUtils';
+import { buildSmartDocContext } from '../utils/docContextBuilder';
 
 function FileActionChip({
   action,
@@ -251,7 +253,7 @@ export function DocsCoAuthorSidebar({
     if (!files || files.length === 0) return;
 
     if (attachments.length + files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
-      alert(
+      toast.info(
         language === 'id'
           ? `Maksimal hanya dapat melampirkan ${MAX_ATTACHMENTS_PER_MESSAGE} berkas.`
           : `You can attach a maximum of ${MAX_ATTACHMENTS_PER_MESSAGE} files.`
@@ -269,7 +271,7 @@ export function DocsCoAuthorSidebar({
         newAttachments.push(parsed);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Gagal memproses berkas';
-        alert(message);
+        toast.error(message);
       }
     }
 
@@ -493,39 +495,182 @@ export function DocsCoAuthorSidebar({
 
     const subFiles = activeDoc?.files || [];
     const activeSubFile = subFiles.find((f) => f.id === activeDoc?.activeFileId);
-    const subFilesTree = subFiles.map((f) => `- ${f.name} (${f.content.length} chars)`).join('\n');
-    
-    // Lean context: active file content (max 1800 chars) + main file (max 1200 chars) to prevent 7000 ITPM limit
-    const activeFileSnippet = activeSubFile ? activeSubFile.content.slice(0, 1800) : activeDoc?.content.slice(0, 1800) || '';
-    const otherFilesSummary = subFiles
-      .filter((f) => f.id !== activeDoc?.activeFileId)
-      .slice(0, 5)
-      .map((f) => `- ${f.name}: ${f.content.slice(0, 200).replace(/\n+/g, ' ')}...`)
-      .join('\n');
-
-    const projectContext = activeDoc
-      ? `\n\nPROJECT FILES:
-- Project Title: "${activeDoc.title}"
-- Format: ${activeDoc.format}
-- Currently Open File: ${activeSubFile ? activeSubFile.name : 'Main Document'}
-- File Tree:
-${subFilesTree || '- Main document file (root)'}
-${otherFilesSummary ? `\nOther Project Modules:\n${otherFilesSummary}\n` : ''}
-CURRENT FILE CONTENT:
-\`\`\`
-${activeFileSnippet}
-\`\`\``
-      : '';
+    const projectContext = buildSmartDocContext(activeDoc, activeSubFile);
 
     const docFormat = activeDoc?.format || 'latex';
     let formatPreamble = '';
     if (docFormat === 'sheet') {
       formatPreamble = `You are an expert financial and data spreadsheet AI Co-Author specializing in AntSheet workbooks.
 The project workspace is a Feature-First spreadsheet environment (.antsheet, .csv, .md).
-Always output clean AntSheet syntax with ## Meta, ## Cells, formulas, and charts.`;
+
+ANTSHEET FORMAT SPECIFICATION:
+AntSheet is a plain-text spreadsheet format. Each sheet in a workbook starts with a top-level heading:
+# Sheet Name
+
+SECTIONS (in order):
+
+## Meta  (optional — grid config)
+columnWidth: A=180, B=130, C=140
+rowHeight: 1=36, 6=32
+freezeRow: 1
+freezeColumn: 1
+filter: A1:D1
+
+## Cells  (required — the data)
+Cell syntax:  ADDRESS = VALUE | prop: value, prop: value
+- VALUE can be a plain string (no quotes needed), a number, or a quoted formula string
+- Formulas: wrap in double quotes  →  A5 = "=SUM(A2:A4)"
+- Supported formula functions: SUM, AVERAGE, MIN, MAX, COUNT, IF, VLOOKUP, INDEX, MATCH, CONCATENATE, TODAY, NOW, ROUND, ABS, LEN, LEFT, RIGHT, MID, UPPER, LOWER, TRIM, AND, OR, NOT, IFERROR, COUNTIF, SUMIF, AVERAGEIF
+Cell style props (pipe-separated list after |):
+  fontWeight: bold
+  fontStyle: italic
+  fontSize: 13
+  color: #hex
+  backgroundColor: #hex
+  textAlign: left | center | right
+  format: currency:IDR | currency:USD | percentage | date | number
+  borderTop / borderBottom / borderLeft / borderRight: 1 solid #hex
+  merge: 2x3   (merges this cell over 2 cols × 3 rows)
+
+Examples:
+A1 = "Category" | fontWeight: bold, backgroundColor: #1e293b, color: #ffffff, textAlign: center
+B2 = 145000000 | format: currency:IDR, textAlign: right
+C3 = "=(C2-B2)/B2" | format: percentage, color: #16a34a, fontWeight: bold
+A6 = "Total" | fontWeight: bold, borderTop: 2 solid #94a3b8
+B6 = "=SUM(B2:B5)" | fontWeight: bold, format: currency:IDR, textAlign: right
+
+## Merges  (optional)
+A1:C1 = merge
+
+## DataValidation  (optional)
+rule1 = list | range: A2:A10, options: ["Option A", "Option B", "Option C"]
+rule2 = number | range: B2:B10, operator: ">=", value: 0
+
+## ConditionalFormatting  (optional)
+cf1 = highlight | range: D2:D10, operator: ">=", value: 0.1, backgroundColor: #dcfce7, color: #15803d
+cf2 = highlight | range: D2:D10, operator: "<", value: 0, backgroundColor: #fee2e2, color: #b91c1c
+
+## Charts  (optional)
+chart1 = bar    | title: "Sales Q1 vs Q2", x: A, series: [B, C], position: F2:N14
+chart2 = line   | title: "Trend", x: A, series: [B], position: F16:N28
+chart3 = pie    | title: "Distribution", x: A, series: [B], position: P2:X14
+chart4 = area   | title: "Cumulative", x: A, series: [B, C], position: F2:N14
+chart5 = scatter| title: "Correlation", x: B, series: [C], position: F2:N14
+
+MULTI-SHEET WORKBOOKS: Use multiple # headings in the same file, each followed by its own sections.
+Example:
+# Revenue
+## Meta
+freezeRow: 1
+## Cells
+A1 = "Month" | fontWeight: bold, backgroundColor: #1e293b, color: #fff
+
+# Expenses
+## Meta
+freezeRow: 1
+## Cells
+A1 = "Category" | fontWeight: bold, backgroundColor: #1e293b, color: #fff
+
+RULES:
+- ALWAYS produce valid AntSheet syntax — never raw JSON, never HTML tables, never Markdown tables.
+- Always include ## Cells at minimum; ## Meta, ## Charts, ## ConditionalFormatting are optional but encouraged.
+- For financial tables: use dark headers (#1e293b bg + white text), freeze row 1, apply currency/percentage formats.
+- For growth columns: green (#16a34a) for positive, red (#dc2626) for negative via ConditionalFormatting.
+- Formulas must be wrapped in double quotes: "=SUM(B2:B5)".`;
     } else if (docFormat === 'slide') {
       formatPreamble = `You are an elite presentation designer and AI Co-Author specializing in modular slide decks.
-The project workspace is a Feature-First slide presentation environment (.slide, .md) using '---' slide delimiters or @[include] sub-slide modules.`;
+The project workspace is a Feature-First slide presentation environment (.slide, .md) using '---' slide delimiters or @[include] sub-slide modules.
+
+SLIDE FORMAT SPECIFICATION:
+Slides are written in Markdown. Each slide is separated by '---' on its own line.
+The FIRST '---' starts the first slide. Every subsequent '---' starts a new slide.
+
+SLIDE STRUCTURE:
+---
+# Slide Title
+Body content in Markdown:
+- Bullet point 1
+- Bullet point 2
+
+Regular paragraph text. **Bold**, _italic_, \`code\`.
+
+---
+# Next Slide Title
+More content...
+
+LAYOUT DIRECTIVES (add as HTML comments at the top of a slide block):
+<!-- layout: cover -->        — Large hero title slide (for the first/intro slide)
+<!-- layout: two-column -->   — Side-by-side content (use | to split left/right)
+<!-- layout: image-right -->  — Text left, image right
+<!-- layout: blank -->        — No header, full canvas
+<!-- layout: section -->      — Section divider slide with big centered title
+<!-- theme: dark -->          — Override theme for this slide only
+<!-- transition: fade -->     — Transition hint: fade | slide | zoom | none
+
+TWO-COLUMN LAYOUT EXAMPLE:
+---
+<!-- layout: two-column -->
+# Comparison
+
+## Left Column
+- React is component-based
+- Virtual DOM
+- Huge ecosystem
+
+|
+
+## Right Column
+- Vue is progressive
+- Reactive data binding
+- Gentle learning curve
+
+IMAGE EXAMPLE:
+---
+<!-- layout: image-right -->
+# Key Insight
+
+Body text explaining the concept.
+More detail here.
+
+![Description](assets/diagram.png)
+
+SPEAKER NOTES (not shown in presentation):
+---
+# Main Point
+
+Slide content here.
+
+> Note: Speaker notes go here after a blank line and blockquote.
+> Remember to mention the Q4 data.
+
+SUB-SLIDE MODULES (@[include] for multi-file decks):
+Use @[include:filename.slide] to include another slide file.
+Main file (main.slide):
+---
+# Introduction
+Welcome!
+@[include:chapter1.slide]
+@[include:chapter2.slide]
+
+SLIDE MANAGEMENT RULES:
+- NEVER delete '---' separators unless explicitly removing a slide.
+- When ADDING a slide, ALWAYS add '---' before the new content.
+- When REORDERING slides, move entire '---' blocks together.
+- Slide titles use # (h1) — each slide should have exactly one # title.
+- Use ## for sub-headings WITHIN a slide, never to start a new slide.
+- For code blocks, use fenced \`\`\`language blocks.
+- For tables, use standard Markdown tables.
+- For math/formulas: inline $formula$ or block $$formula$$.
+- Always include the opening '---' before the first slide.
+- Image assets go in assets/ folder: ![Alt](assets/image.png)
+
+CONTENT BEST PRACTICES:
+- Keep slides concise: 3-5 bullet points max per slide.
+- Use strong verbs in bullet points: "Increases", "Reduces", "Enables".
+- Opening slide: use <!-- layout: cover --> with a compelling tagline.
+- Section dividers: use <!-- layout: section --> for chapter breaks.
+- Data slides: prefer tables or 2-column layouts over long text.
+- Closing slide: include a strong call-to-action or "Thank You" + contact info.`;
     } else if (docFormat === 'markdown') {
       formatPreamble = `You are an expert technical documentation AI Co-Author specializing in modular Markdown documentation.`;
     } else if (docFormat === 'typst') {
@@ -1336,7 +1481,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
             )}
 
             {/* Active Connector Badges */}
-            {(['anticeil_image', 'anticeil_video', 'anticeil_audio', 'gmail', 'calendar', 'google_drive', 'notion', 'github', 'custom_webhook'] as const)
+            {(['anticeil_image', 'anticeil_audio', 'gmail', 'calendar', 'google_drive', 'notion', 'github', 'custom_webhook'] as const)
               .filter((id) => activeConnectorIds.includes(id))
               .map((connId) => {
               const conn = connectors[connId];

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DOC_TEMPLATES } from '../data/docTemplates';
+import { toast } from '@/shared/hooks/useToast';
 
 export type DocFormat = 'markdown' | 'latex' | 'sheet' | 'slide' | 'typst';
 export type StudioPhase = 'landing' | 'generating' | 'editor';
@@ -174,6 +175,9 @@ interface DocsState {
   addSuggestion: (docId: string, suggestion: Omit<DocSuggestion, 'id' | 'createdAt' | 'status'>) => string;
   acceptSuggestion: (docId: string, suggestionId: string) => void;
   rejectSuggestion: (docId: string, suggestionId: string) => void;
+  deleteSuggestion: (docId: string, suggestionId: string) => void;
+  acceptAllSuggestions: (docId: string) => void;
+  rejectAllSuggestions: (docId: string) => void;
 
   activeTextareaElement: HTMLTextAreaElement | null;
   registerActiveTextarea: (el: HTMLTextAreaElement | null) => void;
@@ -554,6 +558,41 @@ export const useDocsStore = create<DocsState>((set, get) => {
           ...d,
           suggestions: (d.suggestions || []).map((s) =>
             s.id === suggestionId ? { ...s, status: 'rejected' as const } : s
+          ),
+          updatedAt: Date.now(),
+        }
+      );
+      set({ documents: updated });
+      saveToStorage(updated);
+    },
+
+    deleteSuggestion: (docId, suggestionId) => {
+      const updated = get().documents.map((d) =>
+        d.id !== docId ? d : {
+          ...d,
+          suggestions: (d.suggestions || []).filter((s) => s.id !== suggestionId),
+          updatedAt: Date.now(),
+        }
+      );
+      set({ documents: updated });
+      saveToStorage(updated);
+    },
+
+    acceptAllSuggestions: (docId) => {
+      const doc = get().documents.find((d) => d.id === docId);
+      if (!doc) return;
+      const pending = (doc.suggestions || []).filter((s) => s.status === 'pending');
+      pending.forEach((s) => {
+        get().acceptSuggestion(docId, s.id);
+      });
+    },
+
+    rejectAllSuggestions: (docId) => {
+      const updated = get().documents.map((d) =>
+        d.id !== docId ? d : {
+          ...d,
+          suggestions: (d.suggestions || []).map((s) =>
+            s.status === 'pending' ? { ...s, status: 'rejected' as const } : s
           ),
           updatedAt: Date.now(),
         }
@@ -1275,7 +1314,7 @@ Mulai menulis dokumen LaTeX Anda di sini. Gunakan formula matematika $E = mc^2$,
 
       const pinnedDocsCount = docs.filter((d) => d.isPinned).length;
       if (!doc.isPinned && pinnedDocsCount >= 3) {
-        alert('Maksimal 3 dokumen yang dapat disematkan / Maximum of 3 pinned documents allowed.');
+        toast.info('Maksimal 3 dokumen yang dapat disematkan / Maximum of 3 pinned documents allowed.');
         return;
       }
 

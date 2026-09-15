@@ -21,7 +21,6 @@ export const gettingStartedCategory: DocCategory = {
 **Anticeil** adalah *AI Work Operating System* modern yang menyatukan seluruh kebutuhan produktivitas cerdas dalam satu workspace terpadu:
 - **Chat Studio**: Berinteraksi dengan puluhan model AI mutakhir (Claude 3.7 Sonnet, DeepSeek R1/V3, GPT-4o, Gemini 2.0 Flash, Llama 3.3).
 - **Docs Studio**: Editor dokumen teknis, riset ilmiah (LaTeX & Overleaf Multi-File), presentasi slide, dan spreadsheet cerdas (**AntSheet**).
-- **Media Studio (Imagine)**: Generator gambar, video, dan musik AI dengan sistem galeri terorganisir.
 - **Connectors**: Terhubung langsung ke Google Drive, Notion, GitHub, dan Gmail.
 
 ---
@@ -38,7 +37,6 @@ export const gettingStartedCategory: DocCategory = {
 **Anticeil** is a modern *AI Work Operating System* uniting all intelligent productivity workflows inside one cohesive interface:
 - **Chat Studio**: Interact with top-tier AI models (Claude 3.7 Sonnet, DeepSeek R1/V3, GPT-4o, Gemini 2.0 Flash, Llama 3.3).
 - **Docs Studio**: Technical doc authoring, research papers (LaTeX & Overleaf Multi-File), slides, and intelligent spreadsheets (**AntSheet**).
-- **Media Studio (Imagine)**: AI image, video, and audio generation with curated collections.
 - **Connectors**: Direct client-side connection to Google Drive, Notion, GitHub, and Gmail.
 
 ---

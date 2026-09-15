@@ -169,6 +169,33 @@ CREATE TABLE IF NOT EXISTS public.document_comments (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 11b. Document View-Only Shares (Snapshot Sharing for Free/Student Tier)
+CREATE TABLE IF NOT EXISTS public.doc_shares (
+  id TEXT PRIMARY KEY, -- share_id e.g. s_xxxxxx
+  project_id TEXT NOT NULL, -- local doc.id
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- nullable for free/local users
+  title TEXT NOT NULL DEFAULT 'Untitled Document',
+  format TEXT NOT NULL DEFAULT 'latex', -- 'latex' | 'typst' | 'sheet' | 'slide' | 'markdown'
+  preview_data TEXT, -- pre-rendered HTML/preview
+  source_code TEXT NOT NULL DEFAULT '', -- primary source code
+  files JSONB NOT NULL DEFAULT '[]'::jsonb, -- modular subfiles [{id, name, content}]
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  password_hash TEXT,
+  view_count INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_doc_shares_project_id ON public.doc_shares(project_id);
+CREATE INDEX IF NOT EXISTS idx_doc_shares_expires_at ON public.doc_shares(expires_at);
+
+ALTER TABLE public.doc_shares ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can view active non-expired shares" ON public.doc_shares
+  FOR SELECT USING (is_active = TRUE AND expires_at > NOW());
+CREATE POLICY "Allow share management" ON public.doc_shares
+  FOR ALL USING (TRUE) WITH CHECK (TRUE);
+
 -- 12. Co-Author Sessions (Docs Studio AI Assistant History)
 CREATE TABLE IF NOT EXISTS public.coauthor_sessions (
   id TEXT PRIMARY KEY,

@@ -23,6 +23,7 @@ import {
   LLMProviderId,
   getTranslation,
 } from '@anticeil/core';
+import { toast } from '@/shared/hooks/useToast';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useChatStore } from '../../chat/store/useChatStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
@@ -180,12 +181,13 @@ export function SettingsView() {
         if (parsed.apiKeys) {
           importApiKeys(parsed.apiKeys);
           setImportNotice('✓ Backup data & API keys successfully restored!');
+          toast.success('Backup data & API keys successfully restored!');
           setTimeout(() => setImportNotice(''), 3500);
         } else {
-          alert('Invalid backup JSON format: missing apiKeys field.');
+          toast.error('Invalid backup JSON format: missing apiKeys field.');
         }
       } catch (err) {
-        alert('Failed parsing backup file. Make sure it is valid JSON.');
+        toast.error('Failed parsing backup file. Make sure it is valid JSON.');
       }
     };
     reader.readAsText(file);

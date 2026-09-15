@@ -1,4 +1,4 @@
-import {
+﻿import {
   ConnectorId,
   ConnectorToolDefinition,
   ToolCallRequest,
@@ -702,20 +702,6 @@ export const CONNECTOR_TOOLS: ConnectorToolDefinition[] = [
     },
   },
   {
-    name: 'anticeil_generate_video',
-    connectorId: 'anticeil_video',
-    description: 'Generate AI video clips, motion animations, or video sequences based on a text prompt.',
-    parameters: {
-      type: 'object',
-      properties: {
-        prompt: { type: 'string', description: 'Prompt for video generation', required: true },
-        duration: { type: 'number', description: 'Video duration in seconds (default 4)' },
-        aspectRatio: { type: 'string', description: 'Aspect ratio: 16:9, 9:16, 1:1', enum: ['16:9', '9:16', '1:1'] },
-      },
-      required: ['prompt'],
-    },
-  },
-  {
     name: 'anticeil_generate_audio',
     connectorId: 'anticeil_audio',
     description: 'Generate AI voice speech, narration, background music, or sound effects.',
@@ -820,19 +806,6 @@ export async function executeConnectorTool(
         status: 'success',
         data: { prompt, aspectRatio, mediaType: 'image' },
         summary: `Anticeil Image: Generated image for "${prompt}" (${aspectRatio})`,
-        executedAt: Date.now(),
-      };
-    }
-
-    if (toolDef.connectorId === 'anticeil_video') {
-      const prompt = args.prompt || 'Generated video';
-      return {
-        toolCallId: id,
-        toolName: name,
-        connectorId: 'anticeil_video',
-        status: 'success',
-        data: { prompt, mediaType: 'video' },
-        summary: `Anticeil Video: Generated video clip for "${prompt}"`,
         executedAt: Date.now(),
       };
     }
@@ -1194,7 +1167,6 @@ export async function executeConnectorTool(
     const _cid = toolDef.connectorId as string;
     if (
       _cid === 'anticeil_image' ||
-      _cid === 'anticeil_video' ||
       _cid === 'anticeil_audio'
     ) {
       const cleanPrompt = String(args.prompt || 'illustration').trim();
@@ -1215,17 +1187,6 @@ export async function executeConnectorTool(
             latexSnippet: `\\begin{figure}[htbp]\\centering\\includegraphics[width=0.6\\textwidth]{${imageUrl}}\\end{figure}`,
           },
           summary: `Berhasil membuat gambar AI untuk prompt "${cleanPrompt}". URL: ${imageUrl}`,
-          executedAt: Date.now(),
-        };
-      } else if (name === 'anticeil_generate_video') {
-        const videoUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=1280&height=720&nologo=true&model=flux`;
-        return {
-          toolCallId: id,
-          toolName: name,
-          connectorId: 'anticeil_video',
-          status: 'success',
-          data: { url: videoUrl, prompt: cleanPrompt },
-          summary: `Berhasil membuat video AI untuk prompt "${cleanPrompt}".`,
           executedAt: Date.now(),
         };
       } else if (name === 'anticeil_generate_audio') {

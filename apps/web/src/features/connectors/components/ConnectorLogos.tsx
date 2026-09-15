@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Image as ImageIcon, Film, Music } from 'lucide-react';
@@ -127,8 +127,6 @@ export function ConnectorBrandIcon({ id, size = 20 }: { id: ConnectorId; size?: 
       return <SmitheryIcon size={size} />;
     case 'anticeil_image':
       return <AnticeilImageLogo size={size} />;
-    case 'anticeil_video':
-      return <AnticeilVideoLogo size={size} />;
     case 'anticeil_audio':
       return <AnticeilAudioLogo size={size} />;
     default:
