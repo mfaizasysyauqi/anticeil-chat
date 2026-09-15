@@ -585,6 +585,8 @@ code, pre, kbd {
   --rail-chat-bg: rgba(249, 115, 22, 0.15);
   --rail-docs-color: #2563eb;
   --rail-docs-bg: rgba(37, 99, 235, 0.15);
+  --rail-code-color: #818cf8;
+  --rail-code-bg: rgba(129, 140, 248, 0.15);
   --rail-media-color: #38bdf8;
   --rail-media-bg: rgba(56, 189, 248, 0.15);
   --rail-credit-color: #f59e0b;
@@ -621,7 +623,7 @@ code, pre, kbd {
   color: var(--rail-chat-color) !important;
 }
 
-/* Docs Button (Emerald Mint Green) */
+/* Docs Button (Deep Blue) */
 .rail-icon-btn.docs-btn:hover {
   color: var(--rail-docs-color) !important;
   background: var(--rail-docs-bg) !important;
@@ -632,7 +634,18 @@ code, pre, kbd {
   color: var(--rail-docs-color) !important;
 }
 
-/* Media Button (Radiant Purple) */
+/* Code Button (Indigo Violet) */
+.rail-icon-btn.code-btn:hover {
+  color: var(--rail-code-color) !important;
+  background: var(--rail-code-bg) !important;
+  transform: scale(1.08);
+}
+.rail-icon-btn.code-btn.active {
+  background: var(--rail-code-bg) !important;
+  color: var(--rail-code-color) !important;
+}
+
+/* Media Button (Radiant Sky) */
 .rail-icon-btn.media-btn:hover {
   color: var(--rail-media-color) !important;
   background: var(--rail-media-bg) !important;

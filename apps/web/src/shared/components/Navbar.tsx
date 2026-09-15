@@ -22,6 +22,7 @@ import {
   Settings as SettingsIcon,
   BookOpen,
   Eye,
+  Code2,
 } from 'lucide-react';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
@@ -115,6 +116,13 @@ export function Navbar({
         onUpdateTitle: (newTitle: string) => {
           if (activeDoc) updateDocumentTitle(activeDoc.id, newTitle);
         },
+      };
+    }
+    if (pathname?.startsWith('/code')) {
+      return {
+        icon: <Code2 size={13.5} color="var(--rail-code-color, #818cf8)" style={{ flexShrink: 0 }} />,
+        title: 'Anticeil Code',
+        isEditable: false,
       };
     }
     if (pathname?.startsWith('/documentation')) {

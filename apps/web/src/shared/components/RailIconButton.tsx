@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
-export type RailColorType = 'chat' | 'docs' | 'media' | 'default';
+export type RailColorType = 'chat' | 'docs' | 'media' | 'code' | 'default';
 
 export interface RailIconButtonProps {
   href?: string;
