@@ -1,5 +1,13 @@
 import React from 'react';
 import { Clock, Pencil, Trash2, RotateCcw, Sparkles } from 'lucide-react';
+import {
+  Timeline,
+  TimelineItem,
+  TimelineDot,
+  TimelineLine,
+  TimelineContent,
+  TimelineHeading,
+} from '@/components/ui/timeline';
 
 export interface AuditEntry {
   time: number;
@@ -15,6 +23,20 @@ export interface AuditTimelineProps {
   /** Auto-collapse when not actively streaming/editing */
   isStreaming?: boolean;
 }
+
+const ACTION_META: Record<AuditEntry['action'], { Icon: React.ElementType; color: string }> = {
+  edit:     { Icon: Pencil,    color: 'var(--accent-warning)' },
+  delete:   { Icon: Trash2,   color: 'var(--accent-danger)' },
+  undo:     { Icon: RotateCcw, color: 'var(--brand-primary)' },
+  generate: { Icon: Sparkles,  color: 'var(--accent-success)' },
+};
+
+const ACTION_LABEL: Record<AuditEntry['action'], { id: string; en: string }> = {
+  edit:     { id: 'Edit prompt',  en: 'Edited prompt' },
+  delete:   { id: 'Hapus',       en: 'Deleted' },
+  undo:     { id: 'Undo',        en: 'Undo' },
+  generate: { id: 'Generate',    en: 'Generated' },
+};
 
 export function AuditTimeline({ entries, language = 'en', isStreaming = false }: AuditTimelineProps) {
   const [collapsed, setCollapsed] = React.useState(!isStreaming);
@@ -49,7 +71,7 @@ export function AuditTimeline({ entries, language = 'en', isStreaming = false }:
         }}
       >
         <Clock size={12} />
-        {language === 'id' ? 'Audit Log' : 'Audit Log'}
+        Audit Log
         <span style={{
           marginLeft: 'auto',
           fontSize: '10px',
@@ -69,50 +91,39 @@ export function AuditTimeline({ entries, language = 'en', isStreaming = false }:
         overflow: 'hidden',
         maxHeight: collapsed ? '0px' : '400px',
         transition: 'max-height 0.25s ease',
-        borderLeft: '1.5px solid var(--border-subtle)',
-        paddingLeft: '14px',
-        marginLeft: '4px',
+        paddingLeft: '4px',
+        marginTop: collapsed ? 0 : '4px',
       }}>
-        {entries.map((e, i) => {
-          const Icon = e.action === 'edit' ? Pencil : e.action === 'delete' ? Trash2 : e.action === 'undo' ? RotateCcw : Sparkles;
-          const color = e.action === 'edit' ? 'var(--accent-warning)' : e.action === 'delete' ? 'var(--accent-danger)' : e.action === 'undo' ? 'var(--brand-primary)' : 'var(--accent-success)';
-          const label = language === 'id'
-            ? (e.action === 'edit' ? 'Edit prompt' : e.action === 'delete' ? 'Hapus' : e.action === 'undo' ? 'Undo' : 'Generate')
-            : (e.action === 'edit' ? 'Edited prompt' : e.action === 'delete' ? 'Deleted' : e.action === 'undo' ? 'Undo' : 'Generated');
+        <Timeline positions="left">
+          {entries.map((e, i) => {
+            const isLast = i === entries.length - 1;
+            const { Icon, color } = ACTION_META[e.action];
+            const label = ACTION_LABEL[e.action][language];
+            const timeStr = new Date(e.time).toLocaleTimeString(
+              language === 'id' ? 'id-ID' : 'en-US',
+              { hour: '2-digit', minute: '2-digit', second: '2-digit' }
+            );
 
-          return (
-            <div key={i} style={{
-              display: 'flex',
-              gap: '8px',
-              padding: '6px 0',
-              position: 'relative',
-            }}>
-              <div style={{
-                position: 'absolute',
-                left: '-18px',
-                top: '10px',
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: color,
-                border: '2px solid var(--bg-surface, #fff)',
-                zIndex: 2,
-              }} />
-              <div style={{ flexShrink: 0, width: '24px', height: '24px', borderRadius: '6px', background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={12} color={color} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                  <span style={{ color, fontWeight: 600 }}>{label}</span>{' '}
-                  <span style={{ color: 'var(--text-dim)' }}>· {e.detail ?? `#${e.messageId.slice(0, 4)}`}</span>
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', fontFamily: 'monospace' }}>
-                  {new Date(e.time).toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+            return (
+              <TimelineItem key={e.messageId + i}>
+                <TimelineHeading side="right" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                  <span style={{ color, fontWeight: 600 }}>{label}</span>
+                  {' '}
+                  <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>· {e.detail ?? `#${e.messageId.slice(0, 4)}`}</span>
+                </TimelineHeading>
+                <TimelineDot
+                  status="custom"
+                  style={{ backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`, border: `1.5px solid ${color}`, color }}
+                  customIcon={<Icon size={8} style={{ strokeWidth: 2.5, flexShrink: 0 }} />}
+                />
+                {!isLast && <TimelineLine done />}
+                <TimelineContent side="right" style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-muted)', paddingBottom: 10 }}>
+                  {timeStr}
+                </TimelineContent>
+              </TimelineItem>
+            );
+          })}
+        </Timeline>
       </div>
     </div>
   );
