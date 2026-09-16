@@ -16,4 +16,5 @@ export * from './domain/connectors/driveClient';
 export * from './domain/connectors/notionClient';
 export * from './domain/connectors/githubClient';
 export * from './domain/connectors/toolRegistry';
+export * from './domain/agenticDocEngine';
 export * from './i18n';

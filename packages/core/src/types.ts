@@ -100,6 +100,12 @@ export interface AgentStep {
     | 'web_search'
     | 'read'
     | 'edit'
+    | 'create'
+    | 'delete'
+    | 'patch'
+    | 'act'
+    | 'lint'
+    | 'verify'
     | 'mcp'
     | 'connector'
     | 'synthesis'
@@ -108,6 +114,7 @@ export interface AgentStep {
   content?: string;
   timestamp: number;
   badge?: string;
+  status?: 'pending' | 'running' | 'done' | 'error';
 }
 
 export interface ChatMessage {

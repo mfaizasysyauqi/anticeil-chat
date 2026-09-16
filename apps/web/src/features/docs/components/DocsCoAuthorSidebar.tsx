@@ -43,6 +43,10 @@ import {
   Plug,
   ChevronRight,
   Trash2,
+  Zap,
+  ListChecks,
+  MessageSquare,
+  Play,
 } from 'lucide-react';
 import { useDocsStore } from '../store/useDocsStore';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
@@ -65,6 +69,9 @@ import {
   parseUploadedFile,
   generateConnectorsSystemInstruction,
   cleanAgenticStream,
+  AgenticMode,
+  getAgenticModeInstruction,
+  parseAgenticStepsFromResponse,
 } from '@anticeil/core';
 import { ModelSelectorModal } from '../../chat/components/ModelSelectorModal';
 import { ConnectorsModal } from '../../connectors/components/ConnectorsModal';
@@ -219,6 +226,7 @@ export function DocsCoAuthorSidebar({
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [agenticMode, setAgenticMode] = useState<AgenticMode>('act');
   const [enableWebSearch, setEnableWebSearch] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
@@ -750,8 +758,11 @@ STRICT PUBLICATION, COVER & PAGINATION STANDARDS:
     }
 
     const connectorsInstruction = generateConnectorsSystemInstruction(activeConnectorIds);
+    const agenticInstruction = getAgenticModeInstruction(agenticMode, docFormat);
 
     const systemPrompt = `${formatPreamble}
+
+${agenticInstruction}
 
 ${connectorsInstruction ? connectorsInstruction + '\n\n' : ''}STRICT COLOR CONTRAST RULES:
 - ALWAYS guarantee high visual contrast between text and background across all documents (Typst, LaTeX, Markdown, Slides):
@@ -923,6 +934,12 @@ After emitting the action tags, provide a brief, polite explanation of what was 
             false
           );
 
+          const { steps: dynamicSteps } = parseAgenticStepsFromResponse(
+            fullResponse,
+            streamReasoning || fullReasoning,
+            true
+          );
+
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantMsgId
@@ -930,9 +947,9 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                     ...msg,
                     content: cleanContent,
                     reasoningContent: streamReasoning || fullReasoning || undefined,
-                    agentSteps: [
-                      ...(streamReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (streamReasoning || fullReasoning).slice(0, 120), timestamp: Date.now() }] : []),
-                      { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Generating…', content: cleanContent.slice(0, 100), timestamp: Date.now() },
+                    agentSteps: dynamicSteps.length > 0 ? dynamicSteps : [
+                      ...(streamReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'reasoning' as const, title: 'Reasoning', content: (streamReasoning || fullReasoning).slice(0, 120), timestamp: Date.now(), status: 'running' as const }] : []),
+                      { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Generating…', content: cleanContent.slice(0, 100), timestamp: Date.now(), status: 'running' as const },
                     ],
                   }
                 : msg
@@ -947,11 +964,11 @@ After emitting the action tags, provide a brief, polite explanation of what was 
         true
       );
 
-      // After streaming completes, parse and execute agent actions
+      // After streaming completes, parse and execute agent actions if in act mode or if action tags were generated
       let executedActions = activeDoc ? executeDocAgentActions(activeDoc.id, fullResponse) : [];
 
-      // Full Auto fallback — if no XML tags but full clean document code was returned, apply it safely
-      if (executedActions.length === 0 && activeDoc) {
+      // Full Auto fallback — if in Act mode and no XML tags but full clean document code was returned, apply it safely
+      if (executedActions.length === 0 && activeDoc && agenticMode === 'act') {
         const cleanCode = extractCleanContent(fullResponse);
         if (cleanCode && cleanCode.length > 30 && cleanCode !== fullResponse.trim()) {
           const subFilesList = activeDoc.files || [];
@@ -978,6 +995,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
       }
 
       // Syntax Verification & Auto-Repair Loop Phase
+      let lintRepairedCount = 0;
       if (activeDoc) {
         const latestDoc = useDocsStore.getState().documents.find((d) => d.id === activeDoc.id);
         if (latestDoc) {
@@ -990,6 +1008,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
               const repaired = autoRepairLatexContent(file.content, file.name);
               if (repaired && repaired !== file.content) {
                 updateSubFileContent(latestDoc.id, file.id, repaired);
+                lintRepairedCount++;
               }
               executedActions.push({ type: 'checked', name: file.name });
             }
@@ -1000,18 +1019,41 @@ After emitting the action tags, provide a brief, polite explanation of what was 
               const repaired = autoRepairLatexContent(activeSub.content, activeSub.name);
               if (repaired && repaired !== activeSub.content) {
                 updateSubFileContent(latestDoc.id, activeSub.id, repaired);
+                lintRepairedCount++;
               }
               executedActions.push({ type: 'checked', name: activeSub.name });
             } else if (latestDoc.content) {
               const repaired = autoRepairLatexContent(latestDoc.content, 'main.typ');
               if (repaired && repaired !== latestDoc.content) {
                 updateDocumentContent(latestDoc.id, repaired);
+                lintRepairedCount++;
               }
               executedActions.push({ type: 'checked', name: 'main.typ' });
             }
           }
         }
       }
+
+      const { planContent, steps: parsedSteps } = parseAgenticStepsFromResponse(
+        fullResponse,
+        finalReasoning || fullReasoning,
+        false
+      );
+
+      const finalAgentSteps = [
+        ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'thinking' as const, title: 'Reasoning', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now(), status: 'done' as const }] : []),
+        ...(planContent ? [{ id: 'step-plan', phase: 'plan' as const, title: 'Plan Roadmap', content: planContent.slice(0, 180), timestamp: Date.now(), status: 'done' as const, badge: 'Plan' }] : []),
+        ...executedActions.map((a: { type: string; name: string }, i: number) => ({
+          id: `step-doc-${i}`,
+          phase: (a.type === 'checked' ? 'lint' : 'edit') as 'lint' | 'edit',
+          title: `${a.type === 'checked' ? 'Verified' : 'Edited'}: ${a.name}`,
+          content: a.type === 'checked' ? (lintRepairedCount > 0 ? `Auto-repaired syntax in ${a.name}` : `Validated syntax for ${a.name}`) : `Applied ${a.type} on ${a.name}`,
+          timestamp: Date.now(),
+          status: 'done' as const,
+        })),
+        { id: 'step-synthesis', phase: 'synthesis' as const, title: agenticMode === 'plan' ? 'Plan Ready' : 'Execution Completed', content: finalCleanContent.slice(0, 100), timestamp: Date.now(), status: 'done' as const },
+        { id: 'step-result', phase: 'result' as const, title: 'Result', content: `${finalCleanContent.split(' ').length} words processed`, timestamp: Date.now(), status: 'done' as const },
+      ];
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -1021,18 +1063,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                 content: finalCleanContent,
                 reasoningContent: finalReasoning || fullReasoning || undefined,
                 actions: executedActions.length > 0 ? executedActions : undefined,
-                agentSteps: [
-                  ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'thinking' as const, title: 'Thinking', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
-                  ...executedActions.map((a: { type: string; name: string }, i: number) => ({
-                    id: `step-doc-${i}`,
-                    phase: (a.type === 'checked' ? 'result' : 'edit') as 'result' | 'edit',
-                    title: `${a.type === 'checked' ? 'Checked' : 'Edited'}: ${a.name}`,
-                    content: `Applied ${a.type} on ${a.name}`,
-                    timestamp: Date.now(),
-                  })),
-                  { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Synthesis', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
-                  { id: 'step-result', phase: 'result' as const, title: 'Result', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
-                ],
+                agentSteps: finalAgentSteps,
               }
             : msg
         )
@@ -1048,18 +1079,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
           actions: executedActions.length > 0 ? executedActions : undefined,
           snapshotId,
           timestamp: Date.now(),
-          agentSteps: [
-            ...(finalReasoning || fullReasoning ? [{ id: 'step-reasoning', phase: 'thinking' as const, title: 'Thinking', content: (finalReasoning || fullReasoning).slice(0, 200), timestamp: Date.now() }] : []),
-            ...executedActions.map((a: { type: string; name: string }, i: number) => ({
-              id: `step-doc-${i}`,
-              phase: (a.type === 'checked' ? 'result' : 'edit') as 'result' | 'edit',
-              title: `${a.type === 'checked' ? 'Checked' : 'Edited'}: ${a.name}`,
-              content: `Applied ${a.type} on ${a.name}`,
-              timestamp: Date.now(),
-            })),
-            { id: 'step-synthesis', phase: 'synthesis' as const, title: 'Synthesis', content: finalCleanContent.slice(0, 100), timestamp: Date.now() },
-            { id: 'step-result', phase: 'result' as const, title: 'Result', content: `${finalCleanContent.split(' ').length} words generated`, timestamp: Date.now() },
-          ],
+          agentSteps: finalAgentSteps,
         };
         historyStore.saveMessage(activeDoc.id, activeDoc.title, finalMsg);
 
@@ -1352,16 +1372,68 @@ After emitting the action tags, provide a brief, polite explanation of what was 
                   onCopy={() => handleCopy(assistantMsg.content, assistantMsg.id)}
                   auditBadge={undefined}
                   extraContent={
-                    activeDoc && index === messages.length - 1 ? (
-                      <InteractiveDocCard
-                        doc={activeDoc}
-                        onOpenEditor={() => {
-                          if (onClose) onClose();
-                        }}
-                        language={language === 'id' ? 'id' : 'en'}
-                        isGenerating={isAssistantStreaming}
-                      />
-                    ) : undefined
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                      {assistantMsg?.agentSteps?.some((s) => s.phase === 'plan') && !isAssistantStreaming && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                            border: '1px solid rgba(99, 102, 241, 0.25)',
+                            marginTop: '4px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <ListChecks size={14} style={{ color: 'var(--brand-primary)' }} />
+                            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {language === 'id' ? 'Plan Terstruktur Siap Dieksekusi' : 'Structured Plan Ready to Execute'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAgenticMode('act');
+                              handleSend(
+                                language === 'id'
+                                  ? 'Jalankan dan terapkan rencana di atas ke dokumen sekarang (Act Mode).'
+                                  : 'Execute and apply the plan above directly to the document now (Act Mode).'
+                              );
+                            }}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              backgroundColor: 'var(--brand-primary)',
+                              color: '#FFFFFF',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'opacity 0.15s ease',
+                            }}
+                          >
+                            <Play size={11} />
+                            <span>{language === 'id' ? 'Eksekusi Plan (Act)' : 'Execute Plan (Act)'}</span>
+                          </button>
+                        </div>
+                      )}
+                      {activeDoc && index === messages.length - 1 && (
+                        <InteractiveDocCard
+                          doc={activeDoc}
+                          onOpenEditor={() => {
+                            if (onClose) onClose();
+                          }}
+                          language={language === 'id' ? 'id' : 'en'}
+                          isGenerating={isAssistantStreaming}
+                        />
+                      )}
+                    </div>
                   }
                 />
               )}
@@ -1380,6 +1452,109 @@ After emitting the action tags, provide a brief, polite explanation of what was 
           flexShrink: 0,
         }}
       >
+        {/* Mode Selector Pill Bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              backgroundColor: 'var(--bg-subtle)',
+              borderRadius: '8px',
+              padding: '2px',
+              border: '1px solid var(--border-subtle)',
+              gap: '2px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setAgenticMode('act')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 9px',
+                borderRadius: '6px',
+                border: 'none',
+                fontSize: '11px',
+                fontWeight: agenticMode === 'act' ? 600 : 500,
+                backgroundColor: agenticMode === 'act' ? 'var(--brand-primary)' : 'transparent',
+                color: agenticMode === 'act' ? '#FFFFFF' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title={language === 'id' ? 'Act: AI otomatis mengubah dokumen' : 'Act: AI auto-edits document'}
+            >
+              <Zap size={11} />
+              <span>Act</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAgenticMode('plan')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 9px',
+                borderRadius: '6px',
+                border: 'none',
+                fontSize: '11px',
+                fontWeight: agenticMode === 'plan' ? 600 : 500,
+                backgroundColor: agenticMode === 'plan' ? 'var(--brand-primary)' : 'transparent',
+                color: agenticMode === 'plan' ? '#FFFFFF' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title={language === 'id' ? 'Plan: AI merancang roadmap & outline sebelum eksekusi' : 'Plan: AI drafts roadmap before execution'}
+            >
+              <ListChecks size={11} />
+              <span>Plan</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAgenticMode('chat')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 9px',
+                borderRadius: '6px',
+                border: 'none',
+                fontSize: '11px',
+                fontWeight: agenticMode === 'chat' ? 600 : 500,
+                backgroundColor: agenticMode === 'chat' ? 'var(--brand-primary)' : 'transparent',
+                color: agenticMode === 'chat' ? '#FFFFFF' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title={language === 'id' ? 'Chat: AI berdiskusi tanpa mengubah file' : 'Chat: AI discusses without modifying files'}
+            >
+              <MessageSquare size={11} />
+              <span>Chat</span>
+            </button>
+          </div>
+
+          <span
+            style={{
+              fontSize: '10.5px',
+              color: 'var(--text-muted)',
+              fontWeight: 500,
+            }}
+          >
+            {agenticMode === 'act'
+              ? (language === 'id' ? '⚡ Full Auto' : '⚡ Full Auto')
+              : agenticMode === 'plan'
+              ? (language === 'id' ? '📋 Architect Plan' : '📋 Architect Plan')
+              : (language === 'id' ? '💬 Consultant' : '💬 Consultant')}
+          </span>
+        </div>
+
         {/* Attachments preview list */}
         {attachments.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>

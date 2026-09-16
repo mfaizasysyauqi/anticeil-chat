@@ -1458,7 +1458,7 @@ export function DocsSpreadsheetView({
 
                 // 1. Errors from validation
                 if (!validation.valid && validation.errors?.length) {
-                  validation.errors.forEach((err, idx) => {
+                  validation.errors.forEach((err: any, idx: number) => {
                     const matchLine = typeof err === 'string' ? err.match(/line\s*(\d+)|baris\s*(\d+)/i) : null;
                     const line = matchLine ? parseInt(matchLine[1] || matchLine[2], 10) : 1;
                     logItems.push({
@@ -1473,7 +1473,7 @@ export function DocsSpreadsheetView({
 
                 // 2. Warnings from validation
                 if (validation.warnings?.length) {
-                  validation.warnings.forEach((warn, idx) => {
+                  validation.warnings.forEach((warn: any, idx: number) => {
                     const matchLine = typeof warn === 'string' ? warn.match(/line\s*(\d+)|baris\s*(\d+)/i) : null;
                     const line = matchLine ? parseInt(matchLine[1] || matchLine[2], 10) : 1;
                     logItems.push({

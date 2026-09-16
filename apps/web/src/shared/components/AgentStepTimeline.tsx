@@ -135,16 +135,18 @@ const PHASE_TO_TYPE: Record<string, AgentStepType> = {
   deploy: 'deploy', done: 'done',
   reasoning: 'thought', thinking: 'thought',
   web_search: 'web_search', search: 'web_search', read: 'read',
-  create: 'create_file', edit: 'edit_file', delete: 'delete_file',
-  tool: 'ran', tool_call: 'ran', terminal: 'ran',
+  create: 'create_file', edit: 'edit_file', delete: 'delete_file', patch: 'edit_file',
+  tool: 'ran', tool_call: 'ran', terminal: 'ran', act: 'ran',
   connector: 'connector', mcp: 'mcp',
   database: 'database',
+  lint: 'checked', verify: 'checked',
   synthesis: 'analyzed', result: 'checked',
 };
 
 const PHASE_TITLES: Partial<Record<string, string>> = {
   plan: 'Plan', design: 'Design', code: 'Code', test: 'Test',
   deploy: 'Deploy', done: 'Done', synthesis: 'Synthesis', result: 'Result',
+  lint: 'Linting & Verification', verify: 'Verification',
 };
 
 function adaptAgentSteps(steps: import('@anticeil/core').AgentStep[]): AgentTimelineStep[] {
@@ -154,7 +156,7 @@ function adaptAgentSteps(steps: import('@anticeil/core').AgentStep[]): AgentTime
     title: s.title || PHASE_TITLES[s.phase] || s.phase,
     content: s.content,
     badge: s.badge,
-    status: (s as any).status as StepStatus | undefined,
+    status: s.status as StepStatus | undefined,
   }));
 }
 
