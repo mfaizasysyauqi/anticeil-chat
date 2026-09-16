@@ -350,30 +350,30 @@ export function getSemanticStepDotStyle(step: AgentTimelineStep): React.CSSPrope
   // 3. File CRUD:
   if (step.type === 'create_file' || step.actionType === 'create') {
     return {
-      backgroundColor: 'rgba(16, 185, 129, 0.15)',
-      border: '1.5px solid rgba(16, 185, 129, 0.55)',
+      backgroundColor: 'rgba(16, 185, 129, 0.2)',
+      border: '1.5px solid rgba(16, 185, 129, 0.65)',
       color: '#34D399',
     };
   }
   if (step.type === 'delete_file' || step.actionType === 'delete') {
     return {
-      backgroundColor: 'rgba(239, 68, 68, 0.15)',
-      border: '1.5px solid rgba(239, 68, 68, 0.55)',
+      backgroundColor: 'rgba(239, 68, 68, 0.2)',
+      border: '1.5px solid rgba(239, 68, 68, 0.65)',
       color: '#F87171',
     };
   }
   if (step.type === 'edit_file' || step.type === 'edited' || step.type === 'edit' || step.actionType === 'modify' || step.type === 'crud') {
     return {
-      backgroundColor: 'rgba(59, 130, 246, 0.15)',
-      border: '1.5px solid rgba(59, 130, 246, 0.55)',
-      color: '#60A5FA',
+      backgroundColor: 'rgba(245, 158, 11, 0.2)',
+      border: '1.5px solid rgba(245, 158, 11, 0.65)',
+      color: '#FBBF24',
     };
   }
   if (step.type === 'read_file' || step.type === 'read' || step.actionType === 'read') {
     return {
-      backgroundColor: 'rgba(148, 163, 184, 0.15)',
-      border: '1.5px solid rgba(148, 163, 184, 0.45)',
-      color: '#94A3B8',
+      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+      border: '1.5px solid rgba(59, 130, 246, 0.65)',
+      color: '#60A5FA',
     };
   }
 
