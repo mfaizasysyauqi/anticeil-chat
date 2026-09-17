@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   ArrowUp,
   Square,
@@ -9,6 +9,7 @@ import {
   MicOff,
   Paperclip,
   Plus,
+  AtSign,
   X,
   FileText,
   Image as ImageIcon,
@@ -135,8 +136,10 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
   const t = getTranslation(language);
 
   // Resolve model display name from provider dynamic models or static registry
-  const providerModels = getModelsForProvider(currentProviderId);
-  const matchedModel = providerModels.find((m) => m.id === currentModelId) || getModelById(currentModelId);
+  const providerModels = useMemo(() => getModelsForProvider(currentProviderId), [getModelsForProvider, currentProviderId]);
+  const matchedModel = useMemo(() => {
+    return providerModels.find((m) => m.id === currentModelId) || getModelById(currentModelId);
+  }, [providerModels, currentModelId]);
   const modelDisplayName = matchedModel?.name || currentModelId || t.chat.selectModel;
 
   // Initialize Web Speech Recognition
@@ -321,7 +324,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
     <div
       className="chat-input-container"
       style={{
-        padding: 'var(--space-sm) var(--page-pad-x) var(--space-xl) var(--page-pad-x)',
+        padding: 'var(--space-xs) var(--page-pad-x) var(--space-lg) var(--page-pad-x)',
         background: 'transparent',
         display: 'flex',
         flexDirection: 'column',
@@ -331,143 +334,231 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
       }}
     >
       <div
-        className="chat-input-wrapper"
         style={{
           width: '100%',
           maxWidth: '860px',
-          background: 'var(--bg-input)',
-          border: `1px solid ${
-            isListening
-              ? 'var(--accent-danger)'
-              : isFocused
-              ? 'var(--border-strong)'
-              : 'var(--border-subtle)'
-          }`,
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: isListening ? '0 0 16px rgba(239, 68, 68, 0.25)' : 'none',
           display: 'flex',
           flexDirection: 'column',
-          padding: '10px 14px',
-          position: 'relative',
-          transition: 'all 0.2s ease',
+          gap: '6px',
         }}
       >
-        {/* Attachment Chips Strip */}
-        {attachments.length > 0 && (
+        {/* Cline-Style Main Input Card */}
+        <div
+          className="chat-input-wrapper"
+          style={{
+            width: '100%',
+            background: 'var(--bg-input, #18181b)',
+            border: `1px solid ${
+              isListening
+                ? 'var(--accent-danger)'
+                : isFocused
+                ? 'var(--border-strong)'
+                : 'var(--border-subtle)'
+            }`,
+            borderRadius: '12px',
+            boxShadow: isListening ? '0 0 16px rgba(239, 68, 68, 0.25)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '12px 14px 8px 14px',
+            position: 'relative',
+            transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+          }}
+        >
+          {/* Attachment Chips Strip */}
+          {attachments.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '6px',
+                marginBottom: '8px',
+                paddingBottom: '6px',
+                borderBottom: '1px solid var(--border-subtle)',
+              }}
+            >
+              {attachments.map((att) => (
+                <div
+                  key={att.id}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    color: 'var(--text-primary)',
+                    maxWidth: '220px',
+                  }}
+                >
+                  {getFileIcon(att)}
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {att.name}
+                  </span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                    ({formatBytes(att.size)})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(att.id)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            multiple
+            accept=".pdf,.md,.txt,.docx,.xlsx,.csv,.pptx,.json,.ts,.js,.py,.html,.css,image/*"
+            style={{ display: 'none' }}
+          />
+
+          {/* Text Area */}
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              isListening
+                ? t.chat.listeningVoice
+                : (language === 'id' ? 'Ketik pesan...' : 'Type a message...')
+            }
+            rows={2}
+            style={{
+              width: '100%',
+              minHeight: '46px',
+              maxHeight: '180px',
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              resize: 'none',
+              color: 'var(--text-primary)',
+              fontSize: '13.5px',
+              lineHeight: '21px',
+              padding: '0',
+            }}
+          />
+
+          {/* Bottom Row Inside Card: Cline Subtext Hint & Send/Stop Button */}
           <div
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
-              gap: '6px',
-              marginBottom: '8px',
-              paddingBottom: '6px',
-              borderBottom: '1px solid var(--border-subtle)',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '6px',
+              gap: '8px',
             }}
           >
-            {attachments.map((att) => (
-              <div
-                key={att.id}
+            {/* Cline-style subtext helper */}
+            <span
+              style={{
+                fontSize: '11px',
+                color: 'var(--text-muted)',
+                opacity: 0.75,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                userSelect: 'none',
+              }}
+            >
+              {language === 'id'
+                ? 'Ketik @ untuk konteks, / untuk perintah, tahan Shift untuk seret berkas'
+                : 'Type @ for context, / for slash commands, hold Shift to drag in files'}
+            </span>
+
+            {/* Send / Stop Icon Button inside bottom-right corner */}
+            {isGenerating ? (
+              <button
+                type="button"
+                onClick={stopGeneration}
+                title={t.chat.stop}
                 style={{
-                  display: 'inline-flex',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  background: 'var(--bg-subtle)',
-                  border: '1px solid var(--border-strong)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  color: 'var(--text-primary)',
-                  maxWidth: '220px',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  background: 'var(--accent-danger, #ef4444)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  transition: 'opacity 0.15s ease',
                 }}
               >
-                {getFileIcon(att)}
-                <span
-                  style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    fontWeight: 500,
-                  }}
-                >
-                  {att.name}
-                </span>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                  ({formatBytes(att.size)})
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeAttachment(att.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '2px',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
+                <Square size={12} fill="#FFFFFF" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!text.trim() && attachments.length === 0}
+                title={t.chat.send}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  background: 'transparent',
+                  color:
+                    text.trim() || attachments.length > 0
+                      ? 'var(--brand-primary, #3b82f6)'
+                      : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: text.trim() || attachments.length > 0 ? 'pointer' : 'default',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                  opacity: text.trim() || attachments.length > 0 ? 1 : 0.45,
+                }}
+              >
+                <ArrowUp size={16} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Hidden File Input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          multiple
-          accept=".pdf,.md,.txt,.docx,.xlsx,.csv,.pptx,.json,.ts,.js,.py,.html,.css,image/*"
-          style={{ display: 'none' }}
-        />
-
-        {/* Text Area */}
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            isListening
-              ? t.chat.listeningVoice
-              : t.chat.placeholder
-          }
-          rows={2}
-          style={{
-            width: '100%',
-            minHeight: '44px',
-            maxHeight: '154px',
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            resize: 'none',
-            color: 'var(--text-primary)',
-            fontSize: '14px',
-            lineHeight: '22px',
-            padding: '2px',
-          }}
-        />
-
-        {/* Bottom Toolbar inside input (Grok Alignment & Ordering) */}
+        {/* Cline-Style Dedicated Bottom Toolbar (Outside Input Card) */}
         <div
-          className="chat-input-toolbar"
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginTop: '8px',
-            paddingTop: '6px',
+            padding: '2px 4px',
             gap: '8px',
-            flexWrap: 'wrap',
             width: '100%',
+            flexWrap: 'wrap',
           }}
         >
-          {/* Left: Plus (+) Attach Button & Popup Menu */}
+          {/* Left Controls: @, +, Connectors, Model Badge, Token Counter */}
           <div
             ref={plusMenuRef}
             style={{
@@ -477,44 +568,87 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
               gap: '6px',
               flexWrap: 'wrap',
               minWidth: 0,
-              flex: '1 1 auto',
             }}
           >
-            {/* File Upload / Plus Menu Toggle Button */}
+            {/* 1. Mention Context (@) Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setText((prev) => (prev ? `${prev} @` : '@'));
+                textareaRef.current?.focus();
+              }}
+              title="Mention context / file (@)"
+              style={{
+                width: '24px',
+                height: '24px',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0',
+                transition: 'color 0.15s ease, background 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <AtSign size={14} />
+            </button>
+
+            {/* 2. Plus (+) Attach Button & Popup Menu */}
             <button
               type="button"
               onClick={() => setIsPlusMenuOpen((prev) => !prev)}
               disabled={isParsingFiles}
-              title="Add attachment, skills, or connectors"
-              className="clickable-pill"
+              title="Add attachment, skills, or connectors (+)"
               style={{
+                width: '24px',
+                height: '24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '32px',
-                height: '32px',
                 background: isPlusMenuOpen ? 'var(--bg-subtle)' : 'transparent',
                 border: 'none',
-                borderRadius: '50%',
+                borderRadius: '4px',
                 color: isPlusMenuOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
                 cursor: 'pointer',
+                padding: '0',
                 transition: 'all 0.15s ease',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                if (!isPlusMenuOpen) {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
             >
-              <Plus size={19} style={{ transform: isPlusMenuOpen ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s ease' }} />
+              <Plus size={14} style={{ transform: isPlusMenuOpen ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s ease' }} />
             </button>
 
-            {/* Grok-Style Popup Menu */}
+            {/* Grok/Cline-Style Popup Menu */}
             {isPlusMenuOpen && (
               <div
                 style={{
                   position: 'absolute',
-                  bottom: 'calc(100% + 10px)',
+                  bottom: 'calc(100% + 8px)',
                   left: '0',
                   width: '210px',
                   backgroundColor: 'var(--bg-surface)',
                   border: '1px solid var(--border-strong)',
-                  borderRadius: 'var(--radius-lg, 14px)',
+                  borderRadius: 'var(--radius-lg, 12px)',
                   boxShadow: 'var(--shadow-xl, 0 12px 30px rgba(0,0,0,0.35))',
                   padding: '6px',
                   display: 'flex',
@@ -537,11 +671,11 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                     gap: '10px',
                     width: '100%',
                     padding: '8px 10px',
-                    borderRadius: 'var(--radius-md, 8px)',
+                    borderRadius: 'var(--radius-md, 6px)',
                     border: 'none',
                     backgroundColor: 'transparent',
                     color: 'var(--text-primary)',
-                    fontSize: '13px',
+                    fontSize: '12.5px',
                     fontWeight: 500,
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -550,7 +684,7 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
-                  <FileUp size={16} color="var(--text-secondary)" />
+                  <FileUp size={15} color="var(--text-secondary)" />
                   <span style={{ flex: 1 }}>{t.connectors.uploadFile}</span>
                 </button>
 
@@ -568,11 +702,11 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                     gap: '10px',
                     width: '100%',
                     padding: '8px 10px',
-                    borderRadius: 'var(--radius-md, 8px)',
+                    borderRadius: 'var(--radius-md, 6px)',
                     border: 'none',
                     backgroundColor: 'transparent',
                     color: 'var(--text-primary)',
-                    fontSize: '13px',
+                    fontSize: '12.5px',
                     fontWeight: 500,
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -582,10 +716,10 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <FileText size={16} color="var(--text-secondary)" />
+                    <FileText size={15} color="var(--text-secondary)" />
                     <span>{t.connectors.recentFiles}</span>
                   </div>
-                  <ChevronRight size={14} color="var(--text-muted)" />
+                  <ChevronRight size={13} color="var(--text-muted)" />
                 </button>
 
                 {/* 3. Keterampilan */}
@@ -606,11 +740,11 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                     gap: '10px',
                     width: '100%',
                     padding: '8px 10px',
-                    borderRadius: 'var(--radius-md, 8px)',
+                    borderRadius: 'var(--radius-md, 6px)',
                     border: 'none',
                     backgroundColor: 'transparent',
                     color: 'var(--text-primary)',
-                    fontSize: '13px',
+                    fontSize: '12.5px',
                     fontWeight: 500,
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -620,15 +754,15 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <LayoutGrid size={16} color="var(--text-secondary)" />
+                    <LayoutGrid size={15} color="var(--text-secondary)" />
                     <span>{t.connectors.skills}</span>
                   </div>
-                  <ChevronRight size={14} color="var(--text-muted)" />
+                  <ChevronRight size={13} color="var(--text-muted)" />
                 </button>
 
                 <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 4px' }} />
 
-                {/* 5. Kelola Konektor */}
+                {/* 4. Kelola Konektor */}
                 <button
                   type="button"
                   onClick={() => {
@@ -641,11 +775,11 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                     gap: '10px',
                     width: '100%',
                     padding: '8px 10px',
-                    borderRadius: 'var(--radius-md, 8px)',
+                    borderRadius: 'var(--radius-md, 6px)',
                     border: 'none',
                     backgroundColor: 'transparent',
-                    color: 'var(--text-primary)',
-                    fontSize: '13px',
+                    color: 'var(--brand-primary)',
+                    fontSize: '12.5px',
                     fontWeight: 600,
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -654,69 +788,44 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--brand-subtle, rgba(99, 102, 241, 0.12))')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
-                  <Plug size={16} color="var(--brand-primary)" />
-                  <span style={{ color: 'var(--brand-primary)' }}>
-                    {t.connectors.manageConnectors}
-                  </span>
+                  <Plug size={15} color="var(--brand-primary)" />
+                  <span>{t.connectors.manageConnectors}</span>
                 </button>
               </div>
             )}
 
-            {/* Quick toggle chips */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-              {CONNECTOR_CHIPS.map((chip) => {
-                if (!activeConnectorIds.includes(chip.id)) return null;
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    onClick={() => toggleActiveConnector(chip.id)}
-                    title={`${chip.label} Aktif (Klik untuk lepas sematan)`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      padding: '3px 8px',
-                      background: chip.bg,
-                      border: `1px solid ${chip.border}`,
-                      borderRadius: 'var(--radius-full, 9999px)',
-                      color: 'var(--text-primary)',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <ConnectorBrandIcon id={chip.id} size={13} />
-                    <span>{chip.label}</span>
-                    <X size={11} style={{ opacity: 0.6, marginLeft: '2px' }} />
-                  </button>
-                );
-              })}
-            </div>
+            {/* Quick toggle connector chips */}
+            {CONNECTOR_CHIPS.map((chip) => {
+              if (!activeConnectorIds.includes(chip.id)) return null;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => toggleActiveConnector(chip.id)}
+                  title={`${chip.label} Aktif (Klik untuk lepas)`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 7px',
+                    background: chip.bg,
+                    border: `1px solid ${chip.border}`,
+                    borderRadius: '4px',
+                    color: 'var(--text-primary)',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <ConnectorBrandIcon id={chip.id} size={12} />
+                  <span>{chip.label}</span>
+                  <X size={10} style={{ opacity: 0.6, marginLeft: '1px' }} />
+                </button>
+              );
+            })}
 
-            {/* Token Counter (Subtle next to plus button) */}
-            {(text.length > 0 || attachments.length > 0) && (
-              <span
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '11px',
-                  color: 'var(--text-muted)',
-                  marginLeft: '2px',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <Sparkles size={11} color="var(--brand-primary)" />
-                ~{estimatedTokens} {t.chat.tokens}
-              </span>
-            )}
-          </div>
-
-          {/* Right Group (Grok Order: Model Selector -> Mic -> Send) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, marginLeft: 'auto' }}>
-            {/* 1. Model Selector Dropdown Text (Grok style) */}
+            {/* 3. Cline-Style Model Selector Badge */}
             <button
               type="button"
               onClick={() => {
@@ -727,23 +836,29 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                 setIsModelSelectorOpen(true);
               }}
               title={t.models.title}
-              className="clickable-pill"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
                 background: 'transparent',
                 border: 'none',
                 color: 'var(--text-secondary)',
-                padding: '4px 6px',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '12.5px',
+                padding: '3px 6px',
+                borderRadius: '4px',
+                fontSize: '12px',
                 fontWeight: 500,
                 cursor: 'pointer',
-                maxWidth: '160px',
+                maxWidth: '260px',
                 minWidth: 0,
-                flexShrink: 1,
                 transition: 'color 0.15s ease, background 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
               <span
@@ -751,94 +866,113 @@ export function ChatInput({ onSend, inputRef }: ChatInputProps) {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  color: 'var(--text-primary)',
+                  color: 'var(--text-secondary)',
                   fontWeight: 500,
-                  fontSize: '12.5px',
+                  fontSize: '12px',
                   minWidth: 0,
                 }}
               >
-                {modelDisplayName}
+                {currentProviderId === 'anticeil' ? 'Anticeil Pass' : currentProviderId}:{' '}
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                  {modelDisplayName.replace(/ \((Anticeil Pass|Anticeil Free)\)/, '')}
+                </strong>
               </span>
-              <ChevronDown size={13} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+              <ChevronDown size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
             </button>
 
-            {/* 2. Speech-to-Text Mic Icon */}
+            {/* Token Counter */}
+            {(text.length > 0 || attachments.length > 0) && (
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  marginLeft: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Sparkles size={11} color="var(--brand-primary)" />
+                ~{estimatedTokens} {t.chat.tokens}
+              </span>
+            )}
+          </div>
+
+          {/* Right Controls: Voice Mic & Mode Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, marginLeft: 'auto' }}>
+            {/* Speech-to-Text Mic Icon */}
             <button
               type="button"
               onClick={toggleSpeechRecognition}
               title={isListening ? t.chat.stopVoiceRecording : t.chat.speechToText}
-              className="clickable-pill"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '32px',
-                height: '32px',
+                width: '26px',
+                height: '26px',
                 background: isListening ? 'var(--accent-danger)' : 'transparent',
                 border: 'none',
-                borderRadius: '50%',
+                borderRadius: '4px',
                 color: isListening ? '#FFFFFF' : 'var(--text-secondary)',
                 cursor: 'pointer',
                 transition: 'background 0.15s ease, color 0.15s ease',
                 animation: isListening ? 'pulseDot 1s infinite' : 'none',
               }}
+              onMouseEnter={(e) => {
+                if (!isListening) {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isListening) {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
             >
-              {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+              {isListening ? <MicOff size={14} /> : <Mic size={14} />}
             </button>
 
-            {/* 3. Send / Stop Button */}
-            {isGenerating ? (
-              <button
-                onClick={stopGeneration}
-                title={t.chat.stop}
+            {/* Cline-Style Mode Pill (Plan | Act) */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                background: 'var(--bg-subtle, rgba(255,255,255,0.06))',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '5px',
+                padding: '2px',
+                gap: '1px',
+                fontSize: '11px',
+                fontWeight: 600,
+              }}
+            >
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '34px',
-                  height: '34px',
-                  background: 'var(--accent-danger)',
+                  padding: '2px 7px',
+                  borderRadius: '3px',
+                  color: 'var(--text-muted)',
+                  cursor: 'default',
+                }}
+              >
+                Plan
+              </span>
+              <span
+                style={{
+                  padding: '2px 7px',
+                  borderRadius: '3px',
+                  background: 'var(--brand-primary, #3b82f6)',
                   color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+                  cursor: 'default',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                 }}
               >
-                <Square size={13} fill="#FFFFFF" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={!text.trim() && attachments.length === 0}
-                title={t.chat.send}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '34px',
-                  height: '34px',
-                  background:
-                    text.trim() || attachments.length > 0
-                      ? 'var(--text-primary)'
-                      : 'var(--bg-subtle)',
-                  color:
-                    text.trim() || attachments.length > 0
-                      ? 'var(--bg-main)'
-                      : 'var(--text-muted)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  boxShadow:
-                    text.trim() || attachments.length > 0
-                      ? 'var(--shadow-sm)'
-                      : 'none',
-                  cursor: text.trim() || attachments.length > 0 ? 'pointer' : 'default',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <ArrowUp size={17} strokeWidth={2.5} />
-              </button>
-            )}
+                Act
+              </span>
+            </div>
           </div>
         </div>
       </div>

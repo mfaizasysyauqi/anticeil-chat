@@ -13,6 +13,16 @@ export type LLMProviderId =
   | 'perplexity'
   | 'cohere'
   | 'ollama'
+  | 'openai-compatible'
+  | 'lmstudio'
+  | 'litellm'
+  | 'baseten'
+  | 'cerebras'
+  | 'huggingface'
+  | 'minimax'
+  | 'moonshot'
+  | 'zai'
+  | 'qwen'
   | 'elevenlabs'
   | 'azure'
   | 'deepgram'
@@ -32,6 +42,8 @@ export type LLMProviderId =
   | 'brave'
   | 'omniroute'
   | 'custom';
+
+export type ReasoningEffort = 'none' | 'low' | 'medium' | 'high';
 
 export type Role = 'user' | 'assistant' | 'system';
 
@@ -172,6 +184,11 @@ export interface ProviderApiKeyConfig {
   baseUrl?: string;
   isEnabled: boolean;
   organizationId?: string;
+  customHeaders?: Record<string, string>;
+  selectedModelId?: string;
+  reasoningEffort?: ReasoningEffort;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export type ApiKeysState = Record<LLMProviderId, ProviderApiKeyConfig>;

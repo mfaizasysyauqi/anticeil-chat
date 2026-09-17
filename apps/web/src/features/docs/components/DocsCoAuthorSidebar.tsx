@@ -335,8 +335,8 @@ export function DocsCoAuthorSidebar({
       role: 'assistant',
       content:
         language === 'id'
-          ? 'Halo! Saya AI Co-Author Anda. Semua instruksi yang Anda berikan akan otomatis diedit langsung ke dokumen Anda (Full Auto). Anda juga dapat membatalkan perubahan (Undo) kapan saja.'
-          : 'Hello! I am your AI Co-Author. All instructions will be automatically applied directly to your document (Full Auto). You can undo changes up to any point at any time.',
+          ? 'Halo! Saya Author Agent Anda. Semua instruksi yang Anda berikan akan otomatis diedit langsung ke dokumen Anda (Full Auto). Anda juga dapat membatalkan perubahan (Undo) kapan saja.'
+          : 'Hello! I am your Author Agent. All instructions will be automatically applied directly to your document (Full Auto). You can undo changes up to any point at any time.',
       timestamp: Date.now(),
     },
   ]);
@@ -1168,7 +1168,7 @@ After emitting the action tags, provide a brief, polite explanation of what was 
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            AI Co-Author
+            Author Agent
           </span>
           <span
             style={{

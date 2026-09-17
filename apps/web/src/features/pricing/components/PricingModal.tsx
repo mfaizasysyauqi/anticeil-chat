@@ -34,7 +34,7 @@ export function PricingModal() {
   const user = useAuthStore((s) => s.user);
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
 
-  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
+  const setIsModelSelectorOpen = useSettingsStore((s) => s.setIsModelSelectorOpen);
   const language = useSettingsStore((s) => s.language);
 
   const [mounted, setMounted] = useState(false);
@@ -689,7 +689,7 @@ export function PricingModal() {
             type="button"
             onClick={() => {
               setPricingModalOpen(false);
-              openSettingsTab('keys');
+              setIsModelSelectorOpen(true);
             }}
             style={{
               background: 'transparent',

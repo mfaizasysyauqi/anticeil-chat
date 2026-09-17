@@ -29,10 +29,10 @@
         "./*"
       ],
       "antsheet": [
-        "../../antsheet/src/index.ts"
+        "../../../antsheet/src/index.ts"
       ],
       "antsheet/*": [
-        "../../antsheet/src/*.ts"
+        "../../../antsheet/src/*.ts"
       ]
     }
   },

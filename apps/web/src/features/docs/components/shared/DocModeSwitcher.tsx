@@ -58,7 +58,7 @@ export function DocModeSwitcher({
       <button
         type="button"
         onClick={() => handleSelect('landing')}
-        title={language === 'id' ? 'AI Co-Author & Ringkasan' : 'AI Co-Author & Summary'}
+        title={language === 'id' ? 'Author Agent & Ringkasan' : 'Author Agent & Summary'}
         style={btnStyle(mode === 'landing')}
         className="hover-subtle"
       >

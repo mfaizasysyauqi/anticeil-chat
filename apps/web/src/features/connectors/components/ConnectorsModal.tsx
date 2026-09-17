@@ -105,7 +105,6 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualToken, setManualToken] = useState('');
-  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const [accountEmailInput, setAccountEmailInput] = useState('');
   const [tokenSuccessMsg, setTokenSuccessMsg] = useState<string | null>(null);
   const [isMediaModelModalOpen, setIsMediaModelModalOpen] = useState(false);
@@ -951,35 +950,6 @@ export function ConnectorsModal({ isOpen, onClose }: ConnectorsModalProps) {
                     <span>{isRedirecting ? tc.connectingOAuth : tc.reconnect}</span>
                   </button>
                 </div>
-              )}
-
-              {/* For anticeil_image / anticeil_audio: open BYOK settings dialog */}
-              {isAnticeilMedia && (
-                <button
-                  type="button"
-                  onClick={() => { onClose(); openSettingsTab('keys'); }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-lg)',
-                    color: 'var(--text-secondary)',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'border-color 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
-                >
-                  <Key size={14} />
-                  <span>{language === 'id' ? 'Kelola API Key untuk Model AI' : 'Manage API Keys for AI Models'}</span>
-                </button>
               )}
 
               {/* Direct Token / API Key Input Section (Accordion) — hidden for custom_webhook and anticeil media */}

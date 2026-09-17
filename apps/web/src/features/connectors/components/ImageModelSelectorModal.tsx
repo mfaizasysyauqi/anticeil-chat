@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -10,6 +10,8 @@ import {
   Sliders,
   RotateCw,
   Eye,
+  EyeOff,
+  ExternalLink,
   KeyRound,
   Film,
   Music,
@@ -47,15 +49,15 @@ export interface ImageProviderItem {
 export const IMAGE_PROVIDERS: ImageProviderItem[] = [
   {
     id: 'anticeil',
-    name: 'Anticeil',
+    name: 'Anticeil Pass',
     logoKey: 'anticeil',
     badge: 'FREE',
-    description: 'Model generatif gratis untuk gambar, video, dan audio — tanpa API key.',
+    description: 'Model generatif gratis untuk gambar, video, dan audio — via Anticeil Pass tanpa API key.',
     capabilities: ['image', 'video', 'audio'],
     models: [
       {
         id: 'flux',
-        name: 'FLUX.1 Schnell (Anticeil Free)',
+        name: 'FLUX.1 Schnell (Anticeil Pass)',
         description: 'Generasi visual kilat resolusi tinggi langsung di peramban — gratis, tanpa API key.',
         keyType: 'free',
         keyRequirement: '100% Gratis — Tanpa API Key',
@@ -422,9 +424,30 @@ export function ImageModelSelectorModal({
   onSelectModel,
 }: ImageModelSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
-  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const language = useSettingsStore((s) => s.language);
   const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
+
+  const apiKeys = useSettingsStore((s) => s.apiKeys);
+  const setApiKey = useSettingsStore((s) => s.setApiKey);
+  const [draftKeys, setDraftKeys] = useState<Record<string, { apiKey?: string; baseUrl?: string }>>({});
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
+  const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
+
+  const handleSaveInlineKey = (providerKey: string) => {
+    const draft = draftKeys[providerKey];
+    const savedKey = (apiKeys as Record<string, any>)[providerKey]?.apiKey || '';
+    const savedUrl = (apiKeys as Record<string, any>)[providerKey]?.baseUrl;
+    const keyToSave = draft?.apiKey !== undefined ? draft.apiKey : savedKey;
+    const urlToSave = draft?.baseUrl !== undefined ? draft.baseUrl : savedUrl;
+    setApiKey(providerKey as any, keyToSave, urlToSave, true);
+    setSavedStatus((prev) => ({ ...prev, [providerKey]: true }));
+    setDraftKeys((prev) => {
+      const next = { ...prev };
+      delete next[providerKey];
+      return next;
+    });
+    setTimeout(() => setSavedStatus((prev) => ({ ...prev, [providerKey]: false })), 2000);
+  };
 
   const KEY_TYPE_TO_PROVIDER: Record<string, string> = {
     openai: 'openai', gemini: 'gemini', stability: 'stability',
@@ -613,39 +636,6 @@ export function ImageModelSelectorModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             <button
               type="button"
-              onClick={() => {
-                onClose();
-                openSettingsTab('keys');
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text-primary)';
-                e.currentTarget.style.borderColor = 'var(--border-strong)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-subtle)';
-              }}
-            >
-              <KeyRound size={13} color="var(--brand-primary)" />
-              <span>{language === 'id' ? 'Atur API Key' : 'Manage API Keys'}</span>
-            </button>
-
-            <button
-              type="button"
               onClick={onClose}
               style={{
                 background: 'transparent',
@@ -755,7 +745,7 @@ export function ImageModelSelectorModal({
                             textOverflow: 'ellipsis',
                           }}
                         >
-                          {provider.id === 'anticeil' ? 'Anticeil' : provider.name}
+                          {provider.name}
                         </div>
                         {(provider.badge === 'FREE' ||
                           provider.models
@@ -861,6 +851,156 @@ export function ImageModelSelectorModal({
                 </span>
               )}
             </div>
+
+            {/* Informative Banner for Anticeil Pass Provider */}
+            {activeProviderId === 'anticeil' && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '9px 12px',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  backgroundColor: 'rgba(0, 115, 234, 0.08)',
+                  border: '1px solid rgba(0, 115, 234, 0.2)',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <Sparkles size={15} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                <span>
+                  {language === 'id'
+                    ? 'Provider Anticeil Pass siap digunakan gratis tanpa input API key.'
+                    : 'Anticeil Pass built-in provider is ready to use for free without any API key.'}
+                </span>
+              </div>
+            )}
+
+            {/* Unified Inline API Configuration Panel for Non-Anticeil Providers */}
+            {activeProviderId !== 'anticeil' && (() => {
+              const primaryKeyType = currentModels.find((m) => m.keyType !== 'free' && m.keyType !== 'microsoft')?.keyType || activeProviderId;
+              const storeId = KEY_TYPE_TO_PROVIDER[primaryKeyType] || activeProviderId;
+              const savedKey = (apiKeys as Record<string, any>)[storeId]?.apiKey || '';
+              const currentKey = draftKeys[storeId]?.apiKey !== undefined ? draftKeys[storeId]!.apiKey! : savedKey;
+              const hasKey = hasConfiguredKey(storeId as any);
+              const isVisible = visibleKeys[storeId];
+              const isSaved = savedStatus[storeId];
+
+              return (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-main)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 650, color: 'var(--text-primary)' }}>
+                        {currentProvider?.name} {language === 'id' ? 'Konfigurasi' : 'Configuration'}
+                      </span>
+                      {hasKey ? (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            color: 'var(--accent-success)',
+                          }}
+                        >
+                          ✓ {language === 'id' ? 'AKTIF' : 'ACTIVE'}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            color: 'var(--accent-warning)',
+                          }}
+                        >
+                          ⚠️ {language === 'id' ? 'BELUM TERHUBUNG' : 'NOT CONFIGURED'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
+                      <input
+                        type={isVisible ? 'text' : 'password'}
+                        value={currentKey}
+                        onChange={(e) =>
+                          setDraftKeys((prev) => ({
+                            ...prev,
+                            [storeId]: { ...prev[storeId], apiKey: e.target.value },
+                          }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSaveInlineKey(storeId);
+                          }
+                        }}
+                        placeholder={`Masukkan API Key ${currentProvider?.name || ''}...`}
+                        style={{
+                          width: '100%',
+                          padding: '6px 30px 6px 9px',
+                          borderRadius: '5px',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                          fontSize: '11.5px',
+                          fontFamily: 'monospace',
+                          outline: 'none',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setVisibleKeys((p) => ({ ...p, [storeId]: !p[storeId] }))}
+                        style={{
+                          position: 'absolute',
+                          right: '6px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: '2px',
+                        }}
+                      >
+                        {isVisible ? <EyeOff size={13} /> : <Eye size={13} />}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSaveInlineKey(storeId)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '5px',
+                        border: 'none',
+                        background: isSaved ? 'var(--accent-success)' : 'var(--brand-primary)',
+                        color: '#fff',
+                        fontSize: '11.5px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {isSaved ? '✓ Tersimpan' : 'Simpan'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Model Cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

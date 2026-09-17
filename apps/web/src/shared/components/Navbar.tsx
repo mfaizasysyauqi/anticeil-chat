@@ -23,6 +23,7 @@ import {
   BookOpen,
   Eye,
   Code2,
+  Workflow,
 } from 'lucide-react';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
@@ -122,6 +123,13 @@ export function Navbar({
       return {
         icon: <Code2 size={13.5} color="var(--rail-code-color, #818cf8)" style={{ flexShrink: 0 }} />,
         title: 'Anticeil Code',
+        isEditable: false,
+      };
+    }
+    if (pathname?.startsWith('/flow')) {
+      return {
+        icon: <Workflow size={13.5} color="var(--rail-flow-color, #10b981)" style={{ flexShrink: 0 }} />,
+        title: 'Anticeil Flow',
         isEditable: false,
       };
     }

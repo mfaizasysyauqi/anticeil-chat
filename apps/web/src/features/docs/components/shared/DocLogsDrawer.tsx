@@ -139,8 +139,8 @@ export function DocLogsDrawer({
               }}
               title={
                 language === 'id'
-                  ? 'Kirim seluruh log output ke AI Co-Author untuk perbaikan otomatis'
-                  : 'Send all output logs to AI Co-Author'
+                  ? 'Kirim seluruh log output ke Author Agent untuk perbaikan otomatis'
+                  : 'Send all output logs to Author Agent'
               }
             >
               <Sparkles size={12} />

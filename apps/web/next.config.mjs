@@ -36,18 +36,19 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     // Monorepo ant-sheet path aliases resolution
     // Use exact-match (`$`) for the bare `antsheet` key so it doesn't shadow subpath imports.
+    const antsheetSrc = path.resolve(__dirname, '../../../antsheet/src');
     config.resolve.alias = {
       ...config.resolve.alias,
-      'antsheet$': path.resolve(__dirname, '../../antsheet/src/index.ts'),
-      'antsheet/formula$': path.resolve(__dirname, '../../antsheet/src/formula.ts'),
-      'antsheet/xlsx$': path.resolve(__dirname, '../../antsheet/src/xlsx.ts'),
-      'antsheet/csv$': path.resolve(__dirname, '../../antsheet/src/csv.ts'),
-      'antsheet/parser$': path.resolve(__dirname, '../../antsheet/src/parser.ts'),
-      'antsheet/converter$': path.resolve(__dirname, '../../antsheet/src/converter.ts'),
-      'antsheet/serializer$': path.resolve(__dirname, '../../antsheet/src/serializer.ts'),
-      'antsheet/types$': path.resolve(__dirname, '../../antsheet/src/types.ts'),
-      'antsheet/chart$': path.resolve(__dirname, '../../antsheet/src/chart.ts'),
-      'antsheet/validator$': path.resolve(__dirname, '../../antsheet/src/validator.ts'),
+      'antsheet$': path.resolve(antsheetSrc, 'index.ts'),
+      'antsheet/formula$': path.resolve(antsheetSrc, 'formula.ts'),
+      'antsheet/xlsx$': path.resolve(antsheetSrc, 'xlsx.ts'),
+      'antsheet/csv$': path.resolve(antsheetSrc, 'csv.ts'),
+      'antsheet/parser$': path.resolve(antsheetSrc, 'parser.ts'),
+      'antsheet/converter$': path.resolve(antsheetSrc, 'converter.ts'),
+      'antsheet/serializer$': path.resolve(antsheetSrc, 'serializer.ts'),
+      'antsheet/types$': path.resolve(antsheetSrc, 'types.ts'),
+      'antsheet/chart$': path.resolve(antsheetSrc, 'chart.ts'),
+      'antsheet/validator$': path.resolve(antsheetSrc, 'validator.ts'),
     };
 
     // Prioritaskan node_modules lokal apps/web (hindari resolve ke nested .pnpm/<pkg>/node_modules)

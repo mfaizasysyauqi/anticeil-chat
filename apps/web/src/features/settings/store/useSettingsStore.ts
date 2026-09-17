@@ -6,6 +6,7 @@ import {
   LLMProviderId,
   LLMModel,
   ApiKeysState,
+  ReasoningEffort,
   Language,
   DEFAULT_PROVIDER_ID,
   DEFAULT_MODEL_ID,
@@ -48,7 +49,8 @@ interface SettingsState {
   theme: ThemeMode;
   language: Language;
   isSettingsOpen: boolean;
-  activeSettingsTab: 'keys' | 'appearance' | 'backup';
+  isModelSelectorOpen: boolean;
+  activeSettingsTab: 'appearance' | 'backup';
   customSupabaseUrl: string;
   customSupabaseAnonKey: string;
   customR2AccountId: string;
@@ -62,10 +64,13 @@ interface SettingsState {
   // Actions
   markModelAsUnavailable: (modelId: string) => void;
   setSettingsOpen: (open: boolean) => void;
-  setSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
-  openSettingsTab: (tab: 'keys' | 'appearance' | 'backup') => void;
+  setIsModelSelectorOpen: (open: boolean) => void;
+  setSettingsTab: (tab: 'appearance' | 'backup') => void;
+  openSettingsTab: (tab: 'appearance' | 'backup') => void;
   getActiveByokProviders: () => LLMProviderId[];
   setApiKey: (providerId: LLMProviderId, apiKey: string, baseUrl?: string, forceReplace?: boolean) => SetApiKeyResult;
+  setCustomHeaders: (providerId: LLMProviderId, headers: Record<string, string>) => void;
+  setReasoningEffort: (providerId: LLMProviderId, effort: ReasoningEffort) => void;
   clearApiKey: (providerId: LLMProviderId) => void;
   setCustomSupabaseConfig: (url: string, anonKey: string) => void;
   setCustomR2Config: (config: { accountId: string; bucketName: string; accessKeyId: string; secretAccessKey: string; publicUrl: string }) => void;
@@ -97,6 +102,16 @@ const initialApiKeys: ApiKeysState = {
   perplexity: { apiKey: '', baseUrl: 'https://api.perplexity.ai', isEnabled: true },
   cohere: { apiKey: '', baseUrl: 'https://api.cohere.com/v1', isEnabled: true },
   ollama: { apiKey: '', baseUrl: 'http://localhost:11434', isEnabled: true },
+  'openai-compatible': { apiKey: '', baseUrl: 'http://localhost:20128/v1', isEnabled: true, reasoningEffort: 'none' },
+  lmstudio: { apiKey: '', baseUrl: 'http://localhost:1234/v1', isEnabled: true },
+  litellm: { apiKey: '', baseUrl: 'http://localhost:4000/v1', isEnabled: true },
+  baseten: { apiKey: '', baseUrl: 'https://bridge.baseten.co/v1', isEnabled: true },
+  cerebras: { apiKey: '', baseUrl: 'https://api.cerebras.ai/v1', isEnabled: true },
+  huggingface: { apiKey: '', baseUrl: 'https://api-inference.huggingface.co/v1', isEnabled: true },
+  minimax: { apiKey: '', baseUrl: 'https://api.minimax.chat/v1', isEnabled: true, reasoningEffort: 'none' },
+  moonshot: { apiKey: '', baseUrl: 'https://api.moonshot.cn/v1', isEnabled: true },
+  zai: { apiKey: '', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', isEnabled: true },
+  qwen: { apiKey: '', baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', isEnabled: true },
   elevenlabs: { apiKey: '', baseUrl: 'https://api.elevenlabs.io/v1', isEnabled: true },
   azure: { apiKey: '', baseUrl: 'https://api.cognitive.microsoft.com/sts/v1.0', isEnabled: true },
   deepgram: { apiKey: '', baseUrl: 'https://api.deepgram.com/v1', isEnabled: true },
@@ -153,7 +168,8 @@ export const useSettingsStore = create<SettingsState>()(
       theme: getInitialTheme(),
       language: getInitialLanguage(),
       isSettingsOpen: false,
-      activeSettingsTab: 'keys',
+      isModelSelectorOpen: false,
+      activeSettingsTab: 'appearance',
       customSupabaseUrl: '',
       customSupabaseAnonKey: '',
       customR2AccountId: '',
@@ -180,6 +196,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
 
       setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
+      setIsModelSelectorOpen: (open: boolean) => set({ isModelSelectorOpen: open }),
       setSettingsTab: (tab) => set({ activeSettingsTab: tab }),
       openSettingsTab: (tab) => set({ activeSettingsTab: tab, isSettingsOpen: true }),
 
@@ -264,12 +281,39 @@ export const useSettingsStore = create<SettingsState>()(
           providerId === 'ollama' ||
           providerId === 'omniroute' ||
           providerId === 'custom' ||
+          providerId === 'openai-compatible' ||
+          providerId === 'lmstudio' ||
+          providerId === 'litellm' ||
           Boolean(trimmedUrl)
         ) {
           get().refreshModels(providerId);
         }
 
         return { success: true };
+      },
+
+      setCustomHeaders: (providerId, headers) => {
+        set((state) => ({
+          apiKeys: {
+            ...state.apiKeys,
+            [providerId]: {
+              ...state.apiKeys[providerId],
+              customHeaders: headers,
+            },
+          },
+        }));
+      },
+
+      setReasoningEffort: (providerId, effort) => {
+        set((state) => ({
+          apiKeys: {
+            ...state.apiKeys,
+            [providerId]: {
+              ...state.apiKeys[providerId],
+              reasoningEffort: effort,
+            },
+          },
+        }));
       },
 
       clearApiKey: (providerId) => {
@@ -327,7 +371,18 @@ export const useSettingsStore = create<SettingsState>()(
         const config = get().apiKeys[providerId];
         const apiKey = config?.apiKey?.trim() || '';
 
-        // All BYOK providers (including Ollama, OmniRoute, and cloud providers) require an API key to be configured
+        // Local & OpenAI-compatible providers may work without key if base URL is supplied
+        if (
+          providerId === 'openai-compatible' ||
+          providerId === 'lmstudio' ||
+          providerId === 'litellm' ||
+          providerId === 'ollama' ||
+          providerId === 'omniroute' ||
+          providerId === 'custom'
+        ) {
+          return true;
+        }
+
         return apiKey.length >= 4;
       },
 
@@ -341,6 +396,7 @@ export const useSettingsStore = create<SettingsState>()(
           const keyConfig = state.apiKeys[providerId];
           let baseUrl = keyConfig?.baseUrl;
           let apiKey = keyConfig?.apiKey || '';
+          const customHeaders = keyConfig?.customHeaders;
 
           // Only Anticeil uses internal free key pool
           if (providerId === 'anticeil') {
@@ -363,11 +419,16 @@ export const useSettingsStore = create<SettingsState>()(
             providerDef?.requiresApiKey &&
             providerId !== 'custom' &&
             providerId !== 'omniroute' &&
+            providerId !== 'openai-compatible' &&
+            providerId !== 'lmstudio' &&
+            providerId !== 'litellm' &&
             (!apiKey || apiKey.length < 4)
           ) {
-            set((s) => ({
-              dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
-            }));
+            if (get().dynamicModels[providerId] !== undefined) {
+              set((s) => ({
+                dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
+              }));
+            }
             continue;
           }
 
@@ -381,7 +442,7 @@ export const useSettingsStore = create<SettingsState>()(
               const res = await fetch('/api/models/sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ providerId, apiKey, baseUrl }),
+                body: JSON.stringify({ providerId, apiKey, baseUrl, customHeaders }),
               });
               if (res.ok) {
                 const data = await res.json();
@@ -390,22 +451,24 @@ export const useSettingsStore = create<SettingsState>()(
                 }
               }
             } catch {
-              fetched = await fetchProviderModels(providerId, apiKey, baseUrl);
+              fetched = await fetchProviderModels(providerId, apiKey, baseUrl, customHeaders);
             }
 
             if (fetched && fetched.length > 0) {
               set((s) => ({
                 dynamicModels: { ...s.dynamicModels, [providerId]: fetched },
               }));
-            } else {
+            } else if (get().dynamicModels[providerId] !== undefined) {
               set((s) => ({
                 dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
               }));
             }
           } catch (err) {
-            set((s) => ({
-              dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
-            }));
+            if (get().dynamicModels[providerId] !== undefined) {
+              set((s) => ({
+                dynamicModels: { ...s.dynamicModels, [providerId]: undefined },
+              }));
+            }
           } finally {
             set((s) => ({
               isLoadingModels: { ...s.isLoadingModels, [providerId]: false },
@@ -434,8 +497,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       testConnection: async (providerId) => {
         const { apiKeys } = get();
-        const apiKey = apiKeys[providerId]?.apiKey || '';
-        let baseUrl = apiKeys[providerId]?.baseUrl;
+        const keyConfig = apiKeys[providerId];
+        const apiKey = keyConfig?.apiKey || '';
+        let baseUrl = keyConfig?.baseUrl;
+        const customHeaders = keyConfig?.customHeaders;
 
         if (providerId === 'omniroute' && (!baseUrl || baseUrl.includes('openrouter.ai'))) {
           baseUrl = 'http://localhost:20128/v1';
@@ -455,11 +520,11 @@ export const useSettingsStore = create<SettingsState>()(
             const res = await fetch('/api/models/test', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ providerId, apiKey, baseUrl }),
+              body: JSON.stringify({ providerId, apiKey, baseUrl, customHeaders }),
             });
             result = await res.json();
           } catch {
-            result = await testProviderConnection(providerId, apiKey, baseUrl);
+            result = await testProviderConnection(providerId, apiKey, baseUrl, customHeaders);
           }
 
           set((s) => ({

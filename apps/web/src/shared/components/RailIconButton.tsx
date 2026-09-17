@@ -4,10 +4,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
-export type RailColorType = 'chat' | 'docs' | 'media' | 'code' | 'default';
+export type RailColorType = 'chat' | 'docs' | 'media' | 'code' | 'flow' | 'default';
 
 export interface RailIconButtonProps {
   href?: string;
+  target?: string;
+  rel?: string;
   onClick?: (e: React.MouseEvent) => void;
   icon: React.ReactNode;
   label: string;
@@ -22,6 +24,8 @@ export interface RailIconButtonProps {
 
 export function RailIconButton({
   href,
+  target,
+  rel,
   onClick,
   icon,
   label,
@@ -101,7 +105,7 @@ export function RailIconButton({
       )}
 
       {href ? (
-        <Link href={href} onClick={onClick} className={combinedClassName} aria-label={label}>
+        <Link href={href} target={target} rel={rel} onClick={onClick} className={combinedClassName} aria-label={label}>
           {icon}
         </Link>
       ) : (

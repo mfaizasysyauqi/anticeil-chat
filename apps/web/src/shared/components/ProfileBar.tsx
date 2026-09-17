@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
   MoreHorizontal,
-  KeyRound,
   Palette,
   Database,
   Zap,
@@ -111,24 +110,6 @@ export function ProfileBar({ className = '', style, onProfileMenuToggle }: Profi
             {language === 'id' ? 'Pengaturan' : 'Settings'}
           </div>
 
-          {/* API Keys */}
-          <button
-            type="button"
-            onClick={() => {
-              handleToggleMenu(false);
-              if (!user) {
-                openAuthModal('login');
-              } else {
-                openSettingsTab('keys');
-              }
-            }}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 10px', borderRadius: 'var(--radius-md, 6px)', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-subtle)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <KeyRound size={14} color="var(--text-secondary)" />
-            <span>{language === 'id' ? 'Kunci API (BYOK)' : 'API Keys (BYOK)'}</span>
-          </button>
 
           {/* Appearance */}
           <button

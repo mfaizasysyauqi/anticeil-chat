@@ -39,7 +39,8 @@ function AuthQueryHandler() {
 }
 
 export function AppShell({ children, showSidebar = true }: AppShellProps) {
-  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const isModelSelectorOpen = useSettingsStore((s) => s.isModelSelectorOpen);
+  const setIsModelSelectorOpen = useSettingsStore((s) => s.setIsModelSelectorOpen);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);

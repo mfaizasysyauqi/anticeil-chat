@@ -4,7 +4,7 @@ export const TRANSLATIONS = {
   en: {
     app: {
       name: 'Anticeil',
-      tagline: 'Bring Your Own Key AI Assistant',
+      tagline: 'Bring Your Own Key Assistant Agent',
       description: 'Zero-proxy, 100% private cross-platform chatbot with your own API keys.',
     },
     common: {
@@ -33,6 +33,7 @@ export const TRANSLATIONS = {
       newChat: 'New Chat',
       docs: 'Docs Studio',
       code: 'Anticeil Code',
+      flow: 'Anticeil Flow',
       imagine: 'Media Studio',
       pdfTools: 'PDF',
       automations: 'Automations',
@@ -58,7 +59,7 @@ export const TRANSLATIONS = {
       reasoning: 'Thought Process',
       systemPrompt: 'System Prompt',
       thinking: 'Thinking...',
-      assistant: 'Assistant',
+      assistant: 'Assistant Agent',
       editMessage: 'Edit message',
       copyResponse: 'Copy response',
       goodResponse: 'Good response',
@@ -435,7 +436,7 @@ export const TRANSLATIONS = {
   id: {
     app: {
       name: 'Anticeil',
-      tagline: 'Asisten AI Bring Your Own Key',
+      tagline: 'Assistant Agent Bring Your Own Key',
       description: 'Chatbot lintas platform 100% privat langsung menggunakan kunci API Anda sendiri.',
     },
     common: {
@@ -464,6 +465,7 @@ export const TRANSLATIONS = {
       newChat: 'Percakapan Baru',
       docs: 'Docs Studio',
       code: 'Anticeil Code',
+      flow: 'Anticeil Flow',
       imagine: 'Media Studio',
       pdfTools: 'PDF',
       automations: 'Otomatisasi',
@@ -489,7 +491,7 @@ export const TRANSLATIONS = {
       reasoning: 'Proses Berpikir',
       systemPrompt: 'System Prompt',
       thinking: 'Sedang berpikir...',
-      assistant: 'Asisten',
+      assistant: 'Assistant Agent',
       editMessage: 'Ubah pesan',
       copyResponse: 'Salin jawaban',
       goodResponse: 'Jawaban bagus',

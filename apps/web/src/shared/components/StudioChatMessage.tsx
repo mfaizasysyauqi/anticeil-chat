@@ -42,7 +42,7 @@ export function StudioChatMessage({
   onOpenFile,
   onOpenVersionHistory,
   isStreaming = false,
-  assistantName = 'AI Co-Author',
+  assistantName = 'Author Agent',
   assistantIcon,
   assistantColor = 'var(--brand-primary)',
   extraContent,

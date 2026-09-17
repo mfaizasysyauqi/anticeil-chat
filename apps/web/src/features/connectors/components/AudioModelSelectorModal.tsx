@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Music, Mic, Ear, Check, KeyRound, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Music, Mic, Ear, Check, KeyRound, Lock, CheckCircle2, AlertCircle, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 
@@ -32,16 +32,16 @@ export const AUDIO_PROVIDERS: AudioProviderInfo[] = [
   // ─── MUSIC & COMPOSITION ───────────────────────────────────────────
   {
     id: 'anticeil-music',
-    name: 'Anticeil',
+    name: 'Anticeil Pass',
     logoKey: 'anticeil',
     badge: 'FREE',
-    description: 'Model musik AI gratis — tanpa API key, langsung pakai.',
+    description: 'Model musik AI gratis — tanpa API key via Anticeil Pass.',
     category: 'music',
     models: [
       {
         id: 'udio',
-        name: 'Udio Music v1.5 (Anticeil Free)',
-        description: 'Komposisi musik fidelitas tinggi berbagai genre — gratis via Anticeil.',
+        name: 'Udio Music v1.5 (Anticeil Pass)',
+        description: 'Komposisi musik fidelitas tinggi berbagai genre — gratis via Anticeil Pass.',
         keyType: 'free',
         keyRequirement: '100% Gratis — Tanpa API Key',
         badge: 'FREE',
@@ -150,10 +150,10 @@ export const AUDIO_PROVIDERS: AudioProviderInfo[] = [
   // ─── SPEECH & NARRATION (TTS) ──────────────────────────────────────
   {
     id: 'anticeil-tts',
-    name: 'Anticeil',
+    name: 'Anticeil Pass',
     logoKey: 'anticeil',
     badge: 'FREE',
-    description: 'Model sintesis suara gratis tanpa API key — langsung pakai.',
+    description: 'Model sintesis suara gratis tanpa API key — langsung pakai via Anticeil Pass.',
     category: 'tts',
     models: [
       {
@@ -283,10 +283,10 @@ export const AUDIO_PROVIDERS: AudioProviderInfo[] = [
   // ─── SPEECH TO TEXT (STT) ──────────────────────────────────────────
   {
     id: 'anticeil-stt',
-    name: 'Anticeil',
+    name: 'Anticeil Pass',
     logoKey: 'anticeil',
     badge: 'FREE',
-    description: 'Transkripsi audio & pengenalan suara gratis tanpa API key.',
+    description: 'Transkripsi audio & pengenalan suara gratis tanpa API key via Anticeil Pass.',
     category: 'stt',
     models: [
       {
@@ -413,14 +413,37 @@ export function AudioModelSelectorModal({
   onSelectModel,
 }: AudioModelSelectorModalProps) {
   const [mounted, setMounted] = useState(false);
-  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const language = useSettingsStore((s) => s.language);
   const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
+  const apiKeys = useSettingsStore((s) => s.apiKeys);
+  const setApiKey = useSettingsStore((s) => s.setApiKey);
+
+  const [draftKeys, setDraftKeys] = useState<Record<string, { apiKey?: string; baseUrl?: string }>>({});
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
+  const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
 
   const KEY_TYPE_TO_PROVIDER: Record<string, string> = {
     openai: 'openai', gemini: 'gemini', elevenlabs: 'elevenlabs',
     suno: 'suno', udio: 'udio', groq: 'groq',
     deepgram: 'deepgram', assemblyai: 'assemblyai',
+  };
+
+  const handleSaveInlineKey = (providerId: string) => {
+    const draft = draftKeys[providerId];
+    const savedKey = (apiKeys as Record<string, any>)[providerId]?.apiKey || '';
+    const savedUrl = (apiKeys as Record<string, any>)[providerId]?.baseUrl;
+    const keyToSave = draft?.apiKey !== undefined ? draft.apiKey : savedKey;
+    const urlToSave = draft?.baseUrl !== undefined ? draft.baseUrl : savedUrl;
+    setApiKey(providerId as any, keyToSave, urlToSave, true);
+    setSavedStatus((prev) => ({ ...prev, [providerId]: true }));
+    setDraftKeys((prev) => {
+      const next = { ...prev };
+      delete next[providerId];
+      return next;
+    });
+    setTimeout(() => {
+      setSavedStatus((prev) => ({ ...prev, [providerId]: false }));
+    }, 2000);
   };
 
   const providerKeyMissing = (provider: AudioProviderInfo) => {
@@ -607,39 +630,6 @@ export function AudioModelSelectorModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             <button
               type="button"
-              onClick={() => {
-                onClose();
-                openSettingsTab('keys');
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text-primary)';
-                e.currentTarget.style.borderColor = 'var(--border-strong)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-subtle)';
-              }}
-            >
-              <KeyRound size={13} color="#60a5fa" />
-              <span>{language === 'id' ? 'Atur API Key' : 'Manage API Keys'}</span>
-            </button>
-
-            <button
-              type="button"
               onClick={onClose}
               style={{
                 background: 'transparent',
@@ -748,7 +738,7 @@ export function AudioModelSelectorModal({
                             textOverflow: 'ellipsis',
                           }}
                         >
-                          {provider.id.startsWith('anticeil') ? 'Anticeil' : provider.name}
+                          {provider.id.startsWith('anticeil') ? 'Anticeil Pass' : provider.name}
                         </div>
                         {(provider.badge === 'FREE' ||
                           provider.models.every((m) => m.keyType === 'free' || m.keyType === 'microsoft')) && (
@@ -782,18 +772,29 @@ export function AudioModelSelectorModal({
                     </div>
                   </div>
 
-                  {hasActiveModel && (
-                    <div
-                      style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#60a5fa',
-                        flexShrink: 0,
-                        marginLeft: '4px',
-                      }}
-                    />
-                  )}
+                  {(() => {
+                    const isFreeProvider = provider.id.startsWith('anticeil') || provider.models.every((m) => m.keyType === 'free' || m.keyType === 'microsoft');
+                    const nonFreeKeyType = provider.models.find((m) => m.keyType !== 'free' && m.keyType !== 'microsoft')?.keyType;
+                    const storeId = nonFreeKeyType ? KEY_TYPE_TO_PROVIDER[nonFreeKeyType] : null;
+                    const providerHasKey = isFreeProvider || (storeId ? hasConfiguredKey(storeId as any) : true);
+
+                    return providerHasKey ? (
+                      <span
+                        title={isFreeProvider ? 'Free Cloud Tier Ready' : 'API Key Active'}
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: 'var(--accent-success, #10b981)',
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <span title="API Key not configured" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                        <AlertCircle size={13} color="var(--accent-warning, #f59e0b)" />
+                      </span>
+                    );
+                  })()}
                 </button>
               );
             })}
@@ -851,6 +852,156 @@ export function AudioModelSelectorModal({
                 </span>
               )}
             </div>
+
+            {/* Informative Banner for Anticeil Pass Provider */}
+            {activeProviderId.startsWith('anticeil') && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '9px 12px',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  backgroundColor: 'rgba(96, 165, 250, 0.08)',
+                  border: '1px solid rgba(96, 165, 250, 0.2)',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <Sparkles size={15} color="#60a5fa" style={{ flexShrink: 0 }} />
+                <span>
+                  {language === 'id'
+                    ? 'Provider Anticeil Pass siap digunakan gratis tanpa input API key.'
+                    : 'Anticeil Pass built-in provider is ready to use for free without any API key.'}
+                </span>
+              </div>
+            )}
+
+            {/* Unified Inline API Configuration Panel for Providers Requiring Key */}
+            {!activeProviderId.startsWith('anticeil') && currentModels.some((m) => m.keyType !== 'free' && m.keyType !== 'microsoft') && (() => {
+              const primaryKeyType = currentModels.find((m) => m.keyType !== 'free' && m.keyType !== 'microsoft')?.keyType || activeProviderId;
+              const storeId = KEY_TYPE_TO_PROVIDER[primaryKeyType] || activeProviderId;
+              const savedKey = (apiKeys as Record<string, any>)[storeId]?.apiKey || '';
+              const currentKey = draftKeys[storeId]?.apiKey !== undefined ? draftKeys[storeId]!.apiKey! : savedKey;
+              const hasKey = hasConfiguredKey(storeId as any);
+              const isVisible = visibleKeys[storeId];
+              const isSaved = savedStatus[storeId];
+
+              return (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-main)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 650, color: 'var(--text-primary)' }}>
+                        {currentProvider?.name} {language === 'id' ? 'Konfigurasi' : 'Configuration'}
+                      </span>
+                      {hasKey ? (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            color: 'var(--accent-success)',
+                          }}
+                        >
+                          ✓ {language === 'id' ? 'AKTIF' : 'ACTIVE'}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            color: 'var(--accent-warning)',
+                          }}
+                        >
+                          ⚠️ {language === 'id' ? 'BELUM TERHUBUNG' : 'NOT CONFIGURED'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
+                      <input
+                        type={isVisible ? 'text' : 'password'}
+                        value={currentKey}
+                        onChange={(e) =>
+                          setDraftKeys((prev) => ({
+                            ...prev,
+                            [storeId]: { ...prev[storeId], apiKey: e.target.value },
+                          }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSaveInlineKey(storeId);
+                          }
+                        }}
+                        placeholder={`Masukkan API Key ${currentProvider?.name || ''}...`}
+                        style={{
+                          width: '100%',
+                          padding: '6px 30px 6px 9px',
+                          borderRadius: '5px',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                          fontSize: '11.5px',
+                          fontFamily: 'monospace',
+                          outline: 'none',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setVisibleKeys((p) => ({ ...p, [storeId]: !p[storeId] }))}
+                        style={{
+                          position: 'absolute',
+                          right: '6px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: '2px',
+                        }}
+                      >
+                        {isVisible ? <EyeOff size={13} /> : <Eye size={13} />}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSaveInlineKey(storeId)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '5px',
+                        border: 'none',
+                        background: isSaved ? 'var(--accent-success)' : '#60a5fa',
+                        color: '#fff',
+                        fontSize: '11.5px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {isSaved ? '✓ Tersimpan' : 'Simpan'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Model Cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

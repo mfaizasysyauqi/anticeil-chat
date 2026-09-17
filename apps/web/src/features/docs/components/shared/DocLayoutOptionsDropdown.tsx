@@ -151,8 +151,8 @@ export function DocLayoutOptionsDropdown({
   const singleModeLabel =
     mode === 'ai-coauthor'
       ? language === 'id'
-        ? 'Hanya AI Co-Author'
-        : 'AI Co-Author only'
+        ? 'Hanya Author Agent'
+        : 'Author Agent only'
       : language === 'id'
       ? 'Hanya Editor Kode'
       : 'Code editor only';

@@ -904,6 +904,7 @@ export function Sidebar({
   const searchParams = useSearchParams();
   const isDocs = pathname === '/docs' || pathname?.startsWith('/docs');
   const isCode = pathname === '/code' || pathname?.startsWith('/code');
+  const isFlow = pathname === '/flow' || pathname?.startsWith('/flow');
   const isDocumentation = pathname === '/documentation' || pathname?.startsWith('/documentation');
 
   const activeDocSectionId = searchParams?.get('section') || 'intro';
@@ -1064,6 +1065,8 @@ export function Sidebar({
     ? 'Docs Studio'
     : isCode
     ? 'Anticeil Code'
+    : isFlow
+    ? 'Anticeil Flow'
     : (language === 'id' ? 'Percakapan' : 'Chat');
 
   const docSearchResults = useMemo(() => {
@@ -1772,6 +1775,9 @@ export function Sidebar({
                 <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: (pathname === '/code' || pathname.startsWith('/code')) ? 'rgba(129, 140, 248, 0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Code2 size={17} color={(pathname === '/code' || pathname.startsWith('/code')) ? 'var(--rail-code-color, #818cf8)' : 'var(--text-muted)'} />
                 </div>
+                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: (pathname === '/flow' || pathname.startsWith('/flow')) ? 'rgba(16, 185, 129, 0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Workflow size={17} color={(pathname === '/flow' || pathname.startsWith('/flow')) ? 'var(--rail-flow-color, #10b981)' : 'var(--text-muted)'} />
+                </div>
                 </div>
             </div>
 
@@ -1926,10 +1932,21 @@ export function Sidebar({
             />
             <RailIconButton
               href="/code"
+              target="_blank"
+              rel="noopener noreferrer"
               label={t.nav.code || 'Anticeil Code'}
               icon={<Code2 size={17} />}
               isActive={pathname === '/code' || pathname.startsWith('/code')}
               colorType="code"
+            />
+            <RailIconButton
+              href="/flow"
+              target="_blank"
+              rel="noopener noreferrer"
+              label={t.nav.flow || 'Anticeil Flow'}
+              icon={<Workflow size={17} />}
+              isActive={pathname === '/flow' || pathname.startsWith('/flow')}
+              colorType="flow"
             />
             </div>
         </SidebarRail>
@@ -2019,11 +2036,23 @@ export function Sidebar({
               />
               <RailIconButton
                 href="/code"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={onCloseMobile}
                 label={t.nav.code || 'Anticeil Code'}
                 icon={<Code2 size={17} />}
                 isActive={pathname === '/code' || pathname.startsWith('/code')}
                 colorType="code"
+              />
+              <RailIconButton
+                href="/flow"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onCloseMobile}
+                label={t.nav.flow || 'Anticeil Flow'}
+                icon={<Workflow size={17} />}
+                isActive={pathname === '/flow' || pathname.startsWith('/flow')}
+                colorType="flow"
               />
               </div>
           </SidebarRail>
@@ -2066,7 +2095,7 @@ export function Sidebar({
         />
 
         {/* Primary Action Button (Mode-Aware) */}
-        {!isDocumentation && !isCode && (
+        {!isDocumentation && !isCode && !isFlow && (
           <div style={{ padding: '8px 10px 4px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
           {isDocs ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>

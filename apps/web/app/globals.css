@@ -587,6 +587,8 @@ code, pre, kbd {
   --rail-docs-bg: rgba(37, 99, 235, 0.15);
   --rail-code-color: #818cf8;
   --rail-code-bg: rgba(129, 140, 248, 0.15);
+  --rail-flow-color: #10b981;
+  --rail-flow-bg: rgba(16, 185, 129, 0.15);
   --rail-media-color: #38bdf8;
   --rail-media-bg: rgba(56, 189, 248, 0.15);
   --rail-credit-color: #f59e0b;
@@ -643,6 +645,17 @@ code, pre, kbd {
 .rail-icon-btn.code-btn.active {
   background: var(--rail-code-bg) !important;
   color: var(--rail-code-color) !important;
+}
+
+/* Flow Button (Emerald Green) */
+.rail-icon-btn.flow-btn:hover {
+  color: var(--rail-flow-color) !important;
+  background: var(--rail-flow-bg) !important;
+  transform: scale(1.08);
+}
+.rail-icon-btn.flow-btn.active {
+  background: var(--rail-flow-bg) !important;
+  color: var(--rail-flow-color) !important;
 }
 
 /* Media Button (Radiant Sky) */

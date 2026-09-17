@@ -3147,7 +3147,7 @@ ${exportText}
               }
             }}
             icon={<Sparkles size={16} />}
-            label={language === 'id' ? 'AI Co-Author Assistant' : 'AI Co-Author Assistant'}
+            label={language === 'id' ? 'Author Agent' : 'Author Agent'}
             isActive={isSidebarOpen && activeDrawerTab === 'ai'}
             colorType="docs"
             showIndicatorBar
@@ -6902,7 +6902,7 @@ ${exportText}
                         flexShrink: 0,
                       }}
                       className="hover-subtle"
-                      title={language === 'id' ? 'Buka di AI Co-Author' : 'Open in AI Co-Author'}
+                      title={language === 'id' ? 'Buka di Author Agent' : 'Open in Author Agent'}
                     >
                       <Sparkles size={14} />
                     </button>

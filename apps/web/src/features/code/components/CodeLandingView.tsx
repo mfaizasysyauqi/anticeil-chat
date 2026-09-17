@@ -30,6 +30,7 @@ import {
   Clock,
   Play,
   Share2,
+  MessageSquare,
 } from 'lucide-react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useAuthStore } from '../../auth/store/useAuthStore';
@@ -168,6 +169,7 @@ We introduce the BYOK multi-agent runtime featuring surgical patch diffs.`,
     <div
       style={{
         flex: 1,
+        minHeight: '100vh',
         height: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -176,6 +178,92 @@ We introduce the BYOK multi-agent runtime featuring surgical patch diffs.`,
         padding: '0 0 80px 0',
       }}
     >
+      {/* ── Standalone Top Navbar ── */}
+      <header
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          width: '100%',
+          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(10, 11, 16, 0.85)',
+          borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 24px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <Link href="/chat" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <img src="/anticeil-logo.png" alt="Anticeil Logo" style={{ width: '28px', height: '28px', borderRadius: '7px' }} />
+            <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary, #ffffff)', letterSpacing: '-0.02em' }}>
+              Anticeil <span style={{ color: '#818cf8', fontWeight: 600 }}>Code</span>
+            </span>
+          </Link>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Link href="/chat" style={{ fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', textDecoration: 'none', fontWeight: 500 }}>
+              {isId ? 'Chat' : 'Chat'}
+            </Link>
+            <Link href="/docs" style={{ fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', textDecoration: 'none', fontWeight: 500 }}>
+              Docs Studio
+            </Link>
+            <Link href="/flow" style={{ fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', textDecoration: 'none', fontWeight: 500 }}>
+              Anticeil Flow
+            </Link>
+            <Link href="/documentation" style={{ fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', textDecoration: 'none', fontWeight: 500 }}>
+              {isId ? 'Dokumentasi' : 'Documentation'}
+            </Link>
+          </nav>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Link
+            href="/chat"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+              color: 'var(--text-primary, #ffffff)',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              textDecoration: 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <MessageSquare size={13} color="var(--brand-primary, #0073ea)" />
+            <span>{isId ? 'Buka Workspace' : 'Open Workspace'}</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 16px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #6366f1, #818cf8)',
+              border: 'none',
+              color: '#ffffff',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(99, 102, 241, 0.3)',
+            }}
+          >
+            <span>{isId ? 'Daftar Akses Awal' : 'Get Early Access'}</span>
+            <ArrowRight size={13} />
+          </button>
+        </div>
+      </header>
+
       {/* ── Top Ambient Hero Glow Banner ── */}
       <div
         style={{

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -13,17 +13,25 @@ import {
   AlertCircle,
   RotateCw,
   Eye,
+  EyeOff,
   FileText,
   Palette,
   Globe,
   Video,
   KeyRound,
   Search,
+  ExternalLink,
+  Plus,
+  Trash2,
+  RefreshCw,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import {
   PROVIDER_DEFINITIONS,
   LLMProviderId,
   LLMModel,
+  ReasoningEffort,
   getTranslation,
   isModelActiveAndAvailable,
 } from '@anticeil/core';
@@ -86,6 +94,28 @@ export function ModelSelectorModal({
 
   const [selectedProviderId, setSelectedProviderId] = useState<LLMProviderId>(initialProvider);
 
+  const apiKeys = useSettingsStore((s) => s.apiKeys);
+  const setApiKey = useSettingsStore((s) => s.setApiKey);
+  const setCustomHeaders = useSettingsStore((s) => s.setCustomHeaders);
+  const setReasoningEffort = useSettingsStore((s) => s.setReasoningEffort);
+  const testConnection = useSettingsStore((s) => s.testConnection);
+  const testConnectionStatus = useSettingsStore((s) => s.testConnectionStatus);
+
+  const [draftKeys, setDraftKeys] = useState<
+    Record<
+      string,
+      {
+        apiKey?: string;
+        baseUrl?: string;
+        customHeaders?: Array<{ key: string; value: string }>;
+        reasoningEffort?: ReasoningEffort;
+      }
+    >
+  >({});
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
+  const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
+  const [isConfigExpanded, setIsConfigExpanded] = useState<Record<string, boolean>>({});
+
   const updateSession = useChatStore((s) => s.updateSession);
   const setActiveProviderAndModel = useSettingsStore((s) => s.setActiveProviderAndModel);
   const hasConfiguredKey = useSettingsStore((s) => s.hasConfiguredKey);
@@ -93,7 +123,6 @@ export function ModelSelectorModal({
   const refreshModels = useSettingsStore((s) => s.refreshModels);
   const isLoadingModels = useSettingsStore((s) => s.isLoadingModels);
   const dynamicModels = useSettingsStore((s) => s.dynamicModels);
-  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
   const disabledModelIds = useSettingsStore((s) => s.disabledModelIds) || [];
 
   const isCurrentProviderLoading = Boolean(isLoadingModels[selectedProviderId]);
@@ -138,14 +167,124 @@ export function ModelSelectorModal({
   const language = useSettingsStore((s) => s.language);
   const t = getTranslation(language);
 
+  const fetchedProvidersRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
-    if (hasKey && !dynamicModels[selectedProviderId]) {
+    if (hasKey && !dynamicModels[selectedProviderId] && !fetchedProvidersRef.current.has(selectedProviderId)) {
+      fetchedProvidersRef.current.add(selectedProviderId);
       refreshModels(selectedProviderId);
     }
   }, [selectedProviderId, hasKey, dynamicModels, refreshModels]);
 
   const user = useAuthStore((s) => s.user);
   const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
+  const handleDraftKeyChange = (providerId: string, value: string) => {
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        apiKey: value,
+      },
+    }));
+  };
+
+  const handleDraftBaseUrlChange = (providerId: string, baseUrl: string) => {
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        baseUrl,
+      },
+    }));
+  };
+
+  const handleAddCustomHeader = (providerId: string) => {
+    const currentHeaders = draftKeys[providerId]?.customHeaders !== undefined
+      ? draftKeys[providerId]!.customHeaders!
+      : Object.entries(apiKeys[providerId as LLMProviderId]?.customHeaders || {}).map(([key, value]) => ({ key, value }));
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        customHeaders: [...currentHeaders, { key: '', value: '' }],
+      },
+    }));
+  };
+
+  const handleUpdateCustomHeader = (providerId: string, index: number, field: 'key' | 'value', val: string) => {
+    const currentHeaders = draftKeys[providerId]?.customHeaders !== undefined
+      ? [...draftKeys[providerId]!.customHeaders!]
+      : Object.entries(apiKeys[providerId as LLMProviderId]?.customHeaders || {}).map(([key, value]) => ({ key, value }));
+    if (currentHeaders[index]) {
+      currentHeaders[index] = { ...currentHeaders[index], [field]: val };
+    }
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        customHeaders: currentHeaders,
+      },
+    }));
+  };
+
+  const handleRemoveCustomHeader = (providerId: string, index: number) => {
+    const currentHeaders = draftKeys[providerId]?.customHeaders !== undefined
+      ? [...draftKeys[providerId]!.customHeaders!]
+      : Object.entries(apiKeys[providerId as LLMProviderId]?.customHeaders || {}).map(([key, value]) => ({ key, value }));
+    currentHeaders.splice(index, 1);
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        customHeaders: currentHeaders,
+      },
+    }));
+  };
+
+  const handleReasoningEffortChange = (providerId: string, effort: ReasoningEffort) => {
+    setDraftKeys((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        reasoningEffort: effort,
+      },
+    }));
+  };
+
+  const handleSaveInlineProvider = (providerId: LLMProviderId) => {
+    const draft = draftKeys[providerId];
+    const savedKey = apiKeys[providerId]?.apiKey || '';
+    const savedUrl = apiKeys[providerId]?.baseUrl;
+
+    const keyToSave = draft?.apiKey !== undefined ? draft.apiKey : savedKey;
+    const urlToSave = draft?.baseUrl !== undefined ? draft.baseUrl : savedUrl;
+
+    setApiKey(providerId, keyToSave, urlToSave, true);
+
+    if (draft?.customHeaders !== undefined) {
+      const headersMap: Record<string, string> = {};
+      for (const h of draft.customHeaders) {
+        if (h.key.trim()) {
+          headersMap[h.key.trim()] = h.value;
+        }
+      }
+      setCustomHeaders(providerId, headersMap);
+    }
+    if (draft?.reasoningEffort !== undefined) {
+      setReasoningEffort(providerId, draft.reasoningEffort);
+    }
+
+    setSavedStatus((prev) => ({ ...prev, [providerId]: true }));
+    setDraftKeys((prev) => {
+      const next = { ...prev };
+      delete next[providerId];
+      return next;
+    });
+    setTimeout(() => {
+      setSavedStatus((prev) => ({ ...prev, [providerId]: false }));
+    }, 2500);
+  };
 
   const handleSelectModel = (model: LLMModel) => {
     setActiveProviderAndModel(model.providerId, model.id);
@@ -207,32 +346,6 @@ export function ModelSelectorModal({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Shortcut: Settings API Keys */}
-            <button
-              onClick={() => {
-                onClose();
-                openSettingsTab('keys');
-              }}
-              title={language === 'id' ? 'Buka Pengaturan Kunci API' : 'Manage API Keys'}
-              className="clickable-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-md)',
-                background: 'rgba(0, 115, 234, 0.1)',
-                border: '1px solid rgba(0, 115, 234, 0.25)',
-                color: 'var(--brand-primary)',
-                fontSize: '11px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <KeyRound size={12} />
-              <span>{language === 'id' ? 'Atur API Key' : 'API Keys'}</span>
-            </button>
-
             {/* Live Refresh Models Button */}
             <button
               onClick={() => refreshModels(selectedProviderId)}
@@ -377,7 +490,7 @@ export function ModelSelectorModal({
               gap: '10px',
             }}
           >
-            {/* Informative Banner for Anticeil Free Provider */}
+            {/* Informative Banner for Anticeil Pass Provider */}
             {selectedProviderId === 'anticeil' && (
               <div
                 style={{
@@ -395,78 +508,478 @@ export function ModelSelectorModal({
                 <Sparkles size={15} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
                 <span>
                   {language === 'id'
-                    ? 'Provider bawaan Anticeil siap digunakan gratis tanpa input API key. Model ditenagai oleh Google Gemini & Groq Cloud LPU.'
-                    : 'Anticeil built-in provider is ready to use for free without any API key. Powered by Google Gemini & Groq Cloud LPU.'}
+                    ? 'Provider Anticeil Pass siap digunakan gratis tanpa input API key. Model ditenagai oleh Google Gemini & Groq Cloud LPU.'
+                    : 'Anticeil Pass built-in provider is ready to use for free without any API key. Powered by Google Gemini & Groq Cloud LPU.'}
                 </span>
               </div>
             )}
 
-            {/* Warning Banner if API Key is missing for this provider */}
-            {!hasKey && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                  border: '1px solid rgba(245, 158, 11, 0.25)',
-                  fontSize: '12px',
-                  color: 'var(--accent-warning)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <AlertCircle size={14} style={{ flexShrink: 0 }} />
-                  <span>
-                    {(() => {
-                      if (selectedProviderId === 'ollama') {
-                        return language === 'id'
-                          ? 'Ollama belum aktif di localhost:11434 atau belum ada model terunduh.'
-                          : 'Ollama is not running on localhost:11434 or has no models installed.';
-                      }
-                      if (selectedProviderId === 'omniroute') {
-                        return language === 'id'
-                          ? 'OmniRoute Gateway belum aktif di port 20128 atau API Key belum diisi.'
-                          : 'OmniRoute Gateway is not active on port 20128 or API key missing.';
-                      }
-                      if (selectedProviderId === 'custom') {
-                        return language === 'id'
-                          ? 'Custom Endpoint belum terhubung di port lokal.'
-                          : 'Custom Endpoint is not connected or reachable.';
-                      }
-                      return language === 'id'
-                        ? `Kunci API ${PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId)?.name} belum diatur.`
-                        : `API Key for ${PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId)?.name} is missing.`;
-                    })()}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    if (!user) {
-                      openAuthModal('login');
-                    } else {
-                      openSettingsTab('keys');
-                    }
-                  }}
+            {/* Unified Inline API Configuration Panel for Non-Anticeil Providers */}
+            {selectedProviderId !== 'anticeil' && (() => {
+              const provDef = PROVIDER_DEFINITIONS.find((p) => p.id === selectedProviderId);
+              const cfg = apiKeys[selectedProviderId];
+              const savedKey = cfg?.apiKey || '';
+              const savedBaseUrl =
+                selectedProviderId === 'omniroute'
+                  ? (!cfg?.baseUrl || cfg?.baseUrl?.includes('openrouter.ai') ? 'http://localhost:20128/v1' : cfg.baseUrl)
+                  : selectedProviderId === 'custom' || selectedProviderId === 'lmstudio'
+                  ? (cfg?.baseUrl?.includes('openrouter.ai') ? 'http://localhost:1234/v1' : (cfg?.baseUrl || 'http://localhost:1234/v1'))
+                  : (cfg?.baseUrl || provDef?.defaultBaseUrl || '');
+
+              const currentKey = draftKeys[selectedProviderId]?.apiKey !== undefined
+                ? draftKeys[selectedProviderId]!.apiKey!
+                : savedKey;
+              const currentBaseUrl = draftKeys[selectedProviderId]?.baseUrl !== undefined
+                ? draftKeys[selectedProviderId]!.baseUrl!
+                : savedBaseUrl;
+
+              const isKeyDirty = currentKey !== savedKey;
+              const isUrlDirty = draftKeys[selectedProviderId]?.baseUrl !== undefined && draftKeys[selectedProviderId]!.baseUrl !== savedBaseUrl;
+              const isDirty = isKeyDirty || isUrlDirty || draftKeys[selectedProviderId]?.customHeaders !== undefined || draftKeys[selectedProviderId]?.reasoningEffort !== undefined;
+              const hasSaved = savedStatus[selectedProviderId];
+              const isVisible = visibleKeys[selectedProviderId];
+              const isAdvOpen = isConfigExpanded[selectedProviderId] || false;
+
+              const ts = testConnectionStatus[selectedProviderId];
+              const isTesting = ts?.testing === true;
+              const testRes = ts?.result;
+
+              return (
+                <div
                   style={{
-                    backgroundColor: 'var(--accent-warning)',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: '4px',
-                    padding: '3px 8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-main)',
+                    border: '1px solid var(--border-subtle)',
                   }}
                 >
-                  {language === 'id' ? 'Masukkan Key' : 'Enter Key'} →
-                </button>
-              </div>
-            )}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 650, color: 'var(--text-primary)' }}>
+                        {provDef?.name || selectedProviderId} {language === 'id' ? 'Konfigurasi' : 'Configuration'}
+                      </span>
+                      {hasKey ? (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            color: 'var(--accent-success)',
+                          }}
+                        >
+                          ✓ {language === 'id' ? 'AKTIF' : 'ACTIVE'}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            color: 'var(--accent-warning)',
+                          }}
+                        >
+                          ⚠️ {language === 'id' ? 'BELUM TERHUBUNG' : 'NOT CONFIGURED'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {provDef?.docUrl && (
+                        <a
+                          href={provDef.docUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            fontSize: '11px',
+                            color: 'var(--brand-primary)',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <span>{t.settings.getApiKey}</span>
+                          <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Anticeil Pass Banner */}
+                  {(selectedProviderId === 'openai-compatible' || selectedProviderId === 'omniroute') && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Sparkles size={12} color="#60a5fa" />
+                        <span>
+                          <strong style={{ color: '#60a5fa' }}>Anticeil Pass</strong> — proxy cepat untuk model open-weights.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDraftBaseUrlChange(selectedProviderId, 'http://localhost:20128/v1')}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#60a5fa',
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          fontSize: '10.5px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Port 20128
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Inputs Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                    {/* API Key Input */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                        {selectedProviderId === 'omniroute' || selectedProviderId === 'openai-compatible'
+                          ? 'API Key (Opsional / Gateway Pass)'
+                          : `${provDef?.name || selectedProviderId} API Key`}
+                      </label>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type={isVisible ? 'text' : 'password'}
+                          value={currentKey}
+                          onChange={(e) => handleDraftKeyChange(selectedProviderId, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleSaveInlineProvider(selectedProviderId);
+                            }
+                          }}
+                          placeholder={
+                            selectedProviderId === 'omniroute'
+                              ? 'Lewati jika menggunakan OmniRoute lokal...'
+                              : selectedProviderId === 'ollama'
+                              ? 'Ollama tidak memerlukan API Key...'
+                              : `Masukkan API Key ${provDef?.name || ''}...`
+                          }
+                          style={{
+                            width: '100%',
+                            padding: '6px 30px 6px 9px',
+                            borderRadius: '5px',
+                            border: '1px solid var(--border-subtle)',
+                            background: 'var(--bg-surface)',
+                            color: 'var(--text-primary)',
+                            fontSize: '11.5px',
+                            fontFamily: 'monospace',
+                            outline: 'none',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setVisibleKeys((p) => ({ ...p, [selectedProviderId]: !p[selectedProviderId] }))}
+                          style={{
+                            position: 'absolute',
+                            right: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '2px',
+                          }}
+                        >
+                          {isVisible ? <EyeOff size={13} /> : <Eye size={13} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Base URL Input */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          Base URL
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsConfigExpanded((p) => ({ ...p, [selectedProviderId]: !p[selectedProviderId] }))}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--brand-primary)',
+                            cursor: 'pointer',
+                            fontSize: '10.5px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                          }}
+                        >
+                          <span>{isAdvOpen ? 'Tutup Opsi Lanjutan' : 'Opsi Lanjutan & Header'}</span>
+                          {isAdvOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={currentBaseUrl}
+                        onChange={(e) => handleDraftBaseUrlChange(selectedProviderId, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSaveInlineProvider(selectedProviderId);
+                          }
+                        }}
+                        placeholder={
+                          selectedProviderId === 'omniroute' || selectedProviderId === 'openai-compatible'
+                            ? 'http://localhost:20128/v1'
+                            : selectedProviderId === 'ollama'
+                            ? 'http://localhost:11434'
+                            : (provDef?.defaultBaseUrl || 'https://api.openai.com/v1')
+                        }
+                        style={{
+                          width: '100%',
+                          padding: '6px 9px',
+                          borderRadius: '5px',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-primary)',
+                          fontSize: '11.5px',
+                          fontFamily: 'monospace',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Collapsible Advanced Section: Custom Headers & Reasoning Effort */}
+                  {isAdvOpen && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        background: 'var(--bg-surface)',
+                        border: '1px dashed var(--border-subtle)',
+                      }}
+                    >
+                      {/* Reasoning Effort */}
+                      {(() => {
+                        const currentReasoningEffort: ReasoningEffort = draftKeys[selectedProviderId]?.reasoningEffort !== undefined
+                          ? draftKeys[selectedProviderId]!.reasoningEffort!
+                          : (cfg?.reasoningEffort || 'none');
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                Reasoning Effort (Thinking Depth)
+                              </label>
+                            </div>
+                            <select
+                              value={currentReasoningEffort}
+                              onChange={(e) => handleReasoningEffortChange(selectedProviderId, e.target.value as ReasoningEffort)}
+                              style={{
+                                width: '100%',
+                                padding: '5px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border-subtle)',
+                                background: 'var(--bg-main)',
+                                color: 'var(--text-primary)',
+                                fontSize: '11px',
+                                outline: 'none',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <option value="none">None (Standard Fast)</option>
+                              <option value="low">Low (Quick Reasoning)</option>
+                              <option value="medium">Medium (Balanced)</option>
+                              <option value="high">High (Deep Verification)</option>
+                            </select>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Custom Headers */}
+                      {(() => {
+                        const customHeadersList = draftKeys[selectedProviderId]?.customHeaders !== undefined
+                          ? draftKeys[selectedProviderId]!.customHeaders!
+                          : Object.entries(cfg?.customHeaders || {}).map(([key, value]) => ({ key, value }));
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                Custom HTTP Headers
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => handleAddCustomHeader(selectedProviderId)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '2px',
+                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                                  color: '#60a5fa',
+                                  borderRadius: '3px',
+                                  padding: '1px 6px',
+                                  fontSize: '10px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Plus size={9} />
+                                <span>Add Header</span>
+                              </button>
+                            </div>
+
+                            {customHeadersList.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {customHeadersList.map((hdr, idx) => (
+                                  <div key={idx} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                    <input
+                                      type="text"
+                                      value={hdr.key}
+                                      onChange={(e) => handleUpdateCustomHeader(selectedProviderId, idx, 'key', e.target.value)}
+                                      placeholder="Header Key"
+                                      style={{
+                                        flex: 1,
+                                        padding: '4px 6px',
+                                        borderRadius: '4px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-main)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '10.5px',
+                                        fontFamily: 'monospace',
+                                        outline: 'none',
+                                      }}
+                                    />
+                                    <input
+                                      type="text"
+                                      value={hdr.value}
+                                      onChange={(e) => handleUpdateCustomHeader(selectedProviderId, idx, 'value', e.target.value)}
+                                      placeholder="Header Value"
+                                      style={{
+                                        flex: 1,
+                                        padding: '4px 6px',
+                                        borderRadius: '4px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-main)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '10.5px',
+                                        fontFamily: 'monospace',
+                                        outline: 'none',
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveCustomHeader(selectedProviderId, idx)}
+                                      style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#ef4444',
+                                        cursor: 'pointer',
+                                        padding: '2px',
+                                      }}
+                                    >
+                                      <Trash2 size={11} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                Tidak ada custom header yang diatur.
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Actions & Test Status Row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => testConnection(selectedProviderId)}
+                        disabled={isTesting}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '4px 9px',
+                          borderRadius: '5px',
+                          border: '1px solid var(--border-subtle)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-secondary)',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: isTesting ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        <RefreshCw size={10} style={{ animation: isTesting ? 'spin 1s linear infinite' : 'none' }} />
+                        <span>{isTesting ? (language === 'id' ? 'Menguji...' : 'Testing...') : (language === 'id' ? 'Uji Koneksi' : 'Test Connection')}</span>
+                      </button>
+
+                      {testRes && !isTesting && (
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            fontWeight: 600,
+                            color: testRes.success ? 'var(--accent-success)' : '#ef4444',
+                          }}
+                        >
+                          {testRes.success ? '✓' : '✗'} {testRes.message}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {hasSaved && (
+                        <span style={{ fontSize: '11px', color: 'var(--accent-success)', fontWeight: 600 }}>
+                          ✓ {t.settings.saved}
+                        </span>
+                      )}
+                      {isDirty && (
+                        <button
+                          type="button"
+                          onClick={() => handleSaveInlineProvider(selectedProviderId)}
+                          style={{
+                            padding: '4px 12px',
+                            background: 'var(--brand-primary, #0073ea)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '5px',
+                            fontSize: '11px',
+                            fontWeight: 650,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {language === 'id' ? 'Simpan Pengaturan' : 'Save Settings'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Model Search Bar */}
             {models.length > 4 && (

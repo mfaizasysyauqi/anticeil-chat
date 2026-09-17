@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, Square, RefreshCw, ChevronDown, Paperclip, Plus, X, FileText, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { ArrowUp, Square, RefreshCw, ChevronDown, Paperclip, Plus, AtSign, X, FileText, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../features/auth/store/useAuthStore';
 
 export interface PromptAttachment {
@@ -262,300 +262,406 @@ export function PromptBar({
         <form
           onSubmit={handleFormSubmit}
           style={{
-            background: 'var(--bg-input, var(--bg-surface))',
-            border: `1px solid ${
-              isFocused ? 'var(--border-strong)' : 'var(--border-subtle)'
-            }`,
-            borderRadius: 'var(--radius-xl, 16px)',
-            boxShadow: 'none',
-            padding: '10px 14px',
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            transition: 'all 0.2s ease',
-            position: 'relative',
-            width: '100%',
-            boxSizing: 'border-box',
+            gap: '6px',
           }}
         >
-        {/* Attachment Previews Bar */}
-        {attachments.length > 0 && (
+          {/* Cline-Style Main Input Card */}
           <div
+            className="chat-input-wrapper"
             style={{
+              width: '100%',
+              background: 'var(--bg-input, #18181b)',
+              border: `1px solid ${
+                isFocused ? 'var(--border-strong)' : 'var(--border-subtle)'
+              }`,
+              borderRadius: '12px',
+              padding: '12px 14px 8px 14px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              flexWrap: 'wrap',
-              paddingBottom: '8px',
-              marginBottom: '4px',
-              borderBottom: '1px solid var(--border-subtle)',
+              flexDirection: 'column',
+              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+              position: 'relative',
+              boxSizing: 'border-box',
             }}
           >
-            {attachments.map((att) => (
+            {/* Attachment Previews Bar */}
+            {attachments.length > 0 && (
               <div
-                key={att.id}
                 style={{
-                  display: 'inline-flex',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: att.type === 'image' ? '3px 8px 3px 3px' : '4px 8px',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--bg-subtle)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '11.5px',
-                  fontWeight: 550,
-                  color: 'var(--text-primary)',
-                  maxWidth: '200px',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  paddingBottom: '8px',
+                  marginBottom: '6px',
+                  borderBottom: '1px solid var(--border-subtle)',
                 }}
               >
-                {att.type === 'image' && att.dataUrl ? (
-                  <img
-                    src={att.dataUrl}
-                    alt={att.name}
-                    style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <FileText size={14} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
-                )}
-                <span
-                  style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    flex: 1,
-                  }}
-                >
-                  {att.name}
-                </span>
+                {attachments.map((att) => (
+                  <div
+                    key={att.id}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: att.type === 'image' ? '3px 8px 3px 3px' : '4px 8px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--bg-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      fontSize: '11.5px',
+                      fontWeight: 550,
+                      color: 'var(--text-primary)',
+                      maxWidth: '200px',
+                    }}
+                  >
+                    {att.type === 'image' && att.dataUrl ? (
+                      <img
+                        src={att.dataUrl}
+                        alt={att.name}
+                        style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <FileText size={14} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                    )}
+                    <span
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1,
+                      }}
+                    >
+                      {att.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(att.id)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Textarea */}
+            <textarea
+              ref={textareaRef}
+              value={prompt}
+              onChange={(e) => onPromptChange(e.target.value)}
+              placeholder={placeholder}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onPaste={handlePaste}
+              autoFocus={autoFocus}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleFormSubmit();
+                }
+              }}
+              rows={2}
+              style={{
+                width: '100%',
+                minHeight: `${minHeight}px`,
+                maxHeight: `${maxHeight}px`,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                resize: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '13.5px',
+                lineHeight: '21px',
+                padding: '0',
+              }}
+            />
+
+            {/* Bottom Row Inside Card: Subtext Hint & Send/Stop Icon */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: '6px',
+                gap: '8px',
+              }}
+            >
+              {/* Subtext Hint */}
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  opacity: 0.75,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  userSelect: 'none',
+                }}
+              >
+                Ketik @ untuk konteks, / untuk perintah, tahan Shift untuk seret berkas
+              </span>
+
+              {/* Send / Stop Icon Button inside bottom-right corner */}
+              {isGenerating ? (
                 <button
                   type="button"
-                  onClick={() => removeAttachment(att.id)}
+                  onClick={() => {
+                    if (onStop) onStop();
+                  }}
+                  title="Stop"
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    width: '28px',
+                    height: '28px',
+                    background: 'var(--accent-danger, #ef4444)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    transition: 'opacity 0.15s ease',
                   }}
                 >
-                  <X size={12} />
+                  <Square size={12} fill="#FFFFFF" />
                 </button>
-              </div>
-            ))}
+              ) : (
+                <button
+                  type="submit"
+                  disabled={(!prompt.trim() && attachments.length === 0) || disabled}
+                  title={submitTooltip || 'Send'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '28px',
+                    height: '28px',
+                    background: 'transparent',
+                    color:
+                      (prompt.trim() || attachments.length > 0) && !disabled
+                        ? 'var(--brand-primary, #3b82f6)'
+                        : 'var(--text-muted)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: (prompt.trim() || attachments.length > 0) && !disabled ? 'pointer' : 'default',
+                    flexShrink: 0,
+                    transition: 'all 0.15s ease',
+                    opacity: (prompt.trim() || attachments.length > 0) && !disabled ? 1 : 0.45,
+                  }}
+                >
+                  <ArrowUp size={16} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
           </div>
-        )}
 
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={prompt}
-          onChange={(e) => onPromptChange(e.target.value)}
-          placeholder={placeholder}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onPaste={handlePaste}
-          autoFocus={autoFocus}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleFormSubmit();
-            }
-          }}
-          rows={2}
-          style={{
-            width: '100%',
-            minHeight: `${minHeight}px`,
-            maxHeight: `${maxHeight}px`,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            resize: 'none',
-            color: 'var(--text-primary)',
-            fontSize: '14px',
-            lineHeight: '22px',
-            padding: '2px',
-          }}
-        />
-
-        {/* Bottom Toolbar */}
-        <div
-          className="prompt-bar-toolbar"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: '6px',
-            paddingTop: '6px',
-            gap: '8px',
-            flexWrap: 'wrap',
-            width: '100%',
-          }}
-        >
-          {/* Left Controls (Format selector, attachment button, etc.) */}
+          {/* Cline-Style Dedicated Bottom Toolbar (Outside Input Card) */}
           <div
-            className="prompt-bar-left-controls"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              justifyContent: 'space-between',
+              padding: '2px 4px',
+              gap: '8px',
+              width: '100%',
               flexWrap: 'wrap',
-              minWidth: 0,
-              flex: '1 1 auto',
             }}
           >
-            {/* Manual Attachment Button (+) */}
-            {allowAttachments && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                title="Attach image or file (or Ctrl+V to paste)"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-subtle)',
-                  backgroundColor: 'var(--bg-subtle)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0,
-                }}
-                className="hover-subtle"
-              >
-                <Plus size={15} />
-              </button>
-            )}
-
-            {leftControls}
-          </div>
-
-          {/* Right Actions (Right controls, model selector, send button) */}
-          <div
-            className="prompt-bar-right-actions"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              flexShrink: 0,
-              marginLeft: 'auto',
-            }}
-          >
-            {rightControls}
-
-            {/* Model Selector Dropdown Button (Grok style) */}
-            {modelDisplayName && (
+            {/* Left Controls: @, +, Category/Engine Dropdowns, Model Badge */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                flexWrap: 'wrap',
+                minWidth: 0,
+              }}
+            >
+              {/* 1. Mention Context (@) Button */}
               <button
                 type="button"
                 onClick={() => {
-                  if (!user) {
-                    openAuthModal('login');
-                    return;
-                  }
-                  if (onModelSelectorOpen) onModelSelectorOpen();
+                  onPromptChange(prompt ? `${prompt} @` : '@');
+                  textareaRef.current?.focus();
                 }}
-                title="Select AI Model"
-                className="clickable-pill"
+                title="Mention context / file (@)"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
+                  width: '24px',
+                  height: '24px',
                   background: 'transparent',
                   border: 'none',
                   color: 'var(--text-secondary)',
-                  padding: '4px 6px',
-                  borderRadius: 'var(--radius-md, 6px)',
-                  fontSize: '12.5px',
-                  fontWeight: 500,
                   cursor: 'pointer',
-                  maxWidth: '160px',
-                  minWidth: 0,
-                  flexShrink: 1,
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0',
                   transition: 'color 0.15s ease, background 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <AtSign size={14} />
+              </button>
+
+              {/* 2. Plus (+) Attach Button */}
+              {allowAttachments && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach image or file (+)"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '4px',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    padding: '0',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                    e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <Plus size={14} />
+                </button>
+              )}
+
+              {/* Custom Left Controls (Category & Engine selectors) */}
+              {leftControls}
+
+              {/* 3. Cline-Style Model Selector Badge */}
+              {modelDisplayName && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!user) {
+                      openAuthModal('login');
+                      return;
+                    }
+                    if (onModelSelectorOpen) onModelSelectorOpen();
+                  }}
+                  title="Select AI Model"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    padding: '3px 6px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    maxWidth: '260px',
+                    minWidth: 0,
+                    transition: 'color 0.15s ease, background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                    e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--text-secondary)',
+                      fontWeight: 500,
+                      fontSize: '12px',
+                      minWidth: 0,
+                    }}
+                  >
+                    Anticeil Pass:{' '}
+                    <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                      {modelDisplayName.replace(/ \((Anticeil Pass|Anticeil Free)\)/, '')}
+                    </strong>
+                  </span>
+                  <ChevronDown size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                </button>
+              )}
+            </div>
+
+            {/* Right Controls: rightControls & Cline-Style Mode Pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, marginLeft: 'auto' }}>
+              {rightControls}
+
+              {/* Cline-Style Mode Pill (Plan | Act) */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  background: 'var(--bg-subtle, rgba(255,255,255,0.06))',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '5px',
+                  padding: '2px',
+                  gap: '1px',
+                  fontSize: '11px',
+                  fontWeight: 600,
                 }}
               >
                 <span
                   style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    color: 'var(--text-primary)',
-                    fontWeight: 500,
-                    fontSize: '12.5px',
-                    minWidth: 0,
+                    padding: '2px 7px',
+                    borderRadius: '3px',
+                    color: 'var(--text-muted)',
+                    cursor: 'default',
                   }}
                 >
-                  {modelDisplayName}
+                  Plan
                 </span>
-                <ChevronDown size={13} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
-              </button>
-            )}
-
-            {/* Send / Stop / Generate Button */}
-            {isGenerating ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (onStop) onStop();
-                }}
-                title="Stop"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '34px',
-                  height: '34px',
-                  background: 'var(--accent-danger, #ef4444)',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
-                  flexShrink: 0,
-                }}
-              >
-                <Square size={13} fill="#FFFFFF" />
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={(!prompt.trim() && attachments.length === 0) || disabled}
-                title={submitTooltip || 'Send'}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '34px',
-                  height: '34px',
-                  background:
-                    (prompt.trim() || attachments.length > 0) && !disabled
-                      ? 'var(--text-primary)'
-                      : 'var(--bg-subtle)',
-                  color:
-                    (prompt.trim() || attachments.length > 0) && !disabled
-                      ? 'var(--bg-main)'
-                      : 'var(--text-muted)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  boxShadow:
-                    (prompt.trim() || attachments.length > 0) && !disabled
-                      ? 'var(--shadow-sm)'
-                      : 'none',
-                  cursor: (prompt.trim() || attachments.length > 0) && !disabled ? 'pointer' : 'default',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0,
-                }}
-              >
-                <ArrowUp size={17} strokeWidth={2.5} />
-              </button>
-            )}
+                <span
+                  style={{
+                    padding: '2px 7px',
+                    borderRadius: '3px',
+                    background: 'var(--brand-primary, #3b82f6)',
+                    color: '#FFFFFF',
+                    cursor: 'default',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  Act
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
       </div>
     </div>
   );

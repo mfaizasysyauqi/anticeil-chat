@@ -21,7 +21,7 @@ export function CreditBadge() {
   const maxCredits = useCreditStore((s) => s.maxDailyCredits) || MAX_DAILY_CREDITS;
   const paidCredits = useCreditStore((s) => s.paidCredits) || 0;
   const setPricingModalOpen = useCreditStore((s) => s.setPricingModalOpen);
-  const openSettingsTab = useSettingsStore((s) => s.openSettingsTab);
+  const setIsModelSelectorOpen = useSettingsStore((s) => s.setIsModelSelectorOpen);
   const language = useSettingsStore((s) => s.language);
 
   const [isOpen, setIsOpen] = useState(false);
@@ -258,7 +258,7 @@ export function CreditBadge() {
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                openSettingsTab('keys');
+                setIsModelSelectorOpen(true);
               }}
               style={{
                 display: 'flex',

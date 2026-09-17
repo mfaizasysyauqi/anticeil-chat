@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import {
   X,
   Settings,
-  KeyRound,
   Palette,
   Database,
   ExternalLink,
@@ -38,11 +37,10 @@ import {
   Copy,
   Terminal,
   Search,
+  Plus,
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import {
-  PROVIDER_DEFINITIONS,
-  LLMProviderId,
   getTranslation,
   UserTier,
 } from '@anticeil/core';
@@ -52,16 +50,14 @@ import { useAuthStore } from '../../auth/store/useAuthStore';
 import { useStorageStore, formatStorageBytes } from '../../storage/store/useStorageStore';
 import { DatabaseService } from '../../storage/services/databaseService';
 import { StorageMeter } from '../../storage/components/StorageMeter';
-import { ProviderBrandLogo } from '../../../shared/components/ProviderLogos';
 import { useCreditStore } from '../../credits/store/useCreditStore';
-import { KeyLimitDialog } from './KeyLimitDialog';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type SettingsTab = 'keys' | 'appearance' | 'backup';
+type SettingsTab = 'appearance' | 'backup';
 
 const FULL_SQL_SCHEMA_SNIPPET = `-- ==============================================================================
 -- ANTICEIL SUPABASE CLOUD DATABASE SCHEMA
@@ -197,13 +193,8 @@ CREATE POLICY "Users can manage own workspace data" ON public.workspace_data FOR
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [mounted, setMounted] = useState(false);
   const storeActiveTab = useSettingsStore((s) => s.activeSettingsTab);
-  const activeTab: SettingsTab = storeActiveTab || 'keys';
+  const activeTab: SettingsTab = storeActiveTab || 'appearance';
 
-  const apiKeys = useSettingsStore((s) => s.apiKeys);
-  const setApiKey = useSettingsStore((s) => s.setApiKey);
-  const clearApiKey = useSettingsStore((s) => s.clearApiKey);
-  const clearAllKeys = useSettingsStore((s) => s.clearAllKeys);
-  const importApiKeys = useSettingsStore((s) => s.importApiKeys);
   const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const theme = useSettingsStore((s) => s.theme);
@@ -219,11 +210,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const setCustomR2Config = useSettingsStore((s) => s.setCustomR2Config);
   const activeMediaStorageDriver = useSettingsStore((s) => s.activeMediaStorageDriver);
   const setActiveMediaStorageDriver = useSettingsStore((s) => s.setActiveMediaStorageDriver);
-  const dynamicModels = useSettingsStore((s) => s.dynamicModels);
-  const isLoadingModels = useSettingsStore((s) => s.isLoadingModels);
-  const refreshModels = useSettingsStore((s) => s.refreshModels);
-  const testConnectionStatus = useSettingsStore((s) => s.testConnectionStatus);
-  const testConnection = useSettingsStore((s) => s.testConnection);
 
   const sessions = useChatStore((s) => s.sessions);
   const messages = useChatStore((s) => s.messages);
@@ -235,29 +221,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const addPaidCredits = useCreditStore((s) => s.addPaidCredits);
   const setPricingModalOpen = useCreditStore((s) => s.setPricingModalOpen);
   const openPricingModal = useCreditStore((s) => s.openPricingModal);
+  const clearAllKeys = useSettingsStore((s) => s.clearAllKeys);
   const signOut = useAuthStore((s) => s.signOut);
   const t = getTranslation(language);
 
-  const [draftKeys, setDraftKeys] = useState<Record<string, { apiKey?: string; baseUrl?: string }>>({});
-  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
-  const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
-  const [statusNotice, setStatusNotice] = useState('');
-  const [providerSearch, setProviderSearch] = useState('');
-  const [providerCategory, setProviderCategory] = useState<'all' | 'chat' | 'audio' | 'image' | 'video' | 'search' | 'tools' | 'custom'>('all');
-  const [expandedEndpoints, setExpandedEndpoints] = useState<Record<string, boolean>>({});
+  const handleClearAll = () => {
+    if (confirm(language === 'id' ? 'Apakah Anda yakin ingin menghapus semua kunci API dari perangkat ini?' : 'Are you sure you want to clear all stored API keys from this device?')) {
+      clearAllKeys();
+    }
+  };
+
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteError, setDeleteError] = useState('');
-  const [keyLimitDialog, setKeyLimitDialog] = useState<{
-    isOpen: boolean;
-    newProviderId?: LLMProviderId;
-    newKey?: string;
-    newUrl?: string;
-    existingProviderId?: LLMProviderId;
-    existingProviderName?: string;
-    newProviderName?: string;
-  } | null>(null);
 
   // Enterprise Custom Supabase Form State
   const [enterpriseUrlInput, setEnterpriseUrlInput] = useState(customSupabaseUrl || '');
@@ -396,101 +373,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   if (!isOpen || !mounted) return null;
 
-  const toggleVisibility = (id: string) => {
-    setVisibleKeys((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
-  const handleDraftKeyChange = (providerId: string, value: string) => {
-    setDraftKeys((prev) => ({
-      ...prev,
-      [providerId]: {
-        ...prev[providerId],
-        apiKey: value,
-      },
-    }));
-  };
-
-  const handleDraftBaseUrlChange = (providerId: string, baseUrl: string) => {
-    setDraftKeys((prev) => ({
-      ...prev,
-      [providerId]: {
-        ...prev[providerId],
-        baseUrl,
-      },
-    }));
-  };
-
-  const handleSaveProvider = (providerId: LLMProviderId, forceReplace = false) => {
-    const draft = draftKeys[providerId];
-    const savedKey = apiKeys[providerId]?.apiKey || '';
-    const savedUrl = apiKeys[providerId]?.baseUrl;
-
-    const keyToSave = draft?.apiKey !== undefined ? draft.apiKey : savedKey;
-    const urlToSave = draft?.baseUrl !== undefined ? draft.baseUrl : savedUrl;
-
-    const res = setApiKey(providerId, keyToSave, urlToSave, forceReplace);
-
-    if (res && !res.success && res.reason === 'FREE_LIMIT_EXCEEDED' && res.activeProviderId) {
-      const existingName = PROVIDER_DEFINITIONS.find((p) => p.id === res.activeProviderId)?.name || res.activeProviderId;
-      const newName = PROVIDER_DEFINITIONS.find((p) => p.id === providerId)?.name || providerId;
-      setKeyLimitDialog({
-        isOpen: true,
-        newProviderId: providerId,
-        newKey: keyToSave,
-        newUrl: urlToSave,
-        existingProviderId: res.activeProviderId,
-        existingProviderName: existingName,
-        newProviderName: newName,
-      });
-      return;
-    }
-
-    setSavedStatus((prev) => ({ ...prev, [providerId]: true }));
-    setDraftKeys((prev) => {
-      const next = { ...prev };
-      delete next[providerId];
-      return next;
-    });
-    setTimeout(() => {
-      setSavedStatus((prev) => ({ ...prev, [providerId]: false }));
-    }, 2500);
-  };
-
-  const handleConfirmReplaceKey = () => {
-    if (!keyLimitDialog?.newProviderId) return;
-    handleSaveProvider(keyLimitDialog.newProviderId, true);
-    setKeyLimitDialog(null);
-  };
-
-  const handleDeleteKey = (providerId: LLMProviderId) => {
-    const provName = PROVIDER_DEFINITIONS.find((p) => p.id === providerId)?.name || providerId;
-    if (confirm(language === 'id' ? `Hapus kunci API untuk ${provName}?` : `Delete API key for ${provName}?`)) {
-      clearApiKey(providerId);
-      setDraftKeys((prev) => {
-        const next = { ...prev };
-        delete next[providerId];
-        return next;
-      });
-      setStatusNotice(language === 'id' ? `Kunci API ${provName} telah dihapus.` : `API key for ${provName} removed.`);
-      setTimeout(() => setStatusNotice(''), 3000);
-    }
-  };
-
-  const handleCancelProvider = (providerId: LLMProviderId) => {
-    setDraftKeys((prev) => {
-      const next = { ...prev };
-      delete next[providerId];
-      return next;
-    });
-  };
-
-  const handleClearAll = () => {
-    if (confirm(language === 'id' ? 'Apakah Anda yakin ingin menghapus semua kunci API dari perangkat ini?' : 'Are you sure you want to clear all stored API keys from this device?')) {
-      clearAllKeys();
-      setStatusNotice(language === 'id' ? 'Semua kunci API telah dihapus dari browser ini.' : 'All API keys cleared from this browser.');
-      setTimeout(() => setStatusNotice(''), 3000);
-    }
-  };
 
   // ─── ENTERPRISE CUSTOM SUPABASE ACTIONS ──────────────────────────────────────
   const handleSaveEnterpriseConfig = async () => {
@@ -702,7 +585,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   const tabs: Array<{ id: SettingsTab; label: string; icon: any }> = [
-    { id: 'keys', label: language === 'id' ? 'Kunci API (BYOK)' : 'API Keys (BYOK)', icon: KeyRound },
     { id: 'appearance', label: language === 'id' ? 'Tampilan & Bahasa' : 'Appearance & Language', icon: Palette },
     { id: 'backup', label: language === 'id' ? 'Database & Cadangan' : 'Database & Backup', icon: Database },
   ];
@@ -764,7 +646,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 {tabs.find((tab) => tab.id === activeTab)?.label ?? t.settings.title}
               </h2>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0 0' }}>
-                {activeTab === 'keys' && (language === 'id' ? 'Masukkan kunci API resmi Anda — tersimpan aman di browser lokal.' : 'Enter your official API keys — stored safely in local browser memory.')}
                 {activeTab === 'appearance' && (language === 'id' ? 'Sesuaikan tema visual dan preferensi bahasa antarmuka.' : 'Customize visual theme and interface language preference.')}
                 {activeTab === 'backup' && (language === 'id' ? 'Ekspor, impor, migrasi, dan konfigurasi database Custom Supabase Enterprise.' : 'Export, import, migrate, and configure Enterprise Custom Supabase.')}
               </p>
@@ -794,26 +675,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         {/* Modal Content Body */}
         <div style={{ padding: '20px', maxHeight: '68vh', overflowY: 'auto' }}>
-          {statusNotice && (
-            <div
-              style={{
-                marginBottom: '16px',
-                padding: '10px 14px',
-                background: 'rgba(0, 200, 117, 0.12)',
-                border: '1px solid var(--accent-success)',
-                borderRadius: '8px',
-                color: 'var(--accent-success)',
-                fontSize: '12.5px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <CheckCircle2 size={16} />
-              <span>{statusNotice}</span>
-            </div>
-          )}
 
           {dbStatusMsg && (
             <div
@@ -833,705 +694,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             >
               {dbStatusMsg.isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
               <span>{dbStatusMsg.text}</span>
-            </div>
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-           * TAB 1: API KEYS (BYOK)
-           * ───────────────────────────────────────────────────────────── */}
-          {activeTab === 'keys' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div
-                style={{
-                  padding: '12px 14px',
-                  background: 'var(--bg-main)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md, 8px)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                }}
-              >
-                <ShieldCheck size={18} color="var(--accent-success)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <div>
-                  <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px 0' }}>
-                    {t.settings.privacyTitle}
-                  </h4>
-                  <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.45 }}>
-                    {t.settings.privacyDescription}
-                  </p>
-                </div>
-              </div>
-
-              {/* Free Tier 1-Key Limit Callout */}
-              {tier === 'free' && (
-                <div
-                  style={{
-                    padding: '10px 14px',
-                    background: 'rgba(59, 130, 246, 0.08)',
-                    border: '1px solid rgba(59, 130, 246, 0.25)',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Zap size={16} color="#3b82f6" style={{ flexShrink: 0 }} />
-                    <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4 }}>
-                      {language === 'id'
-                        ? 'Paket Free Community: Maksimal 1 API Key aktif. Semua model dari kunci tersebut dapat digunakan sepenuhnya tanpa batasan.'
-                        : 'Free Community Plan: Max 1 active API Key. All models from the active key are fully unlocked without restriction.'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      setPricingModalOpen(true);
-                    }}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      background: 'var(--brand-primary, #0073ea)',
-                      color: '#fff',
-                      border: 'none',
-                      fontSize: '11px',
-                      fontWeight: 650,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {language === 'id' ? 'Upgrade Multi-Key ↗' : 'Upgrade Multi-Key ↗'}
-                  </button>
-                </div>
-              )}
-
-              {/* Category Filter & Search */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <div style={{ position: 'relative', flex: 1 }}>
-                    <Search
-                      size={14}
-                      color="var(--text-muted)"
-                      style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
-                    />
-                    <input
-                      type="text"
-                      value={providerSearch}
-                      onChange={(e) => setProviderSearch(e.target.value)}
-                      placeholder={
-                        language === 'id'
-                          ? 'Cari provider (OpenAI, Claude, DeepSeek, Groq, OpenRouter, Mistral, ElevenLabs, dll)...'
-                          : 'Search provider (OpenAI, Claude, DeepSeek, Groq, OpenRouter, Mistral, ElevenLabs, etc)...'
-                      }
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px 8px 32px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-subtle)',
-                        background: 'var(--bg-main)',
-                        color: 'var(--text-primary)',
-                        fontSize: '12px',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-                  {providerSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setProviderSearch('')}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-subtle)',
-                        background: 'var(--bg-main)',
-                        color: 'var(--text-muted)',
-                        fontSize: '11.5px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {language === 'id' ? 'Reset' : 'Clear'}
-                    </button>
-                  )}
-                </div>
-
-                {/* Category Chips */}
-                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
-                  {[
-                    { id: 'all', label: language === 'id' ? `Semua (${PROVIDER_DEFINITIONS.length})` : `All (${PROVIDER_DEFINITIONS.length})` },
-                    { id: 'chat', label: '💬 Chat & LLM' },
-                    { id: 'audio', label: '🎵 Audio & Voice' },
-                    { id: 'image', label: '🎨 Gambar & Video' },
-                    { id: 'search', label: '🌐 Web Search' },
-                    { id: 'tools', label: '🔌 Tools & MCP' },
-                    { id: 'custom', label: '⚙️ Gateway & Custom' },
-                  ].map((cat) => {
-                    const active = providerCategory === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setProviderCategory(cat.id as any)}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          border: `1px solid ${active ? '#60a5fa' : 'var(--border-subtle)'}`,
-                          background: active ? 'rgba(96, 165, 250, 0.12)' : 'var(--bg-main)',
-                          color: active ? '#60a5fa' : 'var(--text-secondary)',
-                          fontSize: '11.5px',
-                          fontWeight: active ? 650 : 500,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {cat.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Provider Key Inputs */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {PROVIDER_DEFINITIONS.filter((prov) => {
-                  if (providerCategory !== 'all') {
-                    if (providerCategory === 'image' && (prov.category === 'image' || prov.category === 'video')) {
-                      // include both image and video
-                    } else if (prov.category !== providerCategory) {
-                      return false;
-                    }
-                  }
-                  if (providerSearch.trim()) {
-                    const q = providerSearch.toLowerCase().trim();
-                    return (
-                      prov.name.toLowerCase().includes(q) ||
-                      prov.id.toLowerCase().includes(q) ||
-                      (prov.description && prov.description.toLowerCase().includes(q))
-                    );
-                  }
-                  return true;
-                }).map((prov) => {
-                  const cfg = apiKeys[prov.id];
-                  const hasSaved = savedStatus[prov.id];
-                  const isVisible = visibleKeys[prov.id];
-                  const isEndpointOpen = Boolean(expandedEndpoints[prov.id]);
-
-                  const savedKey = cfg?.apiKey || '';
-                  const savedBaseUrl =
-                    prov.id === 'omniroute'
-                      ? (!cfg?.baseUrl || cfg?.baseUrl?.includes('openrouter.ai') ? 'http://localhost:20128/v1' : cfg.baseUrl)
-                      : prov.id === 'custom'
-                      ? (cfg?.baseUrl?.includes('openrouter.ai') ? 'http://localhost:1234/v1' : (cfg?.baseUrl || 'http://localhost:1234/v1'))
-                      : (cfg?.baseUrl || prov.defaultBaseUrl || '');
-
-                  const currentKey = draftKeys[prov.id]?.apiKey !== undefined ? draftKeys[prov.id]!.apiKey! : savedKey;
-                  const currentBaseUrl = draftKeys[prov.id]?.baseUrl !== undefined ? draftKeys[prov.id]!.baseUrl! : savedBaseUrl;
-
-                  const isKeyDirty = currentKey !== savedKey;
-                  const isUrlDirty = draftKeys[prov.id]?.baseUrl !== undefined && draftKeys[prov.id]!.baseUrl !== savedBaseUrl;
-                  const isDirty = isKeyDirty || isUrlDirty;
-
-                  if (prov.id === 'anticeil') {
-                    return (
-                      <div
-                        key={prov.id}
-                        style={{
-                          padding: '12px 14px',
-                          background: 'rgba(0, 115, 234, 0.05)',
-                          border: '1px solid rgba(0, 115, 234, 0.25)',
-                          borderRadius: 'var(--radius-md, 8px)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <ProviderBrandLogo provider={prov.id} size={18} />
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {prov.name}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                padding: '1px 6px',
-                                borderRadius: '4px',
-                                background: 'rgba(16, 185, 129, 0.15)',
-                                color: 'var(--accent-success)',
-                              }}
-                            >
-                              DEFAULT • FREE
-                            </span>
-                          </div>
-                          <span style={{ fontSize: '11px', color: 'var(--accent-success)', fontWeight: 600 }}>
-                            ✓ {language === 'id' ? 'Aktif & Siap Pakai' : 'Active & Ready'}
-                          </span>
-                        </div>
-                        <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0 }}>
-                          {language === 'id'
-                            ? 'Provider bawaan Anticeil gratis tanpa perlu memasukkan API key. Menyediakan model Google Gemini & Groq Cloud LPU.'
-                            : 'Built-in free tier provider. No API key needed. Powered by Google Gemini and Groq Cloud LPU.'}
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={prov.id}
-                      style={{
-                        padding: '12px 14px',
-                        background: 'var(--bg-main)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-md, 8px)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <ProviderBrandLogo provider={prov.id} size={18} />
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {prov.name}
-                          </span>
-                          {prov.category && (
-                            <span
-                              style={{
-                                fontSize: '9.5px',
-                                fontWeight: 600,
-                                padding: '1px 5px',
-                                borderRadius: '4px',
-                                background: 'var(--bg-surface)',
-                                border: '1px solid var(--border-subtle)',
-                                color: 'var(--text-muted)',
-                              }}
-                            >
-                              {prov.category.toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        {isDirty ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleSaveProvider(prov.id)}
-                              style={{
-                                padding: '5px 12px',
-                                background: 'var(--brand-primary, #0073ea)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontSize: '11.5px',
-                                fontWeight: 650,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                              }}
-                            >
-                              <Check size={12} />
-                              <span>{language === 'id' ? 'Simpan' : 'Save'}</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCancelProvider(prov.id)}
-                              style={{
-                                padding: '5px 9px',
-                                background: 'var(--bg-subtle)',
-                                color: 'var(--text-secondary)',
-                                border: '1px solid var(--border-subtle)',
-                                borderRadius: '6px',
-                                fontSize: '11.5px',
-                                fontWeight: 500,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {language === 'id' ? 'Batal' : 'Cancel'}
-                            </button>
-                          </div>
-                        ) : hasSaved ? (
-                          <span style={{ fontSize: '11px', color: 'var(--accent-success)', fontWeight: 600 }}>
-                            ✓ {t.settings.saved}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      {prov.id === 'omniroute' ? (
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>
-                          Local AI Router & Gateway (
-                          {(dynamicModels.omniroute?.length || 0) > 0
-                            ? `${dynamicModels.omniroute?.length}+ model routing`
-                            : 'multi-model routing'}
-                          , fallback & load balancing di port 20128).
-                        </p>
-                      ) : prov.description ? (
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>
-                          {prov.description}
-                        </p>
-                      ) : null}
-
-                      {/* OmniRoute & Gateway Info Banner */}
-                      {prov.id === 'omniroute' && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 10px',
-                            background: 'rgba(99, 102, 241, 0.08)',
-                            borderRadius: '6px',
-                            border: '1px solid rgba(99, 102, 241, 0.25)',
-                          }}
-                        >
-                          <span style={{ fontSize: '11px', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e' }} />
-                            {(dynamicModels.omniroute?.length || 0) > 0
-                              ? `${dynamicModels.omniroute?.length} model terdeteksi di OmniRoute (Port 20128)`
-                              : 'OmniRoute Gateway aktif (Port 20128)'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => refreshModels('omniroute')}
-                            disabled={Boolean(isLoadingModels.omniroute)}
-                            style={{
-                              background: 'rgba(99, 102, 241, 0.15)',
-                              border: '1px solid rgba(99, 102, 241, 0.4)',
-                              borderRadius: '4px',
-                              color: '#a5b4fc',
-                              fontSize: '11px',
-                              fontWeight: 600,
-                              padding: '2px 8px',
-                              cursor: isLoadingModels.omniroute ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <RefreshCw size={10} style={{ animation: isLoadingModels.omniroute ? 'spin 1s linear infinite' : 'none' }} />
-                            <span>{isLoadingModels.omniroute ? 'Fetching...' : 'Sync Models'}</span>
-                          </button>
-                        </div>
-                      )}
-
-                      {prov.id === 'custom' && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 10px',
-                            background: 'rgba(59, 130, 246, 0.08)',
-                            borderRadius: '6px',
-                            border: '1px solid rgba(59, 130, 246, 0.25)',
-                          }}
-                        >
-                          <span style={{ fontSize: '11px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#3b82f6' }} />
-                            {(dynamicModels.custom?.length || 0) > 0
-                              ? `${dynamicModels.custom?.length} model terhubung`
-                              : 'Custom OpenAI-compatible Endpoint'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => refreshModels('custom')}
-                            disabled={Boolean(isLoadingModels.custom)}
-                            style={{
-                              background: 'rgba(59, 130, 246, 0.15)',
-                              border: '1px solid rgba(59, 130, 246, 0.4)',
-                              borderRadius: '4px',
-                              color: '#93c5fd',
-                              fontSize: '11px',
-                              fontWeight: 600,
-                              padding: '2px 8px',
-                              cursor: isLoadingModels.custom ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <RefreshCw size={10} style={{ animation: isLoadingModels.custom ? 'spin 1s linear infinite' : 'none' }} />
-                            <span>{isLoadingModels.custom ? 'Fetching...' : 'Sync Models'}</span>
-                          </button>
-                        </div>
-                      )}
-
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
-                          <input
-                            type={isVisible ? 'text' : 'password'}
-                            name={`anticeil-apikey-${prov.id}`}
-                            id={`anticeil-apikey-${prov.id}`}
-                            autoComplete="new-password"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            spellCheck={false}
-                            data-lpignore="true"
-                            data-1p-ignore="true"
-                            data-form-type="other"
-                            value={currentKey}
-                            onChange={(e) => handleDraftKeyChange(prov.id, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleSaveProvider(prov.id);
-                              }
-                            }}
-                            placeholder={
-                              prov.id === 'omniroute'
-                                ? 'API Key (Opsional / Lewati untuk OmniRoute)...'
-                                : prov.id === 'custom'
-                                ? 'API Key (Opsional untuk Local Endpoint)...'
-                                : `${t.settings.enterKeyFor} ${prov.name}...`
-                            }
-                            style={{
-                              width: '100%',
-                              padding: '7px 32px 7px 10px',
-                              borderRadius: '6px',
-                              border: '1px solid var(--border-strong)',
-                              background: 'var(--bg-surface)',
-                              color: 'var(--text-primary)',
-                              fontSize: '12px',
-                              outline: 'none',
-                              fontFamily: 'monospace',
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => toggleVisibility(prov.id)}
-                            style={{
-                              position: 'absolute',
-                              right: '6px',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text-muted)',
-                              cursor: 'pointer',
-                              padding: '2px',
-                            }}
-                          >
-                            {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
-                          </button>
-                        </div>
-
-                        {/* Base URL Toggle Button */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedEndpoints((prev) => ({
-                              ...prev,
-                              [prov.id]: !prev[prov.id],
-                            }))
-                          }
-                          style={{
-                            padding: '7px 10px',
-                            background: isEndpointOpen ? 'rgba(96, 165, 250, 0.12)' : 'var(--bg-surface)',
-                            border: `1px solid ${isEndpointOpen ? '#60a5fa' : 'var(--border-subtle)'}`,
-                            borderRadius: '6px',
-                            color: isEndpointOpen ? '#60a5fa' : 'var(--text-secondary)',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            whiteSpace: 'nowrap',
-                          }}
-                          title={language === 'id' ? 'Sesuaikan Endpoint Base URL' : 'Custom Base URL Endpoint'}
-                        >
-                          <span>⚙️ Endpoint</span>
-                        </button>
-
-                        {prov.docUrl && (
-                          <a
-                            href={prov.docUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '7px 10px',
-                              background: 'var(--bg-surface)',
-                              border: '1px solid var(--border-subtle)',
-                              borderRadius: '6px',
-                              color: 'var(--text-secondary)',
-                              fontSize: '11.5px',
-                              textDecoration: 'none',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            <span>{t.settings.getApiKey}</span>
-                            <ExternalLink size={11} />
-                          </a>
-                        )}
-                      </div>
-
-                      {/* ── Uji Koneksi / Test Connection Row ── */}
-                      {(() => {
-                        const provId = prov.id;
-                        const ts = testConnectionStatus[provId];
-                        const isTesting = ts?.testing === true;
-                        const result = ts?.result;
-                        const hasSavedKey = Boolean(savedKey?.trim());
-
-                        return (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <button
-                              type="button"
-                              onClick={() => testConnection(provId)}
-                              disabled={isTesting}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                padding: '5px 10px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--border-subtle)',
-                                background: isTesting ? 'var(--bg-surface)' : 'var(--bg-main)',
-                                color: 'var(--text-secondary)',
-                                fontSize: '11.5px',
-                                fontWeight: 600,
-                                cursor: isTesting ? 'not-allowed' : 'pointer',
-                                whiteSpace: 'nowrap',
-                                opacity: isTesting ? 0.7 : 1,
-                              }}
-                            >
-                              <RefreshCw
-                                size={11}
-                                style={{ animation: isTesting ? 'spin 1s linear infinite' : 'none' }}
-                              />
-                              <span>
-                                {isTesting
-                                  ? (language === 'id' ? 'Menguji...' : 'Testing...')
-                                  : (language === 'id' ? 'Uji Koneksi' : 'Test Connection')}
-                              </span>
-                            </button>
-
-                            {hasSavedKey && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteKey(provId)}
-                                title={language === 'id' ? 'Hapus Kunci API' : 'Delete API Key'}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  padding: '5px 8px',
-                                  borderRadius: '6px',
-                                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                                  background: 'rgba(239, 68, 68, 0.08)',
-                                  color: '#ef4444',
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                <Trash2 size={11} />
-                                <span>{language === 'id' ? 'Hapus' : 'Delete'}</span>
-                              </button>
-                            )}
-
-                            {result && !isTesting && (
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  color: result.success ? 'var(--accent-success)' : '#f87171',
-                                  padding: '3px 8px',
-                                  borderRadius: '12px',
-                                  background: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(248, 113, 113, 0.1)',
-                                  border: `1px solid ${result.success ? 'rgba(34, 197, 94, 0.3)' : 'rgba(248, 113, 113, 0.3)'}`,
-                                  maxWidth: '100%',
-                                }}
-                              >
-                                <span>{result.success ? '✓' : '✗'}</span>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '260px' }}>
-                                  {result.message}
-                                  {result.latencyMs !== undefined && result.success ? ` · ${result.latencyMs}ms` : ''}
-                                </span>
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {/* Expanded Base URL field */}
-                      {(isEndpointOpen || prov.id === 'omniroute' || prov.id === 'custom') && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '4px',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            background: 'var(--bg-surface)',
-                            border: '1px dashed var(--border-subtle)',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <label style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                              {language === 'id' ? 'Base URL Endpoint:' : 'Base URL Endpoint:'}
-                            </label>
-                            {prov.id === 'omniroute' && (
-                              <span style={{ fontSize: '10px', color: '#818cf8', fontWeight: 600 }}>
-                                Default: http://localhost:20128/v1
-                              </span>
-                            )}
-                          </div>
-                          <input
-                            type="text"
-                            name={`anticeil-baseurl-${prov.id}`}
-                            id={`anticeil-baseurl-${prov.id}`}
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            spellCheck={false}
-                            data-lpignore="true"
-                            data-1p-ignore="true"
-                            value={currentBaseUrl}
-                            onChange={(e) => handleDraftBaseUrlChange(prov.id, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleSaveProvider(prov.id);
-                              }
-                            }}
-                            placeholder={
-                              prov.id === 'omniroute'
-                                ? 'http://localhost:20128/v1'
-                                : prov.id === 'custom'
-                                ? 'http://localhost:1234/v1'
-                                : (prov.defaultBaseUrl || 'https://api.openai.com/v1')
-                            }
-                            style={{
-                              width: '100%',
-                              padding: '5px 8px',
-                              borderRadius: '4px',
-                              border: '1px solid var(--border-subtle)',
-                              background: 'var(--bg-main)',
-                              color: 'var(--text-primary)',
-                              fontSize: '11.5px',
-                              fontFamily: 'monospace',
-                              outline: 'none',
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           )}
 
@@ -3471,21 +2633,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       {showR2Guide && createPortal(r2GuideModal, document.body)}
       {showMigrationConfirm && createPortal(migrationConfirmModal, document.body)}
       {showDeleteConfirm && createPortal(deleteConfirmModal, document.body)}
-      {keyLimitDialog?.isOpen &&
-        createPortal(
-          <KeyLimitDialog
-            dialogData={keyLimitDialog}
-            language={language}
-            onClose={() => setKeyLimitDialog(null)}
-            onConfirmReplace={handleConfirmReplaceKey}
-            onUpgrade={() => {
-              setKeyLimitDialog(null);
-              onClose();
-              setPricingModalOpen(true);
-            }}
-          />,
-          document.body
-        )}
     </>
   );
 }

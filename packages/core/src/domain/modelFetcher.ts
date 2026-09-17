@@ -79,13 +79,15 @@ export interface ProviderConnectionTestResult {
 function resolveProviderEndpoint(
   providerId: LLMProviderId,
   apiKey: string,
-  customBaseUrl?: string
+  customBaseUrl?: string,
+  customHeaders?: Record<string, string>
 ): { endpoint: string; headers: Record<string, string>; isDirectSupported: boolean } {
   const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
   const baseUrl = (customBaseUrl || providerDef?.defaultBaseUrl || '').replace(/\/+$/, '');
   const key = apiKey.trim();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...(customHeaders || {}),
   };
 
   switch (providerId) {
@@ -99,9 +101,19 @@ function resolveProviderEndpoint(
     case 'xai':
     case 'perplexity':
     case 'cohere':
+    case 'openai-compatible':
+    case 'lmstudio':
+    case 'litellm':
+    case 'baseten':
+    case 'cerebras':
+    case 'huggingface':
+    case 'minimax':
+    case 'moonshot':
+    case 'zai':
+    case 'qwen':
       return {
         endpoint: `${baseUrl}/models`,
-        headers: { ...headers, Authorization: `Bearer ${key}` },
+        headers: key ? { ...headers, Authorization: `Bearer ${key}` } : headers,
         isDirectSupported: true,
       };
 
@@ -222,7 +234,8 @@ function resolveProviderEndpoint(
 export async function testProviderConnection(
   providerId: LLMProviderId,
   apiKey: string,
-  customBaseUrl?: string
+  customBaseUrl?: string,
+  customHeaders?: Record<string, string>
 ): Promise<ProviderConnectionTestResult> {
   const startTime = Date.now();
   const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
@@ -231,6 +244,9 @@ export async function testProviderConnection(
     providerDef?.requiresApiKey &&
     providerId !== 'custom' &&
     providerId !== 'omniroute' &&
+    providerId !== 'openai-compatible' &&
+    providerId !== 'lmstudio' &&
+    providerId !== 'litellm' &&
     (!apiKey || apiKey.trim().length < 4)
   ) {
     return {
@@ -242,7 +258,7 @@ export async function testProviderConnection(
   // Anticeil built-in free cloud tier test
   if (providerId === 'anticeil') {
     try {
-      const liveModels = await fetchProviderModels('anticeil', apiKey, customBaseUrl);
+      const liveModels = await fetchProviderModels('anticeil', apiKey, customBaseUrl, customHeaders);
       const latencyMs = Date.now() - startTime;
       return {
         success: true,
@@ -263,7 +279,7 @@ export async function testProviderConnection(
     }
   }
 
-  const { endpoint, headers } = resolveProviderEndpoint(providerId, apiKey, customBaseUrl);
+  const { endpoint, headers } = resolveProviderEndpoint(providerId, apiKey, customBaseUrl, customHeaders);
 
   try {
     const controller = new AbortController();
@@ -371,11 +387,12 @@ export interface RawProviderModelResponse {
 export async function fetchProviderModels(
   providerId: LLMProviderId,
   apiKey: string,
-  customBaseUrl?: string
+  customBaseUrl?: string,
+  customHeaders?: Record<string, string>
 ): Promise<LLMModel[]> {
   const providerDef = PROVIDER_DEFINITIONS.find((p) => p.id === providerId);
 
-  // Dynamic live fetch for Anticeil Free Cloud: queries Gemini & Groq APIs concurrently
+  // Dynamic live fetch for Anticeil Pass Cloud: queries Gemini & Groq APIs concurrently
   if (providerId === 'anticeil') {
     try {
       const geminiKey = apiKey || 'AQ.Ab8RN6JWoVCHAxjnHnTig8_iYyHTobEtwGGo9AAOiyFHQc-5Dg';
@@ -394,8 +411,8 @@ export async function fetchProviderModels(
           liveModels.push({
             ...m,
             providerId: 'anticeil',
-            name: `${m.name.replace(/ \(.*\)/, '')} (Anticeil Free)`,
-            description: `${m.description} — Ditenagai oleh Anticeil Free Cloud`,
+            name: `${m.name.replace(/ \(.*\)/, '')} (Anticeil Pass)`,
+            description: `${m.description} — Ditenagai oleh Anticeil Pass Cloud`,
             inputCostPer1M: 0,
             outputCostPer1M: 0,
             isPopular: m.id.includes('flash') || m.id.includes('pro'),
@@ -417,8 +434,8 @@ export async function fetchProviderModels(
           liveModels.push({
             ...m,
             providerId: 'anticeil',
-            name: `${m.name.replace(/ \(.*\)/, '')} (Groq / Anticeil)`,
-            description: `${m.description} — Ditenagai oleh Groq LPU via Anticeil`,
+            name: `${m.name.replace(/ \(.*\)/, '')} (Groq / Anticeil Pass)`,
+            description: `${m.description} — Ditenagai oleh Groq LPU via Anticeil Pass`,
             inputCostPer1M: 0,
             outputCostPer1M: 0,
             isPopular: m.id.includes('70b') || m.id.includes('llama-3.3'),
@@ -451,12 +468,15 @@ export async function fetchProviderModels(
     providerDef?.requiresApiKey &&
     providerId !== 'custom' &&
     providerId !== 'omniroute' &&
+    providerId !== 'openai-compatible' &&
+    providerId !== 'lmstudio' &&
+    providerId !== 'litellm' &&
     (!apiKey || apiKey.trim().length < 4)
   ) {
     return [];
   }
 
-  const { endpoint, headers } = resolveProviderEndpoint(providerId, apiKey, customBaseUrl);
+  const { endpoint, headers } = resolveProviderEndpoint(providerId, apiKey, customBaseUrl, customHeaders);
 
   try {
     const controller = new AbortController();

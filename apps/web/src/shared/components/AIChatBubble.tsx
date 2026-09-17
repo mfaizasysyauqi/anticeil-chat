@@ -1081,7 +1081,7 @@ export function AssistantMessageBubble({
   content,
   reasoningContent,
   isStreaming = false,
-  assistantName = 'AI Assistant',
+  assistantName = 'Assistant Agent',
   assistantIcon,
   assistantColor = 'var(--brand-primary)',
   timestamp,

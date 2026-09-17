@@ -713,15 +713,15 @@ Every document MUST have a dedicated cover page that is centered horizontally an
   const heroBadge =
     selectedFormat === 'sheet'
       ? language === 'id'
-        ? 'Spreadsheet Studio • Smart Formula • AI Co-Author'
-        : 'Spreadsheet Studio • Smart Formulas • AI Co-Author'
+        ? 'Spreadsheet Studio • Smart Formula • Author Agent'
+        : 'Spreadsheet Studio • Smart Formulas • Author Agent'
       : selectedFormat === 'slide'
       ? language === 'id'
-        ? 'Slide Studio • Pitch Decks • AI Co-Author'
-        : 'Slide Studio • Pitch Decks • AI Co-Author'
+        ? 'Slide Studio • Pitch Decks • Author Agent'
+        : 'Slide Studio • Pitch Decks • Author Agent'
       : language === 'id'
-      ? 'Dokumen & LaTeX • KaTeX Math • AI Co-Author'
-      : 'Docs & LaTeX • KaTeX Math • AI Co-Author';
+      ? 'Dokumen & LaTeX • KaTeX Math • Author Agent'
+      : 'Docs & LaTeX • KaTeX Math • Author Agent';
 
   const heroTitle =
     selectedFormat === 'sheet'
@@ -739,14 +739,14 @@ Every document MUST have a dedicated cover page that is centered horizontally an
   const heroSubtitle =
     selectedFormat === 'sheet'
       ? language === 'id'
-        ? 'Buat model keuangan, analisis metrik, dan tabel kalkulasi cerdas bersama AI Co-Author.'
-        : 'Generate financial models, metric trackers, and automated calculations with AI Co-Author.'
+        ? 'Buat model keuangan, analisis metrik, dan tabel kalkulasi cerdas bersama Author Agent.'
+        : 'Generate financial models, metric trackers, and automated calculations with Author Agent.'
       : selectedFormat === 'slide'
       ? language === 'id'
-        ? 'Rancang slide deck investor, materi presentasi, dan visual interaktif bersama AI Co-Author.'
-        : 'Craft investor pitch decks, keynote presentations, and interactive visual slides with AI Co-Author.'
+        ? 'Rancang slide deck investor, materi presentasi, dan visual interaktif bersama Author Agent.'
+        : 'Craft investor pitch decks, keynote presentations, and interactive visual slides with Author Agent.'
       : language === 'id'
-      ? 'Hasilkan paper riset, formula KaTeX, dan dokumen teknis lengkap bersama AI Co-Author.'
+      ? 'Hasilkan paper riset, formula KaTeX, dan dokumen teknis lengkap bersama Author Agent.'
       : 'Draft research papers, KaTeX math formulas, spreadsheets, and presentation slides.';
 
   const activeColor =
@@ -942,7 +942,7 @@ Every document MUST have a dedicated cover page that is centered horizontally an
                         reasoningContent={msg.reasoningContent}
                         agentSteps={msg.agentSteps}
                         isStreaming={isStreamingThis}
-                        assistantName="AI Co-Author"
+                        assistantName="Author Agent"
                         assistantColor={activeColor}
                         language={language}
                         variant="coauthor"
