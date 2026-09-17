@@ -349,6 +349,7 @@ function MessageActionBar({
         alignItems: 'center',
         justifyContent: role === 'user' ? 'flex-end' : 'space-between',
         width: role === 'user' ? 'fit-content' : '100%',
+        alignSelf: role === 'user' ? 'flex-end' : 'auto',
         marginTop: role === 'assistant' ? '4px' : '2px',
         opacity: isHovered ? 1 : 0,
         pointerEvents: isHovered ? 'auto' : 'none',
@@ -779,7 +780,9 @@ export function AIChatBubble({
           <div
             ref={bubbleRef}
             style={{
-              width: '100%',
+              width: isEditing ? '100%' : 'fit-content',
+              maxWidth: '100%',
+              alignSelf: 'flex-end',
               boxSizing: 'border-box',
               borderRadius: 'var(--radius-xl)',
               padding: '10px 16px',
