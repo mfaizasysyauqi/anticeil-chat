@@ -80,8 +80,8 @@ function saveCachedAuth(user: User | null, session: Session | null) {
 }
 
 function isUserPhoneVerified(user: User | null): boolean {
-  if (!user) return true;
-  return Boolean(user.user_metadata?.phone_verified || user.phone);
+  // Early stage: disable phone verification barrier for seamless 1-click onboarding
+  return true;
 }
 
 function isConnectorCallbackUrl(): boolean {

@@ -49,3 +49,10 @@ build/
 
 # antsheet — separate standalone repo
 antsheet/
+
+# anticeil-browser-runner — sensitive / generated files
+anticeil-browser-runner/auth-state.json
+anticeil-browser-runner/cookies.json
+anticeil-browser-runner/playwright-profile/
+anticeil-browser-runner/output_videos/
+anticeil-browser-runner/debug/
