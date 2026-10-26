@@ -158,6 +158,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 
 import { messagesApi, communityApi } from './messages-api';
@@ -294,18 +295,52 @@ export function CommunityPage() {
     return res;
   };
   const navigate = useNavigate();
-  const currentUser: any = {
-    id: 'user_faiz',
-    name: 'Muhammad Faiz Asy Syauqi',
-    firstName: 'Muhammad Faiz',
-    lastName: 'Asy Syauqi',
-    username: 'mfaizasysyauqi',
-    email: 'faiz@anticeil.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    platformRole: 'ADMIN',
-    usernameUpdatedAt: new Date().toISOString(),
-  };
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    try {
+      const stored = localStorage.getItem('anticeil_current_user');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return {
+      id: 'user_faiz',
+      name: 'Muhammad Faiz Asy Syauqi',
+      firstName: 'Muhammad Faiz',
+      lastName: 'Asy Syauqi',
+      username: 'mfaizasysyauqi',
+      email: 'faiz@anticeil.com',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      platformRole: 'ADMIN',
+      usernameUpdatedAt: new Date().toISOString(),
+    };
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get('token');
+    if (tokenFromUrl) {
+      localStorage.setItem('token', tokenFromUrl);
+      localStorage.setItem('ap_token', tokenFromUrl);
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('token');
+      window.history.replaceState({}, document.title, cleanUrl.toString());
+    }
+
+    const fetchLiveUser = async () => {
+      try {
+        const user = await api.get('/v1/users/me');
+        if (user && user.id) {
+          const formatted = {
+            ...user,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+            imageUrl: user.imageUrl || user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+          };
+          setCurrentUser(formatted);
+          localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+        }
+      } catch (err) {}
+    };
+    fetchLiveUser();
+  }, []);
   const platform: any = { name: 'Anticeil', plan: { plan: 'plus' } };
   const isPlusOrAbove = true;
   const isTeamOrEnterprise = true;
@@ -2086,9 +2121,9 @@ export function CommunityPage() {
           <img
             src="/logo.png"
             alt="Anticeil"
-            className="size-5 object-contain pointer-events-none drop-shadow-xs"
+            className="size-7 object-contain pointer-events-none drop-shadow-xs"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = '/favicon.ico';
+              (e.currentTarget as HTMLImageElement).src = '/logo.svg';
             }}
           />
         );
