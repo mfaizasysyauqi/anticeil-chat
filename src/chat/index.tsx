@@ -2178,10 +2178,10 @@ export function CommunityPage() {
     const otherHubs = hubs.slice(1);
 
     return (
-      <div className="w-12 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
-        {/* Top Hub (Workspace / Home) - Exactly h-12 (48px) to match App Bar height */}
+      <div className="w-14 shrink-0 bg-[#1e1f22] border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
+        {/* Top Hub (Workspace / Home) - Exactly h-14 to align with top bar */}
         {mainHub && (
-          <div className="h-12 w-12 shrink-0 flex items-center justify-center relative group">
+          <div className="h-14 w-14 shrink-0 flex items-center justify-center relative group">
             {/* Discord signature left pill indicator */}
             <span
               className={cn(
@@ -2201,7 +2201,7 @@ export function CommunityPage() {
                     setActiveChannelId('');
                   }}
                   className={cn(
-                    'relative size-9 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                    'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                     activeHubId === mainHub.id
                       ? 'bg-primary/20 text-primary border border-primary/40 shadow-xs shadow-primary/10'
                       : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
@@ -2224,13 +2224,13 @@ export function CommunityPage() {
           </div>
         )}
 
-        {/* Discord separator bar - Symmetrically aligned with the bottom border of the h-12 App Bar */}
+        {/* Discord separator bar */}
         <div className="w-full flex items-center justify-center h-0 relative shrink-0 z-20">
-          <div className="w-6 h-[2px] bg-sidebar-border rounded-full" />
+          <div className="w-8 h-[2px] bg-sidebar-border/40 rounded-full" />
         </div>
 
         {/* Scrollable lower hub rail: other hubs (if any), plus buttons */}
-        <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2.5 pb-2">
+        <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
           {otherHubs.map((hub) => {
             const isActive = activeHubId === hub.id;
             return (
@@ -2253,7 +2253,7 @@ export function CommunityPage() {
                         setActiveChannelId(firstCh?.id || '');
                       }}
                       className={cn(
-                        'relative size-9 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                        'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isActive
                           ? 'bg-primary/20 text-primary border border-primary/40 shadow-xs shadow-primary/10'
                           : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
@@ -2281,9 +2281,9 @@ export function CommunityPage() {
             <TooltipTrigger asChild>
               <button
                 onClick={() => setIsCreateHubOpen(true)}
-                className="group relative size-9 rounded-[14px] bg-sidebar-accent text-emerald-500 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0"
+                className="group relative size-10 rounded-[14px] bg-sidebar-accent text-emerald-500 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0"
               >
-                <Plus className="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" />
+                <Plus className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
@@ -2296,9 +2296,9 @@ export function CommunityPage() {
             <TooltipTrigger asChild>
               <Link
                 to="/templates"
-                className="group relative size-9 rounded-[14px] bg-sidebar-accent text-muted-foreground hover:bg-primary hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0"
+                className="group relative size-10 rounded-[14px] bg-sidebar-accent text-muted-foreground hover:bg-primary hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0"
               >
-                <Compass className="w-4 h-4 transition-transform duration-200 group-hover:scale-110" />
+                <Compass className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
@@ -3119,20 +3119,18 @@ export function CommunityPage() {
             <button
               type="button"
               onClick={() => setIsMuted(!isMuted)}
-              className="h-7 px-1 text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-md cursor-pointer flex items-center gap-0.5 transition-colors"
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-md cursor-pointer transition-colors"
               title={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5" />}
-              <ChevronDown className="w-2.5 h-2.5 opacity-60" />
             </button>
             <button
               type="button"
               onClick={() => setIsDeafened(!isDeafened)}
-              className="h-7 px-1 text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-md cursor-pointer flex items-center gap-0.5 transition-colors"
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-md cursor-pointer transition-colors"
               title={isDeafened ? 'Undeafen' : 'Deafen'}
             >
               <Headphones className={cn('w-3.5 h-3.5', isDeafened && 'text-red-400')} />
-              <ChevronDown className="w-2.5 h-2.5 opacity-60" />
             </button>
             <button
               type="button"
@@ -4068,6 +4066,11 @@ export function CommunityPage() {
     >
       <TooltipProvider delayDuration={200}>
       <div className="flex h-full w-full overflow-hidden bg-background">
+        {/* DESKTOP DISCORD HUB / SERVER MINI RAIL */}
+        <div className="hidden lg:flex flex-col h-full shrink-0 select-none">
+          {renderDiscordHubRail()}
+        </div>
+
         {/* DESKTOP CHANNELS SIDEBAR (Clean single sidebar directly beside the Unified Mini Rail) */}
         <div className="hidden lg:flex flex-col h-full shrink-0 border-r border-sidebar-border bg-sidebar select-none w-60 overflow-hidden">
           <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
