@@ -9,6 +9,42 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
+  background-color: #313338;
+  color: #dbdee1;
+}
+
+:root,
+.dark {
+  --background: #313338;
+  --foreground: #dbdee1;
+  --popover: #2b2d31;
+  --popover-foreground: #dbdee1;
+  --card: #2b2d31;
+  --card-foreground: #f2f3f5;
+  --muted: #2b2d31;
+  --muted-foreground: #949ba4;
+  --secondary: #2b2d31;
+  --secondary-foreground: #dbdee1;
+  --accent: #35373c;
+  --accent-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: #1e1f22;
+  --ring: #5865f2;
+  --radius: 0.5rem;
+
+  --primary: 235 86% 65%;
+  --primary-foreground: 0 0% 100%;
+  --primary-100: 235 86% 25%;
+  --primary-300: 235 86% 75%;
+
+  --success: 160 84% 39%;
+  --destructive: 350 89% 60%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
+  --sidebar-background: #1e1f22;
+  --sidebar-foreground: #dbdee1;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
 }
 
 

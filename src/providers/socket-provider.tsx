@@ -6,7 +6,7 @@ export const ORACLE_VM_REALTIME_URL =
   (import.meta.env.DEV ? 'http://localhost:3000' : typeof window !== 'undefined' ? window.location.origin : '');
 
 const socket: Socket = io(ORACLE_VM_REALTIME_URL, {
-  transports: ['websocket'],
+  transports: ['polling', 'websocket'],
   path: '/api/socket.io',
   autoConnect: false,
   reconnection: true,

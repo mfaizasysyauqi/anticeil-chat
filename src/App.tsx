@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { SocketProvider } from '@/providers/socket-provider';
 import { CommunityPage } from '@/chat';
 
 export default function App() {
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
+
   return (
     <SocketProvider>
       <BrowserRouter>
-        <div className="w-screen h-screen overflow-hidden bg-background text-foreground flex flex-col font-sans select-none antialiased">
+        <div className="dark w-screen h-screen overflow-hidden bg-[#313338] text-foreground flex flex-col font-sans select-none antialiased">
           <Routes>
             <Route path="/" element={<CommunityPage />} />
             <Route path="/channels/:hubId?/:channelId?" element={<CommunityPage />} />
