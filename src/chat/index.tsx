@@ -82,10 +82,19 @@ const authenticationSession: any = {
   getProjectId: () => localStorage.getItem('projectId') || 'default',
 };
 const userMutations: any = {
-  useUpdateUser: () => ({ mutateAsync: async () => {} }),
+  useUpdateUser: () => ({ mutateAsync: async () => {}, mutate: () => {} }),
+  useUpdateName: (opts?: any) => ({
+    mutateAsync: async (data: any) => opts?.onSuccess?.(data),
+    mutate: (data: any) => opts?.onSuccess?.(data),
+  }),
+  useUpdateUsername: (opts?: any) => ({
+    mutateAsync: async (data: any) => opts?.onSuccess?.(data),
+    mutate: (data: any) => opts?.onSuccess?.(data),
+  }),
 };
 const userHooks: any = {
   useCurrentUser: () => ({ data: null }),
+  invalidateCurrentUser: async (_client?: any) => {},
 };
 const queryClient: any = {
   invalidateQueries: async () => {},
