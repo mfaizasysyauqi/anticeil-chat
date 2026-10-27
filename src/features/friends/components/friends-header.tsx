@@ -1,10 +1,9 @@
 import React from 'react';
-import { Users, MessageSquare, Sun, Moon, Globe, Menu } from 'lucide-react';
+import { Users, MessageSquare, Menu } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import { useTheme } from '@/core/theme';
 import type { FriendsTab } from '../types';
 
 interface FriendsHeaderProps {
@@ -28,8 +27,7 @@ export function FriendsHeader({
   onOpenSidebar,
   horizontalPadding = 'px-4',
 }: FriendsHeaderProps) {
-  const { t, locale, setLocale } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <div
@@ -121,41 +119,6 @@ export function FriendsHeader({
 
       {/* Right Top Header Actions */}
       <div className="flex items-center gap-1.5">
-        {/* Language switch */}
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-[#1e1f22] transition-colors cursor-pointer text-xs font-semibold flex items-center gap-1"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span className="uppercase text-[10px]">{locale}</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-            {locale === 'id' ? 'Ganti ke English' : 'Switch to Bahasa Indonesia'}
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Theme toggle */}
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-[#1e1f22] transition-colors cursor-pointer"
-            >
-              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-            {theme === 'midnight'
-              ? 'Mode: Discord Midnight'
-              : theme === 'dark'
-              ? 'Mode: Discord Dark'
-              : 'Mode: Light'}
-          </TooltipContent>
-        </Tooltip>
-
         {/* Start new DM */}
         <Tooltip delayDuration={150}>
           <TooltipTrigger asChild>

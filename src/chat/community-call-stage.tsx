@@ -2085,7 +2085,7 @@ export function CommunityCallStage({
                        ─────────────────────────────────────────────────────────── */
                     <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden bg-background">
                       {/* Left Column (~44%): Player + Expand Pill + Playlist */}
-                      <div className="w-full md:w-[44%] lg:w-[42%] flex flex-col border-b md:border-b-0 md:border-r border-border p-4 gap-4 overflow-y-auto [scrollbar-width:thin]">
+                      <div className={cn("w-full md:w-[44%] lg:w-[42%] flex flex-col border-b md:border-b-0 md:border-r border-border py-4 gap-4 overflow-y-auto [scrollbar-width:thin]", CHANNEL_HORIZONTAL_PADDING)}>
                         {/* Video Player Box with Centered "Expand Video" Pill */}
                         <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-border shadow-2xl group shrink-0">
                           <iframe
@@ -2109,10 +2109,10 @@ export function CommunityCallStage({
                         {/* Playlist Header Row */}
                         <div className="flex items-center justify-between shrink-0">
                           <div>
-                            <h3 className="text-sm font-bold text-white leading-tight">
+                            <h3 className="text-sm font-bold text-foreground leading-tight">
                               {channel?.name || 'general'} Playlist
                             </h3>
-                            <p className="text-[11px] text-[#949ba4]">
+                            <p className="text-[11px] text-muted-foreground">
                               Video {Math.max(1, ytPlaylist.findIndex((v) => v.id === activeVideoId) + 1)}/{Math.max(ytPlaylist.length, 1)}
                             </p>
                           </div>
@@ -2221,7 +2221,7 @@ export function CommunityCallStage({
                       </div>
 
                       {/* Right Column (~56%): Search + Trending Grid (with checkmark on playing/queued) */}
-                      <div className="flex-1 min-h-0 flex flex-col p-4 gap-4 overflow-y-auto [scrollbar-width:thin]">
+                      <div className={cn("flex-1 min-h-0 flex flex-col py-4 gap-4 overflow-y-auto [scrollbar-width:thin]", CHANNEL_HORIZONTAL_PADDING)}>
                         {/* Search Input */}
                         <div className="relative w-full">
                           <input
@@ -2240,7 +2240,7 @@ export function CommunityCallStage({
                         </div>
 
                         {/* Section Header */}
-                        <div className="flex items-center gap-2 text-white font-bold text-sm">
+                        <div className="flex items-center gap-2 text-foreground font-bold text-sm">
                           <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
                           <span>Trending Videos</span>
                         </div>
@@ -2256,7 +2256,7 @@ export function CommunityCallStage({
                                 className="group cursor-pointer flex flex-col"
                               >
                                 {/* Thumbnail */}
-                                <div className="relative aspect-video rounded-xl overflow-hidden bg-black/60 border border-white/8 group-hover:border-white/20 transition-all">
+                                <div className="relative aspect-video rounded-xl overflow-hidden bg-card border border-border group-hover:border-primary/40 transition-all">
                                   <img
                                     src={video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
                                     alt={video.title}
@@ -2298,13 +2298,13 @@ export function CommunityCallStage({
 
                                 {/* Metadata */}
                                 <div className="mt-2 flex flex-col">
-                                  <p className="text-xs font-semibold text-white line-clamp-2 leading-snug group-hover:text-blue-400 transition-colors">
+                                  <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                                     {video.title}
                                   </p>
-                                  <span className="text-[11px] text-[#949ba4] mt-1 truncate">
+                                  <span className="text-[11px] text-muted-foreground mt-1 truncate">
                                     {video.channel}
                                   </span>
-                                  <span className="text-[11px] text-[#949ba4] mt-0.5">
+                                  <span className="text-[11px] text-muted-foreground mt-0.5">
                                     {[video.views, video.uploadedAt].filter(Boolean).join(' • ')}
                                   </span>
                                 </div>
@@ -2318,7 +2318,7 @@ export function CommunityCallStage({
                     /* ───────────────────────────────────────────────────────────
                        STATE 3: FULL BROWSE MODE (Screenshot 1)
                        ─────────────────────────────────────────────────────────── */
-                    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto [scrollbar-width:thin] bg-background p-5 lg:p-6 gap-5">
+                    <div className={cn("flex-1 min-h-0 flex flex-col overflow-y-auto [scrollbar-width:thin] bg-background py-4 gap-4", CHANNEL_HORIZONTAL_PADDING)}>
 
                       {/* Header Row: Hosting Pill + Search Bar */}
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
@@ -2364,7 +2364,7 @@ export function CommunityCallStage({
                             className="group cursor-pointer flex flex-col"
                           >
                             {/* Thumbnail Box */}
-                            <div className="relative aspect-video rounded-xl overflow-hidden bg-black/60 border border-white/8 group-hover:border-white/20 transition-all">
+                            <div className="relative aspect-video rounded-xl overflow-hidden bg-card border border-border group-hover:border-primary/40 transition-all">
                               <img
                                 src={video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
                                 alt={video.title}
@@ -2397,13 +2397,13 @@ export function CommunityCallStage({
 
                             {/* Metadata */}
                             <div className="mt-2.5 flex flex-col">
-                              <p className="text-xs font-semibold text-white line-clamp-2 leading-snug group-hover:text-blue-400 transition-colors">
+                              <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                                 {video.title}
                               </p>
-                              <span className="text-[11px] text-[#949ba4] mt-1 truncate">
+                              <span className="text-[11px] text-muted-foreground mt-1 truncate">
                                 {video.channel}
                               </span>
-                              <span className="text-[11px] text-[#949ba4] mt-0.5">
+                              <span className="text-[11px] text-muted-foreground mt-0.5">
                                 {[video.views, video.uploadedAt].filter(Boolean).join(' • ')}
                               </span>
                             </div>
@@ -2412,10 +2412,10 @@ export function CommunityCallStage({
                       </div>
 
                       {/* Small Discord-style Footer */}
-                      <div className="mt-auto pt-6 pb-2 flex items-center justify-between text-[11px] text-[#949ba4]/60">
-                        <span className="hover:text-[#949ba4] cursor-pointer transition-colors">YouTube Terms and Privacy</span>
+                      <div className="mt-auto pt-6 pb-2 flex items-center justify-between text-[11px] text-muted-foreground/60">
+                        <span className="hover:text-foreground cursor-pointer transition-colors">YouTube Terms and Privacy</span>
                         <span>Build Version: 126</span>
-                        <span className="hover:text-[#949ba4] cursor-pointer transition-colors">Open Font License</span>
+                        <span className="hover:text-foreground cursor-pointer transition-colors">Open Font License</span>
                       </div>
                     </div>
                   )}
@@ -2426,16 +2426,16 @@ export function CommunityCallStage({
               {activeAppId === 'virtual-fisher' && (
                 <div className="h-full flex flex-col md:flex-row overflow-hidden min-h-0">
                   {/* Left: Fishing Stage & Actions */}
-                  <div className="flex-1 min-h-0 p-4 flex flex-col items-center justify-center bg-gradient-to-b from-[#111214] via-[#141b24] to-[#0a111a] relative overflow-y-auto">
+                  <div className={cn("flex-1 min-h-0 py-4 flex flex-col items-center justify-center bg-background relative overflow-y-auto", CHANNEL_HORIZONTAL_PADDING)}>
                     {/* Atmospheric Water & Catch Box (Exact Discord format) */}
-                    <div className="w-full max-w-md bg-[#1e1f22] rounded-2xl border border-white/10 p-5 shadow-2xl relative">
+                    <div className="w-full max-w-md bg-card rounded-2xl border border-border p-5 shadow-2xl relative">
                       {/* Sub-header author */}
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs border border-cyan-500/30">
                           🎣
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-white">{currentUserName}</span>
+                          <span className="text-sm font-bold text-foreground">{currentUserName}</span>
                           <span className="text-xs text-muted-foreground">used</span>
                           <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold text-xs border border-cyan-800">
                             ::fish
@@ -2517,9 +2517,9 @@ export function CommunityCallStage({
                   </div>
 
                   {/* Right: Server Activity Feed & Leaderboard */}
-                  <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-white/10 bg-[#1e1f22]/95 p-4 flex flex-col gap-3 shrink-0">
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <div className={cn("w-full md:w-80 border-t md:border-t-0 md:border-l border-border bg-card py-4 flex flex-col gap-3 shrink-0", CHANNEL_HORIZONTAL_PADDING)}>
+                    <div className="flex items-center justify-between pb-2 border-b border-border">
+                      <span className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                         <Flame className="w-4 h-4 text-orange-400" /> Server Catch Log
                       </span>
                       <span className="text-[11px] text-amber-400 font-bold flex items-center gap-1">
@@ -2529,12 +2529,12 @@ export function CommunityCallStage({
 
                     <div className="flex-1 min-h-0 overflow-y-auto space-y-2 [scrollbar-width:thin]">
                       {fisherFeed.map((item) => (
-                        <div key={item.id} className="p-2 rounded-lg bg-[#2b2d31]/60 border border-white/5 text-xs">
+                        <div key={item.id} className="p-2 rounded-lg bg-muted/40 border border-border text-xs">
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-0.5">
-                            <span className="font-bold text-white">{item.userName}</span>
+                            <span className="font-bold text-foreground">{item.userName}</span>
                             <span>{item.timestamp}</span>
                           </div>
-                          <span className="text-white/90">{item.message}</span>
+                          <span className="text-foreground/90">{item.message}</span>
                         </div>
                       ))}
                     </div>
@@ -2544,7 +2544,7 @@ export function CommunityCallStage({
 
               {/* APP 3: WORDLE GAME */}
               {activeAppId === 'wordle' && (
-                <div className="h-full min-h-0 flex flex-col items-center justify-center p-4 bg-background overflow-y-auto">
+                <div className={cn("h-full min-h-0 flex flex-col items-center justify-center py-4 bg-background overflow-y-auto", CHANNEL_HORIZONTAL_PADDING)}>
                   <div className="w-full max-w-sm flex flex-col items-center gap-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xl font-black tracking-widest text-foreground">W O R D L E</span>
@@ -2630,7 +2630,7 @@ export function CommunityCallStage({
 
               {/* APP 4: MAGIC GARDEN */}
               {activeAppId === 'magic-garden' && (
-                <div className="h-full min-h-0 flex flex-col items-center justify-center p-4 bg-background overflow-y-auto">
+                <div className={cn("h-full min-h-0 flex flex-col items-center justify-center py-4 bg-background overflow-y-auto", CHANNEL_HORIZONTAL_PADDING)}>
                   <div className="w-full max-w-2xl bg-card border border-border rounded-2xl p-4 shadow-2xl">
                     <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
                       <div className="flex items-center gap-2">
@@ -2648,10 +2648,10 @@ export function CommunityCallStage({
                       {gardenPlots.map((plot) => (
                         <div
                           key={plot.id}
-                          className="p-4 rounded-xl bg-[#2b2d31] border border-white/10 flex flex-col items-center justify-center gap-2 text-center group hover:border-amber-500/40 transition-all"
+                          className="p-4 rounded-xl bg-card border border-border flex flex-col items-center justify-center gap-2 text-center group hover:border-amber-500/40 transition-all"
                         >
                           <div className="text-3xl animate-bounce-short">{plot.icon}</div>
-                          <span className="text-xs font-bold text-white">{plot.name}</span>
+                          <span className="text-xs font-bold text-foreground">{plot.name}</span>
                           <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
                             <div
                               className="bg-gradient-to-r from-amber-500 to-emerald-400 h-full rounded-full transition-all"
@@ -2696,9 +2696,9 @@ export function CommunityCallStage({
 
               {/* APP 5: ANTICEIL FLOW BUILDER */}
               {activeAppId === 'flow-canvas' && (
-                <div className="h-full min-h-0 flex flex-col p-3 gap-2 overflow-hidden">
+                <div className={cn("h-full min-h-0 flex flex-col py-3 gap-2 overflow-hidden", CHANNEL_HORIZONTAL_PADDING)}>
                   {/* Flow Toolbar */}
-                  <div className="p-3 rounded-xl bg-[#2b2d31] border border-white/10 flex items-center justify-between shrink-0">
+                  <div className="p-3 rounded-xl bg-card border border-border flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
@@ -2713,7 +2713,7 @@ export function CommunityCallStage({
                         size="sm"
                         variant="outline"
                         onClick={handleAddFlowNode}
-                        className="border-white/10 hover:bg-white/10 text-xs gap-1 text-white"
+                        className="border-border hover:bg-muted text-xs gap-1 text-foreground"
                       >
                         <Plus className="w-3.5 h-3.5" /> Tambah Langkah
                       </Button>
@@ -2721,7 +2721,7 @@ export function CommunityCallStage({
                         size="sm"
                         variant="ghost"
                         onClick={handleResetFlow}
-                        className="text-xs text-muted-foreground hover:text-white gap-1"
+                        className="text-xs text-muted-foreground hover:text-foreground gap-1"
                       >
                         <RotateCcw className="w-3 h-3" /> Reset
                       </Button>
@@ -2996,7 +2996,7 @@ export function CommunityCallStage({
           </div>
 
           {/* ── 2. Discord Bottom Filmstrip (Participant Video/Avatar Tiles at BOTTOM) ── */}
-          <div className="shrink-0 flex flex-col items-center z-10 px-3 pb-1">
+          <div className={cn("shrink-0 flex flex-col items-center z-10 pb-1 w-full", CHANNEL_HORIZONTAL_PADDING)}>
             {/* Collapse / Expand Toggle Pill (Discord Style) */}
             <button
               onClick={() => setIsFilmstripCollapsed(!isFilmstripCollapsed)}
@@ -3090,7 +3090,7 @@ export function CommunityCallStage({
 
                 {/* Screen Share Tile if sharing */}
                 {isScreenSharing && (
-                  <div className="w-28 sm:w-36 h-20 sm:h-24 rounded-xl bg-[#2b2d31] border border-emerald-500/40 relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
+                  <div className="w-28 sm:w-36 h-20 sm:h-24 rounded-xl bg-card border border-emerald-500/40 relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
                     <ScreenVideoView
                       stream={screenStream}
                       className="w-full h-full object-cover"
@@ -3108,9 +3108,9 @@ export function CommunityCallStage({
 
                 {/* Solitary Invite Prompt in Filmstrip */}
                 {participants.length === 0 && !isScreenSharing && (
-                  <div className="h-20 sm:h-24 px-4 rounded-xl bg-[#2b2d31]/40 border border-dashed border-white/10 flex items-center gap-3 shrink-0">
+                  <div className="h-20 sm:h-24 px-4 rounded-xl bg-card border border-dashed border-border flex items-center gap-3 shrink-0">
                     <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-white">Anda sendirian di panggung</span>
+                      <span className="text-xs font-semibold text-foreground">Anda sendirian di panggung</span>
                       <span className="text-[10px] text-muted-foreground">Undang rekan tim untuk menikmati aktivitas bersama</span>
                     </div>
                     <Button
@@ -3128,9 +3128,9 @@ export function CommunityCallStage({
         </div>
       ) : isAnyoneScreenSharing ? (
         /* CASE B1: DISCORD SCREEN SHARE SPOTLIGHT STAGE */
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden w-full h-full bg-[#111214] p-3 gap-3">
+        <div className={cn("flex-1 min-h-0 flex flex-col overflow-hidden w-full h-full bg-background py-3 gap-3", CHANNEL_HORIZONTAL_PADDING)}>
           {/* Main Hero Screen View */}
-          <div className="flex-1 min-h-0 relative rounded-2xl overflow-hidden bg-black/95 border border-white/10 shadow-2xl flex items-center justify-center">
+          <div className="flex-1 min-h-0 relative rounded-2xl overflow-hidden bg-black/95 border border-border shadow-2xl flex items-center justify-center">
             {activeScreenStream ? (
               <ScreenVideoView stream={activeScreenStream} className="w-full h-full" />
             ) : (

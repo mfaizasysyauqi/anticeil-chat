@@ -20,7 +20,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return saved;
       }
     } catch {}
-    return 'midnight'; // Default to Discord Midnight AMOLED
+    return 'dark'; // Default to Dark Mode (AMOLED Pure Black)
   });
 
   const setTheme = (newTheme: ThemeMode) => {
@@ -31,7 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'midnight' : 'light');
+    setTheme(theme === 'dark' ? 'midnight' : theme === 'midnight' ? 'light' : 'dark');
   };
 
   useEffect(() => {
@@ -65,9 +65,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--primary-100', '43 96% 90%');
       root.style.setProperty('--primary-300', '43 96% 65%');
       root.style.setProperty('--ring', '#f59e0b');
-    } else if (theme === 'dark') {
-      // Classic Discord Dark (#313338 / #2b2d31)
-      root.classList.add('dark', 'theme-dark');
+    } else if (theme === 'midnight') {
+      // Midnight: Classic Discord Grey (#313338 / #2b2d31)
+      root.classList.add('dark', 'theme-midnight');
       root.style.setProperty('--background', '#313338');
       root.style.setProperty('--foreground', '#dbdee1');
       root.style.setProperty('--card', '#2b2d31');
@@ -94,8 +94,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--primary-300', '45 93% 70%');
       root.style.setProperty('--ring', '#fbbf24');
     } else {
-      // Midnight (Discord AMOLED Pure Black with Anticeil Palette)
-      root.classList.add('dark', 'theme-midnight');
+      // Dark Mode: Discord AMOLED Pure Black with Anticeil Palette (#000000 / #09090b)
+      root.classList.add('dark', 'theme-dark');
       root.style.setProperty('--background', '#000000');
       root.style.setProperty('--foreground', '#f4f4f5');
       root.style.setProperty('--card', '#09090b');

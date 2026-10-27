@@ -2357,9 +2357,9 @@ export function CommunityPage() {
                   onClick={() => {
                     serverIconQuickInputRef.current?.click();
                   }}
-                  className="cursor-pointer font-medium text-primary focus:text-primary focus:bg-primary/10"
+                  className="cursor-pointer font-medium text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
                 >
-                  <Camera className="w-4 h-4 mr-2" /> {t('Ubah Foto Server')}
+                  <Camera className="w-4 h-4 mr-2 text-emerald-500" /> {t('Ubah Foto Server')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {/* Boost */}
@@ -2368,9 +2368,9 @@ export function CommunityPage() {
                     setServerSettingsSection('boost');
                     setIsServerSettingsOpen(true);
                   }}
-                  className="text-purple-400 focus:text-purple-400 focus:bg-purple-500/10 cursor-pointer font-medium"
+                  className="cursor-pointer font-medium text-primary focus:text-primary focus:bg-primary/10"
                 >
-                  <Zap className="w-4 h-4 mr-2" /> {t('Server Boost')}
+                  <Zap className="w-4 h-4 mr-2 text-primary" /> {t('Server Boost')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {/* Invite & Settings */}
@@ -4077,29 +4077,7 @@ export function CommunityPage() {
                 </TooltipContent>
               </Tooltip>
 
-              {/* 5. Theme Toggle Switcher */}
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleTheme}
-                    className="h-8 w-8 transition-colors cursor-pointer text-muted-foreground hover:text-foreground hover:bg-white/5"
-                    title={theme === 'midnight' ? t('Tema: Midnight (AMOLED) - Klik untuk ganti') : theme === 'dark' ? t('Tema: Dark - Klik untuk ganti') : t('Tema: Light - Klik untuk ganti')}
-                  >
-                    {theme === 'light' ? (
-                      <Sun className="w-4 h-4 text-amber-500" />
-                    ) : theme === 'dark' ? (
-                      <Moon className="w-4 h-4 text-sky-400" />
-                    ) : (
-                      <Moon className="w-4 h-4 text-purple-400" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-                  {t('Ganti Tema')} ({theme === 'midnight' ? 'Midnight AMOLED' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'})
-                </TooltipContent>
-              </Tooltip>
+
 
               {/* 6. Search Box (Theme aware) */}
               <div className="relative w-36 sm:w-40 transition-all duration-200 focus-within:w-56">
@@ -8427,7 +8405,7 @@ export function CommunityPage() {
                       <span>{t('Tampilan & Tema')}</span>
                     </label>
                     <span className="text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded">
-                      {theme === 'midnight' ? 'Midnight AMOLED' : theme === 'dark' ? 'Classic Dark' : 'Clean Light'}
+                      {theme === 'dark' ? 'Dark Mode (AMOLED)' : theme === 'midnight' ? 'Midnight' : 'Light Mode'}
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
@@ -8438,22 +8416,6 @@ export function CommunityPage() {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setTheme('midnight')}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                      theme === 'midnight'
-                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
-                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-black border border-white/20 flex items-center justify-center">
-                      <Moon className="w-3 h-3 text-purple-400" />
-                    </div>
-                    <span>Midnight</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => setTheme('dark')}
                     className={cn(
                       'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
@@ -8462,10 +8424,26 @@ export function CommunityPage() {
                         : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
                     )}
                   >
+                    <div className="w-5 h-5 rounded-full bg-black border border-white/20 flex items-center justify-center">
+                      <Moon className="w-3 h-3 text-purple-400" />
+                    </div>
+                    <span>Dark Mode</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme('midnight')}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                      theme === 'midnight'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
+                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
                     <div className="w-5 h-5 rounded-full bg-[#313338] border border-white/20 flex items-center justify-center">
                       <Moon className="w-3 h-3 text-sky-400" />
                     </div>
-                    <span>Dark Mode</span>
+                    <span>Midnight</span>
                   </button>
 
                   <button
