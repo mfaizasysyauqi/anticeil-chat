@@ -93,8 +93,60 @@ export function ServerRail({
         <div className="w-8 h-[2px] bg-sidebar-border/40 rounded-full" />
       </div>
 
-      {/* Scrollable lower server rail: other servers (if any), plus buttons */}
+      {/* Scrollable lower server rail: Explore, Add Server, then other servers */}
       <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
+        {/* Discover / Templates Compass (Explore) - placed below Anticeil logo */}
+        <div className="relative group w-full flex items-center justify-center">
+          <span
+            className={cn(
+              'absolute left-0 w-[3px] bg-foreground rounded-r-full transition-all duration-200',
+              isTemplates ? 'h-6' : 'h-0 group-hover:h-3.5 opacity-80'
+            )}
+          />
+
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <Link
+                to="/templates"
+                className={cn(
+                  'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
+                  isTemplates
+                    ? 'bg-black text-white dark:bg-white dark:text-black shadow-xs'
+                    : 'bg-sidebar-accent text-amber-500 dark:text-amber-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                )}
+              >
+                <Compass className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+              {t('Jelajahi Template Otomasi')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Add Server (+) Button - placed below Explore */}
+        <div className="relative group w-full flex items-center justify-center">
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleCreate}
+                className="group relative size-10 rounded-[14px] bg-sidebar-accent text-emerald-500 dark:text-emerald-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold"
+              >
+                <Plus className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90 text-inherit" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+              {t('Buat Server Baru')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Separator before other user servers */}
+        {otherServers.length > 0 && (
+          <div className="w-8 h-[2px] bg-sidebar-border/40 rounded-full my-0.5 shrink-0" />
+        )}
+
+        {/* Other Servers */}
         {otherServers.map((srv) => {
           const isActive = currentActiveId === srv.id;
           return (
@@ -133,50 +185,6 @@ export function ServerRail({
             </div>
           );
         })}
-
-        {/* Add Server (+) Button */}
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={handleCreate}
-              className="group relative size-10 rounded-[14px] bg-sidebar-accent text-emerald-500 hover:bg-amber-400 hover:text-black flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold"
-            >
-              <Plus className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90 text-inherit" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-            {t('Buat Server Baru')}
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Discover / Templates Compass */}
-        <div className="relative group w-full flex items-center justify-center">
-          <span
-            className={cn(
-              'absolute left-0 w-[3px] bg-foreground rounded-r-full transition-all duration-200',
-              isTemplates ? 'h-6' : 'h-0 group-hover:h-3.5 opacity-80'
-            )}
-          />
-
-          <Tooltip delayDuration={150}>
-            <TooltipTrigger asChild>
-              <Link
-                to="/templates"
-                className={cn(
-                  'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0',
-                  isTemplates
-                    ? 'bg-emerald-500 text-white font-bold shadow-xs shadow-emerald-500/20'
-                    : 'bg-sidebar-accent text-amber-500 dark:text-amber-400 hover:bg-emerald-500 hover:text-white'
-                )}
-              >
-                <Compass className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-              {t('Jelajahi Template Otomasi')}
-            </TooltipContent>
-          </Tooltip>
-        </div>
       </div>
     </div>
   );
