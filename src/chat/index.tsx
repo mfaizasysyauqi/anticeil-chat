@@ -82,17 +82,23 @@ dayjs.extend(relativeTime);
 import { useTranslation } from '@/core/i18n';
 import { useTheme } from '@/core/theme';
 import { useResponsive, LAYOUT_SIZES, BREAKPOINTS } from '@/core';
-import { HubRail } from '@/features/hubs';
-import { UserBottomDock } from '@/features/profile';
+import { HubRail, HubInviteDialog, CreateOrJoinHubDialog, EditHubDialog, DeleteHubDialog } from '@/features/hubs';
+import { UserBottomDock, EditProfileDialog } from '@/features/profile';
 import { FriendsView, type FriendRequest } from '@/features/friends';
-import { ChannelSettingsDialog } from '@/features/channels';
-import { HubInviteDialog } from '@/features/hubs';
-import { EditProfileDialog } from '@/features/profile';
+import {
+  ChannelSettingsDialog,
+  PinnedMessagesPopover,
+  CreateChannelDialog,
+  EditChannelDialog,
+  DeleteChannelDialog,
+  DmSearchDialog,
+} from '@/features/channels';
 import { ServerMembersSidebar } from '@/features/members';
-import { PinnedMessagesPopover } from '@/features/channels';
 import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
 import { WebhookDialog } from '@/features/webhooks';
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
+import { SendGiftDialog } from '@/features/gifts';
+import { QuickAddEmojiDialog, QuickAddStickerDialog } from '@/features/media';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -5179,444 +5185,58 @@ export function CommunityPage() {
           </div>
         )}
 
-        {/* DIALOG: SEND A GIFT (Matching Screenshot 4) */}
-        <Dialog open={isGiftModalOpen} onOpenChange={setIsGiftModalOpen}>
-          <DialogContent className="sm:max-w-[720px] bg-[#18191c] border-white/10 text-white p-6 rounded-2xl shadow-2xl overflow-hidden">
-            <DialogHeader className="flex flex-row items-center justify-between pb-2">
-              <DialogTitle className="text-xl font-black text-white">Send a Gift</DialogTitle>
-            </DialogHeader>
+        {/* Send Gift Dialog (Feature-First Component) */}
+        <SendGiftDialog
+          open={isGiftModalOpen}
+          onOpenChange={setIsGiftModalOpen}
+          onSendGift={handleSendGift}
+        />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-              {/* 1. NITRO CARD (POPULAR) */}
-              <div className="relative rounded-2xl bg-[#232428] border border-primary/40 hover:border-primary p-5 flex flex-col justify-between transition-all group shadow-xl">
-                {/* POPULAR badge */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#5865f2] to-[#eb459e] text-[10px] font-black uppercase tracking-wider text-white shadow-md">
-                  POPULAR
-                </div>
+        {/* Quick Add Server Emoji Dialog (Feature-First Component) */}
+        <QuickAddEmojiDialog
+          open={isQuickAddEmojiOpen}
+          onOpenChange={setIsQuickAddEmojiOpen}
+          activeHub={activeHub}
+          quickEmojiName={quickEmojiName}
+          setQuickEmojiName={setQuickEmojiName}
+          quickEmojiCode={quickEmojiCode}
+          setQuickEmojiCode={setQuickEmojiCode}
+          quickEmojiUrl={quickEmojiUrl}
+          setQuickEmojiUrl={setQuickEmojiUrl}
+          isSubmittingServerMedia={isSubmittingServerMedia}
+          onQuickAddEmoji={handleQuickAddEmoji}
+        />
 
-                <div>
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-2xl font-black italic tracking-wide text-white">NITRO</h3>
-                      <div className="mt-1">
-                        <span className="text-xl font-extrabold text-white">IDR 142,714</span>
-                        <span className="text-xs text-[#949ba4]">/month</span>
-                      </div>
-                      <span className="text-[11px] text-[#949ba4] block">IDR 1,428,428/year</span>
-                    </div>
-                    {/* Wumpus Astronaut Illustration */}
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center text-3xl shadow-lg">
-                      🚀
-                    </div>
-                  </div>
+        {/* Quick Add Server Sticker Dialog (Feature-First Component) */}
+        <QuickAddStickerDialog
+          open={isQuickAddStickerOpen}
+          onOpenChange={setIsQuickAddStickerOpen}
+          activeHub={activeHub}
+          quickStickerName={quickStickerName}
+          setQuickStickerName={setQuickStickerName}
+          quickStickerUrl={quickStickerUrl}
+          setQuickStickerUrl={setQuickStickerUrl}
+          isSubmittingServerMedia={isSubmittingServerMedia}
+          onQuickAddSticker={handleQuickAddSticker}
+        />
 
-                  <div className="w-full h-px bg-white/10 my-4" />
-
-                  {/* Perks */}
-                  <div className="space-y-2 text-xs text-[#dbdee1]">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-primary font-black">↑</span>
-                      <span>1GB uploads</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>😊</span>
-                      <span>Custom emoji anywhere</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>💥</span>
-                      <span>Unlimited Super Reactions</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>🖵</span>
-                      <span>HD video streaming</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>💎</span>
-                      <span>2 Server Boosts</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>👤</span>
-                      <span>Custom profiles and more!</span>
-                    </div>
-                  </div>
-
-                  {/* Free reward box */}
-                  <div className="mt-4 p-3 rounded-xl bg-[#1e1f22] border border-white/5 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl shrink-0">
-                      🔮
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-white block">Choose a FREE reward</span>
-                      <span className="text-[10px] text-[#949ba4]">3 available options</span>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleSendGift('nitro')}
-                  className="mt-5 w-full py-2.5 rounded-xl bg-gradient-to-r from-[#5865f2] to-[#eb459e] hover:opacity-95 text-white font-bold text-xs transition-all shadow-lg active:scale-95 cursor-pointer"
-                >
-                  Send Nitro Gift
-                </button>
-              </div>
-
-              {/* 2. NITRO BASIC CARD */}
-              <div className="relative rounded-2xl bg-[#232428] border border-white/10 hover:border-white/20 p-5 flex flex-col justify-between transition-all group shadow-xl">
-                <div>
-                  {/* Header */}
-                  <div>
-                    <h3 className="text-2xl font-black italic tracking-wide text-white">NITRO BASIC</h3>
-                    <div className="mt-1">
-                      <span className="text-xl font-extrabold text-white">IDR 42,714</span>
-                      <span className="text-xs text-[#949ba4]">/month</span>
-                    </div>
-                    <span className="text-[11px] text-[#949ba4] block">IDR 427,140/year</span>
-                  </div>
-
-                  <div className="w-full h-px bg-white/10 my-4" />
-
-                  {/* Perks */}
-                  <div className="space-y-2 text-xs text-[#dbdee1]">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-primary font-black">↑</span>
-                      <span>50MB uploads</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>😊</span>
-                      <span>Custom emoji anywhere</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>💥</span>
-                      <span>Unlimited Super Reactions</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <span>🛡️</span>
-                      <span>Special Nitro badge on your profile</span>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleSendGift('nitro_basic')}
-                  className="mt-5 w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold font-bold text-xs transition-all shadow-lg active:scale-95 cursor-pointer"
-                >
-                  Send Nitro Basic Gift
-                </button>
-              </div>
-            </div>
-
-            {/* Bottom Patron Badge Banner */}
-            <div className="mt-4 p-3 rounded-xl bg-[#1e1f22] border border-white/5 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-lg shrink-0">
-                🎁
-              </div>
-              <span className="text-xs text-[#dbdee1] font-medium">
-                1 gift away from the Patron Badge!
-              </span>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG: QUICK ADD SERVER EMOJI (Connected to Database) */}
-        <Dialog open={isQuickAddEmojiOpen} onOpenChange={setIsQuickAddEmojiOpen}>
-          <DialogContent className="sm:max-w-[460px] bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
-            <DialogHeader className="pb-2">
-              <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-                ✨ Tambah Emoji Kustom ke Server
-              </DialogTitle>
-              <DialogDescription className="text-xs text-[#949ba4]">
-                Emoji ini akan disimpan ke database PostgreSQL server {activeHub?.name || ''} dan dapat digunakan oleh anggota server.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 my-2">
-              <div>
-                <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">Nama Emoji</label>
-                <input
-                  type="text"
-                  value={quickEmojiName}
-                  onChange={(e) => {
-                    const clean = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
-                    setQuickEmojiName(clean);
-                    setQuickEmojiCode(`:${clean}:`);
-                  }}
-                  placeholder="contoh: api_anticeil"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">Kode Emoji</label>
-                <input
-                  type="text"
-                  value={quickEmojiCode}
-                  onChange={(e) => setQuickEmojiCode(e.target.value)}
-                  placeholder=":api_anticeil:"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">URL Gambar Emoji (atau Karakter Unicode)</label>
-                <input
-                  type="text"
-                  value={quickEmojiUrl}
-                  onChange={(e) => setQuickEmojiUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/... atau karakter 🚀"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Quick Pick Samples */}
-              <div>
-                <label className="text-[11px] font-semibold text-[#949ba4] mb-1.5 block">Pilih Cepat Simbol:</label>
-                <div className="flex gap-2">
-                  {['🚀', '⚡', '🤖', '🔥', '🎉', '💡', '🏆', '💎'].map((sym) => (
-                    <button
-                      key={sym}
-                      type="button"
-                      onClick={() => {
-                        setQuickEmojiUrl(sym);
-                        if (!quickEmojiName) {
-                          setQuickEmojiName('custom_' + Date.now().toString().slice(-4));
-                          setQuickEmojiCode(`:custom_${Date.now().toString().slice(-4)}:`);
-                        }
-                      }}
-                      className="w-8 h-8 rounded-lg bg-[#2b2d31] hover:bg-[#35373c] border border-white/5 flex items-center justify-center text-sm cursor-pointer"
-                    >
-                      {sym}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="mt-4 gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsQuickAddEmojiOpen(false)}
-                className="text-xs text-[#dbdee1] hover:bg-white/10"
-              >
-                Batal
-              </Button>
-              <Button
-                type="button"
-                disabled={!quickEmojiName.trim() || !quickEmojiUrl.trim() || isSubmittingServerMedia}
-                onClick={handleQuickAddEmoji}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-bold"
-              >
-                {isSubmittingServerMedia ? 'Menyimpan...' : 'Simpan Emoji ke DB'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG: QUICK ADD SERVER STICKER (Connected to Database) */}
-        <Dialog open={isQuickAddStickerOpen} onOpenChange={setIsQuickAddStickerOpen}>
-          <DialogContent className="sm:max-w-[460px] bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
-            <DialogHeader className="pb-2">
-              <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-                🏷️ Tambah Stiker Kustom ke Server
-              </DialogTitle>
-              <DialogDescription className="text-xs text-[#949ba4]">
-                Stiker ini akan disimpan ke database PostgreSQL server {activeHub?.name || ''} dan dapat dikirim langsung ke obrolan.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 my-2">
-              <div>
-                <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">Nama Stiker</label>
-                <input
-                  type="text"
-                  value={quickStickerName}
-                  onChange={(e) => setQuickStickerName(e.target.value)}
-                  placeholder="contoh: Happy Bear Wave"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">URL Gambar Stiker (PNG/WebP/GIF)</label>
-                <input
-                  type="text"
-                  value={quickStickerUrl}
-                  onChange={(e) => setQuickStickerUrl(e.target.value)}
-                  placeholder="https://... (URL gambar stiker transparan)"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
-                />
-              </div>
-
-              {quickStickerUrl.trim() && (
-                <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-[#1e1f22] border border-white/5">
-                  <span className="text-[11px] text-[#949ba4] mb-2">Preview Stiker:</span>
-                  <img
-                    src={quickStickerUrl}
-                    alt="Preview"
-                    className="w-24 h-24 object-contain filter drop-shadow-md"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
-            <DialogFooter className="mt-4 gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsQuickAddStickerOpen(false)}
-                className="text-xs text-[#dbdee1] hover:bg-white/10"
-              >
-                Batal
-              </Button>
-              <Button
-                type="button"
-                disabled={!quickStickerName.trim() || !quickStickerUrl.trim() || isSubmittingServerMedia}
-                onClick={handleQuickAddSticker}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-bold"
-              >
-                {isSubmittingServerMedia ? 'Menyimpan...' : 'Simpan Stiker ke DB'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG: BUAT ATAU GABUNG SERVER (Ala Discord) */}
-        <Dialog open={isCreateHubOpen} onOpenChange={setIsCreateHubOpen}>
-          <DialogContent className="sm:max-w-[440px]">
-            <Tabs defaultValue="create" className="w-full">
-              <DialogHeader className="pb-2">
-                <DialogTitle>{t('Server Komunitas')}</DialogTitle>
-                <DialogDescription>
-                  {t('Buat server baru untuk proyek Anda atau gabung ke server lain menggunakan kode/link undangan.')}
-                </DialogDescription>
-                <TabsList className="grid w-full grid-cols-2 mt-2">
-                  <TabsTrigger value="create">{t('Buat Server Baru')}</TabsTrigger>
-                  <TabsTrigger value="join">{t('Gabung via Link/Kode')}</TabsTrigger>
-                </TabsList>
-              </DialogHeader>
-
-              <TabsContent value="create">
-                <form onSubmit={handleCreateHubSubmit}>
-                  <div className="grid gap-3 py-3">
-                    {/* Server Picture Uploader */}
-                    <div className="flex flex-col items-center justify-center pb-1">
-                      <input
-                        type="file"
-                        ref={newHubIconFileInputRef}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          if (file.size > 5 * 1024 * 1024) {
-                            toast.error(t('Ukuran file maksimal 5 MB.'));
-                            return;
-                          }
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const res = event.target?.result as string;
-                            if (res) setNewHubIconUrl(res);
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                        accept="image/*"
-                        className="hidden"
-                      />
-                      <div
-                        onClick={() => newHubIconFileInputRef.current?.click()}
-                        className="relative group/avatar size-20 rounded-[20px] border-2 border-dashed border-primary/40 hover:border-primary flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all bg-muted/40 hover:bg-muted/60"
-                        title={t('Unggah Foto Server')}
-                      >
-                        {newHubIconUrl ? (
-                          <img src={newHubIconUrl} alt="Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center text-muted-foreground group-hover/avatar:text-primary transition-colors">
-                            <Camera className="size-6 mb-1 opacity-70 group-hover/avatar:opacity-100" />
-                            <span className="text-[10px] font-semibold uppercase tracking-wider">{t('Unggah')}</span>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-1.5">{t('Pilih ikon atau logo untuk server Anda (opsional)')}</p>
-                    </div>
-
-                    <div className="grid gap-1.5">
-                      <label className="text-xs font-semibold">{t('Nama Server')}</label>
-                      <Input
-                        value={newHubName}
-                        onChange={(e) => setNewHubName(e.target.value)}
-                        placeholder="contoh: Komunitas AI & Bot / Proyek Alpha"
-                        className="text-xs"
-                        required
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="grid gap-1.5">
-                      <label className="text-xs font-semibold">{t('Deskripsi (Opsional)')}</label>
-                      <Input
-                        value={newHubDesc}
-                        onChange={(e) => setNewHubDesc(e.target.value)}
-                        placeholder="Ruang diskusi untuk alur kerja dan bot..."
-                        className="text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  <DialogFooter className="pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateHubOpen(false)}
-                    >
-                      {t('Batal')}
-                    </Button>
-                    <Button type="submit">
-                      {t('Buat Server')}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="join">
-                <div className="grid gap-3 py-3">
-                  <div className="grid gap-1.5">
-                    <label className="text-xs font-semibold">{t('Kode atau Link Undangan')}</label>
-                    <Input
-                      value={joinInviteCode}
-                      onChange={(e) => setJoinInviteCode(e.target.value)}
-                      placeholder="contoh: inv_9f2a1b atau https://.../messages?invite=..."
-                      className="text-xs"
-                      autoFocus
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {t('Tempel link undangan dari pembuat server untuk langsung bergabung ke komunitas mereka.')}
-                    </p>
-                  </div>
-                </div>
-
-                <DialogFooter className="pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsCreateHubOpen(false)}
-                  >
-                    {t('Batal')}
-                  </Button>
-                  <Button
-                    onClick={() => handleJoinHub()}
-                    disabled={isJoiningHub || !joinInviteCode.trim()}
-                  >
-                    {isJoiningHub ? t('Bergabung...') : t('Gabung Server')}
-                  </Button>
-                </DialogFooter>
-              </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
+        {/* Create or Join Hub Dialog (Feature-First Component) */}
+        <CreateOrJoinHubDialog
+          open={isCreateHubOpen}
+          onOpenChange={setIsCreateHubOpen}
+          newHubName={newHubName}
+          setNewHubName={setNewHubName}
+          newHubDesc={newHubDesc}
+          setNewHubDesc={setNewHubDesc}
+          newHubIconUrl={newHubIconUrl}
+          setNewHubIconUrl={setNewHubIconUrl}
+          joinInviteCode={joinInviteCode}
+          setJoinInviteCode={setJoinInviteCode}
+          isJoiningHub={isJoiningHub}
+          onCreateHubSubmit={handleCreateHubSubmit}
+          onJoinHub={handleJoinHub}
+          t={t}
+        />
 
         {/* ===== SERVER SETTINGS MODAL (Feature-First Component) ===== */}
         <ServerSettingsDialog
@@ -5644,87 +5264,25 @@ export function CommunityPage() {
           onUpdateMembers={setMembers}
         />
 
-        {/* DIALOG: EDIT SERVER (Hub CRUD: Update) */}
-        <Dialog open={!!hubToEdit} onOpenChange={(open) => !open && setHubToEdit(null)}>
-          <DialogContent className="sm:max-w-[425px]">
-            <form onSubmit={handleEditHubSubmit}>
-              <DialogHeader>
-                <DialogTitle>{t('Ganti Nama Server')}</DialogTitle>
-                <DialogDescription>
-                  {t('Perbarui nama dan deskripsi server atau workspace ini.')}
-                </DialogDescription>
-              </DialogHeader>
+        {/* Edit Hub Dialog (Feature-First Component) */}
+        <EditHubDialog
+          hubToEdit={hubToEdit}
+          onClose={() => setHubToEdit(null)}
+          editHubName={editHubName}
+          setEditHubName={setEditHubName}
+          editHubDesc={editHubDesc}
+          setEditHubDesc={setEditHubDesc}
+          onEditHubSubmit={handleEditHubSubmit}
+          t={t}
+        />
 
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-semibold">{t('Nama Server')}</label>
-                  <Input
-                    value={editHubName}
-                    onChange={(e) => setEditHubName(e.target.value)}
-                    placeholder="Nama server..."
-                    className="text-xs"
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-semibold">{t('Deskripsi (Opsional)')}</label>
-                  <Input
-                    value={editHubDesc}
-                    onChange={(e) => setEditHubDesc(e.target.value)}
-                    placeholder="Deskripsi server..."
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setHubToEdit(null)}
-                >
-                  {t('Batal')}
-                </Button>
-                <Button type="submit">
-                  {t('Simpan Perubahan')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG: DELETE SERVER (Hub CRUD: Delete) */}
-        <Dialog open={!!hubToDelete} onOpenChange={(open) => !open && setHubToDelete(null)}>
-          <DialogContent className="sm:max-w-[400px]">
-            <DialogHeader>
-              <DialogTitle className="text-red-500">{t('Hapus Server?')}</DialogTitle>
-              <DialogDescription>
-                {t(
-                  'Apakah Anda yakin ingin menghapus server "{{name}}"? Semua channel dan riwayat pesan di server ini akan dihapus.',
-                  { name: hubToDelete?.name },
-                )}
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter className="mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setHubToDelete(null)}
-              >
-                {t('Batal')}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteHubConfirm}
-              >
-                {t('Hapus Server')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
+        {/* Delete Hub Dialog (Feature-First Component) */}
+        <DeleteHubDialog
+          hubToDelete={hubToDelete}
+          onClose={() => setHubToDelete(null)}
+          onDeleteConfirm={handleDeleteHubConfirm}
+          t={t}
+        />
 
         {/* ===== WEBHOOK INTEGRATION DIALOG (Feature-First Component) ===== */}
         <WebhookDialog
@@ -5737,438 +5295,60 @@ export function CommunityPage() {
           onCreateChannel={() => setIsCreateChannelOpen(true)}
         />
 
-        {/* DIALOG: BUAT CHANNEL BARU (Discord-Style: 3 Types + Private Toggle) */}
-        <Dialog open={isCreateChannelOpen} onOpenChange={setIsCreateChannelOpen}>
-          <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden bg-[#313338] border-[#232428] text-white">
-            <form onSubmit={handleCreateChannelSubmit} className="flex flex-col">
-              {/* Header */}
-              <div className="p-5 pb-3">
-                <DialogTitle className="text-xl font-bold text-white tracking-tight">
-                  {t('Create Channel')}
-                </DialogTitle>
-                <p className="text-xs text-[#949ba4] mt-0.5">
-                  in {newChannelCategory === 'CHANNELS' ? (activeHub?.name || 'Text Channels') : 'Direct Messages'}
-                </p>
-              </div>
+        {/* Create Channel Dialog (Feature-First Component) */}
+        <CreateChannelDialog
+          open={isCreateChannelOpen}
+          onOpenChange={setIsCreateChannelOpen}
+          activeHub={activeHub}
+          newChannelCategory={newChannelCategory}
+          newChannelType={newChannelType}
+          setNewChannelType={setNewChannelType}
+          newChannelName={newChannelName}
+          setNewChannelName={setNewChannelName}
+          newChannelIsPrivate={newChannelIsPrivate}
+          setNewChannelIsPrivate={setNewChannelIsPrivate}
+          onCreateChannelSubmit={handleCreateChannelSubmit}
+          t={t}
+        />
 
-              {/* Body */}
-              <div className="px-5 py-2 space-y-4 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]">
-                {/* 1. CHANNEL TYPE */}
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#b5bac1] block mb-2">
-                    {t('CHANNEL TYPE')}
-                  </label>
-                  <div className="space-y-2">
-                    {/* Option 1: Text */}
-                    <div
-                      onClick={() => setNewChannelType('text')}
-                      className={cn(
-                        'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border',
-                        newChannelType === 'text'
-                          ? 'bg-[#3b3e45] border-primary text-white'
-                          : 'bg-[#2b2d31] border-transparent hover:bg-[#35373c] text-[#dbdee1]',
-                      )}
-                    >
-                      {/* Radio dot */}
-                      <div className={cn(
-                        'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                        newChannelType === 'text' ? 'border-primary bg-primary text-primary-foreground' : 'border-[#80848e]',
-                      )}>
-                        {newChannelType === 'text' && <div className="w-2 h-2 rounded-full bg-white" />}
-                      </div>
-                      <Hash className="w-6 h-6 text-[#949ba4] shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white">Text</div>
-                        <div className="text-xs text-[#949ba4] leading-snug">
-                          Send messages, images, GIFs, emoji, opinions, and puns
-                        </div>
-                      </div>
-                    </div>
+        {/* Edit Channel Dialog (Feature-First Component) */}
+        <EditChannelDialog
+          channelToEdit={channelToEdit}
+          onClose={() => setChannelToEdit(null)}
+          editChannelType={editChannelType}
+          setEditChannelType={setEditChannelType}
+          editChannelName={editChannelName}
+          setEditChannelName={setEditChannelName}
+          editChannelDesc={editChannelDesc}
+          setEditChannelDesc={setEditChannelDesc}
+          onEditChannelSubmit={handleEditChannelSubmit}
+          t={t}
+        />
 
-                    {/* Option 2: Voice */}
-                    <div
-                      onClick={() => setNewChannelType('voice')}
-                      className={cn(
-                        'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border',
-                        newChannelType === 'voice'
-                          ? 'bg-[#3b3e45] border-primary text-white'
-                          : 'bg-[#2b2d31] border-transparent hover:bg-[#35373c] text-[#dbdee1]',
-                      )}
-                    >
-                      {/* Radio dot */}
-                      <div className={cn(
-                        'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                        newChannelType === 'voice' ? 'border-primary bg-primary text-primary-foreground' : 'border-[#80848e]',
-                      )}>
-                        {newChannelType === 'voice' && <div className="w-2 h-2 rounded-full bg-white" />}
-                      </div>
-                      <Volume2 className="w-6 h-6 text-[#949ba4] shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white">Voice</div>
-                        <div className="text-xs text-[#949ba4] leading-snug">
-                          Hang out together with voice, video, and screen share
-                        </div>
-                      </div>
-                    </div>
+        {/* Delete Channel Dialog (Feature-First Component) */}
+        <DeleteChannelDialog
+          channelToDelete={channelToDelete}
+          onClose={() => setChannelToDelete(null)}
+          onDeleteConfirm={handleDeleteChannelConfirm}
+          t={t}
+        />
 
-                    {/* Option 3: Forum */}
-                    <div
-                      onClick={() => setNewChannelType('forum')}
-                      className={cn(
-                        'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border',
-                        newChannelType === 'forum'
-                          ? 'bg-[#3b3e45] border-primary text-white'
-                          : 'bg-[#2b2d31] border-transparent hover:bg-[#35373c] text-[#dbdee1]',
-                      )}
-                    >
-                      {/* Radio dot */}
-                      <div className={cn(
-                        'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                        newChannelType === 'forum' ? 'border-primary bg-primary text-primary-foreground' : 'border-[#80848e]',
-                      )}>
-                        {newChannelType === 'forum' && <div className="w-2 h-2 rounded-full bg-white" />}
-                      </div>
-                      <MessagesSquare className="w-6 h-6 text-[#949ba4] shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white">Forum</div>
-                        <div className="text-xs text-[#949ba4] leading-snug">
-                          Create a space for organized discussions
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. CHANNEL NAME */}
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#b5bac1] block mb-2">
-                    {t('CHANNEL NAME')}
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#949ba4]">
-                      {newChannelType === 'text' && <Hash className="w-4 h-4" />}
-                      {newChannelType === 'voice' && <Volume2 className="w-4 h-4" />}
-                      {newChannelType === 'forum' && <MessagesSquare className="w-4 h-4" />}
-                    </div>
-                    <Input
-                      value={newChannelName}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setNewChannelName(newChannelType === 'voice' ? val : val.toLowerCase().replace(/\s+/g, '-'));
-                      }}
-                      placeholder="new-channel"
-                      className="pl-9 pr-9 bg-[#1e1f22] border-none text-white placeholder:text-[#80848e] rounded-md h-10 text-sm focus-visible:ring-1 focus-visible:ring-[#5865f2]"
-                      required
-                    />
-                    <Smile className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-[#949ba4] pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* 3. PRIVATE CHANNEL SWITCH */}
-                <div className="pt-2 border-t border-white/5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-start gap-2.5">
-                      <Lock className="w-4 h-4 text-white mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-sm font-semibold text-white flex items-center gap-1.5">
-                          Private Channel
-                        </div>
-                        <p className="text-xs text-[#949ba4] leading-snug">
-                          Only selected members and roles will be able to view this channel.
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={newChannelIsPrivate}
-                      onCheckedChange={setNewChannelIsPrivate}
-                      className="data-[state=checked]:bg-primary text-primary-foreground"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="px-5 py-3.5 bg-[#2b2d31] flex items-center justify-end gap-3 mt-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setIsCreateChannelOpen(false)}
-                  className="text-white hover:text-white hover:bg-white/10 text-xs font-semibold h-9 px-4"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!newChannelName.trim()}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-semibold h-9 px-5 rounded-md shadow-sm transition-all"
-                >
-                  Create Channel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG: EDIT CHANNEL (Channel CRUD: Update) */}
-        <Dialog open={!!channelToEdit} onOpenChange={(open) => !open && setChannelToEdit(null)}>
-          <DialogContent className="sm:max-w-[425px]">
-            <form onSubmit={handleEditChannelSubmit}>
-              <DialogHeader>
-                <DialogTitle>{t('Edit Channel')}</DialogTitle>
-                <DialogDescription>
-                  Perbarui nama dan deskripsi topik channel.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-semibold">{t('Tipe Channel')}</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditChannelType('text')}
-                      className={cn(
-                        'flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                        editChannelType === 'text'
-                          ? 'bg-primary/10 border-primary text-primary font-semibold'
-                          : 'border-border/60 text-muted-foreground hover:bg-muted/50'
-                      )}
-                    >
-                      <Hash className="w-4 h-4" />
-                      <span>Text</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditChannelType('voice')}
-                      className={cn(
-                        'flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                        editChannelType === 'voice'
-                          ? 'bg-primary/10 border-primary text-primary font-semibold'
-                          : 'border-border/60 text-muted-foreground hover:bg-muted/50'
-                      )}
-                    >
-                      <Volume2 className="w-4 h-4" />
-                      <span>Voice</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditChannelType('forum')}
-                      className={cn(
-                        'flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                        editChannelType === 'forum'
-                          ? 'bg-primary/10 border-primary text-primary font-semibold'
-                          : 'border-border/60 text-muted-foreground hover:bg-muted/50'
-                      )}
-                    >
-                      <MessagesSquare className="w-4 h-4" />
-                      <span>Forum</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-semibold">Nama Channel</label>
-                  <Input
-                    value={editChannelName}
-                    onChange={(e) => setEditChannelName(e.target.value)}
-                    className="text-xs"
-                    required
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-semibold">Deskripsi</label>
-                  <Input
-                    value={editChannelDesc}
-                    onChange={(e) => setEditChannelDesc(e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setChannelToEdit(null)}
-                >
-                  Batal
-                </Button>
-                <Button type="submit">
-                  Simpan Perubahan
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG: DELETE CHANNEL (Channel CRUD: Delete) */}
-        <Dialog open={!!channelToDelete} onOpenChange={(open) => !open && setChannelToDelete(null)}>
-          <DialogContent className="sm:max-w-[400px]">
-            <DialogHeader>
-              <DialogTitle className="text-red-500">{t('Hapus Channel?')}</DialogTitle>
-              <DialogDescription>
-                Apakah Anda yakin ingin menghapus channel #{channelToDelete?.name}? Semua pesan di dalamnya akan terhapus permanen.
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter className="mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setChannelToDelete(null)}
-              >
-                Batal
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteChannelConfirm}
-              >
-                Hapus Channel
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG: DM SEARCH (Discord-style "Find or start a conversation") */}
-        <Dialog open={isDmSearchOpen} onOpenChange={setIsDmSearchOpen}>
-          <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
-            <DialogHeader className="sr-only">
-              <DialogTitle>{t('Cari atau mulai percakapan')}</DialogTitle>
-              <DialogDescription>{t('Cari anggota atau channel untuk memulai percakapan.')}</DialogDescription>
-            </DialogHeader>
-
-            {/* Search Input */}
-            <div className="px-4 py-3 border-b border-border">
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={dmSearchQuery}
-                  onChange={(e) => setDmSearchQuery(e.target.value)}
-                  placeholder={t('Mau pergi ke mana?')}
-                  className="pl-9 text-sm bg-transparent border-none shadow-none focus-visible:ring-0 h-9"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            {/* Results */}
-            <div className="max-h-[320px] overflow-y-auto [scrollbar-width:thin]">
-              {(() => {
-                const q = dmSearchQuery.trim().toLowerCase();
-
-                // Existing DM channels
-                const filteredDms = dmChannels.filter((dm) =>
-                  !q || dm.name.toLowerCase().includes(q),
-                );
-
-                // Members not yet in DM (excluding self)
-                const filteredMembers = members.filter((m) => {
-                  if (m.id === currentUser?.id) return false;
-                  const hasDm = dmChannels.some((dm) => dm.id === `dm-${m.id}`);
-                  if (hasDm) return false;
-                  return !q || m.name.toLowerCase().includes(q);
-                });
-
-                const hasResults = filteredDms.length > 0 || filteredMembers.length > 0;
-
-                if (!hasResults) {
-                  return (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      {t('Tidak ada hasil ditemukan.')}
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="py-1">
-                    {/* Existing DM Channels */}
-                    {filteredDms.length > 0 && (
-                      <div>
-                        <div className="px-4 py-1.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">
-                          {t('Percakapan Sebelumnya')}
-                        </div>
-                        {filteredDms.map((dm) => {
-                          const member = members.find((m) => `dm-${m.id}` === dm.id);
-                          return (
-                            <button
-                              key={dm.id}
-                              onClick={() => {
-                                setActiveHubId('anticeil');
-                                setActiveChannelId(dm.id);
-                                setIsDmSearchOpen(false);
-                              }}
-                              className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent transition-colors"
-                            >
-                              {member ? (
-                                <CommunityAvatar
-                                  name={member.name}
-                                  imageUrl={member.avatar}
-                                  size={28}
-                                  status={member.status}
-                                  showStatus
-                                />
-                              ) : (
-                                <div className="size-7 rounded-full bg-muted flex items-center justify-center">
-                                  <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
-                                </div>
-                              )}
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-medium truncate text-foreground">{dm.name}</span>
-                                {member?.customStatus && (
-                                  <span className="text-[10px] text-muted-foreground truncate">{member.customStatus}</span>
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* New DM - members without existing conversation */}
-                    {filteredMembers.length > 0 && (
-                      <div>
-                        <div className="px-4 py-1.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">
-                          {t('Mulai Percakapan Baru')}
-                        </div>
-                        {filteredMembers.map((member) => (
-                          <button
-                            key={member.id}
-                            onClick={() => {
-                              handleStartDM(member);
-                              setIsDmSearchOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent transition-colors"
-                          >
-                            <CommunityAvatar
-                              name={member.name}
-                              imageUrl={member.avatar}
-                              size={28}
-                              status={member.status}
-                              showStatus
-                            />
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium truncate text-foreground">{member.name}</span>
-                              {member.customStatus && (
-                                <span className="text-[10px] text-muted-foreground truncate">{member.customStatus}</span>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Footer tip */}
-            <div className="px-4 py-2 border-t border-border">
-              <p className="text-[10px] text-muted-foreground">
-                <span className="text-primary font-semibold">Tip:</span> {t('Ketik nama anggota untuk mencari dan memulai percakapan langsung.')}
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* DM Search Dialog (Feature-First Component) */}
+        <DmSearchDialog
+          open={isDmSearchOpen}
+          onOpenChange={setIsDmSearchOpen}
+          dmSearchQuery={dmSearchQuery}
+          setDmSearchQuery={setDmSearchQuery}
+          dmChannels={dmChannels}
+          members={members}
+          currentUser={currentUser}
+          onSelectDmChannel={(channelId) => {
+            setActiveHubId('anticeil');
+            setActiveChannelId(channelId);
+          }}
+          onStartDM={handleStartDM}
+          t={t}
+        />
       </div>
     </TooltipProvider>
         {/* Hub Invite Dialog (Feature-First Component) */}
