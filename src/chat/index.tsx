@@ -196,70 +196,7 @@ export function CommunityPage() {
         loginUrl.searchParams.set('state', JSON.stringify(state));
         loginUrl.searchParams.set('prompt', 'select_account');
 
-        // Open popup window for seamless login without losing page context
-        const width = 500;
-        const height = 650;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        const popup = window.open(
-          loginUrl.toString(),
-          'anticeil_google_login',
-          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
-        );
-
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          // Fallback to direct redirect if popup blocked
-          window.location.href = loginUrl.toString();
-          return;
-        }
-
-        const handleMessage = async (event: MessageEvent) => {
-          if (event.data && event.data.code) {
-            window.removeEventListener('message', handleMessage);
-            try {
-              if (popup && !popup.closed) {
-                popup.close();
-              }
-            } catch {}
-            try {
-              toast.loading(t('Memverifikasi autentikasi...'), { id: 'google-oauth' });
-              const claimRes: any = await api.post('/v1/authn/federated/claim', {
-                providerName: 'google',
-                code: event.data.code,
-              });
-              if (claimRes && claimRes.token) {
-                localStorage.setItem('token', claimRes.token);
-                localStorage.setItem('ap_token', claimRes.token);
-                if (claimRes.projectId) {
-                  localStorage.setItem('projectId', claimRes.projectId);
-                }
-                window.dispatchEvent(new Event('storage'));
-
-                const jwt = parseJwt(claimRes.token) || {};
-                const rawImg = claimRes.imageUrl || claimRes.avatar || jwt.imageUrl;
-                const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
-                  ? rawImg
-                  : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
-                const formatted = {
-                  ...jwt,
-                  ...claimRes,
-                  name: `${claimRes.firstName || jwt.firstName || ''} ${claimRes.lastName || jwt.lastName || ''}`.trim() || claimRes.username || claimRes.email,
-                  avatar: validImg,
-                  imageUrl: validImg,
-                };
-                setCurrentUser(formatted);
-                localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
-                toast.success(t('Berhasil masuk!'), { id: 'google-oauth' });
-                setIsEditProfileOpen(false);
-                return;
-              }
-            } catch (claimErr) {
-              console.error('Claim failed:', claimErr);
-              toast.error(t('Gagal memverifikasi sesi login.'), { id: 'google-oauth' });
-            }
-          }
-        };
-        window.addEventListener('message', handleMessage);
+        window.location.href = loginUrl.toString();
         return;
       }
       throw new Error('No loginUrl returned');
@@ -271,7 +208,12 @@ export function CommunityPage() {
 
   const [currentUser, setCurrentUser] = useState<any>(() => {
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+      const urlToken = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null;
+      if (urlToken) {
+        localStorage.setItem('token', urlToken);
+        localStorage.setItem('ap_token', urlToken);
+      }
+      const token = urlToken || localStorage.getItem('token') || localStorage.getItem('ap_token');
       if (!token) return null;
       const stored = localStorage.getItem('anticeil_current_user');
       if (stored) {
@@ -303,6 +245,7 @@ export function CommunityPage() {
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('token');
       window.history.replaceState({}, document.title, cleanUrl.toString());
+      toast.success(t('Berhasil masuk!'));
     }
 
     const fetchLiveUser = async () => {
