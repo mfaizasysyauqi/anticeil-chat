@@ -86,7 +86,9 @@ import { HubRail } from '@/features/hubs';
 import { UserBottomDock } from '@/features/profile';
 import { FriendsView, type FriendRequest } from '@/features/friends';
 import { ChannelSettingsDialog } from '@/features/channels';
-import { ServerSettingsDialog } from '@/features/server-settings';
+import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
+import { WebhookDialog } from '@/features/webhooks';
+import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -661,25 +663,6 @@ export function CommunityPage() {
 
   // Webhook Integration Dialog (Discord-style incoming webhooks & IDs)
   const [isWebhookDialogOpen, setIsWebhookDialogOpen] = useState<boolean>(false);
-  const [isCopiedWebhook, setIsCopiedWebhook] = useState<boolean>(false);
-  const [isCopiedChannelId, setIsCopiedChannelId] = useState<boolean>(false);
-  const [isCopiedHubId, setIsCopiedHubId] = useState<boolean>(false);
-  const [isTestingWebhook, setIsTestingWebhook] = useState<boolean>(false);
-
-  // Server Settings full-page modal (Discord-style)
-  type ServerSettingsSection =
-    | 'profile'
-    | 'server-tag'
-    | 'engagement'
-    | 'boost'
-    | 'emoji'
-    | 'members'
-    | 'roles'
-    | 'invites'
-    | 'integrations'
-    | 'audit-log'
-    | 'bans'
-    | 'delete';
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
   const [serverSettingsSection, setServerSettingsSection] = useState<ServerSettingsSection>('profile');
   const serverIconQuickInputRef = useRef<HTMLInputElement | null>(null);
@@ -1480,17 +1463,15 @@ export function CommunityPage() {
     }
   };
 
-  // ── Create Thread Handler ───────────────────────────────────────────
-  const handleCreateThreadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeChannel || !newThreadName.trim()) return;
-    setIsSubmittingThread(true);
+  // ── Thread Handlers (Feature-First) ──────────────────────────────────
+  const handleCreateThread = async (name: string, initialMessage?: string) => {
+    if (!activeChannel) return;
     try {
       const created = await communityApi.createThread(activeChannel.id, {
-        name: newThreadName.trim(),
+        name,
         creatorName: currentUser?.firstName || currentUser?.email || 'You',
         creatorAvatar: currentUser?.imageUrl ?? null,
-        initialMessage: newThreadInitialMsg.trim() || undefined,
+        initialMessage,
       });
 
       setChannelThreads((prev) => [created, ...prev.filter((t) => t.id !== created.id)]);
@@ -1498,24 +1479,23 @@ export function CommunityPage() {
       setIsThreadDrawerOpen(true);
       setIsCreateThreadModalOpen(false);
       setIsThreadsPopoverOpen(false);
-      setNewThreadName('');
-      setNewThreadInitialMsg('');
       toast.success(`Thread #${created.name} berhasil dibuat! 🧵`);
     } catch (err) {
       console.error('Failed to create thread', err);
       toast.error('Gagal membuat thread');
-    } finally {
-      setIsSubmittingThread(false);
+      throw err;
     }
   };
 
-  // ── Send Thread Message Handler ──────────────────────────────────────
-  const handleSendThreadMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeThread || !threadInputText.trim() || !activeChannel) return;
-    const text = threadInputText.trim();
-    setThreadInputText('');
-
+  const handleSendThreadMessage = async (contentOrEvent?: string | React.FormEvent) => {
+    if (contentOrEvent && typeof contentOrEvent !== 'string') {
+      contentOrEvent.preventDefault();
+    }
+    const content = typeof contentOrEvent === 'string' ? contentOrEvent : threadInputText.trim();
+    if (!content || !activeThread || !activeChannel) return;
+    if (typeof contentOrEvent !== 'string') {
+      setThreadInputText('');
+    }
     const newMsg: CommunityMessage = {
       id: `msg_th_${Date.now()}`,
       channelId: activeChannel.id,
@@ -1525,7 +1505,7 @@ export function CommunityPage() {
       senderEmail: currentUser?.email || '',
       senderAvatar: currentUser?.imageUrl ?? null,
       senderRole: 'member',
-      content: text,
+      content,
       createdAt: new Date().toISOString(),
     };
 
@@ -1533,13 +1513,12 @@ export function CommunityPage() {
 
     try {
       const res = await communityApi.sendThreadMessage(activeThread.id, activeChannel.id, {
-        content: text,
+        content,
         senderName: currentUser?.firstName || currentUser?.email || 'You',
         senderAvatar: currentUser?.imageUrl ?? null,
       });
       if (res && res.id) {
         setThreadMessages((prev) => prev.map((m) => (m.id === newMsg.id ? res : m)));
-        // Update thread stats
         setActiveThread((prev) => (prev ? { ...prev, messageCount: (prev.messageCount || 0) + 1, lastMessageAt: new Date().toISOString() } : null));
         setChannelThreads((prev) =>
           prev.map((t) =>
@@ -5954,284 +5933,16 @@ export function CommunityPage() {
         </Dialog>
 
 
-        {/* DIALOG: INTEGRASI WEBHOOK & ID SALURAN (Ala Discord) */}
-        <Dialog open={isWebhookDialogOpen} onOpenChange={setIsWebhookDialogOpen}>
-          <DialogContent className="sm:max-w-[540px]">
-            {(() => {
-              const effectiveChannel = activeChannel || (hubChannels.length > 0 ? hubChannels[0] : null);
-              const serverId = activeHub?.id || 'anticeil';
-              const channelId = effectiveChannel?.id || '';
-              const channelName = effectiveChannel?.name || 'saluran';
-              const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://anticeil.com'}/api/v1/community/webhook?channelId=${channelId || 'general'}&hubId=${serverId}`;
-
-              return (
-                <>
-                  <DialogHeader>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                        <Webhook className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <DialogTitle className="text-base flex items-center gap-1.5">
-                          {t('Integrasi Webhook Bot')}
-                          {effectiveChannel && (
-                            <span className="text-muted-foreground font-normal text-xs">
-                              #{channelName}
-                            </span>
-                          )}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                          Hubungkan automasi Flow Builder atau bot eksternal ke saluran Anticeil Chat ini.
-                        </DialogDescription>
-                      </div>
-                    </div>
-                  </DialogHeader>
-
-                  <div className="space-y-4 py-2">
-                    {!effectiveChannel ? (
-                      /* Empty state: No channel in server */
-                      <div className="py-6 px-4 text-center rounded-lg border border-dashed border-border/80 bg-muted/20 space-y-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto">
-                          <Hash className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-foreground">Belum Ada Saluran di Server Ini</h4>
-                          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                            Webhook memerlukan channel target untuk menerima pesan. Buat saluran pertama Anda terlebih dahulu.
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setIsWebhookDialogOpen(false);
-                            setIsCreateChannelOpen(true);
-                          }}
-                          className="gap-1.5"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Buat Saluran Pertama
-                        </Button>
-
-                        <div className="pt-2 text-left border-t border-border/40">
-                          <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                            ID Server Saat Ini (Hub ID)
-                          </label>
-                          <div className="flex items-center gap-1.5">
-                            <Input
-                              readOnly
-                              value={serverId}
-                              className="font-mono text-[11px] bg-muted/40 select-all h-8"
-                            />
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-8 px-2 shrink-0"
-                              onClick={() => {
-                                navigator.clipboard.writeText(serverId);
-                                setIsCopiedHubId(true);
-                                setTimeout(() => setIsCopiedHubId(false), 2000);
-                              }}
-                            >
-                              {isCopiedHubId ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {/* Channel selector if server has multiple channels */}
-                        {hubChannels.length > 1 && (
-                          <div className="space-y-1">
-                            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                              <Hash className="w-3.5 h-3.5" />
-                              Pilih Saluran Target Webhook
-                            </label>
-                            <select
-                              value={channelId}
-                              onChange={(e) => setActiveChannelId(e.target.value)}
-                              className="w-full text-xs rounded-md border border-input bg-background px-3 py-1.5 font-medium focus:outline-none focus:ring-1 focus:ring-primary"
-                            >
-                              {hubChannels.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  #{c.name} {c.description ? `— ${c.description}` : ''}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
-                        {/* 1. Full Webhook URL */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold flex items-center justify-between">
-                            <span>URL Webhook Masuk</span>
-                            <Badge variant="outline" className="text-[10px] text-primary bg-primary/5">
-                              Otomatis
-                            </Badge>
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              readOnly
-                              value={webhookUrl}
-                              className="font-mono text-[11px] bg-muted/40 select-all"
-                            />
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant={isCopiedWebhook ? 'default' : 'outline'}
-                              className="shrink-0 h-9 px-3 gap-1.5 text-xs"
-                              onClick={() => {
-                                navigator.clipboard.writeText(webhookUrl);
-                                setIsCopiedWebhook(true);
-                                setTimeout(() => setIsCopiedWebhook(false), 2000);
-                              }}
-                            >
-                              {isCopiedWebhook ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-green-500" />
-                                  Tersalin
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  Salin URL
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground">
-                            Tempel URL ini pada field <strong>Webhook URL</strong> di Flow Builder atau piece Anticeil Chat.
-                          </p>
-                        </div>
-
-                        {/* 2. Direct IDs: Channel ID & Server/Hub ID */}
-                        <div className="grid grid-cols-2 gap-3 pt-1">
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-muted-foreground">
-                              ID Saluran (Channel ID)
-                            </label>
-                            <div className="flex items-center gap-1.5">
-                              <Input
-                                readOnly
-                                value={channelId}
-                                className="font-mono text-[11px] bg-muted/40 select-all h-8"
-                              />
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="h-8 px-2 shrink-0"
-                                onClick={() => {
-                                  if (channelId) {
-                                    navigator.clipboard.writeText(channelId);
-                                    setIsCopiedChannelId(true);
-                                    setTimeout(() => setIsCopiedChannelId(false), 2000);
-                                  }
-                                }}
-                              >
-                                {isCopiedChannelId ? (
-                                  <Check className="w-3 h-3 text-green-500" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-muted-foreground">
-                              ID Server (Hub ID)
-                            </label>
-                            <div className="flex items-center gap-1.5">
-                              <Input
-                                readOnly
-                                value={serverId}
-                                className="font-mono text-[11px] bg-muted/40 select-all h-8"
-                              />
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="h-8 px-2 shrink-0"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(serverId);
-                                  setIsCopiedHubId(true);
-                                  setTimeout(() => setIsCopiedHubId(false), 2000);
-                                }}
-                              >
-                                {isCopiedHubId ? (
-                                  <Check className="w-3 h-3 text-green-500" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 3. Testing Section */}
-                        <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs font-semibold flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-primary" />
-                              <span>Uji Coba Pengiriman Bot</span>
-                            </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="secondary"
-                              disabled={isTestingWebhook}
-                              onClick={async () => {
-                                setIsTestingWebhook(true);
-                                try {
-                                  await communityApi.testWebhook({
-                                    channelId,
-                                    channel: channelName,
-                                    hubId: serverId,
-                                    botName: 'Anticeil Ping Bot',
-                                    content: `👋 **Tes Webhook Berhasil!** Terkoneksi ke saluran **#${channelName}** (ID Server: \`${serverId}\`). Automasi Flow Builder Anda siap mengirim pesan ke sini! 🚀`,
-                                  });
-                                  toast.success(`Pesan tes bot berhasil dikirim ke #${channelName} 🚀`);
-                                } catch (err) {
-                                  console.error('Failed to test webhook', err);
-                                  toast.error('Gagal mengirim pesan tes webhook');
-                                } finally {
-                                  setIsTestingWebhook(false);
-                                }
-                              }}
-                              className="h-7 text-xs px-2.5 gap-1.5"
-                            >
-                              {isTestingWebhook ? (
-                                <Clock className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Send className="w-3 h-3" />
-                              )}
-                              {isTestingWebhook ? 'Mengirim...' : 'Kirim Pesan Tes'}
-                            </Button>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground">
-                            Kirim pesan simulasi bot langsung ke saluran <strong>#{channelName}</strong> untuk memastikan webhook terhubung.
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsWebhookDialogOpen(false)}
-                    >
-                      {t('Tutup')}
-                    </Button>
-                  </DialogFooter>
-                </>
-              );
-            })()}
-          </DialogContent>
-        </Dialog>
+        {/* ===== WEBHOOK INTEGRATION DIALOG (Feature-First Component) ===== */}
+        <WebhookDialog
+          isOpen={isWebhookDialogOpen}
+          onClose={() => setIsWebhookDialogOpen(false)}
+          activeChannel={activeChannel}
+          hubChannels={hubChannels}
+          activeHub={activeHub}
+          onSelectChannel={(chId) => setActiveChannelId(chId)}
+          onCreateChannel={() => setIsCreateChannelOpen(true)}
+        />
 
         {/* DIALOG: BUAT CHANNEL BARU (Discord-Style: 3 Types + Private Toggle) */}
         <Dialog open={isCreateChannelOpen} onOpenChange={setIsCreateChannelOpen}>
@@ -7099,170 +6810,23 @@ export function CommunityPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Create Thread Modal (Discord Style) */}
-        <Dialog open={isCreateThreadModalOpen} onOpenChange={setIsCreateThreadModalOpen}>
-          <DialogContent className="max-w-md bg-[#313338] border-none text-white shadow-2xl p-6">
-            <DialogHeader>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 text-primary flex items-center justify-center">
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
-                  </svg>
-                </div>
-                <DialogTitle className="text-lg font-bold text-white">Buat Thread Baru</DialogTitle>
-              </div>
-              <DialogDescription className="text-xs text-[#949ba4]">
-                Thread membuat percakapan terfokus pada topik tertentu dalam #{activeChannel?.name}.
-              </DialogDescription>
-            </DialogHeader>
+        {/* ===== CREATE THREAD MODAL (Feature-First Component) ===== */}
+        <CreateThreadModal
+          isOpen={isCreateThreadModalOpen}
+          onClose={() => setIsCreateThreadModalOpen(false)}
+          channelName={activeChannel?.name}
+          onCreateThread={handleCreateThread}
+        />
 
-            <form onSubmit={handleCreateThreadSubmit} className="space-y-4 mt-3">
-              <div>
-                <label className="text-[11px] font-bold text-[#b5bac1] uppercase tracking-wider block mb-1.5">
-                  NAMA THREAD <span className="text-red-400">*</span>
-                </label>
-                <Input
-                  type="text"
-                  placeholder="cth. diskusi-fitur-baru"
-                  value={newThreadName}
-                  onChange={(e) => setNewThreadName(e.target.value)}
-                  maxLength={100}
-                  required
-                  className="bg-[#1e1f22] border-none text-white placeholder:text-[#949ba4] focus-visible:ring-1 focus-visible:ring-[#5865f2]"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-[#b5bac1] uppercase tracking-wider block mb-1.5">
-                  PESAN AWAL (OPSIONAL)
-                </label>
-                <textarea
-                  placeholder="Kirim pesan pembuka untuk memulai thread..."
-                  value={newThreadInitialMsg}
-                  onChange={(e) => setNewThreadInitialMsg(e.target.value)}
-                  rows={3}
-                  className="w-full rounded-md bg-[#1e1f22] border-none text-white text-xs p-3 placeholder:text-[#949ba4] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#5865f2] resize-none"
-                />
-              </div>
-
-              <DialogFooter className="gap-2 sm:gap-0 pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCreateThreadModalOpen(false)}
-                  className="text-white hover:bg-white/5"
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!newThreadName.trim() || isSubmittingThread}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold font-medium cursor-pointer"
-                >
-                  {isSubmittingThread ? 'Membuat...' : 'Buat Thread'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Discord Thread Chat Drawer / Side-panel */}
-        <Sheet open={isThreadDrawerOpen} onOpenChange={setIsThreadDrawerOpen}>
-          <SheetContent side="right" className="w-[420px] sm:w-[460px] p-0 bg-[#313338] text-white border-l border-black/40 flex flex-col shadow-2xl">
-            {/* Thread Drawer Header */}
-            <div className="h-14 px-4 border-b border-black/30 flex items-center justify-between bg-[#2b2d31] shrink-0">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/40 text-primary flex items-center justify-center shrink-0">
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate">
-                    {activeThread?.name || 'Thread'}
-                  </h3>
-                  <p className="text-[11px] text-[#949ba4] truncate">
-                    Saluran #{activeChannel?.name}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsThreadDrawerOpen(false)}
-                className="w-7 h-7 rounded-md hover:bg-white/10 text-[#949ba4] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                title="Tutup Thread"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Thread Drawer Message List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Thread starter banner */}
-              <div className="p-3.5 rounded-xl bg-[#2b2d31]/80 border border-white/5 space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Awal dari Thread
-                </span>
-                <h4 className="text-sm font-bold text-white">{activeThread?.name}</h4>
-                <p className="text-xs text-[#949ba4]">
-                  Dibuat oleh <span className="text-white font-medium">{activeThread?.creatorName || 'Member'}</span> • Semua pesan di sini terhubung langsung ke database.
-                </p>
-              </div>
-
-              {threadMessages.length === 0 ? (
-                <div className="py-12 text-center text-xs text-[#949ba4]">
-                  Belum ada pesan di thread ini. Kirim pesan pertama Anda di bawah!
-                </div>
-              ) : (
-                threadMessages.map((tMsg) => (
-                  <div key={tMsg.id} className="flex gap-2.5 group">
-                    <CommunityAvatar
-                      name={tMsg.senderName}
-                      imageUrl={tMsg.senderAvatar}
-                      size={32}
-                      className="shrink-0 mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-white">{tMsg.senderName}</span>
-                        <span className="text-[10px] text-[#949ba4]">
-                          {dayjs(tMsg.createdAt).format('HH:mm')}
-                        </span>
-                      </div>
-                      <div className="text-xs text-[#dbdee1] mt-0.5 break-words">
-                        {renderFormattedMessage(tMsg.content)}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Thread Drawer Message Input */}
-            <div className="p-3 bg-card border-t border-border shrink-0">
-              <form onSubmit={handleSendThreadMessage} className="flex items-center gap-2">
-                <Input
-                  type="text"
-                  placeholder={`Kirim pesan ke #${activeThread?.name || 'thread'}...`}
-                  value={threadInputText}
-                  onChange={(e) => setThreadInputText(e.target.value)}
-                  className="flex-1 bg-muted/70 border border-border text-foreground placeholder:text-muted-foreground text-xs h-9 rounded-lg focus-visible:ring-1 focus-visible:ring-primary"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!threadInputText.trim()}
-                  className="h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shrink-0 cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </Button>
-              </form>
-            </div>
-          </SheetContent>
-        </Sheet>
+        {/* ===== THREAD DRAWER (Feature-First Component) ===== */}
+        <ThreadDrawer
+          isOpen={isThreadDrawerOpen}
+          onClose={() => setIsThreadDrawerOpen(false)}
+          activeThread={activeThread}
+          threadMessages={threadMessages}
+          onSendMessage={handleSendThreadMessage}
+          renderFormattedMessage={renderFormattedMessage}
+        />
 
         {/* Discord-style Channel Settings Dialog (Screenshot 5) */}
         <ChannelSettingsDialog
