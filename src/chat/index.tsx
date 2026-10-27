@@ -306,8 +306,8 @@ export function CommunityPage() {
         const googleUser = {
           name: currentUser?.name || 'Muhammad Faiz Asy Syauqi',
           email: currentUser?.email?.includes('@') ? currentUser.email : 'mfaizasysyauqi@gmail.com',
-          avatar: 'https://lh3.googleusercontent.com/a/ACg8ocIq8ZJ7w7kX',
-          imageUrl: 'https://lh3.googleusercontent.com/a/ACg8ocIq8ZJ7w7kX',
+          avatar: 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
+          imageUrl: 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
           provider: 'google',
           isGoogleLinked: true,
         };
@@ -327,9 +327,18 @@ export function CommunityPage() {
     );
   };
   const [currentUser, setCurrentUser] = useState<any>(() => {
+    const realDefaultAvatar = 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
     try {
       const stored = localStorage.getItem('anticeil_current_user');
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (parsed.imageUrl?.includes('unsplash.com') || parsed.avatar?.includes('unsplash.com') || parsed.imageUrl?.includes('53994a69daeb') || !parsed.imageUrl)) {
+          parsed.imageUrl = realDefaultAvatar;
+          parsed.avatar = realDefaultAvatar;
+          localStorage.setItem('anticeil_current_user', JSON.stringify(parsed));
+        }
+        return parsed;
+      }
     } catch {}
     return {
       id: 'user_faiz',
@@ -337,9 +346,9 @@ export function CommunityPage() {
       firstName: 'Muhammad Faiz',
       lastName: 'Asy Syauqi',
       username: 'mfaizasysyauqi',
-      email: 'faiz@anticeil.com',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-      imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      email: 'mfaizasysyauqi@gmail.com',
+      avatar: realDefaultAvatar,
+      imageUrl: realDefaultAvatar,
       platformRole: 'ADMIN',
       usernameUpdatedAt: new Date().toISOString(),
     };
@@ -359,11 +368,16 @@ export function CommunityPage() {
     const fetchLiveUser = async () => {
       try {
         const user = await api.get('/v1/users/me');
-        if (user && user.id) {
+        if (user && (user.id || user.email)) {
+          const rawImg = user.imageUrl || user.avatar;
+          const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
+            ? rawImg
+            : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
           const formatted = {
             ...user,
-            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
-            imageUrl: user.imageUrl || user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email,
+            avatar: validImg,
+            imageUrl: validImg,
           };
           setCurrentUser(formatted);
           localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
@@ -2256,7 +2270,7 @@ export function CommunityPage() {
   const renderChannelsSidebarContent = (onItemClick?: () => void) => (
     <div className="flex flex-col h-full bg-sidebar select-none flex-1 min-w-0 overflow-hidden">
       {/* Header: Different for Home (DMs) vs Server (Channels) */}
-      <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center font-semibold shadow-2xs shrink-0 bg-sidebar z-10`}>
+      <div className="h-12 border-b border-sidebar-border px-2 flex items-center font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
         {isHome ? (
           /* Home: Discord-style search bar "Find or start a conversation" */
           <button
@@ -2268,7 +2282,7 @@ export function CommunityPage() {
           </button>
         ) : (
           /* Server: Title + dropdown with channel/server actions */
-          <div className="flex items-center justify-between w-full">
+          <div className="w-full">
             <input
               type="file"
               ref={serverIconQuickInputRef}
@@ -2306,23 +2320,26 @@ export function CommunityPage() {
               accept="image/*"
               className="hidden"
             />
-            <div className="flex items-center gap-2 min-w-0">
-              {activeHub?.iconUrl ? (
-                <img
-                  src={activeHub.iconUrl}
-                  alt={activeHub.name}
-                  className="w-5 h-5 rounded-[6px] object-cover shrink-0 border border-white/10"
-                />
-              ) : null}
-              <span className="text-sm font-semibold truncate tracking-tight text-foreground">
-                {activeHub?.name || t('Server')}
-              </span>
-            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                  <ChevronDown className="w-4 h-4" />
-                </Button>
+                <button
+                  type="button"
+                  className="w-full h-8 px-2 flex items-center justify-between rounded-md hover:bg-sidebar-accent/60 transition-colors cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-sidebar-ring group"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    {activeHub?.iconUrl ? (
+                      <img
+                        src={activeHub.iconUrl}
+                        alt={activeHub.name}
+                        className="w-5 h-5 rounded-[6px] object-cover shrink-0 border border-white/10"
+                      />
+                    ) : null}
+                    <span className="text-sm font-semibold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">
+                      {activeHub?.name || t('Server')}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0 ml-1 transition-colors" />
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
                 {/* Server Picture Action */}
@@ -4124,7 +4141,7 @@ export function CommunityPage() {
           {/* Messages Feed (SCROLLABLE CONVERSATION) */}
           <div className={`flex-1 min-h-0 overflow-y-auto ${CHANNEL_HORIZONTAL_PADDING} py-4 space-y-4 [scrollbar-width:thin]`}>
             {!activeChannel ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-24 text-center px-4">
+              <div className="flex-1 flex flex-col items-center justify-center py-24 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border/60 flex items-center justify-center text-muted-foreground mb-4">
                   <Hash className="w-8 h-8 opacity-60" />
                 </div>
