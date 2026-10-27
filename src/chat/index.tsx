@@ -92,6 +92,7 @@ import {
   EditChannelDialog,
   DeleteChannelDialog,
   DmSearchDialog,
+  ChannelTopHeaderBar,
 } from '@/features/channels';
 import { ServerMembersSidebar } from '@/features/members';
 import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
@@ -3495,357 +3496,39 @@ export function CommunityPage() {
           renderFriendsMainPage()
         ) : (
           <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
-          {/* Channel Top Header Bar: NON-SCROLLABLE APP BAR (Hidden during full stage call or in voice channel like Discord) */}
+          {/* Channel Top Header Bar (Feature-First Component) */}
           {!( (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ) && (
-          <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-background z-10`}>
-            <div className="flex items-center gap-2 min-w-0">
-              {/* Burger Menu Button (Visible only on Mobile: md:hidden) */}
-              <button
-                type="button"
-                onClick={() => setIsMobileChannelsOpen(true)}
-                className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
-                title={t('Buka Menu Sidebar')}
-                aria-label={t('Buka Menu Sidebar')}
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-
-              {activeChannel?.category === 'DIRECT MESSAGES' || activeChannel?.isDirectMessage ? (
-                <span className="text-muted-foreground font-bold text-base shrink-0 select-none">@</span>
-              ) : activeChannel?.type === 'voice' ? (
-                <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
-              ) : activeChannel?.type === 'forum' ? (
-                <MessagesSquare className="w-5 h-5 text-muted-foreground shrink-0" />
-              ) : (
-                <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
-              )}
-              <span className="text-sm font-semibold truncate text-foreground flex items-center gap-1.5">
-                {activeChannel ? activeChannel.name : t('Belum ada channel')}
-                {activeChannel?.isPrivate && (
-                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" /> Private
-                  </span>
-                )}
-              </span>
-
-              {activeChannel?.description && (
-                <>
-                  <Separator orientation="vertical" className="h-4 hidden sm:block mx-1" />
-                  <span className="text-xs text-muted-foreground truncate hidden sm:block max-w-[400px]">
-                    {activeChannel.description}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Top Bar Actions: Exactly Discord Signature (Threads, Bell, Pin, Member List, Search) */}
-            <div className="flex items-center gap-2">
-              {/* 1. Threads Popover (Screenshot 3) */}
-              <Popover open={isThreadsPopoverOpen} onOpenChange={setIsThreadsPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 transition-colors cursor-pointer",
-                      isThreadsPopoverOpen ? "text-white bg-white/10" : "text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5"
-                    )}
-                    title="Threads"
-                  >
-                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                      <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
-                    </svg>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="bottom"
-                  align="end"
-                  sideOffset={8}
-                  className="w-[440px] max-w-[95vw] h-[480px] p-0 bg-[#111214] border border-[#2b2d31] text-[#dbdee1] shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
-                >
-                  {/* Header */}
-                  <div className="p-3.5 border-b border-white/10 flex items-center gap-2.5 bg-[#18191c]">
-                    <div className="flex items-center gap-2 shrink-0">
-                      <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
-                        <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
-                      </svg>
-                      <span className="font-bold text-white text-sm">Threads</span>
-                    </div>
-
-                    {/* Search */}
-                    <div className="relative flex-1">
-                      <Search className="w-3.5 h-3.5 text-[#949ba4] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        type="text"
-                        value={threadSearchQuery}
-                        onChange={(e) => setThreadSearchQuery(e.target.value)}
-                        placeholder="Search for Thread Name"
-                        className="w-full bg-[#1e1f22] border border-[#35373c] focus:border-primary rounded-lg pl-8 pr-2.5 py-1 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
-                      />
-                    </div>
-
-                    {/* Create Thread button */}
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateThreadModalOpen(true)}
-                      className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-bold rounded-lg transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
-                    >
-                      Create
-                    </button>
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex-1 flex flex-col overflow-y-auto [scrollbar-width:thin]">
-                    {channelThreads.filter(t => !threadSearchQuery || t.name.toLowerCase().includes(threadSearchQuery.toLowerCase())).length === 0 ? (
-                      /* Empty State (Exact matching Screenshot 3) */
-                      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                        {/* 3 button speech bubble graphics with thread loops */}
-                        <div className="relative w-44 h-32 mb-4 flex items-center justify-center">
-                          {/* Thread button speech bubble 1 (Left Blue) */}
-                          <div className="absolute left-3 top-3 w-16 h-16 rounded-full bg-gradient-to-br from-[#5865f2] to-[#404eed] border-2 border-[#7983f5] shadow-lg flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-full border-2 border-dashed border-cyan-300 flex items-center justify-center">
-                              <span className="text-cyan-200 text-xs font-bold">~</span>
-                            </div>
-                          </div>
-                          {/* Thread button speech bubble 2 (Right Purple) */}
-                          <div className="absolute right-4 top-2 w-16 h-16 rounded-full bg-gradient-to-br from-[#7983f5] to-[#5865f2] border-2 border-cyan-400 shadow-lg flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-full border-2 border-dashed border-cyan-300 flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">~</span>
-                            </div>
-                          </div>
-                          {/* Thread button speech bubble 3 (Center Bottom Magenta) */}
-                          <div className="absolute bottom-1 w-20 h-16 rounded-3xl bg-gradient-to-br from-[#9b59b6] to-[#8e44ad] border-2 border-pink-400 shadow-xl flex items-center justify-center z-10">
-                            <div className="w-10 h-7 rounded-2xl border-2 border-cyan-300 flex items-center justify-center">
-                              <span className="text-cyan-200 text-sm font-bold">🧵</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <h3 className="text-lg font-black text-white mb-2">There are no threads.</h3>
-                        <p className="text-xs text-[#949ba4] max-w-xs mb-6 leading-relaxed">
-                          Stay focused on a conversation with a thread - a temporary text channel.
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsCreateThreadModalOpen(true)}
-                          className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold font-bold text-xs rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer"
-                        >
-                          Create Thread
-                        </button>
-                      </div>
-                    ) : (
-                      /* Thread List */
-                      <div className="p-3 space-y-1.5">
-                        {channelThreads.filter(t => !threadSearchQuery || t.name.toLowerCase().includes(threadSearchQuery.toLowerCase())).map((th) => (
-                          <button
-                            key={th.id}
-                            type="button"
-                            onClick={() => {
-                              setActiveThread(th);
-                              setIsThreadDrawerOpen(true);
-                              setIsThreadsPopoverOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#1e1f22]/70 hover:bg-[#2b2d31] border border-white/5 hover:border-white/10 transition-all text-left cursor-pointer group"
-                          >
-                            <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/40 text-primary flex items-center justify-center shrink-0">
-                              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                                <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
-                              </svg>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs font-bold text-white group-hover:text-primary transition-colors truncate">
-                                  {th.name}
-                                </span>
-                                <span className="text-[10px] text-[#949ba4] shrink-0 font-mono">
-                                  {dayjs(th.lastMessageAt).fromNow()}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-[#949ba4]">
-                                <span>Oleh {th.creatorName}</span>
-                                <span>•</span>
-                                <span className="bg-white/10 px-1.5 py-0.2 rounded-full font-mono text-[9px]">
-                                  {th.messageCount || 1} pesan
-                                </span>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {/* 2. Notification Settings (Dropdown matching Screenshot 2) */}
-              <DropdownMenu open={isNotificationDropdownOpen} onOpenChange={setIsNotificationDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 transition-colors cursor-pointer",
-                      channelNotification.isMuted
-                        ? "text-red-400 hover:text-red-300"
-                        : isNotificationDropdownOpen
-                        ? "text-white bg-white/10"
-                        : "text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5"
-                    )}
-                    title={channelNotification.isMuted ? "Channel Muted" : "Notification Settings"}
-                  >
-                    <Bell className="w-5 h-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="bottom"
-                  align="end"
-                  sideOffset={8}
-                  className="w-[240px] bg-[#111214] border border-[#2b2d31] text-[#dbdee1] rounded-2xl p-2 shadow-2xl z-50"
-                >
-                  {/* Mute Channel with Submenu */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg hover:bg-[#2b2d31] hover:text-white cursor-pointer transition-colors">
-                      <span className={channelNotification.isMuted ? "text-red-400" : ""}>
-                        {channelNotification.isMuted ? "Saluran Dibisukan" : "Mute Channel"}
-                      </span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-[180px] bg-[#111214] border border-[#2b2d31] text-[#dbdee1] rounded-xl p-1 shadow-2xl">
-                      {channelNotification.isMuted ? (
-                        <DropdownMenuItem
-                          onClick={() => handleUpdateNotification(undefined, false, null)}
-                          className="px-3 py-2 text-xs font-medium rounded-lg hover:bg-[#2b2d31] text-emerald-400 cursor-pointer"
-                        >
-                          Bunyikan Saluran (Unmute)
-                        </DropdownMenuItem>
-                      ) : (
-                        [
-                          { label: 'Until I turn it back on', duration: null },
-                          { label: 'For 15 minutes', duration: '15m' },
-                          { label: 'For 1 Hour', duration: '1h' },
-                          { label: 'For 3 Hours', duration: '3h' },
-                          { label: 'For 8 Hours', duration: '8h' },
-                          { label: 'For 24 Hours', duration: '24h' },
-                        ].map((item) => (
-                          <DropdownMenuItem
-                            key={item.label}
-                            onClick={() => handleUpdateNotification(undefined, true, item.duration)}
-                            className="px-3 py-2 text-xs font-medium rounded-lg hover:bg-[#2b2d31] hover:text-white cursor-pointer"
-                          >
-                            {item.label}
-                          </DropdownMenuItem>
-                        ))
-                      )}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-
-                  <DropdownMenuSeparator className="my-1.5 bg-white/10" />
-
-                  {/* Radio Items */}
-                  <div className="space-y-1">
-                    {[
-                      {
-                        key: 'default',
-                        title: 'Use Category Default',
-                        subtitle: 'All Messages',
-                      },
-                      {
-                        key: 'all',
-                        title: 'All Messages',
-                      },
-                      {
-                        key: 'mentions',
-                        title: 'Only @mentions',
-                      },
-                      {
-                        key: 'nothing',
-                        title: 'Nothing',
-                      },
-                    ].map((opt) => {
-                      const isSelected = (channelNotification.level || 'default') === opt.key;
-                      return (
-                        <button
-                          key={opt.key}
-                          type="button"
-                          onClick={() => handleUpdateNotification(opt.key as any)}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#2b2d31] transition-colors text-left cursor-pointer group"
-                        >
-                          <div>
-                            <span className="text-xs font-bold text-white block">
-                              {opt.title}
-                            </span>
-                            {opt.subtitle && (
-                              <span className="text-[10px] text-[#949ba4] block">
-                                {opt.subtitle}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Radio Dot */}
-                          <div className={cn(
-                            "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                            isSelected ? "border-primary bg-primary text-primary-foreground" : "border-[#4e5058] group-hover:border-[#949ba4]"
-                          )}>
-                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* 3. Pinned Messages (Feature-First Reusable Popover) */}
-              <PinnedMessagesPopover
-                isOpen={isPinnedPopoverOpen}
-                onOpenChange={setIsPinnedPopoverOpen}
-                pinnedMessages={pinnedMessages}
-                onJumpToMessage={handleJumpToMessage}
-                onTogglePin={handleTogglePin}
-              />
-
-              {/* 4. Member List Toggle (Users) */}
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      if (window.innerWidth < 1024) {
-                        setIsMobileMembersOpen(true);
-                      } else {
-                        setShowMemberList(!showMemberList);
-                      }
-                    }}
-                    className={cn(
-                      'h-8 w-8 transition-colors cursor-pointer hover:bg-white/5',
-                      showMemberList ? 'text-white' : 'text-[#b5bac1] hover:text-[#dbdee1]',
-                    )}
-                    title={isHome ? 'Daftar Teman' : 'Daftar Anggota'}
-                  >
-                    <Users className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-                  {showMemberList ? 'Sembunyikan Daftar Anggota' : 'Tampilkan Daftar Anggota'}
-                </TooltipContent>
-              </Tooltip>
-
-
-
-              {/* 6. Search Box (Theme aware) */}
-              <div className="relative w-36 sm:w-40 transition-all duration-200 focus-within:w-56">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={activeChannel?.name ? `Search ${activeChannel.name}` : 'Search'}
-                  className="h-6 w-full pl-2.5 pr-7 text-xs bg-muted/60 border border-border rounded-[4px] text-foreground placeholder:text-muted-foreground focus:outline-none transition-all"
-                />
-                <Search className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-          </div>
+            <ChannelTopHeaderBar
+              activeChannel={activeChannel}
+              channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
+              isHome={isHome}
+              onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
+              isThreadsPopoverOpen={isThreadsPopoverOpen}
+              setIsThreadsPopoverOpen={setIsThreadsPopoverOpen}
+              channelThreads={channelThreads}
+              threadSearchQuery={threadSearchQuery}
+              setThreadSearchQuery={setThreadSearchQuery}
+              onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
+              onSelectThread={(th) => {
+                setActiveThread(th as any);
+                setIsThreadDrawerOpen(true);
+              }}
+              isNotificationDropdownOpen={isNotificationDropdownOpen}
+              setIsNotificationDropdownOpen={setIsNotificationDropdownOpen}
+              channelNotification={channelNotification}
+              onUpdateNotification={handleUpdateNotification}
+              isPinnedPopoverOpen={isPinnedPopoverOpen}
+              setIsPinnedPopoverOpen={setIsPinnedPopoverOpen}
+              pinnedMessages={pinnedMessages}
+              onJumpToMessage={handleJumpToMessage}
+              onTogglePin={handleTogglePin}
+              showMemberList={showMemberList}
+              setShowMemberList={setShowMemberList}
+              onOpenMobileMembers={() => setIsMobileMembersOpen(true)}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              t={t}
+            />
           )}
 
           {/* Call Stage (automatically displays when active on this channel, or when it is a voice channel, and not PiP) */}

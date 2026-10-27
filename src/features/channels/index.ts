@@ -4,3 +4,5 @@ export * from './components/create-channel-dialog';
 export * from './components/edit-channel-dialog';
 export * from './components/delete-channel-dialog';
 export * from './components/dm-search-dialog';
+export * from './components/channel-notification-dropdown';
+export * from './components/channel-top-header-bar';
