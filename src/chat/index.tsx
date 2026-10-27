@@ -475,10 +475,8 @@ export function CommunityPage() {
   const [userNotFound, setUserNotFound] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Edit Profile dialog state (Display Name & Username with 14-day cooldown)
+  // Edit Profile dialog state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [editDisplayNameInput, setEditDisplayNameInput] = useState('');
-  const [editUsernameInput, setEditUsernameInput] = useState('');
 
   // DM Search Dialog (Discord-style "Find or start a conversation")
   const [isDmSearchOpen, setIsDmSearchOpen] = useState(false);
@@ -1424,14 +1422,6 @@ export function CommunityPage() {
     }
   };
 
-  // Cooldown calculation for username change (14 days / 2 weeks)
-  const usernameCooldownDays = 14;
-  const usernameLastUpdated = currentUser?.usernameUpdatedAt ? new Date(currentUser.usernameUpdatedAt) : null;
-  const usernameCooldownEnd = usernameLastUpdated
-    ? new Date(usernameLastUpdated.getTime() + usernameCooldownDays * 24 * 60 * 60 * 1000)
-    : null;
-  const isUsernameCooldownActive = usernameCooldownEnd ? new Date() < usernameCooldownEnd : false;
-
   const updateNameMutation = userMutations.useUpdateName({
     onSuccess: (data: any) => {
       userHooks.invalidateCurrentUser(queryClient);
@@ -1451,18 +1441,8 @@ export function CommunityPage() {
     },
   });
 
-  const handleSaveDisplayName = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleaned = editDisplayNameInput.trim();
-    if (!cleaned) {
-      toast.error(t('Nama tampilan tidak boleh kosong.'));
-      return;
-    }
-    updateNameMutation.mutate({ name: cleaned });
-  };
-
   const updateUsernameMutation = userMutations.useUpdateUsername({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       userHooks.invalidateCurrentUser(queryClient);
       toast.success(t(`Username berhasil diperbarui menjadi @${data.username}! 🎉`));
     },
@@ -1471,20 +1451,6 @@ export function CommunityPage() {
       toast.error(msg);
     },
   });
-
-  const handleSaveUsername = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleaned = editUsernameInput.trim().replace(/^@/, '').toLowerCase();
-    if (cleaned.length < 3 || cleaned.length > 32) {
-      toast.error(t('Username harus antara 3 hingga 32 karakter.'));
-      return;
-    }
-    if (!/^[a-z0-9_]+$/.test(cleaned)) {
-      toast.error(t('Username hanya boleh menggunakan huruf kecil, angka, dan garis bawah (_).'));
-      return;
-    }
-    updateUsernameMutation.mutate(cleaned);
-  };
 
   // Create Server / Hub (Discord style Server CRUD)
   const handleCreateHubSubmit = async (e: React.FormEvent) => {
@@ -1945,12 +1911,7 @@ export function CommunityPage() {
       setIsMuted={setIsMuted}
       isDeafened={isDeafened}
       setIsDeafened={setIsDeafened}
-      onOpenEditProfile={() => {
-        const fallback = currentUser?.email ? currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') : '';
-        setEditDisplayNameInput(currentUserName);
-        setEditUsernameInput(currentUser?.username || fallback);
-        setIsEditProfileOpen(true);
-      }}
+      onOpenEditProfile={() => setIsEditProfileOpen(true)}
       onLogout={handleLogout}
       activeCallChannelId={activeCallChannelId}
       activeCallChannelName={channels.find((c) => c.id === activeCallChannelId)?.name}
