@@ -1903,7 +1903,7 @@ export function CommunityPage() {
       onOpenEditHub={() => setHubToEdit(activeHub)}
       onOpenDeleteHub={() => setHubToDelete(activeHub)}
       setIsCallPiP={setIsCallPiP}
-      userBottomDock={renderUserBottomDock()}
+      userBottomDock={null}
       t={t}
     />
   );
@@ -1971,19 +1971,23 @@ export function CommunityPage() {
     >
       <TooltipProvider delayDuration={200}>
       <div className="flex h-full w-full overflow-hidden bg-background">
-        {/* DESKTOP & TABLET DISCORD HUB / SERVER MINI RAIL */}
-        <div className="hidden md:flex flex-col h-full shrink-0 select-none">
-          {renderDiscordHubRail()}
-        </div>
-
-        {/* DESKTOP & TABLET CHANNELS SIDEBAR (Resizable sidebar directly beside the fixed Mini Rail) */}
+        {/* DESKTOP & TABLET COMBINED LEFT COLUMN (Mini Rail + Channels Sidebar + Bottom Dock across both) */}
         <div
           className="hidden md:flex flex-col h-full shrink-0 border-r border-sidebar-border bg-sidebar select-none relative group/sidebar"
-          style={{ width: `${sidebarWidth}px` }}
+          style={{ width: `${56 + sidebarWidth}px` }}
         >
-          <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
-            {renderChannelsSidebarContent()}
+          {/* Top/Middle Area: Mini Rail on left + Channels Sidebar on right */}
+          <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+            <div className="w-14 shrink-0 h-full flex flex-col">
+              {renderDiscordHubRail()}
+            </div>
+            <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
+              {renderChannelsSidebarContent()}
+            </div>
           </div>
+
+          {/* Bottom Dock: Spans across the entire left area including Mini Rail */}
+          {renderUserBottomDock()}
 
           {/* DISCORD-STYLE RESIZE HANDLE ON RIGHT BORDER */}
           <div
@@ -2001,18 +2005,22 @@ export function CommunityPage() {
           />
         </div>
 
-        {/* MOBILE CHANNELS DRAWER */}
+        {/* MOBILE & TABLET CHANNELS DRAWER */}
         <Sheet open={isMobileChannelsOpen} onOpenChange={setIsMobileChannelsOpen}>
           <SheetContent side="left" className={cn("p-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border", LAYOUT_SIZES.DRAWER_WIDTH)}>
             <SheetHeader className="sr-only">
               <SheetTitle>{t('Navigasi Channel & Hub')}</SheetTitle>
             </SheetHeader>
             <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-              {renderDiscordHubRail()}
-              <div className="flex-1 flex flex-col h-full min-w-0">
+              <div className="w-14 shrink-0 h-full flex flex-col">
+                {renderDiscordHubRail()}
+              </div>
+              <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
                 {renderChannelsSidebarContent(() => setIsMobileChannelsOpen(false))}
               </div>
             </div>
+            {/* Bottom Dock: Spans full drawer width including Mini Rail */}
+            {renderUserBottomDock()}
           </SheetContent>
         </Sheet>
 
