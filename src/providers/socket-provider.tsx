@@ -40,22 +40,33 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
 
-    // Try reading token from localStorage or cookies
-    const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
-    const projectId = localStorage.getItem('projectId') || 'default';
+    const syncConnection = () => {
+      const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+      const projectId = localStorage.getItem('projectId') || 'default';
 
-    if (token) {
-      socket.auth = {
-        token,
-        projectId,
-      };
-    }
+      if (token) {
+        socket.auth = {
+          token,
+          projectId,
+        };
+        if (!socket.connected) {
+          socket.connect();
+        }
+      } else {
+        if (socket.connected) {
+          socket.disconnect();
+        }
+        setIsConnected(false);
+      }
+    };
 
-    socket.connect();
+    syncConnection();
+    window.addEventListener('storage', syncConnection);
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      window.removeEventListener('storage', syncConnection);
       socket.disconnect();
     };
   }, []);

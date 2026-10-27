@@ -19,6 +19,7 @@ dayjs.extend(relativeTime);
 import { useTranslation } from '@/core/i18n';
 import { useTheme } from '@/core/theme';
 import { useResponsive, LAYOUT_SIZES } from '@/core';
+import { parseJwt } from '@/lib/utils';
 import {
   ServerRail,
   ServerInviteDialog,
@@ -176,6 +177,7 @@ export function CommunityPage() {
     localStorage.removeItem('current_platform');
     sessionStorage.clear();
     setCurrentUser(null);
+    window.dispatchEvent(new Event('storage'));
     toast.success(t('Berhasil keluar dari akun.'));
   };
 
@@ -215,7 +217,9 @@ export function CommunityPage() {
           if (event.data && event.data.code) {
             window.removeEventListener('message', handleMessage);
             try {
-              popup.close();
+              if (popup && !popup.closed) {
+                popup.close();
+              }
             } catch {}
             try {
               toast.loading(t('Memverifikasi autentikasi...'), { id: 'google-oauth' });
@@ -226,22 +230,26 @@ export function CommunityPage() {
               if (claimRes && claimRes.token) {
                 localStorage.setItem('token', claimRes.token);
                 localStorage.setItem('ap_token', claimRes.token);
-                toast.success(t('Berhasil masuk!'), { id: 'google-oauth' });
-                const user = await api.get('/v1/users/me');
-                if (user && (user.id || user.email)) {
-                  const rawImg = user.imageUrl || user.avatar;
-                  const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
-                    ? rawImg
-                    : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
-                  const formatted = {
-                    ...user,
-                    name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email,
-                    avatar: validImg,
-                    imageUrl: validImg,
-                  };
-                  setCurrentUser(formatted);
-                  localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+                if (claimRes.projectId) {
+                  localStorage.setItem('projectId', claimRes.projectId);
                 }
+                window.dispatchEvent(new Event('storage'));
+
+                const jwt = parseJwt(claimRes.token) || {};
+                const rawImg = claimRes.imageUrl || claimRes.avatar || jwt.imageUrl;
+                const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
+                  ? rawImg
+                  : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
+                const formatted = {
+                  ...jwt,
+                  ...claimRes,
+                  name: `${claimRes.firstName || jwt.firstName || ''} ${claimRes.lastName || jwt.lastName || ''}`.trim() || claimRes.username || claimRes.email,
+                  avatar: validImg,
+                  imageUrl: validImg,
+                };
+                setCurrentUser(formatted);
+                localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+                toast.success(t('Berhasil masuk!'), { id: 'google-oauth' });
                 setIsEditProfileOpen(false);
                 return;
               }
@@ -264,12 +272,22 @@ export function CommunityPage() {
   const [currentUser, setCurrentUser] = useState<any>(() => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+      if (!token) return null;
       const stored = localStorage.getItem('anticeil_current_user');
-      if (token && stored) {
+      if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed && (parsed.id || parsed.email)) {
           return parsed;
         }
+      }
+      const jwt = parseJwt(token);
+      if (jwt && (jwt.id || jwt.email)) {
+        return {
+          ...jwt,
+          name: `${jwt.firstName || ''} ${jwt.lastName || ''}`.trim() || jwt.username || jwt.email,
+          avatar: jwt.imageUrl || 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
+          imageUrl: jwt.imageUrl || 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
+        };
       }
     } catch {}
     return null;
@@ -281,6 +299,7 @@ export function CommunityPage() {
     if (tokenFromUrl) {
       localStorage.setItem('token', tokenFromUrl);
       localStorage.setItem('ap_token', tokenFromUrl);
+      window.dispatchEvent(new Event('storage'));
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('token');
       window.history.replaceState({}, document.title, cleanUrl.toString());
@@ -292,27 +311,29 @@ export function CommunityPage() {
         setCurrentUser(null);
         return;
       }
+      const payload = parseJwt(token);
+      if (!payload || !payload.id) {
+        return;
+      }
       try {
-        const user = await api.get('/v1/users/me');
+        const user = await api.get(`/v1/users/${payload.id}`);
         if (user && (user.id || user.email)) {
-          const rawImg = user.imageUrl || user.avatar;
+          const rawImg = user.imageUrl || user.avatar || payload.imageUrl;
           const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
             ? rawImg
             : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
           const formatted = {
+            ...payload,
             ...user,
-            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email,
+            name: `${user.firstName || payload.firstName || ''} ${user.lastName || payload.lastName || ''}`.trim() || user.username || user.email,
             avatar: validImg,
             imageUrl: validImg,
           };
           setCurrentUser(formatted);
           localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
-        } else {
-          setCurrentUser(null);
-          localStorage.removeItem('anticeil_current_user');
         }
       } catch (err) {
-        setCurrentUser(null);
+        // Fallback to token payload
       }
     };
     fetchLiveUser();
