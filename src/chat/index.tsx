@@ -190,6 +190,7 @@ export function CommunityPage() {
         const state = {
           providerName: 'google',
           from: window.location.href,
+          activepiecesLogin: 'true',
           login: 'true',
         };
         const loginUrl = new URL(res.loginUrl);
@@ -246,6 +247,52 @@ export function CommunityPage() {
       cleanUrl.searchParams.delete('token');
       window.history.replaceState({}, document.title, cleanUrl.toString());
       toast.success(t('Berhasil masuk!'));
+    }
+
+    const codeFromUrl = params.get('code');
+    if (codeFromUrl) {
+      const claimCode = async () => {
+        try {
+          toast.loading(t('Memverifikasi autentikasi...'), { id: 'oauth-claim' });
+          const claimRes: any = await api.post('/v1/authn/federated/claim', {
+            providerName: 'google',
+            code: codeFromUrl,
+          });
+          if (claimRes && claimRes.token) {
+            localStorage.setItem('token', claimRes.token);
+            localStorage.setItem('ap_token', claimRes.token);
+            if (claimRes.projectId) {
+              localStorage.setItem('projectId', claimRes.projectId);
+            }
+            window.dispatchEvent(new Event('storage'));
+
+            const jwt = parseJwt(claimRes.token) || {};
+            const rawImg = claimRes.imageUrl || claimRes.avatar || jwt.imageUrl;
+            const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
+              ? rawImg
+              : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
+            const formatted = {
+              ...jwt,
+              ...claimRes,
+              name: `${claimRes.firstName || jwt.firstName || ''} ${claimRes.lastName || jwt.lastName || ''}`.trim() || claimRes.username || claimRes.email,
+              avatar: validImg,
+              imageUrl: validImg,
+            };
+            setCurrentUser(formatted);
+            localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+            toast.success(t('Berhasil masuk!'), { id: 'oauth-claim' });
+
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('code');
+            cleanUrl.searchParams.delete('state');
+            window.history.replaceState({}, document.title, cleanUrl.toString());
+          }
+        } catch (err) {
+          console.error('Failed to claim auth code:', err);
+          toast.error(t('Gagal memverifikasi sesi login.'), { id: 'oauth-claim' });
+        }
+      };
+      claimCode();
     }
 
     const fetchLiveUser = async () => {
