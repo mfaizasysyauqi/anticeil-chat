@@ -50,7 +50,7 @@ export function UserBottomDock({
             width: '298px',
             height: activeCallChannelId ? '106px' : '60px',
             background:
-              'linear-gradient(to top, #000000 0%, color-mix(in srgb, #000000 75%, transparent) 55%, transparent 100%)',
+              'linear-gradient(to top, var(--sidebar-background) 0%, color-mix(in srgb, var(--sidebar-background) 80%, transparent) 60%, transparent 100%)',
           }}
         />
       )}
@@ -100,7 +100,7 @@ export function UserBottomDock({
         <div className="w-full h-[52px] px-2 py-1.5 rounded-[12px] bg-card border border-border shadow-2xl backdrop-blur-md flex items-center justify-between">
           <div
             onClick={onOpenEditProfile}
-            className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-white/5 cursor-pointer transition-colors group/user"
+            className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-muted/60 cursor-pointer transition-colors group/user"
             title={t('Ubah nama tampilan atau username')}
           >
             <CommunityAvatar
@@ -131,7 +131,7 @@ export function UserBottomDock({
             <button
               type="button"
               onClick={() => setIsMuted(!isMuted)}
-              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-md cursor-pointer transition-colors"
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors"
               title={isMuted ? t('Bunyikan') : t('Bisu')}
             >
               {isMuted ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5" />}
@@ -139,7 +139,7 @@ export function UserBottomDock({
             <button
               type="button"
               onClick={() => setIsDeafened(!isDeafened)}
-              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-md cursor-pointer transition-colors"
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors"
               title={isDeafened ? t('Batal Tulikan') : t('Tulikan')}
             >
               <Headphones className={cn('w-3.5 h-3.5', isDeafened && 'text-red-400')} />
@@ -147,7 +147,7 @@ export function UserBottomDock({
             <button
               type="button"
               onClick={onOpenEditProfile}
-              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-md cursor-pointer transition-colors"
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors"
               title={t('Pengaturan Akun')}
             >
               <Settings className="w-3.5 h-3.5" />

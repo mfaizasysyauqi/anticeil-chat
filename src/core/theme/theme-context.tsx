@@ -31,7 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'midnight' ? 'dark' : theme === 'dark' ? 'light' : 'midnight');
+    setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'midnight' : 'light');
   };
 
   useEffect(() => {
@@ -56,33 +56,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', '#f4f4f5');
       root.style.setProperty('--accent-foreground', '#18181b');
       root.style.setProperty('--input', '#ffffff');
-      // Anticeil Secondary: Hijau Emerald / Teal (#0d9488 / #059669)
+      // Anticeil Secondary: Hijau Emerald / Teal (#0d9488)
       root.style.setProperty('--secondary', '#0d9488');
       root.style.setProperty('--secondary-foreground', '#ffffff');
-      // Anticeil Primary: Kuning Anticeil (#f59e0b / #d97706)
+      // Anticeil Primary: Kuning Anticeil (#f59e0b)
       root.style.setProperty('--primary', '43 96% 46%');
       root.style.setProperty('--primary-foreground', '0 0% 0%');
       root.style.setProperty('--primary-100', '43 96% 90%');
       root.style.setProperty('--primary-300', '43 96% 65%');
       root.style.setProperty('--ring', '#f59e0b');
     } else if (theme === 'dark') {
+      // Classic Discord Dark (#313338 / #2b2d31)
       root.classList.add('dark', 'theme-dark');
-      root.style.setProperty('--background', '#18181b');
-      root.style.setProperty('--foreground', '#f4f4f5');
-      root.style.setProperty('--card', '#27272a');
-      root.style.setProperty('--card-foreground', '#f4f4f5');
-      root.style.setProperty('--popover', '#27272a');
-      root.style.setProperty('--popover-foreground', '#f4f4f5');
-      root.style.setProperty('--sidebar-background', '#121215');
-      root.style.setProperty('--sidebar-foreground', '#f4f4f5');
+      root.style.setProperty('--background', '#313338');
+      root.style.setProperty('--foreground', '#dbdee1');
+      root.style.setProperty('--card', '#2b2d31');
+      root.style.setProperty('--card-foreground', '#f2f3f5');
+      root.style.setProperty('--popover', '#2b2d31');
+      root.style.setProperty('--popover-foreground', '#dbdee1');
+      root.style.setProperty('--sidebar-background', '#2b2d31');
+      root.style.setProperty('--sidebar-foreground', '#dbdee1');
       root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.08)');
-      root.style.setProperty('--sidebar-accent', '#27272a');
+      root.style.setProperty('--sidebar-accent', '#35373c');
       root.style.setProperty('--border', 'rgba(255, 255, 255, 0.08)');
-      root.style.setProperty('--muted', '#27272a');
-      root.style.setProperty('--muted-foreground', '#a1a1aa');
-      root.style.setProperty('--accent', '#3f3f46');
+      root.style.setProperty('--muted', '#383a40');
+      root.style.setProperty('--muted-foreground', '#949ba4');
+      root.style.setProperty('--accent', '#35373c');
       root.style.setProperty('--accent-foreground', '#ffffff');
-      root.style.setProperty('--input', '#27272a');
+      root.style.setProperty('--input', '#383a40');
       // Anticeil Secondary: Hijau Teal (#14b8a6)
       root.style.setProperty('--secondary', '#0f766e');
       root.style.setProperty('--secondary-foreground', '#ffffff');

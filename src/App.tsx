@@ -11,9 +11,7 @@ function AppContent() {
 
   return (
     <div
-      className={`w-screen h-screen overflow-hidden flex flex-col font-sans select-none antialiased ${
-        theme === 'light' ? 'bg-white text-zinc-900' : 'bg-black text-foreground'
-      }`}
+      className="w-screen h-screen overflow-hidden flex flex-col font-sans select-none antialiased bg-background text-foreground"
     >
       <Routes>
         <Route path="/" element={<CommunityPage />} />

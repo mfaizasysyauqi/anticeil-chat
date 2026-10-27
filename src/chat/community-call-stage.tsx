@@ -1965,18 +1965,18 @@ export function CommunityCallStage({
 
   // ── Render Full Discord Stage View ────────────────────────────────────
   return (
-    <div className="w-full h-full flex-1 min-h-0 flex flex-col bg-[#111214] text-white select-none relative overflow-hidden group/stage">
+    <div className="w-full h-full flex-1 min-h-0 flex flex-col bg-background text-foreground select-none relative overflow-hidden group/stage">
       {/* ── Discord Top Stage App Bar (Exact Match to Discord UI) ────────── */}
-      <div className={cn("h-12 w-full flex items-center justify-between bg-[#111214] border-b border-transparent select-none shrink-0 z-20", CHANNEL_HORIZONTAL_PADDING)}>
+      <div className={cn("h-12 w-full flex items-center justify-between bg-background border-b border-border/40 select-none shrink-0 z-20", CHANNEL_HORIZONTAL_PADDING)}>
         {/* Left: Speaker icon + Channel Name + (Activity Tag if active) */}
         <div className="flex items-center gap-2 min-w-0">
-          <Volume2 className="w-5 h-5 text-[#949ba4] shrink-0" />
-          <span className="text-sm font-bold text-white truncate max-w-[140px] sm:max-w-[200px]">
+          <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
+          <span className="text-sm font-bold text-foreground truncate max-w-[140px] sm:max-w-[200px]">
             {channel.name}
           </span>
           {activeAppId !== null && currentActiveApp && (
             <>
-              <span className="text-[#949ba4] text-xs select-none">·</span>
+              <span className="text-muted-foreground text-xs select-none">·</span>
               <div className="flex items-center gap-1.5 min-w-0">
                 {activeAppId === 'watch-together' ? (
                   <div className="w-4 h-4 rounded bg-[#ff0000] flex items-center justify-center text-white shrink-0 shadow-xs">
@@ -1987,7 +1987,7 @@ export function CommunityCallStage({
                     <currentActiveApp.icon className="w-2.5 h-2.5" />
                   </div>
                 )}
-                <span className="text-sm font-bold text-[#dbdee1] truncate max-w-[180px]">
+                <span className="text-sm font-bold text-foreground truncate max-w-[180px]">
                   {currentActiveApp.title}
                 </span>
               </div>
@@ -2000,7 +2000,7 @@ export function CommunityCallStage({
           {/* Member Avatars */}
           <div className="flex items-center -space-x-1.5 overflow-hidden">
             {participants.slice(0, 3).map((p) => (
-              <div key={p.socketId} title={p.userName} className="ring-2 ring-[#111214] rounded-full overflow-hidden">
+              <div key={p.socketId} title={p.userName} className="ring-2 ring-background rounded-full overflow-hidden">
                 <CommunityAvatar
                   name={p.userName}
                   imageUrl={p.userAvatar}
@@ -2009,7 +2009,7 @@ export function CommunityCallStage({
                 />
               </div>
             ))}
-            <div title={`${currentUserName} (Anda)`} className="ring-2 ring-[#111214] rounded-full overflow-hidden">
+            <div title={`${currentUserName} (Anda)`} className="ring-2 ring-background rounded-full overflow-hidden">
               <CommunityAvatar
                 name={currentUserName}
                 imageUrl={currentUser?.imageUrl}
@@ -3246,7 +3246,7 @@ export function CommunityCallStage({
           >
             {/* LOCAL PARTICIPANT TILE (Fixed 16:9 Landscape Rectangle like Discord) */}
             <div
-              className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl overflow-hidden flex items-center justify-center transition-all bg-[#2b2d31] border border-white/5 shadow-2xl group"
+              className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl overflow-hidden flex items-center justify-center transition-all bg-card border border-border/60 shadow-xl group"
             >
               {!isVideoOff && localStream && localStream.getVideoTracks().some((t) => t.readyState === 'live' && t.enabled) ? (
                 <LocalVideoView stream={localStream} />
@@ -3257,8 +3257,8 @@ export function CommunityCallStage({
                       className={cn(
                         'w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 overflow-hidden',
                         isSpeakingLocal
-                          ? 'ring-4 ring-emerald-500 ring-offset-4 ring-offset-[#2b2d31] scale-105'
-                          : 'ring-2 ring-white/10',
+                          ? 'ring-4 ring-emerald-500 ring-offset-4 ring-offset-background scale-105'
+                          : 'ring-2 ring-border',
                       )}
                     >
                       <CommunityAvatar
@@ -3278,13 +3278,13 @@ export function CommunityCallStage({
               )}
 
               {/* Status Pill Bottom-Left */}
-              <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-xs flex items-center gap-2 text-xs font-semibold text-white border border-white/10 z-10">
+              <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-card/85 backdrop-blur-xs flex items-center gap-2 text-xs font-semibold text-foreground border border-border/60 z-10 shadow-xs">
                 <span className="truncate max-w-[140px]">{currentUserName}</span>
                 {isMuted && <MicOff className="w-3.5 h-3.5 text-red-400" />}
               </div>
 
               {isScreenSharing && (
-                <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded bg-primary text-[10px] font-bold text-primary-foreground flex items-center gap-1 z-10">
+                <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded bg-primary text-[10px] font-bold text-primary-foreground flex items-center gap-1 z-10 shadow-xs">
                   <Monitor className="w-3 h-3" /> Berbagi Layar
                 </div>
               )}
@@ -3292,10 +3292,10 @@ export function CommunityCallStage({
 
             {/* SOLO PROMPT CARD (Fixed 16:9 Landscape Rectangle with Turtle, Trophy, Gem + Invite / Activity) */}
             {participants.length === 0 && (
-              <div className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl bg-gradient-to-br from-[#180f24] via-[#120a1d] to-[#0a0512] border border-white/5 overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-2xl">
+              <div className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl bg-card border border-border/60 overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-xl">
                 {/* Discord Activity Illustration: Purple Turtle, Star Trophy, Green Polyhedron */}
                 <div className="relative mb-5 flex items-center justify-center">
-                  <div className="w-28 h-28 rounded-full bg-purple-600/15 blur-2xl absolute -inset-2" />
+                  <div className="w-28 h-28 rounded-full bg-primary/10 blur-2xl absolute -inset-2" />
                   <div className="relative flex items-center justify-center gap-3">
                     <span className="text-4xl sm:text-5xl filter drop-shadow-2xl hover:scale-110 transition-transform cursor-default select-none">
                       🐢
@@ -3309,19 +3309,19 @@ export function CommunityCallStage({
                   </div>
                 </div>
 
-                {/* 2 Discord Buttons: Invite to Voice & Choose Activity */}
+                {/* 2 Buttons: Invite to Voice & Choose Activity */}
                 <div className="flex flex-wrap items-center justify-center gap-3 w-full max-w-sm">
                   <button
                     onClick={handleCopyCallLink}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2b2d31] hover:bg-[#35373c] text-white text-xs font-semibold transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer border border-white/5"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer border border-border/60"
                   >
-                    <UserPlus className="w-4 h-4 text-[#dbdee1]" />
+                    <UserPlus className="w-4 h-4 text-muted-foreground" />
                     <span>Invite to Voice</span>
                   </button>
 
                   <button
                     onClick={() => setIsAppLauncherOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752c4] text-white text-xs font-semibold transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                       <path d="M7 3a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm-10 10a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" />
@@ -3336,7 +3336,7 @@ export function CommunityCallStage({
             {participants.map((peer) => (
               <div
                 key={peer.socketId}
-                className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl bg-[#2b2d31] border border-white/5 overflow-hidden flex items-center justify-center shadow-2xl group transition-all"
+                className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl bg-card border border-border/60 overflow-hidden flex items-center justify-center shadow-xl group transition-all"
               >
                 {peer.stream && peer.hasVideo && peer.stream.getVideoTracks().some((t) => t.readyState === 'live') ? (
                   <RemoteVideoView stream={peer.stream} isMuted={false} />
@@ -3347,8 +3347,8 @@ export function CommunityCallStage({
                         className={cn(
                           'w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 overflow-hidden',
                           peer.isSpeaking
-                            ? 'ring-4 ring-emerald-500 ring-offset-4 ring-offset-[#2b2d31] scale-105'
-                            : 'ring-2 ring-white/10',
+                            ? 'ring-4 ring-emerald-500 ring-offset-4 ring-offset-background scale-105'
+                            : 'ring-2 ring-border',
                         )}
                       >
                         <CommunityAvatar
@@ -3364,7 +3364,7 @@ export function CommunityCallStage({
                       )}
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-sm sm:text-base font-bold text-white tracking-wide">{peer.userName}</span>
+                      <span className="text-sm sm:text-base font-bold text-foreground tracking-wide">{peer.userName}</span>
                       <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                         {!peer.hasAudio ? <MicOff className="w-3 h-3 text-red-400" /> : <Mic className="w-3 h-3 text-emerald-400" />}
                         {!peer.hasAudio ? 'Muted' : 'Tersambung'}
@@ -3373,7 +3373,7 @@ export function CommunityCallStage({
                   </div>
                 )}
 
-                <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs flex items-center gap-2 text-xs font-semibold text-white border border-white/10 z-10">
+                <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-card/85 backdrop-blur-xs flex items-center gap-2 text-xs font-semibold text-foreground border border-border/60 z-10 shadow-xs">
                   <span className="truncate max-w-[140px]">{peer.userName}</span>
                   {!peer.hasAudio ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5 text-emerald-400" />}
                 </div>
@@ -3390,7 +3390,7 @@ export function CommunityCallStage({
       )}
 
       {/* ── Discord Bottom Control Dock (Exact Match to Discord UI) ────────── */}
-      <div className={cn("h-16 shrink-0 w-full flex items-center justify-between bg-[#111214] border-t border-transparent select-none z-20", CHANNEL_HORIZONTAL_PADDING)}>
+      <div className={cn("h-16 shrink-0 w-full flex items-center justify-between bg-background border-t border-border/40 select-none z-20", CHANNEL_HORIZONTAL_PADDING)}>
         {/* Left: Invite Friends / Add to Call */}
         <div className="flex items-center">
           <TooltipProvider delayDuration={150}>
@@ -3399,7 +3399,7 @@ export function CommunityCallStage({
                 <button
                   type="button"
                   onClick={() => setIsInviteVoiceOpen(true)}
-                  className="h-10 w-10 rounded-lg text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center"
+                  className="h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center"
                 >
                   <UserPlus className="w-5 h-5" />
                 </button>
@@ -3414,7 +3414,7 @@ export function CommunityCallStage({
         {/* Center: Controls Pill Group with Strict Consistent h-11 Height */}
         <div className="flex items-center gap-3">
           {/* Pill 1: Audio & Video Controls (Exact h-11, matching other containers) */}
-          <div className="h-11 bg-[#1e1f22] rounded-xl flex items-center px-1 border border-white/5 shadow-md">
+          <div className="h-11 bg-card rounded-xl flex items-center px-1 border border-border/60 shadow-md">
             {/* Mic Toggle Button */}
             <TooltipProvider delayDuration={150}>
               <Tooltip>
@@ -3424,15 +3424,15 @@ export function CommunityCallStage({
                     onClick={handleToggleMute}
                     className={cn(
                       'h-9 flex items-center gap-2 px-3 rounded-lg transition-colors cursor-pointer text-sm font-medium',
-                      isMuted ? 'hover:bg-red-500/10' : 'hover:bg-white/10',
+                      isMuted ? 'hover:bg-red-500/10' : 'hover:bg-muted/60',
                     )}
                   >
                     {isMuted ? (
                       <MicOff className="w-5 h-5 text-red-500" />
                     ) : (
-                      <Mic className="w-5 h-5 text-white" />
+                      <Mic className="w-5 h-5 text-foreground" />
                     )}
-                    <ChevronDown className="w-4 h-4 text-[#949ba4]" />
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-semibold">
@@ -3450,15 +3450,15 @@ export function CommunityCallStage({
                     onClick={handleToggleVideo}
                     className={cn(
                       'h-9 flex items-center gap-2 px-3 rounded-lg transition-colors cursor-pointer text-sm font-medium',
-                      isVideoOff ? 'hover:bg-red-500/10' : 'hover:bg-white/10',
+                      isVideoOff ? 'hover:bg-red-500/10' : 'hover:bg-muted/60',
                     )}
                   >
                     {isVideoOff ? (
                       <VideoOff className="w-5 h-5 text-red-500" />
                     ) : (
-                      <Video className="w-5 h-5 text-white" />
+                      <Video className="w-5 h-5 text-foreground" />
                     )}
-                    <ChevronDown className="w-4 h-4 text-[#949ba4]" />
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-semibold">
@@ -3469,7 +3469,7 @@ export function CommunityCallStage({
           </div>
 
           {/* Pill 2: Media, Activities & Extra Actions (Exact h-11, matching other containers) */}
-          <div className="h-11 bg-[#1e1f22] rounded-xl flex items-center px-1 gap-1 border border-white/5 shadow-md">
+          <div className="h-11 bg-card rounded-xl flex items-center px-1 gap-1 border border-border/60 shadow-md">
             {/* Screen Share Button */}
             <TooltipProvider delayDuration={150}>
               <Tooltip>
@@ -3480,8 +3480,8 @@ export function CommunityCallStage({
                     className={cn(
                       'h-9 w-10 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
                       isScreenSharing
-                        ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30'
-                        : 'text-white hover:bg-white/10',
+                        ? 'bg-emerald-600/20 text-emerald-500 hover:bg-emerald-600/30'
+                        : 'text-foreground hover:bg-muted/60',
                     )}
                   >
                     {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
@@ -3503,13 +3503,13 @@ export function CommunityCallStage({
                     className={cn(
                       'h-9 w-10 flex items-center justify-center rounded-lg transition-colors cursor-pointer relative',
                       activeAppId !== null
-                        ? 'bg-[#233f38] text-emerald-400 hover:bg-[#2c4e46]'
-                        : 'text-white hover:bg-white/10',
+                        ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30'
+                        : 'text-foreground hover:bg-muted/60',
                     )}
                   >
                     <Shapes className="w-5 h-5" />
                     {activeAppId !== null && (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[#1e1f22]" />
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-card" />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -3528,7 +3528,7 @@ export function CommunityCallStage({
                   <button
                     type="button"
                     onClick={() => toast.info('Fitur Soundboard & Efek Suara Discord')}
-                    className="h-9 w-10 flex items-center justify-center rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    className="h-9 w-10 flex items-center justify-center rounded-lg text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                   >
                     <Sparkles className="w-5 h-5" />
                   </button>
@@ -3546,7 +3546,7 @@ export function CommunityCallStage({
                   <button
                     type="button"
                     onClick={handleCopyCallLink}
-                    className="h-9 w-10 flex items-center justify-center rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    className="h-9 w-10 flex items-center justify-center rounded-lg text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                   >
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
@@ -3565,12 +3565,12 @@ export function CommunityCallStage({
                 <button
                   type="button"
                   onClick={onEndCall}
-                  className="h-11 px-5 rounded-xl bg-[#da373c] hover:bg-[#a1282c] text-white flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95"
+                  className="h-11 px-5 rounded-xl bg-destructive hover:bg-destructive/90 text-white flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95"
                 >
                   <PhoneOff className="w-5 h-5" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs font-bold text-red-400">
+              <TooltipContent side="top" className="text-xs font-bold text-destructive">
                 Putus Panggilan
               </TooltipContent>
             </Tooltip>
@@ -3586,7 +3586,7 @@ export function CommunityCallStage({
                 <button
                   type="button"
                   onClick={onTogglePiP}
-                  className="h-10 w-10 rounded-lg text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center"
+                  className="h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center"
                 >
                   <ExternalLink className="w-5 h-5" />
                 </button>
@@ -3604,7 +3604,7 @@ export function CommunityCallStage({
                 <button
                   type="button"
                   onClick={handleToggleFullscreen}
-                  className="h-10 w-10 rounded-lg text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center"
+                  className="h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center"
                 >
                   <Maximize className="w-5 h-5" />
                 </button>
