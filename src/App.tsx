@@ -12,7 +12,7 @@ export default function App() {
   return (
     <SocketProvider>
       <BrowserRouter>
-        <div className="dark w-screen h-screen overflow-hidden bg-[#313338] text-foreground flex flex-col font-sans select-none antialiased">
+        <div className="dark w-screen h-screen overflow-hidden bg-[#000000] text-foreground flex flex-col font-sans select-none antialiased">
           <Routes>
             <Route path="/" element={<CommunityPage />} />
             <Route path="/channels/:hubId?/:channelId?" element={<CommunityPage />} />

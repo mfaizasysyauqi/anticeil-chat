@@ -9,26 +9,26 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #313338;
+  background-color: #000000;
   color: #dbdee1;
 }
 
 :root,
 .dark {
-  --background: #313338;
+  --background: #000000;
   --foreground: #dbdee1;
-  --popover: #2b2d31;
+  --popover: #0b0b0e;
   --popover-foreground: #dbdee1;
-  --card: #2b2d31;
+  --card: #0b0b0e;
   --card-foreground: #f2f3f5;
-  --muted: #2b2d31;
+  --muted: #111214;
   --muted-foreground: #949ba4;
-  --secondary: #2b2d31;
+  --secondary: #111214;
   --secondary-foreground: #dbdee1;
-  --accent: #35373c;
+  --accent: #1e1f22;
   --accent-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: #1e1f22;
+  --border: rgba(255, 255, 255, 0.04);
+  --input: #111214;
   --ring: #5865f2;
   --radius: 0.5rem;
 
@@ -42,9 +42,10 @@ body,
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 100%;
 
-  --sidebar-background: #1e1f22;
+  --sidebar-background: #000000;
   --sidebar-foreground: #dbdee1;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-border: rgba(255, 255, 255, 0.04);
+  --sidebar-accent: #111214;
 }
 
 

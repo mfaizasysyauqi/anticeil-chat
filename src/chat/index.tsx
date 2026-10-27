@@ -2213,7 +2213,7 @@ export function CommunityPage() {
     const otherHubs = hubs.slice(1);
 
     return (
-      <div className="w-14 shrink-0 bg-[#1e1f22] border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
+      <div className="w-14 shrink-0 bg-[#000000] border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
         {/* Top Hub (Workspace / Home) - Exactly h-14 to align with top bar */}
         {mainHub && (
           <div className="h-14 w-14 shrink-0 flex items-center justify-center relative group">
@@ -2354,7 +2354,7 @@ export function CommunityPage() {
           /* Home: Discord-style search bar "Find or start a conversation" */
           <button
             onClick={() => { setIsDmSearchOpen(true); setDmSearchQuery(''); }}
-            className="w-full h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-sidebar-accent/80 hover:bg-sidebar-accent text-muted-foreground text-[11px] transition-colors cursor-pointer"
+            className="w-full h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-[#111214] hover:bg-[#1e1f22] text-[#949ba4] text-[11px] transition-colors cursor-pointer border border-transparent"
           >
             <Search className="w-3 h-3 shrink-0 opacity-60" />
             <span className="truncate">{t('Cari atau mulai percakapan...')}</span>
@@ -3065,7 +3065,7 @@ export function CommunityPage() {
             width: '298px',
             height: activeCallChannelId ? '106px' : '60px',
             background:
-              'linear-gradient(to top, var(--sidebar-background, #141414) 0%, color-mix(in srgb, var(--sidebar-background, #141414) 75%, transparent) 55%, transparent 100%)',
+              'linear-gradient(to top, #000000 0%, color-mix(in srgb, #000000 75%, transparent) 55%, transparent 100%)',
           }}
         />
       )}
@@ -3078,7 +3078,7 @@ export function CommunityPage() {
         )}
       >
         {activeCallChannelId && (
-          <div className="mb-1.5 px-3 py-1.5 rounded-[10px] bg-[#111214] border border-sidebar-border shadow-2xl backdrop-blur-md flex items-center justify-between animate-in slide-in-from-bottom-2">
+          <div className="mb-1.5 px-3 py-1.5 rounded-[10px] bg-[#000000] border border-sidebar-border shadow-2xl backdrop-blur-md flex items-center justify-between animate-in slide-in-from-bottom-2">
             <div className="flex items-center gap-2 min-w-0">
               <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse shrink-0" />
               <div className="flex flex-col min-w-0">
@@ -3115,7 +3115,7 @@ export function CommunityPage() {
             </div>
           </div>
         )}
-        <div className="w-full h-[52px] px-2 py-1.5 rounded-[12px] bg-[#111214] border border-white/10 shadow-2xl backdrop-blur-md flex items-center justify-between">
+        <div className="w-full h-[52px] px-2 py-1.5 rounded-[12px] bg-[#000000] border border-white/5 shadow-2xl backdrop-blur-md flex items-center justify-between">
           <div
             onClick={() => {
               const fallback = currentUser?.email ? currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') : '';
@@ -3271,9 +3271,9 @@ export function CommunityPage() {
   // Component: Discord-Style Friends Main Page (rendered in the primary content area)
   const renderFriendsMainPage = () => {
     return (
-      <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-background/50 overflow-hidden">
+      <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-[#000000] overflow-hidden">
         {/* Top Header: Discord Friends Bar */}
-        <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-background/80 backdrop-blur-xs z-10`}>
+        <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-[#000000] z-10`}>
           <div className="flex items-center gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
             <div className="flex items-center gap-2 shrink-0">
               <Users className="w-5 h-5 text-muted-foreground" />
@@ -3289,8 +3289,8 @@ export function CommunityPage() {
                 className={cn(
                   'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
                   friendsTab === 'online'
-                    ? 'bg-accent text-accent-foreground shadow-2xs'
-                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
+                    ? 'bg-[#2b2d31]/80 text-white shadow-2xs'
+                    : 'text-muted-foreground hover:bg-[#1e1f22] hover:text-foreground',
                 )}
               >
                 <span>{t('Online')}</span>
@@ -3304,8 +3304,8 @@ export function CommunityPage() {
                 className={cn(
                   'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
                   friendsTab === 'all'
-                    ? 'bg-accent text-accent-foreground shadow-2xs'
-                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
+                    ? 'bg-[#2b2d31]/80 text-white shadow-2xs'
+                    : 'text-muted-foreground hover:bg-[#1e1f22] hover:text-foreground',
                 )}
               >
                 <span>{t('Semua')}</span>
@@ -3319,13 +3319,13 @@ export function CommunityPage() {
                 className={cn(
                   'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
                   friendsTab === 'pending'
-                    ? 'bg-accent text-accent-foreground shadow-2xs'
-                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
+                    ? 'bg-[#2b2d31]/80 text-white shadow-2xs'
+                    : 'text-muted-foreground hover:bg-[#1e1f22] hover:text-foreground',
                 )}
               >
                 <span>{t('Tertunda')}</span>
                 {friendRequests.length > 0 && (
-                  <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  <span className="size-4 rounded-full bg-[#da373c] text-white text-[9px] font-bold flex items-center justify-center">
                     {friendRequests.length}
                   </span>
                 )}
@@ -3336,8 +3336,8 @@ export function CommunityPage() {
                 className={cn(
                   'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer ml-1',
                   friendsTab === 'add'
-                    ? 'bg-emerald-600 text-white shadow-2xs'
-                    : 'bg-emerald-600/90 hover:bg-emerald-600 text-white',
+                    ? 'bg-[#5865f2] text-white shadow-2xs'
+                    : 'bg-[#5865f2] hover:bg-[#4752c4] text-white',
                 )}
               >
                 {t('Tambah Teman')}
@@ -3354,7 +3354,7 @@ export function CommunityPage() {
                     setIsDmSearchOpen(true);
                     setDmSearchQuery('');
                   }}
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-[#1e1f22] transition-colors cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4" />
                 </button>
@@ -3367,7 +3367,7 @@ export function CommunityPage() {
         </div>
 
         {/* Body Content */}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden bg-[#000000]">
           {/* Main Friends Column */}
           <div className={`flex-1 min-h-0 overflow-y-auto ${CHANNEL_HORIZONTAL_PADDING} py-5 [scrollbar-width:thin]`}>
             {friendsTab === 'add' ? (
@@ -3380,18 +3380,18 @@ export function CommunityPage() {
                   {t('Kamu bisa menambahkan teman menggunakan nama pengguna mereka.')}
                 </p>
 
-                <div className="relative flex items-center rounded-lg bg-sidebar-accent/50 border border-border/80 focus-within:border-emerald-500 transition-colors p-2 shadow-2xs">
+                <div className="relative flex items-center rounded-lg bg-[#111214] border border-[#1e1f22] focus-within:border-[#5865f2] transition-colors p-2 shadow-2xs">
                   <Input
                     value={addFriendInput}
                     onChange={(e) => setAddFriendInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddFriend()}
                     placeholder={t('Kamu bisa menambahkan teman menggunakan nama pengguna mereka')}
-                    className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2 h-8 placeholder:text-muted-foreground/60 flex-1"
+                    className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2 h-8 placeholder:text-muted-foreground/60 flex-1 text-white"
                   />
                   <Button
                     onClick={handleAddFriend}
                     disabled={!addFriendInput.trim() || isAddingFriend}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-8 px-4 shrink-0 transition-all cursor-pointer disabled:opacity-50"
+                    className="bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium text-xs h-8 px-4 shrink-0 transition-all cursor-pointer disabled:opacity-50"
                   >
                     {isAddingFriend ? t('Mengirim...') : t('Kirim Permintaan Pertemanan')}
                   </Button>
@@ -3400,7 +3400,7 @@ export function CommunityPage() {
                 <Separator className="my-8" />
 
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 mb-3">
+                  <div className="w-16 h-16 rounded-2xl bg-[#5865f2]/10 border border-[#5865f2]/20 flex items-center justify-center text-[#5865f2] mb-3">
                     <Sparkles className="w-8 h-8" />
                   </div>
                   <h3 className="text-sm font-semibold text-foreground mb-1">
@@ -3419,10 +3419,8 @@ export function CommunityPage() {
                 </div>
 
                 {friendRequests.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/40 mb-3">
-                      <Inbox className="w-8 h-8" />
-                    </div>
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <Inbox className="w-16 h-16 text-white/20 mb-3 stroke-[1.2]" />
                     <p className="text-xs text-muted-foreground font-medium">
                       {t('Tidak ada permintaan pertemanan yang tertunda.')}
                     </p>
@@ -3432,7 +3430,7 @@ export function CommunityPage() {
                     {friendRequests.map((req) => (
                       <div
                         key={req.id}
-                        className="flex items-center justify-between p-3 rounded-lg hover:bg-sidebar-accent/60 border-t border-border/40 transition-colors group"
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-[#111214] border-t border-white/[0.04] transition-colors group"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <CommunityAvatar name={req.name} imageUrl={req.avatar} size={40} />
@@ -3502,12 +3500,12 @@ export function CommunityPage() {
               <div className="w-full">
                 {/* Search Bar */}
                 <div className="relative mb-5">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#80848e]" />
                   <Input
                     value={friendsSearchQuery}
                     onChange={(e) => setFriendsSearchQuery(e.target.value)}
                     placeholder={t('Cari...')}
-                    className="pl-9 h-9 text-xs bg-sidebar-accent/50 border-sidebar-border rounded-md"
+                    className="pl-9 h-9 text-xs bg-[#111214] border-transparent focus:border-[#5865f2] text-white placeholder:text-[#80848e] rounded-[4px]"
                   />
                   {friendsSearchQuery && (
                     <button
@@ -3524,10 +3522,8 @@ export function CommunityPage() {
                 </div>
 
                 {filteredFriends.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/40 mb-3">
-                      <Users className="w-8 h-8" />
-                    </div>
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <Users className="w-16 h-16 text-white/20 mb-3 stroke-[1.2]" />
                     <p className="text-xs text-muted-foreground font-medium mb-1">
                       {friendsTab === 'online'
                         ? t('Tidak ada teman yang sedang online saat ini.')
@@ -3537,7 +3533,7 @@ export function CommunityPage() {
                       <Button
                         size="sm"
                         onClick={() => setFriendsTab('add')}
-                        className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs shadow-2xs cursor-pointer"
+                        className="mt-3 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs shadow-2xs cursor-pointer"
                       >
                         <UserPlus className="w-3.5 h-3.5 mr-1.5" />
                         {t('Tambah Teman')}
@@ -3550,7 +3546,7 @@ export function CommunityPage() {
                       <div
                         key={member.id}
                         onClick={() => handleStartDM(member)}
-                        className="flex items-center justify-between p-2.5 rounded-lg hover:bg-sidebar-accent/60 border-t border-border/40 transition-colors group cursor-pointer"
+                        className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#111214] border-t border-white/[0.04] transition-colors group cursor-pointer"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <CommunityAvatar
@@ -3575,7 +3571,7 @@ export function CommunityPage() {
                             <TooltipTrigger asChild>
                               <button
                                 onClick={() => handleStartDM(member)}
-                                className="size-9 rounded-full bg-sidebar-accent hover:bg-accent hover:text-foreground text-muted-foreground flex items-center justify-center transition-colors cursor-pointer"
+                                className="size-9 rounded-full bg-[#111214] hover:bg-[#1e1f22] hover:text-foreground text-muted-foreground flex items-center justify-center transition-colors cursor-pointer"
                               >
                                 <MessageSquare className="w-4 h-4" />
                               </button>
@@ -3594,12 +3590,12 @@ export function CommunityPage() {
           </div>
 
           {/* Right Column: Discord Desktop "Sedang Aktif" (Active Now) */}
-          <div className={`hidden xl:flex flex-col w-80 border-l border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} py-4 bg-background/30 shrink-0`}>
-            <h3 className="text-sm font-bold text-foreground mb-3">{t('Sedang Aktif')}</h3>
+          <div className={`hidden xl:flex flex-col w-80 border-l border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} py-4 bg-[#000000] shrink-0`}>
+            <h3 className="text-sm font-bold text-white mb-4">{t('Sedang Aktif')}</h3>
             {onlineFriends.length === 0 ? (
-              <div className="p-4 rounded-xl border border-dashed border-border/60 text-center">
-                <p className="text-xs font-semibold text-foreground mb-1">{t('Saat ini sepi...')}</p>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <div className="py-8 px-2 text-center">
+                <p className="text-sm font-semibold text-white mb-1.5">{t('Saat ini sepi...')}</p>
+                <p className="text-xs text-[#949ba4] leading-relaxed max-w-[240px] mx-auto">
                   {t('Saat teman Anda online atau berkolaborasi di proyek, status mereka akan muncul di sini!')}
                 </p>
               </div>
@@ -3609,7 +3605,7 @@ export function CommunityPage() {
                   <div
                     key={f.id}
                     onClick={() => handleStartDM(f)}
-                    className="p-3 rounded-xl bg-sidebar-accent/40 hover:bg-sidebar-accent border border-border/50 transition-colors cursor-pointer group"
+                    className="p-3 rounded-xl bg-[#111214] hover:bg-[#1e1f22] border border-white/5 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-2.5 mb-2">
                       <CommunityAvatar name={f.name} imageUrl={f.avatar} size={32} status={f.status} showStatus />
@@ -4146,10 +4142,10 @@ export function CommunityPage() {
         {isFriendsView ? (
           renderFriendsMainPage()
         ) : (
-          <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background/50 overflow-hidden">
+          <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-[#000000] overflow-hidden">
           {/* Channel Top Header Bar: NON-SCROLLABLE APP BAR (Hidden during full stage call or in voice channel like Discord) */}
           {!( (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ) && (
-          <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-background/80 backdrop-blur-xs z-10`}>
+          <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-[#000000] z-10`}>
             <div className="flex items-center gap-2 min-w-0">
               {activeChannel?.category === 'DIRECT MESSAGES' || activeChannel?.isDirectMessage ? (
                 <span className="text-muted-foreground font-bold text-base shrink-0 select-none">@</span>
