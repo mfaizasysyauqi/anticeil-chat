@@ -31,7 +31,7 @@ import {
   CommunityChannelNotification,
   CommunityThread,
 } from './messages-types';
-import { DiscordEmoji, DiscordSticker } from './discord-media-data';
+import { DiscordEmoji, DiscordSticker } from './anticeil-media-data';
 
 export const messagesApi = {
   // ── Channels ──────────────────────────────────────────────────────────

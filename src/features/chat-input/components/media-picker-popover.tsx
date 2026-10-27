@@ -13,7 +13,7 @@ import {
   DiscordEmoji,
   DiscordSticker,
   DiscordGifItem,
-} from '@/chat/discord-media-data';
+} from '@/chat/anticeil-media-data';
 import type { CommunityHub } from '@/chat/messages-types';
 
 export interface MediaPickerPopoverProps {

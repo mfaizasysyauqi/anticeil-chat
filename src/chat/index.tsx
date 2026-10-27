@@ -79,7 +79,7 @@ import {
   DiscordEmoji,
   DiscordSticker,
   DiscordGifItem,
-} from './discord-media-data';
+} from './anticeil-media-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

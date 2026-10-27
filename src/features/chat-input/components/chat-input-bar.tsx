@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MediaPickerPopover } from './media-picker-popover';
 import { ChatAppsPopover } from './chat-apps-popover';
 import type { CommunityChannel, CommunityHub } from '@/chat/messages-types';
-import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/discord-media-data';
+import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/anticeil-media-data';
 
 export interface ChatInputBarProps {
   activeChannel: CommunityChannel | null;

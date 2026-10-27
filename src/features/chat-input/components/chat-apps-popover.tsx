@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { EXTENDED_DISCORD_APPS } from '@/chat/discord-media-data';
+import { EXTENDED_DISCORD_APPS } from '@/chat/anticeil-media-data';
 
 export interface ChatAppsPopoverProps {
   open: boolean;
