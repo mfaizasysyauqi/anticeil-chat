@@ -13,17 +13,8 @@ import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { LocalVideoView, RemoteVideoView, ScreenVideoView } from './video-views';
 
-export interface CallParticipant {
-  socketId: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string | null;
-  hasVideo: boolean;
-  hasAudio: boolean;
-  isScreenSharing?: boolean;
-  isSpeaking?: boolean;
-  stream?: MediaStream;
-}
+import type { CallParticipant } from '../types';
+export type { CallParticipant };
 
 export interface CallParticipantGridProps {
   isAnyoneScreenSharing: boolean;

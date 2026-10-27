@@ -1,3 +1,4 @@
+export * from './types';
 export * from './data/discord-activities';
 export * from './components/video-views';
 export * from './components/call-participant-grid';

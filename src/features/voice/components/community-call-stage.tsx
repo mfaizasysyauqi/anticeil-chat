@@ -13,7 +13,8 @@ import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';
 
 import { DISCORD_APPS, DiscordAppDefinition } from '../data/discord-activities';
-import { CallParticipant, CallParticipantGrid } from './call-participant-grid';
+import type { CallParticipant } from '../types';
+import { CallParticipantGrid } from './call-participant-grid';
 import { CallControlsBar } from './call-controls-bar';
 import { ActivityLauncherDialog } from './activity-launcher-dialog';
 import { VoiceInviteDialog } from './voice-invite-dialog';

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/messages-avatar';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
-import { CallParticipant } from './call-participant-grid';
+import type { CallParticipant } from '../types';
 import { LocalVideoView, RemoteVideoView, ScreenVideoView } from './video-views';
 
 export interface ActivityFilmstripProps {

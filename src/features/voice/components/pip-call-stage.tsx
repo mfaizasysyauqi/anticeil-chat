@@ -14,7 +14,7 @@ import { CommunityAvatar } from '@/chat/messages-avatar';
 import { CommunityChannel } from '@/chat/messages-types';
 import { cn } from '@/lib/utils';
 import { DiscordAppDefinition } from '../data/discord-activities';
-import { CallParticipant } from './call-participant-grid';
+import type { CallParticipant } from '../types';
 import { LocalVideoView, RemoteVideoView, ScreenVideoView } from './video-views';
 
 export interface PiPCallStageProps {
