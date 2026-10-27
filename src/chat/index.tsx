@@ -175,10 +175,8 @@ export function CommunityPage() {
     localStorage.removeItem('current_project');
     localStorage.removeItem('current_platform');
     sessionStorage.clear();
+    setCurrentUser(null);
     toast.success(t('Berhasil keluar dari akun.'));
-    setTimeout(() => {
-      window.location.href = '/sign-in';
-    }, 400);
   };
 
   const handleGoogleSignIn = async () => {
@@ -186,15 +184,74 @@ export function CommunityPage() {
       toast.loading(t('Menghubungkan ke Google OAuth...'), { id: 'google-oauth' });
       const res: any = await api.get('/v1/authn/federated/login?providerName=google');
       if (res && res.loginUrl) {
-        toast.success(t('Mengarahkan ke Google Sign-In...'), { id: 'google-oauth' });
+        toast.success(t('Membuka Google Sign-In...'), { id: 'google-oauth' });
         const state = {
           providerName: 'google',
-          from: window.location.pathname + window.location.search,
+          from: window.location.href,
           login: 'true',
         };
         const loginUrl = new URL(res.loginUrl);
         loginUrl.searchParams.set('state', JSON.stringify(state));
-        window.location.href = loginUrl.toString();
+        loginUrl.searchParams.set('prompt', 'select_account');
+
+        // Open popup window for seamless login without losing page context
+        const width = 500;
+        const height = 650;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        const popup = window.open(
+          loginUrl.toString(),
+          'anticeil_google_login',
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+        );
+
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          // Fallback to direct redirect if popup blocked
+          window.location.href = loginUrl.toString();
+          return;
+        }
+
+        const handleMessage = async (event: MessageEvent) => {
+          if (event.data && event.data.code) {
+            window.removeEventListener('message', handleMessage);
+            try {
+              popup.close();
+            } catch {}
+            try {
+              toast.loading(t('Memverifikasi autentikasi...'), { id: 'google-oauth' });
+              const claimRes: any = await api.post('/v1/authn/federated/claim', {
+                providerName: 'google',
+                code: event.data.code,
+              });
+              if (claimRes && claimRes.token) {
+                localStorage.setItem('token', claimRes.token);
+                localStorage.setItem('ap_token', claimRes.token);
+                toast.success(t('Berhasil masuk!'), { id: 'google-oauth' });
+                const user = await api.get('/v1/users/me');
+                if (user && (user.id || user.email)) {
+                  const rawImg = user.imageUrl || user.avatar;
+                  const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
+                    ? rawImg
+                    : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
+                  const formatted = {
+                    ...user,
+                    name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email,
+                    avatar: validImg,
+                    imageUrl: validImg,
+                  };
+                  setCurrentUser(formatted);
+                  localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+                }
+                setIsEditProfileOpen(false);
+                return;
+              }
+            } catch (claimErr) {
+              console.error('Claim failed:', claimErr);
+              toast.error(t('Gagal memverifikasi sesi login.'), { id: 'google-oauth' });
+            }
+          }
+        };
+        window.addEventListener('message', handleMessage);
         return;
       }
       throw new Error('No loginUrl returned');
@@ -203,32 +260,19 @@ export function CommunityPage() {
       toast.error(t('Google OAuth belum aktif di server atau gagal terhubung.'), { id: 'google-oauth' });
     }
   };
+
   const [currentUser, setCurrentUser] = useState<any>(() => {
-    const realDefaultAvatar = 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
     try {
+      const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
       const stored = localStorage.getItem('anticeil_current_user');
-      if (stored) {
+      if (token && stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && (parsed.imageUrl?.includes('unsplash.com') || parsed.avatar?.includes('unsplash.com') || parsed.imageUrl?.includes('53994a69daeb') || !parsed.imageUrl)) {
-          parsed.imageUrl = realDefaultAvatar;
-          parsed.avatar = realDefaultAvatar;
-          localStorage.setItem('anticeil_current_user', JSON.stringify(parsed));
+        if (parsed && (parsed.id || parsed.email)) {
+          return parsed;
         }
-        return parsed;
       }
     } catch {}
-    return {
-      id: 'user_faiz',
-      name: 'Muhammad Faiz Asy Syauqi',
-      firstName: 'Muhammad Faiz',
-      lastName: 'Asy Syauqi',
-      username: 'mfaizasysyauqi',
-      email: 'mfaizasysyauqi@gmail.com',
-      avatar: realDefaultAvatar,
-      imageUrl: realDefaultAvatar,
-      platformRole: 'ADMIN',
-      usernameUpdatedAt: new Date().toISOString(),
-    };
+    return null;
   });
 
   useEffect(() => {
@@ -243,6 +287,11 @@ export function CommunityPage() {
     }
 
     const fetchLiveUser = async () => {
+      const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+      if (!token) {
+        setCurrentUser(null);
+        return;
+      }
       try {
         const user = await api.get('/v1/users/me');
         if (user && (user.id || user.email)) {
@@ -258,8 +307,13 @@ export function CommunityPage() {
           };
           setCurrentUser(formatted);
           localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem('anticeil_current_user');
         }
-      } catch (err) {}
+      } catch (err) {
+        setCurrentUser(null);
+      }
     };
     fetchLiveUser();
   }, []);
@@ -1919,6 +1973,7 @@ export function CommunityPage() {
       setIsDeafened={setIsDeafened}
       onOpenEditProfile={() => setIsEditProfileOpen(true)}
       onLogout={handleLogout}
+      onGoogleSignIn={handleGoogleSignIn}
       activeCallChannelId={activeCallChannelId}
       activeCallChannelName={channels.find((c) => c.id === activeCallChannelId)?.name}
       activeHubName={activeHub?.name}

@@ -90,7 +90,7 @@ export function ServerRail({
 
       {/* Separator bar */}
       <div className="w-full flex items-center justify-center h-0 relative shrink-0 z-20">
-        <div className="w-8 h-[2px] bg-sidebar-border/40 rounded-full" />
+        <div className="w-8 h-[2px] bg-border rounded-full" />
       </div>
 
       {/* Scrollable lower server rail: Explore, Add Server, then other servers */}
@@ -143,7 +143,7 @@ export function ServerRail({
 
         {/* Separator before other user servers */}
         {otherServers.length > 0 && (
-          <div className="w-8 h-[2px] bg-sidebar-border/40 rounded-full my-0.5 shrink-0" />
+          <div className="w-8 h-[2px] bg-border rounded-full my-0.5 shrink-0" />
         )}
 
         {/* Other Servers */}

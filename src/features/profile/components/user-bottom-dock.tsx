@@ -14,6 +14,7 @@ interface UserBottomDockProps {
   setIsDeafened: (deafened: boolean) => void;
   onOpenEditProfile: () => void;
   onLogout?: () => void;
+  onGoogleSignIn?: () => void;
   activeCallChannelId?: string | null;
   activeCallChannelName?: string;
   activeHubName?: string;
@@ -31,6 +32,7 @@ export function UserBottomDock({
   setIsDeafened,
   onOpenEditProfile,
   onLogout,
+  onGoogleSignIn,
   activeCallChannelId,
   activeCallChannelName,
   activeHubName,
@@ -87,73 +89,112 @@ export function UserBottomDock({
       )}
 
       {/* User Dock Bar - Strictly contained inside sidebar width, background matches sidebar theme exactly */}
-      <div className="w-full h-[52px] px-2 flex items-center justify-between">
-        <div
-          onClick={onOpenEditProfile}
-          className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-sidebar-accent/60 cursor-pointer transition-colors group/user"
-          title={t('Ubah profil & pengaturan akun')}
-        >
-          <CommunityAvatar
-            name={currentUserName}
-            email={currentUser?.email}
-            imageUrl={currentUser?.imageUrl}
-            size={32}
-            status="online"
-            showStatus
-            className="shrink-0"
-          />
-          <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-xs font-semibold truncate leading-tight text-foreground group-hover/user:text-primary transition-colors">
-              {currentUserName}
-            </span>
-            <span className="text-[10px] text-muted-foreground font-mono leading-tight mt-0.5 truncate">
-              {currentUser?.username
-                ? `@${currentUser.username}`
-                : currentUser?.email
-                ? `@${currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '')}`
-                : '@atur_username'}
-            </span>
-          </div>
-        </div>
-
-        {/* Action icons: Mic, Headphones, Settings, Logout */}
-        <div className="flex items-center gap-0.5 text-muted-foreground shrink-0">
-          <button
+      {!currentUser ? (
+        <div className="w-full h-[52px] px-2.5 flex items-center justify-between gap-2">
+          <Button
             type="button"
-            onClick={() => setIsMuted(!isMuted)}
-            className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
-            title={isMuted ? t('Bunyikan') : t('Bisu')}
+            size="sm"
+            onClick={onGoogleSignIn || onOpenEditProfile}
+            className="flex-1 flex items-center justify-center gap-2 h-8 text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer shadow-xs rounded-lg"
           >
-            {isMuted ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsDeafened(!isDeafened)}
-            className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
-            title={isDeafened ? t('Batal Tulikan') : t('Tulikan')}
-          >
-            <Headphones className={cn('w-3.5 h-3.5', isDeafened && 'text-red-400')} />
-          </button>
+            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="currentColor"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+            <span>{t('Masuk dengan Google')}</span>
+          </Button>
           <button
             type="button"
             onClick={onOpenEditProfile}
-            className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
-            title={t('Pengaturan Akun')}
+            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-lg cursor-pointer transition-colors shrink-0"
+            title={t('Pengaturan')}
           >
-            <Settings className="w-3.5 h-3.5" />
+            <Settings className="w-4 h-4" />
           </button>
-          {onLogout && (
+        </div>
+      ) : (
+        <div className="w-full h-[52px] px-2 flex items-center justify-between">
+          <div
+            onClick={onOpenEditProfile}
+            className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-sidebar-accent/60 cursor-pointer transition-colors group/user"
+            title={t('Ubah profil & pengaturan akun')}
+          >
+            <CommunityAvatar
+              name={currentUserName}
+              email={currentUser?.email}
+              imageUrl={currentUser?.imageUrl}
+              size={32}
+              status="online"
+              showStatus
+              className="shrink-0"
+            />
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-xs font-semibold truncate leading-tight text-foreground group-hover/user:text-primary transition-colors">
+                {currentUserName}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono leading-tight mt-0.5 truncate">
+                {currentUser?.username
+                  ? `@${currentUser.username}`
+                  : currentUser?.email
+                  ? `@${currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '')}`
+                  : '@atur_username'}
+              </span>
+            </div>
+          </div>
+
+          {/* Action icons: Mic, Headphones, Settings, Logout */}
+          <div className="flex items-center gap-0.5 text-muted-foreground shrink-0">
             <button
               type="button"
-              onClick={onLogout}
-              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-md cursor-pointer transition-colors"
-              title={t('Keluar (Log Out)')}
+              onClick={() => setIsMuted(!isMuted)}
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
+              title={isMuted ? t('Bunyikan') : t('Bisu')}
             >
-              <LogOut className="w-3.5 h-3.5" />
+              {isMuted ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5" />}
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setIsDeafened(!isDeafened)}
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
+              title={isDeafened ? t('Batal Tulikan') : t('Tulikan')}
+            >
+              <Headphones className={cn('w-3.5 h-3.5', isDeafened && 'text-red-400')} />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenEditProfile}
+              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
+              title={t('Pengaturan Akun')}
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-md cursor-pointer transition-colors"
+                title={t('Keluar (Log Out)')}
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
