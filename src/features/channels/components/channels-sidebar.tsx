@@ -21,6 +21,8 @@ import {
   Layers,
   ScrollText,
   ExternalLink,
+  Mail,
+  Bell,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -52,6 +54,10 @@ export interface ChannelsSidebarProps {
   activeCallChannelId: string | null;
   setActiveCallChannelId: (id: string | null) => void;
   isFriendsView: boolean;
+  homeView?: 'friends' | 'message-requests' | 'notifications';
+  setHomeView?: (view: 'friends' | 'message-requests' | 'notifications') => void;
+  messageRequestsCount?: number;
+  unreadNotificationsCount?: number;
   setFriendsTab: (tab: any) => void;
   friendRequests: any[];
   dmChannels: CommunityChannel[];
@@ -87,6 +93,10 @@ export function ChannelsSidebar({
   activeCallChannelId,
   setActiveCallChannelId,
   isFriendsView,
+  homeView = 'friends',
+  setHomeView,
+  messageRequestsCount = 0,
+  unreadNotificationsCount = 0,
   setFriendsTab,
   friendRequests,
   dmChannels,
@@ -272,27 +282,98 @@ export function ChannelsSidebar({
         {isHome ? (
           /* ===== HOME: DIRECT MESSAGES & FRIENDS NAVIGATION ===== */
           <div>
-            {/* Discord-style Friends button at top of Direct Messages column */}
-            <button
-              onClick={() => {
-                setActiveChannelId('');
-                onItemClick?.();
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left mb-3 cursor-pointer group',
-                isFriendsView
-                  ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-              )}
-            >
-              <Users className={cn('w-4 h-4 shrink-0 transition-colors', isFriendsView ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
-              <span className="flex-1 font-medium">{t('Teman')}</span>
-              {friendRequests.length > 0 && (
-                <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {friendRequests.length}
-                </span>
-              )}
-            </button>
+            {/* Discord-style Home Navigation: Teman, Permintaan Pesan, Notifikasi */}
+            <div className="space-y-0.5 mb-3">
+              {/* Friends button */}
+              <button
+                onClick={() => {
+                  setActiveChannelId('');
+                  setHomeView?.('friends');
+                  onItemClick?.();
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+                  !activeChannelId && homeView === 'friends'
+                    ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                )}
+              >
+                <Users
+                  className={cn(
+                    'w-4 h-4 shrink-0 transition-colors',
+                    !activeChannelId && homeView === 'friends'
+                      ? 'text-primary'
+                      : 'text-muted-foreground group-hover:text-foreground',
+                  )}
+                />
+                <span className="flex-1 font-medium">{t('Teman')}</span>
+                {friendRequests.length > 0 && (
+                  <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {friendRequests.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Message Requests button (Discord-style) */}
+              <button
+                onClick={() => {
+                  setActiveChannelId('');
+                  setHomeView?.('message-requests');
+                  onItemClick?.();
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+                  !activeChannelId && homeView === 'message-requests'
+                    ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                )}
+              >
+                <Mail
+                  className={cn(
+                    'w-4 h-4 shrink-0 transition-colors',
+                    !activeChannelId && homeView === 'message-requests'
+                      ? 'text-primary'
+                      : 'text-muted-foreground group-hover:text-foreground',
+                  )}
+                />
+                <span className="flex-1 font-medium">{t('Permintaan Pesan')}</span>
+                {messageRequestsCount > 0 && (
+                  <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {messageRequestsCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notifications button */}
+              <button
+                onClick={() => {
+                  setActiveChannelId('');
+                  setHomeView?.('notifications');
+                  onItemClick?.();
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+                  !activeChannelId && homeView === 'notifications'
+                    ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                )}
+              >
+                <Bell
+                  className={cn(
+                    'w-4 h-4 shrink-0 transition-colors',
+                    !activeChannelId && homeView === 'notifications'
+                      ? 'text-primary'
+                      : 'text-muted-foreground group-hover:text-foreground',
+                  )}
+                />
+                <span className="flex-1 font-medium">{t('Notifikasi')}</span>
+                {unreadNotificationsCount > 0 && (
+                  <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
+              </button>
+            </div>
 
             <div className="px-2 mb-1.5 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 tracking-wider uppercase">
               <span>{t('Pesan Langsung')}</span>
