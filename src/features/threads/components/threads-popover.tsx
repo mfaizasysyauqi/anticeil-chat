@@ -48,7 +48,7 @@ export function ThreadsPopover({
           size="icon"
           className={cn(
             "h-8 w-8 transition-colors cursor-pointer",
-            open ? "text-white bg-white/10" : "text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5"
+            open ? "text-foreground bg-accent" : "text-foreground/70 hover:text-foreground hover:bg-accent/60"
           )}
           title="Threads"
         >
@@ -61,15 +61,15 @@ export function ThreadsPopover({
         side="bottom"
         align="end"
         sideOffset={8}
-        className="w-[440px] max-w-[95vw] h-[480px] p-0 bg-[#111214] border border-[#2b2d31] text-[#dbdee1] shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
+        className="w-[440px] max-w-[95vw] h-[480px] p-0 bg-popover border border-border text-popover-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="p-3.5 border-b border-white/10 flex items-center gap-2.5 bg-[#18191c]">
+        <div className="p-3.5 border-b border-border/40 flex items-center gap-2.5 bg-muted/30">
           <div className="flex items-center gap-2 shrink-0">
-            <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-foreground fill-current" viewBox="0 0 24 24">
               <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
             </svg>
-            <span className="font-bold text-white text-sm">Threads</span>
+            <span className="font-bold text-foreground text-sm">Threads</span>
           </div>
 
           {/* Search */}

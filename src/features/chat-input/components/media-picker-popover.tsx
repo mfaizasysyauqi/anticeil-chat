@@ -125,18 +125,18 @@ export function MediaPickerPopover({
         side="top"
         align="end"
         sideOffset={14}
-        className="w-[490px] max-w-[96vw] h-[480px] p-0 bg-[#2b2d31] border border-white/10 text-[#dbdee1] shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
+        className="w-[490px] max-w-[96vw] h-[480px] p-0 bg-popover border border-border text-popover-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
       >
         {/* Header: Segmented Tabs & Search Bar */}
-        <div className="p-3 pb-2.5 border-b border-white/5 bg-[#2b2d31]">
+        <div className="p-3 pb-2.5 border-b border-border bg-popover">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <div className="flex items-center p-1 rounded-lg bg-[#1e1f22] text-xs font-semibold">
+            <div className="flex items-center p-1 rounded-lg bg-muted text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setActiveMediaTab('gifs')}
                 className={cn(
                   "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
-                  activeMediaTab === 'gifs' ? 'bg-[#35373c] text-white shadow-xs' : 'text-[#949ba4] hover:text-white'
+                  activeMediaTab === 'gifs' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 GIFs
@@ -146,7 +146,7 @@ export function MediaPickerPopover({
                 onClick={() => setActiveMediaTab('stickers')}
                 className={cn(
                   "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
-                  activeMediaTab === 'stickers' ? 'bg-[#35373c] text-white shadow-xs' : 'text-[#949ba4] hover:text-white'
+                  activeMediaTab === 'stickers' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 Stickers
@@ -156,7 +156,7 @@ export function MediaPickerPopover({
                 onClick={() => setActiveMediaTab('emojis')}
                 className={cn(
                   "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
-                  activeMediaTab === 'emojis' ? 'bg-[#35373c] text-white shadow-xs' : 'text-[#949ba4] hover:text-white'
+                  activeMediaTab === 'emojis' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 Emoji
@@ -179,13 +179,13 @@ export function MediaPickerPopover({
                   ? "Cari stiker di semua server..."
                   : "Cari emoji..."
               }
-              className="w-full bg-[#1e1f22] border-none rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
             {mediaSearchQuery && (
               <button
                 type="button"
                 onClick={() => setMediaSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#949ba4] hover:text-white cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 ✕
               </button>
@@ -194,7 +194,7 @@ export function MediaPickerPopover({
               <button
                 type="button"
                 onClick={() => setSelectedGifCategory(null)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] bg-primary/20 hover:bg-primary/30 text-primary font-bold px-2 py-0.5 rounded cursor-pointer transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] bg-primary/10 hover:bg-primary/20 text-primary font-bold px-2 py-0.5 rounded cursor-pointer transition-colors"
                 title="Kembali ke semua kategori"
               >
                 ← Semua
@@ -204,17 +204,17 @@ export function MediaPickerPopover({
         </div>
 
         {/* Body: Left Server Rail & Right Media Grid */}
-        <div className="flex-1 flex min-h-0 overflow-hidden bg-[#2b2d31]">
+        <div className="flex-1 flex min-h-0 overflow-hidden bg-popover">
           {/* Left Server Rail */}
-          <div className="w-12 bg-[#1e1f22] border-r border-white/5 py-2 flex flex-col items-center gap-2 overflow-y-auto shrink-0 [scrollbar-width:none]">
+          <div className="w-12 bg-muted/40 border-r border-border py-2 flex flex-col items-center gap-2 overflow-y-auto shrink-0 [scrollbar-width:none]">
             <button
               type="button"
-              className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center hover:rounded-2xl transition-all cursor-pointer"
+              className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:rounded-2xl transition-all cursor-pointer"
               title="Sering Digunakan"
             >
               <TrendingUp className="w-4 h-4" />
             </button>
-            <div className="w-6 h-px bg-white/10 my-0.5" />
+            <div className="w-6 h-px bg-border my-0.5" />
 
             {/* Current Active Hub */}
             {activeHub && (
@@ -239,12 +239,12 @@ export function MediaPickerPopover({
             </div>
 
             {/* Quick Add Media Shortcut Button */}
-            <div className="mt-auto pt-2 border-t border-white/5 flex flex-col gap-1.5">
+            <div className="mt-auto pt-2 border-t border-border flex flex-col gap-1.5">
               {activeMediaTab === 'emojis' && (
                 <button
                   type="button"
                   onClick={onOpenQuickAddEmoji}
-                  className="w-8 h-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center transition-all cursor-pointer shadow-md"
+                  className="w-8 h-8 rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border/60 flex items-center justify-center transition-all cursor-pointer shadow-xs"
                   title="Tambah emoji kustom baru ke server ini (PostgreSQL)"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
@@ -254,7 +254,7 @@ export function MediaPickerPopover({
                 <button
                   type="button"
                   onClick={onOpenQuickAddSticker}
-                  className="w-8 h-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center transition-all cursor-pointer shadow-md"
+                  className="w-8 h-8 rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border/60 flex items-center justify-center transition-all cursor-pointer shadow-xs"
                   title="Tambah stiker kustom baru ke server ini (PostgreSQL)"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
@@ -271,25 +271,25 @@ export function MediaPickerPopover({
                 {/* 1. Server Custom Emojis (DB) */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                       {activeHub?.name || 'Server'} — Kustom ({serverDbEmojis.length})
                     </span>
                     <button
                       type="button"
                       onClick={onOpenQuickAddEmoji}
-                      className="text-[10px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] text-foreground/80 hover:text-foreground hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" /> Tambah
                     </button>
                   </div>
 
                   {serverDbEmojis.length === 0 ? (
-                    <div className="p-3 rounded-xl bg-[#1e1f22]/50 border border-white/5 text-center text-xs text-[#949ba4]">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border text-center text-xs text-muted-foreground">
                       Belum ada emoji kustom di server ini.{' '}
                       <button
                         type="button"
                         onClick={onOpenQuickAddEmoji}
-                        className="text-primary hover:underline font-semibold"
+                        className="text-foreground hover:underline font-semibold"
                       >
                         Klik untuk menambahkan!
                       </button>
@@ -307,7 +307,7 @@ export function MediaPickerPopover({
                               onOpenChange(false);
                             }}
                             onMouseEnter={() => setHoveredEmoji(emoji)}
-                            className="w-10 h-10 rounded-lg hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer relative group"
+                            className="w-10 h-10 rounded-lg hover:bg-accent/50 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer relative group"
                             title={emoji.code}
                           >
                             {emoji.url.startsWith('http') || emoji.url.startsWith('data:') ? (
@@ -323,7 +323,7 @@ export function MediaPickerPopover({
 
                 {/* 2. Standard Unicode Emojis */}
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#949ba4] block mb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
                     Standard Emojis
                   </span>
                   <div className="grid grid-cols-8 gap-1.5">
@@ -338,7 +338,7 @@ export function MediaPickerPopover({
                           onOpenChange(false);
                         }}
                         onMouseEnter={() => setHoveredEmoji(emoji)}
-                        className="w-10 h-10 rounded-lg hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer text-2xl select-none"
+                        className="w-10 h-10 rounded-lg hover:bg-accent/50 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer text-2xl select-none"
                         title={emoji.code}
                       >
                         {emoji.url}
@@ -353,25 +353,25 @@ export function MediaPickerPopover({
             {activeMediaTab === 'stickers' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#949ba4]">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     {activeHub?.name || 'Server'} — Stiker ({serverDbStickers.length})
                   </span>
                   <button
                     type="button"
                     onClick={onOpenQuickAddSticker}
-                    className="text-[10px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    className="text-[10px] text-foreground/80 hover:text-foreground hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3" /> Tambah
                   </button>
                 </div>
 
                 {serverDbStickers.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-[#1e1f22]/50 border border-white/5 text-center text-xs text-[#949ba4]">
+                  <div className="p-4 rounded-xl bg-muted/40 border border-border text-center text-xs text-muted-foreground">
                     Belum ada stiker di server ini.{' '}
                     <button
                       type="button"
                       onClick={onOpenQuickAddSticker}
-                      className="text-primary hover:underline font-semibold"
+                      className="text-foreground hover:underline font-semibold"
                     >
                       Unggah stiker pertamamu!
                     </button>
@@ -389,7 +389,7 @@ export function MediaPickerPopover({
                             onOpenChange(false);
                           }}
                           onMouseEnter={() => setHoveredSticker(sticker)}
-                          className="aspect-square rounded-xl bg-[#1e1f22]/60 hover:bg-white/10 border border-white/5 p-2 flex flex-col items-center justify-center gap-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shadow-sm"
+                          className="aspect-square rounded-xl bg-card hover:bg-accent/40 border border-border p-2 flex flex-col items-center justify-center gap-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shadow-xs"
                           title={sticker.name}
                         >
                           <img
@@ -398,7 +398,7 @@ export function MediaPickerPopover({
                             className="w-16 h-16 object-contain filter drop-shadow group-hover:scale-110 transition-transform"
                             loading="lazy"
                           />
-                          <span className="text-[10px] font-medium text-[#dbdee1] truncate max-w-full">
+                          <span className="text-[10px] font-medium text-foreground/90 truncate max-w-full">
                             {sticker.name}
                           </span>
                         </button>
@@ -415,7 +415,7 @@ export function MediaPickerPopover({
                 {selectedGifCategory ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white capitalize">
+                      <span className="text-xs font-bold text-foreground capitalize">
                         #{selectedGifCategory} ({DISCORD_GIF_ITEMS.filter((g) => g.category === selectedGifCategory).length})
                       </span>
                     </div>
@@ -428,7 +428,7 @@ export function MediaPickerPopover({
                             onSendGif(gif);
                             onOpenChange(false);
                           }}
-                          className="rounded-xl overflow-hidden aspect-video bg-[#1e1f22] relative group hover:ring-2 hover:ring-primary transition-all cursor-pointer"
+                          className="rounded-xl overflow-hidden aspect-video bg-muted/60 relative group hover:ring-2 hover:ring-ring transition-all cursor-pointer"
                         >
                           <img src={gif.url} alt={gif.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
@@ -452,7 +452,7 @@ export function MediaPickerPopover({
                           onSendGif(gif);
                           onOpenChange(false);
                         }}
-                        className="rounded-xl overflow-hidden aspect-video bg-[#1e1f22] relative group hover:ring-2 hover:ring-primary transition-all cursor-pointer"
+                        className="rounded-xl overflow-hidden aspect-video bg-muted/60 relative group hover:ring-2 hover:ring-ring transition-all cursor-pointer"
                       >
                         <img src={gif.url} alt={gif.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
@@ -469,7 +469,7 @@ export function MediaPickerPopover({
                         key={cat.id}
                         type="button"
                         onClick={() => setSelectedGifCategory(cat.id)}
-                        className="rounded-xl overflow-hidden aspect-[16/9] relative group hover:ring-2 hover:ring-primary transition-all cursor-pointer shadow-md"
+                        className="rounded-xl overflow-hidden aspect-[16/9] relative group hover:ring-2 hover:ring-ring transition-all cursor-pointer shadow-md"
                       >
                         <img
                           src={cat.coverUrl}
@@ -491,7 +491,7 @@ export function MediaPickerPopover({
         </div>
 
         {/* Bottom Preview Bar */}
-        <div className="h-11 bg-[#1e1f22] border-t border-white/5 px-3 flex items-center justify-between text-xs text-[#949ba4] shrink-0">
+        <div className="h-11 bg-muted/30 border-t border-border px-3 flex items-center justify-between text-xs text-muted-foreground shrink-0">
           {activeMediaTab === 'emojis' && (
             hoveredEmoji ? (
               <div className="flex items-center gap-2">
@@ -500,32 +500,32 @@ export function MediaPickerPopover({
                 ) : (
                   <span className="text-xl">{hoveredEmoji.url}</span>
                 )}
-                <span className="font-mono text-white font-semibold">{hoveredEmoji.code}</span>
-                <span className="text-[10px] text-[#949ba4]">({hoveredEmoji.server})</span>
+                <span className="font-mono text-foreground font-semibold">{hoveredEmoji.code}</span>
+                <span className="text-[10px] text-muted-foreground">({hoveredEmoji.server})</span>
               </div>
             ) : (
-              <span className="text-[11px] text-[#949ba4]">Arahkan kursor ke emoji untuk melihat preview</span>
+              <span className="text-[11px] text-muted-foreground">Arahkan kursor ke emoji untuk melihat preview</span>
             )
           )}
           {activeMediaTab === 'stickers' && (
             hoveredSticker ? (
               <div className="flex items-center gap-2">
                 <img src={hoveredSticker.url} alt={hoveredSticker.name} className="w-6 h-6 object-contain" />
-                <span className="text-white font-semibold">{hoveredSticker.name}</span>
-                <span className="text-[10px] text-[#949ba4]">({hoveredSticker.server})</span>
+                <span className="text-foreground font-semibold">{hoveredSticker.name}</span>
+                <span className="text-[10px] text-muted-foreground">({hoveredSticker.server})</span>
               </div>
             ) : (
-              <span className="text-[11px] text-[#949ba4]">Arahkan kursor ke stiker untuk melihat detail</span>
+              <span className="text-[11px] text-muted-foreground">Arahkan kursor ke stiker untuk melihat detail</span>
             )
           )}
           {activeMediaTab === 'gifs' && (
             <div className="flex items-center justify-between w-full text-[11px]">
-              <span>Ditenagai oleh <strong className="text-white">Tenor</strong></span>
+              <span>Ditenagai oleh <strong className="text-foreground">Tenor</strong></span>
               {selectedGifCategory && (
                 <button
                   type="button"
                   onClick={() => setSelectedGifCategory(null)}
-                  className="text-primary hover:underline cursor-pointer"
+                  className="text-foreground/80 hover:text-foreground hover:underline cursor-pointer font-medium"
                 >
                   Kembali ke Semua Kategori
                 </button>

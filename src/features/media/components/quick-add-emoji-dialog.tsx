@@ -39,19 +39,19 @@ export function QuickAddEmojiDialog({
 }: QuickAddEmojiDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px] bg-[#313338] border-[#232428] text-white p-4 sm:p-5 rounded-[16px] shadow-2xl">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+      <DialogContent className="sm:max-w-[440px]">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
             ✨ Tambah Emoji Kustom ke Server
           </DialogTitle>
-          <DialogDescription className="text-xs text-[#949ba4]">
+          <DialogDescription className="text-xs text-muted-foreground">
             Emoji ini akan disimpan ke database PostgreSQL server {activeHub?.name || ''} dan dapat digunakan oleh anggota server.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 my-2">
+        <div className="space-y-3.5 my-2">
           <div>
-            <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">Nama Emoji</label>
+            <label className="text-xs font-semibold text-foreground/80 mb-1.5 block">Nama Emoji</label>
             <input
               type="text"
               value={quickEmojiName}
@@ -61,35 +61,35 @@ export function QuickAddEmojiDialog({
                 setQuickEmojiCode(`:${clean}:`);
               }}
               placeholder="contoh: api_anticeil"
-              className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
+              className="w-full bg-muted/50 border border-border focus:border-ring rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors font-mono"
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">Kode Emoji</label>
+            <label className="text-xs font-semibold text-foreground/80 mb-1.5 block">Kode Emoji</label>
             <input
               type="text"
               value={quickEmojiCode}
               onChange={(e) => setQuickEmojiCode(e.target.value)}
               placeholder=":api_anticeil:"
-              className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
+              className="w-full bg-muted/50 border border-border focus:border-ring rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors font-mono"
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[#dbdee1] mb-1.5 block">URL Gambar Emoji (atau Karakter Unicode)</label>
+            <label className="text-xs font-semibold text-foreground/80 mb-1.5 block">URL Gambar Emoji (atau Karakter Unicode)</label>
             <input
               type="text"
               value={quickEmojiUrl}
               onChange={(e) => setQuickEmojiUrl(e.target.value)}
               placeholder="https://images.unsplash.com/... atau karakter 🚀"
-              className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
+              className="w-full bg-muted/50 border border-border focus:border-ring rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
             />
           </div>
 
           {/* Quick Pick Samples */}
           <div>
-            <label className="text-[11px] font-semibold text-[#949ba4] mb-1.5 block">Pilih Cepat Simbol:</label>
+            <label className="text-[11px] font-semibold text-muted-foreground mb-1.5 block">Pilih Cepat Simbol:</label>
             <div className="flex gap-2">
               {['🚀', '⚡', '🤖', '🔥', '🎉', '💡', '🏆', '💎'].map((sym) => (
                 <button
@@ -102,7 +102,7 @@ export function QuickAddEmojiDialog({
                       setQuickEmojiCode(`:custom_${Date.now().toString().slice(-4)}:`);
                     }
                   }}
-                  className="w-8 h-8 rounded-lg bg-[#2b2d31] hover:bg-[#35373c] border border-white/5 flex items-center justify-center text-sm cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-muted hover:bg-accent border border-border/60 flex items-center justify-center text-sm cursor-pointer transition-colors"
                 >
                   {sym}
                 </button>
@@ -111,12 +111,12 @@ export function QuickAddEmojiDialog({
           </div>
         </div>
 
-        <DialogFooter className="mt-4 gap-2">
+        <DialogFooter className="mt-3 gap-2">
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="text-xs text-[#dbdee1] hover:bg-white/10"
+            className="text-xs text-muted-foreground hover:text-foreground"
           >
             Batal
           </Button>

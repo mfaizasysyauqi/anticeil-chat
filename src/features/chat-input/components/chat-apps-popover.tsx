@@ -29,7 +29,7 @@ export function ChatAppsPopover({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="w-6 h-6 text-[#b5bac1] hover:text-[#dbdee1] flex items-center justify-center transition-colors cursor-pointer"
+          className="w-6 h-6 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
           title="Apps & Activities (Aplikasi Komunitas)"
         >
           {/* Discord 4-shapes Activity icon */}
@@ -42,17 +42,17 @@ export function ChatAppsPopover({
         side="top"
         align="end"
         sideOffset={14}
-        className="w-[440px] max-w-[95vw] h-[520px] p-4 bg-[#1e1f22] border-white/10 text-[#dbdee1] shadow-2xl rounded-2xl select-none z-50 flex flex-col"
+        className="w-[440px] max-w-[95vw] h-[520px] p-4 bg-popover border border-border text-popover-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col"
       >
         {/* Search Apps & Commands */}
         <div className="relative w-full mb-3.5">
-          <Search className="w-4 h-4 text-[#949ba4] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={appsSearchQuery}
             onChange={(e) => setAppsSearchQuery(e.target.value)}
             placeholder="Search Apps & Commands"
-            className="w-full bg-[#111214] border border-primary rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none"
+            className="w-full bg-muted/60 border border-border rounded-lg pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
 
@@ -60,7 +60,7 @@ export function ChatAppsPopover({
           {/* Recents */}
           {!appsSearchQuery && (
             <div>
-              <span className="text-xs font-bold text-[#dbdee1] block mb-2">
+              <span className="text-xs font-bold text-foreground block mb-2">
                 Recents
               </span>
               <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ export function ChatAppsPopover({
           {/* Apps in this Server */}
           {!appsSearchQuery && (
             <div>
-              <span className="text-xs font-bold text-[#dbdee1] block mb-2">
+              <span className="text-xs font-bold text-foreground block mb-2">
                 Apps in this Server
               </span>
               <button
@@ -144,7 +144,7 @@ export function ChatAppsPopover({
                   onLaunchActivity('virtual-fisher');
                   onOpenChange(false);
                 }}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-[#2b2d31]/70 hover:bg-[#2b2d31] border border-white/5 hover:border-white/15 transition-all text-left cursor-pointer group"
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-card hover:bg-accent/40 border border-border transition-all text-left cursor-pointer group shadow-xs"
               >
                 <div className="w-11 h-11 rounded-xl bg-white border border-white/20 flex items-center justify-center shrink-0 shadow-md">
                   <div className="w-8 h-8 rounded-full bg-[#e2f1ff] border border-blue-200 flex items-center justify-center text-lg relative">
@@ -153,10 +153,10 @@ export function ChatAppsPopover({
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-bold text-white group-hover:text-primary transition-colors block truncate">
+                  <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors block truncate">
                     VirtualFisher
                   </span>
-                  <span className="text-xs text-[#949ba4] line-clamp-1">
+                  <span className="text-xs text-muted-foreground line-clamp-1">
                     Virtual Fisher is a game you can play in your server focused on catching rare fish...
                   </span>
                 </div>
@@ -167,7 +167,7 @@ export function ChatAppsPopover({
           {/* Promoted (4 Apps with Banner) */}
           {!appsSearchQuery && (
             <div>
-              <span className="text-xs font-bold text-[#dbdee1] block mb-2">
+              <span className="text-xs font-bold text-foreground block mb-2">
                 Promoted
               </span>
               <div className="grid grid-cols-2 gap-2.5">
@@ -178,7 +178,7 @@ export function ChatAppsPopover({
                       onLaunchActivity(app.id);
                       onOpenChange(false);
                     }}
-                    className="group/card rounded-xl overflow-hidden bg-[#2b2d31] border border-white/5 hover:border-primary/50 transition-all text-left flex flex-col hover:shadow-xl cursor-pointer"
+                    className="group/card rounded-xl overflow-hidden bg-card border border-border hover:border-border/80 transition-all text-left flex flex-col hover:shadow-md cursor-pointer"
                   >
                     {/* Banner */}
                     <div className={cn("h-20 w-full relative overflow-hidden flex items-center justify-center", app.bannerGradient)}>
@@ -241,8 +241,8 @@ export function ChatAppsPopover({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-bold text-white block truncate">{app.title}</span>
-                        <span className="text-[9px] text-[#949ba4] block truncate">
+                        <span className="text-xs font-bold text-foreground block truncate">{app.title}</span>
+                        <span className="text-[9px] text-muted-foreground block truncate">
                           {app.id === 'wordle' ? 'Play Wordle from New Yo...' : app.id === 'magic-garden' ? 'Garden with friends! Gro...' : app.id === 'farm-merge-valley' ? 'Farm Merge Valley' : app.developer}
                         </span>
                       </div>
@@ -256,7 +256,7 @@ export function ChatAppsPopover({
           {/* Puzzle Games */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-white">Puzzle Games</span>
+              <span className="text-xs font-bold text-foreground">Puzzle Games</span>
               <button
                 type="button"
                 onClick={() => toast.info('Menampilkan game puzzle')}
@@ -277,16 +277,16 @@ export function ChatAppsPopover({
                     onLaunchActivity(app.id);
                     onOpenChange(false);
                   }}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#2b2d31] transition-all text-left cursor-pointer group"
+                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-accent/40 border border-transparent hover:border-border transition-all text-left cursor-pointer group"
                 >
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl shadow-md", app.iconBg)}>
                     {app.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs font-bold text-white group-hover:text-primary transition-colors block truncate">
+                    <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors block truncate">
                       {app.title}
                     </span>
-                    <span className="text-[10px] text-[#949ba4] line-clamp-1">
+                    <span className="text-[10px] text-muted-foreground line-clamp-1">
                       {app.description}
                     </span>
                   </div>
@@ -298,7 +298,7 @@ export function ChatAppsPopover({
           {/* Card Games */}
           {!appsSearchQuery && (
             <div>
-              <span className="text-xs font-bold text-white block mb-2">Card Games</span>
+              <span className="text-xs font-bold text-foreground block mb-2">Card Games</span>
               <div className="space-y-1">
                 {EXTENDED_DISCORD_APPS.filter((a) => a.group === 'Card Games').map((app) => (
                   <button
@@ -307,16 +307,16 @@ export function ChatAppsPopover({
                       onLaunchActivity(app.id);
                       onOpenChange(false);
                     }}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#2b2d31] transition-all text-left cursor-pointer group"
+                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-accent/40 border border-transparent hover:border-border transition-all text-left cursor-pointer group"
                   >
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl shadow-md", app.iconBg)}>
                       {app.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs font-bold text-white group-hover:text-primary transition-colors block truncate">
+                      <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors block truncate">
                         {app.title}
                       </span>
-                      <span className="text-[10px] text-[#949ba4] line-clamp-1">
+                      <span className="text-[10px] text-muted-foreground line-clamp-1">
                         {app.description}
                       </span>
                     </div>
@@ -329,7 +329,7 @@ export function ChatAppsPopover({
           {/* Productivity & Dev */}
           {!appsSearchQuery && (
             <div>
-              <span className="text-xs font-bold text-white block mb-2">Productivity & Dev</span>
+              <span className="text-xs font-bold text-foreground block mb-2">Productivity & Dev</span>
               <div className="space-y-1">
                 {EXTENDED_DISCORD_APPS.filter((a) => a.group === 'Productivity & Dev').map((app) => (
                   <button
@@ -338,16 +338,16 @@ export function ChatAppsPopover({
                       onLaunchActivity(app.id);
                       onOpenChange(false);
                     }}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#2b2d31] transition-all text-left cursor-pointer group"
+                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-accent/40 border border-transparent hover:border-border transition-all text-left cursor-pointer group"
                   >
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl shadow-md", app.iconBg)}>
                       {app.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs font-bold text-white group-hover:text-primary transition-colors block truncate">
+                      <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors block truncate">
                         {app.title}
                       </span>
-                      <span className="text-[10px] text-[#949ba4] line-clamp-1">
+                      <span className="text-[10px] text-muted-foreground line-clamp-1">
                         {app.description}
                       </span>
                     </div>

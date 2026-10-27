@@ -52,7 +52,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--sidebar-accent', '#f4f4f5');
       root.style.setProperty('--border', '#e4e4e7');
       root.style.setProperty('--muted', '#f4f4f5');
-      root.style.setProperty('--muted-foreground', '#64748b');
+      root.style.setProperty('--muted-foreground', '#475569');
       root.style.setProperty('--accent', '#f4f4f5');
       root.style.setProperty('--accent-foreground', '#18181b');
       root.style.setProperty('--input', '#f4f4f5');
@@ -64,7 +64,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--primary-foreground', '0 0% 0%');
       root.style.setProperty('--primary-100', '43 96% 90%');
       root.style.setProperty('--primary-300', '43 96% 65%');
-      root.style.setProperty('--ring', '#f59e0b');
+      root.style.setProperty('--ring', 'rgba(100, 116, 139, 0.35)');
     } else if (theme === 'midnight') {
       // Midnight: Classic Discord Grey (#313338 / #2b2d31)
       root.classList.add('dark', 'theme-midnight');
@@ -92,7 +92,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--primary-foreground', '0 0% 0%');
       root.style.setProperty('--primary-100', '45 93% 20%');
       root.style.setProperty('--primary-300', '45 93% 70%');
-      root.style.setProperty('--ring', '#fbbf24');
+      root.style.setProperty('--ring', 'rgba(255, 255, 255, 0.2)');
     } else {
       // Dark Mode: Discord AMOLED Pure Black with Anticeil Palette (#000000 / #09090b)
       root.classList.add('dark', 'theme-dark');
@@ -120,7 +120,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--primary-foreground', '0 0% 0%');
       root.style.setProperty('--primary-100', '45 93% 20%');
       root.style.setProperty('--primary-300', '45 93% 70%');
-      root.style.setProperty('--ring', '#fbbf24');
+      root.style.setProperty('--ring', 'rgba(255, 255, 255, 0.2)');
     }
   }, [theme]);
 

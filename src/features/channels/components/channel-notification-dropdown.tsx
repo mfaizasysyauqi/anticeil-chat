@@ -47,8 +47,8 @@ export function ChannelNotificationDropdown({
             channelNotification.isMuted
               ? "text-red-400 hover:text-red-300"
               : open
-              ? "text-white bg-white/10"
-              : "text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5"
+              ? "text-foreground bg-accent"
+              : "text-foreground/70 hover:text-foreground hover:bg-accent/60"
           )}
           title={channelNotification.isMuted ? "Channel Muted" : "Notification Settings"}
         >
@@ -59,7 +59,7 @@ export function ChannelNotificationDropdown({
         side="bottom"
         align="end"
         sideOffset={8}
-        className="w-[240px] bg-[#111214] border border-[#2b2d31] text-[#dbdee1] rounded-2xl p-2 shadow-2xl z-50"
+        className="w-[240px] bg-popover border border-border text-popover-foreground rounded-2xl p-2 shadow-2xl z-50"
       >
         {/* Mute Channel with Submenu */}
         <DropdownMenuSub>

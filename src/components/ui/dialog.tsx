@@ -60,7 +60,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'fixed top-[50%] left-[50%] z-50 grid w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[calc(100svh-2rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-3 rounded-[16px] border border-border/80 bg-popover p-4 sm:p-5 text-popover-foreground shadow-2xl duration-200 outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
+          'fixed top-[50%] left-[50%] z-50 flex flex-col w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[calc(100svh-2.5rem)] translate-x-[-50%] translate-y-[-50%] rounded-[16px] border border-border/80 bg-card p-4 sm:p-5 text-card-foreground shadow-2xl duration-200 outline-hidden overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
           className,
         )}
         {...props}
@@ -88,7 +88,20 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-header"
       className={cn(
-        'flex flex-col gap-1 text-left pr-7 mb-1',
+        'flex flex-col gap-1 text-left pr-7 mb-2 shrink-0',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function DialogBody({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn(
+        'flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] pr-1 py-1 space-y-3',
         className,
       )}
       {...props}
@@ -106,7 +119,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-2 mt-1',
+        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-3 mt-2 border-t border-border/40 shrink-0',
         className,
       )}
       {...props}
@@ -129,7 +142,7 @@ function DialogTitle({
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        'text-lg leading-none font-semibold tracking-tight',
+        'text-base leading-none font-semibold tracking-tight text-foreground',
         className,
       )}
       {...props}
@@ -144,7 +157,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn('text-sm text-muted-foreground', className)}
+      className={cn('text-xs text-muted-foreground', className)}
       {...props}
     />
   );
@@ -154,9 +167,10 @@ export {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogDescription,
   DialogOverlay,
   DialogPortal,
   DialogTitle,

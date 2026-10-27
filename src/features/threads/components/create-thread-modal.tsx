@@ -49,25 +49,25 @@ export function CreateThreadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-[#313338] border border-[#232428] text-white shadow-2xl p-4 sm:p-5 rounded-[16px]">
+      <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 text-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center">
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
               </svg>
             </div>
-            <DialogTitle className="text-lg font-bold text-white">{t('Buat Thread Baru')}</DialogTitle>
+            <DialogTitle className="text-base font-bold text-foreground">{t('Buat Thread Baru')}</DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-[#949ba4]">
+          <DialogDescription className="text-xs text-muted-foreground">
             {t('Thread membuat percakapan terfokus pada topik tertentu dalam')} #{channelName || 'channel'}.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-3">
+        <form onSubmit={handleSubmit} className="space-y-3.5 mt-2">
           <div>
-            <label className="text-[11px] font-bold text-[#b5bac1] uppercase tracking-wider block mb-1.5">
-              {t('NAMA THREAD')} <span className="text-red-400">*</span>
+            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
+              {t('NAMA THREAD')} <span className="text-red-500">*</span>
             </label>
             <Input
               type="text"
@@ -76,12 +76,12 @@ export function CreateThreadModal({
               onChange={(e) => setThreadName(e.target.value)}
               maxLength={100}
               required
-              className="bg-[#1e1f22] border-none text-white placeholder:text-[#949ba4] focus-visible:ring-1 focus-visible:ring-[#5865f2]"
+              className="bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-[#b5bac1] uppercase tracking-wider block mb-1.5">
+            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
               {t('PESAN AWAL (OPSIONAL)')}
             </label>
             <textarea
@@ -89,7 +89,7 @@ export function CreateThreadModal({
               value={initialMsg}
               onChange={(e) => setInitialMsg(e.target.value)}
               rows={3}
-              className="w-full rounded-md bg-[#1e1f22] border-none text-white text-xs p-3 placeholder:text-[#949ba4] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#5865f2] resize-none"
+              className="w-full rounded-md bg-muted/50 border border-border text-foreground text-xs p-3 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
             />
           </div>
 
@@ -99,7 +99,7 @@ export function CreateThreadModal({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-white hover:bg-white/5"
+              className="text-muted-foreground hover:text-foreground"
             >
               {t('Batal')}
             </Button>
@@ -107,7 +107,7 @@ export function CreateThreadModal({
               type="submit"
               size="sm"
               disabled={!threadName.trim() || isSubmitting}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold font-medium cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer"
             >
               {isSubmitting ? t('Membuat...') : t('Buat Thread')}
             </Button>

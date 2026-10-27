@@ -34,16 +34,16 @@ export function PinnedMessagesPopover({
           className={cn(
             'h-8 w-8 transition-colors cursor-pointer relative',
             pinnedMessages.length > 0
-              ? 'text-primary'
+              ? 'text-foreground font-semibold'
               : isOpen
-                ? 'text-white bg-white/10'
-                : 'text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5',
+                ? 'text-foreground bg-accent'
+                : 'text-foreground/70 hover:text-foreground hover:bg-accent/60',
           )}
           title="Pinned Messages"
         >
           <Pin className="w-5 h-5" />
           {pinnedMessages.length > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary text-primary-foreground" />
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-card" />
           )}
         </Button>
       </PopoverTrigger>
@@ -51,12 +51,12 @@ export function PinnedMessagesPopover({
         side="bottom"
         align="end"
         sideOffset={8}
-        className="w-[420px] max-w-[95vw] max-h-[500px] p-0 bg-[#111214] border border-[#2b2d31] text-[#dbdee1] shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
+        className="w-[420px] max-w-[95vw] max-h-[500px] p-0 bg-popover border border-border text-popover-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="p-3.5 border-b border-white/10 flex items-center gap-2 bg-[#18191c]">
-          <Pin className="w-4 h-4 text-white" />
-          <span className="font-bold text-white text-sm">Pinned Messages</span>
+        <div className="p-3.5 border-b border-border/40 flex items-center gap-2 bg-muted/30">
+          <Pin className="w-4 h-4 text-foreground" />
+          <span className="font-bold text-foreground text-sm">Pinned Messages</span>
           {pinnedMessages.length > 0 && (
             <span className="ml-auto text-[10px] text-[#949ba4] font-mono">
               {pinnedMessages.length} tersemat

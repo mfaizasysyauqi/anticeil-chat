@@ -237,7 +237,7 @@ export function ActivityLauncherDialog({
 
       {/* ── Discord Nitro / Anticeil Plus Paywall Modal ──────────────────── */}
       <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
-        <DialogContent className="sm:max-w-[480px] p-0 bg-[#1e1f22] border-white/15 text-white overflow-hidden shadow-2xl">
+        <DialogContent className="sm:max-w-[480px] p-0 bg-card border border-border text-card-foreground overflow-hidden shadow-2xl">
           <div className="relative h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-6 flex flex-col justify-end">
             <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-amber-300 animate-spin-slow" />
@@ -250,36 +250,36 @@ export function ActivityLauncherDialog({
             </h3>
           </div>
 
-          <div className="p-6 space-y-4">
+          <div className="p-5 space-y-3.5">
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Paket <strong className="text-white">Free</strong> mendukung panggilan video & suara 1-on-1 gratis selamanya (maksimal 2 orang). Untuk menghubungkan <strong className="text-white">3 orang atau lebih</strong> dalam group call bersama tim Anda, silakan tingkatkan ke paket <strong className="text-primary font-semibold">Anticeil Plus</strong>.
+              Paket <strong className="text-foreground">Free</strong> mendukung panggilan video & suara 1-on-1 gratis selamanya (maksimal 2 orang). Untuk menghubungkan <strong className="text-foreground">3 orang atau lebih</strong> dalam group call bersama tim Anda, silakan tingkatkan ke paket <strong className="text-primary font-semibold">Anticeil Plus</strong>.
             </DialogDescription>
 
-            <div className="space-y-2.5 rounded-xl bg-black/30 p-3.5 border border-white/10 text-xs">
-              <div className="flex items-center gap-2 text-white/90">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="space-y-2 rounded-xl bg-muted/40 p-3.5 border border-border text-xs">
+              <div className="flex items-center gap-2 text-foreground/90">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>Group Video & Voice Call hingga 25+ peserta bersamaan</span>
               </div>
-              <div className="flex items-center gap-2 text-white/90">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="flex items-center gap-2 text-foreground/90">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>High-Definition 1080p 60FPS Screen Sharing & Activities</span>
               </div>
-              <div className="flex items-center gap-2 text-white/90">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="flex items-center gap-2 text-foreground/90">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>Anticeil Activity: YouTube Watch Together, Games, & Workflow Canvas</span>
               </div>
-              <div className="flex items-center gap-2 text-white/90">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="flex items-center gap-2 text-foreground/90">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>Tanpa batas durasi panggilan (*unlimited minutes*)</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsUpgradeModalOpen(false)}
-                className="text-muted-foreground hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
               >
                 Nanti Saja
               </Button>
@@ -293,7 +293,7 @@ export function ActivityLauncherDialog({
                     window.location.href = '/platform/billing';
                   }
                 }}
-                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 text-white font-bold gap-1.5 shadow-lg shadow-purple-500/20"
+                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 text-white font-bold gap-1.5 shadow-md shadow-purple-500/20"
               >
                 <Sparkles className="w-4 h-4" /> Upgrade ke Plus Sekarang
               </Button>

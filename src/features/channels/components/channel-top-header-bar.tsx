@@ -173,8 +173,8 @@ export function ChannelTopHeaderBar({
                 }
               }}
               className={cn(
-                'h-8 w-8 transition-colors cursor-pointer hover:bg-white/5',
-                showMemberList ? 'text-white' : 'text-[#b5bac1] hover:text-[#dbdee1]',
+                'h-8 w-8 transition-colors cursor-pointer',
+                showMemberList ? 'text-foreground bg-accent' : 'text-foreground/70 hover:text-foreground hover:bg-accent/60',
               )}
               title={isHome ? 'Daftar Teman' : 'Daftar Anggota'}
             >
