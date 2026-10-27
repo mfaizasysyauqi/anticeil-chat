@@ -39,6 +39,8 @@ const STORAGE_KEY_HUBS = 'anticeil_community_hubs_v3';
 
 export function loadStoredHubs(): CommunityHub[] {
   try {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
+    if (!token) return DEFAULT_HUBS;
     const raw = localStorage.getItem(STORAGE_KEY_HUBS);
     if (!raw) return DEFAULT_HUBS;
     const parsed = JSON.parse(raw);

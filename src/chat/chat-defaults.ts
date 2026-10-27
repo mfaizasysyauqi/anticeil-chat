@@ -13,6 +13,8 @@ const STORAGE_KEY_CHANNELS = 'anticeil_community_channels_v3';
 
 export function loadStoredMessages(): Record<string, CommunityMessage[]> {
   try {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
+    if (!token) return {};
     const raw = localStorage.getItem(STORAGE_KEY_MESSAGES);
     if (!raw) return {};
     return JSON.parse(raw);
@@ -34,6 +36,8 @@ export const saveStoredChatMessages = saveStoredMessages;
 
 export function loadStoredChannels(): CommunityChannel[] {
   try {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
+    if (!token) return [];
     const raw = localStorage.getItem(STORAGE_KEY_CHANNELS);
     if (!raw) return [];
     return JSON.parse(raw);

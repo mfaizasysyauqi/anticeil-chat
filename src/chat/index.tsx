@@ -48,6 +48,7 @@ import { SendGiftDialog } from '@/features/gifts';
 import { ChatInputBar, processFileInput } from '@/features/chat-input';
 import { MessagesFeed, renderFormattedMessage, useCommunitySocket } from '@/features/chat';
 import { QuickAddEmojiDialog, QuickAddStickerDialog } from '@/features/media';
+import { AuthRequiredDialog } from '@/features/auth';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -169,16 +170,52 @@ export function CommunityPage() {
   const { isMobile, isTablet, isDesktop, deviceMode } = useResponsive();
   const navigate = useNavigate();
 
+  const [isAuthRequiredOpen, setIsAuthRequiredOpen] = useState(false);
+  const [authFeatureInfo, setAuthFeatureInfo] = useState<{ title?: string; desc?: string }>({});
+
+  const requireAuth = (action: () => void, title?: string, desc?: string) => {
+    if (!currentUser) {
+      setAuthFeatureInfo({ title, desc });
+      setIsAuthRequiredOpen(true);
+      return;
+    }
+    action();
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('ap_token');
-    localStorage.removeItem('anticeil_current_user');
-    localStorage.removeItem('current_project');
-    localStorage.removeItem('current_platform');
+    // Clear all user session, community, channels, and hubs caches from localStorage
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith('anticeil_community_') ||
+          key.startsWith('anticeil_current_') ||
+          key.startsWith('anticeil_threads_') ||
+          key.startsWith('anticeil_notif_') ||
+          key === 'token' ||
+          key === 'ap_token' ||
+          key === 'projectId' ||
+          key === 'current_project' ||
+          key === 'current_platform')
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
     sessionStorage.clear();
     setCurrentUser(null);
+    setHubs(DEFAULT_HUBS);
+    setChannels([]);
+    setMembers([]);
+    setMessagesMap({});
+    setActiveHubId('anticeil');
+    setActiveChannelId('');
     window.dispatchEvent(new Event('storage'));
     toast.success(t('Berhasil keluar dari akun.'));
+    setTimeout(() => {
+      window.location.href = window.location.origin + window.location.pathname;
+    }, 200);
   };
 
   const handleGoogleSignIn = async () => {
@@ -228,8 +265,8 @@ export function CommunityPage() {
         return {
           ...jwt,
           name: `${jwt.firstName || ''} ${jwt.lastName || ''}`.trim() || jwt.username || jwt.email,
-          avatar: jwt.imageUrl || 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
-          imageUrl: jwt.imageUrl || 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
+          avatar: jwt.imageUrl || null,
+          imageUrl: jwt.imageUrl || null,
         };
       }
     } catch {}
@@ -270,7 +307,7 @@ export function CommunityPage() {
             const rawImg = claimRes.imageUrl || claimRes.avatar || jwt.imageUrl;
             const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
               ? rawImg
-              : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
+              : null;
             const formatted = {
               ...jwt,
               ...claimRes,
@@ -311,7 +348,7 @@ export function CommunityPage() {
           const rawImg = user.imageUrl || user.avatar || payload.imageUrl;
           const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
             ? rawImg
-            : 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
+            : null;
           const formatted = {
             ...payload,
             ...user,
@@ -579,6 +616,17 @@ export function CommunityPage() {
   useEffect(() => {
     let mounted = true;
     const loadData = async () => {
+      const token = authenticationSession.getToken();
+      if (!token) {
+        if (mounted) {
+          setChannels([]);
+          setMembers([]);
+          setHubs(DEFAULT_HUBS);
+          setActiveHubId('anticeil');
+          setActiveChannelId('');
+        }
+        return;
+      }
       try {
         const currentProjectId = authenticationSession.getProjectId();
         const [channelsRes, membersRes, hubsRes] = await Promise.all([
@@ -914,6 +962,14 @@ export function CommunityPage() {
 
   // Send message
   const handleSendMessage = async () => {
+    if (!currentUser) {
+      setAuthFeatureInfo({
+        title: t('Kirim Pesan'),
+        desc: t('Masuk ke Anticeil untuk mengirim pesan di saluran ini.'),
+      });
+      setIsAuthRequiredOpen(true);
+      return;
+    }
     if (!activeChannel) return;
     if (!inputText.trim() && !stagedAttachment) return;
 
@@ -1887,6 +1943,14 @@ export function CommunityPage() {
       servers={hubs}
       activeServerId={activeHubId}
       onSelectServer={(id) => {
+        if (id !== 'anticeil' && !currentUser) {
+          setAuthFeatureInfo({
+            title: t('Akses Server'),
+            desc: t('Masuk ke Anticeil untuk mengakses saluran dan mengobrol di server ini.'),
+          });
+          setIsAuthRequiredOpen(true);
+          return;
+        }
         setActiveHubId(id);
         if (id === 'anticeil') {
           setActiveChannelId('');
@@ -1897,7 +1961,13 @@ export function CommunityPage() {
           setActiveChannelId(firstCh?.id || '');
         }
       }}
-      onOpenCreateServer={() => setIsCreateHubOpen(true)}
+      onOpenCreateServer={() =>
+        requireAuth(
+          () => setIsCreateHubOpen(true),
+          t('Buat Server Komunitas'),
+          t('Masuk ke Anticeil untuk membuat server komunitas Anda sendiri.'),
+        )
+      }
       platformName={platform?.name}
     />
   );
@@ -1925,21 +1995,47 @@ export function CommunityPage() {
       setActiveThread={setActiveThread}
       activeCallCounts={activeCallCounts}
       onItemClick={onItemClick}
-      onOpenDmSearch={() => {
-        setIsDmSearchOpen(true);
-        setDmSearchQuery('');
-      }}
-      onOpenInvite={() => setIsInviteOpen(true)}
+      onOpenDmSearch={() =>
+        requireAuth(
+          () => {
+            setIsDmSearchOpen(true);
+            setDmSearchQuery('');
+          },
+          t('Cari Percakapan'),
+          t('Masuk ke Anticeil untuk memulai obrolan langsung.'),
+        )
+      }
+      onOpenInvite={() =>
+        requireAuth(
+          () => setIsInviteOpen(true),
+          t('Undang Teman'),
+          t('Masuk untuk membagikan tautan undangan server.'),
+        )
+      }
       onOpenServerSettings={(section) => {
-        if (section) setServerSettingsSection(section);
-        setIsServerSettingsOpen(true);
+        requireAuth(() => {
+          if (section) setServerSettingsSection(section);
+          setIsServerSettingsOpen(true);
+        });
       }}
       onOpenCreateChannel={(category, type = 'text') => {
-        setNewChannelCategory(category as any);
-        setNewChannelType(type);
-        setIsCreateChannelOpen(true);
+        requireAuth(
+          () => {
+            setNewChannelCategory(category as any);
+            setNewChannelType(type);
+            setIsCreateChannelOpen(true);
+          },
+          t('Buat Saluran'),
+          t('Masuk ke Anticeil untuk membuat saluran obrolan atau panggilan suara.'),
+        );
       }}
-      onOpenCreateHub={() => setIsCreateHubOpen(true)}
+      onOpenCreateHub={() =>
+        requireAuth(
+          () => setIsCreateHubOpen(true),
+          t('Buat Server'),
+          t('Masuk ke Anticeil untuk membuat server komunitas.'),
+        )
+      }
       onOpenEditChannel={(ch) => handleOpenEditChannel(ch)}
       onUpdateHubIcon={async (file) => {
         if (!activeHub) return;
@@ -2008,8 +2104,28 @@ export function CommunityPage() {
   const renderFriendsMainPage = () => (
     <FriendsView
       {...friends}
+      onTabChange={(tab) => {
+        if (tab === 'add' && !currentUser) {
+          setAuthFeatureInfo({
+            title: t('Tambah Teman'),
+            desc: t('Masuk ke Anticeil untuk mencari dan menambahkan teman baru.'),
+          });
+          setIsAuthRequiredOpen(true);
+          return;
+        }
+        friends.onTabChange(tab);
+      }}
       onStartDM={handleStartDirectMessage}
-      onOpenDmSearch={() => setIsDmSearchOpen(true)}
+      onOpenDmSearch={() =>
+        requireAuth(
+          () => {
+            setIsDmSearchOpen(true);
+            setDmSearchQuery('');
+          },
+          t('Cari Percakapan'),
+          t('Masuk ke Anticeil untuk memulai obrolan langsung.'),
+        )
+      }
       onOpenSidebar={() => setIsMobileChannelsOpen(true)}
       horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
     />
@@ -2549,6 +2665,15 @@ export function CommunityPage() {
             />
           );
         })()}
+
+        {/* Global Auth Required Prompt Dialog */}
+        <AuthRequiredDialog
+          isOpen={isAuthRequiredOpen}
+          onClose={() => setIsAuthRequiredOpen(false)}
+          onGoogleSignIn={handleGoogleSignIn}
+          featureTitle={authFeatureInfo.title}
+          featureDescription={authFeatureInfo.desc}
+        />
     </LockedFeatureGuard>
   );
 }

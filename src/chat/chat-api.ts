@@ -234,6 +234,10 @@ export const chatApi = {
 
   // ── Members & Friends (Fetches real workspace users from /v1/users) ──
   async getMembers(projectId?: string, hubId?: string): Promise<CommunityMember[]> {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
+    if (!token) {
+      return [];
+    }
     try {
       const res = await api.get<any>('/v1/users', {
         params: { limit: 100 },
@@ -256,7 +260,7 @@ export const chatApi = {
         });
       }
     } catch {
-      // Graceful fallback if unauthenticated
+      // Graceful fallback if unauthenticated or forbidden
     }
     return [];
   },
