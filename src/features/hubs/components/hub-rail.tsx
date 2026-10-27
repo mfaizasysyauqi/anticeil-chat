@@ -121,9 +121,9 @@ export function HubRail({
           <TooltipTrigger asChild>
             <button
               onClick={onOpenCreateHub}
-              className="group relative size-10 rounded-[14px] bg-sidebar-accent text-emerald-500 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0"
+              className="group relative size-10 rounded-[14px] bg-sidebar-accent text-emerald-500 hover:bg-amber-400 hover:text-black flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold"
             >
-              <Plus className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90" />
+              <Plus className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90 text-inherit" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
@@ -147,8 +147,8 @@ export function HubRail({
                 className={cn(
                   'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0',
                   isTemplates
-                    ? 'bg-primary text-black font-bold shadow-xs shadow-primary/20'
-                    : 'bg-sidebar-accent text-sidebar-foreground hover:bg-primary hover:text-black'
+                    ? 'bg-emerald-500 text-white font-bold shadow-xs shadow-emerald-500/20'
+                    : 'bg-sidebar-accent text-amber-500 dark:text-amber-400 hover:bg-emerald-500 hover:text-white'
                 )}
               >
                 <Compass className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />

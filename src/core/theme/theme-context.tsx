@@ -48,14 +48,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--popover-foreground', '#18181b');
       root.style.setProperty('--sidebar-background', '#ffffff');
       root.style.setProperty('--sidebar-foreground', '#18181b');
-      root.style.setProperty('--sidebar-border', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--sidebar-border', '#e4e4e7');
       root.style.setProperty('--sidebar-accent', '#f4f4f5');
-      root.style.setProperty('--border', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--border', '#e4e4e7');
       root.style.setProperty('--muted', '#f4f4f5');
-      root.style.setProperty('--muted-foreground', '#71717a');
+      root.style.setProperty('--muted-foreground', '#64748b');
       root.style.setProperty('--accent', '#f4f4f5');
       root.style.setProperty('--accent-foreground', '#18181b');
-      root.style.setProperty('--input', '#ffffff');
+      root.style.setProperty('--input', '#f4f4f5');
       // Anticeil Secondary: Hijau Emerald / Teal (#0d9488)
       root.style.setProperty('--secondary', '#0d9488');
       root.style.setProperty('--secondary-foreground', '#ffffff');

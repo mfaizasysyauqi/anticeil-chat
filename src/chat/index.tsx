@@ -4497,7 +4497,7 @@ export function CommunityPage() {
             )}
 
             {/* Discord Signature Chat Input Box - High Contrast & Theme-Driven */}
-            <div className="w-full h-[52px] flex items-center gap-3 rounded-[12px] bg-card border border-border hover:border-border/80 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 px-2.5 transition-all shadow-2xs">
+            <div className="w-full h-[52px] flex items-center gap-3 rounded-[12px] bg-muted/70 dark:bg-card border border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-3 transition-all shadow-xs">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -4510,7 +4510,7 @@ export function CommunityPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-7 h-7 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-background dark:bg-muted text-foreground/80 hover:text-foreground hover:bg-background/90 flex items-center justify-center shrink-0 transition-all border border-border/80 shadow-xs cursor-pointer"
                 title="Lampirkan Gambar atau Dokumen (Maks. 5 MB)"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -4535,7 +4535,7 @@ export function CommunityPage() {
                       : `Message #${activeChannel.name}`
                     : t('Pilih atau buat channel terlebih dahulu...')
                 }
-                className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 h-full bg-transparent flex-1 placeholder:text-muted-foreground text-foreground disabled:opacity-50"
+                className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 h-full bg-transparent flex-1 placeholder:text-muted-foreground/90 text-foreground font-medium disabled:opacity-50"
               />
 
               {/* Right Action Icons: Gift, GIF, Sticker, Emoji, Apps & Send (Discord style) */}
@@ -4544,7 +4544,7 @@ export function CommunityPage() {
                 <button
                   type="button"
                   onClick={() => setIsGiftModalOpen(true)}
-                  className="w-6 h-6 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-6 h-6 text-muted-foreground/90 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
                   title="Kirim Hadiah (Send a Gift)"
                 >
                   <Gift className="w-5 h-5" />
@@ -8735,14 +8735,14 @@ export function CommunityPage() {
             </div>
 
             {/* Thread Drawer Message Input */}
-            <div className="p-3 bg-[#2b2d31] border-t border-black/20 shrink-0">
+            <div className="p-3 bg-card border-t border-border shrink-0">
               <form onSubmit={handleSendThreadMessage} className="flex items-center gap-2">
                 <Input
                   type="text"
                   placeholder={`Kirim pesan ke #${activeThread?.name || 'thread'}...`}
                   value={threadInputText}
                   onChange={(e) => setThreadInputText(e.target.value)}
-                  className="flex-1 bg-[#383a40] border-none text-white placeholder:text-[#949ba4] text-xs h-9 rounded-lg focus-visible:ring-1 focus-visible:ring-[#5865f2]"
+                  className="flex-1 bg-muted/70 border border-border text-foreground placeholder:text-muted-foreground text-xs h-9 rounded-lg focus-visible:ring-1 focus-visible:ring-primary"
                 />
                 <Button
                   type="submit"
