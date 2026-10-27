@@ -1,78 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import {
-  Hash,
-  MessageSquare,
-  Users,
   Search,
   Plus,
   Send,
-  Sparkles,
-  Layers,
-  ChevronDown,
-  ExternalLink,
-  Shield,
-  Crown,
-  Paperclip,
-  X,
-  Trash2,
-  Edit2,
-  Compass,
-  Bot,
-  Terminal,
   Settings,
-  Mic,
-  MicOff,
-  Headphones,
-  Smile,
   Check,
-  Share2,
-  UserPlus,
-  Copy,
-  AlertCircle,
-  Clock,
-  AtSign,
-  UserCheck,
-  UserX,
-  Inbox,
   Webhook,
-  Bell,
   Pin,
-  Lock,
-  KeyRound,
-  Zap,
-  ChevronRight,
-  Globe,
-  BarChart3,
-  ScrollText,
-  Ban,
-  Tag,
-  Image as ImageIcon,
-  CheckCircle2,
-  RefreshCw,
   Activity,
-  Award,
-  Flame,
-  ShieldAlert,
   Video,
-  PhoneCall,
-  PhoneOff,
-  Radio,
-  Signal,
-  Rocket,
-  Maximize2,
-  Minimize2,
-  Camera,
-  Upload,
   Gift,
-  Volume2,
-  MessagesSquare,
-  TrendingUp,
-  ArrowLeft,
-  Menu,
-  Sun,
-  Moon,
-  LogOut,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Link, useNavigate } from 'react-router-dom';
@@ -81,13 +18,12 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 import { useTranslation } from '@/core/i18n';
 import { useTheme } from '@/core/theme';
-import { useResponsive, LAYOUT_SIZES, BREAKPOINTS } from '@/core';
+import { useResponsive, LAYOUT_SIZES } from '@/core';
 import { HubRail, HubInviteDialog, CreateOrJoinHubDialog, EditHubDialog, DeleteHubDialog } from '@/features/hubs';
 import { UserBottomDock, EditProfileDialog } from '@/features/profile';
 import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
 import {
   ChannelSettingsDialog,
-  PinnedMessagesPopover,
   CreateChannelDialog,
   EditChannelDialog,
   DeleteChannelDialog,
@@ -95,6 +31,7 @@ import {
   ChannelTopHeaderBar,
   ForumChannelView,
   ChannelsSidebar,
+  useResizableSidebar,
 } from '@/features/channels';
 import { ServerMembersSidebar } from '@/features/members';
 import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
@@ -190,8 +127,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 
-import { messagesApi, communityApi } from './messages-api';
-import { CommunityAvatar } from './messages-avatar';
+import { communityApi } from './messages-api';
 import {
   DEFAULT_CHANNELS,
   DEFAULT_HUBS,
@@ -521,23 +457,13 @@ export function CommunityPage() {
 
   const [channelToDelete, setChannelToDelete] = useState<CommunityChannel | null>(null);
 
-  // Discord-style Resizable Sidebar state
-  const DEFAULT_SIDEBAR_WIDTH = 240;
-  const MIN_SIDEBAR_WIDTH = 180;
-  const MAX_SIDEBAR_WIDTH = 480;
-  const SIDEBAR_STORAGE_KEY = 'anticeil_channels_sidebar_width';
-
-  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-      if (saved) {
-        const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= MIN_SIDEBAR_WIDTH && val <= MAX_SIDEBAR_WIDTH) return val;
-      }
-    } catch {}
-    return DEFAULT_SIDEBAR_WIDTH;
-  });
-  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  // Discord-style Resizable Sidebar hook
+  const {
+    sidebarWidth,
+    isResizingSidebar,
+    handleSidebarResizeStart,
+    handleSidebarResizeReset,
+  } = useResizableSidebar();
   const [channelForSettings, setChannelForSettings] = useState<CommunityChannel | null>(null);
 
   // Responsive state for Mobile/Tablet sheets
@@ -1774,44 +1700,6 @@ export function CommunityPage() {
       console.error('Failed to create channel', err);
     }
   };
-
-  // Discord-style Resizable Sidebar handlers
-  const handleSidebarResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizingSidebar(true);
-  };
-
-  const handleSidebarResizeReset = () => {
-    setSidebarWidth(DEFAULT_SIDEBAR_WIDTH);
-    try {
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(DEFAULT_SIDEBAR_WIDTH));
-    } catch {}
-  };
-
-  useEffect(() => {
-    if (!isResizingSidebar) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const miniRailEl = document.getElementById('anticeil-mini-rail');
-      const miniRailOffset = miniRailEl ? miniRailEl.getBoundingClientRect().right : 56;
-      const newWidth = Math.min(Math.max(e.clientX - miniRailOffset, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
-      setSidebarWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizingSidebar(false);
-      try {
-        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
-      } catch {}
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizingSidebar, sidebarWidth]);
 
   // Edit Channel (Channel Settings Dialog)
   const handleOpenEditChannel = (channel: CommunityChannel, e?: React.MouseEvent) => {
