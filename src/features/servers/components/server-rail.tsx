@@ -141,15 +141,15 @@ export function ServerRail({
                 className={cn(
                   'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
                   isFriendsMode
-                    ? 'bg-amber-400 text-black shadow-xs shadow-amber-400/30 hover:bg-amber-300'
-                    : 'bg-sidebar-accent text-amber-400 dark:text-amber-400 hover:bg-amber-400 hover:text-black'
+                    ? 'bg-amber-400 text-black shadow-xs shadow-amber-400/30 hover:bg-amber-300 hover:text-black'
+                    : 'bg-sidebar-accent text-amber-400 hover:bg-amber-400 hover:text-black dark:hover:text-black'
                 )}
                 aria-label={isFriendsMode ? 'Mode Teman. Klik untuk ganti ke Mode Server' : 'Mode Server. Klik untuk ganti ke Mode Teman'}
               >
                 {isFriendsMode ? (
-                  <Users className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                  <Users className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
                 ) : (
-                  <Globe className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                  <Globe className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
                 )}
               </button>
             </TooltipTrigger>
@@ -168,7 +168,7 @@ export function ServerRail({
                 onClick={isFriendsMode ? onOpenAddFriend : handleCreate}
                 className={cn(
                   'group relative size-10 rounded-[14px] bg-sidebar-accent flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
-                  'text-emerald-500 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                  'text-emerald-400 hover:bg-emerald-500 hover:text-white dark:hover:text-white'
                 )}
               >
                 {isFriendsMode ? (
