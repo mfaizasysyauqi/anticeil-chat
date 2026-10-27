@@ -8,8 +8,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { CommunityAvatar } from '@/chat/messages-avatar';
-import type { CommunityChannel, CommunityMember } from '@/chat/messages-types';
+import { CommunityAvatar } from '@/chat/chat-avatar';
+import type { CommunityChannel, CommunityMember } from '@/chat/chat-types';
 
 export interface DmSearchDialogProps {
   open: boolean;

@@ -7,9 +7,9 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { useTranslation } from '@/core/i18n';
-import type { CommunityThread, CommunityMessage } from '@/chat/messages-types';
+import type { CommunityThread, CommunityMessage } from '@/chat/chat-types';
 
 interface ThreadDrawerProps {
   isOpen: boolean;

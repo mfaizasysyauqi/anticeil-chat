@@ -8,7 +8,7 @@ import {
   Shapes,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { LocalVideoView, RemoteVideoView, ScreenVideoView } from './video-views';

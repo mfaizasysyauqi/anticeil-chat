@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { ThreadsPopover, type ChannelThreadItem } from '@/features/threads';
 import { ChannelNotificationDropdown, type ChannelNotificationSettings } from './channel-notification-dropdown';
 import { PinnedMessagesPopover } from './pinned-messages-popover';
-import type { CommunityChannel, CommunityMessage } from '@/chat/messages-types';
+import type { CommunityChannel, CommunityMessage } from '@/chat/chat-types';
 
 export interface ChannelTopHeaderBarProps {
   activeChannel: CommunityChannel | null;

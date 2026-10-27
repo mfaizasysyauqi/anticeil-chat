@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { CommunityMessage, CommunityChannel } from '@/chat/messages-types';
+import type { CommunityMessage, CommunityChannel } from '@/chat/chat-types';
 
 export interface UseCommunitySocketOptions {
   socket: any;

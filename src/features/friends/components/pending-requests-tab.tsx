@@ -1,6 +1,6 @@
 import React from 'react';
 import { Inbox, UserCheck, UserX, X } from 'lucide-react';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/core/i18n';
 import type { FriendRequest } from '../types';

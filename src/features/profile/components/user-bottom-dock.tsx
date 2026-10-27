@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mic, MicOff, Headphones, Settings, Radio, Maximize2, PhoneOff, LogOut } from 'lucide-react';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';

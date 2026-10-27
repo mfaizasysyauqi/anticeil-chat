@@ -50,8 +50,8 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/messages-api';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { communityApi } from '@/chat/chat-api';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import type {
   CommunityHub,
   CommunityMember,
@@ -62,7 +62,7 @@ import type {
   CommunityHubStats,
   CommunityCustomEmoji,
   CommunityChannel,
-} from '@/chat/messages-types';
+} from '@/chat/chat-types';
 
 export type ServerSettingsSection =
   | 'profile'

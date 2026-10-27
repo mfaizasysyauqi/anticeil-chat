@@ -1,5 +1,5 @@
 import React from 'react';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { useTranslation } from '@/core/i18n';
 import type { FriendMember } from '../types';
 

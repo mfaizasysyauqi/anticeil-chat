@@ -6,8 +6,8 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CommunityAvatar } from '@/chat/messages-avatar';
-import { CommunityChannel, CommunityHub } from '@/chat/messages-types';
+import { CommunityAvatar } from '@/chat/chat-avatar';
+import { CommunityChannel, CommunityHub } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';

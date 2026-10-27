@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { CommunityHub } from '@/chat/messages-types';
+import type { CommunityHub } from '@/chat/chat-types';
 
 export interface EditServerDialogProps {
   serverToEdit?: CommunityHub | null;

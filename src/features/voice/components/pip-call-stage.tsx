@@ -10,8 +10,8 @@ import {
   Monitor,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommunityAvatar } from '@/chat/messages-avatar';
-import { CommunityChannel } from '@/chat/messages-types';
+import { CommunityAvatar } from '@/chat/chat-avatar';
+import { CommunityChannel } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import { DiscordAppDefinition } from '../data/discord-activities';
 import type { CallParticipant } from '../types';

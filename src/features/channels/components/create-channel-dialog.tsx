@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import type { CommunityHub } from '@/chat/messages-types';
+import type { CommunityHub } from '@/chat/chat-types';
 
 export interface CreateChannelDialogProps {
   open: boolean;

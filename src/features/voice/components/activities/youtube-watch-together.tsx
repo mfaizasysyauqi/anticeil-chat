@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
-import { CommunityChannel } from '@/chat/messages-types';
+import { CommunityChannel } from '@/chat/chat-types';
 
 export interface YouTubeWatchTogetherProps {
   channel: CommunityChannel;

@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { CommunityChannel } from '@/chat/messages-types';
+import type { CommunityChannel } from '@/chat/chat-types';
 
 export interface DeleteChannelDialogProps {
   channelToDelete: CommunityChannel | null;

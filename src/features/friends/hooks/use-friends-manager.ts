@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import type { CommunityMember } from '@/chat/messages-types';
+import type { CommunityMember } from '@/chat/chat-types';
 import type { FriendRequest, FriendsTab } from '../types';
 
 export interface UseFriendsManagerOptions {

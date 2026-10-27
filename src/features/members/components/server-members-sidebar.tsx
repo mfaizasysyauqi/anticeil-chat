@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Users, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommunityAvatar } from '@/chat/messages-avatar';
-import { CommunityMember } from '@/chat/messages-types';
+import { CommunityAvatar } from '@/chat/chat-avatar';
+import { CommunityMember } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from './role-badge';
 

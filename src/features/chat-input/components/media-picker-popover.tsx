@@ -14,7 +14,7 @@ import {
   DiscordSticker,
   DiscordGifItem,
 } from '@/chat/anticeil-media-data';
-import type { CommunityHub } from '@/chat/messages-types';
+import type { CommunityHub } from '@/chat/chat-types';
 
 export interface MediaPickerPopoverProps {
   open: boolean;

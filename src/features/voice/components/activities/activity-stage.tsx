@@ -1,6 +1,6 @@
 import React from 'react';
 import { Socket } from 'socket.io-client';
-import { CommunityChannel } from '@/chat/messages-types';
+import { CommunityChannel } from '@/chat/chat-types';
 import { DiscordAppDefinition } from '../../data/discord-activities';
 import { YouTubeWatchTogether } from './youtube-watch-together';
 import { VirtualFisher } from './virtual-fisher';

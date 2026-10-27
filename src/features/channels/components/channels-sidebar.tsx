@@ -34,13 +34,13 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import type {
   CommunityHub,
   CommunityChannel,
   CommunityMember,
   CommunityChannelType,
-} from '@/chat/messages-types';
+} from '@/chat/chat-types';
 import type { ServerSettingsSection } from '@/features/server-settings';
 
 export interface ChannelsSidebarProps {

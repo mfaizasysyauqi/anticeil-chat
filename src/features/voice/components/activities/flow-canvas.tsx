@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';
-import { CommunityChannel } from '@/chat/messages-types';
+import { CommunityChannel } from '@/chat/chat-types';
 
 export interface FlowCanvasProps {
   channel: CommunityChannel;

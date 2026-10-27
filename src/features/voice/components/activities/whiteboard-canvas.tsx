@@ -3,7 +3,7 @@ import { Socket } from 'socket.io-client';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CommunityChannel } from '@/chat/messages-types';
+import { CommunityChannel } from '@/chat/chat-types';
 
 export interface WhiteboardCanvasProps {
   channel: CommunityChannel;

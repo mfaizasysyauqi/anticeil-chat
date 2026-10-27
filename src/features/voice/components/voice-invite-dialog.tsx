@@ -3,7 +3,7 @@ import { Volume2, X, Sparkles, Copy, Check, MessageSquare, Send } from 'lucide-r
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CommunityChannel, CommunityHub } from '@/chat/messages-types';
+import { CommunityChannel, CommunityHub } from '@/chat/chat-types';
 
 export interface VoiceInviteDialogProps {
   open: boolean;

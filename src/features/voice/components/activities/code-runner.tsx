@@ -3,7 +3,7 @@ import { Socket } from 'socket.io-client';
 import { Terminal, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { CommunityChannel } from '@/chat/messages-types';
+import { CommunityChannel } from '@/chat/chat-types';
 
 export interface CodeRunnerProps {
   channel: CommunityChannel;

@@ -18,10 +18,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { CommunityAvatar } from '@/chat/messages-avatar';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
 import { renderFormattedMessage } from '../utils/format-message';
-import type { CommunityChannel, CommunityMessage, CommunityRole } from '@/chat/messages-types';
+import type { CommunityChannel, CommunityMessage, CommunityRole } from '@/chat/chat-types';
 
 export interface MessagesFeedProps {
   activeChannel: CommunityChannel | null;

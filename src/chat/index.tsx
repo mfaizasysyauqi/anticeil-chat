@@ -45,7 +45,7 @@ import { WebhookDialog } from '@/features/webhooks';
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 import { SendGiftDialog } from '@/features/gifts';
 import { ChatInputBar, processFileInput } from '@/features/chat-input';
-import { MessagesFeed, renderFormattedMessage, useCommunitySocket } from '@/features/messages';
+import { MessagesFeed, renderFormattedMessage, useCommunitySocket } from '@/features/chat';
 import { QuickAddEmojiDialog, QuickAddStickerDialog } from '@/features/media';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;

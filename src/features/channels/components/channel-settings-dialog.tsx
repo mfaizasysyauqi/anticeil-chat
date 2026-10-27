@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import type { CommunityChannel } from '@/chat/messages-types';
+import type { CommunityChannel } from '@/chat/chat-types';
 import { toast } from 'sonner';
 
 interface ChannelSettingsDialogProps {

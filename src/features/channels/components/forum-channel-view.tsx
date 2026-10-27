@@ -19,10 +19,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { CommunityAvatar } from '@/chat/messages-avatar';
-import { renderFormattedMessage } from '@/features/messages';
+import { CommunityAvatar } from '@/chat/chat-avatar';
+import { renderFormattedMessage } from '@/features/chat';
 import dayjs from 'dayjs';
-import type { CommunityChannel, CommunityMessage, CommunityThread } from '@/chat/messages-types';
+import type { CommunityChannel, CommunityMessage, CommunityThread } from '@/chat/chat-types';
 
 export interface ForumChannelViewProps {
   activeChannel: CommunityChannel | null;

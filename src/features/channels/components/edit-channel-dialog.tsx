@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { CommunityChannel } from '@/chat/messages-types';
+import type { CommunityChannel } from '@/chat/chat-types';
 
 export interface EditChannelDialogProps {
   channelToEdit: CommunityChannel | null;

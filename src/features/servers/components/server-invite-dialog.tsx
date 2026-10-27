@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import type { CommunityHub } from '@/chat/messages-types';
+import type { CommunityHub } from '@/chat/chat-types';
 
 export interface ServerInviteDialogProps {
   open: boolean;

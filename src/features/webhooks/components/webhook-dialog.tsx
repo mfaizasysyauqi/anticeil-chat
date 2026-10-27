@@ -22,8 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/messages-api';
-import type { CommunityChannel, CommunityHub } from '@/chat/messages-types';
+import { communityApi } from '@/chat/chat-api';
+import type { CommunityChannel, CommunityHub } from '@/chat/chat-types';
 
 interface WebhookDialogProps {
   isOpen: boolean;
