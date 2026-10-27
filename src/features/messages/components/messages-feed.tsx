@@ -378,3 +378,7 @@ export function MessagesFeed({
     </div>
   );
 }
+
+// Domain alias (UI/UX alignment)
+export const ChatFeed = MessagesFeed;
+export type ChatFeedProps = MessagesFeedProps;

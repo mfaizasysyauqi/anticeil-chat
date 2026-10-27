@@ -19,7 +19,13 @@ dayjs.extend(relativeTime);
 import { useTranslation } from '@/core/i18n';
 import { useTheme } from '@/core/theme';
 import { useResponsive, LAYOUT_SIZES } from '@/core';
-import { HubRail, HubInviteDialog, CreateOrJoinHubDialog, EditHubDialog, DeleteHubDialog } from '@/features/hubs';
+import {
+  ServerRail,
+  ServerInviteDialog,
+  CreateOrJoinServerDialog,
+  EditServerDialog,
+  DeleteServerDialog,
+} from '@/features/servers';
 import { UserBottomDock, EditProfileDialog } from '@/features/profile';
 import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
 import {
@@ -127,13 +133,13 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 
-import { communityApi } from './messages-api';
+import { chatApi, communityApi } from './chat-api';
 import {
   DEFAULT_CHANNELS,
   DEFAULT_HUBS,
   loadStoredHubs,
   saveStoredHubs,
-} from './messages-data';
+} from './chat-defaults';
 import {
   CommunityAttachment,
   CommunityChannel,
@@ -152,7 +158,7 @@ import {
   CommunityChannelNotification,
   CommunityChannelNotificationLevel,
   CommunityThread,
-} from './messages-types';
+} from './chat-types';
 
 
 // Rich message parser (supports **bold**, `code`, @mentions, and links)
@@ -1810,12 +1816,12 @@ export function CommunityPage() {
     t,
   });
 
-  // Component: Discord Mini Server/Hub Rail (delegates to reusable HubRail feature component)
+  // Component: Server Rail (delegates to reusable ServerRail feature component)
   const renderDiscordHubRail = () => (
-    <HubRail
-      hubs={hubs}
-      activeHubId={activeHubId}
-      onSelectHub={(id) => {
+    <ServerRail
+      servers={hubs}
+      activeServerId={activeHubId}
+      onSelectServer={(id) => {
         setActiveHubId(id);
         if (id === 'anticeil') {
           setActiveChannelId('');
@@ -1826,7 +1832,7 @@ export function CommunityPage() {
           setActiveChannelId(firstCh?.id || '');
         }
       }}
-      onOpenCreateHub={() => setIsCreateHubOpen(true)}
+      onOpenCreateServer={() => setIsCreateHubOpen(true)}
       platformName={platform?.name}
     />
   );
@@ -2215,21 +2221,21 @@ export function CommunityPage() {
           onQuickAddSticker={handleQuickAddSticker}
         />
 
-        {/* Create or Join Hub Dialog (Feature-First Component) */}
-        <CreateOrJoinHubDialog
+        {/* Create or Join Server Dialog (Feature-First Component) */}
+        <CreateOrJoinServerDialog
           open={isCreateHubOpen}
           onOpenChange={setIsCreateHubOpen}
-          newHubName={newHubName}
-          setNewHubName={setNewHubName}
-          newHubDesc={newHubDesc}
-          setNewHubDesc={setNewHubDesc}
-          newHubIconUrl={newHubIconUrl}
-          setNewHubIconUrl={setNewHubIconUrl}
+          newServerName={newHubName}
+          setNewServerName={setNewHubName}
+          newServerDesc={newHubDesc}
+          setNewServerDesc={setNewHubDesc}
+          newServerIconUrl={newHubIconUrl}
+          setNewServerIconUrl={setNewHubIconUrl}
           joinInviteCode={joinInviteCode}
           setJoinInviteCode={setJoinInviteCode}
-          isJoiningHub={isJoiningHub}
-          onCreateHubSubmit={handleCreateHubSubmit}
-          onJoinHub={handleJoinHub}
+          isJoiningServer={isJoiningHub}
+          onCreateServerSubmit={handleCreateHubSubmit}
+          onJoinServer={handleJoinHub}
           t={t}
         />
 
@@ -2259,21 +2265,21 @@ export function CommunityPage() {
           onUpdateMembers={setMembers}
         />
 
-        {/* Edit Hub Dialog (Feature-First Component) */}
-        <EditHubDialog
-          hubToEdit={hubToEdit}
+        {/* Edit Server Dialog (Feature-First Component) */}
+        <EditServerDialog
+          serverToEdit={hubToEdit}
           onClose={() => setHubToEdit(null)}
-          editHubName={editHubName}
-          setEditHubName={setEditHubName}
-          editHubDesc={editHubDesc}
-          setEditHubDesc={setEditHubDesc}
-          onEditHubSubmit={handleEditHubSubmit}
+          editServerName={editHubName}
+          setEditServerName={setEditHubName}
+          editServerDesc={editHubDesc}
+          setEditServerDesc={setEditHubDesc}
+          onEditServerSubmit={handleEditHubSubmit}
           t={t}
         />
 
-        {/* Delete Hub Dialog (Feature-First Component) */}
-        <DeleteHubDialog
-          hubToDelete={hubToDelete}
+        {/* Delete Server Dialog (Feature-First Component) */}
+        <DeleteServerDialog
+          serverToDelete={hubToDelete}
           onClose={() => setHubToDelete(null)}
           onDeleteConfirm={handleDeleteHubConfirm}
           t={t}
@@ -2346,11 +2352,11 @@ export function CommunityPage() {
         />
       </div>
     </TooltipProvider>
-        {/* Hub Invite Dialog (Feature-First Component) */}
-        <HubInviteDialog
+        {/* Server Invite Dialog (Feature-First Component) */}
+        <ServerInviteDialog
           open={isInviteOpen}
           onOpenChange={setIsInviteOpen}
-          activeHub={activeHub}
+          activeServer={activeHub}
           onInviteUsername={async (username) => {
             const currentHubId = activeHub?.id;
             if (!currentHubId) return false;
