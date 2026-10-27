@@ -33,7 +33,7 @@ export function FriendsHeader({
 
   return (
     <div
-      className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-[#000000] z-10`}
+      className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background z-10`}
     >
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
         {/* Burger Menu Button (Visible on Mobile & Tablet: lg:hidden) */}

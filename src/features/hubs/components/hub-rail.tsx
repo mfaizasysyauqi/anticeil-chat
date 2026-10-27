@@ -28,7 +28,7 @@ export function HubRail({
   const otherHubs = hubs.slice(1);
 
   return (
-    <div className="w-14 shrink-0 bg-[#000000] border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
+    <div className="w-14 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
       {/* Top Hub (Workspace / Home) - Exactly h-14 to align with top bar */}
       {mainHub && (
         <div className="h-14 w-14 shrink-0 flex items-center justify-center relative group">

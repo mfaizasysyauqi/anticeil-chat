@@ -46,7 +46,7 @@ export function FriendsView({
   horizontalPadding = 'px-4',
 }: FriendsViewProps) {
   return (
-    <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-[#000000] overflow-hidden">
+    <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-background overflow-hidden">
       {/* Top Header: Discord Friends Bar */}
       <FriendsHeader
         friendsTab={friendsTab}
@@ -60,7 +60,7 @@ export function FriendsView({
       />
 
       {/* Body Content */}
-      <div className="flex flex-1 min-h-0 overflow-hidden bg-[#000000]">
+      <div className="flex flex-1 min-h-0 overflow-hidden bg-background">
         {/* Main Friends Column */}
         <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-5 [scrollbar-width:thin]`}>
           {friendsTab === 'add' ? (

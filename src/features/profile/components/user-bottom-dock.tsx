@@ -63,7 +63,7 @@ export function UserBottomDock({
         )}
       >
         {activeCallChannelId && (
-          <div className="mb-1.5 px-3 py-1.5 rounded-[10px] bg-[#000000] border border-sidebar-border shadow-2xl backdrop-blur-md flex items-center justify-between animate-in slide-in-from-bottom-2">
+          <div className="mb-1.5 px-3 py-1.5 rounded-[10px] bg-card border border-border shadow-2xl backdrop-blur-md flex items-center justify-between animate-in slide-in-from-bottom-2">
             <div className="flex items-center gap-2 min-w-0">
               <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse shrink-0" />
               <div className="flex flex-col min-w-0">
@@ -97,7 +97,7 @@ export function UserBottomDock({
             </div>
           </div>
         )}
-        <div className="w-full h-[52px] px-2 py-1.5 rounded-[12px] bg-[#000000] border border-white/5 shadow-2xl backdrop-blur-md flex items-center justify-between">
+        <div className="w-full h-[52px] px-2 py-1.5 rounded-[12px] bg-card border border-border shadow-2xl backdrop-blur-md flex items-center justify-between">
           <div
             onClick={onOpenEditProfile}
             className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-white/5 cursor-pointer transition-colors group/user"

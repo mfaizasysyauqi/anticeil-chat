@@ -18,13 +18,13 @@ export function ActiveNowSidebar({
 
   return (
     <div
-      className={`hidden xl:flex flex-col w-80 border-l border-sidebar-border ${horizontalPadding} py-4 bg-[#000000] shrink-0`}
+      className={`hidden xl:flex flex-col w-80 border-l border-sidebar-border ${horizontalPadding} py-4 bg-background shrink-0`}
     >
-      <h3 className="text-sm font-bold text-white mb-4">{t('Sedang Aktif')}</h3>
+      <h3 className="text-sm font-bold text-foreground mb-4">{t('Sedang Aktif')}</h3>
       {onlineFriends.length === 0 ? (
         <div className="py-8 px-2 text-center">
-          <p className="text-sm font-semibold text-white mb-1.5">{t('Saat ini sepi...')}</p>
-          <p className="text-xs text-[#949ba4] leading-relaxed max-w-[240px] mx-auto">
+          <p className="text-sm font-semibold text-foreground mb-1.5">{t('Saat ini sepi...')}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-[240px] mx-auto">
             {t('Saat teman Anda online atau berkolaborasi di proyek, status mereka akan muncul di sini!')}
           </p>
         </div>
@@ -34,7 +34,7 @@ export function ActiveNowSidebar({
             <div
               key={f.id}
               onClick={() => onStartDM(f)}
-              className="p-3 rounded-xl bg-[#111214] hover:bg-[#1e1f22] border border-white/5 transition-colors cursor-pointer group"
+              className="p-3 rounded-xl bg-card hover:bg-muted border border-border transition-colors cursor-pointer group"
             >
               <div className="flex items-center gap-2.5 mb-2">
                 <CommunityAvatar

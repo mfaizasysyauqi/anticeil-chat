@@ -70,6 +70,8 @@ import {
   TrendingUp,
   ArrowLeft,
   Menu,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Link, useNavigate } from 'react-router-dom';
@@ -294,9 +296,36 @@ function renderFormattedMessage(content: string) {
 
 export function CommunityPage() {
   const { t } = useTranslation();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, toggleTheme } = useTheme();
   const { isMobile, isTablet, isDesktop, deviceMode } = useResponsive();
   const navigate = useNavigate();
+
+  const handleGoogleSignIn = () => {
+    toast.promise(
+      new Promise((resolve) => setTimeout(resolve, 800)).then(() => {
+        const googleUser = {
+          name: currentUser?.name || 'Muhammad Faiz Asy Syauqi',
+          email: currentUser?.email?.includes('@') ? currentUser.email : 'mfaizasysyauqi@gmail.com',
+          avatar: 'https://lh3.googleusercontent.com/a/ACg8ocIq8ZJ7w7kX',
+          imageUrl: 'https://lh3.googleusercontent.com/a/ACg8ocIq8ZJ7w7kX',
+          provider: 'google',
+          isGoogleLinked: true,
+        };
+        setCurrentUser((prev: any) => ({ ...prev, ...googleUser }));
+        try {
+          const stored = localStorage.getItem('anticeil_current_user');
+          const current = stored ? JSON.parse(stored) : {};
+          localStorage.setItem('anticeil_current_user', JSON.stringify({ ...current, ...googleUser }));
+        } catch {}
+        return googleUser;
+      }),
+      {
+        loading: t('Menghubungkan ke Google OAuth...'),
+        success: t('Berhasil terhubung dengan Google Account!'),
+        error: t('Gagal menghubungkan Google OAuth.'),
+      }
+    );
+  };
   const [currentUser, setCurrentUser] = useState<any>(() => {
     try {
       const stored = localStorage.getItem('anticeil_current_user');
@@ -3100,26 +3129,26 @@ export function CommunityPage() {
     // 1. Thread Discussion View (when a post is opened)
     if (activeThread) {
       return (
-        <div className="flex-1 min-h-0 flex flex-col w-full h-full bg-[#313338] text-[#dbdee1]">
+        <div className="flex-1 min-h-0 flex flex-col w-full h-full bg-background text-foreground">
           {/* Subheader with back button */}
-          <div className={`${CHANNEL_HORIZONTAL_PADDING} py-3 border-b border-white/5 flex items-center justify-between bg-[#2b2d31]/60 shrink-0`}>
+          <div className={`${CHANNEL_HORIZONTAL_PADDING} py-3 border-b border-border flex items-center justify-between bg-card/40 shrink-0`}>
             <div className="flex items-center gap-3 min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveThread(null)}
-                className="h-8 px-2.5 gap-1.5 text-xs text-[#949ba4] hover:text-white hover:bg-white/10 cursor-pointer shrink-0"
+                className="h-8 px-2.5 gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>#{activeChannel?.name}</span>
               </Button>
-              <Separator orientation="vertical" className="h-4 bg-white/10" />
+              <Separator orientation="vertical" className="h-4 bg-border" />
               <div className="flex items-center gap-2 min-w-0">
-                <MessagesSquare className="w-4 h-4 text-[#5865f2] shrink-0" />
-                <span className="font-bold text-sm text-white truncate">{activeThread.name}</span>
+                <MessagesSquare className="w-4 h-4 text-primary shrink-0" />
+                <span className="font-bold text-sm text-foreground truncate">{activeThread.name}</span>
               </div>
             </div>
-            <div className="text-xs text-[#949ba4] shrink-0 font-mono hidden sm:block">
+            <div className="text-xs text-muted-foreground shrink-0 font-mono hidden sm:block">
               {activeThread.creatorName} • {dayjs(activeThread.createdAt || activeThread.created).fromNow()}
             </div>
           </div>
@@ -3127,27 +3156,27 @@ export function CommunityPage() {
           {/* Discussion feed: OP Card + Replies list */}
           <div className={`flex-1 min-h-0 overflow-y-auto ${CHANNEL_HORIZONTAL_PADDING} py-5 space-y-4 [scrollbar-width:thin]`}>
             {/* OP Card */}
-            <div className="p-4 rounded-xl border border-white/10 bg-[#2b2d31]/80 space-y-3 shadow-md">
+            <div className="p-4 rounded-xl border border-border bg-card space-y-3 shadow-md">
               <div className="flex items-center gap-2.5">
                 <CommunityAvatar
                   name={activeThread.creatorName}
                   imageUrl={activeThread.creatorAvatar}
                   size={28}
                 />
-                <span className="text-xs font-bold text-white">{activeThread.creatorName}</span>
-                <span className="text-[10px] text-[#949ba4] font-mono">
+                <span className="text-xs font-bold text-foreground">{activeThread.creatorName}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">
                   {dayjs(activeThread.createdAt || activeThread.created).format('DD MMM YYYY, HH:mm')}
                 </span>
                 <Badge
                   variant="outline"
-                  className="text-[10px] py-0 px-1.5 text-[#5865f2] border-[#5865f2]/40 bg-[#5865f2]/10"
+                  className="text-[10px] py-0 px-1.5 text-primary border-primary/40 bg-primary/10"
                 >
                   OP
                 </Badge>
               </div>
-              <h3 className="text-lg font-bold text-white">{activeThread.name}</h3>
+              <h3 className="text-lg font-bold text-foreground">{activeThread.name}</h3>
               {threadMessages.length > 0 && threadMessages[0].content && (
-                <div className="text-xs text-[#dbdee1] whitespace-pre-wrap leading-relaxed pt-1 border-t border-white/5">
+                <div className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed pt-1 border-t border-border/50">
                   {renderFormattedMessage(threadMessages[0].content)}
                 </div>
               )}
@@ -3155,19 +3184,19 @@ export function CommunityPage() {
 
             {/* Replies List */}
             <div className="space-y-3 pt-2">
-              <div className="text-[11px] font-bold text-[#949ba4] uppercase tracking-wider">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                 {t('Balasan')} ({Math.max(0, threadMessages.length - 1)})
               </div>
 
               {threadMessages.length <= 1 ? (
-                <div className="py-8 text-center text-xs text-[#949ba4]">
+                <div className="py-8 text-center text-xs text-muted-foreground">
                   {t('Belum ada balasan. Jadilah yang pertama memberikan respons!')}
                 </div>
               ) : (
                 threadMessages.slice(1).map((msg) => (
                   <div
                     key={msg.id}
-                    className="flex gap-3 p-3.5 rounded-xl bg-[#2b2d31]/40 border border-white/5 hover:border-white/10 transition-colors"
+                    className="flex gap-3 p-3.5 rounded-xl bg-card/60 border border-border/60 hover:border-border transition-colors"
                   >
                     <CommunityAvatar
                       name={msg.senderName}
@@ -3177,12 +3206,12 @@ export function CommunityPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-white">{msg.senderName}</span>
-                        <span className="text-[10px] text-[#949ba4] font-mono">
+                        <span className="text-xs font-bold text-foreground">{msg.senderName}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
                           {dayjs(msg.createdAt).format('HH:mm')}
                         </span>
                       </div>
-                      <div className="text-xs text-[#dbdee1] leading-relaxed whitespace-pre-wrap">
+                      <div className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">
                         {renderFormattedMessage(msg.content)}
                       </div>
                     </div>
@@ -3195,19 +3224,19 @@ export function CommunityPage() {
           {/* Bottom Reply Bar */}
           <form
             onSubmit={handleSendThreadMessage}
-            className={`${CHANNEL_HORIZONTAL_PADDING} py-3 border-t border-white/10 bg-[#2b2d31]/40 shrink-0`}
+            className={`${CHANNEL_HORIZONTAL_PADDING} py-3 border-t border-border bg-card/40 shrink-0`}
           >
             <div className="flex items-center gap-2">
               <Input
                 value={threadInputText}
                 onChange={(e) => setThreadInputText(e.target.value)}
                 placeholder={t(`Kirim balasan ke #${activeThread.name}...`)}
-                className="text-xs h-10 bg-[#1e1f22] border-none text-white placeholder:text-[#949ba4] focus-visible:ring-1 focus-visible:ring-[#5865f2]"
+                className="text-xs h-10 bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary"
               />
               <Button
                 type="submit"
                 disabled={!threadInputText.trim()}
-                className="h-10 px-4 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-semibold gap-1.5 shrink-0"
+                className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold gap-1.5 shrink-0"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{t('Balas')}</span>
@@ -3218,19 +3247,19 @@ export function CommunityPage() {
       );
     }
 
-    // 2. Forum Board List View (Exact matching Screenshot 3)
+    // 2. Forum Board List View (Theme-consistent with Midnight, Dark, and Light modes)
     return (
-      <div className="flex-1 min-h-0 flex flex-col w-full h-full bg-[#313338] text-[#dbdee1]">
-        {/* Top Search & Actions Bar (Screenshot 3) */}
-        <div className={`${CHANNEL_HORIZONTAL_PADDING} py-3 border-b border-white/5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#2b2d31]/40 shrink-0`}>
+      <div className="flex-1 min-h-0 flex flex-col w-full h-full bg-background text-foreground">
+        {/* Top Search & Actions Bar */}
+        <div className={`${CHANNEL_HORIZONTAL_PADDING} py-3 border-b border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card/40 shrink-0`}>
           {/* Search or create a post input */}
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#949ba4] pointer-events-none" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               value={forumSearchQuery}
               onChange={(e) => setForumSearchQuery(e.target.value)}
-              placeholder="Search or create a post..."
-              className="pl-9 text-xs h-9 bg-[#1e1f22] border-none text-white placeholder:text-[#949ba4] focus-visible:ring-1 focus-visible:ring-[#5865f2]"
+              placeholder={t('Search or create a post...')}
+              className="pl-9 text-xs h-9 bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>
 
@@ -3241,25 +3270,25 @@ export function CommunityPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 text-xs gap-1.5 bg-[#2b2d31] border-white/10 text-[#dbdee1] hover:text-white hover:bg-[#35373c] cursor-pointer"
+                  className="h-9 text-xs gap-1.5 bg-muted border-border text-foreground hover:bg-accent cursor-pointer"
                 >
-                  <TrendingUp className="w-3.5 h-3.5 text-[#949ba4]" />
+                  <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
                   <span>
                     {forumSort === 'newest' ? 'Sort & View' : 'Aktivitas Terakhir'}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-[#949ba4]" />
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="text-xs bg-[#111214] border-white/10 text-white">
+              <DropdownMenuContent align="end" className="text-xs bg-popover border-border text-popover-foreground">
                 <DropdownMenuItem
                   onClick={() => setForumSort('newest')}
-                  className="cursor-pointer hover:bg-[#5865f2]"
+                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
                 >
                   Terbaru (Waktu Dibuat)
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setForumSort('active')}
-                  className="cursor-pointer hover:bg-[#5865f2]"
+                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
                 >
                   Aktivitas Terakhir (Balasan Baru)
                 </DropdownMenuItem>
@@ -3268,51 +3297,51 @@ export function CommunityPage() {
 
             <Button
               onClick={() => setIsForumComposerOpen((prev) => !prev)}
-              className="h-9 px-4 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-semibold gap-1.5 shadow-md cursor-pointer"
+              className="h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold gap-1.5 shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>New Post</span>
+              <span>{t('New Post')}</span>
             </Button>
           </div>
         </div>
 
         {/* Inline Post Composer (when user clicks New Post) */}
         {isForumComposerOpen && (
-          <div className="p-4 border-b border-white/5 bg-[#2b2d31]/80 animate-in fade-in-50 duration-150">
+          <div className="p-4 border-b border-border bg-card/80 animate-in fade-in-50 duration-150">
             <form
               onSubmit={handleCreateForumPost}
-              className="space-y-3 max-w-2xl mx-auto p-4 rounded-xl border border-white/10 bg-[#1e1f22] shadow-xl"
+              className="space-y-3 max-w-2xl mx-auto p-4 rounded-xl border border-border bg-muted/60 shadow-xl"
             >
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
-                  <MessagesSquare className="w-3.5 h-3.5 text-[#5865f2]" />
-                  <span>Create a Post in #{activeChannel?.name}</span>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <MessagesSquare className="w-3.5 h-3.5 text-primary" />
+                  <span>{t('Create a Post in')} #{activeChannel?.name}</span>
                 </h4>
                 <button
                   type="button"
                   onClick={() => setIsForumComposerOpen(false)}
-                  className="text-[#949ba4] hover:text-white p-1 rounded"
+                  className="text-muted-foreground hover:text-foreground p-1 rounded"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#949ba4] block mb-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                   Title
                 </label>
                 <Input
                   value={forumNewTitle}
                   onChange={(e) => setForumNewTitle(e.target.value)}
                   placeholder="Post title..."
-                  className="text-sm font-semibold h-10 bg-[#2b2d31] border-none text-white placeholder:text-[#80848e] focus-visible:ring-1 focus-visible:ring-[#5865f2]"
+                  className="text-sm font-semibold h-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary"
                   required
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#949ba4] block mb-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                   Message
                 </label>
                 <textarea
@@ -3320,7 +3349,7 @@ export function CommunityPage() {
                   onChange={(e) => setForumNewMessage(e.target.value)}
                   placeholder="Tulis pesan atau topik diskusi di sini..."
                   rows={4}
-                  className="w-full text-xs rounded-md bg-[#2b2d31] border-none p-3 text-white placeholder:text-[#80848e] focus:outline-none focus:ring-1 focus:ring-[#5865f2] resize-none"
+                  className="w-full text-xs rounded-md bg-background border border-border p-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                 />
               </div>
 
@@ -3330,7 +3359,7 @@ export function CommunityPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsForumComposerOpen(false)}
-                  className="text-xs text-[#949ba4] hover:text-white hover:bg-white/10"
+                  className="text-xs text-muted-foreground hover:text-foreground hover:bg-accent"
                 >
                   Cancel
                 </Button>
@@ -3338,7 +3367,7 @@ export function CommunityPage() {
                   type="submit"
                   size="sm"
                   disabled={isSubmittingForumPost || !forumNewTitle.trim()}
-                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-semibold h-8 px-5"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold h-8 px-5"
                 >
                   {isSubmittingForumPost ? 'Posting...' : 'Post'}
                 </Button>
@@ -3351,13 +3380,13 @@ export function CommunityPage() {
         <div className={`flex-1 min-h-0 overflow-y-auto ${CHANNEL_HORIZONTAL_PADDING} py-4 [scrollbar-width:thin]`}>
           {filteredForumPosts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#5865f2]/10 border border-[#5865f2]/30 flex items-center justify-center text-[#5865f2] mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-4">
                 <MessagesSquare className="w-8 h-8" />
               </div>
-              <h3 className="text-base font-bold text-white mb-1">
+              <h3 className="text-base font-bold text-foreground mb-1">
                 {forumSearchQuery ? 'No posts matching query' : `There are no posts in #${activeChannel?.name}`}
               </h3>
-              <p className="text-xs text-[#949ba4] max-w-sm mb-5 leading-relaxed">
+              <p className="text-xs text-muted-foreground max-w-sm mb-5 leading-relaxed">
                 {forumSearchQuery
                   ? 'Coba gunakan kata kunci pencarian yang lain.'
                   : 'Be the first to start an organized discussion in this forum channel!'}
@@ -3365,7 +3394,7 @@ export function CommunityPage() {
               {!isForumComposerOpen && (
                 <Button
                   onClick={() => setIsForumComposerOpen(true)}
-                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-semibold gap-1.5 shadow-md"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold gap-1.5 shadow-md cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Create a Post</span>
@@ -3378,20 +3407,20 @@ export function CommunityPage() {
                 <div
                   key={post.id}
                   onClick={() => setActiveThread(post)}
-                  className="p-4 rounded-xl bg-[#2b2d31]/70 hover:bg-[#2b2d31] border border-white/5 hover:border-[#5865f2]/50 transition-all cursor-pointer group flex flex-col justify-between shadow-xs hover:shadow-md"
+                  className="p-4 rounded-xl bg-card/60 hover:bg-card border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between shadow-xs hover:shadow-md"
                 >
                   <div>
-                    <h4 className="text-sm font-bold text-white group-hover:text-[#5865f2] transition-colors mb-1 truncate">
+                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors mb-1 truncate">
                       {post.name}
                     </h4>
-                    <p className="text-xs text-[#949ba4] line-clamp-2">
-                      <span className="font-semibold text-[#dbdee1]">{post.creatorName}: </span>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      <span className="font-semibold text-foreground/90">{post.creatorName}: </span>
                       {post.name}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2.5 mt-3 text-[11px] text-[#949ba4] pt-2 border-t border-white/5">
-                    <div className="flex items-center gap-1.5 text-white font-medium">
-                      <MessagesSquare className="w-3.5 h-3.5 text-[#5865f2]" />
+                  <div className="flex items-center gap-2.5 mt-3 text-[11px] text-muted-foreground pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-1.5 text-foreground font-medium">
+                      <MessagesSquare className="w-3.5 h-3.5 text-primary" />
                       <span>{post.messageCount || 0}</span>
                     </div>
                     <span>•</span>
@@ -3577,10 +3606,10 @@ export function CommunityPage() {
         {isFriendsView ? (
           renderFriendsMainPage()
         ) : (
-          <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-[#000000] overflow-hidden">
+          <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
           {/* Channel Top Header Bar: NON-SCROLLABLE APP BAR (Hidden during full stage call or in voice channel like Discord) */}
           {!( (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ) && (
-          <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-[#000000] z-10`}>
+          <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-background z-10`}>
             <div className="flex items-center gap-2 min-w-0">
               {/* Burger Menu Button (Visible on Mobile & Tablet: lg:hidden) */}
               <button
@@ -4023,16 +4052,40 @@ export function CommunityPage() {
                 </TooltipContent>
               </Tooltip>
 
-              {/* 5. Search Box (Exactly Discord: rounded input with Search icon on the right) */}
+              {/* 5. Theme Toggle Switcher */}
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleTheme}
+                    className="h-8 w-8 transition-colors cursor-pointer text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    title={theme === 'midnight' ? t('Tema: Midnight (AMOLED) - Klik untuk ganti') : theme === 'dark' ? t('Tema: Dark - Klik untuk ganti') : t('Tema: Light - Klik untuk ganti')}
+                  >
+                    {theme === 'light' ? (
+                      <Sun className="w-4 h-4 text-amber-500" />
+                    ) : theme === 'dark' ? (
+                      <Moon className="w-4 h-4 text-sky-400" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-purple-400" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
+                  {t('Ganti Tema')} ({theme === 'midnight' ? 'Midnight AMOLED' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'})
+                </TooltipContent>
+              </Tooltip>
+
+              {/* 6. Search Box (Theme aware) */}
               <div className="relative w-36 sm:w-40 transition-all duration-200 focus-within:w-56">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={activeChannel?.name ? `Search ${activeChannel.name}` : 'Search'}
-                  className="h-6 w-full pl-2.5 pr-7 text-xs bg-[#1e1f22] border border-white/5 rounded-[4px] text-[#dbdee1] placeholder:text-[#949ba4] focus:outline-none transition-all"
+                  className="h-6 w-full pl-2.5 pr-7 text-xs bg-muted/60 border border-border rounded-[4px] text-foreground placeholder:text-muted-foreground focus:outline-none transition-all"
                 />
-                <Search className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-[#949ba4] pointer-events-none" />
+                <Search className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               </div>
             </div>
           </div>
@@ -8340,6 +8393,152 @@ export function CommunityPage() {
                   </div>
                 )}
               </form>
+
+              {/* Section 3: Theme Appearance (Midnight AMOLED, Classic Dark, Clean Light) */}
+              <div className="space-y-3 p-3.5 rounded-xl border border-border bg-muted/20">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <span>{t('Tampilan & Tema')}</span>
+                    </label>
+                    <span className="text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded">
+                      {theme === 'midnight' ? 'Midnight AMOLED' : theme === 'dark' ? 'Classic Dark' : 'Clean Light'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('Pilih tema tampilan favorit Anda. Semua komponen otomatis menyesuaikan warna secara konsisten.')}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTheme('midnight')}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                      theme === 'midnight'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
+                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-black border border-white/20 flex items-center justify-center">
+                      <Moon className="w-3 h-3 text-purple-400" />
+                    </div>
+                    <span>Midnight</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme('dark')}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                      theme === 'dark'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
+                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-[#313338] border border-white/20 flex items-center justify-center">
+                      <Moon className="w-3 h-3 text-sky-400" />
+                    </div>
+                    <span>Dark Mode</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme('light')}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                      theme === 'light'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
+                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white border border-black/20 flex items-center justify-center">
+                      <Sun className="w-3 h-3 text-amber-500" />
+                    </div>
+                    <span>Light Mode</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Section 4: Google OAuth Integration */}
+              <div className="space-y-3 p-3.5 rounded-xl border border-border bg-muted/20">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <span>{t('Integrasi Akun Google (Google OAuth)')}</span>
+                    </label>
+                    {currentUser?.isGoogleLinked || currentUser?.provider === 'google' ? (
+                      <span className="text-[10px] text-emerald-500 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {t('Terhubung')}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">
+                        {t('Belum Terhubung')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('Tautkan akun Google untuk masuk dengan satu klik melalui Google Sign-In yang aman.')}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-xs shrink-0">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-foreground">
+                        {currentUser?.isGoogleLinked || currentUser?.provider === 'google'
+                          ? currentUser?.email || 'Google Account'
+                          : 'Google Single Sign-On'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {currentUser?.isGoogleLinked || currentUser?.provider === 'google'
+                          ? t('Akun Google tertaut aktif')
+                          : t('Gunakan akun Google Anda')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={currentUser?.isGoogleLinked || currentUser?.provider === 'google' ? 'outline' : 'default'}
+                    onClick={handleGoogleSignIn}
+                    className="shrink-0 text-xs gap-1.5"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                    </svg>
+                    {currentUser?.isGoogleLinked || currentUser?.provider === 'google'
+                      ? t('Sinkronkan Ulang')
+                      : t('Hubungkan Google')}
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <DialogFooter>

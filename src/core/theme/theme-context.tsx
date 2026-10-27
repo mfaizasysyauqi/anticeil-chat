@@ -42,24 +42,63 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.add('light', 'theme-light');
       root.style.setProperty('--background', '#ffffff');
       root.style.setProperty('--foreground', '#2e3338');
+      root.style.setProperty('--card', '#f8f9fa');
+      root.style.setProperty('--card-foreground', '#2e3338');
+      root.style.setProperty('--popover', '#ffffff');
+      root.style.setProperty('--popover-foreground', '#2e3338');
       root.style.setProperty('--sidebar-background', '#f2f3f5');
+      root.style.setProperty('--sidebar-foreground', '#2e3338');
       root.style.setProperty('--sidebar-border', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--sidebar-accent', '#e3e5e8');
       root.style.setProperty('--border', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--muted', '#e3e5e8');
+      root.style.setProperty('--muted-foreground', '#747f8d');
+      root.style.setProperty('--accent', '#e3e5e8');
+      root.style.setProperty('--accent-foreground', '#060607');
+      root.style.setProperty('--input', '#ebedef');
+      root.style.setProperty('--secondary', '#f2f3f5');
+      root.style.setProperty('--secondary-foreground', '#2e3338');
     } else if (theme === 'dark') {
       root.classList.add('dark', 'theme-dark');
       root.style.setProperty('--background', '#313338');
       root.style.setProperty('--foreground', '#dbdee1');
+      root.style.setProperty('--card', '#2b2d31');
+      root.style.setProperty('--card-foreground', '#dbdee1');
+      root.style.setProperty('--popover', '#2b2d31');
+      root.style.setProperty('--popover-foreground', '#dbdee1');
       root.style.setProperty('--sidebar-background', '#1e1f22');
-      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.06)');
-      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.06)');
+      root.style.setProperty('--sidebar-foreground', '#dbdee1');
+      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--sidebar-accent', '#2b2d31');
+      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--muted', '#2b2d31');
+      root.style.setProperty('--muted-foreground', '#949ba4');
+      root.style.setProperty('--accent', '#35373c');
+      root.style.setProperty('--accent-foreground', '#ffffff');
+      root.style.setProperty('--input', '#1e1f22');
+      root.style.setProperty('--secondary', '#2b2d31');
+      root.style.setProperty('--secondary-foreground', '#dbdee1');
     } else {
-      // Midnight (Discord AMOLED)
+      // Midnight (Discord AMOLED Pure Black)
       root.classList.add('dark', 'theme-midnight');
       root.style.setProperty('--background', '#000000');
       root.style.setProperty('--foreground', '#dbdee1');
+      root.style.setProperty('--card', '#0a0a0c');
+      root.style.setProperty('--card-foreground', '#dbdee1');
+      root.style.setProperty('--popover', '#0a0a0c');
+      root.style.setProperty('--popover-foreground', '#dbdee1');
       root.style.setProperty('--sidebar-background', '#000000');
-      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.04)');
-      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.04)');
+      root.style.setProperty('--sidebar-foreground', '#dbdee1');
+      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.06)');
+      root.style.setProperty('--sidebar-accent', '#111214');
+      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.06)');
+      root.style.setProperty('--muted', '#111214');
+      root.style.setProperty('--muted-foreground', '#949ba4');
+      root.style.setProperty('--accent', '#16171b');
+      root.style.setProperty('--accent-foreground', '#ffffff');
+      root.style.setProperty('--input', '#111214');
+      root.style.setProperty('--secondary', '#111214');
+      root.style.setProperty('--secondary-foreground', '#dbdee1');
     }
   }, [theme]);
 
