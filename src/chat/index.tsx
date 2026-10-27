@@ -4664,7 +4664,7 @@ export function CommunityPage() {
                             <button
                               type="button"
                               onClick={() => setIsQuickAddEmojiOpen(true)}
-                              className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-[#4752c4] text-xs font-bold text-white transition-colors cursor-pointer flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add Emoji
@@ -4676,7 +4676,7 @@ export function CommunityPage() {
                             <button
                               type="button"
                               onClick={() => setIsQuickAddStickerOpen(true)}
-                              className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-[#4752c4] text-xs font-bold text-white transition-colors cursor-pointer flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add Sticker
@@ -4697,7 +4697,7 @@ export function CommunityPage() {
                               onClick={() => setSelectedServerFilter('all')}
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all cursor-pointer",
-                                selectedServerFilter === 'all' ? 'bg-primary text-primary-foreground text-white shadow-md' : 'bg-[#2b2d31] text-[#949ba4] hover:text-white'
+                                selectedServerFilter === 'all' ? 'bg-primary text-primary-foreground shadow-md' : 'bg-[#2b2d31] text-[#949ba4] hover:text-white'
                               )}
                               title="All / Standard"
                             >
@@ -4756,7 +4756,7 @@ export function CommunityPage() {
                             <button
                               type="button"
                               onClick={() => setSelectedGifCategory(null)}
-                              className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-white flex items-center justify-center text-xs transition-all cursor-pointer"
+                              className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs transition-all cursor-pointer"
                               title="Trending"
                             >
                               🔥

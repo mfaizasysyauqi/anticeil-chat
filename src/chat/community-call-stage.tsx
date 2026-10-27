@@ -1823,7 +1823,7 @@ export function CommunityCallStage({
               <button
                 type="button"
                 onClick={onTogglePiP}
-                className="mt-2 px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-white text-[10px] font-semibold transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+                className="mt-2 px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] font-bold transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
               >
                 Buka Aktivitas
               </button>
@@ -2823,7 +2823,7 @@ export function CommunityCallStage({
                           onClick={() => setBrushSize(size)}
                           className={cn(
                             'px-2 py-0.5 rounded text-xs font-bold transition-all',
-                            brushSize === size ? 'bg-primary text-white' : 'text-muted-foreground hover:text-white',
+                            brushSize === size ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-white',
                           )}
                         >
                           {size}px
@@ -3284,7 +3284,7 @@ export function CommunityCallStage({
               </div>
 
               {isScreenSharing && (
-                <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded bg-primary text-[10px] font-bold text-white flex items-center gap-1 z-10">
+                <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded bg-primary text-[10px] font-bold text-primary-foreground flex items-center gap-1 z-10">
                   <Monitor className="w-3 h-3" /> Berbagi Layar
                 </div>
               )}
@@ -3379,7 +3379,7 @@ export function CommunityCallStage({
                 </div>
 
                 {peer.isScreenSharing && (
-                  <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded bg-primary text-[10px] font-bold text-white flex items-center gap-1 z-10">
+                  <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded bg-primary text-[10px] font-bold text-primary-foreground flex items-center gap-1 z-10">
                     <Monitor className="w-3 h-3" /> Berbagi Layar
                   </div>
                 )}

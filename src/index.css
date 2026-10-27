@@ -493,10 +493,10 @@ body,
     --ring: rgba(13, 148, 136, 0.45);
     --radius: 0.5rem;
 
-    --primary-100: 173 80% 92%;
-    --primary: 175 84% 32%; /* #0d9488 Anticeil Teal */
-    --primary-300: 175 84% 20%;
-    --primary-foreground: 0 0% 100%;
+    --primary-100: 43 96% 90%;
+    --primary: 43 96% 46%;
+    --primary-300: 43 96% 65%;
+    --primary-foreground: 0 0% 0%;
 
     /* Success — Emerald */
     --success-50: 152 81% 96%;
@@ -578,10 +578,10 @@ body,
     --accent: rgba(255, 255, 255, 0.08);
     --accent-foreground: #f0f0f0;
 
-    --primary-100: 175 84% 20%;
-    --primary: 173 80% 40%; /* #14b8a6 Anticeil Teal for dark mode */
-    --primary-300: 173 80% 80%;
-    --primary-foreground: 0 0% 100%;
+    --primary-100: 45 93% 20%;
+    --primary: 45 93% 47%;
+    --primary-300: 45 93% 70%;
+    --primary-foreground: 0 0% 0%;
 
     --success: var(--success-400);
     --destructive: var(--destructive-400);
@@ -797,10 +797,6 @@ body,
     color: rgba(240, 240, 240, 0.65);
   }
 
-  /* Subtitle / description text inside cards */
-  .text-muted-foreground {
-    color: #a8a8a8;
-  }
 
   /* Template card save badge icon */
   .text-success-500,

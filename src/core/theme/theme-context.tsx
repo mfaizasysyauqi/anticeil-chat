@@ -61,7 +61,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--secondary-foreground', '#ffffff');
       // Anticeil Primary: Kuning Anticeil (#f59e0b / #d97706)
       root.style.setProperty('--primary', '43 96% 46%');
-      root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--primary-foreground', '0 0% 0%');
       root.style.setProperty('--primary-100', '43 96% 90%');
       root.style.setProperty('--primary-300', '43 96% 65%');
       root.style.setProperty('--ring', '#f59e0b');

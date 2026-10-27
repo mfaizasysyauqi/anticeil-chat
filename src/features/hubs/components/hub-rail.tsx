@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Compass } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -24,6 +24,8 @@ export function HubRail({
   renderHubIcon,
 }: HubRailProps) {
   const { t } = useTranslation();
+  const location = useLocation();
+  const isTemplates = location.pathname.startsWith('/templates');
   const mainHub = hubs[0];
   const otherHubs = hubs.slice(1);
 
@@ -130,19 +132,33 @@ export function HubRail({
         </Tooltip>
 
         {/* Discover / Templates Compass */}
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <Link
-              to="/templates"
-              className="group relative size-10 rounded-[14px] bg-sidebar-accent text-muted-foreground hover:bg-primary hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0"
-            >
-              <Compass className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-            {t('Jelajahi Template Otomasi')}
-          </TooltipContent>
-        </Tooltip>
+        <div className="relative group w-full flex items-center justify-center">
+          <span
+            className={cn(
+              'absolute left-0 w-[3px] bg-foreground rounded-r-full transition-all duration-200',
+              isTemplates ? 'h-6' : 'h-0 group-hover:h-3.5 opacity-80'
+            )}
+          />
+
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <Link
+                to="/templates"
+                className={cn(
+                  'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0',
+                  isTemplates
+                    ? 'bg-primary text-black font-bold shadow-xs shadow-primary/20'
+                    : 'bg-sidebar-accent text-sidebar-foreground hover:bg-primary hover:text-black'
+                )}
+              >
+                <Compass className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+              {t('Jelajahi Template Otomasi')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );
