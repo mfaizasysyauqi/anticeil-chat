@@ -28,6 +28,7 @@ import {
   Phone,
   Rocket,
   Columns3,
+  Compass,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -59,8 +60,8 @@ export interface ChannelsSidebarProps {
   activeCallChannelId: string | null;
   setActiveCallChannelId: (id: string | null) => void;
   isFriendsView: boolean;
-  homeView?: 'friends' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
-  setHomeView?: (view: 'friends' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
+  homeView?: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
+  setHomeView?: (view: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
   messageRequestsCount?: number;
   unreadNotificationsCount?: number;
   setFriendsTab: (tab: any) => void;
@@ -318,6 +319,31 @@ export function ChannelsSidebar({
                     {friendRequests.length}
                   </span>
                 )}
+              </button>
+
+              {/* Server & Komunitas button (for easy discovery) */}
+              <button
+                onClick={() => {
+                  setActiveChannelId('');
+                  setHomeView?.('servers');
+                  onItemClick?.();
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+                  !activeChannelId && homeView === 'servers'
+                    ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                )}
+              >
+                <Compass
+                  className={cn(
+                    'w-4 h-4 shrink-0 transition-colors',
+                    !activeChannelId && homeView === 'servers'
+                      ? 'text-primary'
+                      : 'text-muted-foreground group-hover:text-foreground',
+                  )}
+                />
+                <span className="flex-1 font-medium">{t('Server & Komunitas')}</span>
               </button>
 
               {/* Message Requests button (Discord-style) */}

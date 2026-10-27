@@ -35,6 +35,7 @@ import { CalendarView, type CalendarEvent } from '@/features/calendar';
 import { AssignmentsView, type AssignmentItem } from '@/features/assignments';
 import { CallsView, type CallLogItem } from '@/features/calls';
 import { AppsView } from '@/features/apps';
+import { ServersView } from '@/features/servers';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
 import {
   ChannelSettingsDialog,
@@ -441,8 +442,8 @@ export function CommunityPage() {
   const [messagesMap, setMessagesMap] = useState<Record<string, CommunityMessage[]>>({});
   const [members, setMembers] = useState<CommunityMember[]>([]);
 
-  // Home View Mode: Friends Hub vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
-  const [homeView, setHomeView] = useState<'friends' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
+  // Home View Mode: Friends Hub vs Servers vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
+  const [homeView, setHomeView] = useState<'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
 
   // Calendar Events State
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(() => {
@@ -1293,6 +1294,7 @@ export function CommunityPage() {
   const isAssignmentsView = isHome && !activeChannel && homeView === 'assignments';
   const isCallsView = isHome && !activeChannel && homeView === 'calls';
   const isAppsView = isHome && !activeChannel && homeView === 'apps';
+  const isServersView = isHome && !activeChannel && homeView === 'servers';
 
   // Active messages & filter
   const currentMessages = activeChannel ? messagesMap[activeChannel.id] || [] : [];
@@ -2815,6 +2817,26 @@ export function CommunityPage() {
             channels={channels}
             activeCallChannelId={activeCallChannelId}
             onLaunchActivity={handleLaunchActivity}
+            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+          />
+        ) : isServersView ? (
+          <ServersView
+            servers={hubs}
+            onSelectServer={(hubId) => {
+              setActiveHubId(hubId);
+              const firstCh = channels.find(
+                (c) => (c.hubId || 'anticeil') === hubId && c.category === 'CHANNELS',
+              );
+              setActiveChannelId(firstCh?.id || '');
+            }}
+            onOpenCreateServer={() =>
+              requireAuth(
+                () => setIsCreateHubOpen(true),
+                t('Buat Server Komunitas'),
+                t('Masuk ke Anticeil untuk membuat server komunitas Anda sendiri.'),
+              )
+            }
             onOpenSidebar={() => setIsMobileChannelsOpen(true)}
             horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
           />

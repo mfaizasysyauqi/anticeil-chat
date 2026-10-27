@@ -14,6 +14,7 @@ import {
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CallLogItem, CallsTab } from '../types';
@@ -48,62 +49,68 @@ export function CallsView({
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <div className={cn('h-14 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10', horizontalPadding)}>
-        <div className="flex items-center gap-3 min-w-0">
+      {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
+      <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
+        <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] min-w-0">
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
             title="Buka Menu Sidebar"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-            <Phone className="w-4 h-4" />
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Phone className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">Panggilan</span>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
-              Panggilan & Riwayat
-              <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
-                Audio & Video
-              </span>
-            </h1>
-            <p className="text-[11px] text-muted-foreground truncate hidden xs:block">
-              Riwayat panggilan masuk, keluar, dan speed dial kontak teman
-            </p>
+
+          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={cn(
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors shrink-0',
+                activeTab === 'all'
+                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              Semua
+            </button>
+            <button
+              onClick={() => setActiveTab('missed')}
+              className={cn(
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5 shrink-0',
+                activeTab === 'missed'
+                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              <span>Terlewat</span>
+              {missedCount > 0 && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-red-500 text-white">
+                  {missedCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border',
-              activeTab === 'all'
-                ? 'bg-primary text-primary-foreground border-primary font-semibold'
-                : 'bg-card text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-            )}
-          >
-            Semua Panggilan
-          </button>
-          <button
-            onClick={() => setActiveTab('missed')}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5',
-              activeTab === 'missed'
-                ? 'bg-red-500 text-white border-red-500 font-semibold'
-                : 'bg-card text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-            )}
-          >
-            <span>Terlewat</span>
-            {missedCount > 0 && (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-red-500 text-white">
-                {missedCount}
-              </span>
-            )}
-          </button>
+        {/* Search */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-36 sm:w-48">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari riwayat..."
+              className="h-7 pl-7 text-xs bg-muted/40 border-sidebar-border"
+            />
+          </div>
         </div>
       </div>
 

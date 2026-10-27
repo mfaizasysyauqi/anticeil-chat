@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/discord-activities';
 import type { CommunityChannel } from '@/chat/chat-types';
@@ -57,66 +58,64 @@ export function AppsView({
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <div className={cn('h-14 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10', horizontalPadding)}>
-        <div className="flex items-center gap-3 min-w-0">
+      {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
+      <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
+        <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] min-w-0">
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
             title="Buka Menu Sidebar"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="size-8 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center shrink-0">
-            <Rocket className="w-4 h-4" />
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Rocket className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">Aplikasi & Aktivitas</span>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
-              Aplikasi & Anticeil Activities
-              <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400">
-                Co-Watch & Games
-              </span>
-            </h1>
-            <p className="text-[11px] text-muted-foreground truncate hidden xs:block">
-              Jelajahi dan luncurkan aktivitas bersama langsung di panggilan komunitas Anda
-            </p>
+
+          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1 shrink-0">
+            {[
+              { id: 'all', label: 'Semua' },
+              { id: 'entertainment', label: 'Hiburan & Co-Watch' },
+              { id: 'game', label: 'Game' },
+              { id: 'productivity', label: 'Produktivitas' },
+            ].map((tab) => {
+              const active = activeCategory === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveCategory(tab.id as any)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors shrink-0',
+                    active
+                      ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Search Input */}
-        <div className="relative w-40 sm:w-56">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari aktivitas..."
-            className="h-8 pl-8 text-xs bg-card border-border"
-          />
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-36 sm:w-48">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari aktivitas..."
+              className="h-7 pl-7 text-xs bg-muted/40 border-sidebar-border"
+            />
+          </div>
         </div>
-      </div>
-
-      {/* ── Subheader Category Tabs ───────────────────────────────── */}
-      <div className={cn('py-2.5 border-b border-border/50 flex items-center gap-1.5 shrink-0 bg-muted/20 overflow-x-auto [scrollbar-width:none]', horizontalPadding)}>
-        {[
-          { id: 'all', label: 'Semua Aplikasi' },
-          { id: 'entertainment', label: 'Hiburan & Co-Watch' },
-          { id: 'game', label: 'Game Multiplayer' },
-          { id: 'productivity', label: 'Produktivitas' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveCategory(tab.id as any)}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer border',
-              activeCategory === tab.id
-                ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-2xs'
-                : 'bg-card text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}

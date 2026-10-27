@@ -16,6 +16,7 @@ import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
@@ -38,7 +39,7 @@ export function CalendarView({
   onJoinChannel,
   onOpenSidebar,
   onCreateEvent,
-  horizontalPadding = 'px-4 sm:px-6',
+  horizontalPadding = 'px-4',
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(dayjs());
@@ -145,122 +146,119 @@ export function CalendarView({
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <div className={cn('h-14 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10', horizontalPadding)}>
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
-            title="Buka Menu Sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <CalendarIcon className="w-4 h-4" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
-              Kalender & Jadwal
-              <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
-                Teams + Meet
-              </span>
-            </h1>
-            <p className="text-[11px] text-muted-foreground truncate hidden xs:block">
-              Jadwal meeting panggilan suara, deadline tugas, dan aktivitas komunitas
-            </p>
-          </div>
-        </div>
+      {/* ── Top Header Bar: Discord Style (100% Match to Teman & Permintaan Pesan) ── */}
+      <div
+        className={cn(
+          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10',
+          horizontalPadding
+        )}
+      >
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
+          {/* Mobile burger menu */}
+          {onOpenSidebar && (
+            <button
+              type="button"
+              onClick={onOpenSidebar}
+              className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mr-0.5 cursor-pointer shrink-0"
+              title="Buka Menu Sidebar"
+              aria-label="Buka Menu Sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
 
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Mode Switcher */}
-          <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/50 text-xs">
+          <div className="flex items-center gap-2 shrink-0">
+            <CalendarIcon className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">Kalender</span>
+          </div>
+
+          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+
+          {/* Mode Tabs: Bulan & Agenda */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => setViewMode('month')}
               className={cn(
-                'px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer',
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
                 viewMode === 'month'
-                  ? 'bg-background text-foreground shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              Bulan
+              <span>Bulan</span>
             </button>
+
             <button
               onClick={() => setViewMode('agenda')}
               className={cn(
-                'px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer',
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
                 viewMode === 'agenda'
-                  ? 'bg-background text-foreground shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              Agenda
+              <span>Agenda</span>
+              {filteredEvents.length > 0 && (
+                <span className="text-[10px] text-muted-foreground/70">({filteredEvents.length})</span>
+              )}
+            </button>
+
+            {/* Yellow Highlight Button: Jadwalkan Meeting (Matches 'Tambah Teman' Style) */}
+            <button
+              onClick={() => setIsScheduleOpen(true)}
+              className="px-2.5 py-1 rounded-[4px] text-xs font-bold transition-all cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-1"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Jadwalkan Meeting</span>
             </button>
           </div>
 
-          <Button
-            size="sm"
-            onClick={() => setIsScheduleOpen(true)}
-            className="h-8 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Jadwalkan Meeting</span>
-            <span className="sm:hidden">Meeting</span>
-          </Button>
-        </div>
-      </div>
+          <Separator orientation="vertical" className="h-4 mx-1 shrink-0 hidden sm:block" />
 
-      {/* ── Subheader Controls & Filters ────────────────────────────── */}
-      <div className={cn('py-2.5 border-b border-border/50 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-muted/20', horizontalPadding)}>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
+          {/* Month switcher navigation */}
+          <div className="hidden sm:flex items-center gap-1 shrink-0">
+            <button
+              type="button"
               onClick={handlePrevMonth}
-              className="size-7 rounded-md cursor-pointer"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-xs font-bold text-foreground px-1">
+              {currentDate.format('MMM YYYY')}
+            </span>
+            <button
+              type="button"
               onClick={handleNextMonth}
-              className="size-7 rounded-md cursor-pointer"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleToday}
+              className="text-[11px] font-semibold text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted cursor-pointer ml-0.5"
+            >
+              Hari Ini
+            </button>
           </div>
-          <span className="text-sm font-bold text-foreground px-1">
-            {currentDate.format('MMMM YYYY')}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToday}
-            className="h-7 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground"
-          >
-            Hari Ini
-          </Button>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
+        {/* Right side filter pills (All, Meeting, Task) */}
+        <div className="hidden lg:flex items-center gap-1 shrink-0">
           {[
             { id: 'all', label: 'Semua' },
-            { id: 'meeting', label: 'Meeting & Voice' },
+            { id: 'meeting', label: 'Meeting' },
             { id: 'task', label: 'Tugas' },
-            { id: 'activity', label: 'Aktivitas' },
           ].map((pill) => (
             <button
               key={pill.id}
               onClick={() => setFilterType(pill.id as any)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer border',
+                'px-2 py-0.5 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer',
                 filterType === pill.id
-                  ? 'bg-primary text-primary-foreground border-primary font-semibold'
-                  : 'bg-card text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+                  ? 'bg-muted text-foreground font-bold'
+                  : 'text-muted-foreground/80 hover:text-foreground'
               )}
             >
               {pill.label}

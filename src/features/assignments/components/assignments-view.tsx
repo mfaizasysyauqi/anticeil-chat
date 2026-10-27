@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { AssignmentItem, AssignmentTab } from '../types';
@@ -96,100 +97,84 @@ export function AssignmentsView({
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <div className={cn('h-14 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10', horizontalPadding)}>
-        <div className="flex items-center gap-3 min-w-0">
+      {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
+      <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
+        <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] min-w-0">
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
             title="Buka Menu Sidebar"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="size-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
-            <Backpack className="w-4 h-4" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
-              Tugas & Assignments
-              <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400">
-                Teams Style
-              </span>
-            </h1>
-            <p className="text-[11px] text-muted-foreground truncate hidden xs:block">
-              Semua tugas yang didelegasikan kepada Anda dari berbagai channel Kanban komunitas
-            </p>
-          </div>
-        </div>
 
-        {/* Counter badges */}
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium bg-muted/40 px-2.5 py-1 rounded-md border border-border/50">
-            <span>Aktif: <strong className="text-foreground">{totalActive}</strong></span>
-            <span>•</span>
-            <span>Selesai: <strong className="text-emerald-400">{totalDone}</strong></span>
-          </span>
-        </div>
-      </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Backpack className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">Tugas Saya</span>
+          </div>
 
-      {/* ── Subheader Controls & Tabs ──────────────────────────────── */}
-      <div className={cn('py-2.5 border-b border-border/50 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-muted/20', horizontalPadding)}>
-        {/* Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
-          {[
-            { id: 'assigned_to_me', label: 'Perlu Dikerjakan', count: totalActive },
-            { id: 'upcoming', label: 'Mendatang' },
-            { id: 'overdue', label: 'Terlewat', count: totalOverdue, isDanger: totalOverdue > 0 },
-            { id: 'completed', label: 'Selesai', count: totalDone },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={cn(
-                'px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer border flex items-center gap-1.5',
-                activeTab === tab.id
-                  ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-2xs'
-                  : 'bg-card text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-              )}
-            >
-              <span>{tab.label}</span>
-              {typeof tab.count === 'number' && tab.count > 0 && (
-                <span
+          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+
+          {/* Tab Pills */}
+          <div className="flex items-center gap-1 shrink-0">
+            {[
+              { id: 'assigned_to_me', label: 'Perlu Dikerjakan', count: totalActive },
+              { id: 'upcoming', label: 'Mendatang' },
+              { id: 'overdue', label: 'Terlewat', count: totalOverdue, isDanger: totalOverdue > 0 },
+              { id: 'completed', label: 'Selesai', count: totalDone },
+            ].map((tab) => {
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
                   className={cn(
-                    'text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full',
-                    tab.isDanger
-                      ? 'bg-red-500 text-white'
-                      : activeTab === tab.id
-                      ? 'bg-primary-foreground/20 text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
+                    'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5 shrink-0',
+                    active
+                      ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+                  <span>{tab.label}</span>
+                  {typeof tab.count === 'number' && tab.count > 0 && (
+                    <span
+                      className={cn(
+                        'text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full',
+                        tab.isDanger
+                          ? 'bg-red-500 text-white'
+                          : active
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted-foreground/20 text-muted-foreground'
+                      )}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Search & Hub Filter */}
-        <div className="flex items-center gap-2">
-          <div className="relative w-40 sm:w-48">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-36 sm:w-48">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari tugas..."
-              className="h-8 pl-8 text-xs bg-card border-border"
+              className="h-7 pl-7 text-xs bg-muted/40 border-sidebar-border"
             />
           </div>
 
           <select
             value={selectedHubFilter}
             onChange={(e) => setSelectedHubFilter(e.target.value)}
-            className="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary hidden sm:block"
+            className="h-7 rounded-md border border-sidebar-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary hidden md:block"
           >
-            <option value="all">Semua Komunitas</option>
+            <option value="all">Semua Server</option>
             {hubs.map((h) => (
               <option key={h.id} value={h.id}>
                 {h.name}
