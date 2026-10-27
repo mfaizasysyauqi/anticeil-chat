@@ -108,6 +108,8 @@ export function CommunityCallStage({
   // Activities & Games State
   const [isAppLauncherOpen, setIsAppLauncherOpen] = useState(false);
   const [activeAppId, setActiveAppId] = useState<string | null>(initialAppId || null);
+  const activeAppIdRef = useRef<string | null>(activeAppId);
+  activeAppIdRef.current = activeAppId;
   const [isFilmstripCollapsed, setIsFilmstripCollapsed] = useState(false);
 
   useEffect(() => {
@@ -249,10 +251,12 @@ export function CommunityCallStage({
       );
     };
 
+    let isMakingOffer = false;
     pc.onnegotiationneeded = async () => {
       if (!isInitiator) return;
       try {
-        if (pc.signalingState !== 'stable') return;
+        if (pc.signalingState !== 'stable' || isMakingOffer) return;
+        isMakingOffer = true;
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         socket?.emit('COMMUNITY_CALL_SIGNAL', {
@@ -262,26 +266,10 @@ export function CommunityCallStage({
         });
       } catch (err) {
         console.error('Failed to negotiate peer connection', err);
+      } finally {
+        isMakingOffer = false;
       }
     };
-
-    if (isInitiator) {
-      setTimeout(async () => {
-        try {
-          if (pc.signalingState === 'stable') {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            socket?.emit('COMMUNITY_CALL_SIGNAL', {
-              channelId: channel.id,
-              targetSocketId,
-              signal: offer,
-            });
-          }
-        } catch (e) {
-          console.warn('Failed to send initial offer:', e);
-        }
-      }, 50);
-    }
 
     return pc;
   };
@@ -334,6 +322,11 @@ export function CommunityCallStage({
               });
             });
           }
+          // Query if any activity is already running in this call channel
+          socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+            channelId: channel.id,
+            action: 'QUERY_ACTIVE_ACTIVITY',
+          });
         },
       );
     };
@@ -383,6 +376,15 @@ export function CommunityCallStage({
         createPeerConnection(data.socketId, newPeer, false, localMediaStream);
         return [...prev, newPeer];
       });
+
+      // If this client is hosting an activity, inform the newly joined peer immediately!
+      if (activeAppIdRef.current) {
+        socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+          channelId: channel.id,
+          action: 'ACTIVITY_LAUNCH',
+          payload: { appId: activeAppIdRef.current },
+        });
+      }
 
       toast.info(`${data.userName} bergabung dalam panggilan.`);
     };
@@ -489,16 +491,40 @@ export function CommunityCallStage({
       );
     };
 
+    const handleActivityEvent = (data: any) => {
+      if (!data || (data.channelId && data.channelId !== channel.id)) return;
+      if (data.action === 'ACTIVITY_LAUNCH' || data.action === 'START_ACTIVITY') {
+        const appId = data.payload?.appId;
+        if (appId) {
+          setActiveAppId(appId);
+          onToggleActivity?.(true);
+        }
+      } else if (data.action === 'ACTIVITY_STOP') {
+        setActiveAppId(null);
+        onToggleActivity?.(false);
+      } else if (data.action === 'QUERY_ACTIVE_ACTIVITY') {
+        if (activeAppIdRef.current) {
+          socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+            channelId: channel.id,
+            action: 'ACTIVITY_LAUNCH',
+            payload: { appId: activeAppIdRef.current },
+          });
+        }
+      }
+    };
+
     socket.on('COMMUNITY_CALL_USER_JOINED', handleUserJoined);
     socket.on('COMMUNITY_CALL_USER_LEFT', handleUserLeft);
     socket.on('COMMUNITY_CALL_SIGNAL', handleSignal);
     socket.on('COMMUNITY_CALL_PEER_MEDIA_UPDATED', handlePeerMediaUpdated);
+    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
 
     return () => {
       socket.off('COMMUNITY_CALL_USER_JOINED', handleUserJoined);
       socket.off('COMMUNITY_CALL_USER_LEFT', handleUserLeft);
       socket.off('COMMUNITY_CALL_SIGNAL', handleSignal);
       socket.off('COMMUNITY_CALL_PEER_MEDIA_UPDATED', handlePeerMediaUpdated);
+      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
 
       socket.emit('COMMUNITY_CALL_LEAVE', { channelId: channel.id });
       for (const id in peerConnections.current) {

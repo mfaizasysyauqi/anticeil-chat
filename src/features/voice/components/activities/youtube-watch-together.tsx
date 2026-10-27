@@ -485,14 +485,43 @@ export function YouTubeWatchTogether({
     }
     if (!playerRef.current) return;
 
+    const time = playerRef.current.getCurrentTime?.() || currentTime;
     if (isPlaying) {
+      setIsPlaying(false);
+      isRemoteSyncRef.current = true;
       try {
         playerRef.current.pauseVideo();
       } catch (e) {}
+      socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channel.id,
+        action: 'YOUTUBE_PAUSE',
+        payload: {
+          videoId: activeVideoId,
+          currentTime: time,
+          senderId: currentUser?.id || socket?.id,
+        },
+      });
+      setTimeout(() => {
+        isRemoteSyncRef.current = false;
+      }, 500);
     } else {
+      setIsPlaying(true);
+      isRemoteSyncRef.current = true;
       try {
         playerRef.current.playVideo();
       } catch (e) {}
+      socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channel.id,
+        action: 'YOUTUBE_PLAY',
+        payload: {
+          videoId: activeVideoId,
+          currentTime: time,
+          senderId: currentUser?.id || socket?.id,
+        },
+      });
+      setTimeout(() => {
+        isRemoteSyncRef.current = false;
+      }, 500);
     }
   };
 
@@ -574,13 +603,15 @@ export function YouTubeWatchTogether({
         setIsPlaying(false);
         if (playerRef.current) {
           isRemoteSyncRef.current = true;
-          if (typeof targetTime === 'number') {
-            try {
-              playerRef.current.seekTo(targetTime, true);
-            } catch (e) {}
-          }
           try {
             playerRef.current.pauseVideo?.();
+            if (typeof targetTime === 'number') {
+              const curr = playerRef.current.getCurrentTime?.() || 0;
+              if (Math.abs(curr - targetTime) > 1.5) {
+                playerRef.current.seekTo(targetTime, false);
+                playerRef.current.pauseVideo?.();
+              }
+            }
           } catch (e) {}
           setTimeout(() => {
             isRemoteSyncRef.current = false;
@@ -1537,43 +1568,45 @@ export function YouTubeWatchTogether({
               CHANNEL_HORIZONTAL_PADDING,
             )}
           >
-            {/* Search Input Bar */}
-            <div className="relative w-full shrink-0">
-              <input
-                type="text"
-                value={ytSearchQuery}
-                onChange={(e) => setYtSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handlePlayYouTubeUrl(ytSearchQuery);
-                  }
-                }}
-                placeholder="Search or paste YouTube URL"
-                className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-11 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-              <Search className="w-4 h-4 text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* Category Badges */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] shrink-0">
-              {ytCategories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setYtCategory(cat.id);
-                    setYtSearchQuery('');
+            {/* Sticky Search Header Bar */}
+            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-1 pb-3 border-b border-border/50 flex flex-col gap-2.5 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
+              <div className="relative w-full shrink-0">
+                <input
+                  type="text"
+                  value={ytSearchQuery}
+                  onChange={(e) => setYtSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handlePlayYouTubeUrl(ytSearchQuery);
+                    }
                   }}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
-                    ytCategory === cat.id && !ytSearchQuery
-                      ? 'bg-primary text-primary-foreground shadow-xs'
-                      : 'bg-card border border-border text-foreground/80 hover:text-foreground hover:bg-muted',
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
+                  placeholder="Search or paste YouTube URL"
+                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-11 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
+                <Search className="w-4 h-4 text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+
+              {/* Category Badges */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] shrink-0">
+                {ytCategories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setYtCategory(cat.id);
+                      setYtSearchQuery('');
+                    }}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
+                      ytCategory === cat.id && !ytSearchQuery
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'bg-card border border-border text-foreground/80 hover:text-foreground hover:bg-muted',
+                    )}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Section Title */}
@@ -1664,49 +1697,52 @@ export function YouTubeWatchTogether({
         /* Empty / Idle State when no video is playing yet */
         <div
           className={cn(
-            'flex-1 min-h-0 flex flex-col overflow-y-auto [scrollbar-width:thin] bg-background py-4 gap-4',
+            'flex-1 min-h-0 flex flex-col overflow-y-auto [scrollbar-width:thin] bg-background pb-4 gap-4',
             CHANNEL_HORIZONTAL_PADDING,
           )}
         >
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
-            {renderHostPopover()}
+          {/* Fixed / Sticky Header: Host Popover, Search Bar, and Categories */}
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-3 pb-3 border-b border-border/50 flex flex-col gap-3 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+              {renderHostPopover()}
 
-            <div className="relative flex-1 max-w-xl">
-              <input
-                type="text"
-                value={ytSearchQuery}
-                onChange={(e) => setYtSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handlePlayYouTubeUrl(ytSearchQuery);
-                  }
-                }}
-                placeholder="Search or paste YouTube URL"
-                className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-11 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-              <Search className="w-4 h-4 text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <div className="relative flex-1 max-w-xl">
+                <input
+                  type="text"
+                  value={ytSearchQuery}
+                  onChange={(e) => setYtSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handlePlayYouTubeUrl(ytSearchQuery);
+                    }
+                  }}
+                  placeholder="Search or paste YouTube URL"
+                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-11 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
+                <Search className="w-4 h-4 text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] shrink-0">
-            {ytCategories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => {
-                  setYtCategory(cat.id);
-                  setYtSearchQuery('');
-                }}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
-                  ytCategory === cat.id && !ytSearchQuery
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'bg-card border border-border text-foreground/80 hover:text-foreground hover:bg-muted',
-                )}
-              >
-                {cat.label}
-              </button>
-            ))}
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] shrink-0">
+              {ytCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setYtCategory(cat.id);
+                    setYtSearchQuery('');
+                  }}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
+                    ytCategory === cat.id && !ytSearchQuery
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'bg-card border border-border text-foreground/80 hover:text-foreground hover:bg-muted',
+                  )}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 text-foreground font-bold text-sm shrink-0">

@@ -35,7 +35,7 @@ export interface MessagesFeedProps {
   onTogglePin: (messageId: string) => void;
   onStartThread: (initialName: string, initialContent: string) => void;
   onDeleteMessage: (messageId: string) => void;
-  onJoinActivity?: (appId: string) => void;
+  onJoinActivity?: (appId: string, channelId?: string) => void;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
   t: (key: string) => string;
 }
@@ -272,7 +272,7 @@ export function MessagesFeed({
                                     type="button"
                                     onClick={() => {
                                       confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
-                                      onJoinActivity?.(itemAct.appId);
+                                      onJoinActivity?.(itemAct.appId, itemAct.channelId);
                                     }}
                                     className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                   >

@@ -71,18 +71,18 @@ export function ActivityFilmstrip({
         )}
       </button>
 
-      {/* Video Cards Filmstrip (Horizontally centered like Discord) */}
+      {/* Video Cards Filmstrip (Horizontally centered or scrollable like Discord) */}
       {!isFilmstripCollapsed && (
-        <div className="w-full max-w-5xl py-1 flex items-center justify-center gap-2 overflow-x-auto [scrollbar-width:thin] animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="w-full max-w-full py-1 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto [scrollbar-width:thin] px-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
           {/* Local Participant Tile */}
-          <div className="w-28 sm:w-36 h-20 sm:h-24 rounded-xl bg-card border border-border relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
+          <div className="w-24 sm:w-32 md:w-36 h-16 sm:h-20 md:h-24 rounded-xl bg-card border border-border relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
             {!isVideoOff && localStream && localStream.getVideoTracks().some((t) => t.readyState === 'live' && t.enabled) ? (
               <LocalVideoView stream={localStream} />
             ) : (
               <div className="flex flex-col items-center justify-center gap-1">
                 <div
                   className={cn(
-                    'w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all',
+                    'w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-all',
                     isSpeakingLocal
                       ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-card'
                       : 'ring-1 ring-border',
@@ -92,18 +92,18 @@ export function ActivityFilmstrip({
                     name={currentUserName}
                     imageUrl={currentUser?.imageUrl}
                     email={currentUser?.email}
-                    size={44}
+                    size={36}
                     showStatus={false}
                     className="w-full h-full rounded-full"
                   />
                 </div>
-                <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[90px]">
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium truncate max-w-[75px] sm:max-w-[90px]">
                   {currentUserName}
                 </span>
               </div>
             )}
             {/* Bottom tag */}
-            <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-xs flex items-center gap-1 text-[9px] font-semibold text-white border border-white/5">
+            <div className="absolute bottom-1 left-1 sm:bottom-1.5 sm:left-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-xs flex items-center gap-1 text-[8px] sm:text-[9px] font-semibold text-white border border-white/5">
               <span>Anda</span>
               {isMuted ? <MicOff className="w-2.5 h-2.5 text-red-400" /> : <Mic className="w-2.5 h-2.5 text-emerald-400" />}
             </div>
@@ -113,29 +113,29 @@ export function ActivityFilmstrip({
           {participants.map((peer) => (
             <div
               key={peer.socketId}
-              className="w-28 sm:w-36 h-20 sm:h-24 rounded-xl bg-card border border-border relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group"
+              className="w-24 sm:w-32 md:w-36 h-16 sm:h-20 md:h-24 rounded-xl bg-card border border-border relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group"
             >
               {peer.stream && peer.hasVideo && peer.stream.getVideoTracks().some((t) => t.readyState === 'live') ? (
                 <RemoteVideoView stream={peer.stream} isMuted={false} />
               ) : (
                 <div className="flex flex-col items-center justify-center gap-1">
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center ring-1 ring-white/10">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center ring-1 ring-white/10">
                     <CommunityAvatar
                       name={peer.userName}
                       imageUrl={peer.userAvatar}
-                      size={44}
+                      size={36}
                       showStatus={false}
                       className="w-full h-full rounded-full"
                     />
                   </div>
-                  <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[90px]">
+                  <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium truncate max-w-[75px] sm:max-w-[90px]">
                     {peer.userName}
                   </span>
                 </div>
               )}
               {/* Bottom tag */}
-              <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-xs flex items-center gap-1 text-[9px] font-semibold text-white border border-white/5">
-                <span className="truncate max-w-[75px]">{peer.userName}</span>
+              <div className="absolute bottom-1 left-1 sm:bottom-1.5 sm:left-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-xs flex items-center gap-1 text-[8px] sm:text-[9px] font-semibold text-white border border-white/5">
+                <span className="truncate max-w-[65px] sm:max-w-[75px]">{peer.userName}</span>
                 {!peer.hasAudio ? <MicOff className="w-2.5 h-2.5 text-red-400" /> : <Mic className="w-2.5 h-2.5 text-emerald-400" />}
               </div>
             </div>
@@ -143,7 +143,7 @@ export function ActivityFilmstrip({
 
           {/* Screen Share Tile if sharing */}
           {isScreenSharing && (
-            <div className="w-28 sm:w-36 h-20 sm:h-24 rounded-xl bg-card border border-emerald-500/40 relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
+            <div className="w-24 sm:w-32 md:w-36 h-16 sm:h-20 md:h-24 rounded-xl bg-card border border-emerald-500/40 relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
               <ScreenVideoView
                 stream={screenStream}
                 className="w-full h-full object-cover"
@@ -157,7 +157,7 @@ export function ActivityFilmstrip({
 
           {/* Solo empty hint */}
           {participants.length === 0 && !isScreenSharing && (
-            <div className="h-20 sm:h-24 px-4 rounded-xl bg-card border border-dashed border-border flex items-center gap-3 shrink-0">
+            <div className="h-16 sm:h-20 md:h-24 px-3 sm:px-4 rounded-xl bg-card border border-dashed border-border flex items-center gap-2.5 sm:gap-3 shrink-0">
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-foreground">Anda sendirian di panggung</span>
                 <span className="text-[10px] text-muted-foreground">Undang rekan tim untuk menikmati aktivitas bersama</span>

@@ -1353,15 +1353,39 @@ export function CommunityPage() {
   };
 
   // Launch Activity in Voice Stage or Text Channel
-  const handleLaunchActivity = async (appId: string, fromChatInvite: boolean = false) => {
+  const handleLaunchActivity = async (
+    appId: string,
+    fromChatInvite: boolean = false,
+    targetChannelId?: string,
+  ) => {
     setSelectedActivityAppId(appId);
     setIsTemplatePopoverOpen(false);
-    if (activeChannel) {
-      setActiveCallChannelId(activeChannel.id);
+
+    // If joining from chat invite, find the exact channel where the activity/call was launched
+    let destChannel = activeChannel;
+    if (fromChatInvite) {
+      if (targetChannelId) {
+        const found = channels.find((c) => c.id === targetChannelId);
+        if (found) destChannel = found;
+      }
+      // If still not a voice channel, check if there's an active voice channel in the hub
+      if (destChannel?.type !== 'voice') {
+        const activeVoice = hubChannels.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
+        if (activeVoice) destChannel = activeVoice;
+      }
+    } else if (activeChannel?.type !== 'voice') {
+      // If launching from text channel, prefer existing active voice channel if one is in call
+      const activeVoice = hubChannels.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
+      if (activeVoice) destChannel = activeVoice;
+    }
+
+    if (destChannel) {
+      setActiveChannelId(destChannel.id);
+      setActiveCallChannelId(destChannel.id);
       setIsCallPiP(false);
       setIsActivityOpen(true);
       socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-        channelId: activeChannel.id,
+        channelId: destChannel.id,
         action: 'START_ACTIVITY',
         payload: { appId },
       });
@@ -1380,7 +1404,7 @@ export function CommunityPage() {
 
       // If launched from a text channel (not clicking Play from an existing message),
       // create and post the Discord-like Activity Invitation message in the text channel!
-      if (!fromChatInvite && activeChannel.type !== 'voice') {
+      if (!fromChatInvite && activeChannel && activeChannel.type !== 'voice') {
         const currentUserId = currentUser?.id || 'anon-user';
         const currentUserName =
           `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
@@ -1415,8 +1439,8 @@ export function CommunityPage() {
                 bannerGradient: app.bannerGradient,
                 startedBy: currentUserName,
                 startedByAvatar: currentUser?.imageUrl ?? null,
-                channelId: activeChannel.id,
-                channelName: activeChannel.name,
+                channelId: destChannel.id,
+                channelName: destChannel.name,
               },
             },
           ],
@@ -2641,7 +2665,7 @@ export function CommunityPage() {
               setIsCreateThreadModalOpen(true);
             }}
             onDeleteMessage={handleDeleteMessage}
-            onJoinActivity={(appId) => handleLaunchActivity(appId, true)}
+            onJoinActivity={(appId, channelId) => handleLaunchActivity(appId, true, channelId)}
             messagesEndRef={messagesEndRef}
             t={t}
           />

@@ -160,18 +160,18 @@ export function CallParticipantGrid({
 
   // Normal Participant Grid View (Case B2)
   return (
-    <div className={cn('flex-1 min-h-0 flex items-center justify-center overflow-y-auto w-full h-full py-4', CHANNEL_HORIZONTAL_PADDING)}>
+    <div className={cn('flex-1 min-h-0 flex items-center justify-center overflow-hidden w-full h-full py-2 sm:py-3', CHANNEL_HORIZONTAL_PADDING)}>
       <div
         className={cn(
-          'w-full max-h-full grid items-center justify-center gap-4 transition-all duration-300',
-          participants.length <= 1 && 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto',
+          'w-full h-full max-h-full flex flex-col md:grid items-center justify-center gap-2.5 sm:gap-4 transition-all duration-300',
+          participants.length <= 1 && 'md:grid-cols-2 max-w-5xl mx-auto',
           (participants.length === 2 || participants.length === 3) && 'grid-cols-2 max-w-5xl mx-auto',
           participants.length >= 4 && 'grid-cols-2 md:grid-cols-3 max-w-6xl mx-auto',
         )}
       >
-        {/* LOCAL PARTICIPANT TILE (Fixed 16:9 Landscape Rectangle like Discord) */}
+        {/* LOCAL PARTICIPANT TILE */}
         <div
-          className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl overflow-hidden flex items-center justify-center transition-all bg-card border border-border/60 shadow-xl group"
+          className="relative flex-1 min-h-0 w-full md:aspect-video md:max-h-[calc(100vh-180px)] rounded-2xl overflow-hidden flex items-center justify-center transition-all bg-card border border-border/60 shadow-xl group"
         >
           {!isVideoOff && localStream && localStream.getVideoTracks().some((t) => t.readyState === 'live' && t.enabled) ? (
             <LocalVideoView stream={localStream} />
@@ -215,9 +215,9 @@ export function CallParticipantGrid({
           )}
         </div>
 
-        {/* SOLO PROMPT CARD (Fixed 16:9 Landscape Rectangle with Turtle, Trophy, Gem + Invite / Activity) */}
+        {/* SOLO PROMPT CARD */}
         {participants.length === 0 && (
-          <div className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl bg-card border border-border/60 overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-xl">
+          <div className="relative flex-1 min-h-0 w-full md:aspect-video md:max-h-[calc(100vh-180px)] rounded-2xl bg-card border border-border/60 overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-xl">
             {/* Discord Activity Illustration: Purple Turtle, Star Trophy, Green Polyhedron */}
             <div className="relative mb-5 flex items-center justify-center">
               <div className="w-28 h-28 rounded-full bg-primary/10 blur-2xl absolute -inset-2" />
@@ -265,7 +265,7 @@ export function CallParticipantGrid({
         {participants.map((peer) => (
           <div
             key={peer.socketId}
-            className="relative aspect-video w-full max-h-[calc(100vh-180px)] rounded-2xl bg-card border border-border/60 overflow-hidden flex items-center justify-center transition-all shadow-xl group"
+            className="relative flex-1 min-h-0 w-full md:aspect-video md:max-h-[calc(100vh-180px)] rounded-2xl bg-card border border-border/60 overflow-hidden flex items-center justify-center transition-all shadow-xl group"
           >
             {peer.stream && peer.hasVideo && peer.stream.getVideoTracks().some((t) => t.readyState === 'live') ? (
               <RemoteVideoView stream={peer.stream} isMuted={false} />
