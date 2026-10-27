@@ -72,6 +72,7 @@ import {
   Menu,
   Sun,
   Moon,
+  LogOut,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Link, useNavigate } from 'react-router-dom';
@@ -300,31 +301,40 @@ export function CommunityPage() {
   const { isMobile, isTablet, isDesktop, deviceMode } = useResponsive();
   const navigate = useNavigate();
 
-  const handleGoogleSignIn = () => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 800)).then(() => {
-        const googleUser = {
-          name: currentUser?.name || 'Muhammad Faiz Asy Syauqi',
-          email: currentUser?.email?.includes('@') ? currentUser.email : 'mfaizasysyauqi@gmail.com',
-          avatar: 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
-          imageUrl: 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c',
-          provider: 'google',
-          isGoogleLinked: true,
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('ap_token');
+    localStorage.removeItem('anticeil_current_user');
+    localStorage.removeItem('current_project');
+    localStorage.removeItem('current_platform');
+    sessionStorage.clear();
+    toast.success(t('Berhasil keluar dari akun.'));
+    setTimeout(() => {
+      window.location.href = '/sign-in';
+    }, 400);
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      toast.loading(t('Menghubungkan ke Google OAuth...'), { id: 'google-oauth' });
+      const res: any = await api.get('/v1/authn/federated/login?providerName=google');
+      if (res && res.loginUrl) {
+        toast.success(t('Mengarahkan ke Google Sign-In...'), { id: 'google-oauth' });
+        const state = {
+          providerName: 'google',
+          from: window.location.pathname + window.location.search,
+          login: 'true',
         };
-        setCurrentUser((prev: any) => ({ ...prev, ...googleUser }));
-        try {
-          const stored = localStorage.getItem('anticeil_current_user');
-          const current = stored ? JSON.parse(stored) : {};
-          localStorage.setItem('anticeil_current_user', JSON.stringify({ ...current, ...googleUser }));
-        } catch {}
-        return googleUser;
-      }),
-      {
-        loading: t('Menghubungkan ke Google OAuth...'),
-        success: t('Berhasil terhubung dengan Google Account!'),
-        error: t('Gagal menghubungkan Google OAuth.'),
+        const loginUrl = new URL(res.loginUrl);
+        loginUrl.searchParams.set('state', JSON.stringify(state));
+        window.location.href = loginUrl.toString();
+        return;
       }
-    );
+      throw new Error('No loginUrl returned');
+    } catch (err: any) {
+      console.error('Google OAuth initiation failed:', err);
+      toast.error(t('Google OAuth belum aktif di server atau gagal terhubung.'), { id: 'google-oauth' });
+    }
   };
   const [currentUser, setCurrentUser] = useState<any>(() => {
     const realDefaultAvatar = 'https://lh3.googleusercontent.com/a/ACg8ocK-hWNgZxd6J5-GGmZN2mVejw7_ZRZnD-MVzreVmP-4POZJi4d5=s96-c';
@@ -2973,11 +2983,13 @@ export function CommunityPage() {
           </div>
         )}
       </div>
+      {/* Pinned User Bottom Dock inside the channels sidebar - zero offside, matches sidebar theme background */}
+      {renderUserBottomDock()}
     </div>
   );
 
   // Component: User Footer Profile Dock (delegates to reusable UserBottomDock feature component)
-  const renderUserBottomDock = (isOverlay = true) => (
+  const renderUserBottomDock = () => (
     <UserBottomDock
       currentUser={currentUser}
       currentUserName={currentUserName}
@@ -2991,6 +3003,7 @@ export function CommunityPage() {
         setEditUsernameInput(currentUser?.username || fallback);
         setIsEditProfileOpen(true);
       }}
+      onLogout={handleLogout}
       activeCallChannelId={activeCallChannelId}
       activeCallChannelName={channels.find((c) => c.id === activeCallChannelId)?.name}
       activeHubName={activeHub?.name}
@@ -3002,7 +3015,6 @@ export function CommunityPage() {
         setActiveCallChannelId(null);
         setIsActivityOpen(false);
       }}
-      isOverlay={isOverlay}
     />
   );
 
@@ -3590,9 +3602,6 @@ export function CommunityPage() {
           </div>
         </div>
 
-        {/* OVERLAY USER PROFILE DOCK (Discord-style: floating card stacking over rail + body container) */}
-        {renderUserBottomDock(true)}
-
         {/* MOBILE & TABLET CHANNELS DRAWER */}
         <Sheet open={isMobileChannelsOpen} onOpenChange={setIsMobileChannelsOpen}>
           <SheetContent side="left" className={cn("p-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border", LAYOUT_SIZES.DRAWER_WIDTH)}>
@@ -3605,7 +3614,6 @@ export function CommunityPage() {
                 {renderChannelsSidebarContent(() => setIsMobileChannelsOpen(false))}
               </div>
             </div>
-            {renderUserBottomDock(false)}
           </SheetContent>
         </Sheet>
 
@@ -8558,7 +8566,20 @@ export function CommunityPage() {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex items-center justify-between sm:justify-between w-full pt-2">
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setIsEditProfileOpen(false);
+                  handleLogout();
+                }}
+                className="gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                {t('Keluar Akun')}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
