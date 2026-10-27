@@ -35,6 +35,7 @@ export interface MessagesFeedProps {
   onTogglePin: (messageId: string) => void;
   onStartThread: (initialName: string, initialContent: string) => void;
   onDeleteMessage: (messageId: string) => void;
+  onJoinActivity?: (appId: string) => void;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
   t: (key: string) => string;
 }
@@ -51,6 +52,7 @@ export function MessagesFeed({
   onTogglePin,
   onStartThread,
   onDeleteMessage,
+  onJoinActivity,
   messagesEndRef,
   t,
 }: MessagesFeedProps) {
@@ -96,173 +98,310 @@ export function MessagesFeed({
               Belum ada pesan di channel ini. Jadilah yang pertama mengirim pesan!
             </div>
           ) : (
-            filteredMessages.map((msg) => (
-              <div
-                key={msg.id}
-                id={`msg-${msg.id}`}
-                className={cn(
-                  "group relative flex gap-3 px-2 py-1.5 -mx-2 rounded-lg hover:bg-muted/40 transition-colors",
-                  msg.isPinned && "border-l-2 border-primary bg-primary/5"
-                )}
-              >
-                {/* Sender Avatar */}
-                <CommunityAvatar
-                  name={msg.senderName}
-                  email={msg.senderEmail}
-                  imageUrl={msg.senderAvatar}
-                  size={38}
-                  className="shrink-0 mt-0.5"
-                />
+            filteredMessages.map((msg) => {
+              const activityAtt = msg.attachments?.find((a) => a.type === 'activity');
+              const act = activityAtt?.activityData;
 
-                {/* Message Body */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-xs font-semibold text-foreground hover:underline cursor-pointer">
-                      {msg.senderName}
-                    </span>
-                    <RoleBadge role={msg.senderRole as CommunityRole} />
-                    {msg.isPinned && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
-                        <Pin className="w-2.5 h-2.5" /> Tersemat
+              return (
+                <div key={msg.id} className="flex flex-col">
+                  {/* Discord Command Header / Interaction spine when launched by someone */}
+                  {act && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative">
+                      {/* Curved spine connector line */}
+                      <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-border/80 pointer-events-none" />
+                      <CommunityAvatar
+                        name={act.startedBy || msg.senderName}
+                        imageUrl={act.startedByAvatar || msg.senderAvatar}
+                        size={16}
+                        className="shrink-0"
+                        showStatus={false}
+                      />
+                      <span className="font-semibold text-foreground/90 hover:underline cursor-pointer">
+                        {act.startedBy || msg.senderName}
                       </span>
+                      <span>used</span>
+                      <span className="font-semibold text-[#5865f2] hover:underline cursor-pointer flex items-center gap-1">
+                        <svg className="w-3 h-3 fill-current inline shrink-0" viewBox="0 0 24 24">
+                          <path d="M7 3a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm-10 10a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" />
+                        </svg>
+                        Launch
+                      </span>
+                    </div>
+                  )}
+
+                  <div
+                    id={`msg-${msg.id}`}
+                    className={cn(
+                      'group relative flex gap-3 px-2 py-1.5 -mx-2 rounded-lg hover:bg-muted/40 transition-colors',
+                      msg.isPinned && 'border-l-2 border-primary bg-primary/5',
                     )}
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
+                  >
+                    {/* Sender Avatar: If Activity, show App Logo */}
+                    {act ? (
+                      <div
+                        className={cn(
+                          'w-[38px] h-[38px] rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-md text-white',
+                          act.appId === 'watch-together' || act.appId === 'youtube'
+                            ? 'bg-[#ff0000]'
+                            : act.iconBg || 'bg-primary',
+                        )}
+                      >
+                        {act.appId === 'watch-together' || act.appId === 'youtube' ? (
+                          <svg className="w-5 h-4 fill-white" viewBox="0 0 24 24">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                          </svg>
+                        ) : (
+                          <span className="text-xl">{act.icon || '🚀'}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <CommunityAvatar
+                        name={msg.senderName}
+                        email={msg.senderEmail}
+                        imageUrl={msg.senderAvatar}
+                        size={38}
+                        className="shrink-0 mt-0.5"
+                      />
+                    )}
 
-                  <div className="text-xs leading-relaxed text-foreground/90 break-words">
-                    {renderFormattedMessage(msg.content)}
-                  </div>
+                    {/* Message Body */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-semibold text-foreground hover:underline cursor-pointer">
+                          {act ? act.name : msg.senderName}
+                        </span>
+                        {act ? (
+                          <span className="bg-[#5865f2] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center gap-0.5 leading-none shadow-xs">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            <span>APP</span>
+                          </span>
+                        ) : (
+                          <RoleBadge role={msg.senderRole as CommunityRole} />
+                        )}
+                        {msg.isPinned && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
+                            <Pin className="w-2.5 h-2.5" /> Tersemat
+                          </span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(msg.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
 
-                  {/* Attachments rendering */}
-                  {msg.attachments && msg.attachments.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {msg.attachments.map((att, attIdx) => {
-                        if (att.type === 'template' && att.templateData) {
-                          return (
-                            <Card
-                              key={attIdx}
-                              className="p-3 max-w-md bg-sidebar border-border/80 rounded-lg shadow-xs hover:border-primary/50 transition-colors"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                                    <Layers className="w-4 h-4" />
-                                  </div>
-                                  <span className="text-xs font-semibold">{att.templateData.name}</span>
-                                </div>
-                                <Badge variant="outline" className="text-[10px] font-mono">
-                                  {att.templateData.price || 'Free'}
-                                </Badge>
-                              </div>
-                              <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
-                                {att.templateData.description}
-                              </p>
-                              <div className="mt-2.5 flex items-center justify-between pt-2 border-t border-border/40">
-                                <span className="text-[10px] text-muted-foreground">
-                                  {att.templateData.pieceCount} Langkah Alur
-                                </span>
-                                <Button size="sm" variant="default" className="h-7 text-xs px-2.5" asChild>
-                                  <Link to="/templates">
-                                    {t('Gunakan Template')}
-                                    <ExternalLink className="w-3 h-3 ml-1" />
-                                  </Link>
-                                </Button>
-                              </div>
-                            </Card>
-                          );
-                        }
-                        if (att.type === 'sticker') {
-                          return (
-                            <div key={attIdx} className="my-1 inline-block select-none group/sticker" title={att.name}>
-                              <img
-                                src={att.url}
-                                alt={att.name}
-                                className="w-36 h-36 object-contain drop-shadow-md hover:scale-105 transition-transform duration-200 cursor-pointer"
-                              />
-                            </div>
-                          );
-                        }
-                        if (att.type === 'gif') {
-                          return (
-                            <div key={attIdx} className="my-1.5 max-w-sm rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/40">
-                              <img
-                                src={att.url}
-                                alt={att.name}
-                                className="max-h-72 w-full object-cover rounded-t-xl"
-                              />
-                              <div className="px-2.5 py-1 bg-[#111214] flex items-center justify-between text-[10px] text-[#949ba4]">
-                                <span className="font-bold tracking-wider text-primary uppercase">GIF via Klipy</span>
-                                <span className="truncate max-w-[200px]">{att.name}</span>
-                              </div>
-                            </div>
-                          );
-                        }
-                        if (att.type === 'gift') {
-                          const isClaimed = claimedGifts[msg.id] || att.giftData?.claimed;
-                          return (
-                            <div key={attIdx} className="my-2 max-w-sm rounded-2xl border border-primary/40 bg-gradient-to-b from-[#202225] to-[#18191c] shadow-2xl p-4 relative overflow-hidden">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5865f2] to-[#eb459e] flex items-center justify-center text-white shadow-lg text-2xl shrink-0">
-                                  🎁
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-[10px] font-black tracking-wider text-[#eb459e] uppercase block">
-                                    A WILD GIFT APPEARS!
-                                  </span>
-                                  <h4 className="text-xs font-black text-white italic tracking-wide">
-                                    {att.name || 'Discord Nitro Gift'}
-                                  </h4>
-                                  <p className="text-[10px] text-[#949ba4] truncate">
-                                    {att.giftData?.price || 'IDR 142,714'} • Hadiah Komunitas
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
-                                {isClaimed ? (
-                                  <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
-                                    <Check className="w-3.5 h-3.5" /> Telah Diklaim
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-[#949ba4] flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Siap diklaim
-                                  </span>
-                                )}
-                                <button
-                                  type="button"
-                                  disabled={isClaimed}
-                                  onClick={() => {
-                                    setClaimedGifts((prev) => ({ ...prev, [msg.id]: true }));
-                                    confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 } });
-                                    toast.success('🎉 Hadiah Nitro berhasil diklaim ke akun Anda!');
-                                  }}
+                      {msg.content ? (
+                        <div className="text-xs leading-relaxed text-foreground/90 break-words">
+                          {renderFormattedMessage(msg.content)}
+                        </div>
+                      ) : null}
+
+                      {/* Attachments rendering */}
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {msg.attachments.map((att, attIdx) => {
+                            if (att.type === 'activity' && att.activityData) {
+                              const itemAct = att.activityData;
+                              const isYoutube = itemAct.appId === 'watch-together' || itemAct.appId === 'youtube';
+                              const isWordle = itemAct.appId === 'wordle';
+                              const isPoker = itemAct.appId === 'poker-night' || itemAct.appId === 'erth-poker';
+                              const isMagicGarden = itemAct.appId === 'magic-garden';
+
+                              const gradientClass = isYoutube
+                                ? 'from-[#4d1014] via-[#330c0f] to-[#1f0709] border-red-500/30'
+                                : isWordle
+                                  ? 'from-[#123824] via-[#0c2417] to-[#08180e] border-emerald-500/30'
+                                  : isPoker
+                                    ? 'from-[#1b254b] via-[#111730] to-[#0b0e1e] border-blue-500/30'
+                                    : isMagicGarden
+                                      ? 'from-[#3d240d] via-[#261608] to-[#140b04] border-amber-500/30'
+                                      : 'from-[#2b2d31] via-[#1e1f22] to-[#111214] border-border/80';
+
+                              return (
+                                <div
+                                  key={attIdx}
                                   className={cn(
-                                    "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer",
-                                    isClaimed
-                                      ? "bg-white/10 text-[#949ba4] cursor-not-allowed"
-                                      : "bg-[#248046] hover:bg-[#1a6334] text-white hover:shadow-emerald-900/30"
+                                    'my-2 max-w-sm sm:max-w-md rounded-2xl border bg-gradient-to-b shadow-2xl p-4 sm:p-5 relative overflow-hidden select-none',
+                                    gradientClass,
                                   )}
                                 >
-                                  {isClaimed ? 'Diklaim' : 'Klaim Hadiah'}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        }
-                        if (att.type === 'image') {
-                          return (
-                            <img
-                              key={attIdx}
-                              src={att.url}
-                              alt={att.name}
-                              className="max-h-60 rounded-md border border-border/60 object-cover"
-                            />
-                          );
-                        }
+                                  {/* Invitation Header Label */}
+                                  <span className="text-[11px] font-bold text-white/75 tracking-wider uppercase block mb-3.5">
+                                    Game Invitation
+                                  </span>
+
+                                  {/* Main App Info Row */}
+                                  <div className="flex items-center gap-3.5 mb-4">
+                                    {/* App Icon in White Rounded Square */}
+                                    <div className="w-14 h-14 rounded-2xl bg-white border border-white/20 flex items-center justify-center shrink-0 shadow-xl">
+                                      {isYoutube ? (
+                                        <svg className="w-8 h-6 fill-[#ff0000]" viewBox="0 0 24 24">
+                                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                        </svg>
+                                      ) : isWordle ? (
+                                        <div className="w-8 h-8 grid grid-cols-3 gap-0.5 p-1 bg-black rounded-md">
+                                          <div className="bg-[#538d4e] rounded-[1px]" />
+                                          <div className="bg-[#538d4e] rounded-[1px]" />
+                                          <div className="bg-[#538d4e] rounded-[1px]" />
+                                          <div className="bg-[#b59f3b] rounded-[1px]" />
+                                          <div className="bg-[#3a3a3c] rounded-[1px]" />
+                                          <div className="bg-[#538d4e] rounded-[1px]" />
+                                          <div className="bg-[#538d4e] rounded-[1px]" />
+                                          <div className="bg-[#538d4e] rounded-[1px]" />
+                                          <div className="bg-[#538d4e] rounded-[1px]" />
+                                        </div>
+                                      ) : (
+                                        <span className="text-2xl">{itemAct.icon || '🚀'}</span>
+                                      )}
+                                    </div>
+
+                                    {/* Title & Description */}
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="text-sm sm:text-base font-bold text-white leading-tight truncate">
+                                        {itemAct.name}
+                                      </h4>
+                                      <p className="text-xs text-white/70 line-clamp-2 mt-1 leading-snug">
+                                        {itemAct.description || 'Game ended. Start a new one?'}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Full-width Play Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+                                      onJoinActivity?.(itemAct.appId);
+                                    }}
+                                    className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                                  >
+                                    <span>Play</span>
+                                  </button>
+                                </div>
+                              );
+                            }
+                            if (att.type === 'template' && att.templateData) {
+                              return (
+                                <Card
+                                  key={attIdx}
+                                  className="p-3 max-w-md bg-sidebar border-border/80 rounded-lg shadow-xs hover:border-primary/50 transition-colors"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                                        <Layers className="w-4 h-4" />
+                                      </div>
+                                      <span className="text-xs font-semibold">{att.templateData.name}</span>
+                                    </div>
+                                    <Badge variant="outline" className="text-[10px] font-mono">
+                                      {att.templateData.price || 'Free'}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
+                                    {att.templateData.description}
+                                  </p>
+                                  <div className="mt-2.5 flex items-center justify-between pt-2 border-t border-border/40">
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {att.templateData.pieceCount} Langkah Alur
+                                    </span>
+                                    <Button size="sm" variant="default" className="h-7 text-xs px-2.5" asChild>
+                                      <Link to="/templates">
+                                        {t('Gunakan Template')}
+                                        <ExternalLink className="w-3 h-3 ml-1" />
+                                      </Link>
+                                    </Button>
+                                  </div>
+                                </Card>
+                              );
+                            }
+                            if (att.type === 'sticker') {
+                              return (
+                                <div key={attIdx} className="my-1 inline-block select-none group/sticker" title={att.name}>
+                                  <img
+                                    src={att.url}
+                                    alt={att.name}
+                                    className="w-36 h-36 object-contain drop-shadow-md hover:scale-105 transition-transform duration-200 cursor-pointer"
+                                  />
+                                </div>
+                              );
+                            }
+                            if (att.type === 'gif') {
+                              return (
+                                <div key={attIdx} className="my-1.5 max-w-sm rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/40">
+                                  <img
+                                    src={att.url}
+                                    alt={att.name}
+                                    className="max-h-72 w-full object-cover rounded-t-xl"
+                                  />
+                                  <div className="px-2.5 py-1 bg-[#111214] flex items-center justify-between text-[10px] text-[#949ba4]">
+                                    <span className="font-bold tracking-wider text-primary uppercase">GIF via Klipy</span>
+                                    <span className="truncate max-w-[200px]">{att.name}</span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            if (att.type === 'gift') {
+                              const isClaimed = claimedGifts[msg.id] || att.giftData?.claimed;
+                              return (
+                                <div key={attIdx} className="my-2 max-w-sm rounded-2xl border border-primary/40 bg-gradient-to-b from-[#202225] to-[#18191c] shadow-2xl p-4 relative overflow-hidden">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5865f2] to-[#eb459e] flex items-center justify-center text-white shadow-lg text-2xl shrink-0">
+                                      🎁
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="text-[10px] font-black tracking-wider text-[#eb459e] uppercase block">
+                                        A WILD GIFT APPEARS!
+                                      </span>
+                                      <h4 className="text-xs font-black text-white italic tracking-wide">
+                                        {att.name || 'Discord Nitro Gift'}
+                                      </h4>
+                                      <p className="text-[10px] text-[#949ba4] truncate">
+                                        {att.giftData?.price || 'IDR 142,714'} • Hadiah Komunitas
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
+                                    {isClaimed ? (
+                                      <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
+                                        <Check className="w-3.5 h-3.5" /> Telah Diklaim
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-[#949ba4] flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Siap diklaim
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      disabled={isClaimed}
+                                      onClick={() => {
+                                        setClaimedGifts((prev) => ({ ...prev, [msg.id]: true }));
+                                        confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 } });
+                                        toast.success('🎉 Hadiah Nitro berhasil diklaim ke akun Anda!');
+                                      }}
+                                      className={cn(
+                                        "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer",
+                                        isClaimed
+                                          ? "bg-white/10 text-[#949ba4] cursor-not-allowed"
+                                          : "bg-[#248046] hover:bg-[#1a6334] text-white hover:shadow-emerald-900/30"
+                                      )}
+                                    >
+                                      {isClaimed ? 'Diklaim' : 'Klaim Hadiah'}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            if (att.type === 'image') {
+                              return (
+                                <img
+                                  key={attIdx}
+                                  src={att.url}
+                                  alt={att.name}
+                                  className="max-h-60 rounded-md border border-border/60 object-cover"
+                                />
+                              );
+                            }
                         return (
                           <div
                             key={attIdx}
@@ -370,8 +509,10 @@ export function MessagesFeed({
                   </button>
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          );
+        })
+      )}
         </>
       )}
       <div ref={messagesEndRef} />

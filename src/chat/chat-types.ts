@@ -36,7 +36,7 @@ export type CommunityChannel = {
 };
 
 export type CommunityAttachment = {
-  type: 'image' | 'file' | 'template' | 'sticker' | 'gif' | 'gift';
+  type: 'image' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
   url: string;
   name: string;
   size?: string;
@@ -51,6 +51,19 @@ export type CommunityAttachment = {
     tier: 'nitro' | 'nitro_basic';
     price: string;
     claimed?: boolean;
+  };
+  activityData?: {
+    appId: string;
+    name: string;
+    developer?: string;
+    description?: string;
+    icon?: string;
+    iconBg?: string;
+    bannerGradient?: string;
+    startedBy?: string;
+    startedByAvatar?: string | null;
+    channelId?: string;
+    channelName?: string;
   };
 };
 

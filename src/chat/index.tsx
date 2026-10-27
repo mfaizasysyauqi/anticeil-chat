@@ -1195,8 +1195,8 @@ export function CommunityPage() {
     }
   };
 
-  // Launch Activity in Voice Stage
-  const handleLaunchActivity = (appId: string) => {
+  // Launch Activity in Voice Stage or Text Channel
+  const handleLaunchActivity = async (appId: string, fromChatInvite: boolean = false) => {
     setSelectedActivityAppId(appId);
     setIsTemplatePopoverOpen(false);
     if (activeChannel) {
@@ -1208,7 +1208,74 @@ export function CommunityPage() {
         action: 'START_ACTIVITY',
         payload: { appId },
       });
-      toast.success(`Aktivitas ${appId} diluncurkan di panggung suara! 🚀`);
+
+      const app = EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {
+        id: appId,
+        title: appId === 'watch-together' || appId === 'youtube' ? 'Watch Together' : appId,
+        developer: appId === 'watch-together' || appId === 'youtube' ? 'YouTube' : 'Community App',
+        description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.',
+        icon: '▶️',
+        iconBg: 'bg-red-600',
+        bannerGradient: 'bg-white',
+      };
+
+      toast.success(t(`Aktivitas ${app.title} diluncurkan! 🚀`));
+
+      // If launched from a text channel (not clicking Play from an existing message),
+      // create and post the Discord-like Activity Invitation message in the text channel!
+      if (!fromChatInvite && activeChannel.type !== 'voice') {
+        const currentUserId = currentUser?.id || 'anon-user';
+        const currentUserName =
+          `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
+          currentUser?.email?.split('@')[0] ||
+          'Pengguna Anticeil';
+
+        const myMemberInfo = members.find((m) => m.id === currentUserId || m.email === currentUser?.email);
+        let myRole: CommunityRole = myMemberInfo?.role || 'member';
+        if (activeHub?.role === 'owner') myRole = 'owner';
+        else if (activeHub?.role === 'admin') myRole = 'admin';
+
+        const payload: Partial<CommunityMessage> = {
+          channelId: activeChannel.id,
+          senderId: currentUserId,
+          senderName: currentUserName,
+          senderEmail: currentUser?.email || 'user@anticeil.com',
+          senderAvatar: currentUser?.imageUrl ?? null,
+          senderRole: myRole,
+          content: '',
+          attachments: [
+            {
+              type: 'activity',
+              url: '',
+              name: app.title,
+              activityData: {
+                appId,
+                name: app.title,
+                developer: app.developer,
+                description: app.description,
+                icon: app.icon,
+                iconBg: app.iconBg,
+                bannerGradient: app.bannerGradient,
+                startedBy: currentUserName,
+                startedByAvatar: currentUser?.imageUrl ?? null,
+                channelId: activeChannel.id,
+                channelName: activeChannel.name,
+              },
+            },
+          ],
+        };
+
+        try {
+          const saved = await communityApi.sendMessage(activeChannel.id, payload);
+          setMessagesMap((prev) => {
+            const list = prev[activeChannel.id] || [];
+            if (list.some((m) => m.id === saved.id)) return prev;
+            return { ...prev, [activeChannel.id]: [...list, saved] };
+          });
+        } catch (err) {
+          console.error('Failed to send activity invite message', err);
+        }
+      }
     }
   };
 
@@ -2355,6 +2422,7 @@ export function CommunityPage() {
               setIsCreateThreadModalOpen(true);
             }}
             onDeleteMessage={handleDeleteMessage}
+            onJoinActivity={(appId) => handleLaunchActivity(appId, true)}
             messagesEndRef={messagesEndRef}
             t={t}
           />
