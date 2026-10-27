@@ -286,6 +286,38 @@ export function CommunityPage() {
       toast.success(t('Berhasil masuk!'));
     }
 
+    const fetchLiveUser = async (customToken?: string) => {
+      const token = customToken || localStorage.getItem('token') || localStorage.getItem('ap_token');
+      if (!token) {
+        setCurrentUser(null);
+        return;
+      }
+      const payload = parseJwt(token);
+      if (!payload || !payload.id) {
+        return;
+      }
+      try {
+        const user = await api.get(`/v1/users/${payload.id}`);
+        if (user && (user.id || user.email)) {
+          const rawImg = user.imageUrl || user.avatar || payload.imageUrl;
+          const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
+            ? rawImg
+            : null;
+          const formatted = {
+            ...payload,
+            ...user,
+            name: `${user.firstName || payload.firstName || ''} ${user.lastName || payload.lastName || ''}`.trim() || user.username || user.email,
+            avatar: validImg,
+            imageUrl: validImg,
+          };
+          setCurrentUser(formatted);
+          localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+        }
+      } catch (err) {
+        // Fallback to token payload
+      }
+    };
+
     const codeFromUrl = params.get('code');
     if (codeFromUrl) {
       const claimCode = async () => {
@@ -317,6 +349,10 @@ export function CommunityPage() {
             };
             setCurrentUser(formatted);
             localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+
+            // Immediately fetch live user profile & avatar with new token
+            await fetchLiveUser(claimRes.token);
+
             toast.success(t('Berhasil masuk!'), { id: 'oauth-claim' });
 
             const cleanUrl = new URL(window.location.href);
@@ -330,40 +366,9 @@ export function CommunityPage() {
         }
       };
       claimCode();
+    } else {
+      fetchLiveUser();
     }
-
-    const fetchLiveUser = async () => {
-      const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
-      if (!token) {
-        setCurrentUser(null);
-        return;
-      }
-      const payload = parseJwt(token);
-      if (!payload || !payload.id) {
-        return;
-      }
-      try {
-        const user = await api.get(`/v1/users/${payload.id}`);
-        if (user && (user.id || user.email)) {
-          const rawImg = user.imageUrl || user.avatar || payload.imageUrl;
-          const validImg = rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
-            ? rawImg
-            : null;
-          const formatted = {
-            ...payload,
-            ...user,
-            name: `${user.firstName || payload.firstName || ''} ${user.lastName || payload.lastName || ''}`.trim() || user.username || user.email,
-            avatar: validImg,
-            imageUrl: validImg,
-          };
-          setCurrentUser(formatted);
-          localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
-        }
-      } catch (err) {
-        // Fallback to token payload
-      }
-    };
-    fetchLiveUser();
   }, []);
   const platform: any = { name: 'Anticeil', plan: { plan: 'plus' } };
   const isPlusOrAbove = true;
