@@ -31,6 +31,11 @@ import { UserBottomDock, EditProfileDialog } from '@/features/profile';
 import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
 import { MessageRequestsView, type MessageRequestItem } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem } from '@/features/notifications';
+import { CalendarView, type CalendarEvent } from '@/features/calendar';
+import { AssignmentsView, type AssignmentItem } from '@/features/assignments';
+import { CallsView, type CallLogItem } from '@/features/calls';
+import { AppsView } from '@/features/apps';
+import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
 import {
   ChannelSettingsDialog,
   CreateChannelDialog,
@@ -436,8 +441,167 @@ export function CommunityPage() {
   const [messagesMap, setMessagesMap] = useState<Record<string, CommunityMessage[]>>({});
   const [members, setMembers] = useState<CommunityMember[]>([]);
 
-  // Home View Mode: Friends Hub vs Message Requests vs Notifications
-  const [homeView, setHomeView] = useState<'friends' | 'message-requests' | 'notifications'>('friends');
+  // Home View Mode: Friends Hub vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
+  const [homeView, setHomeView] = useState<'friends' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
+
+  // Calendar Events State
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_calendar_events');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: 'cal-1',
+        title: 'Weekly Standup & Design Sync',
+        description: 'Review progres fitur Anticeil Chat, voice stage, dan persiapan rilis v2.0.',
+        type: 'meeting',
+        startTime: dayjs().hour(14).minute(0).second(0).toISOString(),
+        endTime: dayjs().hour(15).minute(0).second(0).toISOString(),
+        hubId: 'anticeil',
+        hubName: 'Anticeil Official',
+        channelId: 'voice-general',
+        channelName: 'General Voice',
+        status: 'scheduled',
+        attendees: [{ id: 'u1', name: 'Anticeil Official' }],
+      },
+      {
+        id: 'cal-2',
+        title: 'Sprint Review & Demo Watch Together',
+        description: 'Live test sinkronisasi YouTube Watch Together dan WebRTC Call.',
+        type: 'meeting',
+        startTime: dayjs().add(1, 'day').hour(16).minute(30).second(0).toISOString(),
+        endTime: dayjs().add(1, 'day').hour(17).minute(30).second(0).toISOString(),
+        hubId: 'anticeil',
+        hubName: 'Anticeil Official',
+        channelId: 'voice-gaming',
+        channelName: 'Gaming & Chill',
+        status: 'scheduled',
+        attendees: [{ id: 'u1', name: 'Anticeil Official' }],
+      },
+      {
+        id: 'cal-3',
+        title: 'Deadline: Integrasi Kanban & Assignments',
+        description: 'Selesaikan pengerjaan papan kanban dan agregasi kartu tugas personal.',
+        type: 'task',
+        startTime: dayjs().add(2, 'day').hour(23).minute(59).second(0).toISOString(),
+        hubId: 'anticeil',
+        hubName: 'Anticeil Official',
+        channelName: 'tugas-tim',
+        status: 'scheduled',
+      },
+    ];
+  });
+
+  // Assignments / Personal Tasks State
+  const [assignments, setAssignments] = useState<AssignmentItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_assignments');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: 'assign-1',
+        title: 'Implementasi Papan Kanban & Sinkronisasi Realtime',
+        description: 'Buat papan kerja model Trello / Microsoft Plan untuk pembagian tugas tim.',
+        columnId: 'in_progress',
+        channelId: 'kanban-dev',
+        channelName: 'tugas-tim',
+        hubId: 'anticeil',
+        hubName: 'Anticeil Official',
+        priority: 'urgent',
+        dueDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+        tags: ['Kanban', 'Feature'],
+        createdAt: dayjs().toISOString(),
+      },
+      {
+        id: 'assign-2',
+        title: 'Integrasikan Jadwal Meeting ke Kalender Personal',
+        description: 'Tampilkan agenda meeting mingguan dan bulanan dengan tombol 1-klik gabung call.',
+        columnId: 'todo',
+        channelId: 'kanban-dev',
+        channelName: 'tugas-tim',
+        hubId: 'anticeil',
+        hubName: 'Anticeil Official',
+        priority: 'high',
+        dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
+        tags: ['Calendar', 'Teams'],
+        createdAt: dayjs().toISOString(),
+      },
+      {
+        id: 'assign-3',
+        title: 'Uji Sinkronisasi Pause YouTube Watch Together',
+        description: 'Pastikan member lain langsung ikut ter-pause saat host menekan tombol pause.',
+        columnId: 'done',
+        channelId: 'kanban-dev',
+        channelName: 'tugas-tim',
+        hubId: 'anticeil',
+        hubName: 'Anticeil Official',
+        priority: 'medium',
+        dueDate: dayjs().subtract(1, 'day').format('YYYY-MM-DD'),
+        tags: ['QA', 'Resolved'],
+        createdAt: dayjs().toISOString(),
+        completedAt: dayjs().toISOString(),
+      },
+    ];
+  });
+
+  // Call Logs State
+  const [callLogs, setCallLogs] = useState<CallLogItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_call_logs');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: 'call-1',
+        peerId: 'peer-1',
+        peerName: 'Muhammad Farhan',
+        peerAvatar: null,
+        type: 'incoming',
+        isVideo: true,
+        timestamp: dayjs().subtract(2, 'hour').toISOString(),
+        duration: '14m 32s',
+      },
+      {
+        id: 'call-2',
+        peerId: 'peer-2',
+        peerName: 'Anticeil Official',
+        peerAvatar: null,
+        type: 'missed',
+        isVideo: false,
+        timestamp: dayjs().subtract(1, 'day').toISOString(),
+      },
+      {
+        id: 'call-3',
+        peerId: 'peer-1',
+        peerName: 'Muhammad Farhan',
+        peerAvatar: null,
+        type: 'outgoing',
+        isVideo: false,
+        timestamp: dayjs().subtract(2, 'day').toISOString(),
+        duration: '45m 10s',
+      },
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('anticeil_calendar_events', JSON.stringify(calendarEvents));
+    } catch {}
+  }, [calendarEvents]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('anticeil_assignments', JSON.stringify(assignments));
+    } catch {}
+  }, [assignments]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('anticeil_call_logs', JSON.stringify(callLogs));
+    } catch {}
+  }, [callLogs]);
 
   // Discord-style Message Requests (matching user screenshot)
   const [messageRequests, setMessageRequests] = useState<MessageRequestItem[]>(() => {
@@ -1125,6 +1289,10 @@ export function CommunityPage() {
   const isFriendsView = isHome && !activeChannel && homeView === 'friends';
   const isMessageRequestsView = isHome && !activeChannel && homeView === 'message-requests';
   const isNotificationsView = isHome && !activeChannel && homeView === 'notifications';
+  const isCalendarView = isHome && !activeChannel && homeView === 'calendar';
+  const isAssignmentsView = isHome && !activeChannel && homeView === 'assignments';
+  const isCallsView = isHome && !activeChannel && homeView === 'calls';
+  const isAppsView = isHome && !activeChannel && homeView === 'apps';
 
   // Active messages & filter
   const currentMessages = activeChannel ? messagesMap[activeChannel.id] || [] : [];
@@ -2557,6 +2725,68 @@ export function CommunityPage() {
             onOpenSidebar={() => setIsMobileChannelsOpen(true)}
             horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
           />
+        ) : isCalendarView ? (
+          <CalendarView
+            events={calendarEvents}
+            hubs={hubs}
+            channels={channels}
+            onJoinChannel={(channelId) => {
+              const targetChannel = channels.find((c) => c.id === channelId);
+              if (targetChannel?.hubId) {
+                setActiveHubId(targetChannel.hubId);
+              }
+              setActiveChannelId(channelId);
+              setActiveCallChannelId(channelId);
+            }}
+            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+            onCreateEvent={(newEvent) => {
+              const created: CalendarEvent = {
+                ...newEvent,
+                id: `cal-ev-${Date.now()}`,
+              };
+              setCalendarEvents((prev) => [created, ...prev]);
+              toast.success('Jadwal meeting berhasil ditambahkan!');
+            }}
+            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+          />
+        ) : isAssignmentsView ? (
+          <AssignmentsView
+            assignments={assignments}
+            hubs={hubs}
+            onOpenBoard={(hubId, channelId) => {
+              setActiveHubId(hubId);
+              setActiveChannelId(channelId);
+            }}
+            onToggleComplete={(assignmentId, isCompleted) => {
+              setAssignments((prev) =>
+                prev.map((a) =>
+                  a.id === assignmentId
+                    ? { ...a, columnId: isCompleted ? 'done' : 'in_progress', completedAt: isCompleted ? dayjs().toISOString() : undefined }
+                    : a
+                )
+              );
+            }}
+            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+          />
+        ) : isCallsView ? (
+          <CallsView
+            calls={callLogs}
+            friends={friends.allFriends}
+            onStartCall={(friend) => {
+              handleStartDirectMessage(friend);
+            }}
+            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+          />
+        ) : isAppsView ? (
+          <AppsView
+            channels={channels}
+            activeCallChannelId={activeCallChannelId}
+            onLaunchActivity={handleLaunchActivity}
+            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+          />
         ) : (
           <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
           {/* Channel Top Header Bar (Feature-First Component) */}
@@ -2645,6 +2875,21 @@ export function CommunityPage() {
               onSendThreadMessage={handleSendThreadMessage}
               channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
               t={t}
+            />
+          ) : activeChannel?.type === 'kanban' ? (
+            <KanbanChannelView
+              activeChannel={activeChannel}
+              activeHub={activeHub}
+              displayMembers={displayMembers}
+              currentUser={currentUser}
+              onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+              horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+              onCardsUpdate={(cards) => {
+                setAssignments((prev) => {
+                  const otherCards = prev.filter((c) => c.channelId !== activeChannel.id);
+                  return [...cards, ...otherCards];
+                });
+              }}
             />
           ) : (
           <>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Hash, Volume2, MessagesSquare, Smile, Lock } from 'lucide-react';
+import { Hash, Volume2, MessagesSquare, Smile, Lock, Columns3 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -16,8 +16,8 @@ export interface CreateChannelDialogProps {
   onOpenChange: (open: boolean) => void;
   activeHub: CommunityHub | null;
   newChannelCategory: string;
-  newChannelType: 'text' | 'voice' | 'forum';
-  setNewChannelType: (type: 'text' | 'voice' | 'forum') => void;
+  newChannelType: 'text' | 'voice' | 'forum' | 'kanban';
+  setNewChannelType: (type: 'text' | 'voice' | 'forum' | 'kanban') => void;
   newChannelName: string;
   setNewChannelName: (name: string) => void;
   newChannelIsPrivate: boolean;
@@ -139,6 +139,32 @@ export function CreateChannelDialog({
                     </div>
                   </div>
                 </div>
+
+                {/* Option 4: Kanban Board */}
+                <div
+                  onClick={() => setNewChannelType('kanban')}
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border',
+                    newChannelType === 'kanban'
+                      ? 'bg-[#3b3e45] border-primary text-white'
+                      : 'bg-[#2b2d31] border-transparent hover:bg-[#35373c] text-[#dbdee1]',
+                  )}
+                >
+                  {/* Radio dot */}
+                  <div className={cn(
+                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                    newChannelType === 'kanban' ? 'border-primary bg-primary text-primary-foreground' : 'border-[#80848e]',
+                  )}>
+                    {newChannelType === 'kanban' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <Columns3 className="w-6 h-6 text-[#949ba4] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-white">Kanban Board</div>
+                    <div className="text-xs text-[#949ba4] leading-snug">
+                      Collaborate on tasks, sprints, cards, and team assignments
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -152,6 +178,7 @@ export function CreateChannelDialog({
                   {newChannelType === 'text' && <Hash className="w-4 h-4" />}
                   {newChannelType === 'voice' && <Volume2 className="w-4 h-4" />}
                   {newChannelType === 'forum' && <MessagesSquare className="w-4 h-4" />}
+                  {newChannelType === 'kanban' && <Columns3 className="w-4 h-4" />}
                 </div>
                 <Input
                   value={newChannelName}

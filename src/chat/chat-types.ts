@@ -18,7 +18,7 @@ export type {
   CommunityHub,
 } from '@/lib/community-hubs';
 
-export type CommunityChannelType = 'text' | 'voice' | 'forum';
+export type CommunityChannelType = 'text' | 'voice' | 'forum' | 'kanban';
 
 export type CommunityChannel = {
   id: string;

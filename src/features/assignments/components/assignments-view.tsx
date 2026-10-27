@@ -1,0 +1,353 @@
+import React, { useState } from 'react';
+import {
+  Backpack,
+  CheckCircle2,
+  Circle,
+  Calendar,
+  AlertCircle,
+  Clock,
+  Search,
+  ExternalLink,
+  Menu,
+  Tag,
+  ArrowRight,
+  Filter,
+} from 'lucide-react';
+import dayjs from 'dayjs';
+import confetti from 'canvas-confetti';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { CommunityAvatar } from '@/chat/chat-avatar';
+import type { AssignmentItem, AssignmentTab } from '../types';
+import type { CommunityHub } from '@/chat/chat-types';
+import { toast } from 'sonner';
+
+export interface AssignmentsViewProps {
+  assignments: AssignmentItem[];
+  hubs: CommunityHub[];
+  onOpenBoard?: (hubId: string, channelId: string) => void;
+  onToggleComplete?: (assignmentId: string, isCompleted: boolean) => void;
+  onOpenSidebar: () => void;
+  horizontalPadding?: string;
+}
+
+export function AssignmentsView({
+  assignments,
+  hubs,
+  onOpenBoard,
+  onToggleComplete,
+  onOpenSidebar,
+  horizontalPadding = 'px-4 sm:px-6',
+}: AssignmentsViewProps) {
+  const [activeTab, setActiveTab] = useState<AssignmentTab>('assigned_to_me');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedHubFilter, setSelectedHubFilter] = useState('all');
+
+  const now = dayjs();
+
+  const filteredList = assignments.filter((item) => {
+    // Search
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.channelName && item.channelName.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Hub filter
+    const matchesHub = selectedHubFilter === 'all' || item.hubId === selectedHubFilter;
+
+    if (!matchesSearch || !matchesHub) return false;
+
+    const isDone = item.columnId === 'done';
+    const isOverdue = item.dueDate && dayjs(item.dueDate).isBefore(now, 'day') && !isDone;
+
+    if (activeTab === 'completed') return isDone;
+    if (activeTab === 'overdue') return isOverdue;
+    if (activeTab === 'upcoming') {
+      return !isDone && item.dueDate && dayjs(item.dueDate).isAfter(now, 'day');
+    }
+    // assigned_to_me (active / not done)
+    return !isDone;
+  });
+
+  const handleToggle = (item: AssignmentItem) => {
+    const isCurrentlyDone = item.columnId === 'done';
+    const willBeDone = !isCurrentlyDone;
+
+    if (willBeDone) {
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.8 },
+        });
+      } catch {}
+      toast.success('Tugas ditandai selesai! 🎉');
+    }
+
+    onToggleComplete?.(item.id, willBeDone);
+  };
+
+  const totalActive = assignments.filter((a) => a.columnId !== 'done').length;
+  const totalDone = assignments.filter((a) => a.columnId === 'done').length;
+  const totalOverdue = assignments.filter(
+    (a) => a.columnId !== 'done' && a.dueDate && dayjs(a.dueDate).isBefore(now, 'day')
+  ).length;
+
+  return (
+    <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
+      {/* ── Top Header Bar ────────────────────────────────────────── */}
+      <div className={cn('h-14 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10', horizontalPadding)}>
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={onOpenSidebar}
+            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+            title="Buka Menu Sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="size-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+            <Backpack className="w-4 h-4" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
+              Tugas & Assignments
+              <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400">
+                Teams Style
+              </span>
+            </h1>
+            <p className="text-[11px] text-muted-foreground truncate hidden xs:block">
+              Semua tugas yang didelegasikan kepada Anda dari berbagai channel Kanban komunitas
+            </p>
+          </div>
+        </div>
+
+        {/* Counter badges */}
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium bg-muted/40 px-2.5 py-1 rounded-md border border-border/50">
+            <span>Aktif: <strong className="text-foreground">{totalActive}</strong></span>
+            <span>•</span>
+            <span>Selesai: <strong className="text-emerald-400">{totalDone}</strong></span>
+          </span>
+        </div>
+      </div>
+
+      {/* ── Subheader Controls & Tabs ──────────────────────────────── */}
+      <div className={cn('py-2.5 border-b border-border/50 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-muted/20', horizontalPadding)}>
+        {/* Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
+          {[
+            { id: 'assigned_to_me', label: 'Perlu Dikerjakan', count: totalActive },
+            { id: 'upcoming', label: 'Mendatang' },
+            { id: 'overdue', label: 'Terlewat', count: totalOverdue, isDanger: totalOverdue > 0 },
+            { id: 'completed', label: 'Selesai', count: totalDone },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={cn(
+                'px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer border flex items-center gap-1.5',
+                activeTab === tab.id
+                  ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-2xs'
+                  : 'bg-card text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              <span>{tab.label}</span>
+              {typeof tab.count === 'number' && tab.count > 0 && (
+                <span
+                  className={cn(
+                    'text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full',
+                    tab.isDanger
+                      ? 'bg-red-500 text-white'
+                      : activeTab === tab.id
+                      ? 'bg-primary-foreground/20 text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Search & Hub Filter */}
+        <div className="flex items-center gap-2">
+          <div className="relative w-40 sm:w-48">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari tugas..."
+              className="h-8 pl-8 text-xs bg-card border-border"
+            />
+          </div>
+
+          <select
+            value={selectedHubFilter}
+            onChange={(e) => setSelectedHubFilter(e.target.value)}
+            className="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary hidden sm:block"
+          >
+            <option value="all">Semua Komunitas</option>
+            {hubs.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* ── Task Items List ────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] p-4 sm:p-6">
+        <div className="max-w-3xl mx-auto space-y-3">
+          {filteredList.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl">
+              <Backpack className="w-10 h-10 stroke-1 mb-2 opacity-50" />
+              <p className="text-sm font-semibold text-foreground">
+                {activeTab === 'completed'
+                  ? 'Belum ada tugas yang selesai'
+                  : activeTab === 'overdue'
+                  ? 'Hebat! Tidak ada tugas yang terlewat'
+                  : 'Tidak ada tugas yang perlu dikerjakan'}
+              </p>
+              <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
+                Tugas yang di-assign kepada Anda di channel Kanban server komunitas akan otomatis terkumpul di halaman ini.
+              </p>
+            </div>
+          ) : (
+            filteredList.map((item) => {
+              const isDone = item.columnId === 'done';
+              const isOverdue =
+                item.dueDate && dayjs(item.dueDate).isBefore(now, 'day') && !isDone;
+
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    'p-3.5 sm:p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group',
+                    isDone
+                      ? 'bg-card/40 border-border/50 opacity-70'
+                      : isOverdue
+                      ? 'bg-card border-red-500/30 hover:border-red-500/60 shadow-xs'
+                      : 'bg-card border-border hover:border-primary/50 shadow-xs'
+                  )}
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    {/* Checkbox */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggle(item)}
+                      className="mt-0.5 text-muted-foreground hover:text-primary transition-colors cursor-pointer shrink-0"
+                      title={isDone ? 'Tandai belum selesai' : 'Tandai selesai'}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      ) : (
+                        <Circle className="w-5 h-5 hover:stroke-primary" />
+                      )}
+                    </button>
+
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3
+                          className={cn(
+                            'text-sm font-bold text-foreground',
+                            isDone && 'line-through text-muted-foreground'
+                          )}
+                        >
+                          {item.title}
+                        </h3>
+
+                        {/* Priority Badge */}
+                        <span
+                          className={cn(
+                            'text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full',
+                            item.priority === 'urgent'
+                              ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                              : item.priority === 'high'
+                              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                              : item.priority === 'medium'
+                              ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                              : 'bg-muted text-muted-foreground border border-border'
+                          )}
+                        >
+                          {item.priority}
+                        </span>
+
+                        {/* Status Column Pill */}
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/50">
+                          {item.columnId === 'todo'
+                            ? 'To Do'
+                            : item.columnId === 'in_progress'
+                            ? 'In Progress'
+                            : item.columnId === 'review'
+                            ? 'Review'
+                            : 'Done'}
+                        </span>
+                      </div>
+
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {item.description}
+                        </p>
+                      )}
+
+                      {/* Metadata row */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-0.5">
+                        {item.dueDate && (
+                          <span
+                            className={cn(
+                              'flex items-center gap-1 font-medium',
+                              isOverdue ? 'text-red-400 font-bold' : 'text-muted-foreground'
+                            )}
+                          >
+                            {isOverdue && <AlertCircle className="w-3 h-3 text-red-400" />}
+                            <Calendar className="w-3 h-3" />
+                            <span>Tenggat: {dayjs(item.dueDate).format('DD MMMM YYYY')}</span>
+                          </span>
+                        )}
+
+                        {item.hubName && (
+                          <>
+                            <span>•</span>
+                            <span className="font-semibold text-foreground/80">
+                              {item.hubName}
+                            </span>
+                          </>
+                        )}
+
+                        {item.channelName && (
+                          <>
+                            <span>•</span>
+                            <span className="font-mono text-muted-foreground">
+                              #{item.channelName}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Open in Board Action */}
+                  <div className="flex items-center justify-end shrink-0 pl-8 sm:pl-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOpenBoard?.(item.hubId, item.channelId)}
+                      className="h-7 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+                    >
+                      <span>Buka di Papan</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

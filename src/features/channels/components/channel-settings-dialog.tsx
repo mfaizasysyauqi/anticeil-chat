@@ -4,6 +4,7 @@ import {
   Hash,
   Volume2,
   MessagesSquare,
+  Columns3,
   Trash2,
   Bold,
   Italic,
@@ -154,6 +155,8 @@ export function ChannelSettingsDialog({
       ? t('VOICE CHANNELS')
       : channel.type === 'forum'
       ? t('FORUM CHANNELS')
+      : channel.type === 'kanban'
+      ? t('KANBAN BOARDS')
       : t('TEXT CHANNELS');
 
   return (
@@ -172,6 +175,8 @@ export function ChannelSettingsDialog({
                   <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
                 ) : channel.type === 'forum' ? (
                   <MessagesSquare className="w-4 h-4 text-muted-foreground shrink-0" />
+                ) : channel.type === 'kanban' ? (
+                  <Columns3 className="w-4 h-4 text-muted-foreground shrink-0" />
                 ) : (
                   <Hash className="w-4 h-4 text-muted-foreground shrink-0" />
                 )}
@@ -291,6 +296,8 @@ export function ChannelSettingsDialog({
                         <Volume2 className="w-4 h-4" />
                       ) : channel.type === 'forum' ? (
                         <MessagesSquare className="w-4 h-4" />
+                      ) : channel.type === 'kanban' ? (
+                        <Columns3 className="w-4 h-4" />
                       ) : (
                         <Hash className="w-4 h-4" />
                       )}

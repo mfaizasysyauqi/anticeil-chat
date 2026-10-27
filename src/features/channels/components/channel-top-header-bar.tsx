@@ -3,6 +3,7 @@ import {
   Menu,
   Volume2,
   MessagesSquare,
+  Columns3,
   Hash,
   Lock,
   Users,
@@ -107,6 +108,8 @@ export function ChannelTopHeaderBar({
           <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
         ) : activeChannel?.type === 'forum' ? (
           <MessagesSquare className="w-5 h-5 text-muted-foreground shrink-0" />
+        ) : activeChannel?.type === 'kanban' ? (
+          <Columns3 className="w-5 h-5 text-muted-foreground shrink-0" />
         ) : (
           <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
         )}

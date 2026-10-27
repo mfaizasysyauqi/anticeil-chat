@@ -16,8 +16,8 @@ import type { CommunityChannel } from '@/chat/chat-types';
 export interface EditChannelDialogProps {
   channelToEdit: CommunityChannel | null;
   onClose: () => void;
-  editChannelType: 'text' | 'voice' | 'forum';
-  setEditChannelType: (type: 'text' | 'voice' | 'forum') => void;
+  editChannelType: 'text' | 'voice' | 'forum' | 'kanban';
+  setEditChannelType: (type: 'text' | 'voice' | 'forum' | 'kanban') => void;
   editChannelName: string;
   setEditChannelName: (name: string) => void;
   editChannelDesc: string;
