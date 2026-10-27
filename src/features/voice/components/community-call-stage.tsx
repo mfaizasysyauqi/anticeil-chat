@@ -23,6 +23,18 @@ import { PiPCallStage } from './pip-call-stage';
 import { ActivityFilmstrip } from './activity-filmstrip';
 import { ActivityStage } from './activities/activity-stage';
 
+export function YouTubeBadgeIcon({ className = 'w-5 h-3.5' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"
+        fill="#FF0000"
+      />
+      <polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432" />
+    </svg>
+  );
+}
+
 export interface CommunityCallStageProps {
   channel: CommunityChannel;
   activeHub?: CommunityHub | null;
@@ -735,40 +747,71 @@ export function CommunityCallStage({
     }
   };
 
-  // Activity Socket Sync Events
-  useEffect(() => {
-    if (!socket) return;
-    const handleActivityEvent = (data: {
-      fromSocketId: string;
-      fromUserId?: string;
-      action: string;
-      payload: any;
-    }) => {
-      if (data.action === 'ACTIVITY_LAUNCH') {
-        const { appId, appName } = data.payload || {};
-        if (appId) {
-          setActiveAppId(appId);
-          setIsAppLauncherOpen(false);
-          toast.info(`${appName || 'Aktivitas'} diluncurkan oleh rekan panggilan!`);
-        }
-      } else if (data.action === 'ACTIVITY_STOP') {
-        setActiveAppId(null);
-        toast.info('Aktivitas dihentikan');
-      }
-    };
-
-    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
-    return () => {
-      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
-    };
-  }, [socket]);
-
   // Total active count including local
   const totalInCall = participants.length + 1;
 
   const currentActiveApp = useMemo(() => {
     return DISCORD_APPS.find((app) => app.id === activeAppId);
   }, [activeAppId]);
+
+  // Activity Socket Sync Events
+  useEffect(() => {
+    if (!socket) return;
+    const handleActivityEvent = (data: {
+      fromSocketId: string;
+      channelId?: string;
+      fromUserId?: string;
+      action: string;
+      payload: any;
+    }) => {
+      if (!data) return;
+      if (data.channelId && data.channelId !== channel.id) return;
+      if (data.action === 'ACTIVITY_LAUNCH' || data.action === 'START_ACTIVITY') {
+        const { appId, appName } = data.payload || {};
+        if (appId) {
+          setActiveAppId(appId);
+          setIsAppLauncherOpen(false);
+          onToggleActivity?.(true);
+          toast.info(`${appName || appId} aktif di panggung panggilan! 🚀`);
+        }
+      } else if (data.action === 'ACTIVITY_STOP') {
+        setActiveAppId(null);
+        onToggleActivity?.(false);
+        toast.info('Aktivitas dihentikan');
+      } else if (data.action === 'ACTIVITY_QUERY') {
+        if (activeAppId) {
+          socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+            channelId: channel.id,
+            action: 'ACTIVITY_LAUNCH',
+            payload: { appId: activeAppId, appName: currentActiveApp?.title || activeAppId },
+          });
+        }
+      }
+    };
+
+    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
+
+    // Query active activity when entering channel
+    socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+      channelId: channel.id,
+      action: 'ACTIVITY_QUERY',
+    });
+
+    return () => {
+      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
+    };
+  }, [socket, channel.id, onToggleActivity, activeAppId, currentActiveApp?.title]);
+
+  // Sync active activity to peers when peer count changes
+  useEffect(() => {
+    if (activeAppId && socket && participants.length > 0) {
+      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channel.id,
+        action: 'ACTIVITY_LAUNCH',
+        payload: { appId: activeAppId, appName: currentActiveApp?.title || activeAppId },
+      });
+    }
+  }, [activeAppId, participants.length, socket, channel.id, currentActiveApp?.title]);
 
   if (!isCallActive) return null;
 
@@ -825,9 +868,7 @@ export function CommunityCallStage({
               <span className="text-muted-foreground text-xs select-none">·</span>
               <div className="flex items-center gap-1.5 min-w-0">
                 {activeAppId === 'watch-together' ? (
-                  <div className="w-4 h-4 rounded bg-[#ff0000] flex items-center justify-center text-white shrink-0 shadow-xs">
-                    <Play className="w-2.5 h-2.5 fill-white text-white ml-0.5" />
-                  </div>
+                  <YouTubeBadgeIcon className="w-5 h-3.5 shrink-0" />
                 ) : (
                   <div className={cn('w-4 h-4 rounded flex items-center justify-center text-white shrink-0', currentActiveApp.iconBg)}>
                     <currentActiveApp.icon className="w-2.5 h-2.5" />
@@ -898,6 +939,8 @@ export function CommunityCallStage({
               currentActiveApp={currentActiveApp}
               channel={channel}
               currentUserName={currentUserName}
+              currentUser={currentUser}
+              participants={participants}
               totalInCall={totalInCall}
               socket={socket}
               onStopActivity={handleStopActivity}

@@ -383,6 +383,29 @@ export function CommunityPage() {
   const [selectedActivityAppId, setSelectedActivityAppId] = useState<string | null>(null);
   const [appsSearchQuery, setAppsSearchQuery] = useState('');
 
+  // Auto-sync active voice channel activity across peers
+  useEffect(() => {
+    if (!socket) return;
+    const handleRemoteActivity = (data: any) => {
+      if (!data) return;
+      if (data.action === 'ACTIVITY_LAUNCH' || data.action === 'START_ACTIVITY') {
+        const appId = data.payload?.appId;
+        if (appId) {
+          setSelectedActivityAppId(appId);
+          setIsActivityOpen(true);
+        }
+      } else if (data.action === 'ACTIVITY_STOP') {
+        setSelectedActivityAppId(null);
+        setIsActivityOpen(false);
+      }
+    };
+
+    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleRemoteActivity);
+    return () => {
+      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleRemoteActivity);
+    };
+  }, [socket]);
+
   // Discord Hubs & Channels state
   const [hubs, setHubs] = useState<CommunityHub[]>(() => loadStoredHubs());
   const [activeHubId, setActiveHubId] = useState<CommunityHubId>(() => {

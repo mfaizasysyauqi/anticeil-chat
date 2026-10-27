@@ -16,6 +16,8 @@ export interface ActivityStageProps {
   currentActiveApp?: DiscordAppDefinition | null;
   channel: CommunityChannel;
   currentUserName: string;
+  currentUser?: any;
+  participants?: any[];
   totalInCall: number;
   socket: Socket | null;
   onStopActivity: () => void;
@@ -26,6 +28,8 @@ export function ActivityStage({
   currentActiveApp,
   channel,
   currentUserName,
+  currentUser,
+  participants,
   totalInCall,
   socket,
   onStopActivity,
@@ -36,6 +40,8 @@ export function ActivityStage({
         <YouTubeWatchTogether
           channel={channel}
           currentUserName={currentUserName}
+          currentUser={currentUser}
+          participants={participants}
           socket={socket}
         />
       )}
