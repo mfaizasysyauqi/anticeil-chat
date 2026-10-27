@@ -7,3 +7,4 @@ export * from './components/dm-search-dialog';
 export * from './components/channel-notification-dropdown';
 export * from './components/channel-top-header-bar';
 export * from './components/forum-channel-view';
+export * from './components/channels-sidebar';

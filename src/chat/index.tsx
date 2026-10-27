@@ -94,6 +94,7 @@ import {
   DmSearchDialog,
   ChannelTopHeaderBar,
   ForumChannelView,
+  ChannelsSidebar,
 } from '@/features/channels';
 import { ServerMembersSidebar } from '@/features/members';
 import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
@@ -2187,661 +2188,75 @@ export function CommunityPage() {
     />
   );
 
-  // Component: Channels Sidebar Content (reusable for desktop & mobile drawer)
+  // Component: Channels Sidebar Content (delegates to ChannelsSidebar feature component)
   const renderChannelsSidebarContent = (onItemClick?: () => void) => (
-    <div className="flex flex-col h-full bg-sidebar select-none flex-1 min-w-0 overflow-hidden">
-      {/* Header: Different for Home (DMs) vs Server (Channels) */}
-      <div className="h-12 border-b border-sidebar-border px-2 flex items-center font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
-        {isHome ? (
-          /* Home: Discord-style search bar "Find or start a conversation" */
-          <button
-            onClick={() => { setIsDmSearchOpen(true); setDmSearchQuery(''); }}
-            className="w-full h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] transition-colors cursor-pointer border border-border"
-          >
-            <Search className="w-3 h-3 shrink-0 opacity-60" />
-            <span className="truncate">{t('Cari atau mulai percakapan...')}</span>
-          </button>
-        ) : (
-          /* Server: Title + dropdown with channel/server actions */
-          <div className="w-full">
-            <input
-              type="file"
-              ref={serverIconQuickInputRef}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file || !activeHub) return;
-                if (file.size > 5 * 1024 * 1024) {
-                  toast.error(t('Ukuran file maksimal 5 MB.'));
-                  return;
-                }
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                  const res = event.target?.result as string;
-                  if (res) {
-                    const updated: CommunityHub = {
-                      ...activeHub,
-                      iconUrl: res,
-                    };
-                    setHubs((prev) => {
-                      const next = prev.map((h) => (h.id === activeHub.id ? updated : h));
-                      saveStoredHubs(next);
-                      return next;
-                    });
-                    try {
-                      await communityApi.updateHub(activeHub.id, {
-                        iconUrl: res,
-                      });
-                    } catch {}
-                    toast.success(t('Foto server berhasil diperbarui! 🖼️'));
-                  }
-                };
-                reader.readAsDataURL(file);
-                e.target.value = '';
-              }}
-              accept="image/*"
-              className="hidden"
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="w-full h-8 px-2 flex items-center justify-between rounded-md hover:bg-sidebar-accent/60 transition-colors cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-sidebar-ring group"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {activeHub?.iconUrl ? (
-                      <img
-                        src={activeHub.iconUrl}
-                        alt={activeHub.name}
-                        className="w-5 h-5 rounded-[6px] object-cover shrink-0 border border-white/10"
-                      />
-                    ) : null}
-                    <span className="text-sm font-semibold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">
-                      {activeHub?.name || t('Server')}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0 ml-1 transition-colors" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                {/* Server Picture Action */}
-                <DropdownMenuItem
-                  onClick={() => {
-                    serverIconQuickInputRef.current?.click();
-                  }}
-                  className="cursor-pointer font-medium text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
-                >
-                  <Camera className="w-4 h-4 mr-2 text-emerald-500" /> {t('Ubah Foto Server')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {/* Boost */}
-                <DropdownMenuItem
-                  onClick={() => {
-                    setServerSettingsSection('boost');
-                    setIsServerSettingsOpen(true);
-                  }}
-                  className="cursor-pointer font-medium text-primary focus:text-primary focus:bg-primary/10"
-                >
-                  <Zap className="w-4 h-4 mr-2 text-primary" /> {t('Server Boost')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {/* Invite & Settings */}
-                <DropdownMenuItem
-                  onClick={() => {
-                    const code = activeHub?.inviteCode || activeHub?.id;
-                    const url = `${window.location.origin}/messages?invite=${code}`;
-                    navigator.clipboard.writeText(url);
-                    toast.success(t('Link undangan berhasil disalin! 📋'));
-                  }}
-                  className="cursor-pointer"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" /> {t('Undang ke Server')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setServerSettingsSection('profile');
-                    setIsServerSettingsOpen(true);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Settings className="w-4 h-4 mr-2" /> {t('Pengaturan Server')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {/* Channel & Category */}
-                <DropdownMenuItem onClick={() => setIsCreateChannelOpen(true)} className="cursor-pointer">
-                  <Plus className="w-4 h-4 mr-2" /> {t('Buat Channel')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsCreateHubOpen(true)} className="cursor-pointer">
-                  <Layers className="w-4 h-4 mr-2" /> {t('Buat Server Baru')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {/* Notification & Privacy */}
-                <DropdownMenuItem
-                  onClick={() => {
-                    setServerSettingsSection('audit-log');
-                    setIsServerSettingsOpen(true);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <ScrollText className="w-4 h-4 mr-2" /> {t('Log Audit Server')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setServerSettingsSection('integrations');
-                    setIsServerSettingsOpen(true);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Webhook className="w-4 h-4 mr-2" /> {t('Integrasi & Bot')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {/* Per-server profile */}
-                <DropdownMenuItem
-                  onClick={() => {
-                    setServerSettingsSection('profile');
-                    setIsServerSettingsOpen(true);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Edit2 className="w-4 h-4 mr-2" /> {t('Edit Profil Server')}
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/templates" className="flex items-center">
-                    <ExternalLink className="w-4 h-4 mr-2" /> {t('Jelajahi Marketplace')}
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
-      </div>
-
-      {/* Scroll Area: Home=DMs only, Server=Channels only */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin]">
-        {isHome ? (
-          /* ===== HOME: DIRECT MESSAGES & FRIENDS NAVIGATION ===== */
-          <div>
-            {/* Discord-style Friends button at top of Direct Messages column */}
-            <button
-              onClick={() => {
-                setActiveChannelId('');
-                onItemClick?.();
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left mb-3 cursor-pointer group',
-                isFriendsView
-                  ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-              )}
-            >
-              <Users className={cn('w-4 h-4 shrink-0 transition-colors', isFriendsView ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
-              <span className="flex-1 font-medium">{t('Teman')}</span>
-              {friendRequests.length > 0 && (
-                <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {friendRequests.length}
-                </span>
-              )}
-            </button>
-
-            <div className="px-2 mb-1.5 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 tracking-wider uppercase">
-              <span>{t('Pesan Langsung')}</span>
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => {
-                      setIsDmSearchOpen(true);
-                      setDmSearchQuery('');
-                    }}
-                    className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                  {t('Mulai DM Baru')}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
-            {dmChannels.length === 0 ? (
-              <div className="px-2.5 py-3 text-[11px] text-muted-foreground/60 leading-relaxed text-center">
-                <p>{t('Belum ada pesan langsung.')}</p>
-                <button
-                  onClick={() => {
-                    setActiveChannelId('');
-                    setFriendsTab('all');
-                  }}
-                  className="mt-1.5 text-primary hover:underline font-semibold cursor-pointer block mx-auto text-[11px]"
-                >
-                  {t('Buka Halaman Teman →')}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {dmChannels.map((dm) => {
-                  const isActiveDm = activeChannelId === dm.id;
-                  const member = members.find((m) => `dm-${m.id}` === dm.id);
-                  return (
-                    <button
-                      key={dm.id}
-                      onClick={() => {
-                        setActiveChannelId(dm.id);
-                        onItemClick?.();
-                      }}
-                      className={cn(
-                        'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group',
-                        isActiveDm
-                          ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                          : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                      )}
-                    >
-                      {member ? (
-                        <CommunityAvatar
-                          name={member.name}
-                          imageUrl={member.avatar}
-                          size={18}
-                          status={member.status}
-                          showStatus
-                        />
-                      ) : (
-                        <MessageSquare
-                          className={cn(
-                            'w-3.5 h-3.5 shrink-0 transition-colors',
-                            isActiveDm ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
-                          )}
-                        />
-                      )}
-                      <span className="truncate flex-1">{dm.name}</span>
-                      {activeCallCounts[dm.id] && activeCallCounts[dm.id] > 0 ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
-                          <Radio className="w-2.5 h-2.5" />
-                          {activeCallCounts[dm.id]}
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* ===== SERVER: CHANNELS ONLY (Discord Category Grouping) ===== */
-          <div className="space-y-4">
-            {hubChannels.length === 0 ? (
-              <div className="px-2.5 py-4 text-center">
-                <p className="text-[11px] text-muted-foreground/60 leading-relaxed mb-2">
-                  {t('Belum ada channel')}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsCreateChannelOpen(true)}
-                  className="h-7 text-xs px-2.5 gap-1 w-full"
-                >
-                  <Plus className="w-3 h-3" />
-                  {t('Buat Channel')}
-                </Button>
-              </div>
-            ) : (
-              <>
-                {/* 1. TEXT CHANNELS CATEGORY */}
-                <div>
-                  <div
-                    onClick={() => setCollapsedCategories((prev) => ({ ...prev, text: !prev.text }))}
-                    className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
-                  >
-                    <div className="flex items-center gap-1">
-                      <ChevronDown
-                        className={cn(
-                          'w-3 h-3 transition-transform duration-200',
-                          collapsedCategories.text && '-rotate-90',
-                        )}
-                      />
-                      <span>{t('Text Channels')}</span>
-                      <span className="text-[10px] text-muted-foreground/60">
-                        ({textChannels.length})
-                      </span>
-                    </div>
-                    <Tooltip delayDuration={150}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNewChannelCategory('CHANNELS');
-                            setNewChannelType('text');
-                            setIsCreateChannelOpen(true);
-                          }}
-                          className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                        {t('Buat Text Channel')}
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  {!collapsedCategories.text && (
-                    <div className="space-y-0.5">
-                      {textChannels.map((ch) => {
-                        const isActiveCh = activeChannelId === ch.id;
-
-                        return (
-                          <div key={ch.id} className="space-y-0.5">
-                            <div
-                              onClick={() => {
-                                setActiveChannelId(ch.id);
-                                onItemClick?.();
-                              }}
-                              className={cn(
-                                'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
-                                isActiveCh
-                                  ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                              )}
-                            >
-                              <Hash
-                                className={cn(
-                                  'w-4 h-4 shrink-0 transition-colors',
-                                  isActiveCh
-                                    ? 'text-primary'
-                                    : 'text-muted-foreground/70 group-hover:text-foreground',
-                                )}
-                              />
-                              <span className="truncate flex-1">{ch.name}</span>
-                              {ch.isPrivate && (
-                                <span title="Private Channel">
-                                  <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-                                </span>
-                              )}
-
-                              {/* Channel action buttons (Discord style: Add/Invite and Settings) */}
-                              <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsInviteOpen(true);
-                                  }}
-                                  title={t('Buat Undangan')}
-                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                                >
-                                  <UserPlus className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleOpenEditChannel(ch, e)}
-                                  title={t('Pengaturan Channel')}
-                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                                >
-                                  <Settings className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. VOICE CHANNELS CATEGORY */}
-                <div>
-                  <div
-                    onClick={() => setCollapsedCategories((prev) => ({ ...prev, voice: !prev.voice }))}
-                    className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
-                  >
-                    <div className="flex items-center gap-1">
-                      <ChevronDown
-                        className={cn(
-                          'w-3 h-3 transition-transform duration-200',
-                          collapsedCategories.voice && '-rotate-90',
-                        )}
-                      />
-                      <span>{t('Voice Channels')}</span>
-                      <span className="text-[10px] text-muted-foreground/60">
-                        ({voiceChannels.length})
-                      </span>
-                    </div>
-                    <Tooltip delayDuration={150}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNewChannelCategory('CHANNELS');
-                            setNewChannelType('voice');
-                            setIsCreateChannelOpen(true);
-                          }}
-                          className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                        {t('Buat Voice Channel')}
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  {!collapsedCategories.voice && (
-                    <div className="space-y-0.5">
-                      {voiceChannels.map((ch) => {
-                        const isActiveCh = activeChannelId === ch.id;
-                        return (
-                          <div
-                            key={ch.id}
-                            onClick={() => {
-                              setActiveChannelId(ch.id);
-                              setActiveCallChannelId(ch.id);
-                              setIsCallPiP(false);
-                              onItemClick?.();
-                            }}
-                            className={cn(
-                              'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
-                              isActiveCh
-                                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                            )}
-                          >
-                            <Volume2
-                              className={cn(
-                                'w-4 h-4 shrink-0 transition-colors',
-                                isActiveCh
-                                  ? 'text-primary'
-                                  : 'text-muted-foreground/70 group-hover:text-foreground',
-                              )}
-                            />
-                            <span className="truncate flex-1">{ch.name}</span>
-                            {ch.isPrivate && (
-                              <span title="Private Channel">
-                                <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-                              </span>
-                            )}
-                            {activeCallCounts[ch.id] && activeCallCounts[ch.id] > 0 ? (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
-                                <Radio className="w-2.5 h-2.5" />
-                                {activeCallCounts[ch.id]}
-                              </span>
-                            ) : null}
-
-                            {/* Channel action buttons (Discord style: Add/Invite and Settings) */}
-                            <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setIsInviteOpen(true);
-                                }}
-                                title={t('Buat Undangan')}
-                                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                              >
-                                <UserPlus className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => handleOpenEditChannel(ch, e)}
-                                title={t('Pengaturan Channel')}
-                                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                              >
-                                <Settings className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. FORUM CHANNELS CATEGORY */}
-                <div>
-                  <div
-                    onClick={() => setCollapsedCategories((prev) => ({ ...prev, forum: !prev.forum }))}
-                    className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
-                  >
-                    <div className="flex items-center gap-1">
-                      <ChevronDown
-                        className={cn(
-                          'w-3 h-3 transition-transform duration-200',
-                          collapsedCategories.forum && '-rotate-90',
-                        )}
-                      />
-                      <span>{t('Forum Channels')}</span>
-                      <span className="text-[10px] text-muted-foreground/60">
-                        ({forumChannels.length})
-                      </span>
-                    </div>
-                    <Tooltip delayDuration={150}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNewChannelCategory('CHANNELS');
-                            setNewChannelType('forum');
-                            setIsCreateChannelOpen(true);
-                          }}
-                          className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                        {t('Buat Forum Channel')}
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  {!collapsedCategories.forum && (
-                    <div className="space-y-0.5">
-                      {forumChannels.map((ch) => {
-                        const isActiveCh = activeChannelId === ch.id;
-                        const childThreads =
-                          threadsMap[ch.id] || (activeChannelId === ch.id ? channelThreads : []);
-
-                        return (
-                          <div key={ch.id} className="space-y-0.5">
-                            <div
-                              onClick={() => {
-                                setActiveChannelId(ch.id);
-                                setActiveThread(null);
-                                onItemClick?.();
-                              }}
-                              className={cn(
-                                'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
-                                isActiveCh
-                                  ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                              )}
-                            >
-                              <MessagesSquare
-                                className={cn(
-                                  'w-4 h-4 shrink-0 transition-colors',
-                                  isActiveCh
-                                    ? 'text-primary'
-                                    : 'text-muted-foreground/70 group-hover:text-foreground',
-                                )}
-                              />
-                              <span className="truncate flex-1">{ch.name}</span>
-                              {ch.isPrivate && (
-                                <span title="Private Channel">
-                                  <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-                                </span>
-                              )}
-
-                              {/* Channel action buttons (Discord style: Add/Invite and Settings) */}
-                              <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsInviteOpen(true);
-                                  }}
-                                  title={t('Buat Undangan')}
-                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                                >
-                                  <UserPlus className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleOpenEditChannel(ch, e)}
-                                  title={t('Pengaturan Channel')}
-                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                                >
-                                  <Settings className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Nested Threads under Forum Channel */}
-                            {childThreads && childThreads.length > 0 && (
-                              <div className="ml-4 pl-2.5 border-l border-border/40 space-y-0.5 my-0.5">
-                                {childThreads.map((th) => {
-                                  const isThActive =
-                                    activeChannelId === ch.id && activeThread?.id === th.id;
-                                  return (
-                                    <div
-                                      key={th.id}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveChannelId(ch.id);
-                                        setActiveThread(th);
-                                        onItemClick?.();
-                                      }}
-                                      className={cn(
-                                        'flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors',
-                                        isThActive
-                                          ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                                          : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                                      )}
-                                    >
-                                      <span className="text-muted-foreground/50 text-[11px] font-mono leading-none">
-                                        └──
-                                      </span>
-                                      <span className="truncate flex-1">{th.name}</span>
-                                      {th.messageCount > 0 && (
-                                        <span className="text-[10px] text-muted-foreground/60 font-mono px-1 rounded bg-muted/40">
-                                          {th.messageCount}
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-      {/* Pinned User Bottom Dock inside the channels sidebar - zero offside, matches sidebar theme background */}
-      {renderUserBottomDock()}
-    </div>
+    <ChannelsSidebar
+      isHome={isHome}
+      activeHub={activeHub}
+      channels={channels}
+      activeChannelId={activeChannelId}
+      setActiveChannelId={setActiveChannelId}
+      activeCallChannelId={activeCallChannelId}
+      setActiveCallChannelId={setActiveCallChannelId}
+      isFriendsView={isFriendsView}
+      setFriendsTab={setFriendsTab}
+      friendRequests={friendRequests}
+      dmChannels={dmChannels}
+      members={members}
+      collapsedCategories={collapsedCategories}
+      setCollapsedCategories={setCollapsedCategories}
+      threadsMap={threadsMap}
+      channelThreads={channelThreads}
+      activeThread={activeThread}
+      setActiveThread={setActiveThread}
+      activeCallCounts={activeCallCounts}
+      onItemClick={onItemClick}
+      onOpenDmSearch={() => {
+        setIsDmSearchOpen(true);
+        setDmSearchQuery('');
+      }}
+      onOpenInvite={() => setIsInviteOpen(true)}
+      onOpenServerSettings={(section) => {
+        if (section) setServerSettingsSection(section);
+        setIsServerSettingsOpen(true);
+      }}
+      onOpenCreateChannel={(category, type = 'text') => {
+        setNewChannelCategory(category as any);
+        setNewChannelType(type);
+        setIsCreateChannelOpen(true);
+      }}
+      onOpenCreateHub={() => setIsCreateHubOpen(true)}
+      onOpenEditChannel={(ch) => handleOpenEditChannel(ch)}
+      onUpdateHubIcon={async (file) => {
+        if (!activeHub) return;
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(t('Ukuran file maksimal 5 MB.'));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const res = event.target?.result as string;
+          if (res) {
+            const updated: CommunityHub = { ...activeHub, iconUrl: res };
+            setHubs((prev) => {
+              const next = prev.map((h) => (h.id === activeHub.id ? updated : h));
+              saveStoredHubs(next);
+              return next;
+            });
+            try {
+              await communityApi.updateHub(activeHub.id, { iconUrl: res });
+            } catch {}
+            toast.success(t('Foto server berhasil diperbarui! 🖼️'));
+          }
+        };
+        reader.readAsDataURL(file);
+      }}
+      onOpenEditHub={() => setHubToEdit(activeHub)}
+      onOpenDeleteHub={() => setHubToDelete(activeHub)}
+      setIsCallPiP={setIsCallPiP}
+      userBottomDock={renderUserBottomDock()}
+      t={t}
+    />
   );
 
   // Component: User Footer Profile Dock (delegates to reusable UserBottomDock feature component)
