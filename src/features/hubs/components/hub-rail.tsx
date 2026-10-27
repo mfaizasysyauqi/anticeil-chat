@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { CommunityHub } from '@/lib/community-hubs';
+import { HubIcon } from './hub-icon';
 
 interface HubRailProps {
   hubs: CommunityHub[];
@@ -12,7 +13,7 @@ interface HubRailProps {
   onSelectHub: (hubId: string) => void;
   onOpenCreateHub: () => void;
   platformName?: string;
-  renderHubIcon: (hub: CommunityHub) => React.ReactNode;
+  renderHubIcon?: (hub: CommunityHub) => React.ReactNode;
 }
 
 export function HubRail({
@@ -21,7 +22,7 @@ export function HubRail({
   onSelectHub,
   onOpenCreateHub,
   platformName,
-  renderHubIcon,
+  renderHubIcon = (hub) => <HubIcon hub={hub} />,
 }: HubRailProps) {
   const { t } = useTranslation();
   const location = useLocation();

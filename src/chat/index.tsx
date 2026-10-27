@@ -84,7 +84,7 @@ import { useTheme } from '@/core/theme';
 import { useResponsive, LAYOUT_SIZES, BREAKPOINTS } from '@/core';
 import { HubRail, HubInviteDialog, CreateOrJoinHubDialog, EditHubDialog, DeleteHubDialog } from '@/features/hubs';
 import { UserBottomDock, EditProfileDialog } from '@/features/profile';
-import { FriendsView, type FriendRequest } from '@/features/friends';
+import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
 import {
   ChannelSettingsDialog,
   PinnedMessagesPopover,
@@ -101,8 +101,8 @@ import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/ser
 import { WebhookDialog } from '@/features/webhooks';
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 import { SendGiftDialog } from '@/features/gifts';
-import { ChatInputBar } from '@/features/chat-input';
-import { MessagesFeed, renderFormattedMessage } from '@/features/messages';
+import { ChatInputBar, processFileInput } from '@/features/chat-input';
+import { MessagesFeed, renderFormattedMessage, useCommunitySocket } from '@/features/messages';
 import { QuickAddEmojiDialog, QuickAddStickerDialog } from '@/features/media';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
@@ -334,22 +334,6 @@ export function CommunityPage() {
   const [selectedActivityAppId, setSelectedActivityAppId] = useState<string | null>(null);
   const [appsSearchQuery, setAppsSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (!socket) return;
-    const handleCallState = (data: { channelId: string; active: boolean; participantCount: number }) => {
-      if (data?.channelId) {
-        setActiveCallCounts((prev) => ({
-          ...prev,
-          [data.channelId]: data.active ? data.participantCount : 0,
-        }));
-      }
-    };
-    socket.on('COMMUNITY_CALL_STATE', handleCallState);
-    return () => {
-      socket.off('COMMUNITY_CALL_STATE', handleCallState);
-    };
-  }, [socket]);
-
   // Discord Hubs & Channels state
   const [hubs, setHubs] = useState<CommunityHub[]>(() => loadStoredHubs());
   const [activeHubId, setActiveHubId] = useState<CommunityHubId>(() => {
@@ -449,14 +433,6 @@ export function CommunityPage() {
   const [inputText, setInputText] = useState('');
   const [stagedAttachment, setStagedAttachment] = useState<CommunityAttachment | null>(null);
   const [showMemberList, setShowMemberList] = useState(false);
-
-  // Friends panel state (Discord-style, shown when isHome)
-  type FriendsTab = 'online' | 'all' | 'pending' | 'add';
-  const [friendsTab, setFriendsTab] = useState<FriendsTab>('online');
-  const [friendsSearchQuery, setFriendsSearchQuery] = useState('');
-  const [addFriendInput, setAddFriendInput] = useState('');
-  const [isAddingFriend, setIsAddingFriend] = useState(false);
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
 
@@ -810,83 +786,15 @@ export function CommunityPage() {
     }
   };
 
-  // 3. WebSocket Realtime Listeners
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleIncomingMessage = (newMsg: CommunityMessage) => {
-      setMessagesMap((prev) => {
-        const list = prev[newMsg.channelId] || [];
-        if (list.some((m) => m.id === newMsg.id)) return prev;
-        return {
-          ...prev,
-          [newMsg.channelId]: [...list, newMsg],
-        };
-      });
-    };
-
-    const handleMessageDeleted = ({ id, channelId }: { id: string; channelId?: string }) => {
-      setMessagesMap((prev) => {
-        const ch = channelId || activeChannelId;
-        const list = prev[ch] || [];
-        return {
-          ...prev,
-          [ch]: list.filter((m) => m.id !== id),
-        };
-      });
-    };
-
-    const handleReactionUpdated = ({
-      id,
-      channelId,
-      reactions,
-    }: {
-      id: string;
-      channelId?: string;
-      reactions: Record<string, string[]>;
-    }) => {
-      setMessagesMap((prev) => {
-        const ch = channelId || activeChannelId;
-        const list = prev[ch] || [];
-        return {
-          ...prev,
-          [ch]: list.map((m) => (m.id === id ? { ...m, reactions } : m)),
-        };
-      });
-    };
-
-    const handleChannelCreated = (newCh: CommunityChannel) => {
-      setChannels((prev) => {
-        if (prev.some((c) => c.id === newCh.id)) return prev;
-        return [...prev, newCh];
-      });
-    };
-
-    const handleChannelUpdated = (updatedCh: CommunityChannel) => {
-      setChannels((prev) => prev.map((c) => (c.id === updatedCh.id ? { ...c, ...updatedCh } : c)));
-    };
-
-    const handleChannelDeleted = ({ id }: { id: string }) => {
-      setChannels((prev) => prev.filter((c) => c.id !== id));
-      setActiveChannelId((current) => (current === id ? '' : current));
-    };
-
-    socket.on('COMMUNITY_CHAT_MESSAGE', handleIncomingMessage);
-    socket.on('COMMUNITY_MESSAGE_DELETED', handleMessageDeleted);
-    socket.on('COMMUNITY_REACTION_UPDATED', handleReactionUpdated);
-    socket.on('COMMUNITY_CHANNEL_CREATED', handleChannelCreated);
-    socket.on('COMMUNITY_CHANNEL_UPDATED', handleChannelUpdated);
-    socket.on('COMMUNITY_CHANNEL_DELETED', handleChannelDeleted);
-
-    return () => {
-      socket.off('COMMUNITY_CHAT_MESSAGE', handleIncomingMessage);
-      socket.off('COMMUNITY_MESSAGE_DELETED', handleMessageDeleted);
-      socket.off('COMMUNITY_REACTION_UPDATED', handleReactionUpdated);
-      socket.off('COMMUNITY_CHANNEL_CREATED', handleChannelCreated);
-      socket.off('COMMUNITY_CHANNEL_UPDATED', handleChannelUpdated);
-      socket.off('COMMUNITY_CHANNEL_DELETED', handleChannelDeleted);
-    };
-  }, [socket, activeChannelId]);
+  // 3. WebSocket Realtime Listeners (Feature-First Hook)
+  useCommunitySocket({
+    socket,
+    activeChannelId,
+    setMessagesMap,
+    setChannels,
+    setActiveChannelId,
+    setActiveCallCounts,
+  });
 
   // Channels filtered by selected Hub
   const hubChannels = useMemo(() => {
@@ -1997,134 +1905,8 @@ export function CommunityPage() {
   };
 
   // File Select with Strict Limit: Max 5MB, Images & Documents only (Videos banned to save storage)
-  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Reset input value so user can re-select same file if needed
-    e.target.value = '';
-
-    // 1. Strict Size Check (5MB max)
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      toast.error('Ukuran file maksimal 5 MB untuk menjaga efisiensi storage.');
-      return;
-    }
-
-    // 2. Reject Video and Audio formats
-    if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
-      toast.error('Format video dan audio tidak diizinkan. Harap unggah gambar atau dokumen.');
-      return;
-    }
-
-    // 3. Allowed MIME types: images and documents (PDF, CSV, JSON, TXT, DOCX)
-    const isImage = file.type.startsWith('image/');
-    const isDocument =
-      file.type === 'application/pdf' ||
-      file.type === 'text/plain' ||
-      file.type === 'text/csv' ||
-      file.type === 'application/json' ||
-      file.type.includes('wordprocessingml') ||
-      file.type.includes('spreadsheetml') ||
-      file.name.endsWith('.pdf') ||
-      file.name.endsWith('.json') ||
-      file.name.endsWith('.txt') ||
-      file.name.endsWith('.csv') ||
-      file.name.endsWith('.docx') ||
-      file.name.endsWith('.xlsx');
-
-    if (!isImage && !isDocument) {
-      toast.error('Format file tidak didukung. Harap unggah gambar atau dokumen (PDF, TXT, CSV, JSON, DOCX).');
-      return;
-    }
-
-    if (isImage) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setStagedAttachment({
-          type: 'image',
-          url: reader.result as string,
-          name: file.name,
-          size: `${Math.round(file.size / 1024)} KB`,
-        });
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setStagedAttachment({
-        type: 'file',
-        url: '#',
-        name: file.name,
-        size: `${Math.round(file.size / 1024)} KB`,
-      });
-    }
-  };
-
-  // Render Hub Icon Helper (Discord style)
-  const renderHubIcon = (hub: CommunityHub) => {
-    if (hub.iconUrl) {
-      return (
-        <img
-          src={hub.iconUrl}
-          alt={hub.name}
-          className="w-full h-full object-cover rounded-[14px]"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
-        />
-      );
-    }
-    switch (hub.iconType) {
-      case 'logo':
-        return (
-          <img
-            src="/logo.png"
-            alt="Anticeil"
-            className="size-7 object-contain pointer-events-none drop-shadow-xs"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = '/logo.svg';
-            }}
-          />
-        );
-      case 'spark':
-        return <Sparkles className="w-4 h-4 text-amber-400" />;
-      case 'bot':
-        return <Bot className="w-4 h-4 text-emerald-400" />;
-      case 'templates':
-        return <Layers className="w-4 h-4 text-purple-400" />;
-      case 'code':
-        return <Terminal className="w-4 h-4 text-blue-400" />;
-      case 'dm':
-        return <MessageSquare className="w-4 h-4 text-rose-400" />;
-      default:
-        return <span className="font-bold text-xs">{hub.initials}</span>;
-    }
-  };
-
-  // Role Badge Helper (Discord Server Roles: Pemilik, Admin, Bot)
-  const renderRoleBadge = (role: CommunityRole, roleLabel?: string) => {
-    switch (role) {
-      case 'owner':
-        return (
-          <Badge className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border-amber-500/20 text-[10px] px-1.5 py-0 uppercase font-semibold gap-1 shrink-0">
-            <Crown className="w-2.5 h-2.5" /> {roleLabel || t('Pemilik')}
-          </Badge>
-        );
-      case 'admin':
-        return (
-          <Badge className="bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 border-rose-500/20 text-[10px] px-1.5 py-0 uppercase font-semibold gap-1 shrink-0">
-            <Shield className="w-2.5 h-2.5" /> {roleLabel || t('Admin')}
-          </Badge>
-        );
-      case 'bot':
-        return (
-          <Badge className="bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border-indigo-500/20 text-[10px] px-1.5 py-0 uppercase font-semibold gap-1 shrink-0">
-            <Bot className="w-2.5 h-2.5" /> {roleLabel || t('Bot')}
-          </Badge>
-        );
-      default:
-        return null;
-    }
+    processFileInput(e, setStagedAttachment);
   };
 
   const currentUserName =
@@ -2166,6 +1948,14 @@ export function CommunityPage() {
     return list;
   }, [members, currentUser, activeHub]);
 
+  // Friends Manager (Feature-First Hook)
+  const friends = useFriendsManager({
+    displayMembers,
+    currentUser,
+    members,
+    t,
+  });
+
   // Component: Discord Mini Server/Hub Rail (delegates to reusable HubRail feature component)
   const renderDiscordHubRail = () => (
     <HubRail
@@ -2184,7 +1974,6 @@ export function CommunityPage() {
       }}
       onOpenCreateHub={() => setIsCreateHubOpen(true)}
       platformName={platform?.name}
-      renderHubIcon={renderHubIcon}
     />
   );
 
@@ -2199,8 +1988,8 @@ export function CommunityPage() {
       activeCallChannelId={activeCallChannelId}
       setActiveCallChannelId={setActiveCallChannelId}
       isFriendsView={isFriendsView}
-      setFriendsTab={setFriendsTab}
-      friendRequests={friendRequests}
+      setFriendsTab={friends.setFriendsTab}
+      friendRequests={friends.friendRequests}
       dmChannels={dmChannels}
       members={members}
       collapsedCategories={collapsedCategories}
@@ -2289,85 +2078,6 @@ export function CommunityPage() {
     />
   );
 
-  // Friends Page helpers and state
-  const onlineFriends = useMemo(() => {
-    return displayMembers.filter(
-      (m) => m.id !== currentUser?.id && m.email !== currentUser?.email && m.status !== 'offline',
-    );
-  }, [displayMembers, currentUser]);
-
-  const allFriends = useMemo(() => {
-    return displayMembers.filter(
-      (m) => m.id !== currentUser?.id && m.email !== currentUser?.email,
-    );
-  }, [displayMembers, currentUser]);
-
-  const filteredFriends = useMemo(() => {
-    const list = friendsTab === 'online' ? onlineFriends : allFriends;
-    if (!friendsSearchQuery.trim()) return list;
-    const q = friendsSearchQuery.toLowerCase();
-    return list.filter(
-      (f) =>
-        f.name.toLowerCase().includes(q) ||
-        (f.username && f.username.toLowerCase().includes(q)),
-    );
-  }, [friendsTab, onlineFriends, allFriends, friendsSearchQuery]);
-
-  const handleAddFriend = async (targetUsername?: string) => {
-    const raw = typeof targetUsername === 'string' ? targetUsername : addFriendInput;
-    if (!raw.trim()) return;
-    setIsAddingFriend(true);
-    try {
-      await new Promise((r) => setTimeout(r, 600));
-      const cleanInput = raw.trim().replace(/^@/, '').toLowerCase();
-      const found = members.find(
-        (m) =>
-          (m.username && m.username.toLowerCase() === cleanInput) ||
-          m.name.toLowerCase() === cleanInput,
-      );
-      if (found) {
-        if (found.id === currentUser?.id || found.email === currentUser?.email) {
-          toast.error(t('Kamu tidak bisa menambahkan diri sendiri sebagai teman.'));
-          return;
-        }
-        setFriendRequests((prev) => [
-          ...prev.filter((r) => r.id !== found.id),
-          {
-            id: found.id,
-            name: found.name,
-            username: found.username || null,
-            avatar: found.avatar || null,
-            direction: 'outgoing' as const,
-            status: 'pending' as const,
-          },
-        ]);
-        toast.success(t('Permintaan pertemanan terkirim ke') + ` ${found.name}!`);
-        setAddFriendInput('');
-      } else {
-        toast.error(t('Pengguna tidak ditemukan. Periksa username dan coba lagi.'));
-      }
-    } catch {
-      toast.error(t('Gagal mengirim permintaan pertemanan.'));
-    } finally {
-      setIsAddingFriend(false);
-    }
-  };
-
-  const handleAcceptRequest = (req: FriendRequest) => {
-    setFriendRequests((prev) => prev.filter((r) => r.id !== req.id));
-    toast.success(t('Permintaan pertemanan dari') + ` ${req.name} ` + t('diterima!'));
-  };
-
-  const handleRejectRequest = (req: FriendRequest) => {
-    setFriendRequests((prev) => prev.filter((r) => r.id !== req.id));
-    toast(t('Permintaan pertemanan ditolak.'));
-  };
-
-  const handleCancelRequest = (req: FriendRequest) => {
-    setFriendRequests((prev) => prev.filter((r) => r.id !== req.id));
-    toast(t('Permintaan pertemanan dibatalkan.'));
-  };
-
   const handleStartDirectMessage = (member: any) => {
     setActiveHubId('anticeil');
     setActiveChannelId(`dm-${member.id}`);
@@ -2376,20 +2086,8 @@ export function CommunityPage() {
   // Component: Discord-Style Friends Main Page (delegates to reusable FriendsView feature component)
   const renderFriendsMainPage = () => (
     <FriendsView
-      friendsTab={friendsTab}
-      onTabChange={setFriendsTab}
-      onlineFriends={onlineFriends}
-      allFriends={allFriends}
-      filteredFriends={filteredFriends}
-      friendRequests={friendRequests}
-      friendsSearchQuery={friendsSearchQuery}
-      onSearchChange={setFriendsSearchQuery}
+      {...friends}
       onStartDM={handleStartDirectMessage}
-      onAddFriend={handleAddFriend}
-      isAddingFriend={isAddingFriend}
-      onAcceptRequest={handleAcceptRequest}
-      onRejectRequest={handleRejectRequest}
-      onCancelRequest={handleCancelRequest}
       onOpenDmSearch={() => setIsDmSearchOpen(true)}
       onOpenSidebar={() => setIsMobileChannelsOpen(true)}
       horizontalPadding={CHANNEL_HORIZONTAL_PADDING}

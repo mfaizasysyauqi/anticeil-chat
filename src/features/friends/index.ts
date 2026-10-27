@@ -6,3 +6,4 @@ export * from './components/pending-requests-tab';
 export * from './components/friends-list';
 export * from './components/friends-header';
 export * from './components/friends-view';
+export * from './hooks/use-friends-manager';
