@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/core/i18n';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface AuthRequiredDialogProps {
   isOpen: boolean;
@@ -36,9 +36,6 @@ export function AuthRequiredDialog({
           <div className="w-16 h-16 rounded-2xl bg-background/90 p-2.5 shadow-xl border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
             <img src="/logo.png" alt="Anticeil" className="w-full h-full object-contain" />
           </div>
-          <span className="absolute bottom-2 right-3 inline-flex items-center gap-1 text-[10px] font-mono font-medium text-muted-foreground/80">
-            <ShieldCheck className="w-3 h-3 text-emerald-500" /> Anticeil SSO
-          </span>
         </div>
 
         <div className="p-6 flex flex-col items-center text-center">
