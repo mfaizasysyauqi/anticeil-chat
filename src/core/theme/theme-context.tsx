@@ -42,20 +42,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.add('light', 'theme-light');
       root.style.setProperty('--background', '#ffffff');
       root.style.setProperty('--foreground', '#18181b');
-      root.style.setProperty('--card', '#f8f9fa');
+      root.style.setProperty('--card', '#ffffff');
       root.style.setProperty('--card-foreground', '#18181b');
       root.style.setProperty('--popover', '#ffffff');
       root.style.setProperty('--popover-foreground', '#18181b');
-      root.style.setProperty('--sidebar-background', '#f4f4f5');
+      root.style.setProperty('--sidebar-background', '#ffffff');
       root.style.setProperty('--sidebar-foreground', '#18181b');
       root.style.setProperty('--sidebar-border', 'rgba(0, 0, 0, 0.08)');
-      root.style.setProperty('--sidebar-accent', '#e4e4e7');
+      root.style.setProperty('--sidebar-accent', '#f4f4f5');
       root.style.setProperty('--border', 'rgba(0, 0, 0, 0.08)');
       root.style.setProperty('--muted', '#f4f4f5');
       root.style.setProperty('--muted-foreground', '#71717a');
-      root.style.setProperty('--accent', '#e4e4e7');
+      root.style.setProperty('--accent', '#f4f4f5');
       root.style.setProperty('--accent-foreground', '#18181b');
-      root.style.setProperty('--input', '#f4f4f5');
+      root.style.setProperty('--input', '#ffffff');
       // Anticeil Secondary: Hijau Emerald / Teal (#0d9488 / #059669)
       root.style.setProperty('--secondary', '#0d9488');
       root.style.setProperty('--secondary-foreground', '#ffffff');

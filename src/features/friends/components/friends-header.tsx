@@ -63,8 +63,8 @@ export function FriendsHeader({
             className={cn(
               'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
               friendsTab === 'online'
-                ? 'bg-[#2b2d31]/80 text-white shadow-2xs'
-                : 'text-muted-foreground hover:bg-[#1e1f22] hover:text-foreground'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
             <span>{t('Online')}</span>
@@ -78,8 +78,8 @@ export function FriendsHeader({
             className={cn(
               'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
               friendsTab === 'all'
-                ? 'bg-[#2b2d31]/80 text-white shadow-2xs'
-                : 'text-muted-foreground hover:bg-[#1e1f22] hover:text-foreground'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
             <span>{t('Semua')}</span>
@@ -93,13 +93,13 @@ export function FriendsHeader({
             className={cn(
               'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
               friendsTab === 'pending'
-                ? 'bg-[#2b2d31]/80 text-white shadow-2xs'
-                : 'text-muted-foreground hover:bg-[#1e1f22] hover:text-foreground'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
             <span>{t('Tertunda')}</span>
             {pendingCount > 0 && (
-              <span className="size-4 rounded-full bg-[#da373c] text-white text-[9px] font-bold flex items-center justify-center">
+              <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
                 {pendingCount}
               </span>
             )}

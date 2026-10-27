@@ -2261,7 +2261,7 @@ export function CommunityPage() {
           /* Home: Discord-style search bar "Find or start a conversation" */
           <button
             onClick={() => { setIsDmSearchOpen(true); setDmSearchQuery(''); }}
-            className="w-full h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-[#111214] hover:bg-[#1e1f22] text-[#949ba4] text-[11px] transition-colors cursor-pointer border border-transparent"
+            className="w-full h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] transition-colors cursor-pointer border border-border"
           >
             <Search className="w-3 h-3 shrink-0 opacity-60" />
             <span className="truncate">{t('Cari atau mulai percakapan...')}</span>
