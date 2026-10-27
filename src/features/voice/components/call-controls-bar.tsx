@@ -65,12 +65,12 @@ export function CallControlsBar({
   return (
     <div
       className={cn(
-        'h-16 shrink-0 w-full flex items-center justify-between bg-background border-t border-border/40 select-none z-20',
+        'h-16 shrink-0 w-full grid grid-cols-[auto_1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center bg-background select-none z-20',
         CHANNEL_HORIZONTAL_PADDING,
       )}
     >
       {/* Left: Invite Friends / Add to Call */}
-      <div className="flex items-center">
+      <div className="flex items-center justify-start">
         <TooltipProvider delayDuration={150}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -90,7 +90,7 @@ export function CallControlsBar({
       </div>
 
       {/* Center: Controls Pill Group with Strict Consistent h-11 Height */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center justify-center gap-1.5 sm:gap-3">
         {/* Pill 1: Audio & Video Controls */}
         <div className="h-11 bg-card rounded-xl flex items-center px-1 border border-border/60 shadow-md shrink-0">
           {/* Mic Toggle Button */}
@@ -236,13 +236,13 @@ export function CallControlsBar({
               align="center"
               side="top"
               sideOffset={12}
-              className="w-56 p-1.5 rounded-xl bg-[#111214] border border-border/80 shadow-2xl text-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
+              className="w-56 p-1.5 rounded-xl bg-popover border border-border shadow-2xl text-popover-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
             >
               {/* Mobile-Only Options: Screen Share, Activity, Soundboard */}
               <div className="md:hidden space-y-0.5">
                 <DropdownMenuItem
                   onClick={onToggleScreenShare}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
                 >
                   {isScreenSharing ? (
                     <>
@@ -251,7 +251,7 @@ export function CallControlsBar({
                     </>
                   ) : (
                     <>
-                      <Monitor className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <Monitor className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
                       <span>Berbagi Layar (Screen Share)</span>
                     </>
                   )}
@@ -259,12 +259,12 @@ export function CallControlsBar({
 
                 <DropdownMenuItem
                   onClick={onOpenAppLauncher}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
                 >
                   <Shapes
                     className={cn(
                       'w-4 h-4 shrink-0',
-                      activeAppId !== null ? 'text-emerald-500' : 'text-muted-foreground',
+                      activeAppId !== null ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent-foreground',
                     )}
                   />
                   <div className="flex items-center justify-between flex-1 min-w-0">
@@ -279,50 +279,31 @@ export function CallControlsBar({
 
                 <DropdownMenuItem
                   onClick={() => toast.info('Fitur Soundboard & Efek Suara Anticeil')}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
                 >
-                  <Sparkles className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Sparkles className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
                   <span>Soundboard & Efek Suara</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="my-1 bg-border/60" />
+                <DropdownMenuSeparator className="my-1 bg-border" />
               </div>
 
               {/* General Options for All Screen Sizes */}
               <DropdownMenuItem
                 onClick={onCopyCallLink}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-white/5 transition-colors"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
               >
-                <LinkIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                <LinkIcon className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
                 <span>Salin Link Panggilan</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 onClick={onOpenInvite}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-white/5 transition-colors"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
               >
-                <UserPlus className="w-4 h-4 text-muted-foreground shrink-0" />
+                <UserPlus className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
                 <span>Undang Teman</span>
               </DropdownMenuItem>
-
-              {/* Small-screen Shortcuts for Popout and Fullscreen */}
-              <div className="sm:hidden">
-                <DropdownMenuSeparator className="my-1 bg-border/60" />
-                <DropdownMenuItem
-                  onClick={onTogglePiP}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-white/5 transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span>Popout (Picture-in-Picture)</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={onToggleFullscreen}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-white/5 transition-colors"
-                >
-                  <Maximize className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span>Layar Penuh</span>
-                </DropdownMenuItem>
-              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -346,8 +327,8 @@ export function CallControlsBar({
         </TooltipProvider>
       </div>
 
-      {/* Right: Popout (PiP) & Fullscreen Controls (Hidden on small mobile screens to prevent overflow) */}
-      <div className="hidden sm:flex items-center gap-1.5">
+      {/* Right: Popout (PiP) & Fullscreen Controls - Aligned Right, Visible on Mobile & Desktop */}
+      <div className="flex items-center justify-end gap-1 sm:gap-1.5">
         {/* Popout / Picture in Picture */}
         <TooltipProvider delayDuration={150}>
           <Tooltip>
@@ -355,9 +336,10 @@ export function CallControlsBar({
               <button
                 type="button"
                 onClick={onTogglePiP}
-                className="h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                title="Popout (Picture-in-Picture)"
               >
-                <ExternalLink className="w-5 h-5" />
+                <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs font-semibold">
@@ -373,9 +355,10 @@ export function CallControlsBar({
               <button
                 type="button"
                 onClick={onToggleFullscreen}
-                className="h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                title="Layar Penuh"
               >
-                <Maximize className="w-5 h-5" />
+                <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs font-semibold">

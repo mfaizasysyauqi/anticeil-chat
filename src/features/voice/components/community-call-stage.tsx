@@ -845,7 +845,7 @@ export function CommunityCallStage({
   return (
     <div className="w-full h-full flex-1 min-h-0 flex flex-col bg-background text-foreground select-none relative overflow-hidden group/stage">
       {/* Discord Top Stage App Bar */}
-      <div className={cn('h-12 w-full flex items-center justify-between bg-background border-b border-border/40 select-none shrink-0 z-20', CHANNEL_HORIZONTAL_PADDING)}>
+      <div className={cn('h-12 w-full flex items-center justify-between bg-background select-none shrink-0 z-20', CHANNEL_HORIZONTAL_PADDING)}>
         <div className="flex items-center gap-2 min-w-0">
           {/* Burger Menu Button (Visible on Mobile/Tablet: md:hidden) */}
           {onOpenMobileChannels && (

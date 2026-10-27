@@ -49,13 +49,13 @@ export function ActivityLauncherDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           showCloseButton={false}
-          className="w-[95vw] sm:w-[560px] max-w-[560px] p-0 bg-popover border border-border text-foreground overflow-hidden shadow-2xl rounded-[16px] flex flex-col max-h-[85vh] h-[620px] focus:outline-none"
+          className="w-[95vw] sm:w-[500px] max-w-[500px] p-0 bg-popover border border-border text-foreground overflow-hidden shadow-2xl rounded-[16px] flex flex-col max-h-[82vh] h-[520px] focus:outline-none"
         >
           <DialogTitle className="sr-only">Activities</DialogTitle>
           <DialogDescription className="sr-only">Browse and launch activities in this voice call.</DialogDescription>
 
           {/* Top Search Bar */}
-          <div className="p-4 pb-3 shrink-0">
+          <div className="p-3 pb-2 shrink-0">
             <div className="relative w-full">
               <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -63,18 +63,18 @@ export function ActivityLauncherDialog({
                 value={appSearchQuery}
                 onChange={(e) => setAppSearchQuery(e.target.value)}
                 placeholder="Search"
-                className="w-full h-10 bg-muted/60 border border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
+                className="w-full h-9 bg-muted/50 border border-border focus:border-border focus:ring-1 focus:ring-ring rounded-lg pl-9 pr-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
               />
             </div>
             {activeAppId !== null && (
-              <div className="mt-2.5 px-3 py-1.5 rounded-lg bg-muted border border-border flex items-center justify-between text-xs">
+              <div className="mt-2 px-2.5 py-1 rounded-lg bg-muted border border-border flex items-center justify-between text-xs">
                 <span className="text-[11px] text-muted-foreground">
                   Aktif: <strong className="text-foreground">{currentActiveApp?.title}</strong>
                 </span>
                 <button
                   type="button"
                   onClick={onStopActivity}
-                  className="text-[11px] text-red-400 hover:text-red-300 hover:underline cursor-pointer font-semibold"
+                  className="text-[11px] text-red-500 hover:text-red-400 hover:underline cursor-pointer font-semibold"
                 >
                   Hentikan Aktivitas
                 </button>
@@ -83,23 +83,23 @@ export function ActivityLauncherDialog({
           </div>
 
           {/* Modal Scrollable Body */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto px-3.5 pb-3.5 space-y-3.5 [scrollbar-width:thin]">
             {/* 1. Recents Row (YouTube, Gamepad, Wordle) */}
             {!appSearchQuery && (
               <div>
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">Recents</h3>
-                <div className="flex items-center gap-3">
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Recents</h3>
+                <div className="flex items-center gap-2.5">
                   {/* YouTube Watch Together */}
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => onLaunchApp('watch-together')}
-                          className="w-14 h-14 rounded-2xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-md group shrink-0"
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm group shrink-0"
                           title="Watch Together"
                         >
-                          <div className="w-8 h-5.5 rounded-md bg-[#ff0000] flex items-center justify-center text-white shadow-sm">
-                            <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
+                          <div className="w-6 h-4.5 rounded-sm bg-[#ff0000] flex items-center justify-center text-white shadow-xs">
+                            <Play className="w-3 h-3 fill-white ml-0.5" />
                           </div>
                         </button>
                       </TooltipTrigger>
@@ -113,10 +113,10 @@ export function ActivityLauncherDialog({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => onLaunchApp('valorant-aces')}
-                          className="w-14 h-14 rounded-2xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-md text-primary shrink-0"
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-primary shrink-0"
                           title="VALORANT Aces"
                         >
-                          <Gamepad2 className="w-7 h-7 stroke-[2.2]" />
+                          <Gamepad2 className="w-5 h-5 stroke-[2.2]" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs font-semibold">VALORANT Aces</TooltipContent>
@@ -129,19 +129,19 @@ export function ActivityLauncherDialog({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => onLaunchApp('wordle')}
-                          className="w-14 h-14 rounded-2xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-md shrink-0"
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0"
                           title="Wordle"
                         >
-                          <div className="grid grid-cols-3 gap-0.5 p-1 rounded-sm bg-muted">
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-500" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-amber-400" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-500" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-muted-foreground/40" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-500" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-500" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-500" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-muted-foreground/40" />
-                            <div className="w-2.5 h-2.5 rounded-[1.5px] bg-amber-400" />
+                          <div className="grid grid-cols-3 gap-0.5 p-0.5 rounded-[2px] bg-muted">
+                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
+                            <div className="w-2 h-2 rounded-[1px] bg-amber-400" />
+                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
+                            <div className="w-2 h-2 rounded-[1px] bg-muted-foreground/40" />
+                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
+                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
+                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
+                            <div className="w-2 h-2 rounded-[1px] bg-muted-foreground/40" />
+                            <div className="w-2 h-2 rounded-[1px] bg-amber-400" />
                           </div>
                         </button>
                       </TooltipTrigger>
@@ -154,17 +154,17 @@ export function ActivityLauncherDialog({
 
             {/* 2. Activities (2 Columns Grid matching Discord) */}
             <div>
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                 {appSearchQuery ? 'Search Results' : 'Activities'}
               </h3>
 
-              <div className="grid grid-cols-2 gap-3.5 pb-2">
+              <div className="grid grid-cols-2 gap-2.5 pb-1">
                 {filteredApps.map((app) => (
                   <div
                     key={app.id}
                     onClick={() => onLaunchApp(app.id)}
                     className={cn(
-                      'rounded-2xl border overflow-hidden transition-all duration-200 cursor-pointer group flex flex-col shadow-md',
+                      'rounded-xl border overflow-hidden transition-all duration-200 cursor-pointer group flex flex-col shadow-xs',
                       activeAppId === app.id
                         ? 'border-primary ring-2 ring-primary/40 bg-card'
                         : 'border-border/60 bg-card hover:border-border hover:bg-muted/60',
@@ -182,26 +182,26 @@ export function ActivityLauncherDialog({
                       ) : (
                         <div
                           className={cn(
-                            'w-full h-full p-3 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br',
+                            'w-full h-full p-2.5 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br',
                             app.bannerGradient,
                           )}
                         >
-                          <app.icon className="w-10 h-10 text-white/30" />
+                          <app.icon className="w-8 h-8 text-white/30" />
                         </div>
                       )}
 
                       {/* Ambient Gradient Overlay for text contrast */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-black/30 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
                       {/* Promoted Pill Badge on Top-Right */}
                       {app.isPromoted && (
-                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-[4px] text-[9px] font-black tracking-wider text-black bg-white uppercase shadow-md select-none">
+                        <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-[3px] text-[8px] font-black tracking-wider text-black bg-white uppercase shadow-xs select-none">
                           PROMOTED
                         </span>
                       )}
 
                       {/* Center Banner Title Overlay */}
-                      <div className="absolute bottom-2 left-2.5 right-2.5 z-10 pointer-events-none">
+                      <div className="absolute bottom-1.5 left-2 right-2 z-10 pointer-events-none">
                         <span className="text-xs sm:text-sm font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide truncate block">
                           {app.bannerTitle || app.title}
                         </span>
@@ -209,20 +209,20 @@ export function ActivityLauncherDialog({
                     </div>
 
                     {/* Card Bottom Meta */}
-                    <div className="p-3 bg-card group-hover:bg-muted/70 transition-colors flex items-center gap-3 min-w-0">
+                    <div className="p-2.5 bg-card group-hover:bg-muted/70 transition-colors flex items-center gap-2.5 min-w-0">
                       <div
                         className={cn(
-                          'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform',
+                          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform',
                           app.iconBg,
                         )}
                       >
-                        <app.icon className="w-5 h-5 text-white" />
+                        <app.icon className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-sm font-bold text-foreground group-hover:text-foreground truncate leading-snug">
+                        <span className="text-xs font-bold text-foreground group-hover:text-foreground truncate leading-snug">
                           {app.title}
                         </span>
-                        <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
+                        <span className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
                           {app.tagline || app.description}
                         </span>
                       </div>
