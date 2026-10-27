@@ -86,6 +86,10 @@ import { HubRail } from '@/features/hubs';
 import { UserBottomDock } from '@/features/profile';
 import { FriendsView, type FriendRequest } from '@/features/friends';
 import { ChannelSettingsDialog } from '@/features/channels';
+import { HubInviteDialog } from '@/features/hubs';
+import { EditProfileDialog } from '@/features/profile';
+import { ServerMembersSidebar } from '@/features/members';
+import { PinnedMessagesPopover } from '@/features/channels';
 import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
 import { WebhookDialog } from '@/features/webhooks';
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
@@ -3403,117 +3407,15 @@ export function CommunityPage() {
   };
 
   // Component: Members Sidebar Content
-  const renderMembersSidebarContent = () => {
-    const roleGroups: {
-      key: string;
-      title: string;
-      filter: (m: CommunityMember) => boolean;
-    }[] = [
-      {
-        key: 'owner',
-        title: t('Pemilik Server'),
-        filter: (m) => m.role === 'owner',
-      },
-      {
-        key: 'admin',
-        title: t('Admin Server'),
-        filter: (m) => m.role === 'admin',
-      },
-      {
-        key: 'bot',
-        title: t('Bot & Integrasi'),
-        filter: (m) => m.role === 'bot',
-      },
-      {
-        key: 'online',
-        title: t('Online'),
-        filter: (m) => m.role !== 'owner' && m.role !== 'admin' && m.role !== 'bot' && m.status !== 'offline',
-      },
-      {
-        key: 'offline',
-        title: t('Offline'),
-        filter: (m) => m.role !== 'owner' && m.role !== 'admin' && m.role !== 'bot' && m.status === 'offline',
-      },
-    ];
-
-    return (
-      <div className="flex flex-col h-full bg-sidebar border-l border-sidebar-border select-none w-60 shrink-0 overflow-hidden">
-        {/* Header: NON-SCROLLABLE APP BAR */}
-        <div className="h-12 border-b border-sidebar-border px-4 flex items-center justify-between font-semibold text-xs text-muted-foreground uppercase tracking-wider shrink-0 bg-sidebar z-10">
-          <span>{t('Anggota Server')} ({displayMembers.length})</span>
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => setIsInviteOpen(true)} title={t('Undang Anggota')}>
-            <Plus className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-
-        {/* Members List: SCROLLABLE DAFTAR ANGGOTA */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 [scrollbar-width:thin]">
-          {displayMembers.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-4 text-center py-8">
-              <Users className="w-8 h-8 text-muted-foreground/30 mb-2" />
-              <p className="text-xs text-muted-foreground/60">{t('Belum ada anggota')}</p>
-            </div>
-          ) : (
-            roleGroups.map((r) => {
-              const matchedMembers = displayMembers.filter(r.filter);
-              if (matchedMembers.length === 0) return null;
-
-              return (
-                <div key={r.key} className="mb-4">
-                  <div className="px-2 mb-1.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider flex items-center justify-between">
-                    <span>{r.title}</span>
-                    <span>{matchedMembers.length}</span>
-                  </div>
-                  <div className="space-y-0.5">
-                    {matchedMembers.map((member) => (
-                      <button
-                        key={member.id}
-                        onClick={() => handleStartDM(member)}
-                        className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left transition-colors hover:bg-sidebar-accent group"
-                      >
-                        <CommunityAvatar
-                          name={member.name}
-                          imageUrl={member.avatar}
-                          size={28}
-                          status={member.status}
-                          showStatus
-                        />
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={cn(
-                                'text-xs font-medium truncate',
-                                member.status === 'offline'
-                                  ? 'text-muted-foreground/60'
-                                  : 'text-foreground group-hover:text-primary',
-                              )}
-                            >
-                              {member.name}
-                            </span>
-                            {renderRoleBadge(member.role, member.roleLabel)}
-                          </div>
-                          {member.username && (
-                            <span className="text-[10px] text-muted-foreground/60 truncate font-mono leading-none mt-0.5">
-                              @{member.username}
-                            </span>
-                          )}
-                          {member.customStatus && (
-                            <span className="text-[10px] text-muted-foreground/70 truncate">
-                              {member.customStatus}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-    );
-  };
+  // Component: Members Sidebar Content (delegates to ServerMembersSidebar feature component)
+  const renderMembersSidebarContent = () => (
+    <ServerMembersSidebar
+      displayMembers={displayMembers}
+      onInviteClick={() => setIsInviteOpen(true)}
+      onStartDM={handleStartDM}
+      t={t}
+    />
+  );
 
   return (
     <LockedFeatureGuard
@@ -3886,123 +3788,14 @@ export function CommunityPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* 3. Pinned Messages (Popover matching Screenshot 1) */}
-              <Popover open={isPinnedPopoverOpen} onOpenChange={setIsPinnedPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 transition-colors cursor-pointer relative",
-                      pinnedMessages.length > 0 ? "text-primary" : isPinnedPopoverOpen ? "text-white bg-white/10" : "text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5"
-                    )}
-                    title="Pinned Messages"
-                  >
-                    <Pin className="w-5 h-5" />
-                    {pinnedMessages.length > 0 && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary text-primary-foreground" />
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="bottom"
-                  align="end"
-                  sideOffset={8}
-                  className="w-[420px] max-w-[95vw] max-h-[500px] p-0 bg-[#111214] border border-[#2b2d31] text-[#dbdee1] shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
-                >
-                  {/* Header */}
-                  <div className="p-3.5 border-b border-white/10 flex items-center gap-2 bg-[#18191c]">
-                    <Pin className="w-4 h-4 text-white" />
-                    <span className="font-bold text-white text-sm">Pinned Messages</span>
-                    {pinnedMessages.length > 0 && (
-                      <span className="ml-auto text-[10px] text-[#949ba4] font-mono">
-                        {pinnedMessages.length} tersemat
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex-1 overflow-y-auto [scrollbar-width:thin] flex flex-col">
-                    {pinnedMessages.length === 0 ? (
-                      /* Empty State (Exact matching Screenshot 1) */
-                      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                        <div className="relative w-28 h-28 mb-4 flex items-center justify-center">
-                          {/* Mascot Head with Pushpin */}
-                          <div className="w-20 h-20 rounded-full bg-[#35373c] border-2 border-[#404249] flex items-center justify-center relative shadow-inner">
-                            {/* Eyes */}
-                            <div className="flex items-center gap-5 -mt-2">
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#1e1f22]" />
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#1e1f22]" />
-                            </div>
-                            {/* Sad curved mouth */}
-                            <div className="absolute bottom-5 w-6 h-2.5 border-t-2 border-[#1e1f22] rounded-t-full" />
-                            {/* Pushpin stuck in head */}
-                            <div className="absolute -top-3.5 -right-1 rotate-45 text-2xl filter drop-shadow">
-                              📌
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="text-sm font-semibold text-[#dbdee1] max-w-xs leading-snug mb-6">
-                          This channel doesn't have any pinned messages... yet.
-                        </p>
-                      </div>
-                    ) : (
-                      /* List Pinned Messages */
-                      <div className="p-3 space-y-2.5">
-                        {pinnedMessages.map((pMsg) => (
-                          <div
-                            key={pMsg.id}
-                            className="p-3 rounded-xl bg-[#1e1f22] border border-white/5 hover:border-white/15 transition-all flex flex-col gap-2 group"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <CommunityAvatar name={pMsg.senderName} imageUrl={pMsg.senderAvatar} size={24} />
-                                <span className="text-xs font-bold text-white truncate">{pMsg.senderName}</span>
-                                <span className="text-[10px] text-[#949ba4] shrink-0">
-                                  {dayjs(pMsg.pinnedAt || pMsg.createdAt).fromNow()}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  type="button"
-                                  onClick={() => handleJumpToMessage(pMsg.id)}
-                                  className="px-2 py-0.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[10px] font-bold rounded transition-colors cursor-pointer"
-                                >
-                                  Jump
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleTogglePin(pMsg.id)}
-                                  className="p-1 hover:bg-red-500/20 text-[#949ba4] hover:text-red-400 rounded transition-colors cursor-pointer"
-                                  title="Unpin message"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <p className="text-xs text-[#dbdee1] line-clamp-3 leading-relaxed whitespace-pre-wrap">
-                              {pMsg.content}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Protip Box at bottom (Exact matching Screenshot 1) */}
-                    <div className="p-3.5 bg-[#18191c] border-t border-white/5 mt-auto">
-                      <span className="text-xs font-bold text-emerald-400 block mb-0.5">
-                        Protip:
-                      </span>
-                      <p className="text-[11px] text-[#949ba4] leading-normal">
-                        Users with the 'Pin Messages' permission can pin a message from its context menu.
-                      </p>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              {/* 3. Pinned Messages (Feature-First Reusable Popover) */}
+              <PinnedMessagesPopover
+                isOpen={isPinnedPopoverOpen}
+                onOpenChange={setIsPinnedPopoverOpen}
+                pinnedMessages={pinnedMessages}
+                onJumpToMessage={handleJumpToMessage}
+                onTogglePin={handleTogglePin}
+              />
 
               {/* 4. Member List Toggle (Users) */}
               <Tooltip delayDuration={150}>
@@ -6378,437 +6171,67 @@ export function CommunityPage() {
         </Dialog>
       </div>
     </TooltipProvider>
-        {/* Hub Invite Dialog (Discord-Style: Search & Invite by Username + Share Link) */}
-        <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-                <UserPlus className="w-5 h-5 text-primary" />
-                {t('Undang Teman ke')} {activeHub?.name || 'Server'}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                {t('Undang langsung menggunakan username atau bagikan link undangan server.')}
-              </DialogDescription>
-            </DialogHeader>
+        {/* Hub Invite Dialog (Feature-First Component) */}
+        <HubInviteDialog
+          open={isInviteOpen}
+          onOpenChange={setIsInviteOpen}
+          activeHub={activeHub}
+          onInviteUsername={async (username) => {
+            const currentHubId = activeHub?.id;
+            if (!currentHubId) return false;
+            try {
+              const res = await communityApi.inviteMemberByUsername(currentHubId, username);
+              if (res.found && res.user) {
+                if (res.alreadyMember) {
+                  toast.info(t(`@${res.user.username || username} sudah menjadi anggota server ini.`));
+                } else {
+                  toast.success(t(`Berhasil menambahkan @${res.user.username || username} ke server! 🎉`));
+                  setMembers((prev) => {
+                    if (prev.some((m) => m.id === res.user!.id)) return prev;
+                    return [...prev, res.user!];
+                  });
+                }
+                return true;
+              }
+              return false;
+            } catch (err) {
+              toast.error(t('Gagal mengundang pengguna. Silakan coba lagi.'));
+              return false;
+            }
+          }}
+          t={t}
+        />
 
-            <div className="space-y-4 py-2">
-              {/* Form 1: Invite by Username */}
-              <form onSubmit={handleInviteByUsername} className="space-y-2">
-                <label className="text-xs font-medium text-foreground flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <AtSign className="w-3.5 h-3.5 text-primary" />
-                    {t('Undang via Username')}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {t('Contoh: faiz, alex_99')}
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-2.5 top-2.5 text-xs text-muted-foreground font-mono">@</span>
-                    <Input
-                      value={inviteUsername}
-                      onChange={(e) => {
-                        setInviteUsername(e.target.value);
-                        if (userNotFound) setUserNotFound(null);
-                      }}
-                      placeholder="username"
-                      className="pl-7 text-xs font-mono"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isInvitingUsername || !inviteUsername.trim()}
-                    size="sm"
-                    className="gap-1.5 shrink-0"
-                  >
-                    {isInvitingUsername ? (
-                      <span className="text-xs">{t('Mencari...')}</span>
-                    ) : (
-                      <>
-                        <UserCheck className="w-4 h-4" />
-                        <span>{t('Undang')}</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-
-              {/* Alert when username not found -> Immediate Share Link Callout */}
-              {userNotFound && (
-                <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs space-y-2 animate-in fade-in-50 duration-200">
-                  <div className="flex items-start gap-2 text-amber-500 font-semibold">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{t('Pengguna')} @{userNotFound} {t('tidak ditemukan')}</span>
-                  </div>
-                  <p className="text-muted-foreground leading-relaxed text-[11px]">
-                    {t('Pengguna belum terdaftar di Anticeil. Bagikan link undangan di bawah ini langsung kepada mereka. Saat mereka mendaftar atau login via OAuth (Google / GitHub), sistem akan')} <strong className="text-foreground">{t('otomatis memasukkan mereka ke server ini')}</strong>!
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs gap-1.5 h-8 border-amber-500/40 hover:bg-amber-500/20 text-foreground"
-                    onClick={() => {
-                      const code = activeHub?.inviteCode || activeHub?.id;
-                      const url = `${window.location.origin}/messages?invite=${code}`;
-                      navigator.clipboard.writeText(url);
-                      setCopiedLink(true);
-                      setTimeout(() => setCopiedLink(false), 2000);
-                      toast.success(t('Link undangan berhasil disalin! 📋'));
-                    }}
-                  >
-                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedLink ? t('Link Tersalin!') : t('Salin Link Undangan Otomatis')}</span>
-                  </Button>
-                </div>
-              )}
-
-              {/* Form 2: Share Link Undangan Server */}
-              <div className="pt-2 border-t border-border space-y-2">
-                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Share2 className="w-3.5 h-3.5 text-primary" />
-                    {t('Tautan Undangan Server')}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-normal">
-                    {t('Tidak pernah kedaluwarsa')}
-                  </span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    readOnly
-                    value={`${window.location.origin}/messages?invite=${activeHub?.inviteCode || activeHub?.id}`}
-                    className="text-xs font-mono bg-muted/40 select-all"
-                    onClick={(e) => (e.target as HTMLInputElement).select()}
-                  />
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    className="gap-1.5 shrink-0"
-                    onClick={() => {
-                      const code = activeHub?.inviteCode || activeHub?.id;
-                      const url = `${window.location.origin}/messages?invite=${code}`;
-                      navigator.clipboard.writeText(url);
-                      setCopiedLink(true);
-                      setTimeout(() => setCopiedLink(false), 2000);
-                      toast.success(t('Tautan undangan berhasil disalin! 📋'));
-                    }}
-                  >
-                    {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedLink ? t('Tersalin!') : t('Salin')}</span>
-                  </Button>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-normal">
-                  {t('Kirim tautan ini ke calon anggota. Mereka yang login atau registrasi via tautan ini akan otomatis langsung bergabung.')}
-                </p>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsInviteOpen(false);
-                  setUserNotFound(null);
-                  setInviteUsername('');
-                }}
-              >
-                {t('Selesai')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Profile & Identity Dialog (Display Name + Username with 14-day Cooldown) */}
-        <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-                <AtSign className="w-5 h-5 text-primary" />
-                {t('Profil & Identitas Akun')}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                {t('Kelola Nama Tampilan Anda dan Username unik untuk obrolan serta server.')}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-5 py-2">
-              {/* Section 1: Display Name (Full Name) - Change anytime with rate limit */}
-              <form onSubmit={handleSaveDisplayName} className="space-y-3 p-3.5 rounded-xl border border-border bg-muted/20">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-foreground">
-                      {t('Nama Tampilan (Display Name)')}
-                    </label>
-                    <span className="text-[10px] text-emerald-500 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                      {t('Bebas Diubah Kapan Saja')}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t('Nama yang dilihat teman di server obrolan. Tidak perlu unik, bebas spasi & karakter.')}
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    value={editDisplayNameInput}
-                    onChange={(e) => setEditDisplayNameInput(e.target.value)}
-                    placeholder="Nama Lengkap Anda"
-                    maxLength={100}
-                    className="text-xs font-medium"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={updateNameMutation.isPending || !editDisplayNameInput.trim() || editDisplayNameInput.trim() === currentUserName}
-                    className="shrink-0"
-                  >
-                    {updateNameMutation.isPending ? t('Menyimpan...') : t('Simpan')}
-                  </Button>
-                </div>
-              </form>
-
-              {/* Section 2: Unique Username (@handle) with 14-day Cooldown */}
-              <form onSubmit={handleSaveUsername} className="space-y-3 p-3.5 rounded-xl border border-border bg-muted/20">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                      <span>{t('Username Unik')}</span>
-                    </label>
-                    <span className="text-[10px] text-amber-500 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded">
-                      {t('Cooldown 14 Hari')}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t('Identifier unik sistem untuk mention (@username) dan undangan tanpa membocorkan email.')}
-                  </p>
-                </div>
-
-                <div className="relative">
-                  <span className="absolute left-2.5 top-2.5 text-xs text-muted-foreground font-mono">@</span>
-                  <Input
-                    value={editUsernameInput}
-                    onChange={(e) => setEditUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    placeholder="username_anda"
-                    disabled={isUsernameCooldownActive}
-                    maxLength={32}
-                    className="pl-7 text-xs font-mono"
-                  />
-                </div>
-
-                {/* Cooldown Information / Warning Card */}
-                {isUsernameCooldownActive ? (
-                  <div className="p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs space-y-1">
-                    <div className="flex items-center gap-1.5 text-amber-500 font-semibold text-[11px]">
-                      <Clock className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t('Cooldown Aktif')}</span>
-                    </div>
-                    <p className="text-muted-foreground text-[10px] leading-relaxed">
-                      {t('Username dapat diubah kembali pada:')}{' '}
-                      <strong className="text-foreground">
-                        {dayjs(usernameCooldownEnd).format('DD MMMM YYYY, HH:mm')}
-                      </strong>
-                      .
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-muted-foreground">
-                      {t('3-32 karakter: huruf kecil, angka, dan underscore (_).')}
-                    </p>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      disabled={
-                        isUsernameCooldownActive ||
-                        updateUsernameMutation.isPending ||
-                        !editUsernameInput.trim() ||
-                        editUsernameInput.trim() === currentUser?.username
-                      }
-                      className="shrink-0"
-                    >
-                      {updateUsernameMutation.isPending ? t('Menyimpan...') : t('Simpan Username')}
-                    </Button>
-                  </div>
-                )}
-              </form>
-
-              {/* Section 3: Theme Appearance (Midnight AMOLED, Classic Dark, Clean Light) */}
-              <div className="space-y-3 p-3.5 rounded-xl border border-border bg-muted/20">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                      <span>{t('Tampilan & Tema')}</span>
-                    </label>
-                    <span className="text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded">
-                      {theme === 'dark' ? 'Dark Mode (AMOLED)' : theme === 'midnight' ? 'Midnight' : 'Light Mode'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t('Pilih tema tampilan favorit Anda. Semua komponen otomatis menyesuaikan warna secara konsisten.')}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTheme('dark')}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                      theme === 'dark'
-                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
-                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-black border border-white/20 flex items-center justify-center">
-                      <Moon className="w-3 h-3 text-purple-400" />
-                    </div>
-                    <span>Dark Mode</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTheme('midnight')}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                      theme === 'midnight'
-                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
-                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-[#313338] border border-white/20 flex items-center justify-center">
-                      <Moon className="w-3 h-3 text-sky-400" />
-                    </div>
-                    <span>Midnight</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTheme('light')}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                      theme === 'light'
-                        ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary'
-                        : 'border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-white border border-black/20 flex items-center justify-center">
-                      <Sun className="w-3 h-3 text-amber-500" />
-                    </div>
-                    <span>Light Mode</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Section 4: Google OAuth Integration */}
-              <div className="space-y-3 p-3.5 rounded-xl border border-border bg-muted/20">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                      <span>{t('Integrasi Akun Google (Google OAuth)')}</span>
-                    </label>
-                    {currentUser?.isGoogleLinked || currentUser?.provider === 'google' ? (
-                      <span className="text-[10px] text-emerald-500 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        {t('Terhubung')}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">
-                        {t('Belum Terhubung')}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t('Tautkan akun Google untuk masuk dengan satu klik melalui Google Sign-In yang aman.')}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-xs shrink-0">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24">
-                        <path
-                          fill="#4285F4"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-foreground">
-                        {currentUser?.isGoogleLinked || currentUser?.provider === 'google'
-                          ? currentUser?.email || 'Google Account'
-                          : 'Google Single Sign-On'}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {currentUser?.isGoogleLinked || currentUser?.provider === 'google'
-                          ? t('Akun Google tertaut aktif')
-                          : t('Gunakan akun Google Anda')}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={currentUser?.isGoogleLinked || currentUser?.provider === 'google' ? 'outline' : 'default'}
-                    onClick={handleGoogleSignIn}
-                    className="shrink-0 text-xs gap-1.5"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                    </svg>
-                    {currentUser?.isGoogleLinked || currentUser?.provider === 'google'
-                      ? t('Sinkronkan Ulang')
-                      : t('Hubungkan Google')}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="flex items-center justify-between sm:justify-between w-full pt-2">
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  setIsEditProfileOpen(false);
-                  handleLogout();
-                }}
-                className="gap-1.5"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                {t('Keluar Akun')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditProfileOpen(false)}
-              >
-                {t('Tutup')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Edit Profile & Identity Dialog (Feature-First Component) */}
+        <EditProfileDialog
+          open={isEditProfileOpen}
+          onOpenChange={setIsEditProfileOpen}
+          currentUser={currentUser}
+          currentUserName={currentUserName}
+          onSaveDisplayName={async (name) => {
+            try {
+              await updateNameMutation.mutateAsync({ firstName: name, lastName: '' });
+              toast.success(t('Nama tampilan berhasil disimpan! 🎉'));
+            } catch {
+              toast.error(t('Gagal menyimpan nama tampilan.'));
+            }
+          }}
+          isSavingDisplayName={updateNameMutation.isPending}
+          onSaveUsername={async (username) => {
+            try {
+              await updateUsernameMutation.mutateAsync({ username });
+              toast.success(t('Username berhasil diperbarui! 🎉'));
+            } catch (err: any) {
+              toast.error(err?.response?.data?.message || t('Gagal menyimpan username.'));
+            }
+          }}
+          isSavingUsername={updateUsernameMutation.isPending}
+          theme={theme}
+          setTheme={setTheme}
+          onGoogleSignIn={handleGoogleSignIn}
+          onLogout={handleLogout}
+          t={t}
+        />
 
         {/* ===== CREATE THREAD MODAL (Feature-First Component) ===== */}
         <CreateThreadModal
