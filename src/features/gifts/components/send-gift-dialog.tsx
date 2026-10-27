@@ -19,7 +19,7 @@ export function SendGiftDialog({
 }: SendGiftDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[720px] bg-[#18191c] border-white/10 text-white p-6 rounded-2xl shadow-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-[720px] bg-[#18191c] border-white/10 text-white p-4 sm:p-5 rounded-[16px] shadow-2xl overflow-hidden">
         <DialogHeader className="flex flex-row items-center justify-between pb-2">
           <DialogTitle className="text-xl font-black text-white">Send a Gift</DialogTitle>
         </DialogHeader>

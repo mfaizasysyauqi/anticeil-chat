@@ -192,7 +192,7 @@ export function ServerSettingsDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-[900px] w-[calc(100vw-2rem)] h-[calc(100dvh-4rem)] max-h-[680px] gap-0 overflow-hidden p-0 flex">
+        <DialogContent showCloseButton={false} className="max-w-[900px] w-[calc(100vw-2rem)] h-[calc(100dvh-4rem)] max-h-[680px] gap-0 overflow-hidden p-0 flex rounded-[16px]">
           <DialogTitle className="sr-only">{t('Pengaturan Server')}</DialogTitle>
 
           {/* Left sidebar */}

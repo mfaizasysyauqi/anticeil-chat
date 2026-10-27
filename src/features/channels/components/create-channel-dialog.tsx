@@ -42,11 +42,11 @@ export function CreateChannelDialog({
 }: CreateChannelDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden bg-[#313338] border-[#232428] text-white">
+      <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden bg-[#313338] border-[#232428] text-white rounded-[16px]">
         <form onSubmit={onCreateChannelSubmit} className="flex flex-col">
           {/* Header */}
-          <div className="p-5 pb-3">
-            <DialogTitle className="text-xl font-bold text-white tracking-tight">
+          <div className="p-4 pb-2 pr-12">
+            <DialogTitle className="text-lg font-bold text-white tracking-tight">
               {t('Create Channel')}
             </DialogTitle>
             <p className="text-xs text-[#949ba4] mt-0.5">
@@ -55,7 +55,7 @@ export function CreateChannelDialog({
           </div>
 
           {/* Body */}
-          <div className="px-5 py-2 space-y-4 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]">
+          <div className="px-4 py-2 space-y-3.5 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]">
             {/* 1. CHANNEL TYPE */}
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-[#b5bac1] block mb-2">
@@ -191,7 +191,7 @@ export function CreateChannelDialog({
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-3.5 bg-[#2b2d31] flex items-center justify-end gap-3 mt-4">
+          <div className="px-4 py-3 bg-[#2b2d31] flex items-center justify-end gap-2.5 mt-3">
             <Button
               type="button"
               variant="ghost"

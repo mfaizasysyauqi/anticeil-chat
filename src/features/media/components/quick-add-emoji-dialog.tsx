@@ -39,7 +39,7 @@ export function QuickAddEmojiDialog({
 }: QuickAddEmojiDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px] bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
+      <DialogContent className="sm:max-w-[460px] bg-[#313338] border-[#232428] text-white p-4 sm:p-5 rounded-[16px] shadow-2xl">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
             ✨ Tambah Emoji Kustom ke Server

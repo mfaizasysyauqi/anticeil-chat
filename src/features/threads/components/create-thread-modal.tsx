@@ -49,7 +49,7 @@ export function CreateThreadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-[#313338] border-none text-white shadow-2xl p-6">
+      <DialogContent className="max-w-md bg-[#313338] border border-[#232428] text-white shadow-2xl p-4 sm:p-5 rounded-[16px]">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 text-primary flex items-center justify-center">

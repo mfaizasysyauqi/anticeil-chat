@@ -29,18 +29,18 @@ export function AuthRequiredDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden bg-card border-border/80 shadow-2xl rounded-2xl select-none">
+      <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden bg-card border-border/80 shadow-2xl rounded-[16px] select-none">
         {/* Banner with gradient & Anticeil branding */}
-        <div className="relative w-full h-32 bg-gradient-to-br from-amber-500/20 via-primary/20 to-purple-500/20 flex flex-col items-center justify-center border-b border-border/60">
+        <div className="relative w-full h-28 bg-gradient-to-br from-amber-500/20 via-primary/20 to-purple-500/20 flex flex-col items-center justify-center border-b border-border/60">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent pointer-events-none" />
-          <div className="w-16 h-16 rounded-2xl bg-background/90 p-2.5 shadow-xl border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
+          <div className="w-14 h-14 rounded-2xl bg-background/90 p-2 shadow-xl border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
             <img src="/logo.png" alt="Anticeil" className="w-full h-full object-contain" />
           </div>
         </div>
 
-        <div className="p-6 flex flex-col items-center text-center">
-          <DialogHeader className="space-y-1.5 flex flex-col items-center">
-            <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-1.5">
+        <div className="p-5 flex flex-col items-center text-center">
+          <DialogHeader className="space-y-1.5 flex flex-col items-center pr-0">
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground flex items-center gap-1.5">
               {featureTitle || t('Masuk ke Anticeil')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground max-w-[340px] leading-relaxed">
@@ -50,7 +50,7 @@ export function AuthRequiredDialog({
           </DialogHeader>
 
           {/* Action button */}
-          <div className="w-full mt-6 space-y-2.5">
+          <div className="w-full mt-4 space-y-2.5">
             <Button
               type="button"
               onClick={() => {
