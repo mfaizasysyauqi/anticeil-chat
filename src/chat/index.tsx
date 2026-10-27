@@ -1455,9 +1455,9 @@ export function CommunityPage() {
     const el = document.getElementById(`msg-${msgId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('bg-[#5865f2]/25', 'transition-colors', 'duration-500');
+      el.classList.add('bg-primary/20', 'transition-colors', 'duration-500');
       setTimeout(() => {
-        el.classList.remove('bg-[#5865f2]/25');
+        el.classList.remove('bg-primary/20');
       }, 2500);
     } else {
       toast.info('Pesan berada di riwayat percakapan sebelumnya');
@@ -3692,7 +3692,7 @@ export function CommunityPage() {
                         value={threadSearchQuery}
                         onChange={(e) => setThreadSearchQuery(e.target.value)}
                         placeholder="Search for Thread Name"
-                        className="w-full bg-[#1e1f22] border border-[#35373c] focus:border-[#5865f2] rounded-lg pl-8 pr-2.5 py-1 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
+                        className="w-full bg-[#1e1f22] border border-[#35373c] focus:border-primary rounded-lg pl-8 pr-2.5 py-1 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
                       />
                     </div>
 
@@ -3700,7 +3700,7 @@ export function CommunityPage() {
                     <button
                       type="button"
                       onClick={() => setIsCreateThreadModalOpen(true)}
-                      className="px-3 py-1.5 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-bold rounded-lg transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                      className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-bold rounded-lg transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
                     >
                       Create
                     </button>
@@ -3741,7 +3741,7 @@ export function CommunityPage() {
                         <button
                           type="button"
                           onClick={() => setIsCreateThreadModalOpen(true)}
-                          className="px-5 py-2.5 bg-[#5865f2] hover:bg-[#4752c4] text-white font-bold text-xs rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer"
+                          className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold font-bold text-xs rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer"
                         >
                           Create Thread
                         </button>
@@ -3760,14 +3760,14 @@ export function CommunityPage() {
                             }}
                             className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#1e1f22]/70 hover:bg-[#2b2d31] border border-white/5 hover:border-white/10 transition-all text-left cursor-pointer group"
                           >
-                            <div className="w-9 h-9 rounded-xl bg-[#5865f2]/20 border border-[#5865f2]/40 text-[#5865f2] flex items-center justify-center shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/40 text-primary flex items-center justify-center shrink-0">
                               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                                 <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
                               </svg>
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs font-bold text-white group-hover:text-[#5865f2] transition-colors truncate">
+                                <span className="text-xs font-bold text-white group-hover:text-primary transition-colors truncate">
                                   {th.name}
                                 </span>
                                 <span className="text-[10px] text-[#949ba4] shrink-0 font-mono">
@@ -3896,7 +3896,7 @@ export function CommunityPage() {
                           {/* Radio Dot */}
                           <div className={cn(
                             "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                            isSelected ? "border-[#5865f2] bg-[#5865f2]" : "border-[#4e5058] group-hover:border-[#949ba4]"
+                            isSelected ? "border-primary bg-primary text-primary-foreground" : "border-[#4e5058] group-hover:border-[#949ba4]"
                           )}>
                             {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                           </div>
@@ -3915,13 +3915,13 @@ export function CommunityPage() {
                     size="icon"
                     className={cn(
                       "h-8 w-8 transition-colors cursor-pointer relative",
-                      pinnedMessages.length > 0 ? "text-[#5865f2]" : isPinnedPopoverOpen ? "text-white bg-white/10" : "text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5"
+                      pinnedMessages.length > 0 ? "text-primary" : isPinnedPopoverOpen ? "text-white bg-white/10" : "text-[#b5bac1] hover:text-[#dbdee1] hover:bg-white/5"
                     )}
                     title="Pinned Messages"
                   >
                     <Pin className="w-5 h-5" />
                     {pinnedMessages.length > 0 && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#5865f2]" />
+                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary text-primary-foreground" />
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -3989,7 +3989,7 @@ export function CommunityPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleJumpToMessage(pMsg.id)}
-                                  className="px-2 py-0.5 bg-[#5865f2] hover:bg-[#4752c4] text-white text-[10px] font-bold rounded transition-colors cursor-pointer"
+                                  className="px-2 py-0.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[10px] font-bold rounded transition-colors cursor-pointer"
                                 >
                                   Jump
                                 </button>
@@ -4169,7 +4169,7 @@ export function CommunityPage() {
                   id={`msg-${msg.id}`}
                   className={cn(
                     "group relative flex gap-3 px-2 py-1.5 -mx-2 rounded-lg hover:bg-muted/40 transition-colors",
-                    msg.isPinned && "border-l-2 border-[#5865f2] bg-[#5865f2]/5"
+                    msg.isPinned && "border-l-2 border-primary bg-primary/5"
                   )}
                 >
                   {/* Sender Avatar */}
@@ -4189,7 +4189,7 @@ export function CommunityPage() {
                       </span>
                       {renderRoleBadge(msg.senderRole)}
                       {msg.isPinned && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-[#5865f2] font-semibold bg-[#5865f2]/10 px-1.5 py-0.5 rounded">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
                           <Pin className="w-2.5 h-2.5" /> Tersemat
                         </span>
                       )}
@@ -4263,7 +4263,7 @@ export function CommunityPage() {
                                   className="max-h-72 w-full object-cover rounded-t-xl"
                                 />
                                 <div className="px-2.5 py-1 bg-[#111214] flex items-center justify-between text-[10px] text-[#949ba4]">
-                                  <span className="font-bold tracking-wider text-[#5865f2] uppercase">GIF via Klipy</span>
+                                  <span className="font-bold tracking-wider text-primary uppercase">GIF via Klipy</span>
                                   <span className="truncate max-w-[200px]">{att.name}</span>
                                 </div>
                               </div>
@@ -4272,7 +4272,7 @@ export function CommunityPage() {
                           if (att.type === 'gift') {
                             const isClaimed = claimedGifts[msg.id] || att.giftData?.claimed;
                             return (
-                              <div key={attIdx} className="my-2 max-w-sm rounded-2xl border border-[#5865f2]/40 bg-gradient-to-b from-[#202225] to-[#18191c] shadow-2xl p-4 relative overflow-hidden">
+                              <div key={attIdx} className="my-2 max-w-sm rounded-2xl border border-primary/40 bg-gradient-to-b from-[#202225] to-[#18191c] shadow-2xl p-4 relative overflow-hidden">
                                 <div className="flex items-center gap-3">
                                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5865f2] to-[#eb459e] flex items-center justify-center text-white shadow-lg text-2xl shrink-0">
                                     🎁
@@ -4408,7 +4408,7 @@ export function CommunityPage() {
                       className={cn(
                         "p-1 rounded text-xs transition-colors",
                         msg.isPinned
-                          ? "text-[#5865f2] bg-[#5865f2]/10 hover:bg-[#5865f2]/20"
+                          ? "text-primary bg-primary/10 hover:bg-primary/20"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                       title={msg.isPinned ? "Lepas Sematan (Unpin)" : "Sematkan Pesan (Pin)"}
@@ -4648,7 +4648,7 @@ export function CommunityPage() {
                                 ? 'sunbin'
                                 : 'Find the perfect emoji'
                             }
-                            className="w-full bg-[#1e1f22] border border-transparent focus:border-[#5865f2] rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
+                            className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
                           />
                         </div>
                         {activeMediaTab === 'emojis' && (
@@ -4664,7 +4664,7 @@ export function CommunityPage() {
                             <button
                               type="button"
                               onClick={() => setIsQuickAddEmojiOpen(true)}
-                              className="px-2.5 py-1 rounded-md bg-[#5865f2] hover:bg-[#4752c4] text-xs font-bold text-white transition-colors cursor-pointer flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-[#4752c4] text-xs font-bold text-white transition-colors cursor-pointer flex items-center gap-1"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add Emoji
@@ -4676,7 +4676,7 @@ export function CommunityPage() {
                             <button
                               type="button"
                               onClick={() => setIsQuickAddStickerOpen(true)}
-                              className="px-2.5 py-1 rounded-md bg-[#5865f2] hover:bg-[#4752c4] text-xs font-bold text-white transition-colors cursor-pointer flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-[#4752c4] text-xs font-bold text-white transition-colors cursor-pointer flex items-center gap-1"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add Sticker
@@ -4697,7 +4697,7 @@ export function CommunityPage() {
                               onClick={() => setSelectedServerFilter('all')}
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all cursor-pointer",
-                                selectedServerFilter === 'all' ? 'bg-[#5865f2] text-white shadow-md' : 'bg-[#2b2d31] text-[#949ba4] hover:text-white'
+                                selectedServerFilter === 'all' ? 'bg-primary text-primary-foreground text-white shadow-md' : 'bg-[#2b2d31] text-[#949ba4] hover:text-white'
                               )}
                               title="All / Standard"
                             >
@@ -4709,7 +4709,7 @@ export function CommunityPage() {
                                 onClick={() => setSelectedServerFilter(activeHub.id)}
                                 className={cn(
                                   "w-8 h-8 rounded-2xl hover:rounded-xl overflow-hidden relative border transition-all cursor-pointer flex items-center justify-center text-xs font-bold text-white",
-                                  selectedServerFilter === activeHub.id ? 'border-[#5865f2] bg-[#5865f2] scale-105' : 'border-white/10 bg-[#2b2d31] opacity-80 hover:opacity-100'
+                                  selectedServerFilter === activeHub.id ? 'border-primary bg-primary text-primary-foreground scale-105' : 'border-white/10 bg-[#2b2d31] opacity-80 hover:opacity-100'
                                 )}
                                 title={activeHub.name}
                               >
@@ -4732,7 +4732,7 @@ export function CommunityPage() {
                                 className={cn(
                                   "w-8 h-8 rounded-2xl hover:rounded-xl overflow-hidden relative border transition-all cursor-pointer flex items-center justify-center text-xs font-bold text-white",
                                   selectedServerFilter === activeHub.id || selectedServerFilter === 'all'
-                                    ? 'border-[#5865f2] bg-[#5865f2] scale-105'
+                                    ? 'border-primary bg-primary text-primary-foreground scale-105'
                                     : 'border-white/10 bg-[#2b2d31] opacity-80 hover:opacity-100'
                                 )}
                                 title={activeHub.name}
@@ -4756,7 +4756,7 @@ export function CommunityPage() {
                             <button
                               type="button"
                               onClick={() => setSelectedGifCategory(null)}
-                              className="w-8 h-8 rounded-full bg-[#5865f2] text-white flex items-center justify-center text-xs transition-all cursor-pointer"
+                              className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-white flex items-center justify-center text-xs transition-all cursor-pointer"
                               title="Trending"
                             >
                               🔥
@@ -4789,7 +4789,7 @@ export function CommunityPage() {
                                     <button
                                       type="button"
                                       onClick={() => setIsQuickAddEmojiOpen(true)}
-                                      className="text-[11px] text-[#5865f2] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                                      className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                                     >
                                       <Plus className="w-3 h-3" /> Tambah Emoji
                                     </button>
@@ -4834,7 +4834,7 @@ export function CommunityPage() {
                                       <button
                                         type="button"
                                         onClick={() => setIsQuickAddEmojiOpen(true)}
-                                        className="text-xs font-bold text-[#5865f2] hover:underline whitespace-nowrap cursor-pointer"
+                                        className="text-xs font-bold text-primary hover:underline whitespace-nowrap cursor-pointer"
                                       >
                                         + Tambah Emoji
                                       </button>
@@ -4884,7 +4884,7 @@ export function CommunityPage() {
                                   <button
                                     type="button"
                                     onClick={() => setIsQuickAddStickerOpen(true)}
-                                    className="text-[11px] text-[#5865f2] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                                    className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                                   >
                                     <Plus className="w-3 h-3" /> Tambah Stiker
                                   </button>
@@ -4926,7 +4926,7 @@ export function CommunityPage() {
                                     <button
                                       type="button"
                                       onClick={() => setIsQuickAddStickerOpen(true)}
-                                      className="text-xs font-bold text-[#5865f2] hover:underline whitespace-nowrap cursor-pointer"
+                                      className="text-xs font-bold text-primary hover:underline whitespace-nowrap cursor-pointer"
                                     >
                                       + Upload Stiker
                                     </button>
@@ -4946,7 +4946,7 @@ export function CommunityPage() {
                                     <button
                                       type="button"
                                       onClick={() => setSelectedGifCategory(null)}
-                                      className="text-xs text-[#5865f2] hover:underline cursor-pointer"
+                                      className="text-xs text-primary hover:underline cursor-pointer"
                                     >
                                       ← All Categories
                                     </button>
@@ -4957,7 +4957,7 @@ export function CommunityPage() {
                                         key={gif.id}
                                         type="button"
                                         onClick={() => handleSendGif(gif)}
-                                        className="relative rounded-xl overflow-hidden aspect-video bg-black/40 border border-white/5 hover:border-[#5865f2] transition-all hover:scale-[1.02] cursor-pointer group"
+                                        className="relative rounded-xl overflow-hidden aspect-video bg-black/40 border border-white/5 hover:border-primary transition-all hover:scale-[1.02] cursor-pointer group"
                                       >
                                         <img src={gif.url} alt={gif.title} className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
@@ -4976,7 +4976,7 @@ export function CommunityPage() {
                                       key={gif.id}
                                       type="button"
                                       onClick={() => handleSendGif(gif)}
-                                      className="relative rounded-xl overflow-hidden aspect-video bg-black/40 border border-white/5 hover:border-[#5865f2] transition-all hover:scale-[1.02] cursor-pointer group"
+                                      className="relative rounded-xl overflow-hidden aspect-video bg-black/40 border border-white/5 hover:border-primary transition-all hover:scale-[1.02] cursor-pointer group"
                                     >
                                       <img src={gif.url} alt={gif.title} className="w-full h-full object-cover" />
                                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
@@ -4995,7 +4995,7 @@ export function CommunityPage() {
                                       onClick={() => setSelectedGifCategory(cat.id)}
                                       className={cn(
                                         "relative rounded-xl overflow-hidden h-20 flex items-center justify-center font-bold text-sm text-white shadow-md transition-all hover:scale-[1.03] active:scale-95 cursor-pointer",
-                                        cat.id === 'favorites' ? 'bg-[#5865f2]' : 'bg-[#1e1f22]'
+                                        cat.id === 'favorites' ? 'bg-primary text-primary-foreground' : 'bg-[#1e1f22]'
                                       )}
                                     >
                                       {cat.coverUrl && cat.id !== 'favorites' && (
@@ -5121,7 +5121,7 @@ export function CommunityPage() {
                         value={appsSearchQuery}
                         onChange={(e) => setAppsSearchQuery(e.target.value)}
                         placeholder="Search Apps & Commands"
-                        className="w-full bg-[#111214] border border-[#5865f2] rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none"
+                        className="w-full bg-[#111214] border border-primary rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none"
                       />
                     </div>
 
@@ -5207,7 +5207,7 @@ export function CommunityPage() {
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <span className="text-sm font-bold text-white group-hover:text-[#5865f2] transition-colors block truncate">
+                              <span className="text-sm font-bold text-white group-hover:text-primary transition-colors block truncate">
                                 VirtualFisher
                               </span>
                               <span className="text-xs text-[#949ba4] line-clamp-1">
@@ -5229,7 +5229,7 @@ export function CommunityPage() {
                               <button
                                 key={app.id}
                                 onClick={() => handleLaunchActivity(app.id)}
-                                className="group/card rounded-xl overflow-hidden bg-[#2b2d31] border border-white/5 hover:border-[#5865f2]/50 transition-all text-left flex flex-col hover:shadow-xl cursor-pointer"
+                                className="group/card rounded-xl overflow-hidden bg-[#2b2d31] border border-white/5 hover:border-primary/50 transition-all text-left flex flex-col hover:shadow-xl cursor-pointer"
                               >
                                 {/* Banner */}
                                 <div className={cn("h-20 w-full relative overflow-hidden flex items-center justify-center", app.bannerGradient)}>
@@ -5311,7 +5311,7 @@ export function CommunityPage() {
                           <button
                             type="button"
                             onClick={() => toast.info('Menampilkan game puzzle')}
-                            className="text-xs text-[#5865f2] hover:underline cursor-pointer"
+                            className="text-xs text-primary hover:underline cursor-pointer"
                           >
                             View More
                           </button>
@@ -5331,7 +5331,7 @@ export function CommunityPage() {
                                 {app.icon}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <span className="text-xs font-bold text-white group-hover:text-[#5865f2] transition-colors block truncate">
+                                <span className="text-xs font-bold text-white group-hover:text-primary transition-colors block truncate">
                                   {app.title}
                                 </span>
                                 <span className="text-[10px] text-[#949ba4] line-clamp-1">
@@ -5358,7 +5358,7 @@ export function CommunityPage() {
                                   {app.icon}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-xs font-bold text-white group-hover:text-[#5865f2] transition-colors block truncate">
+                                  <span className="text-xs font-bold text-white group-hover:text-primary transition-colors block truncate">
                                     {app.title}
                                   </span>
                                   <span className="text-[10px] text-[#949ba4] line-clamp-1">
@@ -5386,7 +5386,7 @@ export function CommunityPage() {
                                   {app.icon}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-xs font-bold text-white group-hover:text-[#5865f2] transition-colors block truncate">
+                                  <span className="text-xs font-bold text-white group-hover:text-primary transition-colors block truncate">
                                     {app.title}
                                   </span>
                                   <span className="text-[10px] text-[#949ba4] line-clamp-1">
@@ -5408,7 +5408,7 @@ export function CommunityPage() {
                     type="button"
                     onClick={handleSendMessage}
                     disabled={!activeChannel}
-                    className="w-6 h-6 ml-1 text-[#5865f2] hover:text-[#4752c4] flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 animate-in zoom-in-75 duration-150"
+                    className="w-6 h-6 ml-1 text-primary hover:text-[#4752c4] flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 animate-in zoom-in-75 duration-150"
                     title="Kirim Pesan (Enter)"
                   >
                     <Send className="w-4 h-4 fill-current" />
@@ -5438,7 +5438,7 @@ export function CommunityPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
               {/* 1. NITRO CARD (POPULAR) */}
-              <div className="relative rounded-2xl bg-[#232428] border border-[#5865f2]/40 hover:border-[#5865f2] p-5 flex flex-col justify-between transition-all group shadow-xl">
+              <div className="relative rounded-2xl bg-[#232428] border border-primary/40 hover:border-primary p-5 flex flex-col justify-between transition-all group shadow-xl">
                 {/* POPULAR badge */}
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#5865f2] to-[#eb459e] text-[10px] font-black uppercase tracking-wider text-white shadow-md">
                   POPULAR
@@ -5466,7 +5466,7 @@ export function CommunityPage() {
                   {/* Perks */}
                   <div className="space-y-2 text-xs text-[#dbdee1]">
                     <div className="flex items-center gap-2.5">
-                      <span className="text-[#5865f2] font-black">↑</span>
+                      <span className="text-primary font-black">↑</span>
                       <span>1GB uploads</span>
                     </div>
                     <div className="flex items-center gap-2.5">
@@ -5530,7 +5530,7 @@ export function CommunityPage() {
                   {/* Perks */}
                   <div className="space-y-2 text-xs text-[#dbdee1]">
                     <div className="flex items-center gap-2.5">
-                      <span className="text-[#5865f2] font-black">↑</span>
+                      <span className="text-primary font-black">↑</span>
                       <span>50MB uploads</span>
                     </div>
                     <div className="flex items-center gap-2.5">
@@ -5551,7 +5551,7 @@ export function CommunityPage() {
                 <button
                   type="button"
                   onClick={() => handleSendGift('nitro_basic')}
-                  className="mt-5 w-full py-2.5 rounded-xl bg-[#5865f2] hover:bg-[#4752c4] text-white font-bold text-xs transition-all shadow-lg active:scale-95 cursor-pointer"
+                  className="mt-5 w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold font-bold text-xs transition-all shadow-lg active:scale-95 cursor-pointer"
                 >
                   Send Nitro Basic Gift
                 </button>
@@ -5594,7 +5594,7 @@ export function CommunityPage() {
                     setQuickEmojiCode(`:${clean}:`);
                   }}
                   placeholder="contoh: api_anticeil"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-[#5865f2] rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
+                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
                 />
               </div>
 
@@ -5605,7 +5605,7 @@ export function CommunityPage() {
                   value={quickEmojiCode}
                   onChange={(e) => setQuickEmojiCode(e.target.value)}
                   placeholder=":api_anticeil:"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-[#5865f2] rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
+                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors font-mono"
                 />
               </div>
 
@@ -5616,7 +5616,7 @@ export function CommunityPage() {
                   value={quickEmojiUrl}
                   onChange={(e) => setQuickEmojiUrl(e.target.value)}
                   placeholder="https://images.unsplash.com/... atau karakter 🚀"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-[#5865f2] rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
+                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
                 />
               </div>
 
@@ -5657,7 +5657,7 @@ export function CommunityPage() {
                 type="button"
                 disabled={!quickEmojiName.trim() || !quickEmojiUrl.trim() || isSubmittingServerMedia}
                 onClick={handleQuickAddEmoji}
-                className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-bold"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-bold"
               >
                 {isSubmittingServerMedia ? 'Menyimpan...' : 'Simpan Emoji ke DB'}
               </Button>
@@ -5685,7 +5685,7 @@ export function CommunityPage() {
                   value={quickStickerName}
                   onChange={(e) => setQuickStickerName(e.target.value)}
                   placeholder="contoh: Happy Bear Wave"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-[#5865f2] rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
+                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
                 />
               </div>
 
@@ -5696,7 +5696,7 @@ export function CommunityPage() {
                   value={quickStickerUrl}
                   onChange={(e) => setQuickStickerUrl(e.target.value)}
                   placeholder="https://... (URL gambar stiker transparan)"
-                  className="w-full bg-[#1e1f22] border border-transparent focus:border-[#5865f2] rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
+                  className="w-full bg-[#1e1f22] border border-transparent focus:border-primary rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
                 />
               </div>
 
@@ -5728,7 +5728,7 @@ export function CommunityPage() {
                 type="button"
                 disabled={!quickStickerName.trim() || !quickStickerUrl.trim() || isSubmittingServerMedia}
                 onClick={handleQuickAddSticker}
-                className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-bold"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-bold"
               >
                 {isSubmittingServerMedia ? 'Menyimpan...' : 'Simpan Stiker ke DB'}
               </Button>
@@ -7729,14 +7729,14 @@ export function CommunityPage() {
                       className={cn(
                         'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border',
                         newChannelType === 'text'
-                          ? 'bg-[#3b3e45] border-[#5865f2] text-white'
+                          ? 'bg-[#3b3e45] border-primary text-white'
                           : 'bg-[#2b2d31] border-transparent hover:bg-[#35373c] text-[#dbdee1]',
                       )}
                     >
                       {/* Radio dot */}
                       <div className={cn(
                         'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                        newChannelType === 'text' ? 'border-[#5865f2] bg-[#5865f2]' : 'border-[#80848e]',
+                        newChannelType === 'text' ? 'border-primary bg-primary text-primary-foreground' : 'border-[#80848e]',
                       )}>
                         {newChannelType === 'text' && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
@@ -7755,14 +7755,14 @@ export function CommunityPage() {
                       className={cn(
                         'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border',
                         newChannelType === 'voice'
-                          ? 'bg-[#3b3e45] border-[#5865f2] text-white'
+                          ? 'bg-[#3b3e45] border-primary text-white'
                           : 'bg-[#2b2d31] border-transparent hover:bg-[#35373c] text-[#dbdee1]',
                       )}
                     >
                       {/* Radio dot */}
                       <div className={cn(
                         'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                        newChannelType === 'voice' ? 'border-[#5865f2] bg-[#5865f2]' : 'border-[#80848e]',
+                        newChannelType === 'voice' ? 'border-primary bg-primary text-primary-foreground' : 'border-[#80848e]',
                       )}>
                         {newChannelType === 'voice' && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
@@ -7781,14 +7781,14 @@ export function CommunityPage() {
                       className={cn(
                         'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border',
                         newChannelType === 'forum'
-                          ? 'bg-[#3b3e45] border-[#5865f2] text-white'
+                          ? 'bg-[#3b3e45] border-primary text-white'
                           : 'bg-[#2b2d31] border-transparent hover:bg-[#35373c] text-[#dbdee1]',
                       )}
                     >
                       {/* Radio dot */}
                       <div className={cn(
                         'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                        newChannelType === 'forum' ? 'border-[#5865f2] bg-[#5865f2]' : 'border-[#80848e]',
+                        newChannelType === 'forum' ? 'border-primary bg-primary text-primary-foreground' : 'border-[#80848e]',
                       )}>
                         {newChannelType === 'forum' && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
@@ -7845,7 +7845,7 @@ export function CommunityPage() {
                     <Switch
                       checked={newChannelIsPrivate}
                       onCheckedChange={setNewChannelIsPrivate}
-                      className="data-[state=checked]:bg-[#5865f2]"
+                      className="data-[state=checked]:bg-primary text-primary-foreground"
                     />
                   </div>
                 </div>
@@ -7864,7 +7864,7 @@ export function CommunityPage() {
                 <Button
                   type="submit"
                   disabled={!newChannelName.trim()}
-                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-semibold h-9 px-5 rounded-md shadow-sm transition-all"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs font-semibold h-9 px-5 rounded-md shadow-sm transition-all"
                 >
                   Create Channel
                 </Button>
@@ -8559,7 +8559,7 @@ export function CommunityPage() {
           <DialogContent className="max-w-md bg-[#313338] border-none text-white shadow-2xl p-6">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 rounded-lg bg-[#5865f2]/20 border border-[#5865f2]/40 text-[#5865f2] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 text-primary flex items-center justify-center">
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
                   </svg>
@@ -8614,7 +8614,7 @@ export function CommunityPage() {
                   type="submit"
                   size="sm"
                   disabled={!newThreadName.trim() || isSubmittingThread}
-                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium cursor-pointer"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold font-medium cursor-pointer"
                 >
                   {isSubmittingThread ? 'Membuat...' : 'Buat Thread'}
                 </Button>
@@ -8629,7 +8629,7 @@ export function CommunityPage() {
             {/* Thread Drawer Header */}
             <div className="h-14 px-4 border-b border-black/30 flex items-center justify-between bg-[#2b2d31] shrink-0">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-[#5865f2]/20 border border-[#5865f2]/40 text-[#5865f2] flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/40 text-primary flex items-center justify-center shrink-0">
                   <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                     <path d="M5.5 4a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 4h-13zm2 3h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h9a1 1 0 1 1 0 2h-9a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2h-5a1 1 0 1 1 0-2z" />
                   </svg>
@@ -8658,7 +8658,7 @@ export function CommunityPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Thread starter banner */}
               <div className="p-3.5 rounded-xl bg-[#2b2d31]/80 border border-white/5 space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#5865f2]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
                   Awal dari Thread
                 </span>
                 <h4 className="text-sm font-bold text-white">{activeThread?.name}</h4>
@@ -8710,7 +8710,7 @@ export function CommunityPage() {
                   type="submit"
                   size="sm"
                   disabled={!threadInputText.trim()}
-                  className="h-9 px-3 bg-[#5865f2] hover:bg-[#4752c4] text-white shrink-0 cursor-pointer"
+                  className="h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shrink-0 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </Button>

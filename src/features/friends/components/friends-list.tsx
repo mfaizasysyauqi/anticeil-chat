@@ -29,12 +29,12 @@ export function FriendsList({
     <div className="w-full">
       {/* Search Bar */}
       <div className="relative mb-5">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#80848e]" />
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={friendsSearchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t('Cari...')}
-          className="pl-9 h-9 text-xs bg-[#111214] border-transparent focus:border-[#5865f2] text-white placeholder:text-[#80848e] rounded-[4px]"
+          className="pl-9 h-9 text-xs bg-muted/50 border-border focus:border-primary text-foreground placeholder:text-muted-foreground rounded-[6px]"
         />
         {friendsSearchQuery && (
           <button
@@ -52,7 +52,7 @@ export function FriendsList({
 
       {filteredFriends.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Users className="w-16 h-16 text-white/20 mb-3 stroke-[1.2]" />
+          <Users className="w-16 h-16 text-muted-foreground/40 mb-3 stroke-[1.2]" />
           <p className="text-xs text-muted-foreground font-medium mb-1">
             {friendsTab === 'online'
               ? t('Tidak ada teman yang sedang online saat ini.')
@@ -62,7 +62,7 @@ export function FriendsList({
             <Button
               size="sm"
               onClick={onSwitchToAddTab}
-              className="mt-3 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs shadow-2xs cursor-pointer"
+              className="mt-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5 mr-1.5" />
               {t('Tambah Teman')}

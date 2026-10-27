@@ -29,13 +29,13 @@ body,
   --accent-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.04);
   --input: #111214;
-  --ring: #5865f2;
+  --ring: #f59e0b;
   --radius: 0.5rem;
 
-  --primary: 235 86% 65%;
-  --primary-foreground: 0 0% 100%;
-  --primary-100: 235 86% 25%;
-  --primary-300: 235 86% 75%;
+  --primary: 45 93% 47%;
+  --primary-foreground: 0 0% 0%;
+  --primary-100: 45 93% 20%;
+  --primary-300: 45 93% 70%;
 
   --success: 160 84% 39%;
   --destructive: 350 89% 60%;

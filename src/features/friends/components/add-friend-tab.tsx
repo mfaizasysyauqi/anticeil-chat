@@ -29,18 +29,18 @@ export function AddFriendTab({ onAddFriend, isAddingFriend = false }: AddFriendT
         {t('Kamu bisa menambahkan teman menggunakan nama pengguna mereka.')}
       </p>
 
-      <div className="relative flex items-center rounded-lg bg-[#111214] border border-[#1e1f22] focus-within:border-[#5865f2] transition-colors p-2 shadow-2xs">
+      <div className="relative flex items-center rounded-lg bg-card border border-border focus-within:border-primary transition-colors p-2 shadow-2xs">
         <Input
           value={inputVal}
           onChange={(e) => setInputVal(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           placeholder={t('Kamu bisa menambahkan teman menggunakan nama pengguna mereka')}
-          className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2 h-8 placeholder:text-muted-foreground/60 flex-1 text-white"
+          className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2 h-8 placeholder:text-muted-foreground/60 flex-1 text-foreground"
         />
         <Button
           onClick={handleSubmit}
           disabled={!inputVal.trim() || isAddingFriend}
-          className="bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium text-xs h-8 px-4 shrink-0 transition-all cursor-pointer disabled:opacity-50"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 shrink-0 transition-all cursor-pointer disabled:opacity-50"
         >
           {isAddingFriend ? t('Mengirim...') : t('Kirim Permintaan Pertemanan')}
         </Button>
@@ -49,7 +49,7 @@ export function AddFriendTab({ onAddFriend, isAddingFriend = false }: AddFriendT
       <Separator className="my-8" />
 
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-[#5865f2]/10 border border-[#5865f2]/20 flex items-center justify-center text-[#5865f2] mb-3">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3">
           <Sparkles className="w-8 h-8" />
         </div>
         <h3 className="text-sm font-semibold text-foreground mb-1">

@@ -110,8 +110,8 @@ export function FriendsHeader({
             className={cn(
               'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer ml-1',
               friendsTab === 'add'
-                ? 'bg-[#5865f2] text-white shadow-2xs'
-                : 'bg-[#5865f2] hover:bg-[#4752c4] text-white'
+                ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
+                : 'bg-primary/90 hover:bg-primary text-primary-foreground'
             )}
           >
             {t('Tambah Teman')}
