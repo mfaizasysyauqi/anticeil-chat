@@ -2421,6 +2421,26 @@ export function CommunityPage() {
     t,
   });
 
+  // Rail Mode: Switcher between Servers and Friends
+  const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
+    try {
+      return (localStorage.getItem('anticeil_rail_mode') as any) || 'servers';
+    } catch {
+      return 'servers';
+    }
+  });
+
+  const handleToggleRailMode = () => {
+    setRailMode((prev) => {
+      const next = prev === 'servers' ? 'friends' : 'servers';
+      try {
+        localStorage.setItem('anticeil_rail_mode', next);
+      } catch {}
+      toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Server'));
+      return next;
+    });
+  };
+
   // Component: Server Rail (delegates to reusable ServerRail feature component)
   const renderDiscordHubRail = () => (
     <ServerRail
@@ -2453,6 +2473,17 @@ export function CommunityPage() {
         )
       }
       platformName={platform?.name}
+      railMode={railMode}
+      onToggleRailMode={handleToggleRailMode}
+      friends={friends.allFriends}
+      activeChannelId={activeChannelId}
+      onSelectFriend={(f) => handleStartDirectMessage(f)}
+      onOpenAddFriend={() => {
+        setActiveHubId('anticeil');
+        setActiveChannelId('');
+        setHomeView('friends');
+        friends.setFriendsTab('add');
+      }}
     />
   );
 
