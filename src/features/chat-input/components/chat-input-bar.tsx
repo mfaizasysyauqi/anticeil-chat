@@ -78,7 +78,7 @@ export function ChatInputBar({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className={`shrink-0 ${channelPaddingClass} pb-2 lg:pb-1 pt-0 bg-transparent z-10 flex flex-col gap-1.5`}>
+    <div className={`shrink-0 ${channelPaddingClass} pb-3 pt-0 bg-transparent z-10 flex flex-col gap-1.5`}>
       {/* Staged Attachment Indicator */}
       {stagedAttachment && (
         <div className="p-2 rounded-[12px] bg-[#111214] border border-white/10 shadow-2xl backdrop-blur-md flex items-center justify-between text-xs animate-in slide-in-from-bottom-1">

@@ -90,12 +90,12 @@ export function UserBottomDock({
 
       {/* User Dock Bar - Strictly contained inside sidebar width, background matches sidebar theme exactly */}
       {!currentUser ? (
-        <div className="w-full h-[52px] px-2.5 flex items-center justify-between gap-2">
+        <div className="w-full h-[64px] px-2.5 flex items-center justify-between gap-2">
           <Button
             type="button"
             size="sm"
             onClick={onGoogleSignIn || onOpenEditProfile}
-            className="flex-1 flex items-center justify-center gap-2 h-8 text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer shadow-xs rounded-lg"
+            className="flex-1 flex items-center justify-center gap-2 h-9 text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer shadow-xs rounded-lg"
           >
             <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
               <path
@@ -127,7 +127,7 @@ export function UserBottomDock({
           </button>
         </div>
       ) : (
-        <div className="w-full h-[52px] px-2 flex items-center justify-between">
+        <div className="w-full h-[64px] px-2 flex items-center justify-between">
           <div
             onClick={onOpenEditProfile}
             className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-sidebar-accent/60 cursor-pointer transition-colors group/user"
@@ -137,7 +137,7 @@ export function UserBottomDock({
               name={currentUserName}
               email={currentUser?.email}
               imageUrl={currentUser?.imageUrl}
-              size={32}
+              size={34}
               status="online"
               showStatus
               className="shrink-0"

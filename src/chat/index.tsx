@@ -2285,6 +2285,7 @@ export function CommunityPage() {
                   }
                 }}
                 onNavigateToBilling={() => navigate('/platform/billing')}
+                onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
               />
             </div>
           ) : activeChannel?.type === 'forum' ? (

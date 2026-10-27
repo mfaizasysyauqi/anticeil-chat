@@ -294,17 +294,13 @@ export function CallParticipantGrid({
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="text-sm sm:text-base font-bold text-foreground tracking-wide">{peer.userName}</span>
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                    {!peer.hasAudio ? <MicOff className="w-3 h-3 text-red-400" /> : <Mic className="w-3 h-3 text-emerald-400" />}
-                    {!peer.hasAudio ? 'Muted' : 'Tersambung'}
-                  </span>
                 </div>
               </div>
             )}
 
             <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-card/85 backdrop-blur-xs flex items-center gap-2 text-xs font-semibold text-foreground border border-border/60 z-10 shadow-xs">
               <span className="truncate max-w-[140px]">{peer.userName}</span>
-              {!peer.hasAudio ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5 text-emerald-400" />}
+              {!peer.hasAudio && <MicOff className="w-3.5 h-3.5 text-red-400" />}
             </div>
 
             {peer.isScreenSharing && (

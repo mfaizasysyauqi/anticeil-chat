@@ -4,6 +4,7 @@ import {
   Volume2,
   Play,
   MessageSquare,
+  Menu,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -41,6 +42,7 @@ export interface CommunityCallStageProps {
   onTogglePiP: () => void;
   onEndCall: () => void;
   onNavigateToBilling?: () => void;
+  onOpenMobileChannels?: () => void;
 }
 
 const ICE_SERVERS = {
@@ -63,6 +65,7 @@ export function CommunityCallStage({
   onTogglePiP,
   onEndCall,
   onNavigateToBilling,
+  onOpenMobileChannels,
 }: CommunityCallStageProps) {
   // Local Media states
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -801,6 +804,18 @@ export function CommunityCallStage({
       {/* Discord Top Stage App Bar */}
       <div className={cn('h-12 w-full flex items-center justify-between bg-background border-b border-border/40 select-none shrink-0 z-20', CHANNEL_HORIZONTAL_PADDING)}>
         <div className="flex items-center gap-2 min-w-0">
+          {/* Burger Menu Button (Visible on Mobile/Tablet: md:hidden) */}
+          {onOpenMobileChannels && (
+            <button
+              type="button"
+              onClick={onOpenMobileChannels}
+              className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors mr-0.5 cursor-pointer shrink-0"
+              title="Buka Menu Sidebar"
+              aria-label="Buka Menu Sidebar"
+            >
+              <Menu className="w-5 h-5 text-foreground" />
+            </button>
+          )}
           <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
           <span className="text-sm font-bold text-foreground truncate max-w-[140px] sm:max-w-[200px]">
             {channel.name}
