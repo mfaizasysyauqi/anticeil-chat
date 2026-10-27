@@ -31,6 +31,8 @@ export type CommunityChannel = {
   unreadCount?: number;
   type?: CommunityChannelType;
   isPrivate?: boolean;
+  slowmode?: number;
+  contentVisibility?: 'default' | 'spoiler' | 'nsfw';
 };
 
 export type CommunityAttachment = {

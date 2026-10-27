@@ -85,6 +85,7 @@ import { useResponsive, LAYOUT_SIZES, BREAKPOINTS } from '@/core';
 import { HubRail } from '@/features/hubs';
 import { UserBottomDock } from '@/features/profile';
 import { FriendsView, type FriendRequest } from '@/features/friends';
+import { ChannelSettingsDialog } from '@/features/channels';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -619,6 +620,25 @@ export function CommunityPage() {
   const [editChannelType, setEditChannelType] = useState<CommunityChannelType>('text');
 
   const [channelToDelete, setChannelToDelete] = useState<CommunityChannel | null>(null);
+
+  // Discord-style Resizable Sidebar state
+  const DEFAULT_SIDEBAR_WIDTH = 240;
+  const MIN_SIDEBAR_WIDTH = 180;
+  const MAX_SIDEBAR_WIDTH = 480;
+  const SIDEBAR_STORAGE_KEY = 'anticeil_channels_sidebar_width';
+
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= MIN_SIDEBAR_WIDTH && val <= MAX_SIDEBAR_WIDTH) return val;
+      }
+    } catch {}
+    return DEFAULT_SIDEBAR_WIDTH;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const [channelForSettings, setChannelForSettings] = useState<CommunityChannel | null>(null);
 
   // Responsive state for Mobile/Tablet sheets
   const [isMobileChannelsOpen, setIsMobileChannelsOpen] = useState(false);
@@ -2010,13 +2030,68 @@ export function CommunityPage() {
     }
   };
 
-  // Edit Channel (Channel CRUD)
-  const handleOpenEditChannel = (channel: CommunityChannel, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setChannelToEdit(channel);
-    setEditChannelName(channel.name);
-    setEditChannelDesc(channel.description || '');
-    setEditChannelType(channel.type || 'text');
+  // Discord-style Resizable Sidebar handlers
+  const handleSidebarResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+  };
+
+  const handleSidebarResizeReset = () => {
+    setSidebarWidth(DEFAULT_SIDEBAR_WIDTH);
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(DEFAULT_SIDEBAR_WIDTH));
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const miniRailEl = document.getElementById('anticeil-mini-rail');
+      const miniRailOffset = miniRailEl ? miniRailEl.getBoundingClientRect().right : 56;
+      const newWidth = Math.min(Math.max(e.clientX - miniRailOffset, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingSidebar, sidebarWidth]);
+
+  // Edit Channel (Channel Settings Dialog)
+  const handleOpenEditChannel = (channel: CommunityChannel, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setChannelForSettings(channel);
+  };
+
+  const handleUpdateChannelSettings = async (channelId: string, updates: Partial<CommunityChannel>) => {
+    try {
+      const updated = await communityApi.updateChannel(channelId, {
+        name: updates.name,
+        description: updates.description,
+        type: updates.type,
+        slowmode: updates.slowmode,
+        contentVisibility: updates.contentVisibility,
+      });
+      setChannels((prev) =>
+        prev.map((c) => (c.id === channelId ? { ...c, ...updated, ...updates } : c)),
+      );
+      toast.success(t('Pengaturan channel berhasil disimpan!'));
+    } catch (err) {
+      console.error('Failed to update channel settings', err);
+      toast.error(t('Gagal menyimpan perubahan channel'));
+      throw err;
+    }
   };
 
   const handleEditChannelSubmit = async (e: React.FormEvent) => {
@@ -2648,43 +2723,26 @@ export function CommunityPage() {
                                 </span>
                               )}
 
-                              {/* Channel action buttons */}
+                              {/* Channel action buttons (Discord style: Add/Invite and Settings) */}
                               <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setActiveChannelId(ch.id);
-                                    setIsWebhookDialogOpen(true);
+                                    setIsInviteOpen(true);
                                   }}
-                                  title="Integrasi Webhook"
-                                  className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted"
-                                >
-                                  <Webhook className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigator.clipboard.writeText(ch.id);
-                                    toast.success(t(`ID Channel disalin: ${ch.id} 📋`));
-                                  }}
-                                  title="Salin ID Channel"
+                                  title={t('Buat Undangan')}
                                   className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
                                 >
-                                  <Copy className="w-3 h-3" />
+                                  <UserPlus className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={(e) => handleOpenEditChannel(ch, e)}
-                                  title="Edit Channel"
+                                  title={t('Pengaturan Channel')}
                                   className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
                                 >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={(e) => handleOpenDeleteChannel(ch, e)}
-                                  title="Hapus Channel"
-                                  className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Settings className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </div>
@@ -2774,43 +2832,26 @@ export function CommunityPage() {
                               </span>
                             ) : null}
 
-                            {/* Channel action buttons */}
+                            {/* Channel action buttons (Discord style: Add/Invite and Settings) */}
                             <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setActiveChannelId(ch.id);
-                                  setIsWebhookDialogOpen(true);
+                                  setIsInviteOpen(true);
                                 }}
-                                title="Integrasi Webhook"
-                                className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted"
-                              >
-                                <Webhook className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(ch.id);
-                                  toast.success(t(`ID Channel disalin: ${ch.id} 📋`));
-                                }}
-                                title="Salin ID Channel"
+                                title={t('Buat Undangan')}
                                 className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
                               >
-                                <Copy className="w-3 h-3" />
+                                <UserPlus className="w-3.5 h-3.5" />
                               </button>
                               <button
+                                type="button"
                                 onClick={(e) => handleOpenEditChannel(ch, e)}
-                                title="Edit Channel"
+                                title={t('Pengaturan Channel')}
                                 className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
                               >
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={(e) => handleOpenDeleteChannel(ch, e)}
-                                title="Hapus Channel"
-                                className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                              >
-                                <Trash2 className="w-3 h-3" />
+                                <Settings className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
@@ -2895,43 +2936,26 @@ export function CommunityPage() {
                                 </span>
                               )}
 
-                              {/* Channel action buttons */}
+                              {/* Channel action buttons (Discord style: Add/Invite and Settings) */}
                               <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setActiveChannelId(ch.id);
-                                    setIsWebhookDialogOpen(true);
+                                    setIsInviteOpen(true);
                                   }}
-                                  title="Integrasi Webhook"
-                                  className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted"
-                                >
-                                  <Webhook className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigator.clipboard.writeText(ch.id);
-                                    toast.success(t(`ID Channel disalin: ${ch.id} 📋`));
-                                  }}
-                                  title="Salin ID Channel"
+                                  title={t('Buat Undangan')}
                                   className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
                                 >
-                                  <Copy className="w-3 h-3" />
+                                  <UserPlus className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={(e) => handleOpenEditChannel(ch, e)}
-                                  title="Edit Channel"
+                                  title={t('Pengaturan Channel')}
                                   className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
                                 >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={(e) => handleOpenDeleteChannel(ch, e)}
-                                  title="Hapus Channel"
-                                  className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Settings className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </div>
@@ -3590,19 +3614,37 @@ export function CommunityPage() {
     >
       <TooltipProvider delayDuration={200}>
       <div className="flex h-full w-full overflow-hidden bg-background">
-        {/* DESKTOP DISCORD HUB / SERVER MINI RAIL */}
-        <div className="hidden lg:flex flex-col h-full shrink-0 select-none">
+        {/* DESKTOP & TABLET DISCORD HUB / SERVER MINI RAIL */}
+        <div className="hidden md:flex flex-col h-full shrink-0 select-none">
           {renderDiscordHubRail()}
         </div>
 
-        {/* DESKTOP CHANNELS SIDEBAR (Clean single sidebar directly beside the Unified Mini Rail) */}
-        <div className="hidden lg:flex flex-col h-full shrink-0 border-r border-sidebar-border bg-sidebar select-none w-60 overflow-hidden">
+        {/* DESKTOP & TABLET CHANNELS SIDEBAR (Resizable sidebar directly beside the fixed Mini Rail) */}
+        <div
+          className="hidden md:flex flex-col h-full shrink-0 border-r border-sidebar-border bg-sidebar select-none relative group/sidebar"
+          style={{ width: `${sidebarWidth}px` }}
+        >
           <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
             {renderChannelsSidebarContent()}
           </div>
+
+          {/* DISCORD-STYLE RESIZE HANDLE ON RIGHT BORDER */}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            title={t('Tarik untuk mengubah ukuran sidebar (Double-klik untuk reset)')}
+            onMouseDown={handleSidebarResizeStart}
+            onDoubleClick={handleSidebarResizeReset}
+            className={cn(
+              'absolute top-0 right-[-3px] w-[6px] h-full cursor-col-resize z-30 transition-colors select-none',
+              isResizingSidebar
+                ? 'bg-primary/80'
+                : 'hover:bg-primary/50 bg-transparent'
+            )}
+          />
         </div>
 
-        {/* MOBILE & TABLET CHANNELS DRAWER */}
+        {/* MOBILE CHANNELS DRAWER */}
         <Sheet open={isMobileChannelsOpen} onOpenChange={setIsMobileChannelsOpen}>
           <SheetContent side="left" className={cn("p-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border", LAYOUT_SIZES.DRAWER_WIDTH)}>
             <SheetHeader className="sr-only">
@@ -3617,7 +3659,7 @@ export function CommunityPage() {
           </SheetContent>
         </Sheet>
 
-        {/* MOBILE & TABLET MEMBERS DRAWER (Server Context) */}
+        {/* MOBILE MEMBERS DRAWER (Server Context) */}
         <Sheet open={isMobileMembersOpen} onOpenChange={setIsMobileMembersOpen}>
           <SheetContent side="right" className={cn("p-0 bg-sidebar border-l border-sidebar-border", LAYOUT_SIZES.MEMBERS_DRAWER_WIDTH)}>
             <SheetHeader className="sr-only">
@@ -3636,11 +3678,11 @@ export function CommunityPage() {
           {!( (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ) && (
           <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-background z-10`}>
             <div className="flex items-center gap-2 min-w-0">
-              {/* Burger Menu Button (Visible on Mobile & Tablet: lg:hidden) */}
+              {/* Burger Menu Button (Visible only on Mobile: md:hidden) */}
               <button
                 type="button"
                 onClick={() => setIsMobileChannelsOpen(true)}
-                className="lg:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
+                className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
                 title={t('Buka Menu Sidebar')}
                 aria-label={t('Buka Menu Sidebar')}
               >
@@ -8734,6 +8776,22 @@ export function CommunityPage() {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Discord-style Channel Settings Dialog (Screenshot 5) */}
+        <ChannelSettingsDialog
+          channel={channelForSettings}
+          isOpen={!!channelForSettings}
+          onClose={() => setChannelForSettings(null)}
+          onUpdateChannel={handleUpdateChannelSettings}
+          onDeleteChannel={(ch) => {
+            setChannelForSettings(null);
+            handleOpenDeleteChannel(ch, { stopPropagation: () => {} } as any);
+          }}
+          onOpenWebhooks={(chId) => {
+            setActiveChannelId(chId);
+            setIsWebhookDialogOpen(true);
+          }}
+        />
 
         {/* Floating PiP Call Stage */}
         {activeCallChannelId && isCallPiP && (() => {

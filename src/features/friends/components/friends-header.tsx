@@ -34,12 +34,12 @@ export function FriendsHeader({
       className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background z-10`}
     >
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
-        {/* Burger Menu Button (Visible on Mobile & Tablet: lg:hidden) */}
+        {/* Burger Menu Button (Visible on Mobile: md:hidden) */}
         {onOpenSidebar && (
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="lg:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
+            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
             title={t('Buka Menu Sidebar')}
             aria-label={t('Buka Menu Sidebar')}
           >

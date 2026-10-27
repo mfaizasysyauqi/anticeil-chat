@@ -89,7 +89,7 @@ export const messagesApi = {
 
   async updateChannel(
     id: string,
-    payload: { name?: string; description?: string; type?: CommunityChannelType; isPrivate?: boolean },
+    payload: Partial<CommunityChannel>,
   ): Promise<CommunityChannel> {
     try {
       const res = await api.put<CommunityChannel>(`/v1/community/channels/${id}`, payload);
