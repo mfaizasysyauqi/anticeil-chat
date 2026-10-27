@@ -115,7 +115,7 @@ const queryClient: any = {
 };
 
 import { useSocket } from '@/providers/socket-provider';
-import { CommunityCallStage, DISCORD_APPS } from './community-call-stage';
+import { CommunityCallStage, DISCORD_APPS } from '@/features/voice';
 import {
   DISCORD_EMOJI_SERVERS,
   DISCORD_EMOJIS,
