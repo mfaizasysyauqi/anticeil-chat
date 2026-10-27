@@ -1,7 +1,8 @@
 /**
  * Shared layout constants for application body containers across all breakpoints
- * - Mobile & Tablet (< lg): 0 margin/padding horizontally and vertically (full-bleed edge-to-edge)
- * - Desktop (lg+): margin 1 on all sides (lg:m-1 = 4px margin top, right, bottom, left)
+ * - Mobile (< 768px): 0 margin/padding horizontally and vertically (full-bleed edge-to-edge)
+ * - Tablet (768px - 1023px): 0 margin/padding, accessible via burger menu drawer
+ * - Desktop (1024px+): margin 1 on all sides (lg:m-1 = 4px margin top, right, bottom, left)
  * - Consistent border color and thickness matching border-sidebar-border (1px solid)
  */
 export const LAYOUT_BODY_CONTAINER = {
@@ -16,4 +17,6 @@ export const LAYOUT_BODY_CONTAINER = {
  * Global horizontal padding for channel views (Text Channel, Voice Channel, Forum Channel, and Sidebar Header)
  * Used across app bar, body/feed, and bottom bar/input dock to ensure perfect horizontal symmetry and consistency.
  */
-export const CHANNEL_HORIZONTAL_PADDING = 'px-4';
+export const CHANNEL_HORIZONTAL_PADDING = 'px-3 sm:px-4';
+
+export * from '@/core/constants/layout';

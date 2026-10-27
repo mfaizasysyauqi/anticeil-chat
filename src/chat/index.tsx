@@ -69,6 +69,7 @@ import {
   MessagesSquare,
   TrendingUp,
   ArrowLeft,
+  Menu,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Link, useNavigate } from 'react-router-dom';
@@ -77,6 +78,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 import { useTranslation } from '@/core/i18n';
 import { useTheme } from '@/core/theme';
+import { useResponsive, LAYOUT_SIZES, BREAKPOINTS } from '@/core';
 import { HubRail } from '@/features/hubs';
 import { UserBottomDock } from '@/features/profile';
 import { FriendsView, type FriendRequest } from '@/features/friends';
@@ -293,6 +295,7 @@ function renderFormattedMessage(content: string) {
 export function CommunityPage() {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const { isMobile, isTablet, isDesktop, deviceMode } = useResponsive();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(() => {
     try {
@@ -3059,6 +3062,7 @@ export function CommunityPage() {
       onRejectRequest={handleRejectRequest}
       onCancelRequest={handleCancelRequest}
       onOpenDmSearch={() => setIsDmSearchOpen(true)}
+      onOpenSidebar={() => setIsMobileChannelsOpen(true)}
       horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
     />
   );
@@ -3543,9 +3547,9 @@ export function CommunityPage() {
         {/* OVERLAY USER PROFILE DOCK (Discord-style: floating card stacking over rail + body container) */}
         {renderUserBottomDock(true)}
 
-        {/* MOBILE CHANNELS DRAWER */}
+        {/* MOBILE & TABLET CHANNELS DRAWER */}
         <Sheet open={isMobileChannelsOpen} onOpenChange={setIsMobileChannelsOpen}>
-          <SheetContent side="left" className="p-0 w-[310px] flex flex-col h-full bg-sidebar">
+          <SheetContent side="left" className={cn("p-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border", LAYOUT_SIZES.DRAWER_WIDTH)}>
             <SheetHeader className="sr-only">
               <SheetTitle>{t('Navigasi Channel & Hub')}</SheetTitle>
             </SheetHeader>
@@ -3559,9 +3563,9 @@ export function CommunityPage() {
           </SheetContent>
         </Sheet>
 
-        {/* MOBILE MEMBERS DRAWER (Server Context) */}
+        {/* MOBILE & TABLET MEMBERS DRAWER (Server Context) */}
         <Sheet open={isMobileMembersOpen} onOpenChange={setIsMobileMembersOpen}>
-          <SheetContent side="right" className="p-0 w-72">
+          <SheetContent side="right" className={cn("p-0 bg-sidebar border-l border-sidebar-border", LAYOUT_SIZES.MEMBERS_DRAWER_WIDTH)}>
             <SheetHeader className="sr-only">
               <SheetTitle>{t('Anggota Server')}</SheetTitle>
             </SheetHeader>
@@ -3578,6 +3582,17 @@ export function CommunityPage() {
           {!( (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ) && (
           <div className={`h-12 border-b border-sidebar-border ${CHANNEL_HORIZONTAL_PADDING} flex items-center justify-between shrink-0 bg-[#000000] z-10`}>
             <div className="flex items-center gap-2 min-w-0">
+              {/* Burger Menu Button (Visible on Mobile & Tablet: lg:hidden) */}
+              <button
+                type="button"
+                onClick={() => setIsMobileChannelsOpen(true)}
+                className="lg:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
+                title={t('Buka Menu Sidebar')}
+                aria-label={t('Buka Menu Sidebar')}
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+
               {activeChannel?.category === 'DIRECT MESSAGES' || activeChannel?.isDirectMessage ? (
                 <span className="text-muted-foreground font-bold text-base shrink-0 select-none">@</span>
               ) : activeChannel?.type === 'voice' ? (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, MessageSquare, Sun, Moon, Globe } from 'lucide-react';
+import { Users, MessageSquare, Sun, Moon, Globe, Menu } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ interface FriendsHeaderProps {
   allCount: number;
   pendingCount: number;
   onOpenDmSearch: () => void;
+  onOpenSidebar?: () => void;
   horizontalPadding?: string;
 }
 
@@ -24,6 +25,7 @@ export function FriendsHeader({
   allCount,
   pendingCount,
   onOpenDmSearch,
+  onOpenSidebar,
   horizontalPadding = 'px-4',
 }: FriendsHeaderProps) {
   const { t, locale, setLocale } = useTranslation();
@@ -33,7 +35,20 @@ export function FriendsHeader({
     <div
       className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-[#000000] z-10`}
     >
-      <div className="flex items-center gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
+        {/* Burger Menu Button (Visible on Mobile & Tablet: lg:hidden) */}
+        {onOpenSidebar && (
+          <button
+            type="button"
+            onClick={onOpenSidebar}
+            className="lg:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
+            title={t('Buka Menu Sidebar')}
+            aria-label={t('Buka Menu Sidebar')}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
         <div className="flex items-center gap-2 shrink-0">
           <Users className="w-5 h-5 text-muted-foreground" />
           <span className="text-sm font-bold text-foreground">{t('Teman')}</span>

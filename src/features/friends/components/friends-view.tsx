@@ -22,6 +22,7 @@ interface FriendsViewProps {
   onRejectRequest: (req: FriendRequest) => void;
   onCancelRequest: (req: FriendRequest) => void;
   onOpenDmSearch: () => void;
+  onOpenSidebar?: () => void;
   horizontalPadding?: string;
 }
 
@@ -41,6 +42,7 @@ export function FriendsView({
   onRejectRequest,
   onCancelRequest,
   onOpenDmSearch,
+  onOpenSidebar,
   horizontalPadding = 'px-4',
 }: FriendsViewProps) {
   return (
@@ -53,6 +55,7 @@ export function FriendsView({
         allCount={allFriends.length}
         pendingCount={friendRequests.length}
         onOpenDmSearch={onOpenDmSearch}
+        onOpenSidebar={onOpenSidebar}
         horizontalPadding={horizontalPadding}
       />
 
