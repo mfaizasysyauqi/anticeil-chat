@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Play, Gamepad2, Sparkles, Crown, Check } from 'lucide-react';
+import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -84,7 +84,7 @@ export function ActivityLauncherDialog({
 
           {/* Modal Scrollable Body */}
           <div className="flex-1 overflow-y-auto px-3.5 pb-3.5 space-y-3.5 [scrollbar-width:thin]">
-            {/* 1. Recents Row (YouTube, Gamepad, Wordle) */}
+            {/* 1. Recents Row (YouTube, Whiteboard, Chess, ScreenShare) */}
             {!appSearchQuery && (
               <div>
                 <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Recents</h3>
@@ -107,45 +107,51 @@ export function ActivityLauncherDialog({
                     </Tooltip>
                   </TooltipProvider>
 
-                  {/* Arm / Gamepad on White squircle */}
+                  {/* Jamspace Whiteboard */}
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          onClick={() => onLaunchApp('valorant-aces')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-primary shrink-0"
-                          title="VALORANT Aces"
+                          onClick={() => onLaunchApp('whiteboard')}
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-blue-500 shrink-0"
+                          title="Jamspace Whiteboard"
                         >
-                          <Gamepad2 className="w-5 h-5 stroke-[2.2]" />
+                          <Palette className="w-5 h-5 stroke-[2.2]" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">VALORANT Aces</TooltipContent>
+                      <TooltipContent side="bottom" className="text-xs font-semibold">Jamspace Whiteboard</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
 
-                  {/* 3x3 Grid on White squircle */}
+                  {/* Anticeil Chess */}
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          onClick={() => onLaunchApp('wordle')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0"
-                          title="Wordle"
+                          onClick={() => onLaunchApp('chess')}
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-amber-500 shrink-0"
+                          title="Anticeil Chess"
                         >
-                          <div className="grid grid-cols-3 gap-0.5 p-0.5 rounded-[2px] bg-muted">
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
-                            <div className="w-2 h-2 rounded-[1px] bg-amber-400" />
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
-                            <div className="w-2 h-2 rounded-[1px] bg-muted-foreground/40" />
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500" />
-                            <div className="w-2 h-2 rounded-[1px] bg-muted-foreground/40" />
-                            <div className="w-2 h-2 rounded-[1px] bg-amber-400" />
-                          </div>
+                          <Crown className="w-5 h-5 stroke-[2.2]" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Wordle</TooltipContent>
+                      <TooltipContent side="bottom" className="text-xs font-semibold">Anticeil Chess</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  {/* Share Screen */}
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => onLaunchApp('screenshare')}
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-purple-500 shrink-0"
+                          title="Share Screen"
+                        >
+                          <ScreenShare className="w-5 h-5 stroke-[2.2]" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs font-semibold">Share Screen</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>

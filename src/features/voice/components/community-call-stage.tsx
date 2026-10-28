@@ -970,6 +970,9 @@ export function CommunityCallStage({
               totalInCall={totalInCall}
               socket={socket}
               onStopActivity={handleStopActivity}
+              isScreenSharing={isScreenSharing}
+              screenStream={activeScreenStream || screenStream}
+              onToggleScreenShare={handleToggleScreenShare}
             />
           </div>
 

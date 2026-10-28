@@ -108,29 +108,10 @@ export const ANTICEIL_GIF_ITEMS: AnticeilGifItem[] = [
 
 // ── Anticeil Interactive Apps & Games ─────────────────────────────────────────
 export const EXTENDED_ANTICEIL_APPS: AnticeilAppCatalogItem[] = [
-  // ── 4 TOP PROMOTED BANNERS ──
-  { id: 'wordle', title: 'Wordle', developer: 'The New York Times Games', group: 'Promoted', icon: '🟩', iconBg: 'bg-emerald-600', bannerGradient: 'bg-[#e3e3e1]', description: 'Play Wordle from New York Times Games together! Tebak 5 huruf tersembunyi.' },
-  { id: 'magic-garden', title: 'Magic Garden', developer: 'Bloom Studio', group: 'Promoted', icon: '🎃', iconBg: 'bg-amber-500', bannerGradient: 'from-amber-600 via-orange-700 to-indigo-950', description: 'Garden with friends! Tanam labu ajaib, buah bintang dan panen bersama tim.' },
-  { id: 'farm-merge-valley', title: 'Farm Merge Valley', developer: 'Zynga & CoolGames', group: 'Promoted', icon: '🌽', iconBg: 'bg-sky-600', bannerGradient: 'from-pink-600 via-purple-700 to-indigo-950', description: 'Gabungkan tanaman, ternak ayam dan kembangkan pedesaan bersama teman.' },
   { id: 'watch-together', title: 'Watch Together', developer: 'YouTube', group: 'Promoted', icon: '▶️', iconBg: 'bg-red-600', bannerGradient: 'bg-white', description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.' },
-
-  // ── PUZZLE GAMES ──
-  { id: 'daily-word-wheel', title: 'Daily Word Wheel', developer: 'Words with Friends', group: 'Puzzle Games', icon: '🔤', iconBg: 'bg-blue-600', description: 'From the makers of Words with Friends, enjoy a daily word puzzle wheel with your friends.' },
-  { id: 'daily-word-griddle', title: 'Daily Word Griddle', developer: 'Words with Friends', group: 'Puzzle Games', icon: '🧇', iconBg: 'bg-amber-600', description: 'From the makers of Words With Friends, enjoy an all new daily griddle challenge.' },
-  { id: 'hex-puzzle-adventure', title: 'Hex Puzzle Adventure', developer: 'Hex Puzzle Studio', group: 'Puzzle Games', icon: '⬢', iconBg: 'bg-purple-600', description: 'A hex stacking puzzle game. Use strategic thinking to solve the hexagonal puzzle board.' },
-  { id: 'daily-sudoku-together', title: 'Daily Sudoku Together', developer: 'BrainGames Inc.', group: 'Puzzle Games', icon: '🔢', iconBg: 'bg-cyan-600', description: 'Collaborative Sudoku session together in real-time voice channel.' },
-
-  // ── CARD GAMES ──
-  { id: 'poker-night', title: 'Poker Night', developer: 'Anticeil Games', group: 'Card Games', icon: '🃏', iconBg: 'bg-indigo-600', description: "A Texas hold 'em style card game where you can prove your Poker skills to friends." },
-  { id: 'blazing-8s', title: 'Blazing 8s', developer: 'Crazy Eights Online', group: 'Card Games', icon: '🎴', iconBg: 'bg-emerald-600', description: 'Be the first to zero cards by swapping hands, skipping players, and dropping wild 8s.' },
-  { id: 'blackjack', title: 'Blackjack', developer: 'Casino Royale', group: 'Card Games', icon: '♠️', iconBg: 'bg-red-700', description: 'The first visual Blackjack game. Play with up to 8 people at the dealer table.' },
-  { id: 'erth-poker', title: 'ERTH Poker', developer: 'ERTH Gaming', group: 'Card Games', icon: '♥️', iconBg: 'bg-pink-600', description: 'High-stakes multiplayer Texas Holdem poker tournament room with live voice chat.' },
-
-  // ── PRODUCTIVITY & DEV ──
-  { id: 'virtual-fisher', title: 'Virtual Fisher', developer: 'Fishing Club Inc.', group: 'Productivity & Dev', icon: '🎣', iconBg: 'bg-cyan-500', description: 'Virtual Fisher is a game you can play in your server focused on catching rare fish.' },
-  { id: 'whiteboard', title: 'Jamspace Whiteboard', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '🎨', iconBg: 'bg-blue-600', description: 'Papan tulis kolaboratif realtime untuk sketching arsitektur sistem dan wireframing.' },
-  { id: 'code-runner', title: 'Dev Scratchpad & Tester', developer: 'Anticeil DevTools', group: 'Productivity & Dev', icon: '💻', iconBg: 'bg-zinc-800', description: 'Editor JavaScript realtime & JSON validator dengan live console output di panggung.' },
-  { id: 'flow-canvas', title: 'Anticeil Flow Builder', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '⚡', iconBg: 'bg-purple-600', description: 'Simulasikan alur webhook, workflow, dan AI agent secara realtime bersama tim.' },
+  { id: 'whiteboard', title: 'Jamspace Whiteboard', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '🎨', iconBg: 'bg-blue-600', bannerGradient: 'from-blue-600 to-indigo-700', description: 'Papan tulis kolaboratif realtime untuk sketching arsitektur sistem dan wireframing.' },
+  { id: 'chess', title: 'Anticeil Chess', developer: 'Anticeil Native', group: 'Promoted', icon: '👑', iconBg: 'bg-amber-600', bannerGradient: 'from-amber-600 to-stone-800', description: 'Bermain catur interaktif realtime bersama bot AI cerdas atau teman server.' },
+  { id: 'screenshare', title: 'Share Screen', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '🖥️', iconBg: 'bg-purple-600', bannerGradient: 'from-purple-600 to-indigo-800', description: 'Bagikan layar atau jendela aplikasi dengan audio jernih dan latensi rendah.' },
 ];
 
 // ── Backward-compatible Aliases ──────────────────────────────────────────────

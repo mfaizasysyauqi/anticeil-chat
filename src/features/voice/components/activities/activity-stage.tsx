@@ -3,14 +3,9 @@ import { Socket } from 'socket.io-client';
 import { CommunityChannel } from '@/chat/chat-types';
 import { DiscordAppDefinition } from '../../data/discord-activities';
 import { YouTubeWatchTogether } from './youtube-watch-together';
-import { VirtualFisher } from './virtual-fisher';
-import { WordleGame } from './wordle-game';
-import { MagicGarden } from './magic-garden';
-import { FlowCanvas } from './flow-canvas';
 import { WhiteboardCanvas } from './whiteboard-canvas';
-import { CodeRunner } from './code-runner';
 import { ChessGame } from './chess-game';
-import { GenericAppView } from './generic-app-view';
+import { ScreenShareView } from './screen-share-view';
 
 export interface ActivityStageProps {
   activeAppId: string;
@@ -22,6 +17,9 @@ export interface ActivityStageProps {
   totalInCall: number;
   socket: Socket | null;
   onStopActivity: () => void;
+  isScreenSharing?: boolean;
+  screenStream?: MediaStream | null;
+  onToggleScreenShare?: () => void;
 }
 
 export function ActivityStage({
@@ -34,6 +32,9 @@ export function ActivityStage({
   totalInCall,
   socket,
   onStopActivity,
+  isScreenSharing,
+  screenStream,
+  onToggleScreenShare,
 }: ActivityStageProps) {
   return (
     <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col bg-background">
@@ -47,43 +48,24 @@ export function ActivityStage({
         />
       )}
 
-      {activeAppId === 'virtual-fisher' && (
-        <VirtualFisher currentUserName={currentUserName} />
-      )}
-
-      {activeAppId === 'wordle' && (
-        <WordleGame />
-      )}
-
-      {activeAppId === 'magic-garden' && (
-        <MagicGarden />
-      )}
-
-      {activeAppId === 'flow-canvas' && (
-        <FlowCanvas channel={channel} socket={socket} />
-      )}
-
       {activeAppId === 'whiteboard' && (
         <WhiteboardCanvas channel={channel} socket={socket} />
-      )}
-
-      {activeAppId === 'code-runner' && (
-        <CodeRunner channel={channel} socket={socket} />
       )}
 
       {activeAppId === 'chess' && (
         <ChessGame channel={channel} socket={socket} currentUserName={currentUserName} />
       )}
 
-      {activeAppId &&
-        !['watch-together', 'virtual-fisher', 'wordle', 'magic-garden', 'flow-canvas', 'whiteboard', 'code-runner', 'chess'].includes(activeAppId) &&
-        currentActiveApp && (
-          <GenericAppView
-            currentActiveApp={currentActiveApp}
-            totalInCall={totalInCall}
-            onStopActivity={onStopActivity}
-          />
-        )}
+      {activeAppId === 'screenshare' && (
+        <ScreenShareView
+          channel={channel}
+          isScreenSharing={isScreenSharing}
+          screenStream={screenStream}
+          currentUserName={currentUserName}
+          onToggleScreenShare={onToggleScreenShare}
+          onStopActivity={onStopActivity}
+        />
+      )}
     </div>
   );
 }
