@@ -197,10 +197,14 @@ export function useServerModals({
         const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
         const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
         if (targetActivityParam) {
-          setSelectedActivityAppId?.(targetActivityParam);
+          const normalizedAct = targetActivityParam === 'youtube' ? 'watch-together' : targetActivityParam;
+          setSelectedActivityAppId?.(normalizedAct);
           setIsActivityOpen?.(true);
         }
-        const matchedChannel = hubChannels.find((c) => c.id === targetChannelParam);
+        let matchedChannel = hubChannels.find((c) => c.id === targetChannelParam);
+        if (!matchedChannel && targetActivityParam) {
+          matchedChannel = hubChannels.find((c) => c.type === 'voice');
+        }
         if (matchedChannel) {
           setActiveChannelId(matchedChannel.id);
           if (matchedChannel.type === 'voice') {

@@ -222,22 +222,31 @@ export function CommunityCallStage({
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peerConnections.current[targetSocketId] = pc;
 
-    if (currentLocalStream) {
-      currentLocalStream.getTracks().forEach((track) => {
-        if (track.kind === 'video' && isScreenSharing && screenStream && screenStream.getVideoTracks()[0]) {
-          pc.addTrack(screenStream.getVideoTracks()[0], screenStream);
-        } else {
-          pc.addTrack(track, currentLocalStream);
-        }
-      });
-      if (isScreenSharing && screenStream && screenStream.getVideoTracks()[0] && !currentLocalStream.getVideoTracks().length) {
-        pc.addTrack(screenStream.getVideoTracks()[0], screenStream);
+    let isMakingOffer = false;
+    const sendOffer = async () => {
+      if (!isInitiator) return;
+      try {
+        if (pc.signalingState !== 'stable' || isMakingOffer) return;
+        isMakingOffer = true;
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true,
+        });
+        await pc.setLocalDescription(offer);
+        socket?.emit('COMMUNITY_CALL_SIGNAL', {
+          channelId: channel.id,
+          targetSocketId,
+          signal: offer,
+        });
+      } catch (err) {
+        console.error('Failed to negotiate peer connection', err);
+      } finally {
+        isMakingOffer = false;
       }
-    } else if (isScreenSharing && screenStream) {
-      screenStream.getTracks().forEach((track) => {
-        pc.addTrack(track, screenStream);
-      });
-    }
+    };
+
+    // Attach event listeners before adding any tracks
+    pc.onnegotiationneeded = sendOffer;
 
     pc.onicecandidate = (event) => {
       if (event.candidate && socket) {
@@ -261,25 +270,29 @@ export function CommunityCallStage({
       );
     };
 
-    let isMakingOffer = false;
-    pc.onnegotiationneeded = async () => {
-      if (!isInitiator) return;
-      try {
-        if (pc.signalingState !== 'stable' || isMakingOffer) return;
-        isMakingOffer = true;
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket?.emit('COMMUNITY_CALL_SIGNAL', {
-          channelId: channel.id,
-          targetSocketId,
-          signal: offer,
-        });
-      } catch (err) {
-        console.error('Failed to negotiate peer connection', err);
-      } finally {
-        isMakingOffer = false;
+    if (currentLocalStream) {
+      currentLocalStream.getTracks().forEach((track) => {
+        if (track.kind === 'video' && isScreenSharing && screenStream && screenStream.getVideoTracks()[0]) {
+          pc.addTrack(screenStream.getVideoTracks()[0], screenStream);
+        } else {
+          pc.addTrack(track, currentLocalStream);
+        }
+      });
+      if (isScreenSharing && screenStream && screenStream.getVideoTracks()[0] && !currentLocalStream.getVideoTracks().length) {
+        pc.addTrack(screenStream.getVideoTracks()[0], screenStream);
       }
-    };
+    } else if (isScreenSharing && screenStream) {
+      screenStream.getTracks().forEach((track) => {
+        pc.addTrack(track, screenStream);
+      });
+    }
+
+    // Explicitly trigger initial offer for initiator to guarantee connection
+    if (isInitiator) {
+      setTimeout(() => {
+        sendOffer();
+      }, 50);
+    }
 
     return pc;
   };
@@ -335,7 +348,7 @@ export function CommunityCallStage({
           // Query if any activity is already running in this call channel
           socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
             channelId: channel.id,
-            action: 'QUERY_ACTIVE_ACTIVITY',
+            action: 'ACTIVITY_QUERY',
           });
         },
       );

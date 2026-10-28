@@ -373,7 +373,13 @@ export function CommunityPage() {
   const socket = useSocket();
 
   // Discord Voice & Video Call State (Anticeil Call & Activity)
-  const [activeCallChannelId, setActiveCallChannelId] = useState<string | null>(null);
+  const [activeCallChannelId, setActiveCallChannelId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('activity') && p.get('channel') ? p.get('channel') : null;
+    }
+    return null;
+  });
   const [isCallPiP, setIsCallPiP] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -384,7 +390,9 @@ export function CommunityPage() {
   const [activeCallCounts, setActiveCallCounts] = useState<Record<string, number>>({});
   const [selectedActivityAppId, setSelectedActivityAppId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return new URLSearchParams(window.location.search).get('activity') || null;
+      const act = new URLSearchParams(window.location.search).get('activity');
+      if (act === 'youtube') return 'watch-together';
+      return act || null;
     }
     return null;
   });
@@ -522,7 +530,7 @@ export function CommunityPage() {
           url.searchParams.set('channel', activeChannelId);
           changed = true;
         }
-      } else if (url.searchParams.has('channel')) {
+      } else if (url.searchParams.has('channel') && channels.length > 0) {
         url.searchParams.delete('channel');
         changed = true;
       }
@@ -532,7 +540,7 @@ export function CommunityPage() {
           url.searchParams.set('activity', selectedActivityAppId);
           changed = true;
         }
-      } else if (url.searchParams.has('activity')) {
+      } else if (url.searchParams.has('activity') && channels.length > 0 && !isActivityOpen) {
         url.searchParams.delete('activity');
         changed = true;
       }
@@ -541,7 +549,7 @@ export function CommunityPage() {
         window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
       }
     } catch {}
-  }, [activeHubId, activeChannelId, selectedActivityAppId]);
+  }, [activeHubId, activeChannelId, selectedActivityAppId, channels.length, isActivityOpen]);
 
   const [inputText, setInputText] = useState('');
   const [stagedAttachment, setStagedAttachment] = useState<CommunityAttachment | null>(null);
@@ -795,17 +803,30 @@ export function CommunityPage() {
             const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
             const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
             if (targetActivityParam) {
-              setSelectedActivityAppId(targetActivityParam);
+              const normalizedAct = targetActivityParam === 'youtube' ? 'watch-together' : targetActivityParam;
+              setSelectedActivityAppId(normalizedAct);
               setIsActivityOpen(true);
             }
             if (targetChannelParam) {
-              const matchedChannel = channelsRes.find((c) => c.id === targetChannelParam);
+              let matchedChannel = channelsRes.find((c) => c.id === targetChannelParam);
+              if (!matchedChannel && targetActivityParam) {
+                matchedChannel = channelsRes.find((c) => (c.hubId || 'anticeil') === activeHubId && c.type === 'voice');
+              }
               if (matchedChannel) {
                 setActiveChannelId(matchedChannel.id);
                 if (matchedChannel.type === 'voice') {
                   setActiveCallChannelId(matchedChannel.id);
                   setIsCallPiP(false);
                 }
+              }
+            } else if (targetActivityParam) {
+              const activeVoice = channelsRes.find(
+                (c) => (c.hubId || 'anticeil') === activeHubId && c.type === 'voice',
+              );
+              if (activeVoice) {
+                setActiveChannelId(activeVoice.id);
+                setActiveCallChannelId(activeVoice.id);
+                setIsCallPiP(false);
               }
             } else if (channelsRes.length > 0 && activeHubId !== 'anticeil') {
               const activeVoice = channelsRes.find(
@@ -964,8 +985,13 @@ export function CommunityPage() {
       const current = hubChannels.find((c) => c.id === activeChannelId);
       if (current) return current;
     }
+    // If activity is selected or activeCallChannelId is set, prefer voice channel over defaulting to first text channel
+    if (selectedActivityAppId || activeCallChannelId) {
+      const voiceCh = hubChannels.find((c) => c.type === 'voice');
+      if (voiceCh) return voiceCh;
+    }
     return hubChannels[0] || null;
-  }, [isHome, activeChannelId, dmChannels, hubChannels]);
+  }, [isHome, activeChannelId, dmChannels, hubChannels, selectedActivityAppId, activeCallChannelId]);
 
   // Load threads for all forum channels in the active hub so sidebar shows child threads
   useEffect(() => {
@@ -998,10 +1024,14 @@ export function CommunityPage() {
           const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
           const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
           if (targetActivityParam) {
-            setSelectedActivityAppId(targetActivityParam);
+            const normalizedAct = targetActivityParam === 'youtube' ? 'watch-together' : targetActivityParam;
+            setSelectedActivityAppId(normalizedAct);
             setIsActivityOpen(true);
           }
-          const matchedTarget = res.find((c) => c.id === targetChannelParam);
+          let matchedTarget = res.find((c) => c.id === targetChannelParam);
+          if (!matchedTarget && targetActivityParam) {
+            matchedTarget = res.find((c) => c.type === 'voice');
+          }
           if (matchedTarget) {
             setActiveChannelId(matchedTarget.id);
             if (matchedTarget.type === 'voice') {
@@ -1012,6 +1042,14 @@ export function CommunityPage() {
             setActiveChannelId((curr) => {
               const exists = res.some((c) => c.id === curr);
               if (exists) return curr;
+              if (targetActivityParam) {
+                const voiceCh = res.find((c) => c.type === 'voice');
+                if (voiceCh) {
+                  setActiveCallChannelId(voiceCh.id);
+                  setIsCallPiP(false);
+                  return voiceCh.id;
+                }
+              }
               const activeVoice = res.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
               if (activeVoice) {
                 setActiveCallChannelId(activeVoice.id);
