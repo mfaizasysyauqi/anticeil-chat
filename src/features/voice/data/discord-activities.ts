@@ -11,6 +11,7 @@ import {
   Grid,
   Workflow,
   Palette,
+  Crown,
 } from 'lucide-react';
 
 export interface DiscordAppDefinition {
@@ -136,6 +137,24 @@ export const DISCORD_APPS: DiscordAppDefinition[] = [
     isPromoted: true,
     badge: 'PROMOTED',
     accentColor: '#22c55e',
+  },
+  {
+    id: 'chess',
+    title: 'Anticeil Chess',
+    bannerTitle: 'ANTICEIL CHESS',
+    developer: 'Anticeil Native',
+    category: 'game',
+    bannerGradient: 'from-amber-700 via-stone-800 to-zinc-950',
+    bannerImage: 'https://images.unsplash.com/photo-1529699211952-734e80c4d42b?auto=format&fit=crop&w=600&q=80',
+    iconBg: 'bg-[#b45309]',
+    iconColor: 'text-white',
+    icon: Crown,
+    tagline: 'Main catur bersama lawan Bot atau teman...',
+    description: 'Bermain catur interaktif di voice channel. Tantang teman satu server atau asah strategi melawan Bot AI cerdas.',
+    isRecent: true,
+    isPromoted: true,
+    badge: 'BARU',
+    accentColor: '#f59e0b',
   },
   {
     id: 'watch-together',

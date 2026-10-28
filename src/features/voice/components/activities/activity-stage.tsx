@@ -9,6 +9,7 @@ import { MagicGarden } from './magic-garden';
 import { FlowCanvas } from './flow-canvas';
 import { WhiteboardCanvas } from './whiteboard-canvas';
 import { CodeRunner } from './code-runner';
+import { ChessGame } from './chess-game';
 import { GenericAppView } from './generic-app-view';
 
 export interface ActivityStageProps {
@@ -70,8 +71,12 @@ export function ActivityStage({
         <CodeRunner channel={channel} socket={socket} />
       )}
 
+      {activeAppId === 'chess' && (
+        <ChessGame channel={channel} socket={socket} currentUserName={currentUserName} />
+      )}
+
       {activeAppId &&
-        !['watch-together', 'virtual-fisher', 'wordle', 'magic-garden', 'flow-canvas', 'whiteboard', 'code-runner'].includes(activeAppId) &&
+        !['watch-together', 'virtual-fisher', 'wordle', 'magic-garden', 'flow-canvas', 'whiteboard', 'code-runner', 'chess'].includes(activeAppId) &&
         currentActiveApp && (
           <GenericAppView
             currentActiveApp={currentActiveApp}
