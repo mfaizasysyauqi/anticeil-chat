@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Columns3,
   Plus,
@@ -19,7 +19,15 @@ import {
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { KanbanCard, KanbanColumn, KanbanPriority } from '../types';
@@ -70,6 +78,12 @@ export function KanbanChannelView({
   const [cardDueDate, setCardDueDate] = useState(dayjs().add(3, 'day').format('YYYY-MM-DD'));
   const [cardTags, setCardTags] = useState('');
 
+  // Stable ref for parent callback to prevent infinite re-render loops
+  const onCardsUpdateRef = useRef(onCardsUpdate);
+  useEffect(() => {
+    onCardsUpdateRef.current = onCardsUpdate;
+  }, [onCardsUpdate]);
+
   // Fetch real cards from PostgreSQL database via API
   const fetchCards = useCallback(async () => {
     setIsLoading(true);
@@ -95,14 +109,17 @@ export function KanbanChannelView({
           completedAt: d.completedAt || undefined,
         }));
         setCards(mapped);
-        onCardsUpdate?.(mapped);
+        onCardsUpdateRef.current?.(mapped);
+      } else {
+        setCards([]);
       }
     } catch (err) {
       console.error('Failed to load kanban cards from backend', err);
+      setCards([]);
     } finally {
       setIsLoading(false);
     }
-  }, [activeChannel.id, activeHub?.id, activeChannel.name, activeHub?.name, onCardsUpdate]);
+  }, [activeChannel.id, activeHub?.id, activeChannel.name, activeHub?.name]);
 
   useEffect(() => {
     fetchCards();
@@ -477,52 +494,52 @@ export function KanbanChannelView({
 
       {/* ── Dialog Tambah Kartu Baru ──────────────────────────────── */}
       <Dialog open={isAddCardOpen} onOpenChange={setIsAddCardOpen}>
-        <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden bg-card border-border text-foreground rounded-2xl shadow-2xl">
-          <form onSubmit={handleCreateCardSubmit} className="flex flex-col">
-            <div className="p-5 pb-3 border-b border-border">
+        <DialogContent className="sm:max-w-[430px] p-4 sm:p-5">
+          <form onSubmit={handleCreateCardSubmit} className="flex flex-col h-full min-h-0">
+            <DialogHeader>
               <DialogTitle className="text-base font-bold text-foreground">
                 Tambah Kartu Tugas
               </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 Tambahkan tugas baru ke papan #{activeChannel.name}
-              </p>
-            </div>
+              </DialogDescription>
+            </DialogHeader>
 
-            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]">
+            <DialogBody className="space-y-3 py-2">
               <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   Judul Tugas *
                 </label>
                 <Input
                   value={cardTitle}
                   onChange={(e) => setCardTitle(e.target.value)}
-                  placeholder="Contoh: Implementasi sistem autentikasi Google"
-                  className="h-9 text-xs"
+                  placeholder="Contoh: Implementasi sistem autentikasi"
+                  className="h-8 text-xs bg-muted/40 border-border"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   Deskripsi Tugas
                 </label>
                 <textarea
                   value={cardDesc}
                   onChange={(e) => setCardDesc(e.target.value)}
                   placeholder="Detail instruksi atau rincian pekerjaan..."
-                  className="w-full rounded-md border border-input bg-background p-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[70px]"
+                  className="w-full rounded-md border border-border bg-muted/40 p-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[60px]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                     Kolom Status
                   </label>
                   <select
                     value={targetColumnId}
                     onChange={(e) => setTargetColumnId(e.target.value)}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     {DEFAULT_COLUMNS.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -532,13 +549,13 @@ export function KanbanChannelView({
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                     Tingkat Prioritas
                   </label>
                   <select
                     value={cardPriority}
                     onChange={(e) => setCardPriority(e.target.value as any)}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -548,15 +565,15 @@ export function KanbanChannelView({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                    Penerima Tugas (Assignee)
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                    Penerima Tugas
                   </label>
                   <select
                     value={cardAssigneeId}
                     onChange={(e) => setCardAssigneeId(e.target.value)}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value={currentUser?.id || 'current-user'}>
                       {currentUser?.firstName || 'Saya Sendiri'}
@@ -569,32 +586,32 @@ export function KanbanChannelView({
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                    Tenggat Waktu (Due Date)
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                    Tenggat Waktu
                   </label>
                   <Input
                     type="date"
                     value={cardDueDate}
                     onChange={(e) => setCardDueDate(e.target.value)}
-                    className="h-9 text-xs"
+                    className="h-8 text-xs bg-muted/40 border-border"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Label / Tag (Pisahkan dengan koma)
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                  Label / Tag (Pisahkan koma)
                 </label>
                 <Input
                   value={cardTags}
                   onChange={(e) => setCardTags(e.target.value)}
                   placeholder="Frontend, Bug, Priority"
-                  className="h-9 text-xs"
+                  className="h-8 text-xs bg-muted/40 border-border"
                 />
               </div>
-            </div>
+            </DialogBody>
 
-            <div className="p-4 bg-muted/40 border-t border-border flex items-center justify-end gap-2">
+            <DialogFooter className="pt-2.5 mt-2 border-t border-border/40">
               <Button
                 type="button"
                 variant="ghost"
@@ -607,11 +624,12 @@ export function KanbanChannelView({
               <Button
                 type="submit"
                 size="sm"
-                className="h-8 text-xs font-semibold cursor-pointer"
+                disabled={isSubmitting || !cardTitle.trim()}
+                className="h-8 text-xs font-semibold cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                Simpan Kartu
+                {isSubmitting ? 'Menyimpan...' : 'Simpan Kartu'}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

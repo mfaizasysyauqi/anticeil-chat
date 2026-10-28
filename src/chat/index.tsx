@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Search,
   Plus,
@@ -2056,6 +2056,15 @@ export function CommunityPage() {
     setIsMobileMembersOpen(false);
   };
 
+  // Kanban update handler
+  const handleKanbanCardsUpdate = useCallback((cards: KanbanCard[]) => {
+    if (!activeChannel?.id) return;
+    setAssignments((prev) => {
+      const otherCards = prev.filter((c) => c.channelId !== activeChannel.id);
+      return [...cards, ...otherCards];
+    });
+  }, [activeChannel?.id, setAssignments]);
+
   // Message Requests Handlers
   const handleAcceptMessageRequest = (item: MessageRequestItem) => {
     handleAcceptMessageRequestRaw(item);
@@ -2635,12 +2644,7 @@ export function CommunityPage() {
               currentUser={currentUser}
               onOpenSidebar={() => setIsMobileChannelsOpen(true)}
               horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-              onCardsUpdate={(cards) => {
-                setAssignments((prev) => {
-                  const otherCards = prev.filter((c) => c.channelId !== activeChannel.id);
-                  return [...cards, ...otherCards];
-                });
-              }}
+              onCardsUpdate={handleKanbanCardsUpdate}
             />
           ) : (
           <>
