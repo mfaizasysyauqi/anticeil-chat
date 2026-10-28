@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Columns3,
   Plus,
@@ -14,6 +14,7 @@ import {
   Tag,
   Menu,
   AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { KanbanCard, KanbanColumn, KanbanPriority } from '../types';
 import type { CommunityChannel, CommunityHub, CommunityMember } from '@/chat/chat-types';
+import { assignmentsApi } from '@/features/assignments/api/assignments-api';
 import { toast } from 'sonner';
 
 export interface KanbanChannelViewProps {
@@ -51,74 +53,9 @@ export function KanbanChannelView({
   horizontalPadding = 'px-4 sm:px-6',
   onCardsUpdate,
 }: KanbanChannelViewProps) {
-  const storageKey = `anticeil_kanban_${activeChannel.id}`;
-
-  const [cards, setCards] = useState<KanbanCard[]>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-
-    // Default mock cards for initial kanban channel
-    const currentUserName = currentUser?.firstName
-      ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim()
-      : 'Anda';
-
-    return [
-      {
-        id: `card-1-${activeChannel.id}`,
-        title: 'Desain Wireframe UI Kalender & Assignments',
-        description: 'Buat komponen antarmuka responsif untuk kalender dan rekap tugas personal.',
-        columnId: 'done',
-        channelId: activeChannel.id,
-        channelName: activeChannel.name,
-        hubId: activeHub?.id || 'anticeil',
-        hubName: activeHub?.name || 'Anticeil',
-        assigneeId: currentUser?.id || 'current-user',
-        assigneeName: currentUserName,
-        assigneeAvatar: currentUser?.avatar || null,
-        priority: 'high',
-        dueDate: dayjs().format('YYYY-MM-DD'),
-        tags: ['Design', 'UI/UX'],
-        createdAt: dayjs().toISOString(),
-        completedAt: dayjs().toISOString(),
-      },
-      {
-        id: `card-2-${activeChannel.id}`,
-        title: 'Integrasikan Kanban Board dengan Kalender',
-        description: 'Pastikan deadline tugas yang diassign otomatis tampil di agenda meeting dan kalender.',
-        columnId: 'in_progress',
-        channelId: activeChannel.id,
-        channelName: activeChannel.name,
-        hubId: activeHub?.id || 'anticeil',
-        hubName: activeHub?.name || 'Anticeil',
-        assigneeId: currentUser?.id || 'current-user',
-        assigneeName: currentUserName,
-        assigneeAvatar: currentUser?.avatar || null,
-        priority: 'urgent',
-        dueDate: dayjs().add(2, 'day').format('YYYY-MM-DD'),
-        tags: ['Feature', 'Sync'],
-        createdAt: dayjs().toISOString(),
-      },
-      {
-        id: `card-3-${activeChannel.id}`,
-        title: 'Testing sinkronisasi video YouTube Watch Together',
-        description: 'Uji pemutaran video bersama, pause realtime, dan reconnect member.',
-        columnId: 'todo',
-        channelId: activeChannel.id,
-        channelName: activeChannel.name,
-        hubId: activeHub?.id || 'anticeil',
-        hubName: activeHub?.name || 'Anticeil',
-        assigneeId: displayMembers[0]?.id,
-        assigneeName: displayMembers[0]?.name || 'Member',
-        assigneeAvatar: displayMembers[0]?.avatar,
-        priority: 'medium',
-        dueDate: dayjs().add(4, 'day').format('YYYY-MM-DD'),
-        tags: ['QA', 'Testing'],
-        createdAt: dayjs().toISOString(),
-      },
-    ];
-  });
+  const [cards, setCards] = useState<KanbanCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -133,13 +70,43 @@ export function KanbanChannelView({
   const [cardDueDate, setCardDueDate] = useState(dayjs().add(3, 'day').format('YYYY-MM-DD'));
   const [cardTags, setCardTags] = useState('');
 
-  // Persist to localStorage & notify parent
-  useEffect(() => {
+  // Fetch real cards from PostgreSQL database via API
+  const fetchCards = useCallback(async () => {
+    setIsLoading(true);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(cards));
-      onCardsUpdate?.(cards);
-    } catch {}
-  }, [cards, storageKey]);
+      const data = await assignmentsApi.getAssignments(activeChannel.id, activeHub?.id);
+      if (Array.isArray(data)) {
+        const mapped: KanbanCard[] = data.map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          description: d.description || '',
+          columnId: d.columnId || 'todo',
+          channelId: d.channelId || activeChannel.id,
+          channelName: d.channelName || activeChannel.name,
+          hubId: d.hubId || activeHub?.id || 'anticeil',
+          hubName: d.hubName || activeHub?.name || 'Anticeil',
+          assigneeId: d.assigneeId || d.userId,
+          assigneeName: d.assigneeName || 'Member',
+          assigneeAvatar: d.assigneeAvatar || null,
+          priority: (d.priority || 'medium') as KanbanPriority,
+          dueDate: d.dueDate || undefined,
+          tags: Array.isArray(d.tags) ? d.tags : [],
+          createdAt: d.createdAt || new Date().toISOString(),
+          completedAt: d.completedAt || undefined,
+        }));
+        setCards(mapped);
+        onCardsUpdate?.(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to load kanban cards from backend', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeChannel.id, activeHub?.id, activeChannel.name, activeHub?.name, onCardsUpdate]);
+
+  useEffect(() => {
+    fetchCards();
+  }, [fetchCards]);
 
   const filteredCards = cards.filter((card) => {
     const matchesSearch =
@@ -150,32 +117,54 @@ export function KanbanChannelView({
     return matchesSearch && matchesPriority;
   });
 
-  const handleMoveCard = (cardId: string, direction: 'left' | 'right') => {
+  const handleMoveCard = async (cardId: string, direction: 'left' | 'right') => {
     const colOrder = ['todo', 'in_progress', 'review', 'done'];
-    setCards((prev) =>
-      prev.map((c) => {
-        if (c.id !== cardId) return c;
-        const currentIndex = colOrder.indexOf(c.columnId);
-        const nextIndex = direction === 'right' ? currentIndex + 1 : currentIndex - 1;
-        if (nextIndex < 0 || nextIndex >= colOrder.length) return c;
-        const newCol = colOrder[nextIndex];
-        return {
-          ...c,
-          columnId: newCol,
-          completedAt: newCol === 'done' ? dayjs().toISOString() : undefined,
-        };
-      })
+    const targetCard = cards.find((c) => c.id === cardId);
+    if (!targetCard) return;
+
+    const currentIndex = colOrder.indexOf(targetCard.columnId);
+    const nextIndex = direction === 'right' ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0 || nextIndex >= colOrder.length) return;
+    const newCol = colOrder[nextIndex];
+    const completedAt = newCol === 'done' ? dayjs().toISOString() : undefined;
+
+    // Optimistic UI update
+    const updated = cards.map((c) =>
+      c.id === cardId ? { ...c, columnId: newCol, completedAt } : c
     );
+    setCards(updated);
+    onCardsUpdate?.(updated);
+
+    try {
+      await assignmentsApi.updateAssignment(cardId, {
+        columnId: newCol,
+        completedAt: completedAt || null,
+      });
+    } catch {
+      toast.error('Gagal memperbarui status kartu di database.');
+      fetchCards(); // Rollback on error
+    }
   };
 
-  const handleDeleteCard = (cardId: string) => {
-    setCards((prev) => prev.filter((c) => c.id !== cardId));
-    toast.success('Kartu tugas berhasil dihapus');
+  const handleDeleteCard = async (cardId: string) => {
+    const previous = [...cards];
+    const updated = cards.filter((c) => c.id !== cardId);
+    setCards(updated);
+    onCardsUpdate?.(updated);
+
+    try {
+      await assignmentsApi.deleteAssignment(cardId);
+      toast.success('Kartu tugas berhasil dihapus dari database');
+    } catch {
+      toast.error('Gagal menghapus kartu dari database.');
+      setCards(previous);
+      onCardsUpdate?.(previous);
+    }
   };
 
-  const handleCreateCardSubmit = (e: React.FormEvent) => {
+  const handleCreateCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cardTitle.trim()) return;
+    if (!cardTitle.trim() || isSubmitting) return;
 
     const assignee = displayMembers.find((m) => m.id === cardAssigneeId) || {
       id: currentUser?.id || 'anon',
@@ -185,10 +174,9 @@ export function KanbanChannelView({
       avatar: currentUser?.avatar || null,
     };
 
-    const newCard: KanbanCard = {
-      id: `card-${Date.now()}`,
+    const payload = {
       title: cardTitle.trim(),
-      description: cardDesc.trim() || undefined,
+      description: cardDesc.trim() || '',
       columnId: targetColumnId,
       channelId: activeChannel.id,
       channelName: activeChannel.name,
@@ -196,23 +184,38 @@ export function KanbanChannelView({
       hubName: activeHub?.name || 'Komunitas',
       assigneeId: assignee.id,
       assigneeName: assignee.name,
-      assigneeAvatar: assignee.avatar,
+      assigneeAvatar: assignee.avatar || null,
       priority: cardPriority,
       dueDate: cardDueDate || undefined,
       tags: cardTags
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean),
-      createdAt: dayjs().toISOString(),
-      completedAt: targetColumnId === 'done' ? dayjs().toISOString() : undefined,
     };
 
-    setCards((prev) => [newCard, ...prev]);
-    setCardTitle('');
-    setCardDesc('');
-    setCardTags('');
-    setIsAddCardOpen(false);
-    toast.success('Kartu tugas baru berhasil ditambahkan');
+    setIsSubmitting(true);
+    try {
+      const created = await assignmentsApi.createAssignment(payload);
+      const newCard: KanbanCard = {
+        ...payload,
+        id: created.id || `card-${Date.now()}`,
+        createdAt: dayjs().toISOString(),
+        completedAt: targetColumnId === 'done' ? dayjs().toISOString() : undefined,
+      };
+      const updated = [newCard, ...cards];
+      setCards(updated);
+      onCardsUpdate?.(updated);
+
+      setCardTitle('');
+      setCardDesc('');
+      setCardTags('');
+      setIsAddCardOpen(false);
+      toast.success('Kartu tugas berhasil disimpan ke database! 🎉');
+    } catch (err) {
+      toast.error('Gagal menyimpan kartu ke database.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -301,8 +304,14 @@ export function KanbanChannelView({
 
       {/* ── Kanban Columns Board ──────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden p-4 sm:p-6 [scrollbar-width:thin]">
-        <div className="flex gap-4 h-full min-w-max items-start">
-          {DEFAULT_COLUMNS.map((col) => {
+        {isLoading ? (
+          <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-2">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+            <span className="text-xs font-medium">Memuat kartu tugas dari database...</span>
+          </div>
+        ) : (
+          <div className="flex gap-4 h-full min-w-max items-start">
+            {DEFAULT_COLUMNS.map((col) => {
             const columnCards = filteredCards.filter((c) => c.columnId === col.id);
 
             return (
@@ -462,7 +471,8 @@ export function KanbanChannelView({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ── Dialog Tambah Kartu Baru ──────────────────────────────── */}
