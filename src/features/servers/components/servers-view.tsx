@@ -259,11 +259,11 @@ export function ServersView({
               <span>{t('Jelajahi Server')}</span>
             </button>
 
-            {/* Yellow Highlight Button: Buat Server Baru */}
+            {/* Emerald Highlight Button: Buat Server Baru */}
             <Button
               size="xs"
               onClick={onOpenCreateServer}
-              className="px-2.5 py-1 text-xs font-bold transition-all bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-0.5"
+              className="px-2.5 py-1 text-xs font-bold transition-all bg-emerald-500 hover:bg-emerald-600 text-white shrink-0 flex items-center gap-1 ml-0.5 shadow-2xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">{t('Buat Server')}</span>
@@ -310,7 +310,7 @@ export function ServersView({
                   <Button
                     size="sm"
                     onClick={onOpenCreateServer}
-                    className="bg-amber-400 hover:bg-amber-300 text-black font-bold h-8 text-xs cursor-pointer"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-8 text-xs cursor-pointer shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" /> Buat Server
                   </Button>
@@ -518,7 +518,7 @@ export function ServersView({
                 <Button
                   size="sm"
                   onClick={onOpenCreateServer}
-                  className="mt-3.5 h-8 px-3 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-black cursor-pointer"
+                  className="mt-3.5 h-8 px-3 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer shadow-2xs"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
                   <span>{t('Buat Server Baru')}</span>
