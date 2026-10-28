@@ -336,12 +336,11 @@ export function ServersView({
 
                       <Button
                         size="sm"
-                        variant="secondary"
                         onClick={(e) => {
                           e.stopPropagation();
                           onSelectServer(srv.id);
                         }}
-                        className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                        className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shadow-xs transition-all"
                       >
                         <span>Buka Server</span>
                         <ArrowRight className="w-3 h-3" />

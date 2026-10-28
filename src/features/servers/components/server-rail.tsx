@@ -168,7 +168,7 @@ export function ServerRail({
                 onClick={isFriendsMode ? onOpenAddFriend : handleCreate}
                 className={cn(
                   'group relative size-10 rounded-[14px] bg-sidebar-accent flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
-                  'text-emerald-400 hover:bg-emerald-500 hover:text-white dark:hover:text-white'
+                  'text-amber-400 hover:bg-amber-400 hover:text-black dark:hover:text-black'
                 )}
               >
                 {isFriendsMode ? (

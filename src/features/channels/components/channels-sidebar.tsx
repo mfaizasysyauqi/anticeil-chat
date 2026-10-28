@@ -202,9 +202,9 @@ export function ChannelsSidebar({
                   onClick={() => {
                     serverIconQuickInputRef.current?.click();
                   }}
-                  className="cursor-pointer font-medium text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
+                  className="cursor-pointer font-medium text-primary focus:text-primary focus:bg-primary/10"
                 >
-                  <Camera className="w-4 h-4 mr-2 text-emerald-500" /> {t('Ubah Foto Server')}
+                  <Camera className="w-4 h-4 mr-2 text-primary" /> {t('Ubah Foto Server')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {/* Boost */}
