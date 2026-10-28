@@ -1012,6 +1012,16 @@ export function CommunityPage() {
     };
   }, [activeHubId]);
 
+  // Automatically connect to voice call when switching to or opening a voice channel
+  useEffect(() => {
+    if (activeChannel?.type === 'voice') {
+      if (activeCallChannelId !== activeChannel.id) {
+        setActiveCallChannelId(activeChannel.id);
+        setIsCallPiP(false);
+      }
+    }
+  }, [activeChannel?.id, activeChannel?.type]);
+
   const isFriendsView = isHome && !activeChannel && homeView === 'friends';
   const isMessageRequestsView = isHome && !activeChannel && homeView === 'message-requests';
   const isNotificationsView = isHome && !activeChannel && homeView === 'notifications';
@@ -1256,31 +1266,37 @@ export function CommunityPage() {
     setSelectedActivityAppId(appId);
     setIsTemplatePopoverOpen(false);
 
-    // If joining from chat invite, find the exact channel where the activity/call was launched
-    let destChannel = activeChannel;
-    if (fromChatInvite) {
-      if (targetChannelId) {
-        const found = channels.find((c) => c.id === targetChannelId);
-        if (found) destChannel = found;
-      }
-      // If still not a voice channel, check if there's an active voice channel in the hub
-      if (destChannel?.type !== 'voice') {
-        const activeVoice = hubChannels.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
-        if (activeVoice) destChannel = activeVoice;
-      }
-    } else if (activeChannel?.type !== 'voice') {
-      // If launching from text channel, prefer existing active voice channel if one is in call
-      const activeVoice = hubChannels.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
-      if (activeVoice) destChannel = activeVoice;
+    const originatingTextChannel = activeChannel && activeChannel.type !== 'voice' ? activeChannel : null;
+
+    // Activities (Watch Together, games) require a voice call stage to run.
+    // Always resolve target to a voice channel:
+    let voiceDest = targetChannelId ? channels.find((c) => c.id === targetChannelId && c.type === 'voice') : null;
+    if (!voiceDest && activeCallChannelId) {
+      voiceDest = channels.find((c) => c.id === activeCallChannelId && c.type === 'voice');
+    }
+    if (!voiceDest && activeChannel?.type === 'voice') {
+      voiceDest = activeChannel;
+    }
+    if (!voiceDest) {
+      voiceDest = hubChannels.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
+    }
+    if (!voiceDest) {
+      voiceDest = hubChannels.find((c) => c.type === 'voice');
+    }
+    if (!voiceDest) {
+      voiceDest = channels.find((c) => c.type === 'voice');
     }
 
-    if (destChannel) {
-      setActiveChannelId(destChannel.id);
-      setActiveCallChannelId(destChannel.id);
+    if (voiceDest) {
+      if (voiceDest.hubId && voiceDest.hubId !== activeHubId) {
+        setActiveHubId(voiceDest.hubId);
+      }
+      setActiveChannelId(voiceDest.id);
+      setActiveCallChannelId(voiceDest.id);
       setIsCallPiP(false);
       setIsActivityOpen(true);
       socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-        channelId: destChannel.id,
+        channelId: voiceDest.id,
         action: 'START_ACTIVITY',
         payload: { appId },
       });
@@ -1299,7 +1315,7 @@ export function CommunityPage() {
 
       // If launched from a text channel (not clicking Play from an existing message),
       // create and post the Discord-like Activity Invitation message in the text channel!
-      if (!fromChatInvite && activeChannel && activeChannel.type !== 'voice') {
+      if (!fromChatInvite && originatingTextChannel) {
         const currentUserId = currentUser?.id || 'anon-user';
         const currentUserName =
           `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
@@ -1312,7 +1328,7 @@ export function CommunityPage() {
         else if (activeHub?.role === 'admin') myRole = 'admin';
 
         const payload: Partial<CommunityMessage> = {
-          channelId: activeChannel.id,
+          channelId: originatingTextChannel.id,
           senderId: currentUserId,
           senderName: currentUserName,
           senderEmail: currentUser?.email || 'user@anticeil.com',
@@ -1334,19 +1350,19 @@ export function CommunityPage() {
                 bannerGradient: app.bannerGradient,
                 startedBy: currentUserName,
                 startedByAvatar: currentUser?.imageUrl ?? null,
-                channelId: destChannel.id,
-                channelName: destChannel.name,
+                channelId: voiceDest.id,
+                channelName: voiceDest.name,
               },
             },
           ],
         };
 
         try {
-          const saved = await communityApi.sendMessage(activeChannel.id, payload);
+          const saved = await communityApi.sendMessage(originatingTextChannel.id, payload);
           setMessagesMap((prev) => {
-            const list = prev[activeChannel.id] || [];
+            const list = prev[originatingTextChannel.id] || [];
             if (list.some((m) => m.id === saved.id)) return prev;
-            return { ...prev, [activeChannel.id]: [...list, saved] };
+            return { ...prev, [originatingTextChannel.id]: [...list, saved] };
           });
         } catch (err) {
           console.error('Failed to send activity invite message', err);
@@ -2151,6 +2167,18 @@ export function CommunityPage() {
       try {
         localStorage.setItem('anticeil_rail_mode', next);
       } catch {}
+      if (next === 'friends') {
+        setActiveHubId('anticeil');
+        setActiveChannelId('');
+        setHomeView('friends');
+      } else {
+        const firstServer = hubs.find((h) => h.id !== 'anticeil') || hubs[0];
+        if (firstServer) {
+          setActiveHubId(firstServer.id);
+          const firstCh = channels.find((c) => (c.hubId || 'anticeil') === firstServer.id && c.category === 'CHANNELS');
+          setActiveChannelId(firstCh?.id || '');
+        }
+      }
       toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Server'));
       return next;
     });
@@ -2330,8 +2358,27 @@ export function CommunityPage() {
   );
 
   const handleStartDirectMessage = (member: any) => {
+    if (!member) return;
+    const dmId = `dm-${member.id}`;
+    const dmName = member.name || member.username || member.firstName || 'Direct Message';
+    setChannels((prev) => {
+      const exists = prev.some((c) => c.id === dmId);
+      if (exists) return prev;
+      const newDm: CommunityChannel = {
+        id: dmId,
+        name: dmName,
+        description: `Percakapan langsung dengan ${dmName}`,
+        category: 'DIRECT MESSAGES',
+        hubId: 'anticeil',
+        isDirectMessage: true,
+        dmUserId: member.id,
+        type: 'text',
+      };
+      return [newDm, ...prev];
+    });
     setActiveHubId('anticeil');
-    setActiveChannelId(`dm-${member.id}`);
+    setActiveChannelId(dmId);
+    setHomeView('friends');
   };
 
   // Component: Discord-Style Friends Main Page (delegates to reusable FriendsView feature component)
