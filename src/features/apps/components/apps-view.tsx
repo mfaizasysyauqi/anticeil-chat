@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
 import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/discord-activities';
 import type { CommunityChannel } from '@/chat/chat-types';
@@ -61,14 +62,18 @@ export function AppsView({
       {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
       <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
         <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] min-w-0">
-          <button
-            type="button"
-            onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
-            title="Buka Menu Sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {onOpenSidebar && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={onOpenSidebar}
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              title="Buka Menu Sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
 
           <div className="flex items-center gap-2 shrink-0">
             <Rocket className="w-5 h-5 text-muted-foreground" />
@@ -78,7 +83,7 @@ export function AppsView({
           <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
           {/* Category Tabs */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none]">
             {[
               { id: 'all', label: 'Semua' },
               { id: 'entertainment', label: 'Hiburan & Co-Watch' },
@@ -106,15 +111,12 @@ export function AppsView({
 
         {/* Search Input */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="relative w-36 sm:w-48">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari aktivitas..."
-              className="h-7 pl-7 text-xs bg-muted/40 border-sidebar-border"
-            />
-          </div>
+          <ResponsiveSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Cari aktivitas..."
+            inputWidth="w-32 sm:w-44 md:w-48"
+          />
         </div>
       </div>
 

@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { Plus, Copy, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { communityApi } from '@/chat/chat-api';
 import type { CommunityHub, CommunityInvite } from '@/chat/chat-types';
@@ -67,29 +74,37 @@ export function InvitesTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-[11px] text-muted-foreground mb-1 block">{t('Masa Berlaku')}</label>
-              <select
+              <Select
                 value={newInviteExpiry}
-                onChange={(e) => setNewInviteExpiry(e.target.value as any)}
-                className="w-full text-xs rounded-md border bg-background px-3 py-2"
+                onValueChange={(val: any) => setNewInviteExpiry(val)}
               >
-                <option value="1d">{t('24 Jam')}</option>
-                <option value="7d">{t('7 Hari')}</option>
-                <option value="30d">{t('30 Hari')}</option>
-                <option value="never">{t('Tanpa Batas Waktu')}</option>
-              </select>
+                <SelectTrigger className="w-full text-xs h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1d">{t('24 Jam')}</SelectItem>
+                  <SelectItem value="7d">{t('7 Hari')}</SelectItem>
+                  <SelectItem value="30d">{t('30 Hari')}</SelectItem>
+                  <SelectItem value="never">{t('Tanpa Batas Waktu')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-[11px] text-muted-foreground mb-1 block">{t('Maksimal Penggunaan')}</label>
-              <select
-                value={newInviteMaxUses}
-                onChange={(e) => setNewInviteMaxUses(Number(e.target.value))}
-                className="w-full text-xs rounded-md border bg-background px-3 py-2"
+              <Select
+                value={String(newInviteMaxUses)}
+                onValueChange={(val) => setNewInviteMaxUses(Number(val))}
               >
-                <option value={0}>{t('Tanpa Batas Penggunaan')}</option>
-                <option value={1}>1 {t('Penggunaan')}</option>
-                <option value={5}>5 {t('Penggunaan')}</option>
-                <option value={25}>25 {t('Penggunaan')}</option>
-              </select>
+                <SelectTrigger className="w-full text-xs h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">{t('Tanpa Batas Penggunaan')}</SelectItem>
+                  <SelectItem value="1">1 {t('Penggunaan')}</SelectItem>
+                  <SelectItem value="5">5 {t('Penggunaan')}</SelectItem>
+                  <SelectItem value="25">25 {t('Penggunaan')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

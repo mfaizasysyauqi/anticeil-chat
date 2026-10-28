@@ -11,6 +11,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -67,15 +68,17 @@ export function NotificationsView({
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
           {/* Mobile burger menu */}
           {onOpenSidebar && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
               title={t('Buka Menu Sidebar')}
               aria-label={t('Buka Menu Sidebar')}
             >
               <Menu className="w-5 h-5" />
-            </button>
+            </Button>
           )}
 
           <div className="flex items-center gap-2 shrink-0">
@@ -86,11 +89,11 @@ export function NotificationsView({
           <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto [scrollbar-width:none]">
             <button
               onClick={() => setActiveTab('all')}
               className={cn(
-                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'all'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -105,7 +108,7 @@ export function NotificationsView({
             <button
               onClick={() => setActiveTab('mentions')}
               className={cn(
-                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'mentions'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -120,7 +123,7 @@ export function NotificationsView({
             <button
               onClick={() => setActiveTab('unread')}
               className={cn(
-                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'unread'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -138,14 +141,16 @@ export function NotificationsView({
 
         {/* Right Action: Mark All as Read */}
         {unreadCount > 0 && (
-          <button
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={onMarkAllAsRead}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer shrink-0"
+            className="h-7 text-xs font-medium text-muted-foreground hover:text-foreground gap-1.5 shrink-0"
             title={t('Tandai Semua Sudah Dibaca')}
           >
             <CheckCheck className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{t('Tandai Semua Dibaca')}</span>
-          </button>
+          </Button>
         )}
       </div>
 

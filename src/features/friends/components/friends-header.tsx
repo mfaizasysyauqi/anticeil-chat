@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, MessageSquare, Menu, Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -38,15 +39,17 @@ export function FriendsHeader({
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
         {/* Burger Menu Button (Visible on Mobile: md:hidden) */}
         {onOpenSidebar && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
+            className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
             title={t('Buka Menu Sidebar')}
             aria-label={t('Buka Menu Sidebar')}
           >
             <Menu className="w-5 h-5" />
-          </button>
+          </Button>
         )}
 
         <div className="flex items-center gap-2 shrink-0">
@@ -57,11 +60,11 @@ export function FriendsHeader({
         <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
         {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none]">
           <button
             onClick={() => onTabChange('online')}
             className={cn(
-              'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+              'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
               friendsTab === 'online'
                 ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -76,7 +79,7 @@ export function FriendsHeader({
           <button
             onClick={() => onTabChange('all')}
             className={cn(
-              'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+              'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
               friendsTab === 'all'
                 ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -91,7 +94,7 @@ export function FriendsHeader({
           <button
             onClick={() => onTabChange('pending')}
             className={cn(
-              'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+              'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
               friendsTab === 'pending'
                 ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -105,28 +108,32 @@ export function FriendsHeader({
             )}
           </button>
 
-          {/* Yellow Highlight Button: Tambah Teman (100% Matches 'Buat Server' Style) */}
-          <button
+          {/* Yellow Highlight Button: Tambah Teman */}
+          <Button
+            size="xs"
             onClick={onOpenAddFriendDialog}
-            className="px-2.5 py-1 rounded-[4px] text-xs font-bold transition-all cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-1"
+            className="px-2.5 py-1 text-xs font-bold transition-all bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-0.5"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{t('Tambah Teman')}</span>
-          </button>
+            <span className="hidden sm:inline">{t('Tambah Teman')}</span>
+            <span className="sm:hidden">{t('Teman')}</span>
+          </Button>
         </div>
       </div>
 
       {/* Right Top Header Actions */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* Start new DM */}
         <Tooltip delayDuration={150}>
           <TooltipTrigger asChild>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={onOpenDmSearch}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-[#1e1f22] transition-colors cursor-pointer"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
             {t('Mulai DM Baru')}

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import {
   Tooltip,
   TooltipTrigger,
@@ -190,16 +191,12 @@ export function ChannelTopHeaderBar({
         </Tooltip>
 
         {/* 5. Search Box */}
-        <div className="relative w-36 sm:w-40 transition-all duration-200 focus-within:w-56">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={activeChannel?.name ? `Search ${activeChannel.name}` : 'Search'}
-            className="h-6 w-full pl-2.5 pr-7 text-xs bg-muted/60 border border-border rounded-[4px] text-foreground placeholder:text-muted-foreground focus:outline-none transition-all"
-          />
-          <Search className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-        </div>
+        <ResponsiveSearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={activeChannel?.name ? `Search ${activeChannel.name}` : 'Search'}
+          inputWidth="w-32 sm:w-40 md:w-48 transition-all duration-200 focus-within:w-56"
+        />
       </div>
     </div>
   );

@@ -18,6 +18,14 @@ import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { AssignmentItem, AssignmentTab } from '../types';
@@ -100,14 +108,18 @@ export function AssignmentsView({
       {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
       <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
         <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] min-w-0">
-          <button
-            type="button"
-            onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
-            title="Buka Menu Sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {onOpenSidebar && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={onOpenSidebar}
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              title="Buka Menu Sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
 
           <div className="flex items-center gap-2 shrink-0">
             <Backpack className="w-5 h-5 text-muted-foreground" />
@@ -117,7 +129,7 @@ export function AssignmentsView({
           <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
           {/* Tab Pills */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none]">
             {[
               { id: 'assigned_to_me', label: 'Perlu Dikerjakan', count: totalActive },
               { id: 'upcoming', label: 'Mendatang' },
@@ -158,29 +170,33 @@ export function AssignmentsView({
         </div>
 
         {/* Search & Hub Filter */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative w-36 sm:w-48">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari tugas..."
-              className="h-7 pl-7 text-xs bg-muted/40 border-sidebar-border"
-            />
-          </div>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <ResponsiveSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Cari tugas..."
+            inputWidth="w-32 sm:w-40 md:w-48"
+          />
 
-          <select
+          <Select
             value={selectedHubFilter}
-            onChange={(e) => setSelectedHubFilter(e.target.value)}
-            className="h-7 rounded-md border border-sidebar-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary hidden md:block"
+            onValueChange={setSelectedHubFilter}
           >
-            <option value="all">Semua Server</option>
-            {hubs.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              size="xs"
+              className="h-7 w-24 sm:w-32 md:w-36 text-xs bg-muted/40 border-sidebar-border"
+            >
+              <SelectValue placeholder="Semua Server" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="all">Semua Server</SelectItem>
+              {hubs.map((h) => (
+                <SelectItem key={h.id} value={h.id}>
+                  {h.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

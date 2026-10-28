@@ -20,6 +20,13 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import {
@@ -444,17 +451,21 @@ export function ChannelSettingsDialog({
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t('Slowmode')}
                   </label>
-                  <select
-                    value={slowmode}
-                    onChange={(e) => setSlowmode(Number(e.target.value))}
-                    className="w-full bg-muted/40 border border-border rounded-lg px-3 py-2.5 text-xs text-foreground focus:outline-none focus:border-primary transition-colors cursor-pointer"
+                  <Select
+                    value={String(slowmode)}
+                    onValueChange={(val) => setSlowmode(Number(val))}
                   >
-                    {SLOWMODE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value} className="bg-background text-foreground">
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full bg-muted/40 border border-border rounded-lg px-3 py-2 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SLOWMODE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={String(opt.value)}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <p className="text-[11px] text-muted-foreground leading-normal">
                     {t('Members will be restricted to sending one message and creating one thread per this interval, unless they have the Bypass Slowmode permission.')}
                   </p>

@@ -11,12 +11,28 @@ import {
   Menu,
   Users,
   Compass,
+  Filter,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
@@ -149,25 +165,27 @@ export function CalendarView({
       {/* ── Top Header Bar: Discord Style (100% Match to Teman & Permintaan Pesan) ── */}
       <div
         className={cn(
-          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10',
+          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2',
           horizontalPadding
         )}
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-x-auto [scrollbar-width:none]">
           {/* Mobile burger menu */}
           {onOpenSidebar && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
               title="Buka Menu Sidebar"
               aria-label="Buka Menu Sidebar"
             >
               <Menu className="w-5 h-5" />
-            </button>
+            </Button>
           )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <CalendarIcon className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">Kalender</span>
           </div>
@@ -203,67 +221,125 @@ export function CalendarView({
               )}
             </button>
 
-            {/* Yellow Highlight Button: Jadwalkan Meeting (Matches 'Tambah Teman' Style) */}
-            <button
+            {/* Yellow Highlight Button: Jadwalkan Meeting */}
+            <Button
+              size="xs"
               onClick={() => setIsScheduleOpen(true)}
-              className="px-2.5 py-1 rounded-[4px] text-xs font-bold transition-all cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-1"
+              className="px-2.5 py-1 text-xs font-bold transition-all bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-0.5"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Jadwalkan Meeting</span>
-            </button>
+              <span className="hidden sm:inline">Jadwalkan Meeting</span>
+              <span className="sm:hidden">Meeting</span>
+            </Button>
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0 hidden sm:block" />
-
-          {/* Month switcher navigation */}
-          <div className="hidden sm:flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-xs font-bold text-foreground px-1">
-              {currentDate.format('MMM YYYY')}
-            </span>
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={handleToday}
-              className="text-[11px] font-semibold text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted cursor-pointer ml-0.5"
-            >
-              Hari Ini
-            </button>
-          </div>
+          {viewMode === 'month' && (
+            <>
+              <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+              {/* Month switcher navigation */}
+              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={handlePrevMonth}
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  title="Bulan Sebelumnya"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+                <span className="text-xs font-bold text-foreground px-1 whitespace-nowrap">
+                  {currentDate.format('MMM YYYY')}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={handleNextMonth}
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  title="Bulan Berikutnya"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={handleToday}
+                  className="hidden sm:inline-flex text-[11px] font-semibold text-muted-foreground hover:text-foreground px-1.5 py-0.5 h-6 rounded hover:bg-muted ml-0.5"
+                >
+                  Hari Ini
+                </Button>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Right side filter pills (All, Meeting, Task) */}
-        <div className="hidden lg:flex items-center gap-1 shrink-0">
-          {[
-            { id: 'all', label: 'Semua' },
-            { id: 'meeting', label: 'Meeting' },
-            { id: 'task', label: 'Tugas' },
-          ].map((pill) => (
-            <button
-              key={pill.id}
-              onClick={() => setFilterType(pill.id as any)}
-              className={cn(
-                'px-2 py-0.5 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer',
-                filterType === pill.id
-                  ? 'bg-muted text-foreground font-bold'
-                  : 'text-muted-foreground/80 hover:text-foreground'
-              )}
-            >
-              {pill.label}
-            </button>
-          ))}
+        {/* Right side filter: Desktop pills & Mobile/Tablet dropdown */}
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Desktop Pills */}
+          <div className="hidden lg:flex items-center gap-1">
+            {[
+              { id: 'all', label: 'Semua' },
+              { id: 'meeting', label: 'Meeting' },
+              { id: 'task', label: 'Tugas' },
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => setFilterType(pill.id as any)}
+                className={cn(
+                  'px-2 py-0.5 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer',
+                  filterType === pill.id
+                    ? 'bg-muted text-foreground font-bold'
+                    : 'text-muted-foreground/80 hover:text-foreground'
+                )}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile & Tablet Dropdown (Ensures filters never disappear!) */}
+          <div className="flex lg:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  className="h-7 px-2 text-xs font-semibold gap-1 bg-muted/40 border-sidebar-border hover:bg-muted text-foreground"
+                >
+                  <Filter className="w-3 h-3 text-muted-foreground" />
+                  <span>
+                    {filterType === 'all'
+                      ? 'Semua'
+                      : filterType === 'meeting'
+                      ? 'Meeting'
+                      : 'Tugas'}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                {[
+                  { id: 'all', label: 'Semua' },
+                  { id: 'meeting', label: 'Meeting' },
+                  { id: 'task', label: 'Tugas' },
+                ].map((pill) => (
+                  <DropdownMenuItem
+                    key={pill.id}
+                    onClick={() => setFilterType(pill.id as any)}
+                    className={cn(
+                      'flex items-center justify-between text-xs',
+                      filterType === pill.id && 'font-bold text-primary bg-primary/10'
+                    )}
+                  >
+                    <span>{pill.label}</span>
+                    {filterType === pill.id && <Check className="w-3.5 h-3.5 text-primary stroke-[2.5]" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -643,37 +719,50 @@ export function CalendarView({
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
                     Pilih Server / Komunitas
                   </label>
-                  <select
+                  <Select
                     value={selectedHubId}
-                    onChange={(e) => {
-                      setSelectedHubId(e.target.value);
+                    onValueChange={(val) => {
+                      setSelectedHubId(val);
                       setSelectedChannelId('');
                     }}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
-                    {hubs.map((h) => (
-                      <option key={h.id} value={h.id}>
-                        {h.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full h-9 text-xs">
+                      <SelectValue placeholder="Pilih Server..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hubs.map((h) => (
+                        <SelectItem key={h.id} value={h.id}>
+                          {h.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
                     Saluran Suara (Voice)
                   </label>
-                  <select
+                  <Select
                     value={selectedChannelId}
-                    onChange={(e) => setSelectedChannelId(e.target.value)}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    onValueChange={(val) => setSelectedChannelId(val)}
                   >
-                    <option value="">Pilih Saluran...</option>
-                    {voiceChannels.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        🔊 {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full h-9 text-xs">
+                      <SelectValue placeholder="Pilih Saluran..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voiceChannels.length === 0 ? (
+                        <SelectItem value="_empty" disabled>
+                          Tidak ada saluran suara
+                        </SelectItem>
+                      ) : (
+                        voiceChannels.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            🔊 {c.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

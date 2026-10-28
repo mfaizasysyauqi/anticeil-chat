@@ -21,6 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -191,15 +192,17 @@ export function ServersView({
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
           {/* Mobile burger menu */}
           {onOpenSidebar && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
               title={t('Buka Menu Sidebar')}
               aria-label={t('Buka Menu Sidebar')}
             >
               <Menu className="w-5 h-5" />
-            </button>
+            </Button>
           )}
 
           <div className="flex items-center gap-2 shrink-0">
@@ -210,11 +213,11 @@ export function ServersView({
           <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
           {/* Tab Filter Pills: Server Saya & Jelajahi */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none]">
             <button
               onClick={() => setActiveTab('joined')}
               className={cn(
-                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'joined'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -229,7 +232,7 @@ export function ServersView({
             <button
               onClick={() => setActiveTab('pending')}
               className={cn(
-                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'pending'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -246,7 +249,7 @@ export function ServersView({
             <button
               onClick={() => setActiveTab('explore')}
               className={cn(
-                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'explore'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -256,35 +259,33 @@ export function ServersView({
               <span>{t('Jelajahi Server')}</span>
             </button>
 
-            {/* Yellow Highlight Button: Buat Server Baru (Matches 'Tambah Teman' Style) */}
-            <button
+            {/* Yellow Highlight Button: Buat Server Baru */}
+            <Button
+              size="xs"
               onClick={onOpenCreateServer}
-              className="px-2.5 py-1 rounded-[4px] text-xs font-bold transition-all cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-1"
+              className="px-2.5 py-1 text-xs font-bold transition-all bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-0.5"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{t('Buat Server')}</span>
-            </button>
+              <span className="hidden sm:inline">{t('Buat Server')}</span>
+              <span className="sm:hidden">{t('Server')}</span>
+            </Button>
           </div>
         </div>
 
-        {/* Right side: Search Box */}
-        <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <div className="relative w-44 lg:w-56">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                activeTab === 'joined'
-                  ? 'Cari server saya...'
-                  : activeTab === 'pending'
-                  ? 'Cari undangan...'
-                  : 'Cari komunitas...'
-              }
-              className="w-full h-7 pl-8 pr-2 text-xs bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
+        {/* Right side: Responsive Search Bar (Accessible on mobile too!) */}
+        <div className="flex items-center gap-2 shrink-0">
+          <ResponsiveSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={
+              activeTab === 'joined'
+                ? 'Cari server saya...'
+                : activeTab === 'pending'
+                ? 'Cari undangan...'
+                : 'Cari komunitas...'
+            }
+            inputWidth="w-36 sm:w-44 md:w-56"
+          />
         </div>
       </div>
 

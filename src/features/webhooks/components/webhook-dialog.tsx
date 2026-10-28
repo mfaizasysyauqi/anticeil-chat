@@ -20,6 +20,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { communityApi } from '@/chat/chat-api';
@@ -143,17 +150,21 @@ export function WebhookDialog({
                     <Hash className="w-3.5 h-3.5" />
                     {t('Pilih Saluran Target Webhook')}
                   </label>
-                  <select
+                  <Select
                     value={channelId}
-                    onChange={(e) => onSelectChannel?.(e.target.value)}
-                    className="w-full text-xs rounded-md border border-input bg-background px-3 py-1.5 font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                    onValueChange={(val) => onSelectChannel?.(val)}
                   >
-                    {hubChannels.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        #{c.name} {c.description ? `— ${c.description}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full text-xs h-8">
+                      <SelectValue placeholder={t('Pilih Saluran')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hubChannels.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          #{c.name} {c.description ? `— ${c.description}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 

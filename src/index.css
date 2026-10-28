@@ -17,8 +17,8 @@ body,
 .dark {
   --background: #000000;
   --foreground: #dbdee1;
-  --popover: #0b0b0e;
-  --popover-foreground: #dbdee1;
+  --popover: #18191c;
+  --popover-foreground: #f4f4f5;
   --card: #0b0b0e;
   --card-foreground: #f2f3f5;
   --muted: #111214;

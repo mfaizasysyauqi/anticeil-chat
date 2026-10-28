@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, ShieldAlert, Check, X, Menu, ShieldCheck } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -40,15 +41,17 @@ export function MessageRequestsView({
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
           {/* Mobile burger menu */}
           {onOpenSidebar && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
               title={t('Buka Menu Sidebar')}
               aria-label={t('Buka Menu Sidebar')}
             >
               <Menu className="w-5 h-5" />
-            </button>
+            </Button>
           )}
 
           <div className="flex items-center gap-2 shrink-0">
@@ -59,11 +62,11 @@ export function MessageRequestsView({
           <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
           {/* Tab Filter Pills: Requests & Spam */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto [scrollbar-width:none]">
             <button
               onClick={() => setActiveTab('requests')}
               className={cn(
-                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'requests'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -78,7 +81,7 @@ export function MessageRequestsView({
             <button
               onClick={() => setActiveTab('spam')}
               className={cn(
-                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'spam'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
