@@ -1,5 +1,5 @@
 import React from 'react';
-import { Hash, Volume2, MessagesSquare } from 'lucide-react';
+import { Hash, Volume2, MessagesSquare, Columns3 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -52,12 +52,12 @@ export function EditChannelDialog({
           <div className="grid gap-4 py-4">
             <div className="grid gap-1.5">
               <label className="text-xs font-semibold">{t('Tipe Channel')}</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <button
                   type="button"
                   onClick={() => setEditChannelType('text')}
                   className={cn(
-                    'flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                    'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
                     editChannelType === 'text'
                       ? 'bg-primary/10 border-primary text-primary font-semibold'
                       : 'border-border/60 text-muted-foreground hover:bg-muted/50'
@@ -70,7 +70,7 @@ export function EditChannelDialog({
                   type="button"
                   onClick={() => setEditChannelType('voice')}
                   className={cn(
-                    'flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                    'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
                     editChannelType === 'voice'
                       ? 'bg-primary/10 border-primary text-primary font-semibold'
                       : 'border-border/60 text-muted-foreground hover:bg-muted/50'
@@ -83,7 +83,7 @@ export function EditChannelDialog({
                   type="button"
                   onClick={() => setEditChannelType('forum')}
                   className={cn(
-                    'flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                    'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
                     editChannelType === 'forum'
                       ? 'bg-primary/10 border-primary text-primary font-semibold'
                       : 'border-border/60 text-muted-foreground hover:bg-muted/50'
@@ -91,6 +91,19 @@ export function EditChannelDialog({
                 >
                   <MessagesSquare className="w-4 h-4" />
                   <span>Forum</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditChannelType('kanban')}
+                  className={cn(
+                    'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                    editChannelType === 'kanban'
+                      ? 'bg-primary/10 border-primary text-primary font-semibold'
+                      : 'border-border/60 text-muted-foreground hover:bg-muted/50'
+                  )}
+                >
+                  <Columns3 className="w-4 h-4" />
+                  <span>Kanban</span>
                 </button>
               </div>
             </div>

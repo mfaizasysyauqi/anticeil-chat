@@ -35,6 +35,25 @@ export type CommunityChannel = {
   contentVisibility?: 'default' | 'spoiler' | 'nsfw';
 };
 
+export function resolveChannelType(channel?: Partial<CommunityChannel> | null): CommunityChannelType {
+  if (!channel) return 'text';
+  const rawType = (channel.type || '').toLowerCase();
+  if (rawType === 'voice' || rawType === 'forum' || rawType === 'kanban') {
+    return rawType;
+  }
+  const identifier = ((channel.name || '') + ' ' + (channel.id || '')).toLowerCase();
+  if (identifier.includes('voice') || identifier.includes('suara')) {
+    return 'voice';
+  }
+  if (identifier.includes('forum') || identifier.includes('diskusi') || identifier.includes('thread')) {
+    return 'forum';
+  }
+  if (identifier.includes('kanban') || identifier.includes('board') || identifier.includes('tugas')) {
+    return 'kanban';
+  }
+  return 'text';
+}
+
 export type CommunityAttachment = {
   type: 'image' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
   url: string;

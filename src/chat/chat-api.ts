@@ -30,6 +30,7 @@ import {
   CommunityRole,
   CommunityChannelNotification,
   CommunityThread,
+  resolveChannelType,
 } from './chat-types';
 import { DiscordEmoji, DiscordSticker } from './anticeil-media-data';
 
@@ -41,17 +42,24 @@ export const chatApi = {
         params: hubId ? { hubId } : undefined,
       });
       if (Array.isArray(res)) {
+        const normalized = res.map((c) => ({
+          ...c,
+          type: resolveChannelType(c),
+        }));
         const stored = loadStoredChannels();
         if (hubId) {
           const others = stored.filter((c) => (c.hubId || 'anticeil') !== hubId);
-          saveStoredChannels([...others, ...res]);
+          saveStoredChannels([...others, ...normalized]);
         } else {
-          saveStoredChannels(res);
+          saveStoredChannels(normalized);
         }
-        return res;
+        return normalized;
       }
     } catch {}
-    const stored = loadStoredChannels();
+    const stored = loadStoredChannels().map((c) => ({
+      ...c,
+      type: resolveChannelType(c),
+    }));
     return hubId ? stored.filter((c) => (c.hubId || 'anticeil') === hubId) : stored;
   },
 

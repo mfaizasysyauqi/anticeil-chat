@@ -30,10 +30,11 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type {
-  CommunityHub,
-  CommunityChannel,
-  CommunityChannelType,
+import {
+  type CommunityHub,
+  type CommunityChannel,
+  type CommunityChannelType,
+  resolveChannelType,
 } from '@/chat/chat-types';
 import type { ServerSettingsSection } from '@/features/server-settings';
 
@@ -88,10 +89,13 @@ export function ServerChannelsSidebar({
 }: ServerChannelsSidebarProps) {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
 
-  const hubChannels = channels.filter(
-    (c) => (c.hubId || 'anticeil') === (activeHub?.id || 'anticeil') && !c.isDirectMessage,
-  );
-  const textChannels = hubChannels.filter((c) => !c.type || c.type === 'text');
+  const hubChannels = channels
+    .filter((c) => (c.hubId || 'anticeil') === (activeHub?.id || 'anticeil') && !c.isDirectMessage)
+    .map((c) => ({
+      ...c,
+      type: resolveChannelType(c),
+    }));
+  const textChannels = hubChannels.filter((c) => c.type === 'text');
   const voiceChannels = hubChannels.filter((c) => c.type === 'voice');
   const forumChannels = hubChannels.filter((c) => c.type === 'forum');
   const kanbanChannels = hubChannels.filter((c) => c.type === 'kanban');

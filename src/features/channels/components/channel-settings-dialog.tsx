@@ -22,7 +22,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import type { CommunityChannel } from '@/chat/chat-types';
+import {
+  type CommunityChannel,
+  type CommunityChannelType,
+  resolveChannelType,
+} from '@/chat/chat-types';
 import { toast } from 'sonner';
 
 interface ChannelSettingsDialogProps {
@@ -66,6 +70,7 @@ export function ChannelSettingsDialog({
 
   // Form State
   const [name, setName] = useState('');
+  const [channelType, setChannelType] = useState<CommunityChannelType>('text');
   const [topic, setTopic] = useState('');
   const [slowmode, setSlowmode] = useState(0);
   const [contentVisibility, setContentVisibility] = useState<'default' | 'spoiler' | 'nsfw'>('default');
@@ -76,6 +81,7 @@ export function ChannelSettingsDialog({
   useEffect(() => {
     if (channel) {
       setName(channel.name || '');
+      setChannelType(resolveChannelType(channel));
       setTopic(channel.description || '');
       setSlowmode(channel.slowmode || 0);
       setContentVisibility(channel.contentVisibility || 'default');
@@ -96,14 +102,17 @@ export function ChannelSettingsDialog({
 
   if (!isOpen || !channel) return null;
 
+  const currentType = resolveChannelType(channel);
   const hasChanges =
     name !== (channel.name || '') ||
+    channelType !== currentType ||
     topic !== (channel.description || '') ||
     slowmode !== (channel.slowmode || 0) ||
     contentVisibility !== (channel.contentVisibility || 'default');
 
   const handleReset = () => {
     setName(channel.name || '');
+    setChannelType(resolveChannelType(channel));
     setTopic(channel.description || '');
     setSlowmode(channel.slowmode || 0);
     setContentVisibility(channel.contentVisibility || 'default');
@@ -117,8 +126,9 @@ export function ChannelSettingsDialog({
     setIsSubmitting(true);
     try {
       await onUpdateChannel(channel.id, {
-        name: name.trim().toLowerCase().replace(/\s+/g, '-'),
+        name: channelType === 'voice' ? name.trim() : name.trim().toLowerCase().replace(/\s+/g, '-'),
         description: topic.trim(),
+        type: channelType,
         slowmode,
         contentVisibility,
       });
@@ -317,6 +327,40 @@ export function ChannelSettingsDialog({
                     >
                       <Smile className="w-4 h-4" />
                     </button>
+                  </div>
+                </div>
+
+                {/* 1.5 Channel Type Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    {t('Tipe Channel')}
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { type: 'text' as const, label: 'Text', icon: Hash },
+                      { type: 'voice' as const, label: 'Voice', icon: Volume2 },
+                      { type: 'forum' as const, label: 'Forum', icon: MessagesSquare },
+                      { type: 'kanban' as const, label: 'Kanban', icon: Columns3 },
+                    ].map((item) => {
+                      const isSelected = channelType === item.type;
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.type}
+                          type="button"
+                          onClick={() => setChannelType(item.type)}
+                          className={cn(
+                            'flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer select-none',
+                            isSelected
+                              ? 'bg-primary/10 border-primary text-primary font-bold ring-1 ring-primary/40'
+                              : 'bg-muted/30 border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
