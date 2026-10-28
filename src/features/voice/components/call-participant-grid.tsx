@@ -56,7 +56,7 @@ export function CallParticipantGrid({
     return (
       <div className={cn('flex-1 min-h-0 flex flex-col overflow-hidden w-full h-full bg-background py-3 gap-3', CHANNEL_HORIZONTAL_PADDING)}>
         {/* Main Hero Screen View */}
-        <div className="flex-1 min-h-0 relative rounded-2xl overflow-hidden bg-black/95 border border-border shadow-2xl flex items-center justify-center">
+        <div className="flex-1 min-h-0 relative rounded-2xl overflow-hidden bg-black/95 border border-border shadow-2xl flex items-center justify-center group">
           {activeScreenStream ? (
             <ScreenVideoView stream={activeScreenStream} className="w-full h-full" />
           ) : (
@@ -66,32 +66,39 @@ export function CallParticipantGrid({
             </div>
           )}
 
-          {/* Top Badge Overlay */}
-          <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg bg-black/75 backdrop-blur-md flex items-center gap-2 border border-white/10 z-10 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <Monitor className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold text-white tracking-wide">
-              {isScreenSharing
-                ? 'Layar Anda (Live)'
-                : `Layar ${screenSharePeer?.userName || 'Rekan'} (Live)`}
-            </span>
+          {/* Top Badge Overlay - Hidden by default, visible on video hover, expands on badge hover */}
+          <div className="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+            <div className="group/badge flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 hover:bg-black/95 text-white border border-white/15 backdrop-blur-md shadow-xl transition-all duration-200 cursor-default">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+              <Monitor className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover/badge:max-w-[200px] group-hover/badge:opacity-100 transition-all duration-300 text-xs font-bold text-white tracking-wide">
+                {isScreenSharing
+                  ? 'Layar Anda (Live)'
+                  : `Layar ${screenSharePeer?.userName || 'Rekan'} (Live)`}
+              </span>
+            </div>
           </div>
 
-          {/* Top Right Stop Button if Local Sharing */}
+          {/* Top Right Stop Button if Local Sharing - Hidden by default, visible on video hover, expands on button hover */}
           {isScreenSharing && (
-            <button
-              type="button"
-              onClick={handleToggleScreenShare}
-              className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-red-600/90 hover:bg-red-600 text-white text-xs font-semibold flex items-center gap-1.5 backdrop-blur-md shadow-lg transition-all cursor-pointer z-10"
-            >
-              <MonitorOff className="w-4 h-4" />
-              <span>Hentikan Berbagi</span>
-            </button>
+            <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+              <button
+                type="button"
+                onClick={handleToggleScreenShare}
+                className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-600/90 hover:bg-red-600 text-white border border-white/20 backdrop-blur-md shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                title="Hentikan Berbagi"
+              >
+                <MonitorOff className="w-4 h-4 shrink-0" />
+                <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover/btn:max-w-[140px] group-hover/btn:opacity-100 transition-all duration-300 text-xs font-semibold">
+                  Hentikan Berbagi
+                </span>
+              </button>
+            </div>
           )}
         </div>
 
         {/* Bottom Participant Filmstrip */}
-        <div className="h-24 sm:h-28 shrink-0 flex items-center gap-2.5 overflow-x-auto px-1 py-1 no-scrollbar">
+        <div className="h-24 sm:h-28 shrink-0 flex items-center justify-center gap-2.5 overflow-x-auto px-1 py-1 no-scrollbar">
           {/* Local Participant Tile */}
           <div className="w-32 sm:w-40 h-full rounded-xl bg-card border border-border relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
             {!isVideoOff && localStream && localStream.getVideoTracks().some((t) => t.readyState === 'live' && t.enabled) ? (
