@@ -48,6 +48,7 @@ export function YouTubeWatchTogether({
 }: YouTubeWatchTogetherProps) {
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [ytSearchQuery, setYtSearchQuery] = useState('');
+  const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
   const [ytCategory, setYtCategory] = useState<string>('semua');
   const [isExpandedVideo, setIsExpandedVideo] = useState(false);
   const [isExpandedPlaylistOpen, setIsExpandedPlaylistOpen] = useState(false);
@@ -125,7 +126,6 @@ export function YouTubeWatchTogether({
 
   const [ytIsSearching, setYtIsSearching] = useState(false);
   const [ytSearchError, setYtSearchError] = useState<string | null>(null);
-  const ytSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ytCacheRef = useRef<
     Map<
       string,
@@ -741,18 +741,17 @@ export function YouTubeWatchTogether({
     };
   }, [socket, channel.id, currentUser?.id]);
 
-  // YouTube API Search / Category fetch
+  // YouTube API Search / Category fetch (only executes when submittedSearchQuery or ytCategory changes)
   useEffect(() => {
-    if (ytSearchDebounce.current) clearTimeout(ytSearchDebounce.current);
-
     const catObj = ytCategories.find((c) => c.id === ytCategory);
-    const rawQ = ytSearchQuery.trim();
+    const rawQ = submittedSearchQuery.trim();
 
     if (rawQ.includes('youtube.com') || rawQ.includes('youtu.be')) return;
     if (rawQ.length === 1) return;
 
     const cacheKey = rawQ ? `search:${rawQ.toLowerCase()}` : `cat:${ytCategory}`;
 
+    // 1. Caching: Return cached results without consuming API quota
     if (ytCacheRef.current.has(cacheKey)) {
       setYtVideos(ytCacheRef.current.get(cacheKey)!);
       setYtIsSearching(false);
@@ -760,7 +759,9 @@ export function YouTubeWatchTogether({
       return;
     }
 
-    ytSearchDebounce.current = setTimeout(async () => {
+    let isCancelled = false;
+
+    const fetchVideos = async () => {
       setYtIsSearching(true);
       setYtSearchError(null);
       try {
@@ -870,20 +871,28 @@ export function YouTubeWatchTogether({
           }));
         }
 
-        ytCacheRef.current.set(cacheKey, items);
-        setYtVideos(items);
+        if (!isCancelled) {
+          ytCacheRef.current.set(cacheKey, items);
+          setYtVideos(items);
+        }
       } catch (e: any) {
-        setYtSearchError(e.message ?? 'Gagal memuat video YouTube');
-        setYtVideos([]);
+        if (!isCancelled) {
+          setYtSearchError(e.message ?? 'Gagal memuat video YouTube');
+          setYtVideos([]);
+        }
       } finally {
-        setYtIsSearching(false);
+        if (!isCancelled) {
+          setYtIsSearching(false);
+        }
       }
-    }, rawQ ? 500 : 0);
+    };
+
+    fetchVideos();
 
     return () => {
-      if (ytSearchDebounce.current) clearTimeout(ytSearchDebounce.current);
+      isCancelled = true;
     };
-  }, [ytSearchQuery, ytCategory]);
+  }, [submittedSearchQuery, ytCategory]);
 
   const handleSelectVideo = (video: {
     id: string;
@@ -1004,7 +1013,37 @@ export function YouTubeWatchTogether({
       };
       handleSelectVideo(newVideo);
       setYtSearchQuery('');
+      setSubmittedSearchQuery('');
     }
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const raw = ytSearchQuery.trim();
+    if (!raw) {
+      setSubmittedSearchQuery('');
+      return;
+    }
+
+    // Direct YouTube URL or 11-char video ID detection
+    const match = raw.match(
+      /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    );
+    const videoId = match
+      ? match[1]
+      : raw.length === 11 && !raw.includes(' ')
+        ? raw
+        : null;
+
+    if (videoId) {
+      handlePlayYouTubeUrl(raw);
+      setYtSearchQuery('');
+      setSubmittedSearchQuery('');
+      return;
+    }
+
+    // Keyword search: trigger on-submit
+    setSubmittedSearchQuery(raw);
   };
 
   const handleTransferHost = (participant: any) => {
@@ -1697,21 +1736,49 @@ export function YouTubeWatchTogether({
           >
             {/* Sticky Search Header Bar */}
             <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-1 pb-3 border-b border-border/50 flex flex-col gap-2.5 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
-              <div className="relative w-full shrink-0">
+              <form onSubmit={handleSearchSubmit} className="relative w-full shrink-0 flex items-center">
                 <input
                   type="text"
                   value={ytSearchQuery}
                   onChange={(e) => setYtSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handlePlayYouTubeUrl(ytSearchQuery);
+                  onPaste={(e) => {
+                    const pasted = e.clipboardData.getData('text');
+                    const match = pasted.match(
+                      /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+                    );
+                    if (match) {
+                      e.preventDefault();
+                      handlePlayYouTubeUrl(pasted);
+                      setYtSearchQuery('');
+                      setSubmittedSearchQuery('');
                     }
                   }}
-                  placeholder="Search or paste YouTube URL"
-                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-11 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                  placeholder="Ketik lalu tekan Enter / Paste URL YouTube..."
+                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-20 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                 />
-                <Search className="w-4 h-4 text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {ytSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setYtSearchQuery('');
+                        if (submittedSearchQuery) setSubmittedSearchQuery('');
+                      }}
+                      className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      title="Hapus pencarian"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="p-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors cursor-pointer active:scale-95"
+                    title="Cari (Enter)"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </form>
 
               {/* Category Badges */}
               <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] shrink-0">
@@ -1722,10 +1789,11 @@ export function YouTubeWatchTogether({
                     onClick={() => {
                       setYtCategory(cat.id);
                       setYtSearchQuery('');
+                      setSubmittedSearchQuery('');
                     }}
                     className={cn(
                       'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
-                      ytCategory === cat.id && !ytSearchQuery
+                      ytCategory === cat.id && !submittedSearchQuery
                         ? 'bg-primary text-primary-foreground shadow-xs'
                         : 'bg-card border border-border text-foreground/80 hover:text-foreground hover:bg-muted',
                     )}
@@ -1739,7 +1807,7 @@ export function YouTubeWatchTogether({
             {/* Section Title */}
             <div className="flex items-center gap-2 text-foreground font-bold text-sm shrink-0">
               <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-              <span>{ytSearchQuery ? `Hasil Pencarian: "${ytSearchQuery}"` : 'Trending Videos'}</span>
+              <span>{submittedSearchQuery ? `Hasil Pencarian: "${submittedSearchQuery}"` : 'Trending Videos'}</span>
             </div>
 
             {ytIsSearching && (
