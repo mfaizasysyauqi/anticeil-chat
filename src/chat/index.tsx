@@ -22,13 +22,10 @@ import { useResponsive, LAYOUT_SIZES } from '@/core';
 import { parseJwt } from '@/lib/utils';
 import {
   ServerRail,
-  ServerInviteDialog,
-  CreateOrJoinServerDialog,
-  EditServerDialog,
-  DeleteServerDialog,
+  ServersView,
   useServerModals,
 } from '@/features/servers';
-import { UserBottomDock, EditProfileDialog } from '@/features/profile';
+import { UserBottomDock } from '@/features/profile';
 import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
 import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
@@ -36,14 +33,8 @@ import { CalendarView, type CalendarEvent, useCalendarEvents } from '@/features/
 import { AssignmentsView, type AssignmentItem, useAssignments } from '@/features/assignments';
 import { CallsView, type CallLogItem, useCallLogs } from '@/features/calls';
 import { AppsView } from '@/features/apps';
-import { ServersView } from '@/features/servers';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
 import {
-  ChannelSettingsDialog,
-  CreateChannelDialog,
-  EditChannelDialog,
-  DeleteChannelDialog,
-  DmSearchDialog,
   ChannelTopHeaderBar,
   ForumChannelView,
   ChannelsSidebar,
@@ -51,14 +42,10 @@ import {
   useChannelModals,
 } from '@/features/channels';
 import { ServerMembersSidebar } from '@/features/members';
-import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
-import { WebhookDialog } from '@/features/webhooks';
-import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
-import { SendGiftDialog } from '@/features/gifts';
+import type { ServerSettingsSection } from '@/features/server-settings';
 import { ChatInputBar, processFileInput } from '@/features/chat-input';
-import { MessagesFeed, renderFormattedMessage, useCommunitySocket } from '@/features/chat';
-import { QuickAddEmojiDialog, QuickAddStickerDialog, useMediaModals } from '@/features/media';
-import { AuthRequiredDialog } from '@/features/auth';
+import { MessagesFeed, renderFormattedMessage, useCommunitySocket, CommunityDialogsPortal } from '@/features/chat';
+import { useMediaModals } from '@/features/media';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -543,6 +530,19 @@ export function CommunityPage() {
   const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
 
   // Server Modals & Actions (Feature-First Hook)
+  const serverModals = useServerModals({
+    hubs,
+    setHubs,
+    channels,
+    setChannels,
+    activeHub,
+    setActiveHubId,
+    setActiveChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+    setMembers,
+    t,
+  });
   const {
     isCreateHubOpen,
     setIsCreateHubOpen,
@@ -579,21 +579,17 @@ export function CommunityPage() {
     setIsServerSettingsOpen,
     serverSettingsSection,
     setServerSettingsSection,
-  } = useServerModals({
-    hubs,
-    setHubs,
-    channels,
-    setChannels,
-    activeHub,
-    setActiveHubId,
-    setActiveChannelId,
-    setActiveCallChannelId,
-    setIsCallPiP,
-    setMembers,
-    t,
-  });
+  } = serverModals;
 
   // Channel Modals & Actions (Feature-First Hook)
+  const channelModals = useChannelModals({
+    activeHubId,
+    channels,
+    setChannels,
+    activeChannelId,
+    setActiveChannelId,
+    t,
+  });
   const {
     isCreateChannelOpen,
     setIsCreateChannelOpen,
@@ -627,16 +623,12 @@ export function CommunityPage() {
     handleUpdateChannelSettings,
     isWebhookDialogOpen,
     setIsWebhookDialogOpen,
-  } = useChannelModals({
-    activeHubId,
-    channels,
-    setChannels,
-    activeChannelId,
-    setActiveChannelId,
-    t,
-  });
+  } = channelModals;
 
   // Media Modals & Quick Add (Feature-First Hook)
+  const mediaModals = useMediaModals({
+    activeHub,
+  });
   const {
     isMediaPickerOpen,
     setIsMediaPickerOpen,
@@ -666,9 +658,7 @@ export function CommunityPage() {
     setQuickStickerUrl,
     handleQuickAddSticker,
     isSubmittingServerMedia,
-  } = useMediaModals({
-    activeHub,
-  });
+  } = mediaModals;
 
   // Discord Send a Gift Modal - matching Screenshot 4
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
@@ -2371,68 +2361,18 @@ export function CommunityPage() {
           </div>
         )}
 
-        {/* Send Gift Dialog (Feature-First Component) */}
-        <SendGiftDialog
-          open={isGiftModalOpen}
-          onOpenChange={setIsGiftModalOpen}
-          onSendGift={handleSendGift}
-        />
-
-        {/* Quick Add Server Emoji Dialog (Feature-First Component) */}
-        <QuickAddEmojiDialog
-          open={isQuickAddEmojiOpen}
-          onOpenChange={setIsQuickAddEmojiOpen}
+        {/* Community Dialogs & Modals Portal */}
+        <CommunityDialogsPortal
+          serverModals={serverModals}
+          channelModals={channelModals}
+          mediaModals={mediaModals}
           activeHub={activeHub}
-          quickEmojiName={quickEmojiName}
-          setQuickEmojiName={setQuickEmojiName}
-          quickEmojiCode={quickEmojiCode}
-          setQuickEmojiCode={setQuickEmojiCode}
-          quickEmojiUrl={quickEmojiUrl}
-          setQuickEmojiUrl={setQuickEmojiUrl}
-          isSubmittingServerMedia={isSubmittingServerMedia}
-          onQuickAddEmoji={handleQuickAddEmoji}
-        />
-
-        {/* Quick Add Server Sticker Dialog (Feature-First Component) */}
-        <QuickAddStickerDialog
-          open={isQuickAddStickerOpen}
-          onOpenChange={setIsQuickAddStickerOpen}
-          activeHub={activeHub}
-          quickStickerName={quickStickerName}
-          setQuickStickerName={setQuickStickerName}
-          quickStickerUrl={quickStickerUrl}
-          setQuickStickerUrl={setQuickStickerUrl}
-          isSubmittingServerMedia={isSubmittingServerMedia}
-          onQuickAddSticker={handleQuickAddSticker}
-        />
-
-        {/* Create or Join Server Dialog (Feature-First Component) */}
-        <CreateOrJoinServerDialog
-          open={isCreateHubOpen}
-          onOpenChange={setIsCreateHubOpen}
-          newServerName={newHubName}
-          setNewServerName={setNewHubName}
-          newServerDesc={newHubDesc}
-          setNewServerDesc={setNewHubDesc}
-          newServerIconUrl={newHubIconUrl}
-          setNewServerIconUrl={setNewHubIconUrl}
-          joinInviteCode={joinInviteCode}
-          setJoinInviteCode={setJoinInviteCode}
-          isJoiningServer={isJoiningHub}
-          onCreateServerSubmit={handleCreateHubSubmit}
-          onJoinServer={handleJoinHub}
-          t={t}
-        />
-
-        {/* ===== SERVER SETTINGS MODAL (Feature-First Component) ===== */}
-        <ServerSettingsDialog
-          isOpen={isServerSettingsOpen}
-          initialSection={serverSettingsSection}
-          onClose={() => setIsServerSettingsOpen(false)}
-          activeHub={activeHub}
+          activeChannel={activeChannel}
           currentUser={currentUser}
           members={members}
+          setMembers={setMembers}
           channels={channels}
+          hubChannels={hubChannels}
           onUpdateHub={async (hubId, updates) => {
             if (!activeHub) return;
             const updated = { ...activeHub, ...updates };
@@ -2445,230 +2385,51 @@ export function CommunityPage() {
               await communityApi.updateHub(hubId, updates);
             } catch {}
           }}
-          onDeleteHub={(hub) => setHubToDelete(hub)}
-          onOpenWebhooks={() => setIsWebhookDialogOpen(true)}
-          onUpdateMembers={setMembers}
-        />
-
-        {/* Edit Server Dialog (Feature-First Component) */}
-        <EditServerDialog
-          serverToEdit={hubToEdit}
-          onClose={() => setHubToEdit(null)}
-          editServerName={editHubName}
-          setEditServerName={setEditHubName}
-          editServerDesc={editHubDesc}
-          setEditServerDesc={setEditHubDesc}
-          onEditServerSubmit={handleEditHubSubmit}
-          t={t}
-        />
-
-        {/* Delete Server Dialog (Feature-First Component) */}
-        <DeleteServerDialog
-          serverToDelete={hubToDelete}
-          onClose={() => setHubToDelete(null)}
-          onDeleteConfirm={handleDeleteHubConfirm}
-          t={t}
-        />
-
-        {/* ===== WEBHOOK INTEGRATION DIALOG (Feature-First Component) ===== */}
-        <WebhookDialog
-          isOpen={isWebhookDialogOpen}
-          onClose={() => setIsWebhookDialogOpen(false)}
-          activeChannel={activeChannel}
-          hubChannels={hubChannels}
-          activeHub={activeHub}
-          onSelectChannel={(chId) => setActiveChannelId(chId)}
-          onCreateChannel={() => setIsCreateChannelOpen(true)}
-        />
-
-        {/* Create Channel Dialog (Feature-First Component) */}
-        <CreateChannelDialog
-          open={isCreateChannelOpen}
-          onOpenChange={setIsCreateChannelOpen}
-          activeHub={activeHub}
-          newChannelCategory={newChannelCategory}
-          newChannelType={newChannelType}
-          setNewChannelType={setNewChannelType}
-          newChannelName={newChannelName}
-          setNewChannelName={setNewChannelName}
-          newChannelIsPrivate={newChannelIsPrivate}
-          setNewChannelIsPrivate={setNewChannelIsPrivate}
-          onCreateChannelSubmit={handleCreateChannelSubmit}
-          t={t}
-        />
-
-        {/* Edit Channel Dialog (Feature-First Component) */}
-        <EditChannelDialog
-          channelToEdit={channelToEdit}
-          onClose={() => setChannelToEdit(null)}
-          editChannelType={editChannelType}
-          setEditChannelType={setEditChannelType}
-          editChannelName={editChannelName}
-          setEditChannelName={setEditChannelName}
-          editChannelDesc={editChannelDesc}
-          setEditChannelDesc={setEditChannelDesc}
-          onEditChannelSubmit={handleEditChannelSubmit}
-          t={t}
-        />
-
-        {/* Delete Channel Dialog (Feature-First Component) */}
-        <DeleteChannelDialog
-          channelToDelete={channelToDelete}
-          onClose={() => setChannelToDelete(null)}
-          onDeleteConfirm={handleDeleteChannelConfirm}
-          t={t}
-        />
-
-        {/* DM Search Dialog (Feature-First Component) */}
-        <DmSearchDialog
-          open={isDmSearchOpen}
-          onOpenChange={setIsDmSearchOpen}
+          isDmSearchOpen={isDmSearchOpen}
+          setIsDmSearchOpen={setIsDmSearchOpen}
           dmSearchQuery={dmSearchQuery}
           setDmSearchQuery={setDmSearchQuery}
           dmChannels={dmChannels}
-          members={members}
-          currentUser={currentUser}
-          onSelectDmChannel={(channelId) => {
-            setActiveHubId('anticeil');
-            setActiveChannelId(channelId);
-          }}
-          onStartDM={handleStartDM}
+          setActiveHubId={setActiveHubId}
+          setActiveChannelId={setActiveChannelId}
+          handleStartDM={handleStartDM}
+          isGiftModalOpen={isGiftModalOpen}
+          setIsGiftModalOpen={setIsGiftModalOpen}
+          handleSendGift={handleSendGift}
+          isEditProfileOpen={isEditProfileOpen}
+          setIsEditProfileOpen={setIsEditProfileOpen}
+          currentUserName={currentUserName}
+          updateNameMutation={updateNameMutation}
+          updateUsernameMutation={updateUsernameMutation}
+          theme={theme}
+          setTheme={setTheme}
+          handleGoogleSignIn={handleGoogleSignIn}
+          handleLogout={handleLogout}
+          isCreateThreadModalOpen={isCreateThreadModalOpen}
+          setIsCreateThreadModalOpen={setIsCreateThreadModalOpen}
+          handleCreateThread={handleCreateThread}
+          isThreadDrawerOpen={isThreadDrawerOpen}
+          setIsThreadDrawerOpen={setIsThreadDrawerOpen}
+          activeThread={activeThread}
+          threadMessages={threadMessages}
+          handleSendThreadMessage={handleSendThreadMessage}
+          renderFormattedMessage={renderFormattedMessage}
+          activeCallChannelId={activeCallChannelId}
+          setActiveCallChannelId={setActiveCallChannelId}
+          isCallPiP={isCallPiP}
+          setIsCallPiP={setIsCallPiP}
+          isPlusOrAbove={isPlusOrAbove}
+          socket={socket}
+          selectedActivityAppId={selectedActivityAppId}
+          setIsActivityOpen={setIsActivityOpen}
+          navigate={navigate}
+          isAuthRequiredOpen={isAuthRequiredOpen}
+          setIsAuthRequiredOpen={setIsAuthRequiredOpen}
+          authFeatureInfo={authFeatureInfo}
           t={t}
         />
       </div>
     </TooltipProvider>
-        {/* Server Invite Dialog (Feature-First Component) */}
-        <ServerInviteDialog
-          open={isInviteOpen}
-          onOpenChange={setIsInviteOpen}
-          activeServer={activeHub}
-          onInviteUsername={async (username) => {
-            const currentHubId = activeHub?.id;
-            if (!currentHubId) return false;
-            try {
-              const res = await communityApi.inviteMemberByUsername(currentHubId, username);
-              if (res.found && res.user) {
-                if (res.alreadyMember) {
-                  toast.info(t(`@${res.user.username || username} sudah menjadi anggota server ini.`));
-                } else {
-                  toast.success(t(`Berhasil menambahkan @${res.user.username || username} ke server! 🎉`));
-                  setMembers((prev) => {
-                    if (prev.some((m) => m.id === res.user!.id)) return prev;
-                    return [...prev, res.user!];
-                  });
-                }
-                return true;
-              }
-              return false;
-            } catch (err) {
-              toast.error(t('Gagal mengundang pengguna. Silakan coba lagi.'));
-              return false;
-            }
-          }}
-          t={t}
-        />
-
-        {/* Edit Profile & Identity Dialog (Feature-First Component) */}
-        <EditProfileDialog
-          open={isEditProfileOpen}
-          onOpenChange={setIsEditProfileOpen}
-          currentUser={currentUser}
-          currentUserName={currentUserName}
-          onSaveDisplayName={async (name) => {
-            try {
-              await updateNameMutation.mutateAsync({ firstName: name, lastName: '' });
-              toast.success(t('Nama tampilan berhasil disimpan! 🎉'));
-            } catch {
-              toast.error(t('Gagal menyimpan nama tampilan.'));
-            }
-          }}
-          isSavingDisplayName={updateNameMutation.isPending}
-          onSaveUsername={async (username) => {
-            try {
-              await updateUsernameMutation.mutateAsync({ username });
-              toast.success(t('Username berhasil diperbarui! 🎉'));
-            } catch (err: any) {
-              toast.error(err?.response?.data?.message || t('Gagal menyimpan username.'));
-            }
-          }}
-          isSavingUsername={updateUsernameMutation.isPending}
-          theme={theme}
-          setTheme={setTheme}
-          onGoogleSignIn={handleGoogleSignIn}
-          onLogout={handleLogout}
-          t={t}
-        />
-
-        {/* ===== CREATE THREAD MODAL (Feature-First Component) ===== */}
-        <CreateThreadModal
-          isOpen={isCreateThreadModalOpen}
-          onClose={() => setIsCreateThreadModalOpen(false)}
-          channelName={activeChannel?.name}
-          onCreateThread={handleCreateThread}
-        />
-
-        {/* ===== THREAD DRAWER (Feature-First Component) ===== */}
-        <ThreadDrawer
-          isOpen={isThreadDrawerOpen}
-          onClose={() => setIsThreadDrawerOpen(false)}
-          activeThread={activeThread}
-          threadMessages={threadMessages}
-          onSendMessage={handleSendThreadMessage}
-          renderFormattedMessage={renderFormattedMessage}
-        />
-
-        {/* Discord-style Channel Settings Dialog (Screenshot 5) */}
-        <ChannelSettingsDialog
-          channel={channelForSettings}
-          isOpen={!!channelForSettings}
-          onClose={() => setChannelForSettings(null)}
-          onUpdateChannel={handleUpdateChannelSettings}
-          onDeleteChannel={(ch) => {
-            setChannelForSettings(null);
-            handleOpenDeleteChannel(ch, { stopPropagation: () => {} } as any);
-          }}
-          onOpenWebhooks={(chId) => {
-            setActiveChannelId(chId);
-            setIsWebhookDialogOpen(true);
-          }}
-        />
-
-        {/* Floating PiP Call Stage */}
-        {activeCallChannelId && isCallPiP && (() => {
-          const pipChannel = channels.find((c) => c.id === activeCallChannelId);
-          if (!pipChannel) return null;
-          return (
-            <CommunityCallStage
-              channel={pipChannel}
-              activeHub={activeHub}
-              currentUser={currentUser}
-              isPlusOrAbove={isPlusOrAbove}
-              socket={socket}
-              isCallActive={true}
-              isPiP={true}
-              initialAppId={selectedActivityAppId}
-              onToggleActivity={(open) => setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))}
-              onTogglePiP={() => {
-                setActiveChannelId(activeCallChannelId);
-                setIsCallPiP(false);
-              }}
-              onEndCall={() => {
-                setActiveCallChannelId(null);
-                setIsActivityOpen(false);
-              }}
-              onNavigateToBilling={() => navigate('/platform/billing')}
-            />
-          );
-        })()}
-
-        {/* Global Auth Required Prompt Dialog */}
-        <AuthRequiredDialog
-          isOpen={isAuthRequiredOpen}
-          onClose={() => setIsAuthRequiredOpen(false)}
-          onGoogleSignIn={handleGoogleSignIn}
-          featureTitle={authFeatureInfo.title}
-          featureDescription={authFeatureInfo.desc}
-        />
     </LockedFeatureGuard>
   );
 }

@@ -8,5 +8,7 @@ export * from './components/channel-notification-dropdown';
 export * from './components/channel-top-header-bar';
 export * from './components/forum-channel-view';
 export * from './components/channels-sidebar';
+export * from './components/home-channels-sidebar';
+export * from './components/server-channels-sidebar';
 export * from './hooks/use-resizable-sidebar';
 export * from './hooks/use-channel-modals';
