@@ -375,9 +375,19 @@ export function CommunityPage() {
   // Discord Voice & Video Call State (Anticeil Call & Activity)
   const [activeCallChannelId, setActiveCallChannelId] = useState<string | null>(null);
   const [isCallPiP, setIsCallPiP] = useState(false);
-  const [isActivityOpen, setIsActivityOpen] = useState(false);
+  const [isActivityOpen, setIsActivityOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return Boolean(new URLSearchParams(window.location.search).get('activity'));
+    }
+    return false;
+  });
   const [activeCallCounts, setActiveCallCounts] = useState<Record<string, number>>({});
-  const [selectedActivityAppId, setSelectedActivityAppId] = useState<string | null>(null);
+  const [selectedActivityAppId, setSelectedActivityAppId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('activity') || null;
+    }
+    return null;
+  });
   const [appsSearchQuery, setAppsSearchQuery] = useState('');
 
   // Auto-sync active voice channel activity across peers
@@ -517,11 +527,21 @@ export function CommunityPage() {
         changed = true;
       }
 
+      if (selectedActivityAppId) {
+        if (url.searchParams.get('activity') !== selectedActivityAppId) {
+          url.searchParams.set('activity', selectedActivityAppId);
+          changed = true;
+        }
+      } else if (url.searchParams.has('activity')) {
+        url.searchParams.delete('activity');
+        changed = true;
+      }
+
       if (changed) {
         window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
       }
     } catch {}
-  }, [activeHubId, activeChannelId]);
+  }, [activeHubId, activeChannelId, selectedActivityAppId]);
 
   const [inputText, setInputText] = useState('');
   const [stagedAttachment, setStagedAttachment] = useState<CommunityAttachment | null>(null);
@@ -540,6 +560,8 @@ export function CommunityPage() {
     setActiveChannelId,
     setActiveCallChannelId,
     setIsCallPiP,
+    setSelectedActivityAppId,
+    setIsActivityOpen,
     setMembers,
     t,
   });
@@ -771,6 +793,11 @@ export function CommunityPage() {
           if (Array.isArray(channelsRes)) {
             setChannels(channelsRes);
             const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
+            const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
+            if (targetActivityParam) {
+              setSelectedActivityAppId(targetActivityParam);
+              setIsActivityOpen(true);
+            }
             if (targetChannelParam) {
               const matchedChannel = channelsRes.find((c) => c.id === targetChannelParam);
               if (matchedChannel) {
@@ -814,6 +841,11 @@ export function CommunityPage() {
     // Check if user came from an invite link: /messages?invite=xyz
     const params = new URLSearchParams(window.location.search);
     const inviteParam = params.get('invite');
+    const activityParam = params.get('activity');
+    if (activityParam) {
+      setSelectedActivityAppId(activityParam);
+      setIsActivityOpen(true);
+    }
     if (inviteParam) {
       handleJoinHub(inviteParam);
     }
@@ -964,6 +996,11 @@ export function CommunityPage() {
             return [...others, ...res];
           });
           const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
+          const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
+          if (targetActivityParam) {
+            setSelectedActivityAppId(targetActivityParam);
+            setIsActivityOpen(true);
+          }
           const matchedTarget = res.find((c) => c.id === targetChannelParam);
           if (matchedTarget) {
             setActiveChannelId(matchedTarget.id);
@@ -2242,6 +2279,7 @@ export function CommunityPage() {
                 isPiP={false}
                 initialAppId={selectedActivityAppId}
                 onToggleActivity={(open) => setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))}
+                onActivityChange={(appId) => setSelectedActivityAppId(appId)}
                 onTogglePiP={() => setIsCallPiP(true)}
                 onEndCall={() => {
                   setActiveCallChannelId(null);
@@ -2421,6 +2459,7 @@ export function CommunityPage() {
           isPlusOrAbove={isPlusOrAbove}
           socket={socket}
           selectedActivityAppId={selectedActivityAppId}
+          setSelectedActivityAppId={setSelectedActivityAppId}
           setIsActivityOpen={setIsActivityOpen}
           navigate={navigate}
           isAuthRequiredOpen={isAuthRequiredOpen}

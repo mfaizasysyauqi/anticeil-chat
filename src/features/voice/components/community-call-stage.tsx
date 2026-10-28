@@ -51,6 +51,7 @@ export interface CommunityCallStageProps {
   isPiP: boolean;
   initialAppId?: string | null;
   onToggleActivity?: (open?: boolean) => void;
+  onActivityChange?: (appId: string | null) => void;
   onTogglePiP: () => void;
   onEndCall: () => void;
   onNavigateToBilling?: () => void;
@@ -74,6 +75,7 @@ export function CommunityCallStage({
   isPiP,
   initialAppId,
   onToggleActivity,
+  onActivityChange,
   onTogglePiP,
   onEndCall,
   onNavigateToBilling,
@@ -98,9 +100,6 @@ export function CommunityCallStage({
 
   const hubId = activeHub?.id || channel.hubId || 'anticeil';
   const inviteCode = activeHub?.inviteCode || activeHub?.id || channel.hubId || '';
-  const callInviteUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/messages?hub=${encodeURIComponent(hubId)}&channel=${encodeURIComponent(channel.id)}&invite=${encodeURIComponent(inviteCode)}`
-    : '';
 
   // Upgrade modal state for Free Plan 2-person limit
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -112,11 +111,20 @@ export function CommunityCallStage({
   activeAppIdRef.current = activeAppId;
   const [isFilmstripCollapsed, setIsFilmstripCollapsed] = useState(false);
 
+  // Dynamically generate invite URL, embedding the active activity so joiners launch it instantly
+  const callInviteUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    const base = `${window.location.origin}/messages?hub=${encodeURIComponent(hubId)}&channel=${encodeURIComponent(channel.id)}&invite=${encodeURIComponent(inviteCode)}`;
+    return activeAppId ? `${base}&activity=${encodeURIComponent(activeAppId)}` : base;
+  }, [hubId, channel.id, inviteCode, activeAppId]);
+
   useEffect(() => {
     if (initialAppId) {
       setActiveAppId(initialAppId);
+      onToggleActivity?.(true);
+      onActivityChange?.(initialAppId);
     }
-  }, [initialAppId]);
+  }, [initialAppId, onToggleActivity, onActivityChange]);
 
   // Screen Sharing computed states
   const screenSharePeer = participants.find((p) => p.isScreenSharing);
@@ -127,6 +135,7 @@ export function CommunityCallStage({
     setActiveAppId(appId);
     setIsAppLauncherOpen(false);
     onToggleActivity?.(true);
+    onActivityChange?.(appId);
 
     const app = DISCORD_APPS.find((a) => a.id === appId);
     socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
@@ -140,6 +149,7 @@ export function CommunityCallStage({
   const handleStopActivity = () => {
     setActiveAppId(null);
     onToggleActivity?.(false);
+    onActivityChange?.(null);
     socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
       channelId: channel.id,
       action: 'ACTIVITY_STOP',
@@ -645,7 +655,11 @@ export function CommunityCallStage({
     if (callInviteUrl) {
       navigator.clipboard.writeText(callInviteUrl);
       setCopiedVoiceCallLink(true);
-      toast.success('Link panggilan berhasil disalin! Siap dibagikan ke teman.');
+      toast.success(
+        activeAppId
+          ? `Link panggilan & aktivitas ${currentActiveApp?.title || ''} disalin!`
+          : 'Link panggilan berhasil disalin!'
+      );
       setTimeout(() => setCopiedVoiceCallLink(false), 2500);
     }
   };
@@ -798,11 +812,13 @@ export function CommunityCallStage({
           setActiveAppId(appId);
           setIsAppLauncherOpen(false);
           onToggleActivity?.(true);
+          onActivityChange?.(appId);
           toast.info(`${appName || appId} aktif di panggung panggilan! 🚀`);
         }
       } else if (data.action === 'ACTIVITY_STOP') {
         setActiveAppId(null);
         onToggleActivity?.(false);
+        onActivityChange?.(null);
         toast.info('Aktivitas dihentikan');
       } else if (data.action === 'ACTIVITY_QUERY') {
         if (activeAppId) {
@@ -1051,6 +1067,7 @@ export function CommunityCallStage({
         callInviteUrl={callInviteUrl}
         copiedVoiceCallLink={copiedVoiceCallLink}
         onCopyCallLink={handleExecuteCopyCallLink}
+        currentActiveApp={currentActiveApp}
       />
     </div>
   );

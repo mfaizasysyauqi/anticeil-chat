@@ -14,7 +14,6 @@ import {
   ExternalLink,
   Maximize,
   ChevronDown,
-  Link as LinkIcon,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -40,7 +39,7 @@ export interface CallControlsBarProps {
   onToggleScreenShare: () => void;
   onOpenInvite: () => void;
   onOpenAppLauncher: () => void;
-  onCopyCallLink: () => void;
+  onCopyCallLink?: () => void;
   onEndCall: () => void;
   onTogglePiP: () => void;
   onToggleFullscreen: () => void;
@@ -290,19 +289,11 @@ export function CallControlsBar({
 
               {/* General Options for All Screen Sizes */}
               <DropdownMenuItem
-                onClick={onCopyCallLink}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
-              >
-                <LinkIcon className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
-                <span>Salin Link Panggilan</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
                 onClick={onOpenInvite}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
               >
                 <UserPlus className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
-                <span>Undang Teman</span>
+                <span>Undang Teman ke Panggilan</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

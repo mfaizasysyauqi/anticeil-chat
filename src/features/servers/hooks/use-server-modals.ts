@@ -15,6 +15,8 @@ interface UseServerModalsOptions {
   setActiveChannelId: (id: string) => void;
   setActiveCallChannelId?: (id: string | null) => void;
   setIsCallPiP?: (val: boolean) => void;
+  setSelectedActivityAppId?: (id: string | null) => void;
+  setIsActivityOpen?: (val: boolean) => void;
   setMembers?: React.Dispatch<React.SetStateAction<CommunityMember[]>>;
   t: (key: string) => string;
 }
@@ -29,6 +31,8 @@ export function useServerModals({
   setActiveChannelId,
   setActiveCallChannelId,
   setIsCallPiP,
+  setSelectedActivityAppId,
+  setIsActivityOpen,
   setMembers,
   t,
 }: UseServerModalsOptions) {
@@ -191,6 +195,11 @@ export function useServerModals({
       if (hubChannels && hubChannels.length > 0) {
         setChannels((prev) => [...prev.filter((c) => c.hubId !== joinedHub.id), ...hubChannels]);
         const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
+        const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
+        if (targetActivityParam) {
+          setSelectedActivityAppId?.(targetActivityParam);
+          setIsActivityOpen?.(true);
+        }
         const matchedChannel = hubChannels.find((c) => c.id === targetChannelParam);
         if (matchedChannel) {
           setActiveChannelId(matchedChannel.id);

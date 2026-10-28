@@ -84,6 +84,7 @@ export interface CommunityDialogsPortalProps {
   isPlusOrAbove: boolean;
   socket: any;
   selectedActivityAppId: string | null;
+  setSelectedActivityAppId?: (id: string | null) => void;
   setIsActivityOpen: React.Dispatch<React.SetStateAction<boolean>>;
   navigate: (path: string) => void;
 
@@ -143,6 +144,7 @@ export function CommunityDialogsPortal({
   isPlusOrAbove,
   socket,
   selectedActivityAppId,
+  setSelectedActivityAppId,
   setIsActivityOpen,
   navigate,
   isAuthRequiredOpen,
@@ -417,6 +419,7 @@ export function CommunityDialogsPortal({
             isPiP={true}
             initialAppId={selectedActivityAppId}
             onToggleActivity={(open) => setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))}
+            onActivityChange={(appId) => setSelectedActivityAppId?.(appId)}
             onTogglePiP={() => {
               setActiveChannelId(activeCallChannelId);
               setIsCallPiP(false);
