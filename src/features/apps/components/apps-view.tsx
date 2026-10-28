@@ -17,25 +17,39 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
 import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/discord-activities';
-import type { CommunityChannel } from '@/chat/chat-types';
+import type { CommunityChannel, CommunityHub, CommunityMember } from '@/chat/chat-types';
+import { ActivityDestinationDialog } from './activity-destination-dialog';
 
 export interface AppsViewProps {
   channels: CommunityChannel[];
+  hubs?: CommunityHub[];
+  members?: CommunityMember[];
   activeCallChannelId?: string | null;
   onLaunchActivity: (appId: string, fromChat?: boolean, targetChannelId?: string) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
+  onStartDM?: (member: CommunityMember) => void;
+  setActiveHubId?: (hubId: string) => void;
+  setActiveChannelId?: (chId: string) => void;
 }
 
 export function AppsView({
   channels,
+  hubs = [],
+  members = [],
   activeCallChannelId,
   onLaunchActivity,
   onOpenSidebar,
   horizontalPadding = 'px-4 sm:px-6',
+  onStartDM,
+  setActiveHubId,
+  setActiveChannelId,
 }: AppsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'entertainment' | 'game' | 'productivity'>('all');
+
+  const [selectedAppForLaunch, setSelectedAppForLaunch] = useState<DiscordAppDefinition | null>(null);
+  const [isLaunchDialogOpen, setIsLaunchDialogOpen] = useState(false);
 
   const voiceChannels = channels.filter((c) => c.type === 'voice');
 
@@ -51,10 +65,46 @@ export function AppsView({
     });
   }, [searchQuery, activeCategory]);
 
-  const handleLaunch = (appId: string) => {
-    // If there is an active call, launch there. Otherwise pick the first voice channel or default.
-    const targetChannel = activeCallChannelId || voiceChannels[0]?.id;
-    onLaunchActivity(appId, false, targetChannel);
+  const handleLaunchClick = (appOrId: DiscordAppDefinition | string) => {
+    const app = typeof appOrId === 'string'
+      ? DISCORD_APPS.find((a) => a.id === appOrId) || null
+      : appOrId;
+    if (app) {
+      setSelectedAppForLaunch(app);
+      setIsLaunchDialogOpen(true);
+    } else {
+      const targetChannel = activeCallChannelId || voiceChannels[0]?.id;
+      onLaunchActivity(typeof appOrId === 'string' ? appOrId : 'watch-together', false, targetChannel);
+    }
+  };
+
+  const handleConfirmLaunch = (options: {
+    targetType: 'dm' | 'server';
+    hubId?: string;
+    channelId: string;
+    targetName: string;
+    appId: string;
+    member?: CommunityMember;
+  }) => {
+    if (options.targetType === 'server') {
+      if (options.hubId && setActiveHubId) {
+        setActiveHubId(options.hubId);
+      }
+      if (options.channelId && setActiveChannelId) {
+        setActiveChannelId(options.channelId);
+      }
+      onLaunchActivity(options.appId, false, options.channelId);
+    } else {
+      if (options.member && onStartDM) {
+        onStartDM(options.member);
+      } else {
+        if (setActiveHubId) setActiveHubId('anticeil');
+        if (options.channelId && setActiveChannelId) {
+          setActiveChannelId(options.channelId);
+        }
+      }
+      onLaunchActivity(options.appId, false, options.channelId);
+    }
   };
 
   return (
@@ -139,7 +189,7 @@ export function AppsView({
 
             <Button
               size="lg"
-              onClick={() => handleLaunch('watch-together')}
+              onClick={() => handleLaunchClick('watch-together')}
               className="bg-red-600 hover:bg-red-500 text-white font-bold h-10 px-6 gap-2 shadow-lg shadow-red-600/30 cursor-pointer z-10"
             >
               <Play className="w-4 h-4 fill-white" />
@@ -215,7 +265,7 @@ export function AppsView({
 
                       <Button
                         size="sm"
-                        onClick={() => handleLaunch(app.id)}
+                        onClick={() => handleLaunchClick(app)}
                         className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
                       >
                         <Play className="w-3 h-3 fill-current" />
@@ -229,6 +279,17 @@ export function AppsView({
           </div>
         </div>
       </div>
+
+      {/* ── Modal Dialog: Pilih Tujuan Luncurkan (DM vs Server) ─────── */}
+      <ActivityDestinationDialog
+        open={isLaunchDialogOpen}
+        onOpenChange={setIsLaunchDialogOpen}
+        app={selectedAppForLaunch}
+        hubs={hubs}
+        channels={channels}
+        members={members}
+        onConfirmLaunch={handleConfirmLaunch}
+      />
     </div>
   );
 }

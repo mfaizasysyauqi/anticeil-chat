@@ -2274,10 +2274,15 @@ export function CommunityPage() {
         ) : isAppsView ? (
           <AppsView
             channels={channels}
+            hubs={hubs}
+            members={members}
             activeCallChannelId={activeCallChannelId}
             onLaunchActivity={handleLaunchActivity}
             onOpenSidebar={() => setIsMobileChannelsOpen(true)}
             horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+            onStartDM={handleStartDM}
+            setActiveHubId={setActiveHubId}
+            setActiveChannelId={setActiveChannelId}
           />
         ) : isServersView ? (
           <ServersView
