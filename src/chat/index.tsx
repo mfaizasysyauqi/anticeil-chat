@@ -26,6 +26,7 @@ import {
   CreateOrJoinServerDialog,
   EditServerDialog,
   DeleteServerDialog,
+  useServerModals,
 } from '@/features/servers';
 import { UserBottomDock, EditProfileDialog } from '@/features/profile';
 import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
@@ -47,6 +48,7 @@ import {
   ForumChannelView,
   ChannelsSidebar,
   useResizableSidebar,
+  useChannelModals,
 } from '@/features/channels';
 import { ServerMembersSidebar } from '@/features/members';
 import { ServerSettingsDialog, type ServerSettingsSection } from '@/features/server-settings';
@@ -55,7 +57,7 @@ import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 import { SendGiftDialog } from '@/features/gifts';
 import { ChatInputBar, processFileInput } from '@/features/chat-input';
 import { MessagesFeed, renderFormattedMessage, useCommunitySocket } from '@/features/chat';
-import { QuickAddEmojiDialog, QuickAddStickerDialog } from '@/features/media';
+import { QuickAddEmojiDialog, QuickAddStickerDialog, useMediaModals } from '@/features/media';
 import { AuthRequiredDialog } from '@/features/auth';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
@@ -422,19 +424,6 @@ export function CommunityPage() {
     return fromUrl || 'anticeil';
   });
 
-  // Server / Hub Creation & Join Modal state (ala Discord "Tambah Server")
-  const [isCreateHubOpen, setIsCreateHubOpen] = useState(false);
-  const [newHubName, setNewHubName] = useState('');
-  const [newHubDesc, setNewHubDesc] = useState('');
-  const [joinInviteCode, setJoinInviteCode] = useState('');
-  const [isJoiningHub, setIsJoiningHub] = useState(false);
-
-  // Server Edit & Delete state
-  const [hubToEdit, setHubToEdit] = useState<CommunityHub | null>(null);
-  const [editHubName, setEditHubName] = useState('');
-  const [editHubDesc, setEditHubDesc] = useState('');
-  const [hubToDelete, setHubToDelete] = useState<CommunityHub | null>(null);
-
   const [channels, setChannels] = useState<CommunityChannel[]>(DEFAULT_CHANNELS);
   const [activeChannelId, setActiveChannelId] = useState<string>(() => {
     return new URLSearchParams(window.location.search).get('channel') || '';
@@ -553,25 +542,133 @@ export function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
 
-  // Discord Media Picker (GIFs, Stickers, Emoji) - matching Screenshots 1, 2, 3
-  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
-  const [activeMediaTab, setActiveMediaTab] = useState<'gifs' | 'stickers' | 'emojis'>('emojis');
-  const [mediaSearchQuery, setMediaSearchQuery] = useState('');
-  const [hoveredEmoji, setHoveredEmoji] = useState<DiscordEmoji | null>(null);
-  const [hoveredSticker, setHoveredSticker] = useState<DiscordSticker | null>(null);
-  const [selectedGifCategory, setSelectedGifCategory] = useState<string | null>(null);
-  const [selectedServerFilter, setSelectedServerFilter] = useState<string>('all');
-  const [serverDbEmojis, setServerDbEmojis] = useState<DiscordEmoji[]>([]);
-  const [serverDbStickers, setServerDbStickers] = useState<DiscordSticker[]>([]);
-  const [isLoadingServerMedia, setIsLoadingServerMedia] = useState(false);
-  const [isQuickAddEmojiOpen, setIsQuickAddEmojiOpen] = useState(false);
-  const [quickEmojiName, setQuickEmojiName] = useState('');
-  const [quickEmojiUrl, setQuickEmojiUrl] = useState('');
-  const [quickEmojiCode, setQuickEmojiCode] = useState('');
-  const [isQuickAddStickerOpen, setIsQuickAddStickerOpen] = useState(false);
-  const [quickStickerName, setQuickStickerName] = useState('');
-  const [quickStickerUrl, setQuickStickerUrl] = useState('');
-  const [isSubmittingServerMedia, setIsSubmittingServerMedia] = useState(false);
+  // Server Modals & Actions (Feature-First Hook)
+  const {
+    isCreateHubOpen,
+    setIsCreateHubOpen,
+    newHubName,
+    setNewHubName,
+    newHubDesc,
+    setNewHubDesc,
+    newHubIconUrl,
+    setNewHubIconUrl,
+    joinInviteCode,
+    setJoinInviteCode,
+    isJoiningHub,
+    handleCreateHubSubmit,
+    handleJoinHub,
+    hubToEdit,
+    setHubToEdit,
+    editHubName,
+    setEditHubName,
+    editHubDesc,
+    setEditHubDesc,
+    handleOpenEditHub,
+    handleEditHubSubmit,
+    hubToDelete,
+    setHubToDelete,
+    handleDeleteHubConfirm,
+    isInviteOpen,
+    setIsInviteOpen,
+    inviteUsername,
+    setInviteUsername,
+    isInvitingUsername,
+    userNotFound,
+    handleInviteByUsername,
+    isServerSettingsOpen,
+    setIsServerSettingsOpen,
+    serverSettingsSection,
+    setServerSettingsSection,
+  } = useServerModals({
+    hubs,
+    setHubs,
+    channels,
+    setChannels,
+    activeHub,
+    setActiveHubId,
+    setActiveChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+    setMembers,
+    t,
+  });
+
+  // Channel Modals & Actions (Feature-First Hook)
+  const {
+    isCreateChannelOpen,
+    setIsCreateChannelOpen,
+    newChannelName,
+    setNewChannelName,
+    newChannelDesc,
+    setNewChannelDesc,
+    newChannelCategory,
+    setNewChannelCategory,
+    newChannelType,
+    setNewChannelType,
+    newChannelIsPrivate,
+    setNewChannelIsPrivate,
+    handleCreateChannelSubmit,
+    channelToEdit,
+    setChannelToEdit,
+    editChannelName,
+    setEditChannelName,
+    editChannelDesc,
+    setEditChannelDesc,
+    editChannelType,
+    setEditChannelType,
+    handleOpenEditChannel,
+    handleEditChannelSubmit,
+    channelToDelete,
+    setChannelToDelete,
+    handleOpenDeleteChannel,
+    handleDeleteChannelConfirm,
+    channelForSettings,
+    setChannelForSettings,
+    handleUpdateChannelSettings,
+    isWebhookDialogOpen,
+    setIsWebhookDialogOpen,
+  } = useChannelModals({
+    activeHubId,
+    channels,
+    setChannels,
+    activeChannelId,
+    setActiveChannelId,
+    t,
+  });
+
+  // Media Modals & Quick Add (Feature-First Hook)
+  const {
+    isMediaPickerOpen,
+    setIsMediaPickerOpen,
+    activeMediaTab,
+    setActiveMediaTab,
+    mediaSearchQuery,
+    setMediaSearchQuery,
+    selectedGifCategory,
+    setSelectedGifCategory,
+    serverDbEmojis,
+    serverDbStickers,
+    isLoadingServerMedia,
+    isQuickAddEmojiOpen,
+    setIsQuickAddEmojiOpen,
+    quickEmojiName,
+    setQuickEmojiName,
+    quickEmojiUrl,
+    setQuickEmojiUrl,
+    quickEmojiCode,
+    setQuickEmojiCode,
+    handleQuickAddEmoji,
+    isQuickAddStickerOpen,
+    setIsQuickAddStickerOpen,
+    quickStickerName,
+    setQuickStickerName,
+    quickStickerUrl,
+    setQuickStickerUrl,
+    handleQuickAddSticker,
+    isSubmittingServerMedia,
+  } = useMediaModals({
+    activeHub,
+  });
 
   // Discord Send a Gift Modal - matching Screenshot 4
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
@@ -623,21 +720,6 @@ export function CommunityPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
 
-  // Channel CRUD Modals
-  const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
-  const [newChannelName, setNewChannelName] = useState('');
-  const [newChannelDesc, setNewChannelDesc] = useState('');
-  const [newChannelCategory, setNewChannelCategory] = useState<'CHANNELS' | 'DIRECT MESSAGES'>('CHANNELS');
-  const [newChannelType, setNewChannelType] = useState<CommunityChannelType>('text');
-  const [newChannelIsPrivate, setNewChannelIsPrivate] = useState(false);
-
-  const [channelToEdit, setChannelToEdit] = useState<CommunityChannel | null>(null);
-  const [editChannelName, setEditChannelName] = useState('');
-  const [editChannelDesc, setEditChannelDesc] = useState('');
-  const [editChannelType, setEditChannelType] = useState<CommunityChannelType>('text');
-
-  const [channelToDelete, setChannelToDelete] = useState<CommunityChannel | null>(null);
-
   // Discord-style Resizable Sidebar hook
   const {
     sidebarWidth,
@@ -645,15 +727,10 @@ export function CommunityPage() {
     handleSidebarResizeStart,
     handleSidebarResizeReset,
   } = useResizableSidebar();
-  const [channelForSettings, setChannelForSettings] = useState<CommunityChannel | null>(null);
 
   // Responsive state for Mobile/Tablet sheets
   const [isMobileChannelsOpen, setIsMobileChannelsOpen] = useState(false);
   const [isMobileMembersOpen, setIsMobileMembersOpen] = useState(false);
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [inviteUsername, setInviteUsername] = useState('');
-  const [isInvitingUsername, setIsInvitingUsername] = useState(false);
-  const [userNotFound, setUserNotFound] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Edit Profile dialog state
@@ -663,13 +740,6 @@ export function CommunityPage() {
   const [isDmSearchOpen, setIsDmSearchOpen] = useState(false);
   const [dmSearchQuery, setDmSearchQuery] = useState('');
 
-  // Webhook Integration Dialog (Discord-style incoming webhooks & IDs)
-  const [isWebhookDialogOpen, setIsWebhookDialogOpen] = useState<boolean>(false);
-  const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
-  const [serverSettingsSection, setServerSettingsSection] = useState<ServerSettingsSection>('profile');
-  const serverIconQuickInputRef = useRef<HTMLInputElement | null>(null);
-  const newHubIconFileInputRef = useRef<HTMLInputElement | null>(null);
-  const [newHubIconUrl, setNewHubIconUrl] = useState('');
 
   // Listen to burger menu clicks from top app bar on mobile/tablet
   useEffect(() => {
@@ -824,83 +894,6 @@ export function CommunityPage() {
     };
   }, [activeThread?.id]);
 
-  // Load Server Emojis and Stickers from DB for active server
-  useEffect(() => {
-    if (!activeHub?.id) {
-      setServerDbEmojis([]);
-      setServerDbStickers([]);
-      return;
-    }
-    let mounted = true;
-    const loadServerMedia = async () => {
-      try {
-        setIsLoadingServerMedia(true);
-        const [emojis, stickers] = await Promise.all([
-          communityApi.getServerEmojis(activeHub.id),
-          communityApi.getServerStickers(activeHub.id),
-        ]);
-        if (mounted) {
-          setServerDbEmojis(emojis || []);
-          setServerDbStickers(stickers || []);
-        }
-      } catch (err) {
-        console.warn('Failed to load server emojis/stickers', activeHub.id, err);
-      } finally {
-        if (mounted) setIsLoadingServerMedia(false);
-      }
-    };
-    loadServerMedia();
-    return () => {
-      mounted = false;
-    };
-  }, [activeHub?.id, isMediaPickerOpen]);
-
-  const handleQuickAddEmoji = async () => {
-    if (!activeHub?.id || !quickEmojiName.trim() || !quickEmojiUrl.trim()) return;
-    try {
-      setIsSubmittingServerMedia(true);
-      const code = quickEmojiCode.trim() || `:${quickEmojiName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')}:`;
-      const created = await communityApi.addServerEmoji(activeHub.id, {
-        name: quickEmojiName.trim(),
-        code,
-        url: quickEmojiUrl.trim(),
-      });
-      if (created) {
-        setServerDbEmojis((prev) => [...prev, created]);
-        toast.success(`Emoji ${code} berhasil disimpan ke database server! ✨`);
-        setQuickEmojiName('');
-        setQuickEmojiUrl('');
-        setQuickEmojiCode('');
-        setIsQuickAddEmojiOpen(false);
-      }
-    } catch (err) {
-      toast.error('Gagal menambahkan emoji server');
-    } finally {
-      setIsSubmittingServerMedia(false);
-    }
-  };
-
-  const handleQuickAddSticker = async () => {
-    if (!activeHub?.id || !quickStickerName.trim() || !quickStickerUrl.trim()) return;
-    try {
-      setIsSubmittingServerMedia(true);
-      const created = await communityApi.addServerSticker(activeHub.id, {
-        name: quickStickerName.trim(),
-        url: quickStickerUrl.trim(),
-      });
-      if (created) {
-        setServerDbStickers((prev) => [...prev, created]);
-        toast.success(`Stiker ${quickStickerName} berhasil disimpan ke database server! 🏷️`);
-        setQuickStickerName('');
-        setQuickStickerUrl('');
-        setIsQuickAddStickerOpen(false);
-      }
-    } catch (err) {
-      toast.error('Gagal menambahkan stiker server');
-    } finally {
-      setIsSubmittingServerMedia(false);
-    }
-  };
 
   // 3. WebSocket Realtime Listeners (Feature-First Hook)
   useCommunitySocket({
@@ -1632,109 +1625,6 @@ export function CommunityPage() {
     }
   };
 
-  // Join Server via Invite Code/Link
-  const handleJoinHub = async (codeToJoin?: string) => {
-    const rawCode = (codeToJoin || joinInviteCode).trim();
-    if (!rawCode) {
-      toast.error(t('Masukkan kode atau link undangan yang valid.'));
-      return;
-    }
-
-    let code = rawCode;
-    if (rawCode.includes('invite=')) {
-      code = rawCode.split('invite=')[1].split('&')[0];
-    } else if (rawCode.includes('/')) {
-      code = rawCode.split('/').pop() || rawCode;
-    }
-
-    try {
-      setIsJoiningHub(true);
-      const joinedHub = await communityApi.joinHub(code);
-      setHubs((prev) => {
-        const next = [...prev.filter((h) => h.id !== joinedHub.id), joinedHub];
-        saveStoredHubs(next);
-        return next;
-      });
-      setActiveHubId(joinedHub.id);
-
-      // fetch channels for joined server
-      const hubChannels = await communityApi.getChannels(joinedHub.id);
-      if (hubChannels && hubChannels.length > 0) {
-        setChannels((prev) => [...prev.filter((c) => c.hubId !== joinedHub.id), ...hubChannels]);
-        const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
-        const matchedChannel = hubChannels.find((c) => c.id === targetChannelParam);
-        if (matchedChannel) {
-          setActiveChannelId(matchedChannel.id);
-          if (matchedChannel.type === 'voice') {
-            setActiveCallChannelId(matchedChannel.id);
-            setIsCallPiP(false);
-          }
-        } else {
-          setActiveChannelId(hubChannels[0].id);
-        }
-      }
-
-      setIsCreateHubOpen(false);
-      setJoinInviteCode('');
-      toast.success(t(`Berhasil bergabung ke server ${joinedHub.name}! 🎉`));
-
-      // Clear ?invite= from URL so page reloads don't re-trigger auto-join, while preserving hub & channel
-      const url = new URL(window.location.href);
-      if (url.searchParams.has('invite')) {
-        url.searchParams.delete('invite');
-        if (!url.searchParams.has('hub')) {
-          url.searchParams.set('hub', joinedHub.id);
-        }
-        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
-      }
-    } catch {
-      toast.error(t('Kode undangan tidak valid atau server tidak ditemukan.'));
-    } finally {
-      setIsJoiningHub(false);
-    }
-  };
-
-  // Invite by Username
-  const handleInviteByUsername = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const rawUser = inviteUsername.trim().replace(/^@/, '');
-    if (!rawUser) {
-      toast.error(t('Masukkan username yang ingin diundang'));
-      return;
-    }
-
-    const currentHubId = activeHub?.id;
-    if (!currentHubId) {
-      toast.error(t('Server tidak valid.'));
-      return;
-    }
-
-    try {
-      setIsInvitingUsername(true);
-      setUserNotFound(null);
-      const res = await communityApi.inviteMemberByUsername(currentHubId, rawUser);
-      if (res.found && res.user) {
-        if (res.alreadyMember) {
-          toast.info(t(`@${res.user.username || rawUser} sudah menjadi anggota server ini.`));
-        } else {
-          toast.success(t(`Berhasil menambahkan @${res.user.username || rawUser} ke server! 🎉`));
-          setMembers((prev) => {
-            if (prev.some((m) => m.id === res.user!.id)) return prev;
-            return [...prev, res.user!];
-          });
-        }
-        setInviteUsername('');
-        setUserNotFound(null);
-      } else {
-        setUserNotFound(rawUser);
-      }
-    } catch (err) {
-      console.error('Invite by username failed', err);
-      toast.error(t('Gagal mengundang pengguna. Silakan coba lagi.'));
-    } finally {
-      setIsInvitingUsername(false);
-    }
-  };
 
   const updateNameMutation = userMutations.useUpdateName({
     onSuccess: (data: any) => {
@@ -1766,288 +1656,6 @@ export function CommunityPage() {
     },
   });
 
-  // Create Server / Hub (Discord style Server CRUD)
-  const handleCreateHubSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newHubName.trim()) return;
-
-    try {
-      const createdHub = await communityApi.createHub({
-        name: newHubName.trim(),
-        description: newHubDesc.trim() || undefined,
-        iconUrl: newHubIconUrl || undefined,
-      });
-
-      const updatedHubs = [...hubs.filter((h) => h.id !== createdHub.id), createdHub];
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
-      setActiveHubId(createdHub.id);
-
-      let hubChannels = await communityApi.getChannels(createdHub.id);
-      if (!hubChannels || hubChannels.length === 0) {
-        const [defaultCh, defaultVoice, defaultForum] = await Promise.all([
-          communityApi.createChannel({
-            name: 'general',
-            description: `Saluran obrolan umum untuk server ${createdHub.name}`,
-            category: 'CHANNELS',
-            hubId: createdHub.id,
-            type: 'text',
-          }),
-          communityApi.createChannel({
-            name: 'General Voice',
-            description: `Saluran suara & video untuk server ${createdHub.name}`,
-            category: 'CHANNELS',
-            hubId: createdHub.id,
-            type: 'voice',
-          }),
-          communityApi.createChannel({
-            name: 'forum-diskusi',
-            description: `Ruang diskusi topik untuk server ${createdHub.name}`,
-            category: 'CHANNELS',
-            hubId: createdHub.id,
-            type: 'forum',
-          }),
-        ]);
-        hubChannels = [defaultCh, defaultVoice, defaultForum];
-      }
-      setChannels((prev) => [...prev.filter((c) => c.hubId !== createdHub.id), ...hubChannels]);
-      setActiveChannelId(hubChannels[0].id);
-
-      setIsCreateHubOpen(false);
-      setNewHubName('');
-      setNewHubDesc('');
-      setNewHubIconUrl('');
-      toast.success(t('Server baru berhasil dibuat!'));
-    } catch (err) {
-      console.warn('API createHub fallback', err);
-      const newId = `hub_${Date.now()}`;
-      const newHub: CommunityHub = {
-        id: newId,
-        name: newHubName.trim(),
-        iconType: undefined as any,
-        initials: newHubName.trim().slice(0, 2).toUpperCase() || 'SV',
-        description: newHubDesc.trim() || '',
-        iconUrl: newHubIconUrl || undefined,
-      };
-
-      const defaultText: CommunityChannel = {
-        id: `ch_${Date.now()}_gen`,
-        name: 'general',
-        description: `Saluran obrolan umum untuk server ${newHub.name}`,
-        category: 'CHANNELS',
-        hubId: newId,
-        type: 'text',
-      };
-      const defaultVoice: CommunityChannel = {
-        id: `ch_${Date.now()}_voice`,
-        name: 'General Voice',
-        description: `Saluran suara & video untuk server ${newHub.name}`,
-        category: 'CHANNELS',
-        hubId: newId,
-        type: 'voice',
-      };
-      const defaultForum: CommunityChannel = {
-        id: `ch_${Date.now()}_forum`,
-        name: 'forum-diskusi',
-        description: `Ruang diskusi topik untuk server ${newHub.name}`,
-        category: 'CHANNELS',
-        hubId: newId,
-        type: 'forum',
-      };
-
-      const updatedHubs = [...hubs, newHub];
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
-      setChannels((prev) => [...prev, defaultText, defaultVoice, defaultForum]);
-      setActiveHubId(newId);
-      setActiveChannelId(defaultText.id);
-
-      setIsCreateHubOpen(false);
-      setNewHubName('');
-      setNewHubDesc('');
-      setNewHubIconUrl('');
-      toast.success(t('Server baru berhasil dibuat!'));
-    }
-  };
-
-  // Edit / Rename Server (Hub CRUD: Update)
-  const handleOpenEditHub = (hub: CommunityHub) => {
-    setHubToEdit(hub);
-    setEditHubName(hub.name);
-    setEditHubDesc(hub.description || '');
-  };
-
-  const handleEditHubSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!hubToEdit || !editHubName.trim()) return;
-
-    const newName = editHubName.trim();
-    try {
-      const updated = await communityApi.updateHub(hubToEdit.id, {
-        name: newName,
-        description: editHubDesc.trim() || undefined,
-      });
-      const updatedHubs = hubs.map((h) => (h.id === updated.id ? { ...h, ...updated } : h));
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
-      setHubToEdit(null);
-      toast.success(t('Nama server berhasil diperbarui!'));
-    } catch {
-      const updatedHubs: CommunityHub[] = hubs.map((h) => {
-        if (h.id === hubToEdit.id) {
-          return {
-            ...h,
-            name: newName,
-            initials: newName.slice(0, 2).toUpperCase() || 'SV',
-            description: editHubDesc.trim() || undefined,
-          };
-        }
-        return h;
-      });
-
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
-      setHubToEdit(null);
-      toast.success(t('Nama server berhasil diperbarui!'));
-    }
-  };
-
-  // Delete Server (Hub CRUD: Delete)
-  const handleDeleteHubConfirm = async () => {
-    if (!hubToDelete) return;
-    if (hubToDelete.id === 'anticeil') {
-      toast.error(t('Server default tidak dapat dihapus.'));
-      setHubToDelete(null);
-      return;
-    }
-
-    try {
-      await communityApi.deleteHub(hubToDelete.id);
-    } catch (err) {
-      console.warn('API deleteHub error', err);
-    }
-
-    const updatedHubs = hubs.filter((h) => h.id !== hubToDelete.id);
-    setHubs(updatedHubs);
-    saveStoredHubs(updatedHubs);
-
-    // Filter out channels that belonged to this deleted hub
-    setChannels((prev) => prev.filter((c) => c.hubId !== hubToDelete.id));
-
-    // Switch active hub to default 'anticeil'
-    setActiveHubId('anticeil');
-
-    // Home hub = DMs, switch to first DM
-    const firstDm = channels.find((c) => c.category === 'DIRECT MESSAGES');
-    setActiveChannelId(firstDm?.id || '');
-
-    setHubToDelete(null);
-    toast.success(t('Server berhasil dihapus!'));
-  };
-
-  // Create Channel (Channel CRUD)
-  const handleCreateChannelSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newChannelName.trim()) return;
-
-    const formattedName =
-      newChannelType === 'voice'
-        ? newChannelName.trim()
-        : newChannelName.trim().toLowerCase().replace(/\s+/g, '-');
-
-    try {
-      const created = await communityApi.createChannel({
-        name: formattedName,
-        description: newChannelDesc.trim(),
-        category: newChannelCategory,
-        hubId: activeHubId === 'direct-messages' ? 'anticeil' : activeHubId,
-        type: newChannelType,
-        isPrivate: newChannelIsPrivate,
-      });
-
-      setChannels((prev) => {
-        if (prev.some((c) => c.id === created.id)) return prev;
-        return [...prev, created];
-      });
-      setActiveChannelId(created.id);
-      setIsCreateChannelOpen(false);
-      setNewChannelName('');
-      setNewChannelDesc('');
-      setNewChannelType('text');
-      setNewChannelIsPrivate(false);
-      toast.success(t(`Channel ${created.name} berhasil dibuat!`));
-    } catch (err) {
-      console.error('Failed to create channel', err);
-    }
-  };
-
-  // Edit Channel (Channel Settings Dialog)
-  const handleOpenEditChannel = (channel: CommunityChannel, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setChannelForSettings(channel);
-  };
-
-  const handleUpdateChannelSettings = async (channelId: string, updates: Partial<CommunityChannel>) => {
-    try {
-      const updated = await communityApi.updateChannel(channelId, {
-        name: updates.name,
-        description: updates.description,
-        type: updates.type,
-        slowmode: updates.slowmode,
-        contentVisibility: updates.contentVisibility,
-      });
-      setChannels((prev) =>
-        prev.map((c) => (c.id === channelId ? { ...c, ...updated, ...updates } : c)),
-      );
-      toast.success(t('Pengaturan channel berhasil disimpan!'));
-    } catch (err) {
-      console.error('Failed to update channel settings', err);
-      toast.error(t('Gagal menyimpan perubahan channel'));
-      throw err;
-    }
-  };
-
-  const handleEditChannelSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!channelToEdit || !editChannelName.trim()) return;
-
-    try {
-      const updated = await communityApi.updateChannel(channelToEdit.id, {
-        name: editChannelName.trim(),
-        description: editChannelDesc.trim(),
-        type: editChannelType,
-      });
-      setChannels((prev) =>
-        prev.map((c) => (c.id === channelToEdit.id ? { ...c, ...updated, type: editChannelType } : c)),
-      );
-      setChannelToEdit(null);
-      toast.success(t('Channel berhasil diperbarui!'));
-    } catch (err) {
-      console.error('Failed to edit channel', err);
-    }
-  };
-
-  // Delete Channel (Channel CRUD)
-  const handleOpenDeleteChannel = (channel: CommunityChannel, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setChannelToDelete(channel);
-  };
-
-  const handleDeleteChannelConfirm = async () => {
-    if (!channelToDelete) return;
-    const id = channelToDelete.id;
-    setChannels((prev) => prev.filter((c) => c.id !== id));
-    if (activeChannelId === id) {
-      setActiveChannelId('');
-    }
-    setChannelToDelete(null);
-
-    try {
-      await communityApi.deleteChannel(id);
-    } catch (err) {
-      console.error('Failed to delete channel', err);
-    }
-  };
 
   // Start DM
   const handleStartDM = (member: CommunityMember) => {
