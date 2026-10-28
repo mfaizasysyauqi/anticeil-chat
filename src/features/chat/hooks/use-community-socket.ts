@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import type { CommunityMessage, CommunityChannel } from '@/chat/chat-types';
+import { type CommunityMessage, type CommunityChannel, resolveChannelType } from '@/chat/chat-types';
+import { saveStoredChannels, saveStoredMessages, loadStoredMessages } from '@/chat/chat-defaults';
 
 export interface UseCommunitySocketOptions {
   socket: any;
@@ -31,13 +32,18 @@ export function useCommunitySocket({
     };
 
     const handleIncomingMessage = (newMsg: CommunityMessage) => {
+      if (!newMsg?.channelId) return;
       setMessagesMap((prev) => {
         const list = prev[newMsg.channelId] || [];
         if (list.some((m) => m.id === newMsg.id)) return prev;
-        return {
+        const updated = {
           ...prev,
           [newMsg.channelId]: [...list, newMsg],
         };
+        try {
+          saveStoredMessages(updated);
+        } catch {}
+        return updated;
       });
     };
 
@@ -45,10 +51,14 @@ export function useCommunitySocket({
       setMessagesMap((prev) => {
         const ch = channelId || activeChannelId;
         const list = prev[ch] || [];
-        return {
+        const updated = {
           ...prev,
           [ch]: list.filter((m) => m.id !== id),
         };
+        try {
+          saveStoredMessages(updated);
+        } catch {}
+        return updated;
       });
     };
 
@@ -64,26 +74,58 @@ export function useCommunitySocket({
       setMessagesMap((prev) => {
         const ch = channelId || activeChannelId;
         const list = prev[ch] || [];
-        return {
+        const updated = {
           ...prev,
           [ch]: list.map((m) => (m.id === id ? { ...m, reactions } : m)),
         };
+        try {
+          saveStoredMessages(updated);
+        } catch {}
+        return updated;
       });
     };
 
-    const handleChannelCreated = (newCh: CommunityChannel) => {
+    const handleChannelCreated = (rawCh: CommunityChannel) => {
+      if (!rawCh?.id) return;
+      const newCh: CommunityChannel = {
+        ...rawCh,
+        type: resolveChannelType(rawCh),
+      };
       setChannels((prev) => {
-        if (prev.some((c) => c.id === newCh.id)) return prev;
-        return [...prev, newCh];
+        if (prev.some((c) => c.id === newCh.id)) {
+          return prev.map((c) => (c.id === newCh.id ? { ...c, ...newCh } : c));
+        }
+        const updated = [...prev, newCh];
+        try {
+          saveStoredChannels(updated);
+        } catch {}
+        return updated;
       });
     };
 
-    const handleChannelUpdated = (updatedCh: CommunityChannel) => {
-      setChannels((prev) => prev.map((c) => (c.id === updatedCh.id ? { ...c, ...updatedCh } : c)));
+    const handleChannelUpdated = (rawCh: CommunityChannel) => {
+      if (!rawCh?.id) return;
+      const updatedCh: CommunityChannel = {
+        ...rawCh,
+        type: resolveChannelType(rawCh),
+      };
+      setChannels((prev) => {
+        const updated = prev.map((c) => (c.id === updatedCh.id ? { ...c, ...updatedCh } : c));
+        try {
+          saveStoredChannels(updated);
+        } catch {}
+        return updated;
+      });
     };
 
     const handleChannelDeleted = ({ id }: { id: string }) => {
-      setChannels((prev) => prev.filter((c) => c.id !== id));
+      setChannels((prev) => {
+        const updated = prev.filter((c) => c.id !== id);
+        try {
+          saveStoredChannels(updated);
+        } catch {}
+        return updated;
+      });
       setActiveChannelId((current) => (current === id ? '' : current));
     };
 

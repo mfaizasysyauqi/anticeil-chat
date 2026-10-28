@@ -53,7 +53,13 @@ export function ActivityStage({
       )}
 
       {activeAppId === 'chess' && (
-        <ChessGame channel={channel} socket={socket} currentUserName={currentUserName} />
+        <ChessGame
+          channel={channel}
+          socket={socket}
+          currentUserName={currentUserName}
+          currentUser={currentUser}
+          participants={participants}
+        />
       )}
 
       {activeAppId === 'screenshare' && (

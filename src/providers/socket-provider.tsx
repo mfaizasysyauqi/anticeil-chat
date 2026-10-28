@@ -6,12 +6,14 @@ export const ORACLE_VM_REALTIME_URL =
   (import.meta.env.DEV ? 'http://localhost:3000' : typeof window !== 'undefined' ? window.location.origin : '');
 
 const socket: Socket = io(ORACLE_VM_REALTIME_URL, {
-  transports: ['websocket'],
+  transports: ['websocket', 'polling'],
   path: '/api/socket.io',
   autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: Infinity,
   reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
 });
 
 export type SocketContextType = {
@@ -60,14 +62,25 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
+    const handleFocusOrOnline = () => {
+      if (!socket.connected) {
+        syncConnection();
+      }
+    };
+
     syncConnection();
     window.addEventListener('storage', syncConnection);
+    window.addEventListener('focus', handleFocusOrOnline);
+    window.addEventListener('online', handleFocusOrOnline);
+    window.addEventListener('visibilitychange', handleFocusOrOnline);
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       window.removeEventListener('storage', syncConnection);
-      socket.disconnect();
+      window.removeEventListener('focus', handleFocusOrOnline);
+      window.removeEventListener('online', handleFocusOrOnline);
+      window.removeEventListener('visibilitychange', handleFocusOrOnline);
     };
   }, []);
 

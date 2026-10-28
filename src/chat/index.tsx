@@ -876,6 +876,38 @@ export function CommunityPage() {
     };
   }, []);
 
+  // 1b. Load channels dynamically whenever activeHubId changes
+  useEffect(() => {
+    if (!activeHubId || activeHubId === 'anticeil') return;
+    let mounted = true;
+    const loadHubChannels = async () => {
+      try {
+        const hubChannelsRes = await communityApi.getChannels(activeHubId);
+        if (mounted && Array.isArray(hubChannelsRes) && hubChannelsRes.length > 0) {
+          setChannels((prev) => {
+            const others = prev.filter((c) => (c.hubId || 'anticeil') !== activeHubId);
+            return [...others, ...hubChannelsRes];
+          });
+          setActiveChannelId((curr) => {
+            if (curr && hubChannelsRes.some((c) => c.id === curr)) return curr;
+            const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
+            if (targetChannelParam && hubChannelsRes.some((c) => c.id === targetChannelParam)) {
+              return targetChannelParam;
+            }
+            const general = hubChannelsRes.find((c) => (c.name || '').toLowerCase() === 'general');
+            return general?.id || hubChannelsRes[0]?.id || '';
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to load hub channels for', activeHubId, err);
+      }
+    };
+    loadHubChannels();
+    return () => {
+      mounted = false;
+    };
+  }, [activeHubId]);
+
   // 2. Load Messages, Pins, Notifications & Threads when Active Channel Changes
   useEffect(() => {
     if (!activeChannelId) return;
