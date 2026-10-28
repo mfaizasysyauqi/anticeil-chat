@@ -60,7 +60,7 @@ export function CustomScheduleModal({
       <DialogContent className="sm:max-w-[440px] bg-[#1e1f22] text-[#dbdee1] border border-white/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-white">
-            <CalendarPlus className="w-5 h-5 text-primary" />
+            <CalendarPlus className="w-5 h-5 text-emerald-400" />
             Jadwalkan Pesan (Schedule Message)
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -72,7 +72,7 @@ export function CustomScheduleModal({
           <DialogBody className="space-y-3.5">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-white flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-primary" />
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
                 Tanggal & Waktu
               </label>
               <Input
@@ -80,7 +80,7 @@ export function CustomScheduleModal({
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
                 min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                className="bg-[#111214] border-white/10 text-white text-xs h-9"
+                className="bg-[#111214] border-white/10 text-white text-xs h-9 focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
                 required
               />
             </div>
@@ -92,7 +92,7 @@ export function CustomScheduleModal({
                 onChange={(e) => setMessageText(e.target.value)}
                 placeholder="Tulis pesan yang ingin dijadwalkan..."
                 rows={3}
-                className="w-full rounded-md bg-[#111214] border border-white/10 p-2.5 text-xs text-white placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-md bg-[#111214] border border-white/10 p-2.5 text-xs text-white placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500/80"
                 required
               />
             </div>
@@ -109,7 +109,7 @@ export function CustomScheduleModal({
             </Button>
             <Button
               type="submit"
-              className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-semibold cursor-pointer"
+              className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold cursor-pointer shadow-xs"
             >
               Jadwalkan Pesan
             </Button>

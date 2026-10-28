@@ -185,7 +185,7 @@ export function ChatInputBar({
             align="start"
             side="top"
             sideOffset={10}
-            className="w-56 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md"
+            className="w-56 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md overflow-visible"
           >
             {/* 1. Upload a File */}
             <DropdownMenuItem
@@ -193,7 +193,7 @@ export function ChatInputBar({
                 fileInputRef.current?.click();
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
             >
               <Upload className="w-4 h-4 shrink-0" />
               <span>Upload a File</span>
@@ -205,7 +205,7 @@ export function ChatInputBar({
                 onOpenCreateThreadModal?.();
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
             >
               <MessageSquarePlus className="w-4 h-4 shrink-0" />
               <span>Create Thread</span>
@@ -217,7 +217,7 @@ export function ChatInputBar({
                 setIsPollModalOpen(true);
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
             >
               <BarChart2 className="w-4 h-4 shrink-0" />
               <span>Create Poll</span>
@@ -229,7 +229,7 @@ export function ChatInputBar({
                 setIsTemplatePopoverOpen(true);
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
             >
               <LayoutGrid className="w-4 h-4 shrink-0" />
               <span>Use Apps</span>
@@ -237,26 +237,30 @@ export function ChatInputBar({
 
             {/* 5. Schedule Message */}
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold">
+              <DropdownMenuSubTrigger className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white data-[state=open]:bg-emerald-500 data-[state=open]:text-white transition-colors text-xs font-semibold">
                 <CalendarPlus className="w-4 h-4 shrink-0" />
                 <span>Schedule Message</span>
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-52 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md">
+              <DropdownMenuSubContent
+                sideOffset={8}
+                alignOffset={-4}
+                className="w-52 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md z-50 overflow-visible"
+              >
                 <DropdownMenuItem
                   onClick={() => handleQuickSchedule('tomorrow-9am')}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
                 >
                   Tomorrow at 9:00am
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleQuickSchedule('tomorrow-1pm')}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
                 >
                   Tomorrow at 1:00pm
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleQuickSchedule('monday-9am')}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
                 >
                   Monday at 9:00am
                 </DropdownMenuItem>
@@ -266,7 +270,7 @@ export function ChatInputBar({
                     setIsCustomScheduleOpen(true);
                     setIsPlusMenuOpen(false);
                   }}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
                 >
                   Custom...
                 </DropdownMenuItem>
