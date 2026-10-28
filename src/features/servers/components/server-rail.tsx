@@ -192,7 +192,7 @@ export function ServerRail({
         {/* Mode-specific list: Friends list OR Servers list */}
         {isFriendsMode ? (
           friendList.map((f) => {
-            const isDmActive = activeChannelId === `dm-${f.id}`;
+            const isDmActive = activeChannelId === `dm-${f.id}` || (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id)));
             return (
               <div key={f.id} className="relative group w-full flex items-center justify-center">
                 <span

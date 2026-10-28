@@ -29,6 +29,40 @@ export const friendsApi = {
     }
   },
 
+  searchUsers: async (query: string): Promise<FriendMember[]> => {
+    const clean = query.trim().replace(/^@/, '').toLowerCase();
+    if (!clean) return [];
+    try {
+      const res = await api.get<any>('/v1/users', { params: { limit: 100 } });
+      const list = Array.isArray(res) ? res : res?.data;
+      if (Array.isArray(list)) {
+        return list
+          .map((u: any) => {
+            const firstName = u.firstName || '';
+            const lastName = u.lastName || '';
+            const fullName = `${firstName} ${lastName}`.trim() || u.email?.split('@')[0] || 'Pengguna Anticeil';
+            const username = u.username || u.email?.split('@')[0]?.toLowerCase().replace(/[^a-z0-9_]/g, '') || null;
+            return {
+              id: u.id,
+              name: fullName,
+              username,
+              avatar: u.imageUrl || u.avatar || null,
+              email: u.email || '',
+              status: 'online' as const,
+            };
+          })
+          .filter((u: FriendMember) =>
+            (u.username && u.username.toLowerCase().includes(clean)) ||
+            u.name.toLowerCase().includes(clean) ||
+            (u.email && u.email.toLowerCase().includes(clean))
+          );
+      }
+    } catch {
+      return [];
+    }
+    return [];
+  },
+
   sendFriendRequest: async (targetUsername: string, targetUserId?: string): Promise<{ success: boolean; message?: string }> => {
     return api.post('/v1/community/friends/request', { targetUsername, targetUserId });
   },

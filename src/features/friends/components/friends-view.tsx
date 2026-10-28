@@ -17,8 +17,10 @@ interface FriendsViewProps {
   friendsSearchQuery: string;
   onSearchChange: (query: string) => void;
   onStartDM: (member: FriendMember) => void;
-  onAddFriend: (username: string) => Promise<void> | void;
+  onAddFriend: (username: string, userId?: string) => Promise<void> | void;
   isAddingFriend?: boolean;
+  currentUser?: any;
+  members?: any[];
   onAcceptRequest: (req: FriendRequest) => void;
   onRejectRequest: (req: FriendRequest) => void;
   onCancelRequest: (req: FriendRequest) => void;
@@ -39,6 +41,8 @@ export function FriendsView({
   onStartDM,
   onAddFriend,
   isAddingFriend = false,
+  currentUser,
+  members,
   onAcceptRequest,
   onRejectRequest,
   onCancelRequest,
@@ -68,7 +72,14 @@ export function FriendsView({
         {/* Main Friends Column */}
         <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-5 [scrollbar-width:thin]`}>
           {friendsTab === 'add' ? (
-            <AddFriendTab onAddFriend={onAddFriend} isAddingFriend={isAddingFriend} />
+            <AddFriendTab
+              onAddFriend={onAddFriend}
+              isAddingFriend={isAddingFriend}
+              currentUser={currentUser}
+              allFriends={allFriends}
+              friendRequests={friendRequests}
+              members={members}
+            />
           ) : friendsTab === 'pending' ? (
             <PendingRequestsTab
               friendRequests={friendRequests}
@@ -102,6 +113,10 @@ export function FriendsView({
         onOpenChange={setIsAddDialogOpen}
         onAddFriend={onAddFriend}
         isAddingFriend={isAddingFriend}
+        currentUser={currentUser}
+        allFriends={allFriends}
+        friendRequests={friendRequests}
+        members={members}
       />
     </div>
   );

@@ -34,12 +34,36 @@ export function useCommunitySocket({
     const handleIncomingMessage = (newMsg: CommunityMessage) => {
       if (!newMsg?.channelId) return;
       setMessagesMap((prev) => {
-        const list = prev[newMsg.channelId] || [];
-        if (list.some((m) => m.id === newMsg.id)) return prev;
-        const updated = {
-          ...prev,
-          [newMsg.channelId]: [...list, newMsg],
-        };
+        const keysToUpdate = new Set<string>([newMsg.channelId]);
+
+        // If message is for a DM, also associate with participating user IDs & active channel if matching
+        if (newMsg.channelId.startsWith('dm-')) {
+          const parts = newMsg.channelId.slice(3).split('-').filter(Boolean);
+          if (parts.length === 2) {
+            keysToUpdate.add(`dm-${parts[0]}`);
+            keysToUpdate.add(`dm-${parts[1]}`);
+          }
+          if (activeChannelId?.startsWith('dm-')) {
+            const activeParts = activeChannelId.slice(3).split('-').filter(Boolean);
+            const matchesActive = parts.some((p) => activeParts.includes(p)) || activeParts.some((ap) => newMsg.channelId.includes(ap));
+            if (matchesActive) {
+              keysToUpdate.add(activeChannelId);
+            }
+          }
+        }
+
+        const updated = { ...prev };
+        let hasChange = false;
+        keysToUpdate.forEach((key) => {
+          const list = updated[key] || [];
+          if (!list.some((m) => m.id === newMsg.id)) {
+            updated[key] = [...list, newMsg];
+            hasChange = true;
+          }
+        });
+
+        if (!hasChange) return prev;
+
         try {
           saveStoredMessages(updated);
         } catch {}

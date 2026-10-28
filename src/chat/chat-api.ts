@@ -137,6 +137,35 @@ export const chatApi = {
   // ── Messages ──────────────────────────────────────────────────────────
   async getMessages(channelId: string): Promise<CommunityMessage[]> {
     try {
+      if (channelId.startsWith('dm-')) {
+        const parts = channelId.slice(3).split('-').filter(Boolean);
+        const reqs = [api.get<CommunityMessage[]>(`/v1/community/channels/${channelId}/messages`)];
+        if (parts.length === 2) {
+          reqs.push(
+            api.get<CommunityMessage[]>(`/v1/community/channels/dm-${parts[0]}/messages`).catch(() => []),
+            api.get<CommunityMessage[]>(`/v1/community/channels/dm-${parts[1]}/messages`).catch(() => []),
+          );
+        }
+        const results = await Promise.all(reqs.map((p) => p.catch(() => [])));
+        const allMsgs: CommunityMessage[] = [];
+        const seen = new Set<string>();
+        results.forEach((res) => {
+          if (Array.isArray(res)) {
+            res.forEach((m) => {
+              if (m && m.id && !seen.has(m.id)) {
+                seen.add(m.id);
+                allMsgs.push(m);
+              }
+            });
+          }
+        });
+        allMsgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        const stored = loadStoredMessages();
+        stored[channelId] = allMsgs;
+        saveStoredMessages(stored);
+        return allMsgs;
+      }
+
       const res = await api.get<CommunityMessage[]>(`/v1/community/channels/${channelId}/messages`);
       if (Array.isArray(res)) {
         const stored = loadStoredMessages();

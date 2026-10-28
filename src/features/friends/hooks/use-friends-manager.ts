@@ -83,7 +83,7 @@ export function useFriendsManager({
     );
   }, [friendsTab, onlineFriends, allFriends, friendsSearchQuery]);
 
-  const handleAddFriend = async (targetUsername?: string) => {
+  const handleAddFriend = async (targetUsername?: string, targetUserId?: string) => {
     const raw = typeof targetUsername === 'string' ? targetUsername : addFriendInput;
     if (!raw.trim()) return;
     setIsAddingFriend(true);
@@ -91,16 +91,19 @@ export function useFriendsManager({
       const cleanInput = raw.trim().replace(/^@/, '');
       const found = members.find(
         (m) =>
+          (targetUserId && m.id === targetUserId) ||
           (m.username && m.username.toLowerCase() === cleanInput.toLowerCase()) ||
           m.name.toLowerCase() === cleanInput.toLowerCase(),
       );
 
-      if (found && (found.id === currentUser?.id || found.email === currentUser?.email)) {
+      const resolvedUserId = targetUserId || found?.id;
+
+      if ((found && (found.id === currentUser?.id || found.email === currentUser?.email)) || (resolvedUserId && resolvedUserId === currentUser?.id)) {
         toast.error(t('Kamu tidak bisa menambahkan diri sendiri sebagai teman.'));
         return;
       }
 
-      await friendsApi.sendFriendRequest(cleanInput, found?.id);
+      await friendsApi.sendFriendRequest(cleanInput, resolvedUserId);
 
       // Optimistic update
       setFriendRequests((prev) => [

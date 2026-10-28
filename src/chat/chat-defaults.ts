@@ -131,3 +131,25 @@ export function saveStoredAuditLog(hubId: string, logs: any[]): void {
     console.error('Failed to save audit logs', err);
   }
 }
+
+/**
+ * Computes a symmetrical, deterministic canonical channel ID for direct messages between two users.
+ * Ensures User A -> User B and User B -> User A always use the EXACT same channel ID.
+ */
+export function getDmChannelId(userId1?: string | null, userId2?: string | null): string {
+  if (!userId1 && !userId2) return 'dm-chat';
+  if (!userId1) return `dm-${userId2}`;
+  if (!userId2) return `dm-${userId1}`;
+  const sorted = [String(userId1), String(userId2)].sort();
+  return `dm-${sorted[0]}-${sorted[1]}`;
+}
+
+export function isDmChannelId(channelId?: string | null): boolean {
+  return Boolean(channelId && channelId.startsWith('dm-'));
+}
+
+export function parseDmUserIds(channelId?: string | null): string[] {
+  if (!channelId || !channelId.startsWith('dm-')) return [];
+  return channelId.slice(3).split('-').filter(Boolean);
+}
+

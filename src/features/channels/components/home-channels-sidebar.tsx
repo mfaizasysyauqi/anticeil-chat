@@ -320,7 +320,7 @@ export function HomeChannelsSidebar({
           <div className="space-y-0.5">
             {dmChannels.map((dm) => {
               const isActiveDm = activeChannelId === dm.id;
-              const member = members.find((m) => `dm-${m.id}` === dm.id);
+              const member = members.find((m) => m.id === dm.dmUserId || `dm-${m.id}` === dm.id || (m.id && dm.id.includes(m.id)));
               return (
                 <button
                   key={dm.id}

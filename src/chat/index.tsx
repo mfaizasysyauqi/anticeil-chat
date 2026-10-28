@@ -138,6 +138,7 @@ import {
   DEFAULT_HUBS,
   loadStoredHubs,
   saveStoredHubs,
+  getDmChannelId,
 } from './chat-defaults';
 import {
   CommunityAttachment,
@@ -1016,7 +1017,25 @@ export function CommunityPage() {
   const activeChannel = useMemo(() => {
     if (isHome) {
       if (!activeChannelId) return null;
-      return dmChannels.find((c) => c.id === activeChannelId) || null;
+      const found = dmChannels.find((c) => c.id === activeChannelId);
+      if (found) return found;
+      if (activeChannelId.startsWith('dm-')) {
+        const parts = activeChannelId.slice(3).split('-').filter(Boolean);
+        const otherUserId = parts.find((p) => p !== currentUser?.id) || parts[0];
+        const otherMember = members.find((m) => m.id === otherUserId);
+        const dmName = otherMember?.name || otherMember?.username || 'Direct Message';
+        return {
+          id: activeChannelId,
+          name: dmName,
+          description: `Percakapan langsung dengan ${dmName}`,
+          category: 'DIRECT MESSAGES',
+          hubId: 'anticeil',
+          isDirectMessage: true,
+          dmUserId: otherUserId,
+          type: 'text',
+        } as CommunityChannel;
+      }
+      return null;
     }
     if (hubChannels.length === 0) return null;
     if (activeChannelId) {
@@ -1029,7 +1048,42 @@ export function CommunityPage() {
       if (voiceCh) return voiceCh;
     }
     return hubChannels[0] || null;
-  }, [isHome, activeChannelId, dmChannels, hubChannels, selectedActivityAppId, activeCallChannelId]);
+  }, [isHome, activeChannelId, dmChannels, hubChannels, selectedActivityAppId, activeCallChannelId, members, currentUser]);
+
+  // Canonicalize DM channel ID when opened with legacy single-user id (e.g. ?channel=dm-userId)
+  useEffect(() => {
+    if (!currentUser?.id || !activeChannelId?.startsWith('dm-')) return;
+    const parts = activeChannelId.slice(3).split('-').filter(Boolean);
+    if (parts.length === 1 && parts[0] && parts[0] !== currentUser.id) {
+      const otherUserId = parts[0];
+      const canonicalId = getDmChannelId(currentUser.id, otherUserId);
+      const otherMember = members.find((m) => m.id === otherUserId);
+      const dmName = otherMember?.name || otherMember?.username || 'Direct Message';
+
+      setChannels((prev) => {
+        const exists = prev.some((c) => c.id === canonicalId);
+        if (exists) return prev;
+        const newDm: CommunityChannel = {
+          id: canonicalId,
+          name: dmName,
+          description: `Percakapan langsung dengan ${dmName}`,
+          category: 'DIRECT MESSAGES',
+          hubId: 'anticeil',
+          isDirectMessage: true,
+          dmUserId: otherUserId,
+          type: 'text',
+        };
+        return [newDm, ...prev];
+      });
+
+      setActiveChannelId(canonicalId);
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('channel', canonicalId);
+        window.history.replaceState(null, '', url.pathname + url.search);
+      } catch {}
+    }
+  }, [currentUser?.id, activeChannelId, members]);
 
   // Load threads for all forum channels in the active hub so sidebar shows child threads
   useEffect(() => {
@@ -1822,20 +1876,25 @@ export function CommunityPage() {
 
   // Start DM
   const handleStartDM = (member: CommunityMember) => {
-    const dmId = `dm-${member.id}`;
-    const existing = channels.find((c) => c.id === dmId);
-    if (!existing) {
+    const dmId = currentUser?.id ? getDmChannelId(currentUser.id, member.id) : `dm-${member.id}`;
+    const dmName = member.name || member.username || 'Direct Message';
+    setChannels((prev) => {
+      const existing = prev.find((c) => c.id === dmId);
+      if (existing) {
+        return prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c));
+      }
       const newDMChannel: CommunityChannel = {
         id: dmId,
-        name: member.name,
-        description: `Percakapan langsung dengan ${member.name} (${member.customStatus || member.role})`,
+        name: dmName,
+        description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role})`,
         category: 'DIRECT MESSAGES',
         hubId: 'anticeil',
         isDirectMessage: true,
         dmUserId: member.id,
+        type: 'text',
       };
-      setChannels((prev) => [...prev, newDMChannel]);
-    }
+      return [...prev, newDMChannel];
+    });
     // DMs live in Home hub, auto-switch
     setActiveHubId('anticeil');
     setActiveChannelId(dmId);
@@ -2131,11 +2190,13 @@ export function CommunityPage() {
 
   const handleStartDirectMessage = (member: any) => {
     if (!member) return;
-    const dmId = `dm-${member.id}`;
+    const dmId = currentUser?.id ? getDmChannelId(currentUser.id, member.id) : `dm-${member.id}`;
     const dmName = member.name || member.username || member.firstName || 'Direct Message';
     setChannels((prev) => {
-      const exists = prev.some((c) => c.id === dmId);
-      if (exists) return prev;
+      const existing = prev.find((c) => c.id === dmId);
+      if (existing) {
+        return prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c));
+      }
       const newDm: CommunityChannel = {
         id: dmId,
         name: dmName,
@@ -2157,6 +2218,8 @@ export function CommunityPage() {
   const renderFriendsMainPage = () => (
     <FriendsView
       {...friends}
+      currentUser={currentUser}
+      members={members}
       onTabChange={(tab) => {
         if (tab === 'add' && !currentUser) {
           setAuthFeatureInfo({
@@ -2616,6 +2679,10 @@ export function CommunityPage() {
           onOpenChange={setIsAddFriendDialogOpen}
           onAddFriend={friends.onAddFriend}
           isAddingFriend={friends.isAddingFriend}
+          currentUser={currentUser}
+          allFriends={friends.allFriends}
+          friendRequests={friends.friendRequests}
+          members={members}
         />
       </div>
     </TooltipProvider>
