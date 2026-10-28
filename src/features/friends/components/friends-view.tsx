@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FriendsHeader } from './friends-header';
 import { FriendsList } from './friends-list';
 import { AddFriendTab } from './add-friend-tab';
+import { AddFriendDialog } from './add-friend-dialog';
 import { PendingRequestsTab } from './pending-requests-tab';
 import { ActiveNowSidebar } from './active-now-sidebar';
 import type { FriendMember, FriendRequest, FriendsTab } from '../types';
@@ -45,6 +46,8 @@ export function FriendsView({
   onOpenSidebar,
   horizontalPadding = 'px-4',
 }: FriendsViewProps) {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-background overflow-hidden">
       {/* Top Header: Discord Friends Bar */}
@@ -55,6 +58,7 @@ export function FriendsView({
         allCount={allFriends.length}
         pendingCount={friendRequests.length}
         onOpenDmSearch={onOpenDmSearch}
+        onOpenAddFriendDialog={() => setIsAddDialogOpen(true)}
         onOpenSidebar={onOpenSidebar}
         horizontalPadding={horizontalPadding}
       />
@@ -79,7 +83,7 @@ export function FriendsView({
               onSearchChange={onSearchChange}
               filteredFriends={filteredFriends}
               onStartDM={onStartDM}
-              onSwitchToAddTab={() => onTabChange('add')}
+              onSwitchToAddTab={() => setIsAddDialogOpen(true)}
             />
           )}
         </div>
@@ -91,6 +95,14 @@ export function FriendsView({
           horizontalPadding={horizontalPadding}
         />
       </div>
+
+      {/* Add Friend Modal Dialog */}
+      <AddFriendDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onAddFriend={onAddFriend}
+        isAddingFriend={isAddingFriend}
+      />
     </div>
   );
 }

@@ -62,7 +62,7 @@ export function FriendsList({
             <Button
               size="sm"
               onClick={onSwitchToAddTab}
-              className="mt-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs cursor-pointer"
+              className="mt-3 bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs shadow-2xs cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5 mr-1.5" />
               {t('Tambah Teman')}

@@ -29,11 +29,11 @@ import {
 } from '@/features/servers';
 import { UserBottomDock, EditProfileDialog } from '@/features/profile';
 import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
-import { MessageRequestsView, type MessageRequestItem } from '@/features/message-requests';
-import { NotificationsView, type NotificationItem } from '@/features/notifications';
-import { CalendarView, type CalendarEvent } from '@/features/calendar';
-import { AssignmentsView, type AssignmentItem } from '@/features/assignments';
-import { CallsView, type CallLogItem } from '@/features/calls';
+import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
+import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
+import { CalendarView, type CalendarEvent, useCalendarEvents } from '@/features/calendar';
+import { AssignmentsView, type AssignmentItem, useAssignments } from '@/features/assignments';
+import { CallsView, type CallLogItem, useCallLogs } from '@/features/calls';
 import { AppsView } from '@/features/apps';
 import { ServersView } from '@/features/servers';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
@@ -445,314 +445,39 @@ export function CommunityPage() {
   // Home View Mode: Friends Hub vs Servers vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
   const [homeView, setHomeView] = useState<'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
 
-  // Calendar Events State
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(() => {
-    try {
-      const saved = localStorage.getItem('anticeil_calendar_events');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [
-      {
-        id: 'cal-1',
-        title: 'Weekly Standup & Design Sync',
-        description: 'Review progres fitur Anticeil Chat, voice stage, dan persiapan rilis v2.0.',
-        type: 'meeting',
-        startTime: dayjs().hour(14).minute(0).second(0).toISOString(),
-        endTime: dayjs().hour(15).minute(0).second(0).toISOString(),
-        hubId: 'anticeil',
-        hubName: 'Anticeil Official',
-        channelId: 'voice-general',
-        channelName: 'General Voice',
-        status: 'scheduled',
-        attendees: [{ id: 'u1', name: 'Anticeil Official' }],
-      },
-      {
-        id: 'cal-2',
-        title: 'Sprint Review & Demo Watch Together',
-        description: 'Live test sinkronisasi YouTube Watch Together dan WebRTC Call.',
-        type: 'meeting',
-        startTime: dayjs().add(1, 'day').hour(16).minute(30).second(0).toISOString(),
-        endTime: dayjs().add(1, 'day').hour(17).minute(30).second(0).toISOString(),
-        hubId: 'anticeil',
-        hubName: 'Anticeil Official',
-        channelId: 'voice-gaming',
-        channelName: 'Gaming & Chill',
-        status: 'scheduled',
-        attendees: [{ id: 'u1', name: 'Anticeil Official' }],
-      },
-      {
-        id: 'cal-3',
-        title: 'Deadline: Integrasi Kanban & Assignments',
-        description: 'Selesaikan pengerjaan papan kanban dan agregasi kartu tugas personal.',
-        type: 'task',
-        startTime: dayjs().add(2, 'day').hour(23).minute(59).second(0).toISOString(),
-        hubId: 'anticeil',
-        hubName: 'Anticeil Official',
-        channelName: 'tugas-tim',
-        status: 'scheduled',
-      },
-    ];
-  });
+  // Feature-First Hooks (Fullstack connected to PostgreSQL DB)
+  const {
+    events: calendarEvents,
+    setEvents: setCalendarEvents,
+    handleCreateEvent: createCalendarEvent,
+  } = useCalendarEvents();
 
-  // Assignments / Personal Tasks State
-  const [assignments, setAssignments] = useState<AssignmentItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('anticeil_assignments');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [
-      {
-        id: 'assign-1',
-        title: 'Implementasi Papan Kanban & Sinkronisasi Realtime',
-        description: 'Buat papan kerja model Trello / Microsoft Plan untuk pembagian tugas tim.',
-        columnId: 'in_progress',
-        channelId: 'kanban-dev',
-        channelName: 'tugas-tim',
-        hubId: 'anticeil',
-        hubName: 'Anticeil Official',
-        priority: 'urgent',
-        dueDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
-        tags: ['Kanban', 'Feature'],
-        createdAt: dayjs().toISOString(),
-      },
-      {
-        id: 'assign-2',
-        title: 'Integrasikan Jadwal Meeting ke Kalender Personal',
-        description: 'Tampilkan agenda meeting mingguan dan bulanan dengan tombol 1-klik gabung call.',
-        columnId: 'todo',
-        channelId: 'kanban-dev',
-        channelName: 'tugas-tim',
-        hubId: 'anticeil',
-        hubName: 'Anticeil Official',
-        priority: 'high',
-        dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
-        tags: ['Calendar', 'Teams'],
-        createdAt: dayjs().toISOString(),
-      },
-      {
-        id: 'assign-3',
-        title: 'Uji Sinkronisasi Pause YouTube Watch Together',
-        description: 'Pastikan member lain langsung ikut ter-pause saat host menekan tombol pause.',
-        columnId: 'done',
-        channelId: 'kanban-dev',
-        channelName: 'tugas-tim',
-        hubId: 'anticeil',
-        hubName: 'Anticeil Official',
-        priority: 'medium',
-        dueDate: dayjs().subtract(1, 'day').format('YYYY-MM-DD'),
-        tags: ['QA', 'Resolved'],
-        createdAt: dayjs().toISOString(),
-        completedAt: dayjs().toISOString(),
-      },
-    ];
-  });
+  const {
+    assignments,
+    setAssignments,
+    handleToggleComplete,
+  } = useAssignments();
 
-  // Call Logs State
-  const [callLogs, setCallLogs] = useState<CallLogItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('anticeil_call_logs');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [
-      {
-        id: 'call-1',
-        peerId: 'peer-1',
-        peerName: 'Muhammad Farhan',
-        peerAvatar: null,
-        type: 'incoming',
-        isVideo: true,
-        timestamp: dayjs().subtract(2, 'hour').toISOString(),
-        duration: '14m 32s',
-      },
-      {
-        id: 'call-2',
-        peerId: 'peer-2',
-        peerName: 'Anticeil Official',
-        peerAvatar: null,
-        type: 'missed',
-        isVideo: false,
-        timestamp: dayjs().subtract(1, 'day').toISOString(),
-      },
-      {
-        id: 'call-3',
-        peerId: 'peer-1',
-        peerName: 'Muhammad Farhan',
-        peerAvatar: null,
-        type: 'outgoing',
-        isVideo: false,
-        timestamp: dayjs().subtract(2, 'day').toISOString(),
-        duration: '45m 10s',
-      },
-    ];
-  });
+  const {
+    calls: callLogs,
+    setCalls: setCallLogs,
+    handleCreateCallLog,
+  } = useCallLogs();
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil_calendar_events', JSON.stringify(calendarEvents));
-    } catch {}
-  }, [calendarEvents]);
+  const {
+    requests: messageRequests,
+    setRequests: setMessageRequests,
+    handleAccept: handleAcceptMessageRequestRaw,
+    handleIgnore: handleIgnoreMessageRequest,
+    handleSpam: handleReportSpamMessageRequest,
+  } = useMessageRequests();
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil_assignments', JSON.stringify(assignments));
-    } catch {}
-  }, [assignments]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil_call_logs', JSON.stringify(callLogs));
-    } catch {}
-  }, [callLogs]);
-
-  // Discord-style Message Requests (matching user screenshot)
-  const [messageRequests, setMessageRequests] = useState<MessageRequestItem[]>(() => {
-    const saved = localStorage.getItem('anticeil_message_requests');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return [
-      {
-        id: 'mr-1',
-        userId: 'user-gwiyo',
-        name: '귀요미규짱',
-        username: 'gwiyomigyujjang',
-        avatar: null,
-        date: 'February 23, 2023',
-        mutualServers: 0,
-        isSpam: false,
-        initialMessage: 'Halo! Salam kenal ya kak 👋',
-      },
-      {
-        id: 'mr-2',
-        userId: 'user-silence',
-        name: 'Silence',
-        username: 'silence03330',
-        avatar: null,
-        date: 'February 19, 2023',
-        mutualServers: 1,
-        isSpam: false,
-        initialMessage: 'Kak mau tanya tentang channel voice kemarin dong',
-      },
-      {
-        id: 'mr-3',
-        userId: 'user-d4nni',
-        name: '꧁D4nni꧂',
-        username: 'd4nni7199',
-        avatar: null,
-        date: 'February 11, 2023',
-        mutualServers: 0,
-        isSpam: false,
-        initialMessage: 'Boleh mabar game nanti malam?',
-      },
-      {
-        id: 'mr-4',
-        userId: 'user-kevkirk',
-        name: 'KevKirk',
-        username: 'kevkirk',
-        avatar: null,
-        date: 'February 3, 2023',
-        mutualServers: 0,
-        isSpam: false,
-        initialMessage: 'Hey, are you active in Anticeil?',
-      },
-      // Spam requests
-      {
-        id: 'mr-spam-1',
-        userId: 'spam-bf423',
-        name: 'deleted_user_bf423af095f2',
-        username: 'deleted_user',
-        avatar: null,
-        date: 'August 10, 2023',
-        mutualServers: 0,
-        isSpam: true,
-        initialMessage: 'Free nitro gift click link below: http://...',
-      },
-      {
-        id: 'mr-spam-2',
-        userId: 'spam-f3098',
-        name: 'deleted_user_f3098e5bfff4',
-        username: 'deleted_user',
-        avatar: null,
-        date: 'May 31, 2023',
-        mutualServers: 0,
-        isSpam: true,
-        initialMessage: 'Join crypto server earn 500$ daily now!!',
-      },
-      {
-        id: 'mr-spam-3',
-        userId: 'spam-fireboy',
-        name: 'fireboy',
-        username: 'fireboy6114',
-        avatar: null,
-        date: 'February 12, 2023',
-        mutualServers: 0,
-        isSpam: true,
-        initialMessage: 'Check out this suspicious link right now',
-      },
-    ];
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil_message_requests', JSON.stringify(messageRequests));
-    } catch {}
-  }, [messageRequests]);
-
-  // Notifications state (Feed ala MS Teams / Discord Inbox)
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    const saved = localStorage.getItem('anticeil_notifications');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return [
-      {
-        id: 'notif-1',
-        actorId: 'usr-daffa',
-        actorName: 'Daffa, znafian',
-        type: 'mention',
-        title: 'menandai Anda di pesan baru',
-        summary: '@you jangan lupa coba fitur Watch Together realtime barusan ya!',
-        channelId: 'general',
-        channelName: 'general',
-        createdAt: '5 mnt lalu',
-        isRead: false,
-      },
-      {
-        id: 'notif-2',
-        actorId: 'usr-pengebom',
-        actorName: 'Pengebom',
-        type: 'activity',
-        title: 'meluncurkan aktivitas baru',
-        summary: 'Aktivitas Watch Together (YouTube) telah dimulai. Klik untuk bergabung!',
-        channelId: 'general',
-        channelName: 'general',
-        createdAt: '20 mnt lalu',
-        isRead: false,
-      },
-      {
-        id: 'notif-3',
-        actorId: 'usr-silence',
-        actorName: 'Silence',
-        type: 'reply',
-        title: 'membalas thread Anda',
-        summary: 'Thread "Fitur baru": Saya sudah coba di perangkat mobile dan responsive banget.',
-        channelId: 'general',
-        channelName: 'general',
-        createdAt: '1 jam lalu',
-        isRead: true,
-      },
-    ];
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('anticeil_notifications', JSON.stringify(notifications));
-    } catch {}
-  }, [notifications]);
+  const {
+    notifications,
+    setNotifications,
+    handleMarkAsRead: handleMarkNotificationRead,
+    handleMarkAllAsRead: handleMarkAllNotificationsRead,
+  } = useNotifications();
 
   const activeHub = useMemo(() => {
     return hubs.find((h) => h.id === activeHubId) || hubs[0];
@@ -2333,34 +2058,13 @@ export function CommunityPage() {
 
   // Message Requests Handlers
   const handleAcceptMessageRequest = (item: MessageRequestItem) => {
-    setMessageRequests((prev) => prev.filter((r) => r.id !== item.id));
+    handleAcceptMessageRequestRaw(item);
     handleStartDM({
       id: item.userId,
       name: item.name,
       username: item.username,
       avatar: item.avatar,
     } as any);
-    toast.success(t(`Permintaan pesan dari ${item.name} diterima! Membuka obrolan.`));
-  };
-
-  const handleIgnoreMessageRequest = (item: MessageRequestItem) => {
-    setMessageRequests((prev) => prev.filter((r) => r.id !== item.id));
-    toast.info(t(`Permintaan pesan dari ${item.name} diabaikan.`));
-  };
-
-  const handleReportSpamMessageRequest = (item: MessageRequestItem) => {
-    setMessageRequests((prev) => prev.filter((r) => r.id !== item.id));
-    toast.success(t(`Pesan dari ${item.name} dilaporkan sebagai spam.`));
-  };
-
-  // Notifications Handlers
-  const handleMarkAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    toast.success(t('Semua notifikasi ditandai sudah dibaca'));
-  };
-
-  const handleMarkNotificationRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
   };
 
   const handleJumpToNotification = (item: NotificationItem) => {
@@ -2772,14 +2476,7 @@ export function CommunityPage() {
               setActiveCallChannelId(channelId);
             }}
             onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            onCreateEvent={(newEvent) => {
-              const created: CalendarEvent = {
-                ...newEvent,
-                id: `cal-ev-${Date.now()}`,
-              };
-              setCalendarEvents((prev) => [created, ...prev]);
-              toast.success('Jadwal meeting berhasil ditambahkan!');
-            }}
+            onCreateEvent={createCalendarEvent}
             horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
           />
         ) : isAssignmentsView ? (
@@ -2790,14 +2487,8 @@ export function CommunityPage() {
               setActiveHubId(hubId);
               setActiveChannelId(channelId);
             }}
-            onToggleComplete={(assignmentId, isCompleted) => {
-              setAssignments((prev) =>
-                prev.map((a) =>
-                  a.id === assignmentId
-                    ? { ...a, columnId: isCompleted ? 'done' : 'in_progress', completedAt: isCompleted ? dayjs().toISOString() : undefined }
-                    : a
-                )
-              );
+            onToggleComplete={(assignmentId) => {
+              handleToggleComplete(assignmentId);
             }}
             onOpenSidebar={() => setIsMobileChannelsOpen(true)}
             horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
@@ -2807,6 +2498,13 @@ export function CommunityPage() {
             calls={callLogs}
             friends={friends.allFriends}
             onStartCall={(friend) => {
+              handleCreateCallLog({
+                peerId: friend.id,
+                peerName: friend.name,
+                peerAvatar: friend.avatar || null,
+                type: 'outgoing',
+                isVideo: false,
+              });
               handleStartDirectMessage(friend);
             }}
             onOpenSidebar={() => setIsMobileChannelsOpen(true)}

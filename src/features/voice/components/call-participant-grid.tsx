@@ -164,9 +164,9 @@ export function CallParticipantGrid({
       <div
         className={cn(
           'w-full h-full max-h-full flex flex-col md:grid items-center justify-center gap-2.5 sm:gap-4 transition-all duration-300',
-          participants.length <= 1 && 'md:grid-cols-2 max-w-5xl mx-auto',
-          (participants.length === 2 || participants.length === 3) && 'grid-cols-2 max-w-5xl mx-auto',
-          participants.length >= 4 && 'grid-cols-2 md:grid-cols-3 max-w-6xl mx-auto',
+          participants.length <= 1 && 'md:grid-cols-2 w-full',
+          (participants.length === 2 || participants.length === 3) && 'grid-cols-2 w-full',
+          participants.length >= 4 && 'grid-cols-2 md:grid-cols-3 w-full',
         )}
       >
         {/* LOCAL PARTICIPANT TILE */}

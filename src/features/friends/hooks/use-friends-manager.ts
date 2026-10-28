@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { CommunityMember } from '@/chat/chat-types';
 import type { FriendRequest, FriendsTab } from '../types';
+import { friendsApi } from '../api/friends-api';
 
 export interface UseFriendsManagerOptions {
   displayMembers: CommunityMember[];
@@ -21,18 +22,55 @@ export function useFriendsManager({
   const [addFriendInput, setAddFriendInput] = useState('');
   const [isAddingFriend, setIsAddingFriend] = useState(false);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [persistedFriends, setPersistedFriends] = useState<any[]>([]);
+
+  const fetchFriendRequests = useCallback(async () => {
+    try {
+      const [reqs, friends] = await Promise.all([
+        friendsApi.getFriendRequests(),
+        friendsApi.getFriends(),
+      ]);
+      setFriendRequests(reqs);
+      setPersistedFriends(friends);
+    } catch {
+      // Keep optimistic state
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFriendRequests();
+  }, [fetchFriendRequests]);
+
+  const effectiveMembers = useMemo(() => {
+    if (persistedFriends.length === 0) return displayMembers;
+    const map = new Map<string, any>();
+    displayMembers.forEach((m) => map.set(m.id, m));
+    persistedFriends.forEach((f) => {
+      if (!map.has(f.id)) {
+        map.set(f.id, {
+          id: f.id,
+          name: f.name,
+          username: f.username || f.name.toLowerCase().replace(/\s+/g, ''),
+          avatar: f.avatar || null,
+          status: 'online',
+          role: 'member',
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [displayMembers, persistedFriends]);
 
   const onlineFriends = useMemo(() => {
-    return displayMembers.filter(
+    return effectiveMembers.filter(
       (m) => m.id !== currentUser?.id && m.email !== currentUser?.email && m.status !== 'offline',
     );
-  }, [displayMembers, currentUser]);
+  }, [effectiveMembers, currentUser]);
 
   const allFriends = useMemo(() => {
-    return displayMembers.filter(
+    return effectiveMembers.filter(
       (m) => m.id !== currentUser?.id && m.email !== currentUser?.email,
     );
-  }, [displayMembers, currentUser]);
+  }, [effectiveMembers, currentUser]);
 
   const filteredFriends = useMemo(() => {
     const list = friendsTab === 'online' ? onlineFriends : allFriends;
@@ -50,34 +88,34 @@ export function useFriendsManager({
     if (!raw.trim()) return;
     setIsAddingFriend(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
-      const cleanInput = raw.trim().replace(/^@/, '').toLowerCase();
+      const cleanInput = raw.trim().replace(/^@/, '');
       const found = members.find(
         (m) =>
-          (m.username && m.username.toLowerCase() === cleanInput) ||
-          m.name.toLowerCase() === cleanInput,
+          (m.username && m.username.toLowerCase() === cleanInput.toLowerCase()) ||
+          m.name.toLowerCase() === cleanInput.toLowerCase(),
       );
-      if (found) {
-        if (found.id === currentUser?.id || found.email === currentUser?.email) {
-          toast.error(t('Kamu tidak bisa menambahkan diri sendiri sebagai teman.'));
-          return;
-        }
-        setFriendRequests((prev) => [
-          ...prev.filter((r) => r.id !== found.id),
-          {
-            id: found.id,
-            name: found.name,
-            username: found.username || null,
-            avatar: found.avatar || null,
-            direction: 'outgoing' as const,
-            status: 'pending' as const,
-          },
-        ]);
-        toast.success(t('Permintaan pertemanan terkirim ke') + ` ${found.name}!`);
-        setAddFriendInput('');
-      } else {
-        toast.error(t('Pengguna tidak ditemukan. Periksa username dan coba lagi.'));
+
+      if (found && (found.id === currentUser?.id || found.email === currentUser?.email)) {
+        toast.error(t('Kamu tidak bisa menambahkan diri sendiri sebagai teman.'));
+        return;
       }
+
+      await friendsApi.sendFriendRequest(cleanInput, found?.id);
+
+      // Optimistic update
+      setFriendRequests((prev) => [
+        ...prev.filter((r) => r.name.toLowerCase() !== cleanInput.toLowerCase()),
+        {
+          id: `freq_${Date.now()}`,
+          name: found ? found.name : cleanInput,
+          username: found?.username || cleanInput.toLowerCase(),
+          avatar: found?.avatar || null,
+          direction: 'outgoing' as const,
+          status: 'pending' as const,
+        },
+      ]);
+      toast.success(t('Permintaan pertemanan terkirim ke') + ` ${found ? found.name : cleanInput}!`);
+      setAddFriendInput('');
     } catch {
       toast.error(t('Gagal mengirim permintaan pertemanan.'));
     } finally {
@@ -85,19 +123,45 @@ export function useFriendsManager({
     }
   };
 
-  const handleAcceptRequest = (req: FriendRequest) => {
+  const handleAcceptRequest = async (req: FriendRequest) => {
     setFriendRequests((prev) => prev.filter((r) => r.id !== req.id));
-    toast.success(t('Permintaan pertemanan dari') + ` ${req.name} ` + t('diterima!'));
+    try {
+      await friendsApi.acceptFriendRequest(req.id);
+      toast.success(t('Permintaan pertemanan dari') + ` ${req.name} ` + t('diterima!'));
+      fetchFriendRequests();
+    } catch {
+      toast.error(t('Gagal menerima permintaan.'));
+    }
   };
 
-  const handleRejectRequest = (req: FriendRequest) => {
+  const handleRejectRequest = async (req: FriendRequest) => {
     setFriendRequests((prev) => prev.filter((r) => r.id !== req.id));
-    toast(t('Permintaan pertemanan ditolak.'));
+    try {
+      await friendsApi.ignoreFriendRequest(req.id);
+      toast(t('Permintaan pertemanan ditolak.'));
+    } catch {
+      // Ignored
+    }
   };
 
-  const handleCancelRequest = (req: FriendRequest) => {
+  const handleCancelRequest = async (req: FriendRequest) => {
     setFriendRequests((prev) => prev.filter((r) => r.id !== req.id));
-    toast(t('Permintaan pertemanan dibatalkan.'));
+    try {
+      await friendsApi.ignoreFriendRequest(req.id);
+      toast(t('Permintaan pertemanan dibatalkan.'));
+    } catch {
+      // Ignored
+    }
+  };
+
+  const handleDeleteFriend = async (friendId: string) => {
+    setPersistedFriends((prev) => prev.filter((f) => f.id !== friendId));
+    try {
+      await friendsApi.deleteFriend(friendId);
+      toast.success(t('Teman dihapus.'));
+    } catch {
+      // Ignored
+    }
   };
 
   return {
@@ -119,5 +183,7 @@ export function useFriendsManager({
     onAcceptRequest: handleAcceptRequest,
     onRejectRequest: handleRejectRequest,
     onCancelRequest: handleCancelRequest,
+    onDeleteFriend: handleDeleteFriend,
+    refetch: fetchFriendRequests,
   };
 }

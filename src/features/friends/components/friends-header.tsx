@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, MessageSquare, Menu } from 'lucide-react';
+import { Users, MessageSquare, Menu, Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ interface FriendsHeaderProps {
   allCount: number;
   pendingCount: number;
   onOpenDmSearch: () => void;
+  onOpenAddFriendDialog?: () => void;
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
 }
@@ -24,6 +25,7 @@ export function FriendsHeader({
   allCount,
   pendingCount,
   onOpenDmSearch,
+  onOpenAddFriendDialog,
   onOpenSidebar,
   horizontalPadding = 'px-4',
 }: FriendsHeaderProps) {
@@ -54,7 +56,7 @@ export function FriendsHeader({
 
         <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
-        {/* Tabs: Online, Semua, Tertunda, Tambah Teman */}
+        {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => onTabChange('online')}
@@ -103,16 +105,13 @@ export function FriendsHeader({
             )}
           </button>
 
+          {/* Yellow Highlight Button: Tambah Teman (100% Matches 'Buat Server' Style) */}
           <button
-            onClick={() => onTabChange('add')}
-            className={cn(
-              'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer ml-1',
-              friendsTab === 'add'
-                ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
-                : 'bg-primary/90 hover:bg-primary text-primary-foreground'
-            )}
+            onClick={onOpenAddFriendDialog}
+            className="px-2.5 py-1 rounded-[4px] text-xs font-bold transition-all cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-1"
           >
-            {t('Tambah Teman')}
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>{t('Tambah Teman')}</span>
           </button>
         </div>
       </div>

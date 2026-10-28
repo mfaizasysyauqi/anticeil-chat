@@ -115,7 +115,7 @@ export function CallsView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] p-4 sm:p-6 space-y-6">
+      <div className={cn('flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] py-4 sm:py-6 space-y-6', horizontalPadding)}>
         {/* Speed Dial / Kontak Cepat Section */}
         {friends && friends.length > 0 && (
           <div className="space-y-3">
@@ -182,7 +182,7 @@ export function CallsView({
         )}
 
         {/* Call Logs Section */}
-        <div className="space-y-3 max-w-3xl">
+        <div className="space-y-3 w-full">
           <div className="flex items-center justify-between pb-2 border-b border-border">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Riwayat Panggilan Terakhir ({filteredCalls.length})

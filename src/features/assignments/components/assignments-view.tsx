@@ -185,8 +185,8 @@ export function AssignmentsView({
       </div>
 
       {/* ── Task Items List ────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] p-4 sm:p-6">
-        <div className="max-w-3xl mx-auto space-y-3">
+      <div className={cn('flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
+        <div className="w-full space-y-3">
           {filteredList.length === 0 ? (
             <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl">
               <Backpack className="w-10 h-10 stroke-1 mb-2 opacity-50" />

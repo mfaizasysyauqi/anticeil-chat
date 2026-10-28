@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Globe,
   Plus,
@@ -11,6 +11,9 @@ import {
   ArrowRight,
   Shield,
   Layers,
+  Inbox,
+  Check,
+  X,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -19,6 +22,13 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CommunityHub } from '@/chat/chat-types';
+import {
+  loadStoredServerInvitations,
+  saveStoredServerInvitations,
+  loadStoredHubs,
+  saveStoredHubs,
+  type ServerInvitation,
+} from '@/lib/community-hubs';
 import { ServerIcon } from './server-icon';
 import { toast } from 'sonner';
 
@@ -81,24 +91,74 @@ export function ServersView({
   horizontalPadding = 'px-4',
 }: ServersViewProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'joined' | 'explore'>('joined');
+  const [activeTab, setActiveTab] = useState<'joined' | 'pending' | 'explore'>('joined');
   const [searchQuery, setSearchQuery] = useState('');
+  const [serverInvitations, setServerInvitations] = useState<ServerInvitation[]>(() =>
+    loadStoredServerInvitations()
+  );
+
+  useEffect(() => {
+    const handleUpdate = () => setServerInvitations(loadStoredServerInvitations());
+    window.addEventListener('anticeil_server_invites_changed', handleUpdate);
+    return () => window.removeEventListener('anticeil_server_invites_changed', handleUpdate);
+  }, []);
 
   // Exclude default home if desired or keep all
   const myServers = servers.filter((s) => s.id !== 'anticeil');
 
-  const filteredMyServers = myServers.filter((s) =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredMyServers = myServers.filter(
+    (s) =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredExplore = PUBLIC_EXPLORE_COMMUNITIES.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPendingInvites = serverInvitations.filter(
+    (inv) =>
+      inv.serverName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inv.inviterName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inv.serverDescription && inv.serverDescription.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const filteredExplore = PUBLIC_EXPLORE_COMMUNITIES.filter(
+    (c) =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleJoinPublic = (community: typeof PUBLIC_EXPLORE_COMMUNITIES[0]) => {
     toast.success(`Berhasil bergabung dengan ${community.name}! 🎉`);
+  };
+
+  const handleAcceptInvitation = (invite: ServerInvitation) => {
+    const updated = serverInvitations.filter((i) => i.id !== invite.id);
+    setServerInvitations(updated);
+    saveStoredServerInvitations(updated);
+
+    // Persist as joined hub
+    const existing = loadStoredHubs();
+    if (!existing.some((h) => h.id === invite.serverId)) {
+      const newHub: CommunityHub = {
+        id: invite.serverId,
+        name: invite.serverName,
+        description: invite.serverDescription,
+        initials: invite.serverName.slice(0, 2).toUpperCase(),
+        iconType: 'initials',
+        iconUrl: invite.serverIconUrl,
+        role: 'member',
+        membersCount: (invite.membersCount || 1) + 1,
+      };
+      saveStoredHubs([...existing, newHub]);
+    }
+
+    toast.success(`Berhasil bergabung dengan ${invite.serverName}! 🎉`);
+    onSelectServer(invite.serverId);
+  };
+
+  const handleRejectInvitation = (invite: ServerInvitation) => {
+    const updated = serverInvitations.filter((i) => i.id !== invite.id);
+    setServerInvitations(updated);
+    saveStoredServerInvitations(updated);
+    toast.info(`Undangan server ${invite.serverName} telah ditolak.`);
   };
 
   return (
@@ -149,6 +209,23 @@ export function ServersView({
             </button>
 
             <button
+              onClick={() => setActiveTab('pending')}
+              className={cn(
+                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
+                activeTab === 'pending'
+                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              <span>{t('Tertunda')}</span>
+              {serverInvitations.length > 0 && (
+                <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {serverInvitations.length}
+                </span>
+              )}
+            </button>
+
+            <button
               onClick={() => setActiveTab('explore')}
               className={cn(
                 'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5',
@@ -180,7 +257,13 @@ export function ServersView({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={activeTab === 'joined' ? 'Cari server saya...' : 'Cari komunitas...'}
+              placeholder={
+                activeTab === 'joined'
+                  ? 'Cari server saya...'
+                  : activeTab === 'pending'
+                  ? 'Cari undangan...'
+                  : 'Cari komunitas...'
+              }
               className="w-full h-7 pl-8 pr-2 text-xs bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -263,6 +346,94 @@ export function ServersView({
                         <span>Buka Server</span>
                         <ArrowRight className="w-3 h-3" />
                       </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'pending' ? (
+          /* Pending Server Invitations Tab */
+          <div className="space-y-4 max-w-5xl">
+            <div className="flex items-center justify-between pb-1 border-b border-border/50">
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                {t('Undangan Server Tertunda')} ({filteredPendingInvites.length})
+              </h2>
+            </div>
+
+            {filteredPendingInvites.length === 0 ? (
+              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl">
+                <Inbox className="w-12 h-12 stroke-1 mb-3 text-muted-foreground/60" />
+                <h3 className="text-sm font-bold text-foreground">{t('Tidak Ada Undangan Tertunda')}</h3>
+                <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
+                  {t('Saat seseorang mengajak Anda untuk bergabung ke server komunitas mereka, undangannya akan muncul di sini.')}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredPendingInvites.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="p-4 rounded-xl border border-border bg-card hover:border-amber-400/40 transition-all flex flex-col justify-between gap-3 shadow-xs group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="size-12 rounded-[14px] bg-sidebar-accent border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs font-bold text-base text-foreground group-hover:scale-105 transition-transform">
+                        {inv.serverIconUrl ? (
+                          <img src={inv.serverIconUrl} alt={inv.serverName} className="w-full h-full object-cover" />
+                        ) : (
+                          inv.serverName.charAt(0).toUpperCase()
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-foreground truncate">{inv.serverName}</h3>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
+                            Undangan Masuk
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
+                          {inv.serverDescription || 'Komunitas Anticeil untuk kolaborasi dan obrolan santai.'}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
+                          {inv.inviterAvatar && (
+                            <img src={inv.inviterAvatar} alt={inv.inviterName} className="w-4 h-4 rounded-full object-cover" />
+                          )}
+                          <span>
+                            Diundang oleh <strong className="text-foreground">{inv.inviterName}</strong>
+                            {inv.inviterUsername ? ` (@${inv.inviterUsername})` : ''}
+                            {inv.createdAt ? ` • ${inv.createdAt}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-border/50 flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                        <Users className="w-3 h-3" />
+                        <span>{inv.membersCount ? `${inv.membersCount.toLocaleString()} Anggota` : 'Komunitas Aktif'}</span>
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRejectInvitation(inv)}
+                          className="h-8 px-3 text-xs font-semibold text-muted-foreground hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5 mr-1" />
+                          <span>{t('Tolak')}</span>
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          onClick={() => handleAcceptInvitation(inv)}
+                          className="h-8 px-3.5 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-black cursor-pointer shadow-2xs gap-1"
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <span>{t('Gabung Server')}</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
