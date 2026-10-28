@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import {
   AtSign,
   Clock,
@@ -55,15 +56,22 @@ export function EditProfileDialog({
   onLogout,
   t,
 }: EditProfileDialogProps) {
+  const suggestedUsername = useMemo(() => {
+    if (currentUser?.username) return currentUser.username;
+    // Auto-generate from email or display name
+    const base = currentUser?.email?.split('@')[0] || currentUserName;
+    return base?.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 32) || '';
+  }, [currentUser?.username, currentUser?.email, currentUserName]);
+
   const [editDisplayNameInput, setEditDisplayNameInput] = useState(currentUserName);
-  const [editUsernameInput, setEditUsernameInput] = useState(currentUser?.username || '');
+  const [editUsernameInput, setEditUsernameInput] = useState(suggestedUsername);
 
   useEffect(() => {
     if (open) {
       setEditDisplayNameInput(currentUserName);
-      setEditUsernameInput(currentUser?.username || '');
+      setEditUsernameInput(suggestedUsername);
     }
-  }, [open, currentUserName, currentUser?.username]);
+  }, [open, currentUserName, suggestedUsername]);
 
   // Cooldown calculation: 14 days from usernameLastChangedAt
   const usernameLastChangedAt = currentUser?.usernameLastChangedAt;
@@ -91,7 +99,18 @@ export function EditProfileDialog({
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-            <AtSign className="w-4 h-4 text-primary" />
+            {currentUser ? (
+              <CommunityAvatar
+                name={currentUserName}
+                email={currentUser?.email}
+                imageUrl={currentUser?.imageUrl}
+                size={28}
+                showStatus={false}
+                className="shrink-0"
+              />
+            ) : (
+              <AtSign className="w-4 h-4 text-primary" />
+            )}
             {!currentUser ? t('Masuk ke Anticeil') : t('Profil & Identitas Akun')}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">

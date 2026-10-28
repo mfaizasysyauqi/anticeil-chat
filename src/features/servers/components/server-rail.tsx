@@ -13,6 +13,7 @@ export interface ServerRailProps {
   hubs?: CommunityHub[];
   activeServerId?: string;
   activeHubId?: string;
+  unreadCounts?: Record<string, number | string>;
   onSelectServer?: (serverId: string) => void;
   onSelectHub?: (hubId: string) => void;
   onOpenCreateServer?: () => void;
@@ -28,11 +29,19 @@ export interface ServerRailProps {
   onOpenAddFriend?: () => void;
 }
 
+function formatUnreadBadge(count: number | string | undefined): string | null {
+  if (count === undefined || count === null || count === 0 || count === '0' || count === '') return null;
+  if (typeof count === 'string') return count;
+  if (count >= 1000) return `${Math.floor(count / 1000)}K+`;
+  return String(count);
+}
+
 export function ServerRail({
   servers,
   hubs,
   activeServerId,
   activeHubId,
+  unreadCounts,
   onSelectServer,
   onSelectHub,
   onOpenCreateServer,
@@ -83,6 +92,15 @@ export function ServerRail({
   const otherServers = serverList.slice(1);
   const friendList = friends || [];
 
+  const mainUnread = mainServer
+    ? formatUnreadBadge(
+        unreadCounts?.[mainServer.id] ??
+          unreadCounts?.['home'] ??
+          unreadCounts?.['anticeil'] ??
+          mainServer.unreadCount,
+      )
+    : null;
+
   return (
     <div id="anticeil-mini-rail" className="w-14 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
       {/* Top Server (Workspace / Home) - Exactly h-14 to align with top bar */}
@@ -91,8 +109,12 @@ export function ServerRail({
           {/* Signature left pill indicator */}
           <span
             className={cn(
-              'absolute left-0 w-[3px] bg-foreground rounded-r-full transition-all duration-200',
-              currentActiveId === mainServer.id && !activeChannelId?.startsWith('dm-') ? 'h-6' : 'h-0 group-hover:h-3.5 opacity-80'
+              'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+              currentActiveId === mainServer.id && !activeChannelId?.startsWith('dm-')
+                ? 'h-10'
+                : mainUnread
+                ? 'h-2 group-hover:h-5'
+                : 'h-0 group-hover:h-3.5 opacity-80',
             )}
           />
 
@@ -104,17 +126,17 @@ export function ServerRail({
                   'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                   currentActiveId === mainServer.id && !activeChannelId?.startsWith('dm-')
                     ? 'bg-primary/20 text-primary border border-primary/40 shadow-xs shadow-primary/10'
-                    : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80'
+                    : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
                 )}
               >
                 {renderIcon(mainServer)}
 
-                {/* Unread badge pill */}
-                {mainServer.unreadCount && mainServer.unreadCount > 0 ? (
-                  <span className="absolute -top-1 -right-1 size-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center border-2 border-sidebar">
-                    {mainServer.unreadCount}
+                {/* Discord-style bottom-right unread badge pill */}
+                {mainUnread && (
+                  <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
+                    {mainUnread}
                   </span>
-                ) : null}
+                )}
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
@@ -142,7 +164,7 @@ export function ServerRail({
                   'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
                   isFriendsMode
                     ? 'bg-amber-400 text-black shadow-xs shadow-amber-400/30 hover:bg-amber-300 hover:text-black'
-                    : 'bg-sidebar-accent text-amber-400 hover:bg-amber-400 hover:text-black dark:hover:text-black'
+                    : 'bg-sidebar-accent text-amber-400 hover:bg-amber-400 hover:text-black dark:hover:text-black',
                 )}
                 aria-label={isFriendsMode ? 'Mode Teman. Klik untuk ganti ke Mode Server' : 'Mode Server. Klik untuk ganti ke Mode Teman'}
               >
@@ -168,7 +190,7 @@ export function ServerRail({
                 onClick={isFriendsMode ? onOpenAddFriend : handleCreate}
                 className={cn(
                   'group relative size-10 rounded-[14px] bg-sidebar-accent flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
-                  'text-emerald-400 hover:bg-emerald-500 hover:text-white dark:hover:text-white'
+                  'text-emerald-400 hover:bg-emerald-500 hover:text-white dark:hover:text-white',
                 )}
               >
                 {isFriendsMode ? (
@@ -192,13 +214,23 @@ export function ServerRail({
         {/* Mode-specific list: Friends list OR Servers list */}
         {isFriendsMode ? (
           friendList.map((f) => {
-            const isDmActive = activeChannelId === `dm-${f.id}` || (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id)));
+            const isDmActive =
+              activeChannelId === `dm-${f.id}` ||
+              (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id)));
+            const friendUnread = formatUnreadBadge(
+              unreadCounts?.[f.id] ?? unreadCounts?.[`dm-${f.id}`] ?? f.unreadCount,
+            );
+
             return (
               <div key={f.id} className="relative group w-full flex items-center justify-center">
                 <span
                   className={cn(
-                    'absolute left-0 w-[3px] bg-foreground rounded-r-full transition-all duration-200',
-                    isDmActive ? 'h-6' : 'h-0 group-hover:h-3.5 opacity-80'
+                    'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+                    isDmActive
+                      ? 'h-10'
+                      : friendUnread
+                      ? 'h-2 group-hover:h-5'
+                      : 'h-0 group-hover:h-3.5 opacity-80',
                   )}
                 />
 
@@ -211,7 +243,7 @@ export function ServerRail({
                         'relative size-10 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isDmActive
                           ? 'ring-2 ring-primary ring-offset-2 ring-offset-sidebar shadow-xs'
-                          : 'hover:opacity-90'
+                          : 'hover:opacity-90',
                       )}
                     >
                       <CommunityAvatar
@@ -231,9 +263,16 @@ export function ServerRail({
                             ? 'bg-amber-500'
                             : f.status === 'dnd'
                             ? 'bg-red-500'
-                            : 'bg-muted-foreground/40'
+                            : 'bg-muted-foreground/40',
                         )}
                       />
+
+                      {/* Discord-style bottom-right unread badge pill for friend */}
+                      {friendUnread && (
+                        <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
+                          {friendUnread}
+                        </span>
+                      )}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
@@ -251,12 +290,18 @@ export function ServerRail({
         ) : (
           otherServers.map((srv) => {
             const isActive = currentActiveId === srv.id;
+            const serverUnread = formatUnreadBadge(unreadCounts?.[srv.id] ?? srv.unreadCount);
+
             return (
               <div key={srv.id} className="relative group w-full flex items-center justify-center">
                 <span
                   className={cn(
-                    'absolute left-0 w-[3px] bg-foreground rounded-r-full transition-all duration-200',
-                    isActive ? 'h-6' : 'h-0 group-hover:h-3.5 opacity-80'
+                    'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+                    isActive
+                      ? 'h-10'
+                      : serverUnread
+                      ? 'h-2 group-hover:h-5'
+                      : 'h-0 group-hover:h-3.5 opacity-80',
                   )}
                 />
 
@@ -268,16 +313,17 @@ export function ServerRail({
                         'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isActive
                           ? 'bg-primary/20 text-primary border border-primary/40 shadow-xs shadow-primary/10'
-                          : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80'
+                          : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
                       )}
                     >
                       {renderIcon(srv)}
 
-                      {srv.unreadCount && srv.unreadCount > 0 ? (
-                        <span className="absolute -top-1 -right-1 size-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center border-2 border-sidebar">
-                          {srv.unreadCount}
+                      {/* Discord-style bottom-right unread badge pill for server */}
+                      {serverUnread && (
+                        <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
+                          {serverUnread}
                         </span>
-                      ) : null}
+                      )}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">

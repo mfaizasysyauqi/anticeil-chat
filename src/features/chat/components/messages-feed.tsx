@@ -22,6 +22,20 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
 import { renderFormattedMessage } from '../utils/format-message';
 import type { CommunityChannel, CommunityMessage, CommunityRole } from '@/chat/chat-types';
+import dayjs from 'dayjs';
+
+function formatDateDivider(dateStr?: string): string {
+  if (!dateStr) return 'Hari ini';
+  const d = dayjs(dateStr);
+  const now = dayjs();
+  if (d.isSame(now, 'day')) {
+    return 'Hari ini';
+  }
+  if (d.isSame(now.subtract(1, 'day'), 'day')) {
+    return 'Kemarin';
+  }
+  return d.format('D MMMM YYYY');
+}
 
 export interface MessagesFeedProps {
   activeChannel: CommunityChannel | null;
@@ -98,12 +112,47 @@ export function MessagesFeed({
               Belum ada pesan di channel ini. Jadilah yang pertama mengirim pesan!
             </div>
           ) : (
-            filteredMessages.map((msg) => {
-              const activityAtt = msg.attachments?.find((a) => a.type === 'activity');
-              const act = activityAtt?.activityData;
+            (() => {
+              const unreadCount = activeChannel?.unreadCount || 0;
+              const unreadStartIndex =
+                unreadCount > 0 ? Math.max(0, filteredMessages.length - unreadCount) : -1;
 
-              return (
-                <div key={msg.id} className="flex flex-col">
+              return filteredMessages.map((msg, index) => {
+                const activityAtt = msg.attachments?.find((a) => a.type === 'activity');
+                const act = activityAtt?.activityData;
+                const prevMsg = index > 0 ? filteredMessages[index - 1] : null;
+                const isNewDay =
+                  !prevMsg || !dayjs(msg.createdAt).isSame(dayjs(prevMsg.createdAt), 'day');
+                const isUnreadDivider = index === unreadStartIndex && unreadStartIndex > 0;
+
+                return (
+                  <React.Fragment key={msg.id}>
+                    {/* Date Section Divider (Sections per hari ala Discord) */}
+                    {isNewDay && (
+                      <div className="relative my-5 flex items-center justify-center select-none">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-border/40" />
+                        </div>
+                        <span className="relative px-3 py-0.5 text-[11px] font-bold text-muted-foreground/80 bg-background rounded-full border border-border/40 shadow-2xs">
+                          {formatDateDivider(msg.createdAt)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Unread Section Divider (Sections unread ala Discord) */}
+                    {isUnreadDivider && (
+                      <div
+                        className="relative my-4 flex items-center select-none"
+                        id="discord-unread-divider"
+                      >
+                        <div className="w-full border-t border-[#da373c]/80" />
+                        <span className="absolute right-4 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white bg-[#da373c] rounded-full shadow-xs leading-none">
+                          BARU
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col">
                   {/* Discord Command Header / Interaction spine when launched by someone */}
                   {act && (
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative">
@@ -237,7 +286,7 @@ export function MessagesFeed({
                                 >
                                   {/* Invitation Header Label */}
                                   <span className="text-[11px] font-bold text-white/75 tracking-wider uppercase block mb-3.5">
-                                    Game Invitation
+                                    App Invitation
                                   </span>
 
                                   {/* Main App Info Row */}
@@ -278,7 +327,7 @@ export function MessagesFeed({
                                           className="shrink-0"
                                           showStatus={false}
                                         />
-                                        <span className="text-xs text-white/90 font-medium">1 Playing</span>
+                                        <span className="text-xs text-white/90 font-medium">1 Using</span>
                                       </div>
                                     </div>
                                   </div>
@@ -423,6 +472,26 @@ export function MessagesFeed({
                                 />
                               );
                             }
+                            if (att.type === 'video') {
+                              return (
+                                <video
+                                  key={attIdx}
+                                  src={att.url}
+                                  controls
+                                  className="max-h-72 max-w-md rounded-md border border-border/60"
+                                />
+                              );
+                            }
+                            if (att.type === 'audio') {
+                              return (
+                                <audio
+                                  key={attIdx}
+                                  src={att.url}
+                                  controls
+                                  className="max-w-md my-1"
+                                />
+                              );
+                            }
                         return (
                           <div
                             key={attIdx}
@@ -531,9 +600,11 @@ export function MessagesFeed({
                 </div>
               </div>
             </div>
-          );
-        })
-      )}
+          </React.Fragment>
+        );
+      });
+    })()
+  )}
         </>
       )}
       <div ref={messagesEndRef} />

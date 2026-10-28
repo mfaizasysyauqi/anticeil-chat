@@ -1,8 +1,32 @@
-import React, { useRef } from 'react';
-import { Paperclip, X, Plus, Gift, Send } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import {
+  Paperclip,
+  X,
+  Plus,
+  Gift,
+  Send,
+  Upload,
+  MessageSquarePlus,
+  BarChart2,
+  LayoutGrid,
+  CalendarPlus,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { MediaPickerPopover } from './media-picker-popover';
 import { ChatAppsPopover } from './chat-apps-popover';
+import { CreatePollModal } from './create-poll-modal';
+import { CustomScheduleModal } from './custom-schedule-modal';
+import { MAX_MESSAGE_CHARS } from '../utils/text-limit';
 import type { CommunityChannel, CommunityHub } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/anticeil-media-data';
 
@@ -17,6 +41,9 @@ export interface ChatInputBarProps {
   onSendMessage: () => void;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onOpenGiftModal: () => void;
+  onOpenCreateThreadModal?: () => void;
+  onScheduleMessage?: (scheduledDate: Date, customText?: string) => Promise<void> | void;
+  onSubmitPoll?: (question: string, options: string[]) => void;
   // Media Picker props
   isMediaPickerOpen: boolean;
   setIsMediaPickerOpen: (open: boolean) => void;
@@ -53,6 +80,9 @@ export function ChatInputBar({
   onSendMessage,
   onFileSelect,
   onOpenGiftModal,
+  onOpenCreateThreadModal,
+  onScheduleMessage,
+  onSubmitPoll,
   isMediaPickerOpen,
   setIsMediaPickerOpen,
   activeMediaTab,
@@ -76,6 +106,36 @@ export function ChatInputBar({
   t,
 }: ChatInputBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+  const [isCustomScheduleOpen, setIsCustomScheduleOpen] = useState(false);
+
+  // Auto-resize textarea to fit content dynamically up to 50vh max
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [inputText]);
+
+  const handleQuickSchedule = async (preset: 'tomorrow-9am' | 'tomorrow-1pm' | 'monday-9am') => {
+    const d = new Date();
+    if (preset === 'tomorrow-9am') {
+      d.setDate(d.getDate() + 1);
+      d.setHours(9, 0, 0, 0);
+    } else if (preset === 'tomorrow-1pm') {
+      d.setDate(d.getDate() + 1);
+      d.setHours(13, 0, 0, 0);
+    } else if (preset === 'monday-9am') {
+      const day = d.getDay();
+      const daysUntilMonday = ((1 - day + 7) % 7) || 7;
+      d.setDate(d.getDate() + daysUntilMonday);
+      d.setHours(9, 0, 0, 0);
+    }
+    await onScheduleMessage?.(d, inputText.trim());
+    setIsPlusMenuOpen(false);
+  };
 
   return (
     <div className={`shrink-0 ${channelPaddingClass} pb-3 pt-0 bg-transparent z-10 flex flex-col gap-1.5`}>
@@ -100,33 +160,131 @@ export function ChatInputBar({
         </div>
       )}
 
-      {/* Discord Signature Chat Input Box */}
-      <div className="w-full h-[52px] flex items-center gap-3 rounded-[12px] bg-muted/70 dark:bg-card border border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-3 transition-all shadow-xs">
+      {/* Discord Signature Chat Input Box: Auto-expanding multiline with max-height 50% screen height */}
+      <div className="w-full min-h-[52px] max-h-[50vh] flex items-end gap-2.5 rounded-[12px] bg-muted/70 dark:bg-card border border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-3 py-2 transition-all shadow-xs">
         <input
           type="file"
           ref={fileInputRef}
           onChange={onFileSelect}
-          accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json"
+          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.csv,.json,.xlsx,.pptx,.md,.rtf,.zip,.rar,.7z"
           className="hidden"
         />
 
-        {/* Upload file button: circular plus button ala Discord */}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="w-7 h-7 rounded-full bg-background dark:bg-muted text-foreground/80 hover:text-foreground hover:bg-background/90 flex items-center justify-center shrink-0 transition-all border border-border/80 shadow-xs cursor-pointer"
-          title="Lampirkan Gambar atau Dokumen (Maks. 5 MB)"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-        </button>
+        {/* Discord Plus Action Menu (Upload, Thread, Poll, Apps, Schedule Message) */}
+        <DropdownMenu open={isPlusMenuOpen} onOpenChange={setIsPlusMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="w-7 h-7 rounded-full bg-background dark:bg-muted text-foreground/80 hover:text-foreground hover:bg-background/90 flex items-center justify-center shrink-0 transition-all border border-border/80 shadow-xs cursor-pointer mb-1"
+              title="Aksi Pesan (Upload, Thread, Poll, Apps, Schedule)"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            side="top"
+            sideOffset={10}
+            className="w-56 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md"
+          >
+            {/* 1. Upload a File */}
+            <DropdownMenuItem
+              onClick={() => {
+                fileInputRef.current?.click();
+                setIsPlusMenuOpen(false);
+              }}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+            >
+              <Upload className="w-4 h-4 shrink-0" />
+              <span>Upload a File</span>
+            </DropdownMenuItem>
 
-        {/* Text Input - 100% transparent to blend seamlessly with container */}
-        <input
-          type="text"
+            {/* 2. Create Thread */}
+            <DropdownMenuItem
+              onClick={() => {
+                onOpenCreateThreadModal?.();
+                setIsPlusMenuOpen(false);
+              }}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+            >
+              <MessageSquarePlus className="w-4 h-4 shrink-0" />
+              <span>Create Thread</span>
+            </DropdownMenuItem>
+
+            {/* 3. Create Poll */}
+            <DropdownMenuItem
+              onClick={() => {
+                setIsPollModalOpen(true);
+                setIsPlusMenuOpen(false);
+              }}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+            >
+              <BarChart2 className="w-4 h-4 shrink-0" />
+              <span>Create Poll</span>
+            </DropdownMenuItem>
+
+            {/* 4. Use Apps */}
+            <DropdownMenuItem
+              onClick={() => {
+                setIsTemplatePopoverOpen(true);
+                setIsPlusMenuOpen(false);
+              }}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold"
+            >
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <span>Use Apps</span>
+            </DropdownMenuItem>
+
+            {/* 5. Schedule Message */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white transition-colors text-xs font-semibold">
+                <CalendarPlus className="w-4 h-4 shrink-0" />
+                <span>Schedule Message</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-52 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md">
+                <DropdownMenuItem
+                  onClick={() => handleQuickSchedule('tomorrow-9am')}
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                >
+                  Tomorrow at 9:00am
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleQuickSchedule('tomorrow-1pm')}
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                >
+                  Tomorrow at 1:00pm
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleQuickSchedule('monday-9am')}
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                >
+                  Monday at 9:00am
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/10 my-1" />
+                <DropdownMenuItem
+                  onClick={() => {
+                    setIsCustomScheduleOpen(true);
+                    setIsPlusMenuOpen(false);
+                  }}
+                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-[#5865f2] hover:text-white text-xs font-medium"
+                >
+                  Custom...
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Multiline Textarea Input - Auto-expands up to 50% viewport height */}
+        <textarea
+          ref={textareaRef}
+          rows={1}
           value={inputText}
+          maxLength={MAX_MESSAGE_CHARS}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
+              if ((e.nativeEvent as any).isComposing) return;
               e.preventDefault();
               onSendMessage();
             }
@@ -139,11 +297,29 @@ export function ChatInputBar({
                 : `Message #${activeChannel.name}`
               : t('Pilih atau buat channel terlebih dahulu...')
           }
-          className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 h-full bg-transparent flex-1 placeholder:text-muted-foreground/90 text-foreground font-medium disabled:opacity-50"
+          className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 py-1.5 bg-transparent flex-1 placeholder:text-muted-foreground/90 text-foreground font-medium disabled:opacity-50 resize-none min-h-[32px] max-h-[calc(50vh-2rem)] overflow-y-auto leading-relaxed"
         />
 
-        {/* Right Action Icons: Gift, GIF, Sticker, Emoji, Apps & Send (Discord style) */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right Action Icons: Counter, Gift, GIF, Sticker, Emoji, Apps & Send (Discord style) */}
+        <div className="flex items-center gap-2 shrink-0 mb-1">
+          {/* Character counter (shows remaining / total when text is present) */}
+          {inputText.length > 0 && (
+            <span
+              className={`text-[10px] font-mono px-1 select-none transition-colors ${
+                inputText.length >= MAX_MESSAGE_CHARS
+                  ? 'text-destructive font-bold'
+                  : inputText.length >= 1800
+                  ? 'text-amber-500 font-semibold'
+                  : 'text-muted-foreground/60'
+              }`}
+              title={`${inputText.length} / ${MAX_MESSAGE_CHARS} karakter`}
+            >
+              {MAX_MESSAGE_CHARS - inputText.length <= 200
+                ? `${MAX_MESSAGE_CHARS - inputText.length}`
+                : `${inputText.length}/${MAX_MESSAGE_CHARS}`}
+            </span>
+          )}
+
           {/* 1. Gift Icon */}
           <button
             type="button"
@@ -197,6 +373,26 @@ export function ChatInputBar({
           )}
         </div>
       </div>
+
+      {/* Create Poll Dialog */}
+      <CreatePollModal
+        open={isPollModalOpen}
+        onOpenChange={setIsPollModalOpen}
+        onSubmitPoll={(question, options) => {
+          onSubmitPoll?.(question, options);
+        }}
+      />
+
+      {/* Custom Schedule Dialog (connected to calendar DB) */}
+      <CustomScheduleModal
+        open={isCustomScheduleOpen}
+        onOpenChange={setIsCustomScheduleOpen}
+        currentText={inputText}
+        onSchedule={async (date, text) => {
+          await onScheduleMessage?.(date, text);
+        }}
+      />
     </div>
   );
 }
+

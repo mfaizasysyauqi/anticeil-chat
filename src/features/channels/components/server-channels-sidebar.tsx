@@ -248,7 +248,8 @@ export function ServerChannelsSidebar({
           ) : (
             <>
               {/* 1. TEXT CHANNELS CATEGORY */}
-              <div>
+              {textChannels.length > 0 && (
+                <div>
                 <div
                   onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, text: !prev?.text }))}
                   className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
@@ -349,9 +350,11 @@ export function ServerChannelsSidebar({
                   </div>
                 )}
               </div>
+              )}
 
               {/* 2. VOICE CHANNELS CATEGORY */}
-              <div>
+              {voiceChannels.length > 0 && (
+                <div>
                 <div
                   onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, voice: !prev?.voice }))}
                   className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
@@ -458,9 +461,11 @@ export function ServerChannelsSidebar({
                   </div>
                 )}
               </div>
+              )}
 
               {/* 3. FORUM CHANNELS CATEGORY */}
-              <div>
+              {forumChannels.length > 0 && (
+                <div>
                 <div
                   onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, forum: !prev?.forum }))}
                   className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
@@ -601,109 +606,112 @@ export function ServerChannelsSidebar({
                   </div>
                 )}
               </div>
+              )}
 
               {/* 4. KANBAN CHANNELS CATEGORY */}
-              <div>
-                <div
-                  onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, kanban: !prev?.kanban }))}
-                  className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
-                >
-                  <div className="flex items-center gap-1">
-                    <ChevronDown
-                      className={cn(
-                        'w-3 h-3 transition-transform duration-200',
-                        collapsedCategories?.kanban && '-rotate-90',
-                      )}
-                    />
-                    <span>{t('Kanban Boards')}</span>
-                    <span className="text-[10px] text-muted-foreground/60">
-                      ({kanbanChannels.length})
-                    </span>
+              {kanbanChannels.length > 0 && (
+                <div>
+                  <div
+                    onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, kanban: !prev?.kanban }))}
+                    className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
+                  >
+                    <div className="flex items-center gap-1">
+                      <ChevronDown
+                        className={cn(
+                          'w-3 h-3 transition-transform duration-200',
+                          collapsedCategories?.kanban && '-rotate-90',
+                        )}
+                      />
+                      <span>{t('Kanban Boards')}</span>
+                      <span className="text-[10px] text-muted-foreground/60">
+                        ({kanbanChannels.length})
+                      </span>
+                    </div>
+                    <Tooltip delayDuration={150}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenCreateChannel('CHANNELS', 'kanban');
+                          }}
+                          className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
+                        {t('Buat Kanban Board')}
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                  <Tooltip delayDuration={150}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenCreateChannel('CHANNELS', 'kanban');
-                        }}
-                        className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                      {t('Buat Kanban Board')}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
 
-                {!collapsedCategories?.kanban && (
-                  <div className="space-y-0.5">
-                    {kanbanChannels.map((ch) => {
-                      const isActiveCh = activeChannelId === ch.id;
+                  {!collapsedCategories?.kanban && (
+                    <div className="space-y-0.5">
+                      {kanbanChannels.map((ch) => {
+                        const isActiveCh = activeChannelId === ch.id;
 
-                      return (
-                        <div key={ch.id} className="relative group">
-                          <div
-                            onClick={() => {
-                              setActiveChannelId(ch.id);
-                              onItemClick?.();
-                            }}
-                            className={cn(
-                              'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
-                              isActiveCh
-                                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                            )}
-                          >
-                            <Columns3
+                        return (
+                          <div key={ch.id} className="relative group">
+                            <div
+                              onClick={() => {
+                                setActiveChannelId(ch.id);
+                                onItemClick?.();
+                              }}
                               className={cn(
-                                'w-4 h-4 shrink-0 transition-colors',
+                                'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
                                 isActiveCh
-                                  ? 'text-primary'
-                                  : 'text-muted-foreground/70 group-hover:text-foreground',
+                                  ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                               )}
-                            />
-                            <span className="truncate flex-1">{ch.name}</span>
-                            {ch.isPrivate && (
-                              <span title="Private Channel">
-                                <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-                              </span>
-                            )}
+                            >
+                              <Columns3
+                                className={cn(
+                                  'w-4 h-4 shrink-0 transition-colors',
+                                  isActiveCh
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground/70 group-hover:text-foreground',
+                                )}
+                              />
+                              <span className="truncate flex-1">{ch.name}</span>
+                              {ch.isPrivate && (
+                                <span title="Private Channel">
+                                  <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+                                </span>
+                              )}
 
-                            {/* Channel action buttons */}
-                            <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenInvite();
-                                }}
-                                title={t('Buat Undangan')}
-                                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                              >
-                                <UserPlus className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenEditChannel(ch);
-                                }}
-                                title={t('Pengaturan Channel')}
-                                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                              >
-                                <Settings className="w-3.5 h-3.5" />
-                              </button>
+                              {/* Channel action buttons */}
+                              <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenInvite();
+                                  }}
+                                  title={t('Buat Undangan')}
+                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+                                >
+                                  <UserPlus className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenEditChannel(ch);
+                                  }}
+                                  title={t('Pengaturan Channel')}
+                                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+                                >
+                                  <Settings className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

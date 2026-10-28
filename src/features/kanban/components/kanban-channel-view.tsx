@@ -335,15 +335,41 @@ export function KanbanChannelView({
             <span className="text-xs font-medium">Memuat kartu tugas dari database...</span>
           </div>
         ) : (
-          <div className="flex gap-4 h-full min-w-max items-start">
-            {DEFAULT_COLUMNS.map((col) => {
-            const columnCards = filteredCards.filter((c) => c.columnId === col.id);
+          (() => {
+            const visibleColumns = DEFAULT_COLUMNS.filter((col) =>
+              filteredCards.some((c) => c.columnId === col.id),
+            );
+
+            if (visibleColumns.length === 0) {
+              return (
+                <div className="w-full h-64 flex flex-col items-center justify-center text-muted-foreground gap-3">
+                  <Columns3 className="w-10 h-10 stroke-1 opacity-50" />
+                  <span className="text-sm font-medium">Belum ada daftar kartu di board ini.</span>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setTargetColumnId('todo');
+                      setIsAddCardOpen(true);
+                    }}
+                    className="gap-1.5 text-xs h-8 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Tambah Kartu Pertama
+                  </Button>
+                </div>
+              );
+            }
 
             return (
-              <div
-                key={col.id}
-                className="w-72 sm:w-80 h-full flex flex-col bg-card border border-border rounded-xl overflow-hidden shadow-xs shrink-0"
-              >
+              <div className="flex gap-4 h-full min-w-max items-start">
+                {visibleColumns.map((col) => {
+                  const columnCards = filteredCards.filter((c) => c.columnId === col.id);
+
+                  return (
+                    <div
+                      key={col.id}
+                      className="w-72 sm:w-80 h-full flex flex-col bg-card border border-border rounded-xl overflow-hidden shadow-xs shrink-0"
+                    >
                 {/* Column Header */}
                 <div className="p-3 border-b border-border flex items-center justify-between bg-muted/30">
                   <div className="flex items-center gap-2">
@@ -497,7 +523,9 @@ export function KanbanChannelView({
             );
           })}
           </div>
-        )}
+        );
+      })()
+    )}
       </div>
 
       {/* ── Dialog Tambah Kartu Baru ──────────────────────────────── */}

@@ -43,7 +43,13 @@ import {
 } from '@/features/channels';
 import { ServerMembersSidebar } from '@/features/members';
 import type { ServerSettingsSection } from '@/features/server-settings';
-import { ChatInputBar, processFileInput } from '@/features/chat-input';
+import {
+  ChatInputBar,
+  processFileInput,
+  checkTextRateLimit,
+  recordTextMessage,
+  validateTextMessage,
+} from '@/features/chat-input';
 import { MessagesFeed, renderFormattedMessage, useCommunitySocket, CommunityDialogsPortal } from '@/features/chat';
 import { useMediaModals } from '@/features/media';
 
@@ -437,6 +443,18 @@ export function CommunityPage() {
   });
   const [messagesMap, setMessagesMap] = useState<Record<string, CommunityMessage[]>>({});
   const [members, setMembers] = useState<CommunityMember[]>([]);
+
+  // Discord-style unread message counter badges for mini rail (servers & friends)
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number | string>>(() => ({
+    anticeil: 10,
+    hub_general: '9K+',
+    hub_gaming: 167,
+    hub_dev: 353,
+    hub_anime: 651,
+    hub_crypto: 87,
+    hub_music: 743,
+    hub_study: '5K+',
+  }));
 
   // Home View Mode: Friends Hub vs Servers vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
   const [homeView, setHomeView] = useState<'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
@@ -1201,7 +1219,7 @@ export function CommunityPage() {
   }, [activeChannelId, currentMessages.length]);
 
   // Send message
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (customContent?: string) => {
     if (!currentUser) {
       setAuthFeatureInfo({
         title: t('Kirim Pesan'),
@@ -1211,7 +1229,26 @@ export function CommunityPage() {
       return;
     }
     if (!activeChannel) return;
-    if (!inputText.trim() && !stagedAttachment) return;
+    const trimmedContent = (typeof customContent === 'string' ? customContent : inputText).trim();
+    if (!trimmedContent && !stagedAttachment) return;
+
+    // Check message character length limit
+    if (trimmedContent) {
+      const lengthCheck = validateTextMessage(trimmedContent);
+      if (!lengthCheck.valid) {
+        toast.error(lengthCheck.error);
+        return;
+      }
+    }
+
+    // Check anti-spam rate limit
+    const rateCheck = checkTextRateLimit();
+    if (!rateCheck.allowed) {
+      toast.error(rateCheck.reason || 'Terlalu cepat mengirim pesan. Harap tunggu sebentar.');
+      return;
+    }
+
+    recordTextMessage();
 
     const currentUserId = currentUser?.id || 'anon-user';
     const currentUserName =
@@ -1234,11 +1271,13 @@ export function CommunityPage() {
       senderEmail: currentUser?.email || 'user@anticeil.com',
       senderAvatar: currentUser?.imageUrl ?? null,
       senderRole: myRole,
-      content: inputText.trim(),
+      content: trimmedContent,
       attachments: stagedAttachment ? [stagedAttachment] : undefined,
     };
 
-    setInputText('');
+    if (!customContent) {
+      setInputText('');
+    }
     setStagedAttachment(null);
 
     try {
@@ -1256,9 +1295,68 @@ export function CommunityPage() {
     }
   };
 
+  // Schedule Message connected directly to PostgreSQL Calendar Database
+  const handleScheduleMessage = async (scheduledDate: Date, customText?: string) => {
+    const textToSend = (customText || inputText).trim();
+    if (!textToSend) {
+      toast.error(t('Tulis pesan terlebih dahulu untuk dijadwalkan'));
+      return;
+    }
+
+    try {
+      await createCalendarEvent({
+        title: `Scheduled: ${textToSend.slice(0, 30)}`,
+        description: textToSend,
+        type: 'task',
+        startTime: scheduledDate.toISOString(),
+        hubId: activeHub?.id,
+        hubName: activeHub?.name,
+        channelId: activeChannel?.id,
+        channelName: activeChannel?.name,
+        status: 'scheduled',
+      });
+      toast.success(
+        `${t('Pesan dijadwalkan untuk')} ${scheduledDate.toLocaleString(undefined, {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}`,
+      );
+      setInputText('');
+    } catch (err) {
+      console.error('Failed to schedule message:', err);
+      toast.error(t('Gagal menjadwalkan pesan ke database kalender'));
+    }
+  };
+
+  // Discord-style Poll Creator
+  const handleCreatePoll = async (question: string, options: string[]) => {
+    if (!activeChannel) return;
+    const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+    const optionsText = options
+      .map((opt, i) => `${numberEmojis[i] || '▫️'} ${opt}`)
+      .join('\n');
+    const pollMessage = `📊 **POLL: ${question}**\n\n${optionsText}\n\n*${t('Bereaksi dengan emoji nomor di bawah untuk memilih!')}*`;
+
+    try {
+      await handleSendMessage(pollMessage);
+      toast.success(t('Poll berhasil dibuat!'));
+    } catch {
+      toast.error(t('Gagal membuat poll'));
+    }
+  };
+
   // Fullstack Discord Sticker sender (direct message attachment)
   const handleSendSticker = async (sticker: DiscordSticker) => {
     if (!activeChannel) return;
+    const rateCheck = checkTextRateLimit();
+    if (!rateCheck.allowed) {
+      toast.error(rateCheck.reason || 'Terlalu cepat mengirim pesan. Harap tunggu sebentar.');
+      return;
+    }
+    recordTextMessage();
     setIsMediaPickerOpen(false);
     const currentUserId = currentUser?.id || 'anon-user';
     const currentUserName =
@@ -1303,6 +1401,12 @@ export function CommunityPage() {
   // Fullstack Discord GIF sender (direct animated GIF attachment)
   const handleSendGif = async (gif: DiscordGifItem) => {
     if (!activeChannel) return;
+    const rateCheck = checkTextRateLimit();
+    if (!rateCheck.allowed) {
+      toast.error(rateCheck.reason || 'Terlalu cepat mengirim pesan. Harap tunggu sebentar.');
+      return;
+    }
+    recordTextMessage();
     setIsMediaPickerOpen(false);
     const currentUserId = currentUser?.id || 'anon-user';
     const currentUserName =
@@ -2019,7 +2123,9 @@ export function CommunityPage() {
     <ServerRail
       servers={hubs}
       activeServerId={activeHubId}
+      unreadCounts={unreadCounts}
       onSelectServer={(id) => {
+        setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
         if (id !== 'anticeil' && !currentUser) {
           setAuthFeatureInfo({
             title: t('Akses Server'),
@@ -2050,7 +2156,10 @@ export function CommunityPage() {
       onToggleRailMode={handleToggleRailMode}
       friends={friends.allFriends}
       activeChannelId={activeChannelId}
-      onSelectFriend={(f) => handleStartDirectMessage(f)}
+      onSelectFriend={(f) => {
+        setUnreadCounts((prev) => ({ ...prev, [f.id]: 0, [`dm-${f.id}`]: 0 }));
+        handleStartDirectMessage(f);
+      }}
       onOpenAddFriend={() =>
         requireAuth(
           () => setIsAddFriendDialogOpen(true),
@@ -2590,6 +2699,9 @@ export function CommunityPage() {
             appsSearchQuery={appsSearchQuery}
             setAppsSearchQuery={setAppsSearchQuery}
             onLaunchActivity={handleLaunchActivity}
+            onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
+            onScheduleMessage={handleScheduleMessage}
+            onSubmitPoll={handleCreatePoll}
             t={t}
           />
           </>

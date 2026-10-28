@@ -55,7 +55,7 @@ export function resolveChannelType(channel?: Partial<CommunityChannel> | null): 
 }
 
 export type CommunityAttachment = {
-  type: 'image' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
+  type: 'image' | 'video' | 'audio' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
   url: string;
   name: string;
   size?: string;
