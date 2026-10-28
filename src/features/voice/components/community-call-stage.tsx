@@ -514,40 +514,16 @@ export function CommunityCallStage({
       );
     };
 
-    const handleActivityEvent = (data: any) => {
-      if (!data || (data.channelId && data.channelId !== channel.id)) return;
-      if (data.action === 'ACTIVITY_LAUNCH' || data.action === 'START_ACTIVITY') {
-        const appId = data.payload?.appId;
-        if (appId) {
-          setActiveAppId(appId);
-          onToggleActivity?.(true);
-        }
-      } else if (data.action === 'ACTIVITY_STOP') {
-        setActiveAppId(null);
-        onToggleActivity?.(false);
-      } else if (data.action === 'QUERY_ACTIVE_ACTIVITY') {
-        if (activeAppIdRef.current) {
-          socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-            channelId: channel.id,
-            action: 'ACTIVITY_LAUNCH',
-            payload: { appId: activeAppIdRef.current },
-          });
-        }
-      }
-    };
-
     socket.on('COMMUNITY_CALL_USER_JOINED', handleUserJoined);
     socket.on('COMMUNITY_CALL_USER_LEFT', handleUserLeft);
     socket.on('COMMUNITY_CALL_SIGNAL', handleSignal);
     socket.on('COMMUNITY_CALL_PEER_MEDIA_UPDATED', handlePeerMediaUpdated);
-    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
 
     return () => {
       socket.off('COMMUNITY_CALL_USER_JOINED', handleUserJoined);
       socket.off('COMMUNITY_CALL_USER_LEFT', handleUserLeft);
       socket.off('COMMUNITY_CALL_SIGNAL', handleSignal);
       socket.off('COMMUNITY_CALL_PEER_MEDIA_UPDATED', handlePeerMediaUpdated);
-      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
 
       socket.emit('COMMUNITY_CALL_LEAVE', { channelId: channel.id });
       for (const id in peerConnections.current) {
@@ -806,39 +782,64 @@ export function CommunityCallStage({
   const currentActiveApp = useMemo(() => {
     return DISCORD_APPS.find((app) => app.id === activeAppId);
   }, [activeAppId]);
+  const currentActiveAppRef = useRef(currentActiveApp);
+  currentActiveAppRef.current = currentActiveApp;
 
   // Activity Socket Sync Events
   useEffect(() => {
     if (!socket) return;
     const handleActivityEvent = (data: {
-      fromSocketId: string;
+      fromSocketId?: string;
       channelId?: string;
       fromUserId?: string;
       action: string;
-      payload: any;
+      payload?: any;
     }) => {
       if (!data) return;
       if (data.channelId && data.channelId !== channel.id) return;
       if (data.action === 'ACTIVITY_LAUNCH' || data.action === 'START_ACTIVITY') {
-        const { appId, appName } = data.payload || {};
+        const { appId, appName, isSync } = data.payload || {};
         if (appId) {
+          const isDifferentApp = appId !== activeAppIdRef.current;
           setActiveAppId(appId);
           setIsAppLauncherOpen(false);
           onToggleActivity?.(true);
           onActivityChange?.(appId);
-          toast.info(`${appName || appId} aktif di panggung panggilan! 🚀`);
+
+          const isLocal =
+            (data.fromSocketId && data.fromSocketId === socket.id) ||
+            (data.fromUserId && data.fromUserId === currentUser?.id);
+
+          // Only show toast if:
+          // 1. Not from local user (local action already shows confirmation)
+          // 2. Not a silent sync (peer join / query reply)
+          // 3. The activity actually changed or was not already active
+          if (!isLocal && !isSync && isDifferentApp) {
+            toast.info(`${appName || appId} aktif di panggung panggilan! 🚀`, {
+              id: `activity-active-${channel.id}`,
+            });
+          }
         }
       } else if (data.action === 'ACTIVITY_STOP') {
+        const wasActive = !!activeAppIdRef.current;
         setActiveAppId(null);
         onToggleActivity?.(false);
         onActivityChange?.(null);
-        toast.info('Aktivitas dihentikan');
-      } else if (data.action === 'ACTIVITY_QUERY') {
-        if (activeAppId) {
+        if (wasActive) {
+          toast.info('Aktivitas dihentikan', {
+            id: `activity-stop-${channel.id}`,
+          });
+        }
+      } else if (data.action === 'ACTIVITY_QUERY' || data.action === 'QUERY_ACTIVE_ACTIVITY') {
+        if (activeAppIdRef.current) {
           socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
             channelId: channel.id,
             action: 'ACTIVITY_LAUNCH',
-            payload: { appId: activeAppId, appName: currentActiveApp?.title || activeAppId },
+            payload: {
+              appId: activeAppIdRef.current,
+              appName: currentActiveAppRef.current?.title || activeAppIdRef.current,
+              isSync: true,
+            },
           });
         }
       }
@@ -846,7 +847,7 @@ export function CommunityCallStage({
 
     socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
 
-    // Query active activity when entering channel
+    // Query active activity once when entering channel
     socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
       channelId: channel.id,
       action: 'ACTIVITY_QUERY',
@@ -855,18 +856,22 @@ export function CommunityCallStage({
     return () => {
       socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
     };
-  }, [socket, channel.id, onToggleActivity, activeAppId, currentActiveApp?.title]);
+  }, [socket, channel.id, onToggleActivity, onActivityChange, currentUser?.id]);
 
-  // Sync active activity to peers when peer count changes
+  // Sync active activity to peers when peer count changes (silent sync, no spam)
   useEffect(() => {
-    if (activeAppId && socket && participants.length > 0) {
+    if (activeAppIdRef.current && socket && participants.length > 0) {
       socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
         channelId: channel.id,
         action: 'ACTIVITY_LAUNCH',
-        payload: { appId: activeAppId, appName: currentActiveApp?.title || activeAppId },
+        payload: {
+          appId: activeAppIdRef.current,
+          appName: currentActiveAppRef.current?.title || activeAppIdRef.current,
+          isSync: true,
+        },
       });
     }
-  }, [activeAppId, participants.length, socket, channel.id, currentActiveApp?.title]);
+  }, [participants.length, socket, channel.id]);
 
   if (!isCallActive) return null;
 
