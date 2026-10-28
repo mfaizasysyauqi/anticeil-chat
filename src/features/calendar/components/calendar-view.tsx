@@ -268,7 +268,7 @@ export function CalendarView({
       </div>
 
       {/* ── Main Content Area: Month Grid vs Agenda List ────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] p-4 sm:p-6">
+      <div className={cn('flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] p-4 sm:p-6', horizontalPadding)}>
         {viewMode === 'month' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-[500px]">
             {/* Calendar Month Grid (Left 2 cols) */}
@@ -484,7 +484,7 @@ export function CalendarView({
           </div>
         ) : (
           /* Agenda / List Mode */
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="w-full space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-border">
               <h2 className="text-sm font-bold text-foreground">
                 Semua Agenda Mendatang ({filteredEvents.length})

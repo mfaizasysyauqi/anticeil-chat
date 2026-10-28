@@ -14,6 +14,9 @@ import {
   Inbox,
   Check,
   X,
+  Loader2,
+  Link as LinkIcon,
+  Hash,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -29,6 +32,7 @@ import {
   saveStoredHubs,
   type ServerInvitation,
 } from '@/lib/community-hubs';
+import { chatApi } from '@/chat/chat-api';
 import { ServerIcon } from './server-icon';
 import { toast } from 'sonner';
 
@@ -39,49 +43,6 @@ export interface ServersViewProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
 }
-
-const PUBLIC_EXPLORE_COMMUNITIES = [
-  {
-    id: 'explore-dev',
-    name: 'Anticeil Developers & Creators',
-    description: 'Komunitas resmi developer, designer, dan pengembang otomasi Anticeil. Berbagi tips kode, bot, dan template kolaborasi.',
-    membersCount: 2450,
-    onlineCount: 412,
-    iconBg: 'bg-emerald-600',
-    bannerGradient: 'from-emerald-950 via-zinc-900 to-black',
-    tags: ['Developer', 'TypeScript', 'AI'],
-  },
-  {
-    id: 'explore-gaming',
-    name: 'Indo Gaming Lounge & Esports',
-    description: 'Tempat kumpul mabar Valorant, Mobile Legends, Genshin Impact, dan nonton bareng YouTube Watch Together setiap malam.',
-    membersCount: 5120,
-    onlineCount: 890,
-    iconBg: 'bg-rose-600',
-    bannerGradient: 'from-rose-950 via-zinc-900 to-black',
-    tags: ['Gaming', 'Voice Call', 'Co-Watch'],
-  },
-  {
-    id: 'explore-design',
-    name: 'UI/UX & Product Design Lab',
-    description: 'Diskusi tren desain antarmuka, Figma design system, kritik portofolio, dan kolaborasi live canvas whiteboard.',
-    membersCount: 1890,
-    onlineCount: 275,
-    iconBg: 'bg-purple-600',
-    bannerGradient: 'from-purple-950 via-zinc-900 to-black',
-    tags: ['Design', 'UI/UX', 'Figma'],
-  },
-  {
-    id: 'explore-music',
-    name: 'Lofi & Chill Hangout',
-    description: 'Ruang santai mendengarkan musik lofi, belajar bersama (study with me), dan obrolan kasual sehari-hari.',
-    membersCount: 3200,
-    onlineCount: 520,
-    iconBg: 'bg-amber-600',
-    bannerGradient: 'from-amber-950 via-zinc-900 to-black',
-    tags: ['Music', 'Chill', 'Study'],
-  },
-];
 
 export function ServersView({
   servers,
@@ -97,11 +58,44 @@ export function ServersView({
     loadStoredServerInvitations()
   );
 
+  // Real Public Servers from Backend DB
+  const [publicServers, setPublicServers] = useState<CommunityHub[]>([]);
+  const [isLoadingPublic, setIsLoadingPublic] = useState(false);
+  const [inviteCodeInput, setInviteCodeInput] = useState('');
+  const [isJoiningByCode, setIsJoiningByCode] = useState(false);
+
   useEffect(() => {
     const handleUpdate = () => setServerInvitations(loadStoredServerInvitations());
     window.addEventListener('anticeil_server_invites_changed', handleUpdate);
     return () => window.removeEventListener('anticeil_server_invites_changed', handleUpdate);
   }, []);
+
+  // Fetch real public hubs from database
+  useEffect(() => {
+    let mounted = true;
+    const fetchPublicServers = async () => {
+      setIsLoadingPublic(true);
+      try {
+        const all = await chatApi.getHubs();
+        if (mounted && Array.isArray(all)) {
+          // Filter out DM hub and servers the current user is already member of
+          const available = all.filter(
+            (h) => h.id !== 'anticeil' && !servers.some((s) => s.id === h.id)
+          );
+          setPublicServers(available);
+        }
+      } catch (err) {
+        console.warn('Failed to load public hubs from API', err);
+      } finally {
+        if (mounted) setIsLoadingPublic(false);
+      }
+    };
+
+    fetchPublicServers();
+    return () => {
+      mounted = false;
+    };
+  }, [servers, activeTab]);
 
   // Exclude default home if desired or keep all
   const myServers = servers.filter((s) => s.id !== 'anticeil');
@@ -119,14 +113,38 @@ export function ServersView({
       (inv.serverDescription && inv.serverDescription.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredExplore = PUBLIC_EXPLORE_COMMUNITIES.filter(
+  const filteredExplore = publicServers.filter(
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleJoinPublic = (community: typeof PUBLIC_EXPLORE_COMMUNITIES[0]) => {
-    toast.success(`Berhasil bergabung dengan ${community.name}! 🎉`);
+  const handleJoinPublic = async (community: CommunityHub) => {
+    try {
+      const codeOrId = community.inviteCode || community.id;
+      const joined = await chatApi.joinHub(codeOrId);
+      toast.success(t('Berhasil bergabung dengan {{name}}! 🎉', { name: community.name }));
+      onSelectServer(joined.id || community.id);
+    } catch {
+      toast.error(t('Gagal bergabung ke server'));
+    }
+  };
+
+  const handleJoinByCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = inviteCodeInput.trim();
+    if (!code) return;
+    setIsJoiningByCode(true);
+    try {
+      const joined = await chatApi.joinHub(code);
+      toast.success(t('Berhasil bergabung dengan {{name}}! 🎉', { name: joined.name }));
+      setInviteCodeInput('');
+      onSelectServer(joined.id);
+    } catch {
+      toast.error(t('Kode undangan tidak valid atau server tidak ditemukan'));
+    } finally {
+      setIsJoiningByCode(false);
+    }
   };
 
   const handleAcceptInvitation = (invite: ServerInvitation) => {
@@ -273,7 +291,7 @@ export function ServersView({
       {/* ── Main Content Area ─────────────────────────────────────── */}
       <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-5 [scrollbar-width:thin] space-y-6`}>
         {activeTab === 'joined' ? (
-          <div className="space-y-4 max-w-5xl">
+          <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Daftar Komunitas yang Anda Ikuti ({filteredMyServers.length})
@@ -281,7 +299,7 @@ export function ServersView({
             </div>
 
             {filteredMyServers.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl">
+              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
                 <Globe className="w-12 h-12 stroke-1 mb-3 text-muted-foreground/60" />
                 <h3 className="text-sm font-bold text-foreground">Belum Bergabung dengan Server</h3>
                 <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
@@ -353,7 +371,7 @@ export function ServersView({
           </div>
         ) : activeTab === 'pending' ? (
           /* Pending Server Invitations Tab */
-          <div className="space-y-4 max-w-5xl">
+          <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 {t('Undangan Server Tertunda')} ({filteredPendingInvites.length})
@@ -361,7 +379,7 @@ export function ServersView({
             </div>
 
             {filteredPendingInvites.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl">
+              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
                 <Inbox className="w-12 h-12 stroke-1 mb-3 text-muted-foreground/60" />
                 <h3 className="text-sm font-bold text-foreground">{t('Tidak Ada Undangan Tertunda')}</h3>
                 <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
@@ -440,63 +458,112 @@ export function ServersView({
             )}
           </div>
         ) : (
-          /* Explore Tab */
-          <div className="space-y-4 max-w-5xl">
+          /* Explore Tab (Full DB Integration - No Dummy Data) */
+          <div className="space-y-4 w-full">
+            {/* Quick Invite Code / Link Join Banner */}
+            <div className="p-4 rounded-xl border border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-9 rounded-lg bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center shrink-0">
+                  <LinkIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground">
+                    {t('Punya Tautan atau Kode Undangan?')}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('Masukkan kode atau tautan server untuk langsung bergabung.')}
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleJoinByCode} className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <Input
+                  type="text"
+                  value={inviteCodeInput}
+                  onChange={(e) => setInviteCodeInput(e.target.value)}
+                  placeholder="Contoh: hub_xyz atau inv_abc"
+                  className="h-8 text-xs bg-sidebar-accent border-border w-full sm:w-56"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!inviteCodeInput.trim() || isJoiningByCode}
+                  className="h-8 px-3 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-black shrink-0 cursor-pointer"
+                >
+                  {isJoiningByCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1 stroke-[2.5]" />}
+                  <span>{t('Gabung')}</span>
+                </Button>
+              </form>
+            </div>
+
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Jelajahi Server Publik & Komunitas Populer ({filteredExplore.length})
+                {t('Jelajahi Server Komunitas')} ({filteredExplore.length})
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredExplore.map((pub) => (
-                <div
-                  key={pub.id}
-                  className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs hover:border-primary/50 transition-all flex flex-col justify-between"
+            {isLoadingPublic ? (
+              <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl w-full">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60 mb-2" />
+                <p className="text-xs font-medium">{t('Memuat server komunitas...')}</p>
+              </div>
+            ) : filteredExplore.length === 0 ? (
+              <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl w-full">
+                <Compass className="w-10 h-10 stroke-1 mb-2 opacity-50" />
+                <h3 className="text-xs font-bold text-foreground">{t('Tidak Ada Server Publik Lain')}</h3>
+                <p className="text-[11px] text-muted-foreground/80 mt-1 max-w-sm">
+                  {t('Semua server komunitas saat ini sudah Anda ikuti, atau belum ada server publik lain yang terdaftar.')}
+                </p>
+                <Button
+                  size="sm"
+                  onClick={onOpenCreateServer}
+                  className="mt-3.5 h-8 px-3 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-black cursor-pointer"
                 >
-                  <div className={cn('h-24 p-4 relative flex items-end bg-gradient-to-r', pub.bannerGradient)}>
-                    <div className="flex items-center gap-3 z-10">
-                      <div className={cn('size-12 rounded-xl flex items-center justify-center shadow-lg text-white font-bold text-base', pub.iconBg)}>
-                        {pub.name.charAt(0)}
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  <span>{t('Buat Server Baru')}</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredExplore.map((pub) => (
+                  <div
+                    key={pub.id}
+                    className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between gap-3 shadow-xs group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="size-12 rounded-[14px] bg-sidebar-accent border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs group-hover:scale-105 transition-transform">
+                        <ServerIcon hub={pub} />
                       </div>
-                      <div className="text-white">
-                        <h3 className="text-sm font-bold drop-shadow-xs line-clamp-1">{pub.name}</h3>
-                        <span className="text-[11px] text-zinc-300 flex items-center gap-2">
-                          <span>{pub.membersCount.toLocaleString()} Anggota</span>
-                          <span>•</span>
-                          <span className="text-emerald-400 font-medium">● {pub.onlineCount} Online</span>
-                        </span>
+
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                          {pub.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
+                          {pub.description || t('Komunitas Anticeil untuk kolaborasi dan obrolan.')}
+                        </p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {pub.description}
-                    </p>
+                    <div className="pt-3 border-t border-border/50 flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                        <Users className="w-3 h-3" />
+                        <span>{pub.membersCount ? `${pub.membersCount.toLocaleString()} Anggota` : 'Komunitas Aktif'}</span>
+                      </span>
 
-                    <div className="flex flex-wrap gap-1.5">
-                      {pub.tags.map((t, idx) => (
-                        <span key={idx} className="text-[10px] font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="pt-2 border-t border-border/50 flex items-center justify-end">
                       <Button
                         size="sm"
                         onClick={() => handleJoinPublic(pub)}
-                        className="h-8 px-4 text-xs font-semibold gap-1.5 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shadow-xs transition-all"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Gabung Server</span>
+                        <Plus className="w-3 h-3 stroke-[2.5]" />
+                        <span>{t('Gabung Server')}</span>
                       </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

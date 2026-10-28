@@ -74,26 +74,18 @@ export type ServerInvitation = {
 
 const STORAGE_KEY_SERVER_INVITES = 'anticeil_server_invitations_v1';
 
-export const DEFAULT_SERVER_INVITATIONS: ServerInvitation[] = [
-  {
-    id: 'inv-dev-team',
-    serverId: 'explore-gaming',
-    serverName: 'Indo Gaming Lounge & Esports',
-    serverDescription: 'Tempat kumpul mabar Valorant, Mobile Legends, Genshin Impact, dan nonton bareng YouTube.',
-    inviterName: 'Muhammad Faiz Asy Syauqi',
-    inviterUsername: 'mfaizasysyauqi',
-    inviterAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
-    createdAt: 'Baru saja',
-    membersCount: 5120,
-  },
-];
+export const DEFAULT_SERVER_INVITATIONS: ServerInvitation[] = [];
 
 export function loadStoredServerInvitations(): ServerInvitation[] {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_SERVER_INVITES) : null;
     if (!raw) return DEFAULT_SERVER_INVITATIONS;
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : DEFAULT_SERVER_INVITATIONS;
+    if (Array.isArray(parsed)) {
+      // Purge legacy dummy invitations (e.g. inv-dev-team)
+      return parsed.filter((inv) => inv && inv.id && inv.id !== 'inv-dev-team' && inv.serverId !== 'explore-gaming');
+    }
+    return DEFAULT_SERVER_INVITATIONS;
   } catch {
     return DEFAULT_SERVER_INVITATIONS;
   }
