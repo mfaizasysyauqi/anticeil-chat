@@ -1347,7 +1347,7 @@ export function CommunityPage() {
     }
   };
 
-  // Launch Activity in Voice Stage or Text Channel
+  // Launch Activity in Voice Stage or Text Channel (Direct Message & Server)
   const handleLaunchActivity = async (
     appId: string,
     fromChatInvite: boolean = false,
@@ -1356,26 +1356,63 @@ export function CommunityPage() {
     setSelectedActivityAppId(appId);
     setIsTemplatePopoverOpen(false);
 
-    const originatingTextChannel = activeChannel && activeChannel.type !== 'voice' ? activeChannel : null;
+    // 1. Determine target channel and whether it's a DM
+    const targetChannel = (targetChannelId ? channels.find((c) => c.id === targetChannelId) : null) || activeChannel;
+    const isDM = targetChannelId?.startsWith('dm-') || targetChannel?.isDirectMessage;
 
-    // Activities (Watch Together, games) require a voice call stage to run.
-    // Always resolve target to a voice channel:
-    let voiceDest = targetChannelId ? channels.find((c) => c.id === targetChannelId && c.type === 'voice') : null;
-    if (!voiceDest && activeCallChannelId) {
-      voiceDest = channels.find((c) => c.id === activeCallChannelId && c.type === 'voice');
+    // 2. Resolve destination channel for voice/activity stage:
+    let voiceDest: CommunityChannel | null = null;
+
+    if (isDM) {
+      // In DM, the DM channel itself is the call/activity stage
+      const dmId = targetChannelId || targetChannel?.id || 'dm-chat';
+      let dmCh = channels.find((c) => c.id === dmId);
+      if (!dmCh) {
+        const fallbackDM: CommunityChannel = {
+          id: dmId,
+          name: targetChannel?.name || 'Direct Message',
+          description: `Direct Message (${dmId})`,
+          category: 'DIRECT MESSAGES',
+          hubId: 'anticeil',
+          isDirectMessage: true,
+          type: 'text',
+        };
+        dmCh = dmChannels.find((c) => c.id === dmId) || fallbackDM;
+        setChannels((prev) => (prev.some((c) => c.id === dmId) ? prev : [...prev, dmCh!]));
+      }
+      voiceDest = dmCh || null;
+    } else {
+      // In Server: resolve to selected channel or available voice channel in that hub
+      if (targetChannelId) {
+        voiceDest = channels.find((c) => c.id === targetChannelId && c.type === 'voice') || null;
+      }
+      if (!voiceDest && activeCallChannelId) {
+        voiceDest = channels.find((c) => c.id === activeCallChannelId && c.type === 'voice') || null;
+      }
+      if (!voiceDest && targetChannel?.type === 'voice') {
+        voiceDest = targetChannel;
+      }
+      if (!voiceDest && activeChannel?.type === 'voice') {
+        voiceDest = activeChannel;
+      }
+      if (!voiceDest) {
+        const hubId = targetChannel?.hubId || activeHubId;
+        voiceDest = channels.find((c) => (c.hubId || 'anticeil') === hubId && c.type === 'voice') || null;
+      }
+      if (!voiceDest) {
+        voiceDest = channels.find((c) => c.type === 'voice') || null;
+      }
     }
-    if (!voiceDest && activeChannel?.type === 'voice') {
-      voiceDest = activeChannel;
-    }
-    if (!voiceDest) {
-      voiceDest = hubChannels.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
-    }
-    if (!voiceDest) {
-      voiceDest = hubChannels.find((c) => c.type === 'voice');
-    }
-    if (!voiceDest) {
-      voiceDest = channels.find((c) => c.type === 'voice');
-    }
+
+    const app = EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {
+      id: appId,
+      title: appId === 'watch-together' || appId === 'youtube' ? 'Watch Together' : appId,
+      developer: appId === 'watch-together' || appId === 'youtube' ? 'YouTube' : 'Community App',
+      description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.',
+      icon: '▶️',
+      iconBg: 'bg-red-600',
+      bannerGradient: 'bg-white',
+    };
 
     if (voiceDest) {
       if (voiceDest.hubId && voiceDest.hubId !== activeHubId) {
@@ -1391,24 +1428,30 @@ export function CommunityPage() {
         payload: { appId },
       });
 
-      const app = EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {
-        id: appId,
-        title: appId === 'watch-together' || appId === 'youtube' ? 'Watch Together' : appId,
-        developer: appId === 'watch-together' || appId === 'youtube' ? 'YouTube' : 'Community App',
-        description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.',
-        icon: '▶️',
-        iconBg: 'bg-red-600',
-        bannerGradient: 'bg-white',
-      };
-
       toast.success(t(`Aktivitas ${app.title} diluncurkan! 🚀`));
+    }
 
-      // If launched from a text channel (not clicking Play from an existing message),
-      // create and post the Discord-like Activity Invitation message in the text channel!
-      if (!fromChatInvite && originatingTextChannel) {
+    // 3. Post Discord-like Bot Invitation Message in the destination text channel (DM or Server)
+    if (!fromChatInvite) {
+      let textChannelToSendId: string | null = null;
+      if (isDM) {
+        textChannelToSendId = targetChannelId || voiceDest?.id || null;
+      } else if (targetChannel && targetChannel.type !== 'voice') {
+        textChannelToSendId = targetChannel.id;
+      } else if (targetChannelId && !channels.find((c) => c.id === targetChannelId && c.type === 'voice')) {
+        textChannelToSendId = targetChannelId;
+      } else {
+        // Voice channel selected in server: post to the hub's main text channel or to the voice channel's chat
+        const hubId = voiceDest?.hubId || activeHubId;
+        const hubTextCh = channels.find((c) => (c.hubId || 'anticeil') === hubId && (c.type === 'text' || !c.type));
+        textChannelToSendId = hubTextCh?.id || targetChannelId || voiceDest?.id || null;
+      }
+
+      if (textChannelToSendId) {
         const currentUserId = currentUser?.id || 'anon-user';
         const currentUserName =
           `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
+          currentUser?.name ||
           currentUser?.email?.split('@')[0] ||
           'Pengguna Anticeil';
 
@@ -1418,7 +1461,7 @@ export function CommunityPage() {
         else if (activeHub?.role === 'admin') myRole = 'admin';
 
         const payload: Partial<CommunityMessage> = {
-          channelId: originatingTextChannel.id,
+          channelId: textChannelToSendId,
           senderId: currentUserId,
           senderName: currentUserName,
           senderEmail: currentUser?.email || 'user@anticeil.com',
@@ -1439,23 +1482,40 @@ export function CommunityPage() {
                 iconBg: app.iconBg,
                 bannerGradient: app.bannerGradient,
                 startedBy: currentUserName,
+                startedById: currentUserId,
                 startedByAvatar: currentUser?.imageUrl ?? null,
-                channelId: voiceDest.id,
-                channelName: voiceDest.name,
+                channelId: voiceDest?.id || textChannelToSendId,
+                channelName: voiceDest?.name || 'Call Stage',
               },
             },
           ],
         };
 
         try {
-          const saved = await communityApi.sendMessage(originatingTextChannel.id, payload);
+          const saved = await communityApi.sendMessage(textChannelToSendId, payload);
           setMessagesMap((prev) => {
-            const list = prev[originatingTextChannel.id] || [];
+            const list = prev[textChannelToSendId!] || [];
             if (list.some((m) => m.id === saved.id)) return prev;
-            return { ...prev, [originatingTextChannel.id]: [...list, saved] };
+            return { ...prev, [textChannelToSendId!]: [...list, saved] };
           });
         } catch (err) {
           console.error('Failed to send activity invite message', err);
+          const optimisticMsg: CommunityMessage = {
+            id: `msg-act-${Date.now()}`,
+            channelId: textChannelToSendId,
+            senderId: currentUserId,
+            senderName: currentUserName,
+            senderEmail: currentUser?.email || 'user@anticeil.com',
+            senderAvatar: currentUser?.imageUrl ?? null,
+            senderRole: myRole,
+            content: '',
+            createdAt: new Date().toISOString(),
+            attachments: payload.attachments,
+          };
+          setMessagesMap((prev) => {
+            const list = prev[textChannelToSendId!] || [];
+            return { ...prev, [textChannelToSendId!]: [...list, optimisticMsg] };
+          });
         }
       }
     }

@@ -80,6 +80,7 @@ export type CommunityAttachment = {
     iconBg?: string;
     bannerGradient?: string;
     startedBy?: string;
+    startedById?: string;
     startedByAvatar?: string | null;
     channelId?: string;
     channelName?: string;

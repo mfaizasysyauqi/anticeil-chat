@@ -218,6 +218,15 @@ export function MessagesFeed({
                                       ? 'from-[#3d240d] via-[#261608] to-[#140b04] border-amber-500/30'
                                       : 'from-[#2b2d31] via-[#1e1f22] to-[#111214] border-border/80';
 
+                              const currentUserName =
+                                `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
+                                currentUser?.name ||
+                                currentUser?.email?.split('@')[0] ||
+                                '';
+                              const isAlreadyPlaying =
+                                (currentUser?.id && (itemAct.startedById === currentUser.id || msg.senderId === currentUser.id)) ||
+                                (currentUserName && itemAct.startedBy === currentUserName);
+
                               return (
                                 <div
                                   key={attIdx}
@@ -256,27 +265,39 @@ export function MessagesFeed({
                                       )}
                                     </div>
 
-                                    {/* Title & Description */}
+                                    {/* Title & Playing Status */}
                                     <div className="flex-1 min-w-0">
                                       <h4 className="text-sm sm:text-base font-bold text-white leading-tight truncate">
                                         {itemAct.name}
                                       </h4>
-                                      <p className="text-xs text-white/70 line-clamp-2 mt-1 leading-snug">
-                                        {itemAct.description || 'Game ended. Start a new one?'}
-                                      </p>
+                                      <div className="flex items-center gap-1.5 mt-1.5">
+                                        <CommunityAvatar
+                                          name={itemAct.startedBy || 'Player'}
+                                          imageUrl={itemAct.startedByAvatar}
+                                          size={16}
+                                          className="shrink-0"
+                                          showStatus={false}
+                                        />
+                                        <span className="text-xs text-white/90 font-medium">1 Playing</span>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Full-width Play Button */}
+                                  {/* Full-width Join/Joined Button */}
                                   <button
                                     type="button"
                                     onClick={() => {
                                       confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
                                       onJoinActivity?.(itemAct.appId, itemAct.channelId);
                                     }}
-                                    className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                                    className={cn(
+                                      'w-full py-2.5 px-4 rounded-xl font-bold text-sm shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2',
+                                      isAlreadyPlaying
+                                        ? 'bg-white/20 hover:bg-white/25 text-white backdrop-blur-xs'
+                                        : 'bg-white hover:bg-zinc-200 text-zinc-950',
+                                    )}
                                   >
-                                    <span>Play</span>
+                                    <span>{isAlreadyPlaying ? 'Joined' : 'Join'}</span>
                                   </button>
                                 </div>
                               );
