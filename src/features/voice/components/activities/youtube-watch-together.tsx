@@ -56,9 +56,12 @@ export function YouTubeWatchTogether({
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
   const [isPlayerReady, setIsPlayerReady] = useState<boolean>(false);
+  const [needsUserGesture, setNeedsUserGesture] = useState<boolean>(false);
 
   const playerRef = useRef<any>(null);
   const isRemoteSyncRef = useRef<boolean>(false);
+  const ignoreLocalStateChangeUntilRef = useRef<number>(0);
+  const lastSeekTimestampRef = useRef<number>(0);
   const lastKnownTimeRef = useRef<number>(0);
   const initialSeekTimeRef = useRef<number>(0);
 
@@ -210,7 +213,9 @@ export function YouTubeWatchTogether({
     // 1: PLAYING, 2: PAUSED, 0: ENDED, 3: BUFFERING
     if (state === 1) {
       setIsPlaying(true);
-      if (!isRemoteSyncRef.current && canEdit) {
+      setNeedsUserGesture(false);
+      // Only broadcast if not in ignore window, user has permission, and local interaction
+      if (Date.now() >= ignoreLocalStateChangeUntilRef.current && canEdit) {
         const time = playerRef.current?.getCurrentTime?.() || 0;
         socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
           channelId: channel.id,
@@ -223,8 +228,9 @@ export function YouTubeWatchTogether({
       }
     } else if (state === 2) {
       setIsPlaying(false);
-      if (!isRemoteSyncRef.current && canEdit) {
-        const time = playerRef.current?.getCurrentTime?.() || 0;
+      const time = playerRef.current?.getCurrentTime?.() || 0;
+      // Prevent pause broadcast on video initial load (time === 0) or during ignore window
+      if (Date.now() >= ignoreLocalStateChangeUntilRef.current && canEdit && time > 0.5) {
         socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
           channelId: channel.id,
           action: 'YOUTUBE_PAUSE',
@@ -274,14 +280,19 @@ export function YouTubeWatchTogether({
 
       if (playerRef.current) {
         try {
+          const currentLoadedId = playerRef.current.getVideoData?.()?.video_id;
+          if (currentLoadedId === activeVideoId) return;
+
           if (typeof playerRef.current.loadVideoById === 'function') {
-            isRemoteSyncRef.current = true;
-            lastKnownTimeRef.current = 0;
-            setCurrentTime(0);
-            playerRef.current.loadVideoById(activeVideoId);
-            setTimeout(() => {
-              isRemoteSyncRef.current = false;
-            }, 800);
+            ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+            const seekToTime = initialSeekTimeRef.current || 0;
+            initialSeekTimeRef.current = 0;
+            lastKnownTimeRef.current = seekToTime;
+            setCurrentTime(seekToTime);
+            playerRef.current.loadVideoById({
+              videoId: activeVideoId,
+              startSeconds: seekToTime,
+            });
           }
         } catch (err) {
           console.error('Error loading video in YT Player:', err);
@@ -290,6 +301,7 @@ export function YouTubeWatchTogether({
       }
 
       try {
+        ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
         playerRef.current = new window.YT.Player('yt-watch-together-player-frame', {
           width: '100%',
           height: '100%',
@@ -312,6 +324,7 @@ export function YouTubeWatchTogether({
                   event.target.seekTo(initialSeekTimeRef.current, true);
                   initialSeekTimeRef.current = 0;
                 }
+                event.target.playVideo?.();
               } catch (e) {}
             },
             onStateChange: (event: any) => {
@@ -373,12 +386,13 @@ export function YouTubeWatchTogether({
         const last = lastKnownTimeRef.current;
         lastKnownTimeRef.current = curr;
 
-        // Skip manual seek broadcast if this tick was caused by remote sync
-        if (isRemoteSyncRef.current) return;
+        // Skip manual seek broadcast if within remote sync grace window or tab hidden
+        if (Date.now() < ignoreLocalStateChangeUntilRef.current) return;
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
 
-        // Detect manual scrub inside YouTube iframe (jump > 1.8s)
+        // Detect manual scrub inside YouTube iframe (jump > 2.5s)
         const delta = Math.abs(curr - last);
-        if (delta > 1.8 && dur > 0 && last > 0) {
+        if (delta > 2.5 && dur > 0 && last > 0) {
           if (canEdit) {
             socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
               channelId: channel.id,
@@ -424,6 +438,18 @@ export function YouTubeWatchTogether({
     return () => clearInterval(heartbeat);
   }, [isMeHost, activeVideoId, isPlaying, socket, channel.id, currentUser?.id]);
 
+  // Unlock browser autoplay policy on user click
+  const handleUnlockAutoplay = () => {
+    setNeedsUserGesture(false);
+    if (playerRef.current) {
+      try {
+        playerRef.current.unMute?.();
+        playerRef.current.playVideo?.();
+        setIsPlaying(true);
+      } catch (e) {}
+    }
+  };
+
   // Seeking & playback control actions
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
@@ -442,9 +468,11 @@ export function YouTubeWatchTogether({
     }
     if (!playerRef.current) return;
 
-    isRemoteSyncRef.current = true;
+    ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+    lastSeekTimestampRef.current = Date.now();
     lastKnownTimeRef.current = newTime;
     setCurrentTime(newTime);
+    setNeedsUserGesture(false);
 
     try {
       if (typeof playerRef.current.seekTo === 'function') {
@@ -462,10 +490,6 @@ export function YouTubeWatchTogether({
         senderId: currentUser?.id || socket?.id,
       },
     });
-
-    setTimeout(() => {
-      isRemoteSyncRef.current = false;
-    }, 800);
   };
 
   const handleJumpRelative = (deltaSeconds: number) => {
@@ -485,10 +509,11 @@ export function YouTubeWatchTogether({
     }
     if (!playerRef.current) return;
 
+    ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+    setNeedsUserGesture(false);
     const time = playerRef.current.getCurrentTime?.() || currentTime;
     if (isPlaying) {
       setIsPlaying(false);
-      isRemoteSyncRef.current = true;
       try {
         playerRef.current.pauseVideo();
       } catch (e) {}
@@ -501,12 +526,8 @@ export function YouTubeWatchTogether({
           senderId: currentUser?.id || socket?.id,
         },
       });
-      setTimeout(() => {
-        isRemoteSyncRef.current = false;
-      }, 500);
     } else {
       setIsPlaying(true);
-      isRemoteSyncRef.current = true;
       try {
         playerRef.current.playVideo();
       } catch (e) {}
@@ -519,9 +540,6 @@ export function YouTubeWatchTogether({
           senderId: currentUser?.id || socket?.id,
         },
       });
-      setTimeout(() => {
-        isRemoteSyncRef.current = false;
-      }, 500);
     }
   };
 
@@ -535,27 +553,19 @@ export function YouTubeWatchTogether({
 
       if (data.action === 'YOUTUBE_CHANGE_VIDEO') {
         const { videoId } = data.payload || {};
-        if (videoId) {
+        if (videoId && videoId !== activeVideoIdRef.current) {
+          ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+          initialSeekTimeRef.current = 0;
           setActiveVideoId(videoId);
           setIsExpandedVideo(false);
-          if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
-            isRemoteSyncRef.current = true;
-            lastKnownTimeRef.current = 0;
-            setCurrentTime(0);
-            try {
-              playerRef.current.loadVideoById(videoId);
-            } catch (e) {}
-            setTimeout(() => {
-              isRemoteSyncRef.current = false;
-            }, 800);
-          }
         }
       } else if (data.action === 'YOUTUBE_SEEK') {
         const { currentTime: targetTime, isPlaying: remotePlaying, senderId } = data.payload || {};
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
 
         if (typeof targetTime === 'number' && playerRef.current) {
-          isRemoteSyncRef.current = true;
+          ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+          lastSeekTimestampRef.current = Date.now();
           lastKnownTimeRef.current = targetTime;
           setCurrentTime(targetTime);
 
@@ -569,70 +579,69 @@ export function YouTubeWatchTogether({
               setIsPlaying(false);
             }
           } catch (e) {}
-
-          setTimeout(() => {
-            isRemoteSyncRef.current = false;
-          }, 800);
         }
       } else if (data.action === 'YOUTUBE_PLAY') {
         const { currentTime: targetTime, senderId } = data.payload || {};
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
 
+        ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
         setIsPlaying(true);
         if (playerRef.current) {
-          isRemoteSyncRef.current = true;
           if (typeof targetTime === 'number') {
             const curr = playerRef.current.getCurrentTime?.() || 0;
-            if (Math.abs(curr - targetTime) > 1.5) {
+            if (Math.abs(curr - targetTime) > 3.0) {
               try {
                 playerRef.current.seekTo(targetTime, true);
               } catch (e) {}
             }
           }
           try {
-            playerRef.current.playVideo?.();
-          } catch (e) {}
-          setTimeout(() => {
-            isRemoteSyncRef.current = false;
-          }, 800);
+            const res = playerRef.current.playVideo?.();
+            if (res && typeof res.catch === 'function') {
+              res.catch(() => setNeedsUserGesture(true));
+            }
+          } catch (e) {
+            setNeedsUserGesture(true);
+          }
         }
       } else if (data.action === 'YOUTUBE_PAUSE') {
         const { currentTime: targetTime, senderId } = data.payload || {};
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
 
+        ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
         setIsPlaying(false);
         if (playerRef.current) {
-          isRemoteSyncRef.current = true;
           try {
             playerRef.current.pauseVideo?.();
             if (typeof targetTime === 'number') {
               const curr = playerRef.current.getCurrentTime?.() || 0;
-              if (Math.abs(curr - targetTime) > 1.5) {
+              if (Math.abs(curr - targetTime) > 3.0) {
                 playerRef.current.seekTo(targetTime, false);
-                playerRef.current.pauseVideo?.();
               }
             }
           } catch (e) {}
-          setTimeout(() => {
-            isRemoteSyncRef.current = false;
-          }, 800);
         }
       } else if (data.action === 'YOUTUBE_TIME_SYNC') {
         const { currentTime: targetTime, senderId } = data.payload || {};
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
 
         if (playerRef.current && typeof targetTime === 'number') {
+          // If player is currently buffering, NEVER interrupt buffering with a seek
+          const pState = playerRef.current.getPlayerState?.();
+          if (pState === 3) return;
+
+          // Rate-limit sync seeks to prevent continuous buffering loops
+          if (Date.now() - lastSeekTimestampRef.current < 8000) return;
+
           const localTime = playerRef.current.getCurrentTime?.() || 0;
-          if (Math.abs(localTime - targetTime) > 2.0) {
-            isRemoteSyncRef.current = true;
+          if (Math.abs(localTime - targetTime) > 4.5) {
+            ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+            lastSeekTimestampRef.current = Date.now();
             lastKnownTimeRef.current = targetTime;
             setCurrentTime(targetTime);
             try {
               playerRef.current.seekTo(targetTime, true);
             } catch (e) {}
-            setTimeout(() => {
-              isRemoteSyncRef.current = false;
-            }, 800);
           }
         }
       } else if (data.action === 'YOUTUBE_UPDATE_PLAYLIST') {
@@ -669,19 +678,24 @@ export function YouTubeWatchTogether({
           isPlaying: syncPlaying,
         } = data.payload || {};
         if (videoId) {
-          setActiveVideoId(videoId);
-          if (typeof syncTime === 'number' && syncTime > 0) {
-            initialSeekTimeRef.current = syncTime;
-            if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
-              isRemoteSyncRef.current = true;
-              playerRef.current.seekTo(syncTime, true);
-              if (syncPlaying) {
-                playerRef.current.playVideo?.();
-                setIsPlaying(true);
-              }
-              setTimeout(() => {
-                isRemoteSyncRef.current = false;
-              }, 800);
+          if (videoId !== activeVideoIdRef.current) {
+            initialSeekTimeRef.current = typeof syncTime === 'number' ? syncTime : 0;
+            ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+            setActiveVideoId(videoId);
+          } else if (typeof syncTime === 'number' && playerRef.current) {
+            const curr = playerRef.current.getCurrentTime?.() || 0;
+            if (Math.abs(curr - syncTime) > 4.0) {
+              ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+              try {
+                playerRef.current.seekTo(syncTime, true);
+              } catch (e) {}
+            }
+            if (syncPlaying) {
+              playerRef.current.playVideo?.();
+              setIsPlaying(true);
+            } else if (syncPlaying === false) {
+              playerRef.current.pauseVideo?.();
+              setIsPlaying(false);
             }
           }
         }
@@ -882,6 +896,8 @@ export function YouTubeWatchTogether({
       return;
     }
 
+    ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+    initialSeekTimeRef.current = 0;
     setActiveVideoId(video.id);
     setIsExpandedVideo(false);
 
@@ -1347,6 +1363,23 @@ export function YouTubeWatchTogether({
                 id="yt-watch-together-player-frame"
                 className="w-full h-full [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
               />
+
+              {/* Browser Autoplay Blocked Banner */}
+              {needsUserGesture && (
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center gap-3 z-30 p-4 text-center">
+                  <p className="text-xs sm:text-sm font-semibold text-white">
+                    Browser membatasi pemutaran otomatis
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleUnlockAutoplay}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Klik untuk Sinkronkan Video</span>
+                  </button>
+                </div>
+              )}
 
               {/* Expand Video Button Container: Hidden by default, only visible on hover */}
               {!isExpandedVideo && (
