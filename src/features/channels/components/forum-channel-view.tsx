@@ -280,10 +280,10 @@ export function ForumChannelView({
 
       {/* Inline Post Composer (when user clicks New Post) */}
       {isForumComposerOpen && (
-        <div className="p-4 border-b border-border bg-card/80 animate-in fade-in-50 duration-150">
+        <div className={`${channelPaddingClass} py-3 border-b border-border bg-card/80 animate-in fade-in-50 duration-150`}>
           <form
             onSubmit={onCreateForumPost}
-            className="space-y-3 max-w-2xl mx-auto p-4 rounded-xl border border-border bg-muted/60 shadow-xl"
+            className="space-y-3 w-full p-4 rounded-xl border border-border bg-muted/60 shadow-xl"
           >
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
@@ -375,23 +375,31 @@ export function ForumChannelView({
             )}
           </div>
         ) : (
-          <div className="space-y-2.5 max-w-5xl mx-auto">
+          <div className="space-y-2.5 w-full">
             {filteredForumPosts.map((post) => (
               <div
                 key={post.id}
                 onClick={() => setActiveThread(post)}
-                className="p-4 rounded-xl bg-card/60 hover:bg-card border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between shadow-xs hover:shadow-md"
+                className="p-4 rounded-xl bg-card/60 hover:bg-card border border-border hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between shadow-xs hover:shadow-md gap-3"
               >
-                <div>
-                  <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors mb-1 truncate">
-                    {post.name}
-                  </h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    <span className="font-semibold text-foreground/90">{post.creatorName}: </span>
-                    {post.name}
-                  </p>
+                <div className="flex items-start gap-3">
+                  <CommunityAvatar
+                    name={post.creatorName}
+                    imageUrl={post.creatorAvatar}
+                    size={36}
+                    className="shrink-0 mt-0.5"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors mb-1 truncate">
+                      {post.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      <span className="font-semibold text-foreground/90">{post.creatorName}: </span>
+                      {post.name}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2.5 mt-3 text-[11px] text-muted-foreground pt-2 border-t border-border/50">
+                <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground pt-2 border-t border-border/50">
                   <div className="flex items-center gap-1.5 text-foreground font-medium">
                     <MessagesSquare className="w-3.5 h-3.5 text-primary" />
                     <span>{post.messageCount || 0}</span>
