@@ -7,6 +7,7 @@ import {
   Check,
   Search,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   Flame,
   Maximize2,
@@ -15,6 +16,7 @@ import {
   RotateCw,
   Lock,
   ListVideo,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -48,6 +50,7 @@ export function YouTubeWatchTogether({
   const [ytSearchQuery, setYtSearchQuery] = useState('');
   const [ytCategory, setYtCategory] = useState<string>('semua');
   const [isExpandedVideo, setIsExpandedVideo] = useState(false);
+  const [isExpandedPlaylistOpen, setIsExpandedPlaylistOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'browse' | 'playlist'>('browse');
 
   // Playback & Realtime Sync States
@@ -1332,6 +1335,132 @@ export function YouTubeWatchTogether({
     );
   };
 
+  // Render playlist items list
+  const renderPlaylistItems = () => {
+    if (ytPlaylist.length === 0) {
+      return (
+        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-card border border-border">
+          <Play className="w-3.5 h-3.5 fill-current text-white shrink-0 ml-1" />
+          <div className="relative w-24 aspect-video rounded-lg overflow-hidden shrink-0 bg-black">
+            <img
+              src={`https://i.ytimg.com/vi/${activeVideoId}/hqdefault.jpg`}
+              alt="Playing"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes('mqdefault')) {
+                  target.src = `https://i.ytimg.com/vi/${activeVideoId}/mqdefault.jpg`;
+                }
+              }}
+            />
+            <span className="absolute inset-0 bg-black/45 flex items-center justify-center text-[10px] font-bold text-white tracking-wide">
+              Playing
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-white truncate">
+              {ytVideos.find((v) => v.id === activeVideoId)?.title || 'Now Playing'}
+            </p>
+            <p className="text-[11px] text-[#949ba4] truncate">
+              {ytVideos.find((v) => v.id === activeVideoId)?.channel || 'YouTube'}
+            </p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <CommunityAvatar
+                name={currentUserName}
+                imageUrl={currentUser?.imageUrl || currentUser?.avatar}
+                size={18}
+                showStatus={false}
+              />
+              <span className="text-[11px] text-[#949ba4] truncate">{currentUserName}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return ytPlaylist.map((item, idx) => {
+      const isCurrentItem = item.id === activeVideoId;
+      return (
+        <div
+          key={`${item.id}-${idx}`}
+          onClick={() => {
+            if (!canEdit) {
+              toast.info('Hanya host yang dapat mengganti video yang sedang diputar.');
+              return;
+            }
+            setActiveVideoId(item.id);
+            socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+              channelId: channel.id,
+              action: 'YOUTUBE_CHANGE_VIDEO',
+              payload: { videoId: item.id },
+            });
+          }}
+          className={cn(
+            'flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer',
+            isCurrentItem
+              ? 'bg-card border-primary/50 shadow-sm'
+              : 'bg-card/70 border-border hover:border-border/80 hover:bg-card',
+          )}
+        >
+          <Play
+            className={cn(
+              'w-3.5 h-3.5 shrink-0 ml-1',
+              isCurrentItem ? 'fill-current text-primary' : 'text-muted-foreground',
+            )}
+          />
+          <div className="relative w-24 aspect-video rounded-lg overflow-hidden shrink-0 bg-black">
+            <img
+              src={item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`}
+              alt={item.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes('mqdefault')) {
+                  target.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`;
+                }
+              }}
+            />
+            {isCurrentItem ? (
+              <span className="absolute inset-0 bg-black/45 flex items-center justify-center text-[10px] font-bold text-white tracking-wide">
+                Playing
+              </span>
+            ) : item.duration ? (
+              <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-semibold px-1 py-0.2 rounded">
+                {item.duration}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p
+              className={cn(
+                'text-xs font-semibold truncate',
+                isCurrentItem ? 'text-foreground' : 'text-foreground/80',
+              )}
+            >
+              {item.title}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">{item.channel}</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <CommunityAvatar
+                name={item.addedBy}
+                imageUrl={
+                  item.addedBy === currentUserName
+                    ? currentUser?.imageUrl || currentUser?.avatar
+                    : participants.find((p) => p.userName === item.addedBy)?.userAvatar
+                }
+                size={18}
+                showStatus={false}
+              />
+              <span className="text-[11px] text-muted-foreground truncate">
+                {item.addedBy}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-background select-none">
       {activeVideoId ? (
@@ -1341,7 +1470,7 @@ export function YouTubeWatchTogether({
             className={cn(
               'flex flex-col',
               isExpandedVideo
-                ? 'w-full h-full p-2 sm:p-4 gap-2 sm:gap-3 bg-black'
+                ? 'w-full h-full p-0 gap-0 bg-black relative'
                 : cn(
                     'w-full md:w-[44%] lg:w-[42%] border-b md:border-b-0 md:border-r border-border py-3 md:py-4 gap-3 md:gap-4 shrink-0 md:shrink md:overflow-y-auto [scrollbar-width:thin]',
                     mobileTab === 'browse' ? 'md:flex' : 'flex',
@@ -1352,10 +1481,10 @@ export function YouTubeWatchTogether({
             {/* Video Player Box with YouTube IFrame API Target */}
             <div
               className={cn(
-                'relative mx-auto w-full overflow-hidden bg-black border border-border shadow-2xl group shrink-0 transition-all duration-200',
+                'relative mx-auto w-full overflow-hidden bg-black group shrink-0 transition-all duration-200',
                 isExpandedVideo
-                  ? 'flex-1 min-h-0 rounded-2xl flex items-center justify-center'
-                  : 'aspect-video max-h-[220px] sm:max-h-[260px] md:max-h-none rounded-2xl',
+                  ? 'w-full h-full rounded-none flex items-center justify-center border-0'
+                  : 'aspect-video max-h-[220px] sm:max-h-[260px] md:max-h-none rounded-2xl border border-border shadow-2xl',
               )}
             >
               {/* Target div for YouTube IFrame Player API */}
@@ -1395,209 +1524,174 @@ export function YouTubeWatchTogether({
                 </div>
               )}
 
-              {/* Floating Return Button when expanded */}
+              {/* Floating Return / Minimize Button in Expanded Mode (Only visible when video is hovered) */}
               {isExpandedVideo && (
-                <button
-                  type="button"
-                  onClick={() => setIsExpandedVideo(false)}
-                  className="absolute left-4 top-4 z-30 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-black/80 hover:bg-black text-white font-bold text-xs shadow-2xl backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4 rotate-180 stroke-[2.5]" />
-                  <span>Playlist</span>
-                </button>
-              )}
-            </div>
-
-            {/* Realtime Synced Video Control Bar */}
-            {renderSyncedControlBar()}
-
-            {/* Mobile / Tablet Segmented Tabs for overflow management */}
-            <div className="md:hidden flex items-center border border-border bg-card/60 p-1 rounded-xl shrink-0 gap-1">
-              <button
-                type="button"
-                onClick={() => setMobileTab('browse')}
-                className={cn(
-                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
-                  mobileTab === 'browse'
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:bg-muted',
-                )}
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span>Pilih Video</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileTab('playlist')}
-                className={cn(
-                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
-                  mobileTab === 'playlist'
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:bg-muted',
-                )}
-              >
-                <ListVideo className="w-3.5 h-3.5" />
-                <span>Playlist ({ytPlaylist.length || 1})</span>
-              </button>
-            </div>
-
-            {/* Playlist Content (Visible on desktop always; on mobile only when mobileTab === 'playlist') */}
-            <div
-              className={cn(
-                'flex-col gap-3',
-                mobileTab === 'playlist' ? 'flex flex-1 min-h-0' : 'hidden md:flex md:flex-1 md:min-h-0',
-              )}
-            >
-              {/* Header: Title + Host pill */}
-              <div className="flex items-center justify-between shrink-0">
-                <div>
-                  <h3 className="text-sm font-bold text-foreground leading-tight">
-                    {channel?.name || 'General Voice'} Playlist
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    Video{' '}
-                    {Math.max(
-                      1,
-                      ytPlaylist.findIndex((v) => v.id === activeVideoId) + 1,
-                    )}
-                    /{Math.max(ytPlaylist.length, 1)}
-                  </p>
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExpandedVideo(false);
+                      setIsExpandedPlaylistOpen(false);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/85 hover:bg-black text-white font-bold text-xs shadow-2xl backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    title="Tampilan Normal"
+                  >
+                    <Minimize2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Normal</span>
+                  </button>
                 </div>
+              )}
 
-                {renderHostPopover()}
-              </div>
+              {/* Discord-style Floating Playlist Toggle Button in Expanded Mode */}
+              {/* Only visible when video is hovered (> only appears on hover video) */}
+              {/* Text 'Playlist' only appears when button itself is hovered */}
+              {isExpandedVideo && !isExpandedPlaylistOpen && (
+                <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+                  <button
+                    type="button"
+                    onClick={() => setIsExpandedPlaylistOpen(true)}
+                    className="group/pill flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/85 hover:bg-black text-white font-bold text-xs shadow-2xl backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    title="Buka Playlist"
+                  >
+                    <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover/pill:max-w-[80px] group-hover/pill:opacity-100 transition-all duration-300 text-xs font-semibold">
+                      Playlist
+                    </span>
+                    <ChevronRight className="w-4 h-4 stroke-[2.5] shrink-0" />
+                  </button>
+                </div>
+              )}
 
-              {/* Playlist items scroll container */}
-              <div className="flex-1 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
-                {ytPlaylist.length === 0 ? (
-                  <div className="flex items-center gap-3 p-2.5 rounded-xl bg-card border border-border">
-                    <Play className="w-3.5 h-3.5 fill-current text-white shrink-0 ml-1" />
-                    <div className="relative w-24 aspect-video rounded-lg overflow-hidden shrink-0 bg-black">
-                      <img
-                        src={`https://i.ytimg.com/vi/${activeVideoId}/hqdefault.jpg`}
-                        alt="Playing"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          if (!target.src.includes('mqdefault')) {
-                            target.src = `https://i.ytimg.com/vi/${activeVideoId}/mqdefault.jpg`;
-                          }
-                        }}
-                      />
-                      <span className="absolute inset-0 bg-black/45 flex items-center justify-center text-[10px] font-bold text-white tracking-wide">
-                        Playing
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-white truncate">
-                        {ytVideos.find((v) => v.id === activeVideoId)?.title || 'Now Playing'}
-                      </p>
-                      <p className="text-[11px] text-[#949ba4] truncate">
-                        {ytVideos.find((v) => v.id === activeVideoId)?.channel || 'YouTube'}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-1.5">
-                        <CommunityAvatar
-                          name={currentUserName}
-                          imageUrl={currentUser?.imageUrl || currentUser?.avatar}
-                          size={18}
-                          showStatus={false}
-                        />
-                        <span className="text-[11px] text-[#949ba4] truncate">{currentUserName}</span>
+              {/* Discord-style Slide-in Playlist Drawer when expanded */}
+              {isExpandedVideo && isExpandedPlaylistOpen && (
+                <>
+                  {/* Backdrop click to close */}
+                  <div
+                    className="absolute inset-0 bg-black/50 backdrop-blur-xs z-35 animate-in fade-in duration-200"
+                    onClick={() => setIsExpandedPlaylistOpen(false)}
+                  />
+
+                  {/* Drawer Panel */}
+                  <div className="absolute inset-y-0 left-0 z-40 w-full max-w-sm sm:max-w-md bg-background/95 backdrop-blur-2xl border-r border-border shadow-2xl flex flex-col p-4 animate-in slide-in-from-left duration-200">
+                    <div className="flex items-center justify-between pb-3 border-b border-border/60 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsExpandedPlaylistOpen(false)}
+                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                          title="Tutup Playlist"
+                        >
+                          <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                        </button>
+                        <div>
+                          <h3 className="text-sm font-bold text-foreground leading-tight">
+                            {channel?.name || 'General Voice'} Playlist
+                          </h3>
+                          <p className="text-[11px] text-muted-foreground">
+                            Video{' '}
+                            {Math.max(
+                              1,
+                              ytPlaylist.findIndex((v) => v.id === activeVideoId) + 1,
+                            )}
+                            /{Math.max(ytPlaylist.length, 1)}
+                          </p>
+                        </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        {renderHostPopover()}
+                        <button
+                          type="button"
+                          onClick={() => setIsExpandedPlaylistOpen(false)}
+                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Playlist items scroll container */}
+                    <div className="flex-1 space-y-2 overflow-y-auto pr-1 pt-3 [scrollbar-width:thin]">
+                      {renderPlaylistItems()}
                     </div>
                   </div>
-                ) : (
-                  ytPlaylist.map((item, idx) => {
-                    const isCurrentItem = item.id === activeVideoId;
-                    return (
-                      <div
-                        key={`${item.id}-${idx}`}
-                        onClick={() => {
-                          if (!canEdit) {
-                            toast.info('Hanya host yang dapat mengganti video yang sedang diputar.');
-                            return;
-                          }
-                          setActiveVideoId(item.id);
-                          socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-                            channelId: channel.id,
-                            action: 'YOUTUBE_CHANGE_VIDEO',
-                            payload: { videoId: item.id },
-                          });
-                        }}
-                        className={cn(
-                          'flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer',
-                          isCurrentItem
-                            ? 'bg-card border-primary/50 shadow-sm'
-                            : 'bg-card/70 border-border hover:border-border/80 hover:bg-card',
-                        )}
-                      >
-                        <Play
-                          className={cn(
-                            'w-3.5 h-3.5 shrink-0 ml-1',
-                            isCurrentItem ? 'fill-current text-primary' : 'text-muted-foreground',
-                          )}
-                        />
-                        <div className="relative w-24 aspect-video rounded-lg overflow-hidden shrink-0 bg-black">
-                          <img
-                            src={item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              if (!target.src.includes('mqdefault')) {
-                                target.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`;
-                              }
-                            }}
-                          />
-                          {isCurrentItem ? (
-                            <span className="absolute inset-0 bg-black/45 flex items-center justify-center text-[10px] font-bold text-white tracking-wide">
-                              Playing
-                            </span>
-                          ) : item.duration ? (
-                            <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-semibold px-1 py-0.2 rounded">
-                              {item.duration}
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={cn(
-                              'text-xs font-semibold truncate',
-                              isCurrentItem ? 'text-foreground' : 'text-foreground/80',
-                            )}
-                          >
-                            {item.title}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground truncate">{item.channel}</p>
-                          <div className="flex items-center gap-1.5 mt-1.5">
-                            <CommunityAvatar
-                              name={item.addedBy}
-                              imageUrl={
-                                item.addedBy === currentUserName
-                                  ? currentUser?.imageUrl || currentUser?.avatar
-                                  : participants.find((p) => p.userName === item.addedBy)?.userAvatar
-                              }
-                              size={18}
-                              showStatus={false}
-                            />
-                            <span className="text-[11px] text-muted-foreground truncate">
-                              {item.addedBy}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                </>
+              )}
             </div>
+
+            {/* Realtime Synced Video Control Bar (Hidden when expanded) */}
+            {!isExpandedVideo && renderSyncedControlBar()}
+
+            {/* Mobile / Tablet Segmented Tabs for overflow management */}
+            {!isExpandedVideo && (
+              <div className="md:hidden flex items-center border border-border bg-card/60 p-1 rounded-xl shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMobileTab('browse')}
+                  className={cn(
+                    'flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                    mobileTab === 'browse'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:bg-muted',
+                  )}
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Pilih Video</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileTab('playlist')}
+                  className={cn(
+                    'flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                    mobileTab === 'playlist'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:bg-muted',
+                  )}
+                >
+                  <ListVideo className="w-3.5 h-3.5" />
+                  <span>Playlist ({ytPlaylist.length || 1})</span>
+                </button>
+              </div>
+            )}
+
+            {/* Playlist Content (Visible when !isExpandedVideo) */}
+            {!isExpandedVideo && (
+              <div
+                className={cn(
+                  'flex-col gap-3',
+                  mobileTab === 'playlist' ? 'flex flex-1 min-h-0' : 'hidden md:flex md:flex-1 md:min-h-0',
+                )}
+              >
+                {/* Header: Title + Host pill */}
+                <div className="flex items-center justify-between shrink-0">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground leading-tight">
+                      {channel?.name || 'General Voice'} Playlist
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Video{' '}
+                      {Math.max(
+                        1,
+                        ytPlaylist.findIndex((v) => v.id === activeVideoId) + 1,
+                      )}
+                      /{Math.max(ytPlaylist.length, 1)}
+                    </p>
+                  </div>
+
+                  {renderHostPopover()}
+                </div>
+
+                {/* Playlist items scroll container */}
+                <div className="flex-1 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
+                  {renderPlaylistItems()}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column (Desktop) or Main Browse Area (Mobile when mobileTab === 'browse') */}
           <div
             className={cn(
               'flex-1 min-h-0 flex flex-col py-3 md:py-4 gap-3 md:gap-4 overflow-y-auto [scrollbar-width:thin]',
-              mobileTab === 'browse' ? 'flex' : 'hidden md:flex',
+              isExpandedVideo ? 'hidden' : (mobileTab === 'browse' ? 'flex' : 'hidden md:flex'),
               CHANNEL_HORIZONTAL_PADDING,
             )}
           >
