@@ -15,6 +15,8 @@ import {
   Menu,
   AlertCircle,
   Loader2,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,12 @@ import {
   DialogBody,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { KanbanCard, KanbanColumn, KanbanPriority } from '../types';
@@ -536,32 +544,72 @@ export function KanbanChannelView({
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                     Kolom Status
                   </label>
-                  <select
-                    value={targetColumnId}
-                    onChange={(e) => setTargetColumnId(e.target.value)}
-                    className="w-full h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    {DEFAULT_COLUMNS.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-8 justify-between text-xs bg-muted/40 hover:bg-muted/70 border-border font-normal text-foreground px-2.5 focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
+                      >
+                        <span className="truncate">
+                          {DEFAULT_COLUMNS.find((c) => c.id === targetColumnId)?.title || 'Pilih Kolom'}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-[150px] bg-card border-border text-foreground shadow-2xl p-1 z-[100]">
+                      {DEFAULT_COLUMNS.map((c) => (
+                        <DropdownMenuItem
+                          key={c.id}
+                          onClick={() => setTargetColumnId(c.id)}
+                          className={cn(
+                            'text-xs cursor-pointer justify-between py-1.5 px-2 rounded-md hover:bg-accent hover:text-accent-foreground',
+                            targetColumnId === c.id && 'bg-primary/15 text-primary font-semibold'
+                          )}
+                        >
+                          <span>{c.title}</span>
+                          {targetColumnId === c.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                     Tingkat Prioritas
                   </label>
-                  <select
-                    value={cardPriority}
-                    onChange={(e) => setCardPriority(e.target.value as any)}
-                    className="w-full h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-8 justify-between text-xs bg-muted/40 hover:bg-muted/70 border-border font-normal text-foreground px-2.5 focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
+                      >
+                        <span className="capitalize">{cardPriority}</span>
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-[150px] bg-card border-border text-foreground shadow-2xl p-1 z-[100]">
+                      {[
+                        { id: 'low', label: 'Low', color: 'text-slate-400' },
+                        { id: 'medium', label: 'Medium', color: 'text-blue-400' },
+                        { id: 'high', label: 'High', color: 'text-amber-400' },
+                        { id: 'urgent', label: 'Urgent', color: 'text-rose-400' },
+                      ].map((p) => (
+                        <DropdownMenuItem
+                          key={p.id}
+                          onClick={() => setCardPriority(p.id as KanbanPriority)}
+                          className={cn(
+                            'text-xs cursor-pointer justify-between py-1.5 px-2 rounded-md hover:bg-accent hover:text-accent-foreground',
+                            cardPriority === p.id && 'bg-primary/15 text-primary font-semibold'
+                          )}
+                        >
+                          <span className={p.color}>{p.label}</span>
+                          {cardPriority === p.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
@@ -570,20 +618,49 @@ export function KanbanChannelView({
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                     Penerima Tugas
                   </label>
-                  <select
-                    value={cardAssigneeId}
-                    onChange={(e) => setCardAssigneeId(e.target.value)}
-                    className="w-full h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value={currentUser?.id || 'current-user'}>
-                      {currentUser?.firstName || 'Saya Sendiri'}
-                    </option>
-                    {displayMembers.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-8 justify-between text-xs bg-muted/40 hover:bg-muted/70 border-border font-normal text-foreground px-2.5 focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
+                      >
+                        <span className="truncate">
+                          {cardAssigneeId === (currentUser?.id || 'current-user')
+                            ? currentUser?.firstName || 'Saya Sendiri'
+                            : displayMembers.find((m) => m.id === cardAssigneeId)?.name || 'Pilih Penerima'}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-[180px] max-h-56 overflow-y-auto bg-card border-border text-foreground shadow-2xl p-1 z-[100]">
+                      <DropdownMenuItem
+                        onClick={() => setCardAssigneeId(currentUser?.id || 'current-user')}
+                        className={cn(
+                          'text-xs cursor-pointer justify-between py-1.5 px-2 rounded-md hover:bg-accent hover:text-accent-foreground',
+                          (cardAssigneeId === currentUser?.id || cardAssigneeId === 'current-user') && 'bg-primary/15 text-primary font-semibold'
+                        )}
+                      >
+                        <span>{currentUser?.firstName || 'Saya Sendiri'}</span>
+                        {(cardAssigneeId === currentUser?.id || cardAssigneeId === 'current-user') && (
+                          <Check className="w-3.5 h-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+                      {displayMembers.map((m) => (
+                        <DropdownMenuItem
+                          key={m.id}
+                          onClick={() => setCardAssigneeId(m.id)}
+                          className={cn(
+                            'text-xs cursor-pointer justify-between py-1.5 px-2 rounded-md hover:bg-accent hover:text-accent-foreground',
+                            cardAssigneeId === m.id && 'bg-primary/15 text-primary font-semibold'
+                          )}
+                        >
+                          <span className="truncate">{m.name}</span>
+                          {cardAssigneeId === m.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
@@ -593,7 +670,7 @@ export function KanbanChannelView({
                     type="date"
                     value={cardDueDate}
                     onChange={(e) => setCardDueDate(e.target.value)}
-                    className="h-8 text-xs bg-muted/40 border-border"
+                    className="h-8 text-xs bg-muted/40 border-border [color-scheme:dark]"
                   />
                 </div>
               </div>
