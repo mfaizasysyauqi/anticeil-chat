@@ -30,7 +30,8 @@ export const enTranslations: Record<string, string> = {
   'Kamu bisa menambahkan teman menggunakan nama pengguna mereka': 'You can add friends with their username',
   'Kirim Permintaan Pertemanan': 'Send Friend Request',
   'Mengirim...': 'Sending...',
-  'Wumpus menunggu teman!': 'Wumpus is waiting for friends!',
+  'Wumpus menunggu teman!': 'Start connecting on Anticeil!',
+  'Mulai berteman di Anticeil!': 'Start connecting on Anticeil!',
   'Bagikan username Anda kepada teman atau masukkan username mereka di atas untuk mulai mengobrol dan berkolaborasi.':
     'Share your username with friends or enter their username above to start chatting and collaborating.',
   'Permintaan Pertemanan Masuk': 'Incoming Friend Request',

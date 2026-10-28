@@ -53,7 +53,7 @@ export function AddFriendTab({ onAddFriend, isAddingFriend = false }: AddFriendT
           <Sparkles className="w-8 h-8" />
         </div>
         <h3 className="text-sm font-semibold text-foreground mb-1">
-          {t('Wumpus menunggu teman!')}
+          {t('Mulai berteman di Anticeil!')}
         </h3>
         <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
           {t(

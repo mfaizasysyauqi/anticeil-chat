@@ -49,7 +49,13 @@ export function ActivityStage({
       )}
 
       {activeAppId === 'whiteboard' && (
-        <WhiteboardCanvas channel={channel} socket={socket} />
+        <WhiteboardCanvas
+          channel={channel}
+          socket={socket}
+          currentUser={currentUser}
+          currentUserName={currentUserName}
+          participants={participants}
+        />
       )}
 
       {activeAppId === 'chess' && (

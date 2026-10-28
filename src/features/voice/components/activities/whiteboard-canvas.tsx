@@ -1,163 +1,224 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Users, Sparkles, RefreshCw } from 'lucide-react';
+import { Excalidraw } from '@excalidraw/excalidraw';
+import '@excalidraw/excalidraw/index.css';
 import { Button } from '@/components/ui/button';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
 import { CommunityChannel } from '@/chat/chat-types';
+import { toast } from 'sonner';
 
 export interface WhiteboardCanvasProps {
   channel: CommunityChannel;
   socket: Socket | null;
+  currentUser?: any;
+  currentUserName?: string;
+  participants?: any[];
 }
 
-export function WhiteboardCanvas({ channel, socket }: WhiteboardCanvasProps) {
-  const whiteboardCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [drawColor, setDrawColor] = useState('#10b981');
-  const [brushSize, setBrushSize] = useState(3);
-  const isDrawing = useRef(false);
-  const lastCoord = useRef<{ x: number; y: number } | null>(null);
+export function WhiteboardCanvas({
+  channel,
+  socket,
+  currentUser,
+  currentUserName = 'You',
+  participants = [],
+}: WhiteboardCanvasProps) {
+  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
+  const isRemoteUpdatingRef = useRef(false);
+  const broadcastDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastElementsHashRef = useRef<string>('');
+  const [isSynced, setIsSynced] = useState(true);
 
-  const drawStroke = (
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-    color: string,
-    size: number,
-  ) => {
-    const canvas = whiteboardCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
+  // Simple fast element hash to prevent sending identical scenes
+  const computeElementsHash = (elements: readonly any[]) => {
+    let hash = elements.length.toString();
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      hash += `|${el.id}:${el.version}:${el.x}:${el.y}`;
+    }
+    return hash;
   };
 
-  const handleClearCanvas = () => {
-    const canvas = whiteboardCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-      channelId: channel.id,
-      action: 'WHITEBOARD_CLEAR',
-    });
-  };
-
+  // Socket Activity Sync Events for Excalidraw
   useEffect(() => {
     if (!socket) return;
-    const handleRemoteActivityEvent = (data: { action: string; payload?: any }) => {
-      if (data.action === 'WHITEBOARD_DRAW' && data.payload) {
-        const { x0, y0, x1, y1, color, size } = data.payload;
-        drawStroke(x0, y0, x1, y1, color, size);
-      } else if (data.action === 'WHITEBOARD_CLEAR') {
-        const canvas = whiteboardCanvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext('2d');
-          ctx?.clearRect(0, 0, canvas.width, canvas.height);
+
+    const handleWhiteboardSocketEvent = (data: {
+      channelId?: string;
+      action: string;
+      payload?: any;
+    }) => {
+      if (!data) return;
+      if (data.channelId && data.channelId !== channel.id) return;
+
+      if (data.action === 'EXCALIDRAW_SYNC') {
+        const { elements, senderId, senderName } = data.payload || {};
+        if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
+
+        if (Array.isArray(elements) && excalidrawAPI) {
+          isRemoteUpdatingRef.current = true;
+          excalidrawAPI.updateScene({ elements });
+          lastElementsHashRef.current = computeElementsHash(elements);
+          setIsSynced(true);
+
+          setTimeout(() => {
+            isRemoteUpdatingRef.current = false;
+          }, 100);
+        }
+      } else if (data.action === 'EXCALIDRAW_CLEAR') {
+        const { senderId, senderName } = data.payload || {};
+        if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
+
+        if (excalidrawAPI) {
+          isRemoteUpdatingRef.current = true;
+          excalidrawAPI.resetScene();
+          lastElementsHashRef.current = '';
+          toast.info(`${senderName || 'Rekan'} telah membersihkan papan tulis`);
+          setTimeout(() => {
+            isRemoteUpdatingRef.current = false;
+          }, 100);
+        }
+      } else if (data.action === 'EXCALIDRAW_QUERY_STATE') {
+        // Newly joined peer requests current whiteboard scene
+        if (excalidrawAPI) {
+          const currentElements = excalidrawAPI.getSceneElements() || [];
+          if (currentElements.length > 0) {
+            socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+              channelId: channel.id,
+              action: 'EXCALIDRAW_SYNC',
+              payload: {
+                elements: currentElements,
+                senderId: currentUser?.id || socket.id,
+                senderName: currentUserName,
+              },
+            });
+          }
         }
       }
     };
 
-    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleRemoteActivityEvent);
+    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleWhiteboardSocketEvent);
+
+    // Query active state when opening whiteboard
+    socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+      channelId: channel.id,
+      action: 'EXCALIDRAW_QUERY_STATE',
+    });
+
     return () => {
-      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleRemoteActivityEvent);
+      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleWhiteboardSocketEvent);
     };
-  }, [socket]);
+  }, [socket, channel.id, excalidrawAPI, currentUser?.id, currentUserName]);
+
+  // Handle local change and broadcast to room
+  const handleChange = useCallback(
+    (elements: readonly any[]) => {
+      if (isRemoteUpdatingRef.current) return;
+      if (!socket) return;
+
+      const newHash = computeElementsHash(elements);
+      if (newHash === lastElementsHashRef.current) return;
+      lastElementsHashRef.current = newHash;
+
+      setIsSynced(false);
+
+      if (broadcastDebounceRef.current) {
+        clearTimeout(broadcastDebounceRef.current);
+      }
+
+      broadcastDebounceRef.current = setTimeout(() => {
+        socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+          channelId: channel.id,
+          action: 'EXCALIDRAW_SYNC',
+          payload: {
+            elements: [...elements],
+            senderId: currentUser?.id || socket.id,
+            senderName: currentUserName,
+          },
+        });
+        setIsSynced(true);
+      }, 80);
+    },
+    [socket, channel.id, currentUser?.id, currentUserName],
+  );
+
+  // Clear board action
+  const handleClearBoard = () => {
+    if (!excalidrawAPI) return;
+    excalidrawAPI.resetScene();
+    lastElementsHashRef.current = '';
+
+    socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+      channelId: channel.id,
+      action: 'EXCALIDRAW_CLEAR',
+      payload: {
+        senderId: currentUser?.id || socket?.id,
+        senderName: currentUserName,
+      },
+    });
+
+    toast.success('Papan tulis berhasil dibersihkan');
+  };
 
   return (
-    <div className="h-full min-h-0 flex flex-col p-3 gap-2 overflow-hidden select-none">
-      <div className="p-2.5 rounded-xl bg-[#2b2d31] border border-white/5 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-muted-foreground mr-1">Warna:</span>
-          {['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#ffffff'].map((color) => (
-            <button
-              key={color}
-              onClick={() => setDrawColor(color)}
+    <div className="h-full w-full min-h-0 flex flex-col bg-[#121212] select-none relative overflow-hidden">
+      {/* ── Discord Style Jamspace Top Header Bar ───────────────────── */}
+      <div className="h-11 px-3 sm:px-4 bg-[#1e1f22] border-b border-border/50 flex items-center justify-between shrink-0 z-10 shadow-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="size-6 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-xs font-bold text-foreground truncate">Jamspace Whiteboard</span>
+
+          {/* Realtime Synced Badge */}
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold ml-1">
+            <span
               className={cn(
-                'w-5 h-5 rounded-full transition-all border cursor-pointer',
-                drawColor === color ? 'scale-125 border-white ring-2 ring-primary' : 'border-transparent opacity-80 hover:opacity-100',
+                'w-1.5 h-1.5 rounded-full bg-emerald-400',
+                isSynced ? 'animate-pulse' : 'bg-amber-400',
               )}
-              style={{ backgroundColor: color }}
             />
-          ))}
-          <div className="w-[1px] h-4 bg-white/10 mx-1.5" />
-          <span className="text-xs font-semibold text-muted-foreground">Tebal:</span>
-          {[2, 4, 8].map((size) => (
-            <button
-              key={size}
-              onClick={() => setBrushSize(size)}
-              className={cn(
-                'px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer',
-                brushSize === size ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-white',
-              )}
-            >
-              {size}px
-            </button>
-          ))}
+            <span className="hidden sm:inline">{isSynced ? 'Realtime Synced' : 'Syncing...'}</span>
+          </div>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleClearCanvas}
-          className="h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/20 gap-1 cursor-pointer"
-        >
-          <Trash2 className="w-3.5 h-3.5" /> Bersihkan Papan
-        </Button>
+
+        {/* Right Actions: Participants & Clear */}
+        <div className="flex items-center gap-2">
+          {/* Active Collaborators count */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 text-[11px] text-muted-foreground border border-border/40">
+            <Users className="w-3.5 h-3.5" />
+            <span>{participants.length + 1} Aktif</span>
+          </div>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleClearBoard}
+            className="h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 gap-1.5 cursor-pointer"
+            title="Bersihkan Semua Gambar"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Bersihkan</span>
+          </Button>
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-white/10 relative bg-[#111214]">
-        <canvas
-          ref={whiteboardCanvasRef}
-          width={1200}
-          height={700}
-          onMouseDown={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const scaleX = e.currentTarget.width / rect.width;
-            const scaleY = e.currentTarget.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
-            isDrawing.current = true;
-            lastCoord.current = { x, y };
+      {/* ── Excalidraw Full Collaborative Canvas ────────────────────── */}
+      <div className="flex-1 w-full h-full min-h-0 relative excalidraw-container">
+        <Excalidraw
+          excalidrawAPI={(api) => setExcalidrawAPI(api)}
+          onChange={handleChange}
+          theme="dark"
+          UIOptions={{
+            canvasActions: {
+              loadScene: false,
+              saveAsImage: true,
+              export: { saveFileToDisk: true },
+              changeViewBackgroundColor: true,
+              clearCanvas: false, // Handled via our top bar
+            },
           }}
-          onMouseMove={(e) => {
-            if (!isDrawing.current || !lastCoord.current) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const scaleX = e.currentTarget.width / rect.width;
-            const scaleY = e.currentTarget.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
-            drawStroke(lastCoord.current.x, lastCoord.current.y, x, y, drawColor, brushSize);
-            socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-              channelId: channel.id,
-              action: 'WHITEBOARD_DRAW',
-              payload: {
-                x0: lastCoord.current.x,
-                y0: lastCoord.current.y,
-                x1: x,
-                y1: y,
-                color: drawColor,
-                size: brushSize,
-              },
-            });
-            lastCoord.current = { x, y };
-          }}
-          onMouseUp={() => {
-            isDrawing.current = false;
-            lastCoord.current = null;
-          }}
-          onMouseLeave={() => {
-            isDrawing.current = false;
-            lastCoord.current = null;
-          }}
-          className="w-full h-full cursor-crosshair touch-none"
         />
       </div>
     </div>

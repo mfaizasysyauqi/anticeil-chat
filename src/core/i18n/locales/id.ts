@@ -30,7 +30,8 @@ export const idTranslations: Record<string, string> = {
   'Kamu bisa menambahkan teman menggunakan nama pengguna mereka': 'Kamu bisa menambahkan teman menggunakan nama pengguna mereka',
   'Kirim Permintaan Pertemanan': 'Kirim Permintaan Pertemanan',
   'Mengirim...': 'Mengirim...',
-  'Wumpus menunggu teman!': 'Wumpus menunggu teman!',
+  'Wumpus menunggu teman!': 'Mulai berteman di Anticeil!',
+  'Mulai berteman di Anticeil!': 'Mulai berteman di Anticeil!',
   'Bagikan username Anda kepada teman atau masukkan username mereka di atas untuk mulai mengobrol dan berkolaborasi.':
     'Bagikan username Anda kepada teman atau masukkan username mereka di atas untuk mulai mengobrol dan berkolaborasi.',
   'Permintaan Pertemanan Masuk': 'Permintaan Pertemanan Masuk',

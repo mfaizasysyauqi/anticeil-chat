@@ -26,7 +26,7 @@ import {
   useServerModals,
 } from '@/features/servers';
 import { UserBottomDock } from '@/features/profile';
-import { FriendsView, type FriendRequest, useFriendsManager } from '@/features/friends';
+import { FriendsView, AddFriendDialog, type FriendRequest, useFriendsManager } from '@/features/friends';
 import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
 import { CalendarView, type CalendarEvent, useCalendarEvents } from '@/features/calendar';
@@ -169,6 +169,7 @@ export function CommunityPage() {
 
   const [isAuthRequiredOpen, setIsAuthRequiredOpen] = useState(false);
   const [authFeatureInfo, setAuthFeatureInfo] = useState<{ title?: string; desc?: string }>({});
+  const [isAddFriendDialogOpen, setIsAddFriendDialogOpen] = useState(false);
 
   const requireAuth = (action: () => void, title?: string, desc?: string) => {
     if (!currentUser) {
@@ -496,11 +497,16 @@ export function CommunityPage() {
     const handleOpenCreateHub = () => {
       setIsCreateHubOpen(true);
     };
+    const handleOpenAddFriend = () => {
+      setIsAddFriendDialogOpen(true);
+    };
     window.addEventListener('anticeil_switch_hub', handleSwitchHub as EventListener);
     window.addEventListener('anticeil_open_create_hub', handleOpenCreateHub);
+    window.addEventListener('anticeil_open_add_friend', handleOpenAddFriend);
     return () => {
       window.removeEventListener('anticeil_switch_hub', handleSwitchHub as EventListener);
       window.removeEventListener('anticeil_open_create_hub', handleOpenCreateHub);
+      window.removeEventListener('anticeil_open_add_friend', handleOpenAddFriend);
     };
   }, [channels]);
 
@@ -1986,12 +1992,13 @@ export function CommunityPage() {
       friends={friends.allFriends}
       activeChannelId={activeChannelId}
       onSelectFriend={(f) => handleStartDirectMessage(f)}
-      onOpenAddFriend={() => {
-        setActiveHubId('anticeil');
-        setActiveChannelId('');
-        setHomeView('friends');
-        friends.setFriendsTab('add');
-      }}
+      onOpenAddFriend={() =>
+        requireAuth(
+          () => setIsAddFriendDialogOpen(true),
+          t('Tambah Teman Baru'),
+          t('Masuk ke Anticeil untuk menambahkan teman baru.'),
+        )
+      }
     />
   );
 
@@ -2601,6 +2608,14 @@ export function CommunityPage() {
           setIsAuthRequiredOpen={setIsAuthRequiredOpen}
           authFeatureInfo={authFeatureInfo}
           t={t}
+        />
+
+        {/* Add Friend Dialog Modal */}
+        <AddFriendDialog
+          open={isAddFriendDialogOpen}
+          onOpenChange={setIsAddFriendDialogOpen}
+          onAddFriend={friends.onAddFriend}
+          isAddingFriend={friends.isAddingFriend}
         />
       </div>
     </TooltipProvider>
