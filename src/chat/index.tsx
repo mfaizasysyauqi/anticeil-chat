@@ -2369,30 +2369,34 @@ export function CommunityPage() {
   );
 
   // Component: User Footer Profile Dock (delegates to reusable UserBottomDock feature component)
-  const renderUserBottomDock = () => (
-    <UserBottomDock
-      currentUser={currentUser}
-      currentUserName={currentUserName}
-      isMuted={isMuted}
-      setIsMuted={setIsMuted}
-      isDeafened={isDeafened}
-      setIsDeafened={setIsDeafened}
-      onOpenEditProfile={() => setIsEditProfileOpen(true)}
-      onLogout={handleLogout}
-      onGoogleSignIn={handleGoogleSignIn}
-      activeCallChannelId={activeCallChannelId}
-      activeCallChannelName={channels.find((c) => c.id === activeCallChannelId)?.name}
-      activeHubName={activeHub?.name}
-      onReturnToCall={() => {
-        setActiveChannelId(activeCallChannelId!);
-        setIsCallPiP(false);
-      }}
-      onDisconnectCall={() => {
-        setActiveCallChannelId(null);
-        setIsActivityOpen(false);
-      }}
-    />
-  );
+  const renderUserBottomDock = () => {
+    const activeCallChannel = channels.find((c) => c.id === activeCallChannelId);
+    return (
+      <UserBottomDock
+        currentUser={currentUser}
+        currentUserName={currentUserName}
+        isMuted={isMuted}
+        setIsMuted={setIsMuted}
+        isDeafened={isDeafened}
+        setIsDeafened={setIsDeafened}
+        onOpenEditProfile={() => setIsEditProfileOpen(true)}
+        onLogout={handleLogout}
+        onGoogleSignIn={handleGoogleSignIn}
+        activeCallChannelId={activeCallChannelId}
+        activeCallChannelName={activeCallChannel?.name}
+        activeHubName={activeHub?.name}
+        isActivityChannel={!!activeCallChannelId && activeCallChannel?.type !== 'voice'}
+        onReturnToCall={() => {
+          setActiveChannelId(activeCallChannelId!);
+          setIsCallPiP(false);
+        }}
+        onDisconnectCall={() => {
+          setActiveCallChannelId(null);
+          setIsActivityOpen(false);
+        }}
+      />
+    );
+  };
 
   const handleStartDirectMessage = (member: any) => {
     if (!member) return;

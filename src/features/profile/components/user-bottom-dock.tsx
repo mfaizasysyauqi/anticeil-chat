@@ -18,6 +18,8 @@ interface UserBottomDockProps {
   activeCallChannelId?: string | null;
   activeCallChannelName?: string;
   activeHubName?: string;
+  /** True when the active call is a text-channel activity, not a voice channel call */
+  isActivityChannel?: boolean;
   onReturnToCall?: () => void;
   onDisconnectCall?: () => void;
   className?: string;
@@ -36,6 +38,7 @@ export function UserBottomDock({
   activeCallChannelId,
   activeCallChannelName,
   activeHubName,
+  isActivityChannel = false,
   onReturnToCall,
   onDisconnectCall,
   className,
@@ -57,7 +60,7 @@ export function UserBottomDock({
               <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="text-[11px] font-bold text-emerald-400 leading-tight">
-                  {t('Voice Terhubung')}
+                  {isActivityChannel ? t('Aktivitas Berjalan') : t('Voice Terhubung')}
                 </span>
                 <span className="text-[10px] text-muted-foreground truncate">
                   {activeCallChannelName || t('Panggilan')} / {activeHubName || t('Workspace')}
