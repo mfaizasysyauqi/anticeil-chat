@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import {
   Play,
-  Pause,
   Plus,
   Check,
   Search,
@@ -12,8 +11,6 @@ import {
   Flame,
   Maximize2,
   Minimize2,
-  RotateCcw,
-  RotateCw,
   Lock,
   ListVideo,
   X,
@@ -1266,90 +1263,6 @@ export function YouTubeWatchTogether({
     );
   };
 
-  // Realtime Synced Video Control Bar Component
-  const renderSyncedControlBar = () => {
-    return (
-      <div className="w-full bg-card/90 backdrop-blur-md border border-border rounded-xl p-2.5 sm:p-3 flex flex-col gap-2 shrink-0 shadow-sm">
-        {/* Scrubber hidden - native YT controls handle progress */}
-
-        {/* Button row */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Play/Pause */}
-            <button
-              type="button"
-              onClick={handleTogglePlayPause}
-              disabled={!canEdit}
-              title={isPlaying ? 'Jeda (Pause)' : 'Putar (Play)'}
-              className={cn(
-                'w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 shadow-xs',
-                !canEdit && 'opacity-60 cursor-not-allowed',
-              )}
-            >
-              {isPlaying ? (
-                <Pause className="w-4 h-4 fill-current" />
-              ) : (
-                <Play className="w-4 h-4 fill-current ml-0.5" />
-              )}
-            </button>
-
-            {/* -10s */}
-            <button
-              type="button"
-              onClick={() => handleJumpRelative(-10)}
-              disabled={!canEdit}
-              title="Mundur 10 detik"
-              className={cn(
-                'px-2 py-1 h-8 rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer active:scale-95',
-                !canEdit && 'opacity-60 cursor-not-allowed',
-              )}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="text-[10px] hidden sm:inline">-10s</span>
-            </button>
-
-            {/* +10s */}
-            <button
-              type="button"
-              onClick={() => handleJumpRelative(10)}
-              disabled={!canEdit}
-              title="Maju 10 detik"
-              className={cn(
-                'px-2 py-1 h-8 rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer active:scale-95',
-                !canEdit && 'opacity-60 cursor-not-allowed',
-              )}
-            >
-              <RotateCw className="w-3.5 h-3.5" />
-              <span className="text-[10px] hidden sm:inline">+10s</span>
-            </button>
-          </div>
-
-          {/* Realtime Synced Badge + Expand Toggle */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[11px] font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="hidden sm:inline">Realtime Synced</span>
-              <span className="sm:hidden">Synced</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsExpandedVideo((prev) => !prev)}
-              className="p-1.5 h-8 w-8 rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground flex items-center justify-center transition-all cursor-pointer active:scale-95"
-              title={isExpandedVideo ? 'Tampilan Normal' : 'Perbesar Video'}
-            >
-              {isExpandedVideo ? (
-                <Minimize2 className="w-4 h-4" />
-              ) : (
-                <Maximize2 className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // Render playlist items list
   const renderPlaylistItems = () => {
     if (ytPlaylist.length === 0) {
@@ -1632,8 +1545,6 @@ export function YouTubeWatchTogether({
               )}
             </div>
 
-            {/* Realtime Synced Video Control Bar (Hidden when expanded) */}
-            {!isExpandedVideo && renderSyncedControlBar()}
 
             {/* Mobile / Tablet Segmented Tabs for overflow management */}
             {!isExpandedVideo && (
