@@ -312,7 +312,7 @@ export function YouTubeWatchTogether({
           videoId: activeVideoId,
           playerVars: {
             autoplay: 1,
-            controls: 0,
+            controls: 1,
             rel: 0,
             enablejsapi: 1,
             playsinline: 1,
@@ -397,7 +397,7 @@ export function YouTubeWatchTogether({
 
         // Detect manual scrub inside YouTube iframe (jump > 2.5s)
         const delta = Math.abs(curr - last);
-        if (delta > 2.5 && dur > 0 && last > 0) {
+        if (delta > 0.8 && dur > 0 && last > 0) {
           if (canEdit) {
             socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
               channelId: channel.id,
@@ -412,7 +412,7 @@ export function YouTubeWatchTogether({
           }
         }
       } catch (e) {}
-    }, 500);
+    }, 100);
 
     return () => clearInterval(interval);
   }, [activeVideoId, isScrubbing, isPlaying, canEdit, channel.id, socket, currentUser?.id]);
@@ -1270,34 +1270,7 @@ export function YouTubeWatchTogether({
   const renderSyncedControlBar = () => {
     return (
       <div className="w-full bg-card/90 backdrop-blur-md border border-border rounded-xl p-2.5 sm:p-3 flex flex-col gap-2 shrink-0 shadow-sm">
-        {/* Scrubber slider */}
-        <div className="flex items-center gap-2.5 w-full">
-          <span className="text-[11px] font-mono font-medium text-muted-foreground w-11 text-right shrink-0">
-            {formatSeconds(currentTime)}
-          </span>
-          <div className="relative flex-1 flex items-center group">
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              step={0.5}
-              value={currentTime}
-              disabled={!canEdit}
-              onChange={handleSeekChange}
-              onMouseDown={handleSeekStart}
-              onTouchStart={handleSeekStart}
-              onMouseUp={(e) => handleSeekCommit(parseFloat((e.target as HTMLInputElement).value))}
-              onTouchEnd={(e) => handleSeekCommit(parseFloat((e.target as HTMLInputElement).value))}
-              className={cn(
-                'w-full h-1.5 sm:h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary transition-all',
-                !canEdit && 'opacity-60 cursor-not-allowed',
-              )}
-            />
-          </div>
-          <span className="text-[11px] font-mono font-medium text-muted-foreground w-11 shrink-0">
-            {formatSeconds(duration)}
-          </span>
-        </div>
+        {/* Scrubber hidden - native YT controls handle progress */}
 
         {/* Button row */}
         <div className="flex items-center justify-between gap-2">
