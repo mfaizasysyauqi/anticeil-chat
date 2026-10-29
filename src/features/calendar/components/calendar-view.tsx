@@ -662,7 +662,7 @@ export function CalendarView({
 
       {/* ── Dialog Jadwalkan Meeting Baru ─────────────────────────── */}
       <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-card border-border text-foreground rounded-2xl shadow-2xl">
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border text-foreground rounded-2xl shadow-2xl">
           <form onSubmit={handleCreateSubmit} className="flex flex-col">
             <div className="p-5 pb-3 border-b border-border">
               <DialogTitle className="text-base font-bold text-foreground">

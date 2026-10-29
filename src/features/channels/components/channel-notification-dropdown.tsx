@@ -63,16 +63,16 @@ export function ChannelNotificationDropdown({
       >
         {/* Mute Channel with Submenu */}
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg hover:bg-[#2b2d31] hover:text-white cursor-pointer transition-colors">
+          <DropdownMenuSubTrigger className="flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
             <span className={channelNotification.isMuted ? "text-red-400" : ""}>
               {channelNotification.isMuted ? "Saluran Dibisukan" : "Mute Channel"}
             </span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[180px] bg-[#111214] border border-[#2b2d31] text-[#dbdee1] rounded-xl p-1 shadow-2xl">
+          <DropdownMenuSubContent className="w-[180px] bg-background border border-border text-foreground rounded-xl p-1 shadow-2xl">
             {channelNotification.isMuted ? (
               <DropdownMenuItem
                 onClick={() => onUpdateNotification(undefined, false, null)}
-                className="px-3 py-2 text-xs font-medium rounded-lg hover:bg-[#2b2d31] text-emerald-400 cursor-pointer"
+                className="px-3 py-2 text-xs font-medium rounded-lg hover:bg-accent text-emerald-500 cursor-pointer"
               >
                 Bunyikan Saluran (Unmute)
               </DropdownMenuItem>
@@ -88,7 +88,7 @@ export function ChannelNotificationDropdown({
                 <DropdownMenuItem
                   key={item.label}
                   onClick={() => onUpdateNotification(undefined, true, item.duration)}
-                  className="px-3 py-2 text-xs font-medium rounded-lg hover:bg-[#2b2d31] hover:text-white cursor-pointer"
+                  className="px-3 py-2 text-xs font-medium rounded-lg hover:bg-accent hover:text-accent-foreground cursor-pointer"
                 >
                   {item.label}
                 </DropdownMenuItem>
@@ -97,7 +97,7 @@ export function ChannelNotificationDropdown({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        <DropdownMenuSeparator className="my-1.5 bg-white/10" />
+        <DropdownMenuSeparator className="my-1.5 bg-border" />
 
         {/* Radio Items */}
         <div className="space-y-1">
@@ -126,14 +126,14 @@ export function ChannelNotificationDropdown({
                 key={opt.key}
                 type="button"
                 onClick={() => onUpdateNotification(opt.key as any)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#2b2d31] transition-colors text-left cursor-pointer group"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left cursor-pointer group"
               >
                 <div>
-                  <span className="text-xs font-bold text-white block">
+                  <span className="text-xs font-bold text-foreground block">
                     {opt.title}
                   </span>
                   {opt.subtitle && (
-                    <span className="text-[10px] text-[#949ba4] block">
+                    <span className="text-[10px] text-muted-foreground block">
                       {opt.subtitle}
                     </span>
                   )}
@@ -142,9 +142,9 @@ export function ChannelNotificationDropdown({
                 {/* Radio Dot */}
                 <div className={cn(
                   "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                  isSelected ? "border-primary bg-primary text-primary-foreground" : "border-[#4e5058] group-hover:border-[#949ba4]"
+                  isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border group-hover:border-foreground/60"
                 )}>
-                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
                 </div>
               </button>
             );

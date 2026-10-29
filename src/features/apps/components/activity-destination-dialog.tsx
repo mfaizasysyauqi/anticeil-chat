@@ -166,7 +166,7 @@ export function ActivityDestinationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-border bg-card shadow-2xl">
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border border-border bg-background shadow-2xl">
         {/* ── App Header Banner ─────────────────────────────────── */}
         <div
           className={cn(

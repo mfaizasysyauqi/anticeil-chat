@@ -243,7 +243,7 @@ export function ActivityLauncherDialog({
 
       {/* ── Discord Nitro / Anticeil Plus Paywall Modal ──────────────────── */}
       <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
-        <DialogContent className="sm:max-w-[480px] p-0 bg-card border border-border text-card-foreground overflow-hidden shadow-2xl">
+        <DialogContent className="sm:max-w-[480px] p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl">
           <div className="relative h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-6 flex flex-col justify-end">
             <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-amber-300 animate-spin-slow" />

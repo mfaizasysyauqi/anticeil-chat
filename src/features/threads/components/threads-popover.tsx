@@ -74,13 +74,13 @@ export function ThreadsPopover({
 
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 text-[#949ba4] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={threadSearchQuery}
               onChange={(e) => setThreadSearchQuery(e.target.value)}
               placeholder="Search for Thread Name"
-              className="w-full bg-[#1e1f22] border border-[#35373c] focus:border-primary rounded-lg pl-8 pr-2.5 py-1 text-xs text-white placeholder:text-[#949ba4] focus:outline-none transition-colors"
+              className="w-full bg-muted border border-border focus:border-primary rounded-lg pl-8 pr-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
             />
           </div>
 
@@ -117,8 +117,8 @@ export function ThreadsPopover({
                 </div>
               </div>
 
-              <h3 className="text-lg font-black text-white mb-2">There are no threads.</h3>
-              <p className="text-xs text-[#949ba4] max-w-xs mb-6 leading-relaxed">
+              <h3 className="text-lg font-black text-foreground mb-2">There are no threads.</h3>
+              <p className="text-xs text-muted-foreground max-w-xs mb-6 leading-relaxed">
                 Stay focused on a conversation with a thread - a temporary text channel.
               </p>
 
@@ -141,7 +141,7 @@ export function ThreadsPopover({
                     onSelectThread(th);
                     onOpenChange(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#1e1f22]/70 hover:bg-[#2b2d31] border border-white/5 hover:border-white/10 transition-all text-left cursor-pointer group"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-card hover:bg-accent border border-border transition-all text-left cursor-pointer group"
                 >
                   <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/40 text-primary flex items-center justify-center shrink-0">
                     <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -150,17 +150,17 @@ export function ThreadsPopover({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-white group-hover:text-primary transition-colors truncate">
+                      <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                         {th.name}
                       </span>
-                      <span className="text-[10px] text-[#949ba4] shrink-0 font-mono">
+                      <span className="text-[10px] text-muted-foreground shrink-0 font-mono">
                         {dayjs(th.lastMessageAt).fromNow()}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-[#949ba4]">
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
                       <span>Oleh {th.creatorName}</span>
                       <span>•</span>
-                      <span className="bg-white/10 px-1.5 py-0.2 rounded-full font-mono text-[9px]">
+                      <span className="bg-muted px-1.5 py-0.5 rounded-full font-mono text-[9px] text-muted-foreground">
                         {th.messageCount || 1} pesan
                       </span>
                     </div>

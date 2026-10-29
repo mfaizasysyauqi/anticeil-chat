@@ -81,7 +81,7 @@ export function PinnedMessagesPopover({
                 </div>
               </div>
 
-              <p className="text-sm font-semibold text-[#dbdee1] max-w-xs leading-snug mb-6">
+              <p className="text-sm font-semibold text-foreground max-w-xs leading-snug mb-6">
                 This channel doesn&apos;t have any pinned messages... yet.
               </p>
             </div>
@@ -90,13 +90,13 @@ export function PinnedMessagesPopover({
               {pinnedMessages.map((pMsg) => (
                 <div
                   key={pMsg.id}
-                  className="p-3 rounded-xl bg-[#1e1f22] border border-white/5 hover:border-white/15 transition-all flex flex-col gap-2 group"
+                  className="p-3 rounded-xl bg-card border border-border hover:border-border/80 transition-all flex flex-col gap-2 group"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <CommunityAvatar name={pMsg.senderName} imageUrl={pMsg.senderAvatar} size={24} />
-                      <span className="text-xs font-bold text-white truncate">{pMsg.senderName}</span>
-                      <span className="text-[10px] text-[#949ba4] shrink-0">
+                      <span className="text-xs font-bold text-foreground truncate">{pMsg.senderName}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
                         {dayjs(pMsg.pinnedAt || pMsg.createdAt).fromNow()}
                       </span>
                     </div>
@@ -112,7 +112,7 @@ export function PinnedMessagesPopover({
                       <button
                         type="button"
                         onClick={() => onTogglePin(pMsg.id)}
-                        className="p-1 hover:bg-red-500/20 text-[#949ba4] hover:text-red-400 rounded transition-colors cursor-pointer"
+                        className="p-1 hover:bg-red-500/20 text-muted-foreground hover:text-red-400 rounded transition-colors cursor-pointer"
                         title="Unpin message"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -120,7 +120,7 @@ export function PinnedMessagesPopover({
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#dbdee1] line-clamp-3 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs text-foreground/90 line-clamp-3 leading-relaxed whitespace-pre-wrap">
                     {pMsg.content}
                   </p>
                 </div>
@@ -129,11 +129,11 @@ export function PinnedMessagesPopover({
           )}
 
           {/* Protip Box at bottom */}
-          <div className="p-3.5 bg-[#18191c] border-t border-white/5 mt-auto">
-            <span className="text-xs font-bold text-emerald-400 block mb-0.5">
+          <div className="p-3.5 bg-card/60 border-t border-border mt-auto">
+            <span className="text-xs font-bold text-emerald-500 block mb-0.5">
               Protip:
             </span>
-            <p className="text-[11px] text-[#949ba4] leading-normal">
+            <p className="text-[11px] text-muted-foreground leading-normal">
               Users with the &apos;Pin Messages&apos; permission can pin a message from its context menu.
             </p>
           </div>

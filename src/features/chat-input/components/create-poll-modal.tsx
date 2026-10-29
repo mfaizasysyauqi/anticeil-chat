@@ -73,10 +73,10 @@ export function CreatePollModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px] bg-[#1e1f22] text-[#dbdee1] border border-white/10">
+      <DialogContent className="sm:max-w-[460px] bg-background text-foreground border border-border">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold text-white">
-            <BarChart2 className="w-5 h-5 text-emerald-400" />
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <BarChart2 className="w-5 h-5 text-emerald-500" />
             Buat Jajak Pendapat (Create Poll)
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -87,19 +87,19 @@ export function CreatePollModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogBody className="space-y-3.5">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-white">Pertanyaan</label>
+              <label className="text-xs font-semibold text-foreground">Pertanyaan</label>
               <Input
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Apa yang ingin kamu tanyakan?"
-                className="bg-[#111214] border-white/10 text-white placeholder:text-muted-foreground text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
                 maxLength={200}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white flex items-center justify-between">
+              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                 <span>Opsi Jawaban</span>
                 <span className="text-[10px] text-muted-foreground font-normal">
                   {options.length}/8 opsi
@@ -116,7 +116,7 @@ export function CreatePollModal({
                       value={opt}
                       onChange={(e) => handleOptionChange(i, e.target.value)}
                       placeholder={`Opsi ${i + 1}`}
-                      className="bg-[#111214] border-white/10 text-white placeholder:text-muted-foreground text-xs flex-1 focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
+                      className="bg-muted border-border text-foreground placeholder:text-muted-foreground text-xs flex-1 focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
                       maxLength={100}
                       required
                     />
@@ -141,7 +141,7 @@ export function CreatePollModal({
                   variant="outline"
                   size="sm"
                   onClick={handleAddOption}
-                  className="w-full text-xs font-medium border-dashed border-white/20 hover:border-emerald-500/50 hover:text-emerald-400 cursor-pointer gap-1.5 h-8 mt-1"
+                  className="w-full text-xs font-medium border-dashed border-border hover:border-emerald-500/50 hover:text-emerald-500 cursor-pointer gap-1.5 h-8 mt-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Tambah Opsi

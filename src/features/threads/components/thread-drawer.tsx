@@ -50,9 +50,9 @@ export function ThreadDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-[420px] sm:w-[460px] p-0 bg-[#313338] text-white border-l border-black/40 flex flex-col shadow-2xl">
+      <SheetContent side="right" className="w-[420px] sm:w-[460px] p-0 bg-background text-foreground border-l border-border flex flex-col shadow-2xl">
         {/* Thread Drawer Header */}
-        <div className="h-14 px-4 border-b border-black/30 flex items-center justify-between bg-[#2b2d31] shrink-0">
+        <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-card/50 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/40 text-primary flex items-center justify-center shrink-0">
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -60,8 +60,8 @@ export function ThreadDrawer({
               </svg>
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-white truncate">{activeThread?.name}</h3>
-              <p className="text-[11px] text-[#949ba4] truncate">
+              <h3 className="text-sm font-bold text-foreground truncate">{activeThread?.name}</h3>
+              <p className="text-[11px] text-muted-foreground truncate">
                 {t('Thread dimulai oleh')} {activeThread?.creatorName || 'Member'}
               </p>
             </div>
@@ -69,7 +69,7 @@ export function ThreadDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -78,18 +78,18 @@ export function ThreadDrawer({
         {/* Thread Drawer Message List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Thread starter banner */}
-          <div className="p-3.5 rounded-xl bg-[#2b2d31]/80 border border-white/5 space-y-1">
+          <div className="p-3.5 rounded-xl bg-card border border-border space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
               {t('Awal dari Thread')}
             </span>
-            <h4 className="text-sm font-bold text-white">{activeThread?.name}</h4>
-            <p className="text-xs text-[#949ba4]">
-              {t('Dibuat oleh')} <span className="text-white font-medium">{activeThread?.creatorName || 'Member'}</span> • {t('Semua pesan di sini terhubung langsung ke database.')}
+            <h4 className="text-sm font-bold text-foreground">{activeThread?.name}</h4>
+            <p className="text-xs text-muted-foreground">
+              {t('Dibuat oleh')} <span className="text-foreground font-medium">{activeThread?.creatorName || 'Member'}</span> • {t('Semua pesan di sini terhubung langsung ke database.')}
             </p>
           </div>
 
           {threadMessages.length === 0 ? (
-            <div className="py-12 text-center text-xs text-[#949ba4]">
+            <div className="py-12 text-center text-xs text-muted-foreground">
               {t('Belum ada pesan di thread ini. Kirim pesan pertama Anda di bawah!')}
             </div>
           ) : (
@@ -103,12 +103,12 @@ export function ThreadDrawer({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-white">{tMsg.senderName}</span>
-                    <span className="text-[10px] text-[#949ba4]">
+                    <span className="text-xs font-semibold text-foreground">{tMsg.senderName}</span>
+                    <span className="text-[10px] text-muted-foreground">
                       {dayjs(tMsg.createdAt).format('HH:mm')}
                     </span>
                   </div>
-                  <div className="text-xs text-[#dbdee1] mt-0.5 break-words">
+                  <div className="text-xs text-foreground/90 mt-0.5 break-words">
                     {renderFormattedMessage ? renderFormattedMessage(tMsg.content) : tMsg.content}
                   </div>
                 </div>

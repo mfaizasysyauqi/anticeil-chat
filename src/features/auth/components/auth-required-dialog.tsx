@@ -29,7 +29,7 @@ export function AuthRequiredDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden bg-card border-border/80 shadow-2xl rounded-[16px] select-none">
+      <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden bg-background border border-border shadow-2xl rounded-[16px] select-none">
         {/* Banner with gradient & Anticeil branding */}
         <div className="relative w-full h-28 bg-gradient-to-br from-amber-500/20 via-primary/20 to-purple-500/20 flex flex-col items-center justify-center border-b border-border/60">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent pointer-events-none" />
