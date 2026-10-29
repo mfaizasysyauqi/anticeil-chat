@@ -23,8 +23,8 @@ export interface HomeChannelsSidebarProps {
   setActiveChannelId: (id: string) => void;
   homeView?: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
   setHomeView?: (view: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
-  messageRequestsCount?: number;
-  unreadNotificationsCount?: number;
+  messageRequestsCount?: number | string;
+  unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
   friendRequests: any[];
   dmChannels: CommunityChannel[];
@@ -33,6 +33,17 @@ export interface HomeChannelsSidebarProps {
   onItemClick?: () => void;
   onOpenDmSearch: () => void;
   t: (key: string, params?: Record<string, any>) => string;
+}
+
+function formatSidebarBadge(count: number | string | undefined): string | null {
+  if (count === undefined || count === null || count === 0 || count === '0' || count === '') return null;
+  const num = typeof count === 'string' ? Number(count) : count;
+  if (!isNaN(num)) {
+    if (num >= 9000) return '9K+';
+    if (num >= 1000) return `${Math.floor(num / 1000)}K+`;
+    return String(num);
+  }
+  return String(count);
 }
 
 export function HomeChannelsSidebar({
@@ -51,6 +62,9 @@ export function HomeChannelsSidebar({
   onOpenDmSearch,
   t,
 }: HomeChannelsSidebarProps) {
+  const notifBadge = formatSidebarBadge(unreadNotificationsCount);
+  const msgReqBadge = formatSidebarBadge(messageRequestsCount);
+  const friendReqBadge = formatSidebarBadge(friendRequests?.length);
   return (
     <>
       {/* Home Header: Search bar "Find or start a conversation" */}
@@ -91,9 +105,9 @@ export function HomeChannelsSidebar({
               )}
             />
             <span className="flex-1 font-medium">{t('Teman')}</span>
-            {friendRequests.length > 0 && (
-              <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                {friendRequests.length}
+            {friendReqBadge && (
+              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
+                {friendReqBadge}
               </span>
             )}
           </button>
@@ -146,9 +160,9 @@ export function HomeChannelsSidebar({
               )}
             />
             <span className="flex-1 font-medium">{t('Permintaan Pesan')}</span>
-            {messageRequestsCount > 0 && (
-              <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                {messageRequestsCount}
+            {msgReqBadge && (
+              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
+                {msgReqBadge}
               </span>
             )}
           </button>
@@ -176,9 +190,9 @@ export function HomeChannelsSidebar({
               )}
             />
             <span className="flex-1 font-medium">{t('Notifikasi')}</span>
-            {unreadNotificationsCount > 0 && (
-              <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                {unreadNotificationsCount}
+            {notifBadge && (
+              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
+                {notifBadge}
               </span>
             )}
           </button>

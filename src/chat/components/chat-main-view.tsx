@@ -294,6 +294,15 @@ export function ChatMainView({
   handleCreatePoll,
   t,
 }: ChatMainViewProps) {
+  const callStartTimeRef = React.useRef<number | null>(null);
+  React.useEffect(() => {
+    if ((activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !callStartTimeRef.current) {
+      callStartTimeRef.current = Date.now();
+    } else if (!activeCallChannelId && activeChannel?.type !== 'voice') {
+      callStartTimeRef.current = null;
+    }
+  }, [activeCallChannelId, activeChannel]);
+
   if (isFriendsView) {
     return <>{renderFriendsMainPage()}</>;
   }
@@ -481,6 +490,23 @@ export function ChatMainView({
             onActivityChange={(appId) => setSelectedActivityAppId(appId)}
             onTogglePiP={() => setIsCallPiP(true)}
             onEndCall={() => {
+              if (activeChannel) {
+                const elapsedSec = callStartTimeRef.current
+                  ? Math.max(1, Math.floor((Date.now() - callStartTimeRef.current) / 1000))
+                  : 12;
+                const mins = Math.floor(elapsedSec / 60);
+                const secs = elapsedSec % 60;
+                const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                handleCreateCallLog?.({
+                  peerId: activeChannel.dmUserId || activeChannel.id,
+                  peerName: activeChannel.name,
+                  peerAvatar: null,
+                  type: 'outgoing',
+                  isVideo: activeChannel.type === 'voice' || Boolean(selectedActivityAppId),
+                  duration: durationStr,
+                });
+              }
+              callStartTimeRef.current = null;
               setActiveCallChannelId(null);
               setSelectedActivityAppId(null);
               setIsActivityOpen(false);

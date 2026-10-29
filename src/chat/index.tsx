@@ -448,15 +448,17 @@ export function CommunityPage() {
   const [members, setMembers] = useState<CommunityMember[]>([]);
 
   // Discord-style unread message counter badges for mini rail (servers & friends)
+  // Key 'anticeil' = NOTIFICATION-ONLY count (shown on logo badge)
+  // Per server/friend keys = their individual chat unread counts (summed by switcher buttons)
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number | string>>(() => ({
-    anticeil: 10,
-    hub_general: '9K+',
+    anticeil: 3,       // notifications only (logo badge)
+    hub_general: 47,
     hub_gaming: 167,
     hub_dev: 353,
     hub_anime: 651,
     hub_crypto: 87,
     hub_music: 743,
-    hub_study: '5K+',
+    hub_study: 512,
   }));
 
   // Home View Mode: Friends Hub vs Servers vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
@@ -495,6 +497,19 @@ export function CommunityPage() {
     handleMarkAsRead: handleMarkNotificationRead,
     handleMarkAllAsRead: handleMarkAllNotificationsRead,
   } = useNotifications();
+
+  // Logo Anticeil badge: ONLY count unread notifications
+  const unreadNotifCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications],
+  );
+
+  useEffect(() => {
+    setUnreadCounts((prev) => {
+      if (prev.anticeil === unreadNotifCount) return prev;
+      return { ...prev, anticeil: unreadNotifCount };
+    });
+  }, [unreadNotifCount]);
 
   const activeHub = useMemo(() => {
     return hubs.find((h) => h.id === activeHubId) || hubs[0];
@@ -2128,7 +2143,9 @@ export function CommunityPage() {
       activeServerId={activeHubId}
       unreadCounts={unreadCounts}
       onSelectServer={(id) => {
-        setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
+        if (id !== 'anticeil') {
+          setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
+        }
         if (id !== 'anticeil' && !currentUser) {
           setAuthFeatureInfo({
             title: t('Akses Server'),
@@ -2187,7 +2204,7 @@ export function CommunityPage() {
       homeView={homeView}
       setHomeView={setHomeView}
       messageRequestsCount={messageRequests.filter((r) => !r.isSpam).length}
-      unreadNotificationsCount={notifications.filter((n) => !n.isRead).length}
+      unreadNotificationsCount={unreadCounts?.['anticeil'] ?? unreadNotifCount}
       setFriendsTab={friends.setFriendsTab}
       friendRequests={friends.friendRequests}
       dmChannels={dmChannels}

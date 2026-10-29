@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Smile, TrendingUp, Search, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Smile, TrendingUp, Search, Plus, Loader2 } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -15,6 +15,7 @@ import {
   DiscordGifItem,
 } from '@/chat/anticeil-media-data';
 import type { CommunityHub } from '@/chat/chat-types';
+import { communityApi } from '@/chat/chat-api';
 
 export interface MediaPickerPopoverProps {
   open: boolean;
@@ -55,6 +56,38 @@ export function MediaPickerPopover({
 }: MediaPickerPopoverProps) {
   const [hoveredEmoji, setHoveredEmoji] = useState<DiscordEmoji | null>(null);
   const [hoveredSticker, setHoveredSticker] = useState<DiscordSticker | null>(null);
+  const [apiGifs, setApiGifs] = useState<DiscordGifItem[]>([]);
+  const [isLoadingGifs, setIsLoadingGifs] = useState(false);
+
+  useEffect(() => {
+    if (!open || activeMediaTab !== 'gifs') return;
+
+    const query = (selectedGifCategory || mediaSearchQuery || '').trim();
+    if (!query) {
+      setApiGifs([]);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setIsLoadingGifs(true);
+      try {
+        const results = await communityApi.searchGifs(query, 30);
+        if (!cancelled) {
+          setApiGifs(results && results.length > 0 ? results : []);
+        }
+      } catch {
+        if (!cancelled) setApiGifs([]);
+      } finally {
+        if (!cancelled) setIsLoadingGifs(false);
+      }
+    }, 200);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [open, activeMediaTab, mediaSearchQuery, selectedGifCategory]);
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -415,12 +448,16 @@ export function MediaPickerPopover({
                 {selectedGifCategory ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground capitalize">
-                        #{selectedGifCategory} ({DISCORD_GIF_ITEMS.filter((g) => g.category === selectedGifCategory).length})
+                      <span className="text-xs font-bold text-foreground capitalize flex items-center gap-1.5">
+                        #{selectedGifCategory}
+                        {isLoadingGifs && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      {DISCORD_GIF_ITEMS.filter((g) => g.category === selectedGifCategory).map((gif) => (
+                      {(apiGifs.length > 0
+                        ? apiGifs
+                        : DISCORD_GIF_ITEMS.filter((g) => g.category === selectedGifCategory)
+                      ).map((gif) => (
                         <button
                           key={gif.id}
                           type="button"
@@ -440,26 +477,36 @@ export function MediaPickerPopover({
                   </div>
                 ) : mediaSearchQuery ? (
                   /* 2. Free Search GIF Results */
-                  <div className="grid grid-cols-2 gap-2">
-                    {DISCORD_GIF_ITEMS.filter((g) =>
-                      g.title.toLowerCase().includes(mediaSearchQuery.toLowerCase()) ||
-                      g.category.toLowerCase().includes(mediaSearchQuery.toLowerCase())
-                    ).map((gif) => (
-                      <button
-                        key={gif.id}
-                        type="button"
-                        onClick={() => {
-                          onSendGif(gif);
-                          onOpenChange(false);
-                        }}
-                        className="rounded-xl overflow-hidden aspect-video bg-muted/60 relative group hover:ring-2 hover:ring-ring transition-all cursor-pointer"
-                      >
-                        <img src={gif.url} alt={gif.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                          <span className="text-[10px] font-semibold text-white truncate">{gif.title}</span>
-                        </div>
-                      </button>
-                    ))}
+                  <div className="space-y-2">
+                    {isLoadingGifs && (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      {(apiGifs.length > 0
+                        ? apiGifs
+                        : DISCORD_GIF_ITEMS.filter((g) =>
+                            g.title.toLowerCase().includes(mediaSearchQuery.toLowerCase()) ||
+                            g.category.toLowerCase().includes(mediaSearchQuery.toLowerCase())
+                          )
+                      ).map((gif) => (
+                        <button
+                          key={gif.id}
+                          type="button"
+                          onClick={() => {
+                            onSendGif(gif);
+                            onOpenChange(false);
+                          }}
+                          className="rounded-xl overflow-hidden aspect-video bg-muted/60 relative group hover:ring-2 hover:ring-ring transition-all cursor-pointer"
+                        >
+                          <img src={gif.url} alt={gif.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span className="text-[10px] font-semibold text-white truncate">{gif.title}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   /* 3. Discord Default: Categorized Banner Tiles */

@@ -20,8 +20,8 @@ export interface ChannelsSidebarProps {
   isFriendsView: boolean;
   homeView?: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
   setHomeView?: (view: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
-  messageRequestsCount?: number;
-  unreadNotificationsCount?: number;
+  messageRequestsCount?: number | string;
+  unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
   friendRequests: any[];
   dmChannels: CommunityChannel[];

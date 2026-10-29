@@ -32,7 +32,7 @@ import {
   CommunityThread,
   resolveChannelType,
 } from './chat-types';
-import { DiscordEmoji, DiscordSticker } from './anticeil-media-data';
+import { DiscordEmoji, DiscordSticker, DiscordGifItem } from './anticeil-media-data';
 
 export const chatApi = {
   // ── Channels ──────────────────────────────────────────────────────────
@@ -1092,6 +1092,25 @@ export const chatApi = {
 
   async deleteServerSticker(hubId: string, stickerId: string): Promise<void> {
     try { await api.delete(`/v1/community/hubs/${hubId}/stickers/${stickerId}`); } catch {}
+  },
+
+  async claimGift(messageId: string, userName?: string): Promise<{ success: boolean }> {
+    try {
+      const res = await api.post<{ success: boolean }>(`/v1/community/messages/${messageId}/claim-gift`, { userName });
+      return res || { success: true };
+    } catch {
+      return { success: false };
+    }
+  },
+
+  async searchGifs(query: string = '', limit: number = 20): Promise<DiscordGifItem[]> {
+    try {
+      const res = await api.get<DiscordGifItem[]>(`/v1/community/gifs/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+      if (Array.isArray(res) && res.length > 0) {
+        return res;
+      }
+    } catch {}
+    return [];
   },
 };
 

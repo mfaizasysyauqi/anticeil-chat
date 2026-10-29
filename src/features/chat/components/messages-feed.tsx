@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
 import { renderFormattedMessage } from '../utils/format-message';
+import { communityApi } from '@/chat/chat-api';
 import type { CommunityChannel, CommunityMessage, CommunityRole } from '@/chat/chat-types';
 import dayjs from 'dayjs';
 
@@ -444,10 +445,11 @@ export function MessagesFeed({
                                     <button
                                       type="button"
                                       disabled={isClaimed}
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setClaimedGifts((prev) => ({ ...prev, [msg.id]: true }));
                                         confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 } });
                                         toast.success('🎉 Hadiah Nitro berhasil diklaim ke akun Anda!');
+                                        await communityApi.claimGift(msg.id, currentUser?.firstName || currentUser?.name || 'User');
                                       }}
                                       className={cn(
                                         "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer",

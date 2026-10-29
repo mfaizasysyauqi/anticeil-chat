@@ -31,9 +31,55 @@ export interface ServerRailProps {
 
 function formatUnreadBadge(count: number | string | undefined): string | null {
   if (count === undefined || count === null || count === 0 || count === '0' || count === '') return null;
-  if (typeof count === 'string') return count;
-  if (count >= 1000) return `${Math.floor(count / 1000)}K+`;
+  const num = typeof count === 'string' ? Number(count) : count;
+  if (!isNaN(num)) {
+    if (num >= 9000) return '9K+';
+    if (num >= 1000) return `${Math.floor(num / 1000)}K+`;
+    return String(num);
+  }
   return String(count);
+}
+
+/** Sum all server (non-DM, non-anticeil) unread counts */
+function sumServerUnread(counts: Record<string, number | string> | undefined, servers: CommunityHub[]): string | null {
+  if (!counts) return null;
+  let total = 0;
+  for (const srv of servers) {
+    const v = counts[srv.id];
+    if (!v) continue;
+    const n = typeof v === 'string' ? parseInt(v, 10) || 0 : v;
+    total += n;
+  }
+  return formatUnreadBadge(total);
+}
+
+/** Sum all DM/friend unread counts */
+function sumFriendUnread(counts: Record<string, number | string> | undefined, friends: any[]): string | null {
+  if (!counts) return null;
+  let total = 0;
+  const countedKeys = new Set<string>();
+
+  for (const f of friends) {
+    const directKey = f.id;
+    const dmKey = `dm-${f.id}`;
+    const v = counts[directKey] ?? counts[dmKey];
+    if (counts[directKey] !== undefined) countedKeys.add(directKey);
+    if (counts[dmKey] !== undefined) countedKeys.add(dmKey);
+    if (v) {
+      const n = typeof v === 'string' ? parseInt(v, 10) || 0 : v;
+      total += n;
+    }
+  }
+
+  // Also catch any other 'dm-*' unread keys
+  for (const [k, v] of Object.entries(counts)) {
+    if (k.startsWith('dm-') && !countedKeys.has(k)) {
+      const n = typeof v === 'string' ? parseInt(v, 10) || 0 : v;
+      total += n;
+    }
+  }
+
+  return formatUnreadBadge(total);
 }
 
 export function ServerRail({
@@ -92,14 +138,12 @@ export function ServerRail({
   const otherServers = serverList.slice(1);
   const friendList = friends || [];
 
-  const mainUnread = mainServer
-    ? formatUnreadBadge(
-        unreadCounts?.[mainServer.id] ??
-          unreadCounts?.['home'] ??
-          unreadCounts?.['anticeil'] ??
-          mainServer.unreadCount,
-      )
-    : null;
+  // Logo Anticeil: ONLY notification count, not chat messages
+  const mainUnread = formatUnreadBadge(unreadCounts?.['anticeil'] ?? 0);
+
+  // Switcher badges: total server chats vs total DM chats
+  const serverModeBadge = sumServerUnread(unreadCounts, otherServers);
+  const friendModeBadge = sumFriendUnread(unreadCounts, friendList);
 
   return (
     <div id="anticeil-mini-rail" className="w-14 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
@@ -173,6 +217,20 @@ export function ServerRail({
                 ) : (
                   <Globe className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
                 )}
+
+                {/* Badge: total server unreads (when in server mode) or total DM unreads (when in friend mode) */}
+                {isFriendsMode
+                  ? friendModeBadge && (
+                      <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight">
+                        {friendModeBadge}
+                      </span>
+                    )
+                  : serverModeBadge && (
+                      <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight">
+                        {serverModeBadge}
+                      </span>
+                    )
+                }
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">

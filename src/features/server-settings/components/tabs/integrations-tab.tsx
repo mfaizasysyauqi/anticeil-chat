@@ -118,7 +118,12 @@ export function IntegrationsTab({
                     <Bot className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="font-medium">{b.name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium">{b.name}</p>
+                      <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground border leading-none">
+                        Built-in
+                      </span>
+                    </div>
                     <p className="text-[11px] text-muted-foreground">{b.desc}</p>
                   </div>
                 </div>
