@@ -235,13 +235,13 @@ export function CallControlsBar({
               align="center"
               side="top"
               sideOffset={12}
-              className="w-56 p-1.5 rounded-xl bg-popover border border-border shadow-2xl text-popover-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
+              className="w-56 p-1.5 rounded-xl bg-background border border-border shadow-2xl text-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
             >
               {/* Mobile-Only Options: Screen Share, Activity, Soundboard */}
               <div className="md:hidden space-y-0.5">
                 <DropdownMenuItem
                   onClick={onToggleScreenShare}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
                 >
                   {isScreenSharing ? (
                     <>
@@ -258,7 +258,7 @@ export function CallControlsBar({
 
                 <DropdownMenuItem
                   onClick={onOpenAppLauncher}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
                 >
                   <Shapes
                     className={cn(
@@ -278,7 +278,7 @@ export function CallControlsBar({
 
                 <DropdownMenuItem
                   onClick={() => toast.info('Fitur Soundboard & Efek Suara Anticeil')}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
                 >
                   <Sparkles className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
                   <span>Soundboard & Efek Suara</span>
@@ -290,7 +290,7 @@ export function CallControlsBar({
               {/* General Options for All Screen Sizes */}
               <DropdownMenuItem
                 onClick={onOpenInvite}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
               >
                 <UserPlus className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
                 <span>Undang Teman ke Panggilan</span>

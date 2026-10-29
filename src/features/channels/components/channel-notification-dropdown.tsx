@@ -59,7 +59,7 @@ export function ChannelNotificationDropdown({
         side="bottom"
         align="end"
         sideOffset={8}
-        className="w-[240px] bg-popover border border-border text-popover-foreground rounded-2xl p-2 shadow-2xl z-50"
+        className="w-[240px] bg-background border border-border text-foreground rounded-2xl p-2 shadow-2xl z-50"
       >
         {/* Mute Channel with Submenu */}
         <DropdownMenuSub>

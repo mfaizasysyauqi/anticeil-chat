@@ -49,7 +49,7 @@ export function ActivityLauncherDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           showCloseButton={false}
-          className="w-[95vw] sm:w-[500px] max-w-[500px] p-0 bg-popover border border-border text-foreground overflow-hidden shadow-2xl rounded-[16px] flex flex-col max-h-[82vh] h-[520px] focus:outline-none"
+          className="w-[95vw] sm:w-[500px] max-w-[500px] p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl rounded-[16px] flex flex-col max-h-[82vh] h-[520px] focus:outline-none"
         >
           <DialogTitle className="sr-only">Activities</DialogTitle>
           <DialogDescription className="sr-only">Browse and launch activities in this voice call.</DialogDescription>

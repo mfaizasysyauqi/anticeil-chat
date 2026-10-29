@@ -61,7 +61,7 @@ export function ThreadsPopover({
         side="bottom"
         align="end"
         sideOffset={8}
-        className="w-[440px] max-w-[95vw] h-[480px] p-0 bg-popover border border-border text-popover-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
+        className="w-[440px] max-w-[95vw] h-[480px] p-0 bg-background border border-border text-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="p-3.5 border-b border-border/40 flex items-center gap-2.5 bg-muted/30">

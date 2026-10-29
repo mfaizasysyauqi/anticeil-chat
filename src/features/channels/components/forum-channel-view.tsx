@@ -252,7 +252,7 @@ export function ForumChannelView({
                 <ChevronDown className="w-3 h-3 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs bg-popover border-border text-popover-foreground">
+            <DropdownMenuContent align="end" className="text-xs bg-background border-border text-foreground">
               <DropdownMenuItem
                 onClick={() => setForumSort('newest')}
                 className="cursor-pointer hover:bg-primary hover:text-primary-foreground"

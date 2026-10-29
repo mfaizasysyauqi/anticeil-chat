@@ -125,10 +125,10 @@ export function MediaPickerPopover({
         side="top"
         align="end"
         sideOffset={14}
-        className="w-[490px] max-w-[96vw] h-[480px] p-0 bg-popover border border-border text-popover-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
+        className="w-[490px] max-w-[96vw] h-[480px] p-0 bg-background border border-border text-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
       >
         {/* Header: Segmented Tabs & Search Bar */}
-        <div className="p-3 pb-2.5 border-b border-border bg-popover">
+        <div className="p-3 pb-2.5 border-b border-border bg-background">
           <div className="flex items-center gap-1.5 mb-2.5">
             <div className="flex items-center p-1 rounded-lg bg-muted text-xs font-semibold">
               <button
@@ -204,7 +204,7 @@ export function MediaPickerPopover({
         </div>
 
         {/* Body: Left Server Rail & Right Media Grid */}
-        <div className="flex-1 flex min-h-0 overflow-hidden bg-popover">
+        <div className="flex-1 flex min-h-0 overflow-hidden bg-background">
           {/* Left Server Rail */}
           <div className="w-12 bg-muted/40 border-r border-border py-2 flex flex-col items-center gap-2 overflow-y-auto shrink-0 [scrollbar-width:none]">
             <button

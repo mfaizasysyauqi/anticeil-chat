@@ -70,7 +70,7 @@ export function VoiceInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-5 bg-popover text-popover-foreground border-border/80 shadow-2xl rounded-2xl">
+      <DialogContent className="sm:max-w-md p-5 bg-background text-foreground border-border shadow-2xl rounded-2xl">
         <DialogHeader className="space-y-1.5 pb-1">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">

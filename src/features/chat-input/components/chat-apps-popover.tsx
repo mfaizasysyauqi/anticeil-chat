@@ -51,7 +51,7 @@ export function ChatAppsPopover({
         side="top"
         align="end"
         sideOffset={14}
-        className="w-[440px] max-w-[95vw] h-[480px] p-4 bg-popover border border-border text-popover-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col"
+        className="w-[440px] max-w-[95vw] h-[480px] p-4 bg-background border border-border text-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col"
       >
         {/* Search Apps & Commands */}
         <div className="relative w-full mb-3.5 shrink-0">

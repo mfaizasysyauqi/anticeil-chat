@@ -17,7 +17,7 @@ body,
 .dark {
   --background: #000000;
   --foreground: #dbdee1;
-  --popover: #18191c;
+  --popover: #000000;
   --popover-foreground: #f4f4f5;
   --card: #0b0b0e;
   --card-foreground: #f2f3f5;
@@ -566,7 +566,7 @@ body,
   .dark {
     --background: #171717; /* Anticeil neutral charcoal */
     --foreground: #f0f0f0;
-    --popover: #242424;
+    --popover: #171717;
     --card: #1e1e1e;          /* Card bg lifted above background */
     --card-foreground: #f0f0f0;
     --muted: #222222;

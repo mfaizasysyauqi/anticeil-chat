@@ -72,8 +72,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--foreground', '#dbdee1');
       root.style.setProperty('--card', '#2b2d31');
       root.style.setProperty('--card-foreground', '#f2f3f5');
-      root.style.setProperty('--popover', '#232428');
-      root.style.setProperty('--popover-foreground', '#f4f4f5');
+      // Popover matches background so dialogs/menus blend with the theme
+      root.style.setProperty('--popover', '#313338');
+      root.style.setProperty('--popover-foreground', '#dbdee1');
       root.style.setProperty('--sidebar-background', '#2b2d31');
       root.style.setProperty('--sidebar-foreground', '#dbdee1');
       root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.08)');
@@ -100,7 +101,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--foreground', '#f4f4f5');
       root.style.setProperty('--card', '#09090b');
       root.style.setProperty('--card-foreground', '#f4f4f5');
-      root.style.setProperty('--popover', '#18191c');
+      // Popover matches background so dialogs/menus blend with the theme
+      root.style.setProperty('--popover', '#000000');
       root.style.setProperty('--popover-foreground', '#f4f4f5');
       root.style.setProperty('--sidebar-background', '#000000');
       root.style.setProperty('--sidebar-foreground', '#f4f4f5');
