@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { CommunityChannel } from '@/chat/chat-types';
 import { CommunityAvatar } from '@/chat/chat-avatar';
+import { api } from '@/lib/api';
 
 declare global {
   interface Window {
@@ -776,7 +777,6 @@ export function YouTubeWatchTogether({
       setYtIsSearching(true);
       setYtSearchError(null);
       try {
-        const key = import.meta.env.VITE_YOUTUBE_API_KEY || 'AIzaSyBg-0HDXNw2occXp6_89D4dXxBW0gISbQ4';
         let items: Array<{
           id: string;
           title: string;
@@ -787,99 +787,114 @@ export function YouTubeWatchTogether({
           uploadedAt?: string;
         }> = [];
 
-        if (rawQ) {
-          const params = new URLSearchParams({
-            part: 'snippet',
-            q: rawQ,
-            type: 'video',
-            maxResults: '16',
-            key,
-          });
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
-          if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-          const data = await res.json();
-          items = (data.items ?? []).map((item: any) => ({
-            id: item.id.videoId,
-            title: item.snippet.title,
-            channel: item.snippet.channelTitle,
-            thumbnail:
-              item.snippet.thumbnails?.medium?.url ||
-              item.snippet.thumbnails?.default?.url ||
-              `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
-            duration: '',
-            uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-          }));
-        } else if (catObj?.categoryId) {
-          const params = new URLSearchParams({
-            part: 'snippet,contentDetails,statistics',
-            chart: 'mostPopular',
-            regionCode: 'ID',
-            videoCategoryId: catObj.categoryId,
-            maxResults: '16',
-            key,
-          });
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
-          if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-          const data = await res.json();
-          items = (data.items ?? []).map((item: any) => ({
-            id: item.id,
-            title: item.snippet.title,
-            channel: item.snippet.channelTitle,
-            thumbnail:
-              item.snippet.thumbnails?.medium?.url ||
-              item.snippet.thumbnails?.standard?.url ||
-              item.snippet.thumbnails?.default?.url ||
-              `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
-            duration: parseYtDuration(item.contentDetails?.duration),
-            views: formatViews(item.statistics?.viewCount),
-            uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-          }));
-        } else if (catObj?.q) {
-          const params = new URLSearchParams({
-            part: 'snippet',
-            q: catObj.q,
-            type: 'video',
-            maxResults: '16',
-            key,
-          });
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
-          if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-          const data = await res.json();
-          items = (data.items ?? []).map((item: any) => ({
-            id: item.id.videoId,
-            title: item.snippet.title,
-            channel: item.snippet.channelTitle,
-            thumbnail:
-              item.snippet.thumbnails?.medium?.url ||
-              item.snippet.thumbnails?.default?.url ||
-              `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
-            duration: '',
-            uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-          }));
-        } else {
-          const params = new URLSearchParams({
-            part: 'snippet,contentDetails,statistics',
-            chart: 'mostPopular',
-            regionCode: 'ID',
-            maxResults: '16',
-            key,
-          });
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
-          if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-          const data = await res.json();
-          items = (data.items ?? []).map((item: any) => ({
-            id: item.id,
-            title: item.snippet.title,
-            channel: item.snippet.channelTitle,
-            thumbnail:
-              item.snippet.thumbnails?.medium?.url ||
-              item.snippet.thumbnails?.standard?.url ||
-              item.snippet.thumbnails?.default?.url ||
-              `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
-            duration: parseYtDuration(item.contentDetails?.duration),
-            views: formatViews(item.statistics?.viewCount),
-            uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-          }));
+        // 1. Primary: Unlimited Zero-Quota Search & Trending via Backend Scraper
+        try {
+          const endpoint = rawQ
+            ? `/v1/community/youtube/search?q=${encodeURIComponent(rawQ)}`
+            : `/v1/community/youtube/search?category=${encodeURIComponent(catObj?.q || ytCategory || '')}`;
+          const backendRes = await api.get<{ items: any[] }>(endpoint);
+          if (Array.isArray(backendRes?.items) && backendRes.items.length > 0) {
+            items = backendRes.items;
+          }
+        } catch (backendErr) {}
+
+        // 2. Fallback to Google YouTube API v3 if backend didn't return items
+        if (items.length === 0) {
+          const key = import.meta.env.VITE_YOUTUBE_API_KEY || 'AIzaSyBg-0HDXNw2occXp6_89D4dXxBW0gISbQ4';
+          if (rawQ) {
+            const params = new URLSearchParams({
+              part: 'snippet',
+              q: rawQ,
+              type: 'video',
+              maxResults: '16',
+              key,
+            });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
+            const data = await res.json();
+            items = (data.items ?? []).map((item: any) => ({
+              id: item.id.videoId,
+              title: item.snippet.title,
+              channel: item.snippet.channelTitle,
+              thumbnail:
+                item.snippet.thumbnails?.medium?.url ||
+                item.snippet.thumbnails?.default?.url ||
+                `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
+              duration: '',
+              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
+            }));
+          } else if (catObj?.categoryId) {
+            const params = new URLSearchParams({
+              part: 'snippet,contentDetails,statistics',
+              chart: 'mostPopular',
+              regionCode: 'ID',
+              videoCategoryId: catObj.categoryId,
+              maxResults: '16',
+              key,
+            });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
+            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
+            const data = await res.json();
+            items = (data.items ?? []).map((item: any) => ({
+              id: item.id,
+              title: item.snippet.title,
+              channel: item.snippet.channelTitle,
+              thumbnail:
+                item.snippet.thumbnails?.medium?.url ||
+                item.snippet.thumbnails?.standard?.url ||
+                item.snippet.thumbnails?.default?.url ||
+                `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
+              duration: parseYtDuration(item.contentDetails?.duration),
+              views: formatViews(item.statistics?.viewCount),
+              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
+            }));
+          } else if (catObj?.q) {
+            const params = new URLSearchParams({
+              part: 'snippet',
+              q: catObj.q,
+              type: 'video',
+              maxResults: '16',
+              key,
+            });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
+            const data = await res.json();
+            items = (data.items ?? []).map((item: any) => ({
+              id: item.id.videoId,
+              title: item.snippet.title,
+              channel: item.snippet.channelTitle,
+              thumbnail:
+                item.snippet.thumbnails?.medium?.url ||
+                item.snippet.thumbnails?.default?.url ||
+                `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
+              duration: '',
+              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
+            }));
+          } else {
+            const params = new URLSearchParams({
+              part: 'snippet,contentDetails,statistics',
+              chart: 'mostPopular',
+              regionCode: 'ID',
+              maxResults: '16',
+              key,
+            });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
+            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
+            const data = await res.json();
+            items = (data.items ?? []).map((item: any) => ({
+              id: item.id,
+              title: item.snippet.title,
+              channel: item.snippet.channelTitle,
+              thumbnail:
+                item.snippet.thumbnails?.medium?.url ||
+                item.snippet.thumbnails?.standard?.url ||
+                item.snippet.thumbnails?.default?.url ||
+                `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
+              duration: parseYtDuration(item.contentDetails?.duration),
+              views: formatViews(item.statistics?.viewCount),
+              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
+            }));
+          }
         }
 
         if (!isCancelled) {
