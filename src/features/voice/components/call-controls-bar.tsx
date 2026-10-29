@@ -46,6 +46,7 @@ export interface CallControlsBarProps {
   isScreenSharing: boolean;
   activeAppId: string | null;
   currentActiveApp?: DiscordAppDefinition | null;
+  isChatOpen?: boolean;
   onToggleMute: () => void;
   onToggleVideo: () => void;
   onToggleScreenShare: () => void;
@@ -67,6 +68,7 @@ export function CallControlsBar({
   isScreenSharing,
   activeAppId,
   currentActiveApp,
+  isChatOpen = false,
   onToggleMute,
   onToggleVideo,
   onToggleScreenShare,
@@ -109,14 +111,19 @@ export function CallControlsBar({
                   <button
                     type="button"
                     onClick={onToggleChat || onTogglePiP}
-                    className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors flex items-center justify-center cursor-pointer active:scale-95"
-                    title="Buka Obrolan"
+                    className={cn(
+                      'h-9 w-9 rounded-lg transition-colors flex items-center justify-center cursor-pointer active:scale-95',
+                      isChatOpen
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                    )}
+                    title={isChatOpen ? 'Sembunyikan Obrolan' : 'Buka Obrolan'}
                   >
                     <MessageSquare className="w-5 h-5" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-semibold">
-                  Tampilkan Obrolan
+                  {isChatOpen ? 'Sembunyikan Obrolan' : 'Tampilkan Obrolan'}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

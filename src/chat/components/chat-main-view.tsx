@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigateFunction } from 'react-router-dom';
+import { MessageSquare, X } from 'lucide-react';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { MessageRequestsView, type MessageRequestItem } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem } from '@/features/notifications';
@@ -303,6 +304,45 @@ export function ChatMainView({
     }
   }, [activeCallChannelId, activeChannel]);
 
+  const [isActivityChatSplitOpen, setIsActivityChatSplitOpen] = React.useState(false);
+  const [activitySplitHeight, setActivitySplitHeight] = React.useState(70); // 70% activity, 30% chat
+  const splitContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Reset split chat state when channel changes
+  React.useEffect(() => {
+    setIsActivityChatSplitOpen(false);
+  }, [activeChannel?.id]);
+
+  const handleSplitPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const handleEl = e.currentTarget;
+    handleEl.setPointerCapture(e.pointerId);
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      if (!splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      if (rect.height <= 0) return;
+      const relativeY = moveEv.clientY - rect.top;
+      const pct = (relativeY / rect.height) * 100;
+      // Clamp: activity max 80% (min 20% chat), activity min 50% (50/50 max chat)
+      const clamped = Math.min(80, Math.max(50, Math.round(pct)));
+      setActivitySplitHeight(clamped);
+    };
+
+    const onPointerUp = (upEv: PointerEvent) => {
+      try {
+        handleEl.releasePointerCapture(upEv.pointerId);
+      } catch {
+        // ignore if already released
+      }
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
   if (isFriendsView) {
     return <>{renderFriendsMainPage()}</>;
   }
@@ -432,6 +472,70 @@ export function ChatMainView({
     );
   }
 
+  const renderChatFeedAndInput = (isSplit = false) => (
+    <>
+      {/* Messages Feed */}
+      <MessagesFeed
+        activeChannel={activeChannel}
+        channelPaddingClass={isSplit ? 'px-3 sm:px-4' : CHANNEL_HORIZONTAL_PADDING}
+        filteredMessages={filteredMessages}
+        currentUser={currentUser}
+        claimedGifts={claimedGifts}
+        setClaimedGifts={setClaimedGifts}
+        onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
+        onToggleReaction={handleToggleReaction}
+        onTogglePin={handleTogglePin}
+        onStartThread={(initialName, initialContent) => {
+          setNewThreadName(initialName);
+          setNewThreadInitialMsg(initialContent);
+          setIsCreateThreadModalOpen(true);
+        }}
+        onDeleteMessage={handleDeleteMessage}
+        onJoinActivity={(appId, channelId) => handleLaunchActivity(appId, true, channelId)}
+        messagesEndRef={messagesEndRef}
+        t={t}
+      />
+
+      {/* Chat Input Bar */}
+      <ChatInputBar
+        activeChannel={activeChannel}
+        activeHub={activeHub}
+        channelPaddingClass={isSplit ? 'px-3 sm:px-4' : CHANNEL_HORIZONTAL_PADDING}
+        stagedAttachment={stagedAttachment}
+        setStagedAttachment={setStagedAttachment}
+        inputText={inputText}
+        setInputText={setInputText}
+        onSendMessage={handleSendMessage}
+        onFileSelect={handleFileChange}
+        onOpenGiftModal={() => setIsGiftModalOpen(true)}
+        isMediaPickerOpen={isMediaPickerOpen}
+        setIsMediaPickerOpen={setIsMediaPickerOpen}
+        activeMediaTab={activeMediaTab}
+        setActiveMediaTab={setActiveMediaTab}
+        mediaSearchQuery={mediaSearchQuery}
+        setMediaSearchQuery={setMediaSearchQuery}
+        selectedGifCategory={selectedGifCategory}
+        setSelectedGifCategory={setSelectedGifCategory}
+        serverDbEmojis={serverDbEmojis}
+        serverDbStickers={serverDbStickers}
+        onSelectEmoji={handleSelectEmoji}
+        onSendSticker={handleSendSticker}
+        onSendGif={handleSendGif}
+        onOpenQuickAddEmoji={() => setIsQuickAddEmojiOpen(true)}
+        onOpenQuickAddSticker={() => setIsQuickAddStickerOpen(true)}
+        isTemplatePopoverOpen={isTemplatePopoverOpen}
+        setIsTemplatePopoverOpen={setIsTemplatePopoverOpen}
+        appsSearchQuery={appsSearchQuery}
+        setAppsSearchQuery={setAppsSearchQuery}
+        onLaunchActivity={handleLaunchActivity}
+        onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
+        onScheduleMessage={handleScheduleMessage}
+        onSubmitPoll={handleCreatePoll}
+        t={t}
+      />
+    </>
+  );
+
   return (
     <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
       {/* Channel Top Header Bar */}
@@ -474,50 +578,109 @@ export function ChatMainView({
 
       {/* Call Stage, Forum, Kanban, or Chat Feed */}
       {(activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ? (
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full">
-          <CommunityCallStage
-            channel={activeChannel!}
-            activeHub={activeHub}
-            currentUser={currentUser}
-            isPlusOrAbove={isPlusOrAbove}
-            socket={socket}
-            isCallActive={true}
-            isPiP={false}
-            initialAppId={selectedActivityAppId}
-            onToggleActivity={(open) =>
-              setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))
-            }
-            onActivityChange={(appId) => setSelectedActivityAppId(appId)}
-            onTogglePiP={() => setIsCallPiP(true)}
-            onEndCall={() => {
-              if (activeChannel) {
-                const elapsedSec = callStartTimeRef.current
-                  ? Math.max(1, Math.floor((Date.now() - callStartTimeRef.current) / 1000))
-                  : 12;
-                const mins = Math.floor(elapsedSec / 60);
-                const secs = elapsedSec % 60;
-                const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                handleCreateCallLog?.({
-                  peerId: activeChannel.dmUserId || activeChannel.id,
-                  peerName: activeChannel.name,
-                  peerAvatar: null,
-                  type: 'outgoing',
-                  isVideo: activeChannel.type === 'voice' || Boolean(selectedActivityAppId),
-                  duration: durationStr,
-                });
-              }
-              callStartTimeRef.current = null;
-              setActiveCallChannelId(null);
-              setSelectedActivityAppId(null);
-              setIsActivityOpen(false);
-              const defaultTextChannel = hubChannels.find((c) => c.type === 'text' || !c.type);
-              if (defaultTextChannel && activeChannel?.type === 'voice') {
-                setActiveChannelId(defaultTextChannel.id);
-              }
+        <div ref={splitContainerRef} className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full relative">
+          <div
+            style={{
+              height: isActivityChatSplitOpen ? `${activitySplitHeight}%` : '100%',
             }}
-            onNavigateToBilling={() => navigate('/platform/billing')}
-            onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
-          />
+            className="w-full min-h-[50%] overflow-hidden flex flex-col"
+          >
+            <CommunityCallStage
+              channel={activeChannel!}
+              activeHub={activeHub}
+              currentUser={currentUser}
+              isPlusOrAbove={isPlusOrAbove}
+              socket={socket}
+              isCallActive={true}
+              isPiP={false}
+              initialAppId={selectedActivityAppId}
+              isChatOpen={isActivityChatSplitOpen}
+              onToggleChat={() => setIsActivityChatSplitOpen((prev) => !prev)}
+              onToggleActivity={(open) =>
+                setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))
+              }
+              onActivityChange={(appId) => setSelectedActivityAppId(appId)}
+              onTogglePiP={() => setIsCallPiP(true)}
+              onEndCall={() => {
+                setIsActivityChatSplitOpen(false);
+                if (activeChannel) {
+                  const elapsedSec = callStartTimeRef.current
+                    ? Math.max(1, Math.floor((Date.now() - callStartTimeRef.current) / 1000))
+                    : 12;
+                  const mins = Math.floor(elapsedSec / 60);
+                  const secs = elapsedSec % 60;
+                  const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                  handleCreateCallLog?.({
+                    peerId: activeChannel.dmUserId || activeChannel.id,
+                    peerName: activeChannel.name,
+                    peerAvatar: null,
+                    type: 'outgoing',
+                    isVideo: activeChannel.type === 'voice' || Boolean(selectedActivityAppId),
+                    duration: durationStr,
+                  });
+                }
+                callStartTimeRef.current = null;
+                setActiveCallChannelId(null);
+                setSelectedActivityAppId(null);
+                setIsActivityOpen(false);
+                const defaultTextChannel = hubChannels.find((c) => c.type === 'text' || !c.type);
+                if (defaultTextChannel && activeChannel?.type === 'voice') {
+                  setActiveChannelId(defaultTextChannel.id);
+                }
+              }}
+              onNavigateToBilling={() => navigate('/platform/billing')}
+              onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
+            />
+          </div>
+
+          {isActivityChatSplitOpen && (
+            <>
+              {/* Resizable Divider Handle (Discord style) */}
+              <div
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label="Resize chat split"
+                onPointerDown={handleSplitPointerDown}
+                className="group relative h-2.5 w-full bg-border/40 hover:bg-primary/20 active:bg-primary/30 cursor-row-resize shrink-0 transition-colors flex items-center justify-center select-none z-20"
+                title="Tarik untuk mengubah ukuran obrolan"
+              >
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/40 group-hover:bg-primary group-hover:scale-x-125 transition-all shadow-xs" />
+              </div>
+
+              {/* Chat Split Pane */}
+              <div
+                style={{ height: `${100 - activitySplitHeight}%` }}
+                className="w-full min-h-[20%] max-h-[50%] overflow-hidden flex flex-col bg-background border-t border-border/70 shadow-lg shrink-0"
+              >
+                {/* Compact Discord-style Chat Header */}
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-card/60 backdrop-blur-xs shrink-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-semibold text-foreground truncate">
+                      Obrolan #{activeChannel?.name}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-medium hidden sm:inline">
+                      (Tarik pembatas untuk ubah ukuran • max 50%)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsActivityChatSplitOpen(false)}
+                      className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                      title="Tutup Obrolan"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                  {renderChatFeedAndInput(true)}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       ) : activeChannel?.type === 'forum' ? (
         <ForumChannelView
@@ -555,67 +718,7 @@ export function ChatMainView({
           onCardsUpdate={handleKanbanCardsUpdate}
         />
       ) : (
-        <>
-          {/* Messages Feed */}
-          <MessagesFeed
-            activeChannel={activeChannel}
-            channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
-            filteredMessages={filteredMessages}
-            currentUser={currentUser}
-            claimedGifts={claimedGifts}
-            setClaimedGifts={setClaimedGifts}
-            onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
-            onToggleReaction={handleToggleReaction}
-            onTogglePin={handleTogglePin}
-            onStartThread={(initialName, initialContent) => {
-              setNewThreadName(initialName);
-              setNewThreadInitialMsg(initialContent);
-              setIsCreateThreadModalOpen(true);
-            }}
-            onDeleteMessage={handleDeleteMessage}
-            onJoinActivity={(appId, channelId) => handleLaunchActivity(appId, true, channelId)}
-            messagesEndRef={messagesEndRef}
-            t={t}
-          />
-
-          {/* Chat Input Bar */}
-          <ChatInputBar
-            activeChannel={activeChannel}
-            activeHub={activeHub}
-            channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
-            stagedAttachment={stagedAttachment}
-            setStagedAttachment={setStagedAttachment}
-            inputText={inputText}
-            setInputText={setInputText}
-            onSendMessage={handleSendMessage}
-            onFileSelect={handleFileChange}
-            onOpenGiftModal={() => setIsGiftModalOpen(true)}
-            isMediaPickerOpen={isMediaPickerOpen}
-            setIsMediaPickerOpen={setIsMediaPickerOpen}
-            activeMediaTab={activeMediaTab}
-            setActiveMediaTab={setActiveMediaTab}
-            mediaSearchQuery={mediaSearchQuery}
-            setMediaSearchQuery={setMediaSearchQuery}
-            selectedGifCategory={selectedGifCategory}
-            setSelectedGifCategory={setSelectedGifCategory}
-            serverDbEmojis={serverDbEmojis}
-            serverDbStickers={serverDbStickers}
-            onSelectEmoji={handleSelectEmoji}
-            onSendSticker={handleSendSticker}
-            onSendGif={handleSendGif}
-            onOpenQuickAddEmoji={() => setIsQuickAddEmojiOpen(true)}
-            onOpenQuickAddSticker={() => setIsQuickAddStickerOpen(true)}
-            isTemplatePopoverOpen={isTemplatePopoverOpen}
-            setIsTemplatePopoverOpen={setIsTemplatePopoverOpen}
-            appsSearchQuery={appsSearchQuery}
-            setAppsSearchQuery={setAppsSearchQuery}
-            onLaunchActivity={handleLaunchActivity}
-            onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
-            onScheduleMessage={handleScheduleMessage}
-            onSubmitPoll={handleCreatePoll}
-            t={t}
-          />
-        </>
+        renderChatFeedAndInput(false)
       )}
     </div>
   );

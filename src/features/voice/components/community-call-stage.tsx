@@ -51,6 +51,8 @@ export interface CommunityCallStageProps {
   isCallActive: boolean;
   isPiP: boolean;
   initialAppId?: string | null;
+  isChatOpen?: boolean;
+  onToggleChat?: () => void;
   onToggleActivity?: (open?: boolean) => void;
   onActivityChange?: (appId: string | null) => void;
   onTogglePiP: () => void;
@@ -75,6 +77,8 @@ export function CommunityCallStage({
   isCallActive,
   isPiP,
   initialAppId,
+  isChatOpen,
+  onToggleChat,
   onToggleActivity,
   onActivityChange,
   onTogglePiP,
@@ -978,19 +982,26 @@ export function CommunityCallStage({
                 <button
                   type="button"
                   onClick={() => {
-                    if (onToggleActivity) {
+                    if (onToggleChat) {
+                      onToggleChat();
+                    } else if (onToggleActivity) {
                       onToggleActivity();
                     } else {
                       toast.info('Obrolan teks suara');
                     }
                   }}
-                  className="p-1.5 rounded-lg text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  className={cn(
+                    'p-1.5 rounded-lg transition-colors cursor-pointer',
+                    isChatOpen
+                      ? 'bg-white/20 text-white'
+                      : 'text-[#949ba4] hover:text-white hover:bg-white/10',
+                  )}
                 >
                   <MessageSquare className="w-4 h-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs font-semibold">
-                Buka Obrolan Suara
+                {isChatOpen ? 'Sembunyikan Obrolan' : 'Buka Obrolan Suara'}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -1065,6 +1076,7 @@ export function CommunityCallStage({
         isScreenSharing={isScreenSharing}
         activeAppId={activeAppId}
         currentActiveApp={currentActiveApp}
+        isChatOpen={isChatOpen}
         onToggleMute={handleToggleMute}
         onToggleVideo={handleToggleVideo}
         onToggleScreenShare={handleToggleScreenShare}
@@ -1075,7 +1087,9 @@ export function CommunityCallStage({
         onTogglePiP={onTogglePiP}
         onToggleFullscreen={handleToggleFullscreen}
         onToggleChat={() => {
-          if (onToggleActivity) {
+          if (onToggleChat) {
+            onToggleChat();
+          } else if (onToggleActivity) {
             onToggleActivity();
           } else {
             onTogglePiP();

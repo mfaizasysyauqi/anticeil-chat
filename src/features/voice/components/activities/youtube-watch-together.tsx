@@ -1127,7 +1127,7 @@ export function YouTubeWatchTogether({
   };
 
   // Reusable Host Button & Popover Component
-  const renderHostPopover = () => {
+  const renderHostPopover = (align: 'left' | 'right' = 'left') => {
     const displayAvatar = isMeHost
       ? currentUser?.imageUrl || currentUser?.avatar
       : hostUserAvatar;
@@ -1173,7 +1173,12 @@ export function YouTubeWatchTogether({
               className="fixed inset-0 z-40"
               onClick={() => setIsHostMenuOpen(false)}
             />
-            <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-[#111214] border border-border/80 shadow-2xl p-4 z-50 text-foreground animate-in fade-in zoom-in-95 duration-150">
+            <div
+              className={cn(
+                'absolute top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#111214] border border-border/80 shadow-2xl p-4 z-50 text-foreground animate-in fade-in zoom-in-95 duration-150',
+                align === 'right' ? 'right-0' : 'left-0',
+              )}
+            >
               {/* Permission Card */}
               <div className="flex items-center justify-between p-3 rounded-xl border border-sky-500/40 bg-sky-500/5">
                 <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -1556,7 +1561,7 @@ export function YouTubeWatchTogether({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {renderHostPopover()}
+                        {renderHostPopover('right')}
                         <button
                           type="button"
                           onClick={() => setIsExpandedPlaylistOpen(false)}
@@ -1793,7 +1798,7 @@ export function YouTubeWatchTogether({
           )}
         >
           {/* Fixed / Sticky Header: Host Popover, Search Bar, and Categories */}
-          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-2 pb-1.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md pt-2 pb-1.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {renderHostPopover()}
 
