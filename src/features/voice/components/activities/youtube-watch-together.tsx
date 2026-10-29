@@ -1788,12 +1788,12 @@ export function YouTubeWatchTogether({
         /* Empty / Idle State when no video is playing yet */
         <div
           className={cn(
-            'flex-1 min-h-0 flex flex-col overflow-y-auto [scrollbar-width:thin] bg-background pb-4 gap-4',
+            'flex-1 min-h-0 flex flex-col overflow-y-auto [scrollbar-width:thin] bg-background pb-4 gap-2',
             CHANNEL_HORIZONTAL_PADDING,
           )}
         >
           {/* Fixed / Sticky Header: Host Popover, Search Bar, and Categories */}
-          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-2 pb-2 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-2 pb-1.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {renderHostPopover()}
 
