@@ -1,0 +1,596 @@
+import React from 'react';
+import { NavigateFunction } from 'react-router-dom';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { MessageRequestsView, type MessageRequestItem } from '@/features/message-requests';
+import { NotificationsView, type NotificationItem } from '@/features/notifications';
+import { CalendarView, type CalendarEvent } from '@/features/calendar';
+import { AssignmentsView, type AssignmentItem } from '@/features/assignments';
+import { CallsView, type CallLogItem } from '@/features/calls';
+import { AppsView } from '@/features/apps';
+import { ServersView } from '@/features/servers';
+import { ChannelTopHeaderBar, ForumChannelView } from '@/features/channels';
+import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
+import { CommunityCallStage } from '@/features/voice';
+import { MessagesFeed } from '@/features/chat';
+import { ChatInputBar } from '@/features/chat-input';
+import {
+  CommunityChannel,
+  CommunityHub,
+  CommunityMember,
+  CommunityMessage,
+  CommunityAttachment,
+} from '../chat-types';
+
+export interface ChatMainViewProps {
+  isFriendsView: boolean;
+  renderFriendsMainPage: () => React.ReactNode;
+  isMessageRequestsView: boolean;
+  messageRequests: MessageRequestItem[];
+  handleAcceptMessageRequest: (item: MessageRequestItem) => void;
+  handleIgnoreMessageRequest: (item: MessageRequestItem) => void | Promise<void>;
+  handleReportSpamMessageRequest: (item: MessageRequestItem) => void | Promise<void>;
+  setIsMobileChannelsOpen: (open: boolean) => void;
+  isNotificationsView: boolean;
+  notifications: NotificationItem[];
+  handleMarkAllNotificationsRead: () => void;
+  handleMarkNotificationRead: (id: string) => void;
+  handleJumpToNotification: (n: NotificationItem) => void;
+  isCalendarView: boolean;
+  calendarEvents: CalendarEvent[];
+  hubs: CommunityHub[];
+  channels: CommunityChannel[];
+  hubChannels: CommunityChannel[];
+  setActiveHubId: (id: string) => void;
+  setActiveChannelId: (id: string) => void;
+  setActiveCallChannelId: (id: string | null) => void;
+  createCalendarEvent: (event: Partial<CalendarEvent>) => void;
+  isAssignmentsView: boolean;
+  assignments: AssignmentItem[];
+  handleToggleComplete: (id: string) => void;
+  isCallsView: boolean;
+  callLogs: CallLogItem[];
+  friends: {
+    allFriends: any[];
+    [key: string]: any;
+  };
+  handleCreateCallLog: (log: any) => void;
+  handleStartDirectMessage: (friend: any) => void;
+  isAppsView: boolean;
+  members: CommunityMember[];
+  activeCallChannelId: string | null;
+  handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string) => void;
+  handleStartDM: (member: CommunityMember) => void;
+  isServersView: boolean;
+  requireAuth: (action: () => void, title?: string, desc?: string) => void;
+  setIsCreateHubOpen: (open: boolean) => void;
+  // Channel view props
+  activeChannel: CommunityChannel | null;
+  isHome: boolean;
+  isCallPiP: boolean;
+  isThreadsPopoverOpen: boolean;
+  setIsThreadsPopoverOpen: (open: boolean) => void;
+  channelThreads: any[];
+  threadSearchQuery: string;
+  setThreadSearchQuery: (query: string) => void;
+  setIsCreateThreadModalOpen: (open: boolean) => void;
+  setActiveThread: (th: any) => void;
+  setIsThreadDrawerOpen: (open: boolean) => void;
+  isNotificationDropdownOpen: boolean;
+  setIsNotificationDropdownOpen: (open: boolean) => void;
+  channelNotification: any;
+  handleUpdateNotification: (level?: any, isMuted?: boolean, muteDuration?: string | null) => void;
+  isPinnedPopoverOpen: boolean;
+  setIsPinnedPopoverOpen: (open: boolean) => void;
+  pinnedMessages: CommunityMessage[];
+  handleJumpToMessage: (id: string) => void;
+  handleTogglePin: (id: string) => void;
+  showMemberList: boolean;
+  setShowMemberList: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsMobileMembersOpen: (open: boolean) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  // Call stage props
+  activeHub: CommunityHub | null;
+  currentUser: any;
+  isPlusOrAbove: boolean;
+  socket: any;
+  selectedActivityAppId: string | null;
+  setSelectedActivityAppId: (appId: string | null) => void;
+  setIsActivityOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsCallPiP: (pip: boolean) => void;
+  navigate: NavigateFunction;
+  // Forum props
+  activeThread: any;
+  threadsMap: Record<string, any[]>;
+  threadMessages: any[];
+  forumSearchQuery: string;
+  setForumSearchQuery: (query: string) => void;
+  forumSort: 'active' | 'newest';
+  setForumSort: React.Dispatch<React.SetStateAction<'active' | 'newest'>> | ((sort: 'active' | 'newest') => void);
+  isForumComposerOpen: boolean;
+  setIsForumComposerOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  forumNewTitle: string;
+  setForumNewTitle: (title: string) => void;
+  forumNewMessage: string;
+  setForumNewMessage: (msg: string) => void;
+  isSubmittingForumPost: boolean;
+  handleCreateForumPost: (e: React.FormEvent) => void;
+  threadInputText: string;
+  setThreadInputText: (text: string) => void;
+  handleSendThreadMessage: (e: React.FormEvent) => void;
+  // Kanban props
+  displayMembers: CommunityMember[];
+  handleKanbanCardsUpdate: (cards: KanbanCard[]) => void;
+  // Feed & Input props
+  filteredMessages: CommunityMessage[];
+  claimedGifts: Record<string, boolean>;
+  setClaimedGifts: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  setIsCreateChannelOpen: (open: boolean) => void;
+  handleToggleReaction: (messageId: string, emoji: string) => void;
+  setNewThreadName: (name: string) => void;
+  setNewThreadInitialMsg: (msg: string) => void;
+  handleDeleteMessage: (messageId: string) => void;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  stagedAttachment: CommunityAttachment | null;
+  setStagedAttachment: (att: CommunityAttachment | null) => void;
+  inputText: string;
+  setInputText: (text: string) => void;
+  handleSendMessage: (customContent?: string) => void | Promise<void>;
+  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setIsGiftModalOpen: (open: boolean) => void;
+  isMediaPickerOpen: boolean;
+  setIsMediaPickerOpen: (open: boolean) => void;
+  activeMediaTab: 'gifs' | 'stickers' | 'emojis';
+  setActiveMediaTab: (tab: 'gifs' | 'stickers' | 'emojis') => void;
+  mediaSearchQuery: string;
+  setMediaSearchQuery: (q: string) => void;
+  selectedGifCategory: string | null;
+  setSelectedGifCategory: (cat: string | null) => void;
+  serverDbEmojis: any[];
+  serverDbStickers: any[];
+  handleSelectEmoji: (emoji: any) => void;
+  handleSendSticker: (sticker: any) => void;
+  handleSendGif: (gif: any) => void;
+  setIsQuickAddEmojiOpen: (open: boolean) => void;
+  setIsQuickAddStickerOpen: (open: boolean) => void;
+  isTemplatePopoverOpen: boolean;
+  setIsTemplatePopoverOpen: (open: boolean) => void;
+  appsSearchQuery: string;
+  setAppsSearchQuery: (q: string) => void;
+  handleScheduleMessage: (scheduledDate: Date, customText?: string) => void | Promise<void>;
+  handleCreatePoll: (question: string, options: string[]) => void;
+  t: (key: string) => string;
+}
+
+export function ChatMainView({
+  isFriendsView,
+  renderFriendsMainPage,
+  isMessageRequestsView,
+  messageRequests,
+  handleAcceptMessageRequest,
+  handleIgnoreMessageRequest,
+  handleReportSpamMessageRequest,
+  setIsMobileChannelsOpen,
+  isNotificationsView,
+  notifications,
+  handleMarkAllNotificationsRead,
+  handleMarkNotificationRead,
+  handleJumpToNotification,
+  isCalendarView,
+  calendarEvents,
+  hubs,
+  channels,
+  hubChannels,
+  setActiveHubId,
+  setActiveChannelId,
+  setActiveCallChannelId,
+  createCalendarEvent,
+  isAssignmentsView,
+  assignments,
+  handleToggleComplete,
+  isCallsView,
+  callLogs,
+  friends,
+  handleCreateCallLog,
+  handleStartDirectMessage,
+  isAppsView,
+  members,
+  activeCallChannelId,
+  handleLaunchActivity,
+  handleStartDM,
+  isServersView,
+  requireAuth,
+  setIsCreateHubOpen,
+  activeChannel,
+  isHome,
+  isCallPiP,
+  isThreadsPopoverOpen,
+  setIsThreadsPopoverOpen,
+  channelThreads,
+  threadSearchQuery,
+  setThreadSearchQuery,
+  setIsCreateThreadModalOpen,
+  setActiveThread,
+  setIsThreadDrawerOpen,
+  isNotificationDropdownOpen,
+  setIsNotificationDropdownOpen,
+  channelNotification,
+  handleUpdateNotification,
+  isPinnedPopoverOpen,
+  setIsPinnedPopoverOpen,
+  pinnedMessages,
+  handleJumpToMessage,
+  handleTogglePin,
+  showMemberList,
+  setShowMemberList,
+  setIsMobileMembersOpen,
+  searchQuery,
+  setSearchQuery,
+  activeHub,
+  currentUser,
+  isPlusOrAbove,
+  socket,
+  selectedActivityAppId,
+  setSelectedActivityAppId,
+  setIsActivityOpen,
+  setIsCallPiP,
+  navigate,
+  activeThread,
+  threadsMap,
+  threadMessages,
+  forumSearchQuery,
+  setForumSearchQuery,
+  forumSort,
+  setForumSort,
+  isForumComposerOpen,
+  setIsForumComposerOpen,
+  forumNewTitle,
+  setForumNewTitle,
+  forumNewMessage,
+  setForumNewMessage,
+  isSubmittingForumPost,
+  handleCreateForumPost,
+  threadInputText,
+  setThreadInputText,
+  handleSendThreadMessage,
+  displayMembers,
+  handleKanbanCardsUpdate,
+  filteredMessages,
+  claimedGifts,
+  setClaimedGifts,
+  setIsCreateChannelOpen,
+  handleToggleReaction,
+  setNewThreadName,
+  setNewThreadInitialMsg,
+  handleDeleteMessage,
+  messagesEndRef,
+  stagedAttachment,
+  setStagedAttachment,
+  inputText,
+  setInputText,
+  handleSendMessage,
+  handleFileChange,
+  setIsGiftModalOpen,
+  isMediaPickerOpen,
+  setIsMediaPickerOpen,
+  activeMediaTab,
+  setActiveMediaTab,
+  mediaSearchQuery,
+  setMediaSearchQuery,
+  selectedGifCategory,
+  setSelectedGifCategory,
+  serverDbEmojis,
+  serverDbStickers,
+  handleSelectEmoji,
+  handleSendSticker,
+  handleSendGif,
+  setIsQuickAddEmojiOpen,
+  setIsQuickAddStickerOpen,
+  isTemplatePopoverOpen,
+  setIsTemplatePopoverOpen,
+  appsSearchQuery,
+  setAppsSearchQuery,
+  handleScheduleMessage,
+  handleCreatePoll,
+  t,
+}: ChatMainViewProps) {
+  if (isFriendsView) {
+    return <>{renderFriendsMainPage()}</>;
+  }
+
+  if (isMessageRequestsView) {
+    return (
+      <MessageRequestsView
+        requests={messageRequests}
+        onAccept={handleAcceptMessageRequest}
+        onIgnore={handleIgnoreMessageRequest}
+        onReportSpam={handleReportSpamMessageRequest}
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+      />
+    );
+  }
+
+  if (isNotificationsView) {
+    return (
+      <NotificationsView
+        notifications={notifications}
+        onMarkAllAsRead={handleMarkAllNotificationsRead}
+        onMarkAsRead={handleMarkNotificationRead}
+        onJumpToMessage={handleJumpToNotification}
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+      />
+    );
+  }
+
+  if (isCalendarView) {
+    return (
+      <CalendarView
+        events={calendarEvents}
+        hubs={hubs}
+        channels={channels}
+        onJoinChannel={(channelId) => {
+          const targetChannel = channels.find((c) => c.id === channelId);
+          if (targetChannel?.hubId) {
+            setActiveHubId(targetChannel.hubId);
+          }
+          setActiveChannelId(channelId);
+          setActiveCallChannelId(channelId);
+        }}
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onCreateEvent={createCalendarEvent}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+      />
+    );
+  }
+
+  if (isAssignmentsView) {
+    return (
+      <AssignmentsView
+        assignments={assignments}
+        hubs={hubs}
+        onOpenBoard={(hubId, channelId) => {
+          setActiveHubId(hubId);
+          setActiveChannelId(channelId);
+        }}
+        onToggleComplete={handleToggleComplete}
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+      />
+    );
+  }
+
+  if (isCallsView) {
+    return (
+      <CallsView
+        calls={callLogs}
+        friends={friends.allFriends}
+        onStartCall={(friend) => {
+          handleCreateCallLog({
+            peerId: friend.id,
+            peerName: friend.name,
+            peerAvatar: friend.avatar || null,
+            type: 'outgoing',
+            isVideo: false,
+          });
+          handleStartDirectMessage(friend);
+        }}
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+      />
+    );
+  }
+
+  if (isAppsView) {
+    return (
+      <AppsView
+        channels={channels}
+        hubs={hubs}
+        members={members}
+        activeCallChannelId={activeCallChannelId}
+        onLaunchActivity={handleLaunchActivity}
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        onStartDM={handleStartDM}
+        setActiveHubId={setActiveHubId}
+        setActiveChannelId={setActiveChannelId}
+      />
+    );
+  }
+
+  if (isServersView) {
+    return (
+      <ServersView
+        servers={hubs}
+        onSelectServer={(hubId) => {
+          setActiveHubId(hubId);
+          const firstCh = channels.find(
+            (c) => (c.hubId || 'anticeil') === hubId && c.category === 'CHANNELS',
+          );
+          setActiveChannelId(firstCh?.id || '');
+        }}
+        onOpenCreateServer={() =>
+          requireAuth(
+            () => setIsCreateHubOpen(true),
+            t('Buat Server Komunitas'),
+            t('Masuk ke Anticeil untuk membuat server komunitas Anda sendiri.'),
+          )
+        }
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
+      {/* Channel Top Header Bar */}
+      {!(
+        (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') &&
+        !isCallPiP
+      ) && (
+        <ChannelTopHeaderBar
+          activeChannel={activeChannel}
+          channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
+          isHome={isHome}
+          onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
+          isThreadsPopoverOpen={isThreadsPopoverOpen}
+          setIsThreadsPopoverOpen={setIsThreadsPopoverOpen}
+          channelThreads={channelThreads}
+          threadSearchQuery={threadSearchQuery}
+          setThreadSearchQuery={setThreadSearchQuery}
+          onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
+          onSelectThread={(th) => {
+            setActiveThread(th as any);
+            setIsThreadDrawerOpen(true);
+          }}
+          isNotificationDropdownOpen={isNotificationDropdownOpen}
+          setIsNotificationDropdownOpen={setIsNotificationDropdownOpen}
+          channelNotification={channelNotification}
+          onUpdateNotification={handleUpdateNotification}
+          isPinnedPopoverOpen={isPinnedPopoverOpen}
+          setIsPinnedPopoverOpen={setIsPinnedPopoverOpen}
+          pinnedMessages={pinnedMessages}
+          onJumpToMessage={handleJumpToMessage}
+          onTogglePin={handleTogglePin}
+          showMemberList={showMemberList}
+          setShowMemberList={setShowMemberList}
+          onOpenMobileMembers={() => setIsMobileMembersOpen(true)}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          t={t}
+        />
+      )}
+
+      {/* Call Stage, Forum, Kanban, or Chat Feed */}
+      {(activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ? (
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full">
+          <CommunityCallStage
+            channel={activeChannel!}
+            activeHub={activeHub}
+            currentUser={currentUser}
+            isPlusOrAbove={isPlusOrAbove}
+            socket={socket}
+            isCallActive={true}
+            isPiP={false}
+            initialAppId={selectedActivityAppId}
+            onToggleActivity={(open) =>
+              setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))
+            }
+            onActivityChange={(appId) => setSelectedActivityAppId(appId)}
+            onTogglePiP={() => setIsCallPiP(true)}
+            onEndCall={() => {
+              setActiveCallChannelId(null);
+              setSelectedActivityAppId(null);
+              setIsActivityOpen(false);
+              const defaultTextChannel = hubChannels.find((c) => c.type === 'text' || !c.type);
+              if (defaultTextChannel && activeChannel?.type === 'voice') {
+                setActiveChannelId(defaultTextChannel.id);
+              }
+            }}
+            onNavigateToBilling={() => navigate('/platform/billing')}
+            onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
+          />
+        </div>
+      ) : activeChannel?.type === 'forum' ? (
+        <ForumChannelView
+          activeChannel={activeChannel}
+          activeThread={activeThread}
+          setActiveThread={setActiveThread}
+          channelThreadsList={threadsMap[activeChannel?.id || ''] || channelThreads || []}
+          threadMessages={threadMessages}
+          forumSearchQuery={forumSearchQuery}
+          setForumSearchQuery={setForumSearchQuery}
+          forumSort={forumSort}
+          setForumSort={setForumSort}
+          isForumComposerOpen={isForumComposerOpen}
+          setIsForumComposerOpen={setIsForumComposerOpen}
+          forumNewTitle={forumNewTitle}
+          setForumNewTitle={setForumNewTitle}
+          forumNewMessage={forumNewMessage}
+          setForumNewMessage={setForumNewMessage}
+          isSubmittingForumPost={isSubmittingForumPost}
+          onCreateForumPost={handleCreateForumPost}
+          threadInputText={threadInputText}
+          setThreadInputText={setThreadInputText}
+          onSendThreadMessage={handleSendThreadMessage}
+          channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
+          t={t}
+        />
+      ) : activeChannel?.type === 'kanban' ? (
+        <KanbanChannelView
+          activeChannel={activeChannel}
+          activeHub={activeHub}
+          displayMembers={displayMembers}
+          currentUser={currentUser}
+          onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+          horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+          onCardsUpdate={handleKanbanCardsUpdate}
+        />
+      ) : (
+        <>
+          {/* Messages Feed */}
+          <MessagesFeed
+            activeChannel={activeChannel}
+            channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
+            filteredMessages={filteredMessages}
+            currentUser={currentUser}
+            claimedGifts={claimedGifts}
+            setClaimedGifts={setClaimedGifts}
+            onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
+            onToggleReaction={handleToggleReaction}
+            onTogglePin={handleTogglePin}
+            onStartThread={(initialName, initialContent) => {
+              setNewThreadName(initialName);
+              setNewThreadInitialMsg(initialContent);
+              setIsCreateThreadModalOpen(true);
+            }}
+            onDeleteMessage={handleDeleteMessage}
+            onJoinActivity={(appId, channelId) => handleLaunchActivity(appId, true, channelId)}
+            messagesEndRef={messagesEndRef}
+            t={t}
+          />
+
+          {/* Chat Input Bar */}
+          <ChatInputBar
+            activeChannel={activeChannel}
+            activeHub={activeHub}
+            channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
+            stagedAttachment={stagedAttachment}
+            setStagedAttachment={setStagedAttachment}
+            inputText={inputText}
+            setInputText={setInputText}
+            onSendMessage={handleSendMessage}
+            onFileSelect={handleFileChange}
+            onOpenGiftModal={() => setIsGiftModalOpen(true)}
+            isMediaPickerOpen={isMediaPickerOpen}
+            setIsMediaPickerOpen={setIsMediaPickerOpen}
+            activeMediaTab={activeMediaTab}
+            setActiveMediaTab={setActiveMediaTab}
+            mediaSearchQuery={mediaSearchQuery}
+            setMediaSearchQuery={setMediaSearchQuery}
+            selectedGifCategory={selectedGifCategory}
+            setSelectedGifCategory={setSelectedGifCategory}
+            serverDbEmojis={serverDbEmojis}
+            serverDbStickers={serverDbStickers}
+            onSelectEmoji={handleSelectEmoji}
+            onSendSticker={handleSendSticker}
+            onSendGif={handleSendGif}
+            onOpenQuickAddEmoji={() => setIsQuickAddEmojiOpen(true)}
+            onOpenQuickAddSticker={() => setIsQuickAddStickerOpen(true)}
+            isTemplatePopoverOpen={isTemplatePopoverOpen}
+            setIsTemplatePopoverOpen={setIsTemplatePopoverOpen}
+            appsSearchQuery={appsSearchQuery}
+            setAppsSearchQuery={setAppsSearchQuery}
+            onLaunchActivity={handleLaunchActivity}
+            onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
+            onScheduleMessage={handleScheduleMessage}
+            onSubmitPoll={handleCreatePoll}
+            t={t}
+          />
+        </>
+      )}
+    </div>
+  );
+}

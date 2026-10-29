@@ -52,6 +52,9 @@ import {
 } from '@/features/chat-input';
 import { MessagesFeed, renderFormattedMessage, useCommunitySocket, CommunityDialogsPortal } from '@/features/chat';
 import { useMediaModals } from '@/features/media';
+import { ChatDesktopSidebar } from './components/chat-desktop-sidebar';
+import { ChatMobileDrawers } from './components/chat-mobile-drawers';
+import { ChatMainView } from './components/chat-main-view';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -2379,335 +2382,163 @@ export function CommunityPage() {
       <TooltipProvider delayDuration={200}>
       <div className="flex h-full w-full overflow-hidden bg-background">
         {/* DESKTOP & TABLET COMBINED LEFT COLUMN (Mini Rail + Channels Sidebar + Bottom Dock across both) */}
-        <div
-          className="hidden md:flex flex-col h-full shrink-0 border-r border-sidebar-border bg-sidebar select-none relative group/sidebar"
-          style={{ width: `${56 + sidebarWidth}px` }}
-        >
-          {/* Top/Middle Area: Mini Rail on left + Channels Sidebar on right */}
-          <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-            <div className="w-14 shrink-0 h-full flex flex-col">
-              {renderDiscordHubRail()}
-            </div>
-            <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
-              {renderChannelsSidebarContent()}
-            </div>
-          </div>
+        <ChatDesktopSidebar
+          sidebarWidth={sidebarWidth}
+          isResizingSidebar={isResizingSidebar}
+          onResizeStart={handleSidebarResizeStart}
+          onResizeReset={handleSidebarResizeReset}
+          renderDiscordHubRail={renderDiscordHubRail}
+          renderChannelsSidebarContent={renderChannelsSidebarContent}
+          renderUserBottomDock={renderUserBottomDock}
+          t={t}
+        />
 
-          {/* Bottom Dock: Spans across the entire left area including Mini Rail */}
-          {renderUserBottomDock()}
+        {/* MOBILE & TABLET DRAWERS */}
+        <ChatMobileDrawers
+          isMobileChannelsOpen={isMobileChannelsOpen}
+          setIsMobileChannelsOpen={setIsMobileChannelsOpen}
+          isMobileMembersOpen={isMobileMembersOpen}
+          setIsMobileMembersOpen={setIsMobileMembersOpen}
+          renderDiscordHubRail={renderDiscordHubRail}
+          renderChannelsSidebarContent={renderChannelsSidebarContent}
+          renderMembersSidebarContent={renderMembersSidebarContent}
+          renderUserBottomDock={renderUserBottomDock}
+          t={t}
+        />
 
-          {/* DISCORD-STYLE RESIZE HANDLE ON RIGHT BORDER */}
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            title={t('Tarik untuk mengubah ukuran sidebar (Double-klik untuk reset)')}
-            onMouseDown={handleSidebarResizeStart}
-            onDoubleClick={handleSidebarResizeReset}
-            className={cn(
-              'absolute top-0 right-[-3px] w-[6px] h-full cursor-col-resize z-30 transition-colors select-none',
-              isResizingSidebar
-                ? 'bg-primary/80'
-                : 'hover:bg-primary/50 bg-transparent'
-            )}
-          />
-        </div>
-
-        {/* MOBILE & TABLET CHANNELS DRAWER */}
-        <Sheet open={isMobileChannelsOpen} onOpenChange={setIsMobileChannelsOpen}>
-          <SheetContent side="left" className={cn("p-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border", LAYOUT_SIZES.DRAWER_WIDTH)}>
-            <SheetHeader className="sr-only">
-              <SheetTitle>{t('Navigasi Channel & Hub')}</SheetTitle>
-            </SheetHeader>
-            <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-              <div className="w-14 shrink-0 h-full flex flex-col">
-                {renderDiscordHubRail()}
-              </div>
-              <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-                {renderChannelsSidebarContent(() => setIsMobileChannelsOpen(false))}
-              </div>
-            </div>
-            {/* Bottom Dock: Spans full drawer width including Mini Rail */}
-            {renderUserBottomDock()}
-          </SheetContent>
-        </Sheet>
-
-        {/* MOBILE MEMBERS DRAWER (Server Context) */}
-        <Sheet open={isMobileMembersOpen} onOpenChange={setIsMobileMembersOpen}>
-          <SheetContent side="right" className={cn("p-0 bg-sidebar border-l border-sidebar-border", LAYOUT_SIZES.MEMBERS_DRAWER_WIDTH)}>
-            <SheetHeader className="sr-only">
-              <SheetTitle>{t('Anggota Server')}</SheetTitle>
-            </SheetHeader>
-            {renderMembersSidebarContent()}
-          </SheetContent>
-        </Sheet>
-
-        {/* MAIN CONTENT AREA: DISCORD-STYLE FRIENDS HUB, MESSAGE REQUESTS, NOTIFICATIONS, OR CHANNEL CHAT */}
-        {isFriendsView ? (
-          renderFriendsMainPage()
-        ) : isMessageRequestsView ? (
-          <MessageRequestsView
-            requests={messageRequests}
-            onAccept={handleAcceptMessageRequest}
-            onIgnore={handleIgnoreMessageRequest}
-            onReportSpam={handleReportSpamMessageRequest}
-            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-          />
-        ) : isNotificationsView ? (
-          <NotificationsView
-            notifications={notifications}
-            onMarkAllAsRead={handleMarkAllNotificationsRead}
-            onMarkAsRead={handleMarkNotificationRead}
-            onJumpToMessage={handleJumpToNotification}
-            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-          />
-        ) : isCalendarView ? (
-          <CalendarView
-            events={calendarEvents}
-            hubs={hubs}
-            channels={channels}
-            onJoinChannel={(channelId) => {
-              const targetChannel = channels.find((c) => c.id === channelId);
-              if (targetChannel?.hubId) {
-                setActiveHubId(targetChannel.hubId);
-              }
-              setActiveChannelId(channelId);
-              setActiveCallChannelId(channelId);
-            }}
-            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            onCreateEvent={createCalendarEvent}
-            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-          />
-        ) : isAssignmentsView ? (
-          <AssignmentsView
-            assignments={assignments}
-            hubs={hubs}
-            onOpenBoard={(hubId, channelId) => {
-              setActiveHubId(hubId);
-              setActiveChannelId(channelId);
-            }}
-            onToggleComplete={(assignmentId) => {
-              handleToggleComplete(assignmentId);
-            }}
-            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-          />
-        ) : isCallsView ? (
-          <CallsView
-            calls={callLogs}
-            friends={friends.allFriends}
-            onStartCall={(friend) => {
-              handleCreateCallLog({
-                peerId: friend.id,
-                peerName: friend.name,
-                peerAvatar: friend.avatar || null,
-                type: 'outgoing',
-                isVideo: false,
-              });
-              handleStartDirectMessage(friend);
-            }}
-            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-          />
-        ) : isAppsView ? (
-          <AppsView
-            channels={channels}
-            hubs={hubs}
-            members={members}
-            activeCallChannelId={activeCallChannelId}
-            onLaunchActivity={handleLaunchActivity}
-            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-            onStartDM={handleStartDM}
-            setActiveHubId={setActiveHubId}
-            setActiveChannelId={setActiveChannelId}
-          />
-        ) : isServersView ? (
-          <ServersView
-            servers={hubs}
-            onSelectServer={(hubId) => {
-              setActiveHubId(hubId);
-              const firstCh = channels.find(
-                (c) => (c.hubId || 'anticeil') === hubId && c.category === 'CHANNELS',
-              );
-              setActiveChannelId(firstCh?.id || '');
-            }}
-            onOpenCreateServer={() =>
-              requireAuth(
-                () => setIsCreateHubOpen(true),
-                t('Buat Server Komunitas'),
-                t('Masuk ke Anticeil untuk membuat server komunitas Anda sendiri.'),
-              )
-            }
-            onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-            horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-          />
-        ) : (
-          <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
-          {/* Channel Top Header Bar (Feature-First Component) */}
-          {!( (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ) && (
-            <ChannelTopHeaderBar
-              activeChannel={activeChannel}
-              channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
-              isHome={isHome}
-              onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
-              isThreadsPopoverOpen={isThreadsPopoverOpen}
-              setIsThreadsPopoverOpen={setIsThreadsPopoverOpen}
-              channelThreads={channelThreads}
-              threadSearchQuery={threadSearchQuery}
-              setThreadSearchQuery={setThreadSearchQuery}
-              onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
-              onSelectThread={(th) => {
-                setActiveThread(th as any);
-                setIsThreadDrawerOpen(true);
-              }}
-              isNotificationDropdownOpen={isNotificationDropdownOpen}
-              setIsNotificationDropdownOpen={setIsNotificationDropdownOpen}
-              channelNotification={channelNotification}
-              onUpdateNotification={handleUpdateNotification}
-              isPinnedPopoverOpen={isPinnedPopoverOpen}
-              setIsPinnedPopoverOpen={setIsPinnedPopoverOpen}
-              pinnedMessages={pinnedMessages}
-              onJumpToMessage={handleJumpToMessage}
-              onTogglePin={handleTogglePin}
-              showMemberList={showMemberList}
-              setShowMemberList={setShowMemberList}
-              onOpenMobileMembers={() => setIsMobileMembersOpen(true)}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              t={t}
-            />
-          )}
-
-          {/* Call Stage (automatically displays when active on this channel, or when it is a voice channel, and not PiP) */}
-          {(activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ? (
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full">
-              <CommunityCallStage
-                channel={activeChannel!}
-                activeHub={activeHub}
-                currentUser={currentUser}
-                isPlusOrAbove={isPlusOrAbove}
-                socket={socket}
-                isCallActive={true}
-                isPiP={false}
-                initialAppId={selectedActivityAppId}
-                onToggleActivity={(open) => setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))}
-                onActivityChange={(appId) => setSelectedActivityAppId(appId)}
-                onTogglePiP={() => setIsCallPiP(true)}
-                onEndCall={() => {
-                  setActiveCallChannelId(null);
-                  setSelectedActivityAppId(null);
-                  setIsActivityOpen(false);
-                  const defaultTextChannel = hubChannels.find((c) => c.type === 'text' || !c.type);
-                  if (defaultTextChannel && activeChannel?.type === 'voice') {
-                    setActiveChannelId(defaultTextChannel.id);
-                  }
-                }}
-                onNavigateToBilling={() => navigate('/platform/billing')}
-                onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
-              />
-            </div>
-          ) : activeChannel?.type === 'forum' ? (
-            <ForumChannelView
-              activeChannel={activeChannel}
-              activeThread={activeThread}
-              setActiveThread={setActiveThread}
-              channelThreadsList={threadsMap[activeChannel?.id || ''] || channelThreads || []}
-              threadMessages={threadMessages}
-              forumSearchQuery={forumSearchQuery}
-              setForumSearchQuery={setForumSearchQuery}
-              forumSort={forumSort}
-              setForumSort={setForumSort}
-              isForumComposerOpen={isForumComposerOpen}
-              setIsForumComposerOpen={setIsForumComposerOpen}
-              forumNewTitle={forumNewTitle}
-              setForumNewTitle={setForumNewTitle}
-              forumNewMessage={forumNewMessage}
-              setForumNewMessage={setForumNewMessage}
-              isSubmittingForumPost={isSubmittingForumPost}
-              onCreateForumPost={handleCreateForumPost}
-              threadInputText={threadInputText}
-              setThreadInputText={setThreadInputText}
-              onSendThreadMessage={handleSendThreadMessage}
-              channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
-              t={t}
-            />
-          ) : activeChannel?.type === 'kanban' ? (
-            <KanbanChannelView
-              activeChannel={activeChannel}
-              activeHub={activeHub}
-              displayMembers={displayMembers}
-              currentUser={currentUser}
-              onOpenSidebar={() => setIsMobileChannelsOpen(true)}
-              horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
-              onCardsUpdate={handleKanbanCardsUpdate}
-            />
-          ) : (
-          <>
-          {/* Messages Feed (Feature-First Component) */}
-          <MessagesFeed
-            activeChannel={activeChannel}
-            channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
-            filteredMessages={filteredMessages}
-            currentUser={currentUser}
-            claimedGifts={claimedGifts}
-            setClaimedGifts={setClaimedGifts}
-            onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
-            onToggleReaction={handleToggleReaction}
-            onTogglePin={handleTogglePin}
-            onStartThread={(initialName, initialContent) => {
-              setNewThreadName(initialName);
-              setNewThreadInitialMsg(initialContent);
-              setIsCreateThreadModalOpen(true);
-            }}
-            onDeleteMessage={handleDeleteMessage}
-            onJoinActivity={(appId, channelId) => handleLaunchActivity(appId, true, channelId)}
-            messagesEndRef={messagesEndRef}
-            t={t}
-          />
-
-          {/* Chat Input Bar (Feature-First Component) */}
-          <ChatInputBar
-            activeChannel={activeChannel}
-            activeHub={activeHub}
-            channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
-            stagedAttachment={stagedAttachment}
-            setStagedAttachment={setStagedAttachment}
-            inputText={inputText}
-            setInputText={setInputText}
-            onSendMessage={handleSendMessage}
-            onFileSelect={handleFileChange}
-            onOpenGiftModal={() => setIsGiftModalOpen(true)}
-            isMediaPickerOpen={isMediaPickerOpen}
-            setIsMediaPickerOpen={setIsMediaPickerOpen}
-            activeMediaTab={activeMediaTab}
-            setActiveMediaTab={setActiveMediaTab}
-            mediaSearchQuery={mediaSearchQuery}
-            setMediaSearchQuery={setMediaSearchQuery}
-            selectedGifCategory={selectedGifCategory}
-            setSelectedGifCategory={setSelectedGifCategory}
-            serverDbEmojis={serverDbEmojis}
-            serverDbStickers={serverDbStickers}
-            onSelectEmoji={handleSelectEmoji}
-            onSendSticker={handleSendSticker}
-            onSendGif={handleSendGif}
-            onOpenQuickAddEmoji={() => setIsQuickAddEmojiOpen(true)}
-            onOpenQuickAddSticker={() => setIsQuickAddStickerOpen(true)}
-            isTemplatePopoverOpen={isTemplatePopoverOpen}
-            setIsTemplatePopoverOpen={setIsTemplatePopoverOpen}
-            appsSearchQuery={appsSearchQuery}
-            setAppsSearchQuery={setAppsSearchQuery}
-            onLaunchActivity={handleLaunchActivity}
-            onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
-            onScheduleMessage={handleScheduleMessage}
-            onSubmitPoll={handleCreatePoll}
-            t={t}
-          />
-          </>
-          )}
-        </div>
-        )}
+        {/* MAIN CONTENT AREA: DISCORD-STYLE FRIENDS HUB, NOTIFICATIONS, CHANNEL CHAT, ETC. */}
+        <ChatMainView
+          isFriendsView={isFriendsView}
+          renderFriendsMainPage={renderFriendsMainPage}
+          isMessageRequestsView={isMessageRequestsView}
+          messageRequests={messageRequests}
+          handleAcceptMessageRequest={handleAcceptMessageRequest}
+          handleIgnoreMessageRequest={handleIgnoreMessageRequest}
+          handleReportSpamMessageRequest={handleReportSpamMessageRequest}
+          setIsMobileChannelsOpen={setIsMobileChannelsOpen}
+          isNotificationsView={isNotificationsView}
+          notifications={notifications}
+          handleMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+          handleMarkNotificationRead={handleMarkNotificationRead}
+          handleJumpToNotification={handleJumpToNotification}
+          isCalendarView={isCalendarView}
+          calendarEvents={calendarEvents}
+          hubs={hubs}
+          channels={channels}
+          hubChannels={hubChannels}
+          setActiveHubId={setActiveHubId}
+          setActiveChannelId={setActiveChannelId}
+          setActiveCallChannelId={setActiveCallChannelId}
+          createCalendarEvent={createCalendarEvent}
+          isAssignmentsView={isAssignmentsView}
+          assignments={assignments}
+          handleToggleComplete={handleToggleComplete}
+          isCallsView={isCallsView}
+          callLogs={callLogs}
+          friends={friends}
+          handleCreateCallLog={handleCreateCallLog}
+          handleStartDirectMessage={handleStartDirectMessage}
+          isAppsView={isAppsView}
+          members={members}
+          activeCallChannelId={activeCallChannelId}
+          handleLaunchActivity={handleLaunchActivity}
+          handleStartDM={handleStartDM}
+          isServersView={isServersView}
+          requireAuth={requireAuth}
+          setIsCreateHubOpen={setIsCreateHubOpen}
+          activeChannel={activeChannel}
+          isHome={isHome}
+          isCallPiP={isCallPiP}
+          isThreadsPopoverOpen={isThreadsPopoverOpen}
+          setIsThreadsPopoverOpen={setIsThreadsPopoverOpen}
+          channelThreads={channelThreads}
+          threadSearchQuery={threadSearchQuery}
+          setThreadSearchQuery={setThreadSearchQuery}
+          setIsCreateThreadModalOpen={setIsCreateThreadModalOpen}
+          setActiveThread={setActiveThread}
+          setIsThreadDrawerOpen={setIsThreadDrawerOpen}
+          isNotificationDropdownOpen={isNotificationDropdownOpen}
+          setIsNotificationDropdownOpen={setIsNotificationDropdownOpen}
+          channelNotification={channelNotification}
+          handleUpdateNotification={handleUpdateNotification}
+          isPinnedPopoverOpen={isPinnedPopoverOpen}
+          setIsPinnedPopoverOpen={setIsPinnedPopoverOpen}
+          pinnedMessages={pinnedMessages}
+          handleJumpToMessage={handleJumpToMessage}
+          handleTogglePin={handleTogglePin}
+          showMemberList={showMemberList}
+          setShowMemberList={setShowMemberList}
+          setIsMobileMembersOpen={setIsMobileMembersOpen}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          activeHub={activeHub}
+          currentUser={currentUser}
+          isPlusOrAbove={isPlusOrAbove}
+          socket={socket}
+          selectedActivityAppId={selectedActivityAppId}
+          setSelectedActivityAppId={setSelectedActivityAppId}
+          setIsActivityOpen={setIsActivityOpen}
+          setIsCallPiP={setIsCallPiP}
+          navigate={navigate}
+          activeThread={activeThread}
+          threadsMap={threadsMap}
+          threadMessages={threadMessages}
+          forumSearchQuery={forumSearchQuery}
+          setForumSearchQuery={setForumSearchQuery}
+          forumSort={forumSort}
+          setForumSort={setForumSort}
+          isForumComposerOpen={isForumComposerOpen}
+          setIsForumComposerOpen={setIsForumComposerOpen}
+          forumNewTitle={forumNewTitle}
+          setForumNewTitle={setForumNewTitle}
+          forumNewMessage={forumNewMessage}
+          setForumNewMessage={setForumNewMessage}
+          isSubmittingForumPost={isSubmittingForumPost}
+          handleCreateForumPost={handleCreateForumPost}
+          threadInputText={threadInputText}
+          setThreadInputText={setThreadInputText}
+          handleSendThreadMessage={handleSendThreadMessage}
+          displayMembers={displayMembers}
+          handleKanbanCardsUpdate={handleKanbanCardsUpdate}
+          filteredMessages={filteredMessages}
+          claimedGifts={claimedGifts}
+          setClaimedGifts={setClaimedGifts}
+          setIsCreateChannelOpen={setIsCreateChannelOpen}
+          handleToggleReaction={handleToggleReaction}
+          setNewThreadName={setNewThreadName}
+          setNewThreadInitialMsg={setNewThreadInitialMsg}
+          handleDeleteMessage={handleDeleteMessage}
+          messagesEndRef={messagesEndRef}
+          stagedAttachment={stagedAttachment}
+          setStagedAttachment={setStagedAttachment}
+          inputText={inputText}
+          setInputText={setInputText}
+          handleSendMessage={handleSendMessage}
+          handleFileChange={handleFileChange}
+          setIsGiftModalOpen={setIsGiftModalOpen}
+          isMediaPickerOpen={isMediaPickerOpen}
+          setIsMediaPickerOpen={setIsMediaPickerOpen}
+          activeMediaTab={activeMediaTab}
+          setActiveMediaTab={setActiveMediaTab}
+          mediaSearchQuery={mediaSearchQuery}
+          setMediaSearchQuery={setMediaSearchQuery}
+          selectedGifCategory={selectedGifCategory}
+          setSelectedGifCategory={setSelectedGifCategory}
+          serverDbEmojis={serverDbEmojis}
+          serverDbStickers={serverDbStickers}
+          handleSelectEmoji={handleSelectEmoji}
+          handleSendSticker={handleSendSticker}
+          handleSendGif={handleSendGif}
+          setIsQuickAddEmojiOpen={setIsQuickAddEmojiOpen}
+          setIsQuickAddStickerOpen={setIsQuickAddStickerOpen}
+          isTemplatePopoverOpen={isTemplatePopoverOpen}
+          setIsTemplatePopoverOpen={setIsTemplatePopoverOpen}
+          appsSearchQuery={appsSearchQuery}
+          setAppsSearchQuery={setAppsSearchQuery}
+          handleScheduleMessage={handleScheduleMessage}
+          handleCreatePoll={handleCreatePoll}
+          t={t}
+        />
 
         {/* DESKTOP MEMBERS SIDEBAR (w-60 - Hidden in Voice Channels like Discord) */}
         {showMemberList && !isFriendsView && activeChannel?.type !== 'voice' && activeCallChannelId !== activeChannel?.id && (
