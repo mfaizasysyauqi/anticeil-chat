@@ -114,24 +114,16 @@ export function processFileInput(
   // Record for rate limiting
   recordUpload();
 
-  // 4. Process file
-  if (category === 'image') {
-    const reader = new FileReader();
-    reader.onload = () => {
-      onSuccess({
-        type: 'image',
-        url: reader.result as string,
-        name: file.name,
-        size: formatSize(file.size),
-      });
-    };
-    reader.readAsDataURL(file);
-  } else {
+  // 4. Process file — always use data URL so it survives page refresh.
+  // (blob: URLs from createObjectURL are ephemeral and die on refresh)
+  const reader = new FileReader();
+  reader.onload = () => {
     onSuccess({
       type: category,
-      url: URL.createObjectURL(file),
+      url: reader.result as string,
       name: file.name,
       size: formatSize(file.size),
     });
-  }
+  };
+  reader.readAsDataURL(file);
 }
