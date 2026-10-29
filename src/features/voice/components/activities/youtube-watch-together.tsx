@@ -290,10 +290,15 @@ export function YouTubeWatchTogether({
             initialSeekTimeRef.current = 0;
             lastKnownTimeRef.current = seekToTime;
             setCurrentTime(seekToTime);
+            setIsPlaying(true);
             playerRef.current.loadVideoById({
               videoId: activeVideoId,
               startSeconds: seekToTime,
             });
+            // loadVideoById doesn't guarantee play — call explicitly after a tick
+            setTimeout(() => {
+              try { playerRef.current?.playVideo?.(); } catch (e) {}
+            }, 300);
           }
         } catch (err) {
           console.error('Error loading video in YT Player:', err);
@@ -554,12 +559,19 @@ export function YouTubeWatchTogether({
       if (data.channelId && data.channelId !== channel.id) return;
 
       if (data.action === 'YOUTUBE_CHANGE_VIDEO') {
-        const { videoId } = data.payload || {};
+        const { videoId, isPlaying: remotePlaying } = data.payload || {};
         if (videoId && videoId !== activeVideoIdRef.current) {
           ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
           initialSeekTimeRef.current = 0;
+          setIsPlaying(true);
           setActiveVideoId(videoId);
           setIsExpandedVideo(false);
+          // If player already exists, trigger play after load
+          if (playerRef.current) {
+            setTimeout(() => {
+              try { playerRef.current?.playVideo?.(); } catch (e) {}
+            }, 800);
+          }
         }
       } else if (data.action === 'YOUTUBE_SEEK') {
         const { currentTime: targetTime, isPlaying: remotePlaying, senderId } = data.payload || {};
@@ -927,8 +939,18 @@ export function YouTubeWatchTogether({
     socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
       channelId: channel.id,
       action: 'YOUTUBE_CHANGE_VIDEO',
-      payload: { videoId: video.id },
+      payload: { videoId: video.id, isPlaying: true },
     });
+
+    // After a short delay, also emit YOUTUBE_PLAY so members who already
+    // have the player initialized will start playing at second 0
+    setTimeout(() => {
+      socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channel.id,
+        action: 'YOUTUBE_PLAY',
+        payload: { videoId: video.id, currentTime: 0, senderId: currentUser?.id || socket?.id },
+      });
+    }, 1500);
 
     socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
       channelId: channel.id,
@@ -1317,11 +1339,20 @@ export function YouTubeWatchTogether({
               return;
             }
             setActiveVideoId(item.id);
+            setIsPlaying(true);
+            ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
             socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
               channelId: channel.id,
               action: 'YOUTUBE_CHANGE_VIDEO',
-              payload: { videoId: item.id },
+              payload: { videoId: item.id, isPlaying: true },
             });
+            setTimeout(() => {
+              socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+                channelId: channel.id,
+                action: 'YOUTUBE_PLAY',
+                payload: { videoId: item.id, currentTime: 0, senderId: currentUser?.id || socket?.id },
+              });
+            }, 1500);
           }}
           className={cn(
             'flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer',
