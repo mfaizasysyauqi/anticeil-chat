@@ -54,6 +54,31 @@ export function saveStoredChannels(channels: CommunityChannel[]): void {
   }
 }
 
+// ── Direct Messages Storage ──
+const STORAGE_KEY_DM_CHANNELS = 'anticeil_community_dm_channels_v3';
+
+export function loadStoredDmChannels(): CommunityChannel[] {
+  try {
+    if (typeof window === 'undefined') return [];
+    const raw = localStorage.getItem(STORAGE_KEY_DM_CHANNELS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredDmChannels(channels: CommunityChannel[]): void {
+  try {
+    if (typeof window === 'undefined') return;
+    const dmsOnly = channels.filter((c) => c.category === 'DIRECT MESSAGES' || c.isDirectMessage);
+    localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(dmsOnly));
+  } catch (err) {
+    console.error('Failed to save DM channels to storage', err);
+  }
+}
+
 // ── Extended Storage (Invites, Bans, Roles, Audit Log) ──
 const STORAGE_KEY_INVITES = 'anticeil_community_invites_v3';
 const STORAGE_KEY_BANS = 'anticeil_community_bans_v3';

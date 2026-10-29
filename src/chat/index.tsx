@@ -26,7 +26,7 @@ import {
   useServerModals,
 } from '@/features/servers';
 import { UserBottomDock, DmUserProfileSidebar } from '@/features/profile';
-import { FriendsView, AddFriendDialog, type FriendRequest, useFriendsManager } from '@/features/friends';
+import { FriendsView, AddFriendDialog, type FriendRequest, useFriendsManager, friendsApi } from '@/features/friends';
 import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
 import { CalendarView, type CalendarEvent, useCalendarEvents } from '@/features/calendar';
@@ -148,6 +148,8 @@ import {
   loadStoredHubs,
   saveStoredHubs,
   getDmChannelId,
+  loadStoredDmChannels,
+  saveStoredDmChannels,
 } from './chat-defaults';
 import {
   CommunityAttachment,
@@ -440,7 +442,10 @@ export function CommunityPage() {
     return fromUrl || 'anticeil';
   });
 
-  const [channels, setChannels] = useState<CommunityChannel[]>(DEFAULT_CHANNELS);
+  const [channels, setChannels] = useState<CommunityChannel[]>(() => {
+    const storedDms = loadStoredDmChannels();
+    return [...storedDms, ...DEFAULT_CHANNELS];
+  });
   const [activeChannelId, setActiveChannelId] = useState<string>(() => {
     return new URLSearchParams(window.location.search).get('channel') || '';
   });
@@ -835,14 +840,49 @@ export function CommunityPage() {
       }
       try {
         const currentProjectId = authenticationSession.getProjectId();
-        const [channelsRes, membersRes, hubsRes] = await Promise.all([
+        const [channelsRes, membersRes, hubsRes, friendsRes] = await Promise.all([
           communityApi.getChannels(),
           communityApi.getMembers(currentProjectId || undefined),
           communityApi.getHubs(),
+          friendsApi.getFriends().catch(() => []),
         ]);
         if (mounted) {
           if (Array.isArray(channelsRes)) {
-            setChannels(channelsRes);
+            const storedDms = loadStoredDmChannels();
+            const friendDms: CommunityChannel[] = [];
+            const effectiveUser = authenticationSession.getUser() || currentUser;
+            const myId = effectiveUser?.id;
+
+            if (Array.isArray(friendsRes) && myId) {
+              friendsRes.forEach((f) => {
+                if (!f.id || f.id === myId) return;
+                const dmId = getDmChannelId(myId, f.id);
+                const dmName = f.name || f.username || 'Direct Message';
+                friendDms.push({
+                  id: dmId,
+                  name: dmName,
+                  description: `Percakapan langsung dengan ${dmName}`,
+                  category: 'DIRECT MESSAGES',
+                  hubId: 'anticeil',
+                  isDirectMessage: true,
+                  dmUserId: f.id,
+                  type: 'text',
+                });
+              });
+            }
+
+            const dmMap = new Map<string, CommunityChannel>();
+            storedDms.forEach((dm) => dmMap.set(dm.id, dm));
+            friendDms.forEach((dm) => {
+              if (!dmMap.has(dm.id)) dmMap.set(dm.id, dm);
+            });
+            const allDms = Array.from(dmMap.values());
+            saveStoredDmChannels(allDms);
+
+            const serverChannels = channelsRes.filter((c) => c.category !== 'DIRECT MESSAGES');
+            const mergedAllChannels = [...allDms, ...serverChannels];
+            setChannels(mergedAllChannels);
+
             const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
             const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
             if (targetActivityParam) {
@@ -851,9 +891,9 @@ export function CommunityPage() {
               setIsActivityOpen(true);
             }
             if (targetChannelParam) {
-              let matchedChannel = channelsRes.find((c) => c.id === targetChannelParam);
+              let matchedChannel = mergedAllChannels.find((c) => c.id === targetChannelParam);
               if (!matchedChannel && targetActivityParam) {
-                matchedChannel = channelsRes.find((c) => (c.hubId || 'anticeil') === activeHubId && c.type === 'voice');
+                matchedChannel = mergedAllChannels.find((c) => (c.hubId || 'anticeil') === activeHubId && c.type === 'voice');
               }
               if (matchedChannel) {
                 setActiveChannelId(matchedChannel.id);
@@ -1109,7 +1149,9 @@ export function CommunityPage() {
           dmUserId: otherUserId,
           type: 'text',
         };
-        return [newDm, ...prev];
+        const updated = [newDm, ...prev];
+        saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
+        return updated;
       });
 
       setActiveChannelId(canonicalId);
@@ -2002,20 +2044,23 @@ export function CommunityPage() {
     const dmName = member.name || member.username || 'Direct Message';
     setChannels((prev) => {
       const existing = prev.find((c) => c.id === dmId);
-      if (existing) {
-        return prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c));
-      }
-      const newDMChannel: CommunityChannel = {
-        id: dmId,
-        name: dmName,
-        description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role})`,
-        category: 'DIRECT MESSAGES',
-        hubId: 'anticeil',
-        isDirectMessage: true,
-        dmUserId: member.id,
-        type: 'text',
-      };
-      return [...prev, newDMChannel];
+      const updated = existing
+        ? prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c))
+        : [
+            {
+              id: dmId,
+              name: dmName,
+              description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role})`,
+              category: 'DIRECT MESSAGES' as const,
+              hubId: 'anticeil',
+              isDirectMessage: true,
+              dmUserId: member.id,
+              type: 'text' as const,
+            },
+            ...prev,
+          ];
+      saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
+      return updated;
     });
     // DMs live in Home hub, auto-switch
     setActiveHubId('anticeil');
@@ -2103,6 +2148,43 @@ export function CommunityPage() {
     members,
     t,
   });
+
+  // Auto-sync DM channels for friends so they appear in Direct Messages sidebar by default
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const friendsList = friends.allFriends || [];
+    if (friendsList.length === 0) return;
+
+    setChannels((prev) => {
+      let changed = false;
+      const currentList = [...prev];
+      friendsList.forEach((friend) => {
+        if (!friend.id || friend.id === currentUser.id) return;
+        const dmId = getDmChannelId(currentUser.id, friend.id);
+        const exists = currentList.some((c) => c.id === dmId);
+        if (!exists) {
+          const dmName = friend.name || friend.username || 'Direct Message';
+          const newDm: CommunityChannel = {
+            id: dmId,
+            name: dmName,
+            description: `Percakapan langsung dengan ${dmName}`,
+            category: 'DIRECT MESSAGES',
+            hubId: 'anticeil',
+            isDirectMessage: true,
+            dmUserId: friend.id,
+            type: 'text',
+          };
+          currentList.unshift(newDm);
+          changed = true;
+        }
+      });
+      if (changed) {
+        saveStoredDmChannels(currentList.filter((c) => c.category === 'DIRECT MESSAGES'));
+        return currentList;
+      }
+      return prev;
+    });
+  }, [currentUser?.id, friends.allFriends]);
 
   // Rail Mode: Switcher between Servers and Friends
   const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
@@ -2208,7 +2290,7 @@ export function CommunityPage() {
       setFriendsTab={friends.setFriendsTab}
       friendRequests={friends.friendRequests}
       dmChannels={dmChannels}
-      members={members}
+      members={friends.effectiveMembers || members}
       collapsedCategories={collapsedCategories}
       setCollapsedCategories={setCollapsedCategories}
       threadsMap={threadsMap}
@@ -2323,20 +2405,23 @@ export function CommunityPage() {
     const dmName = member.name || member.username || member.firstName || 'Direct Message';
     setChannels((prev) => {
       const existing = prev.find((c) => c.id === dmId);
-      if (existing) {
-        return prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c));
-      }
-      const newDm: CommunityChannel = {
-        id: dmId,
-        name: dmName,
-        description: `Percakapan langsung dengan ${dmName}`,
-        category: 'DIRECT MESSAGES',
-        hubId: 'anticeil',
-        isDirectMessage: true,
-        dmUserId: member.id,
-        type: 'text',
-      };
-      return [newDm, ...prev];
+      const updated = existing
+        ? prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c))
+        : [
+            {
+              id: dmId,
+              name: dmName,
+              description: `Percakapan langsung dengan ${dmName}`,
+              category: 'DIRECT MESSAGES' as const,
+              hubId: 'anticeil',
+              isDirectMessage: true,
+              dmUserId: member.id,
+              type: 'text' as const,
+            },
+            ...prev,
+          ];
+      saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
+      return updated;
     });
     setActiveHubId('anticeil');
     setActiveChannelId(dmId);

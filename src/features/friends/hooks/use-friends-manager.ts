@@ -182,6 +182,7 @@ export function useFriendsManager({
     onlineFriends,
     allFriends,
     filteredFriends,
+    effectiveMembers,
     onAddFriend: handleAddFriend,
     onAcceptRequest: handleAcceptRequest,
     onRejectRequest: handleRejectRequest,

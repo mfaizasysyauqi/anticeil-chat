@@ -51,7 +51,8 @@ export const chatApi = {
           const others = stored.filter((c) => (c.hubId || 'anticeil') !== hubId);
           saveStoredChannels([...others, ...normalized]);
         } else {
-          saveStoredChannels(normalized);
+          const existingDms = stored.filter((c) => c.category === 'DIRECT MESSAGES' || c.isDirectMessage);
+          saveStoredChannels([...existingDms, ...normalized]);
         }
         return normalized;
       }
