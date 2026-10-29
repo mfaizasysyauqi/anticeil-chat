@@ -1616,13 +1616,13 @@ export function YouTubeWatchTogether({
           {/* Right Column (Desktop) or Main Browse Area (Mobile when mobileTab === 'browse') */}
           <div
             className={cn(
-              'flex-1 min-h-0 flex flex-col py-3 md:py-4 gap-3 md:gap-4 overflow-y-auto [scrollbar-width:thin]',
+              'flex-1 min-h-0 flex flex-col py-2 md:py-3 gap-2 md:gap-3 overflow-y-auto [scrollbar-width:thin]',
               isExpandedVideo ? 'hidden' : (mobileTab === 'browse' ? 'flex' : 'hidden md:flex'),
               CHANNEL_HORIZONTAL_PADDING,
             )}
           >
             {/* Sticky Search Header Bar */}
-            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-1 pb-3 border-b border-border/50 flex flex-col gap-2.5 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
+            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-0 pb-2 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
               <form onSubmit={handleSearchSubmit} className="relative w-full shrink-0 flex items-center">
                 <input
                   type="text"
@@ -1762,7 +1762,7 @@ export function YouTubeWatchTogether({
           )}
         >
           {/* Fixed / Sticky Header: Host Popover, Search Bar, and Categories */}
-          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-3 pb-3 border-b border-border/50 flex flex-col gap-3 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-2 pb-2 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {renderHostPopover()}
 
