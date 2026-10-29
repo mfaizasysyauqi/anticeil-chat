@@ -305,7 +305,7 @@ export function YouTubeWatchTogether({
       }
 
       try {
-        ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+        ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
         playerRef.current = new window.YT.Player('yt-watch-together-player-frame', {
           width: '100%',
           height: '100%',
@@ -473,7 +473,7 @@ export function YouTubeWatchTogether({
     }
     if (!playerRef.current) return;
 
-    ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+    ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
     lastSeekTimestampRef.current = Date.now();
     lastKnownTimeRef.current = newTime;
     setCurrentTime(newTime);
@@ -569,7 +569,7 @@ export function YouTubeWatchTogether({
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
 
         if (typeof targetTime === 'number' && playerRef.current) {
-          ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+          ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
           lastSeekTimestampRef.current = Date.now();
           lastKnownTimeRef.current = targetTime;
           setCurrentTime(targetTime);
@@ -589,7 +589,7 @@ export function YouTubeWatchTogether({
         const { currentTime: targetTime, senderId } = data.payload || {};
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
 
-        ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+        ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
         setIsPlaying(true);
         if (playerRef.current) {
           if (typeof targetTime === 'number') {
@@ -613,7 +613,7 @@ export function YouTubeWatchTogether({
         const { currentTime: targetTime, senderId } = data.payload || {};
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
 
-        ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+        ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
         setIsPlaying(false);
         if (playerRef.current) {
           try {
@@ -636,7 +636,7 @@ export function YouTubeWatchTogether({
           if (pState === 3) return;
 
           // Rate-limit sync seeks to prevent continuous buffering loops
-          if (Date.now() - lastSeekTimestampRef.current < 8000) return;
+          if (Date.now() - lastSeekTimestampRef.current < 3000) return;
 
           const localTime = playerRef.current.getCurrentTime?.() || 0;
           if (Math.abs(localTime - targetTime) > 4.5) {
@@ -685,12 +685,12 @@ export function YouTubeWatchTogether({
         if (videoId) {
           if (videoId !== activeVideoIdRef.current) {
             initialSeekTimeRef.current = typeof syncTime === 'number' ? syncTime : 0;
-            ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+            ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
             setActiveVideoId(videoId);
           } else if (typeof syncTime === 'number' && playerRef.current) {
             const curr = playerRef.current.getCurrentTime?.() || 0;
             if (Math.abs(curr - syncTime) > 4.0) {
-              ignoreLocalStateChangeUntilRef.current = Date.now() + 3500;
+              ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
               try {
                 playerRef.current.seekTo(syncTime, true);
               } catch (e) {}
