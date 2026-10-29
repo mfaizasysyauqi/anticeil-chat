@@ -32,6 +32,7 @@ export function ChatMobileDrawers({
       <Sheet open={isMobileChannelsOpen} onOpenChange={setIsMobileChannelsOpen}>
         <SheetContent
           side="left"
+          hideCloseButton
           className={cn(
             'p-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border',
             LAYOUT_SIZES.DRAWER_WIDTH,
@@ -57,6 +58,7 @@ export function ChatMobileDrawers({
       <Sheet open={isMobileMembersOpen} onOpenChange={setIsMobileMembersOpen}>
         <SheetContent
           side="right"
+          hideCloseButton
           className={cn(
             'p-0 bg-sidebar border-l border-sidebar-border',
             LAYOUT_SIZES.MEMBERS_DRAWER_WIDTH,

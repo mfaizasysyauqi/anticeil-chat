@@ -53,7 +53,7 @@ export function ServerMembersSidebar({
   );
 
   return (
-    <div className="flex flex-col h-full bg-sidebar border-l border-sidebar-border select-none w-60 shrink-0 overflow-hidden">
+    <div className="flex flex-col h-full bg-sidebar border-l border-sidebar-border select-none w-full overflow-hidden">
       {/* Header: NON-SCROLLABLE APP BAR */}
       <div className="h-12 border-b border-sidebar-border px-4 flex items-center justify-between font-semibold text-xs text-muted-foreground uppercase tracking-wider shrink-0 bg-sidebar z-10">
         <span>

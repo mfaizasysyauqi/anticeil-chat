@@ -109,10 +109,9 @@ export function ResponsiveSearchBar({
             )}
             <Button
               type="button"
-              variant="secondary"
               size="xs"
               onClick={() => setIsMobileOpen(false)}
-              className="text-xs font-semibold px-2.5 h-7"
+              className="text-xs font-bold px-2.5 h-7 bg-amber-400 hover:bg-amber-300 text-black cursor-pointer shadow-2xs shrink-0"
             >
               Tutup
             </Button>
