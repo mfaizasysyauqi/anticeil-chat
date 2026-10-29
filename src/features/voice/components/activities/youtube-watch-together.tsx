@@ -29,6 +29,22 @@ declare global {
   }
 }
 
+// Module-level in-memory cache to preserve video playback and state
+// seamlessly when minimizing to PiP or restoring to full stage.
+interface ChannelWatchStateCache {
+  videoId: string | null;
+  currentTime: number;
+  duration: number;
+  isPlaying: boolean;
+  playlist?: any[];
+  hostUserId?: string;
+  hostUserName?: string;
+  hostUserAvatar?: string | null;
+  allowEveryoneEdit?: boolean;
+}
+
+const channelWatchStateCache = new Map<string, ChannelWatchStateCache>();
+
 export interface YouTubeWatchTogetherProps {
   channel: CommunityChannel;
   currentUserName: string;
@@ -44,7 +60,8 @@ export function YouTubeWatchTogether({
   participants = [],
   socket,
 }: YouTubeWatchTogetherProps) {
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+  const cachedState = channelWatchStateCache.get(channel.id);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(() => cachedState?.videoId || null);
   const [ytSearchQuery, setYtSearchQuery] = useState('');
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
   const [searchTriggerCount, setSearchTriggerCount] = useState(0);
@@ -54,9 +71,9 @@ export function YouTubeWatchTogether({
   const [mobileTab, setMobileTab] = useState<'browse' | 'playlist'>('browse');
 
   // Playback & Realtime Sync States
-  const [currentTime, setCurrentTime] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [currentTime, setCurrentTime] = useState<number>(() => cachedState?.currentTime || 0);
+  const [duration, setDuration] = useState<number>(() => cachedState?.duration || 0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(() => cachedState?.isPlaying ?? true);
   const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
   const [isPlayerReady, setIsPlayerReady] = useState<boolean>(false);
   const [needsUserGesture, setNeedsUserGesture] = useState<boolean>(false);
@@ -65,16 +82,22 @@ export function YouTubeWatchTogether({
   const isRemoteSyncRef = useRef<boolean>(false);
   const ignoreLocalStateChangeUntilRef = useRef<number>(0);
   const lastSeekTimestampRef = useRef<number>(0);
-  const lastKnownTimeRef = useRef<number>(0);
-  const initialSeekTimeRef = useRef<number>(0);
+  const lastKnownTimeRef = useRef<number>(cachedState?.currentTime || 0);
+  const initialSeekTimeRef = useRef<number>(cachedState?.currentTime || 0);
 
   // Host & Permission States
-  const [hostUserId, setHostUserId] = useState<string>(() => currentUser?.id || 'me');
-  const [hostUserName, setHostUserName] = useState<string>(() => currentUserName || 'You');
-  const [hostUserAvatar, setHostUserAvatar] = useState<string | null>(
-    () => currentUser?.imageUrl || currentUser?.avatar || null,
+  const [hostUserId, setHostUserId] = useState<string>(
+    () => cachedState?.hostUserId || currentUser?.id || 'me',
   );
-  const [allowEveryoneEdit, setAllowEveryoneEdit] = useState<boolean>(true);
+  const [hostUserName, setHostUserName] = useState<string>(
+    () => cachedState?.hostUserName || currentUserName || 'You',
+  );
+  const [hostUserAvatar, setHostUserAvatar] = useState<string | null>(
+    () => cachedState?.hostUserAvatar ?? (currentUser?.imageUrl || currentUser?.avatar || null),
+  );
+  const [allowEveryoneEdit, setAllowEveryoneEdit] = useState<boolean>(
+    () => cachedState?.allowEveryoneEdit ?? true,
+  );
   const [isHostMenuOpen, setIsHostMenuOpen] = useState(false);
 
   const isMeHost = !hostUserId || hostUserId === currentUser?.id || hostUserId === 'me';
@@ -363,9 +386,39 @@ export function YouTubeWatchTogether({
     };
   }, [activeVideoId]);
 
-  // Clean up player on unmount
+  // Save state to cache on unmount (for PiP / minimize restore)
   useEffect(() => {
     return () => {
+      // Snapshot current playback position from the player directly (most accurate)
+      let snapshotTime = currentTime;
+      let snapshotDuration = duration;
+      let snapshotPlaying = isPlaying;
+      try {
+        if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+          snapshotTime = playerRef.current.getCurrentTime() || snapshotTime;
+          snapshotDuration = playerRef.current.getDuration() || snapshotDuration;
+          const state = playerRef.current.getPlayerState?.();
+          snapshotPlaying = state === 1; // 1 = PLAYING
+        }
+      } catch (e) {}
+
+      if (activeVideoId) {
+        channelWatchStateCache.set(channel.id, {
+          videoId: activeVideoId,
+          currentTime: snapshotTime,
+          duration: snapshotDuration,
+          isPlaying: snapshotPlaying,
+          playlist: ytPlaylistRef.current,
+          hostUserId,
+          hostUserName,
+          hostUserAvatar,
+          allowEveryoneEdit,
+        });
+      } else {
+        // No video selected — clear cache so next mount is fresh
+        channelWatchStateCache.delete(channel.id);
+      }
+
       if (playerRef.current) {
         try {
           playerRef.current.destroy();
@@ -373,6 +426,7 @@ export function YouTubeWatchTogether({
         playerRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 500ms poller for tracking time & detecting manual scrubs in native YouTube iframe

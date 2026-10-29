@@ -1606,25 +1606,20 @@ export function CommunityPage() {
       }
       voiceDest = dmCh || null;
     } else {
-      // In Server: resolve to selected channel or available voice channel in that hub
+      // In Server: if already in / already have a voice call active, attach activity there.
+      // If the current channel is a text channel (NOT voice), keep the activity
+      // inline in that text channel — do NOT jump to a voice channel.
       if (targetChannelId) {
-        voiceDest = channels.find((c) => c.id === targetChannelId && c.type === 'voice') || null;
+        voiceDest = channels.find((c) => c.id === targetChannelId) || null;
       }
       if (!voiceDest && activeCallChannelId) {
-        voiceDest = channels.find((c) => c.id === activeCallChannelId && c.type === 'voice') || null;
+        voiceDest = channels.find((c) => c.id === activeCallChannelId) || null;
       }
-      if (!voiceDest && targetChannel?.type === 'voice') {
+      if (!voiceDest && targetChannel) {
         voiceDest = targetChannel;
       }
-      if (!voiceDest && activeChannel?.type === 'voice') {
+      if (!voiceDest && activeChannel) {
         voiceDest = activeChannel;
-      }
-      if (!voiceDest) {
-        const hubId = targetChannel?.hubId || activeHubId;
-        voiceDest = channels.find((c) => (c.hubId || 'anticeil') === hubId && c.type === 'voice') || null;
-      }
-      if (!voiceDest) {
-        voiceDest = channels.find((c) => c.type === 'voice') || null;
       }
     }
 
