@@ -312,6 +312,7 @@ export function YouTubeWatchTogether({
           videoId: activeVideoId,
           playerVars: {
             autoplay: 1,
+            controls: 0,
             rel: 0,
             enablejsapi: 1,
             playsinline: 1,
