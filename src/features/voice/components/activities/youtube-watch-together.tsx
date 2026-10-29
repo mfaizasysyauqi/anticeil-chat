@@ -29,6 +29,17 @@ declare global {
   }
 }
 
+export interface YouTubeVideoItem {
+  id: string;
+  title: string;
+  channel: string;
+  thumbnail: string;
+  duration: string;
+  views?: string;
+  uploadedAt?: string;
+  addedBy?: string;
+}
+
 // Module-level in-memory cache to preserve video playback and state
 // seamlessly when minimizing to PiP or restoring to full stage.
 interface ChannelWatchStateCache {
@@ -36,7 +47,7 @@ interface ChannelWatchStateCache {
   currentTime: number;
   duration: number;
   isPlaying: boolean;
-  playlist?: any[];
+  playlist?: YouTubeVideoItem[];
   hostUserId?: string;
   hostUserName?: string;
   hostUserAvatar?: string | null;
@@ -44,6 +55,53 @@ interface ChannelWatchStateCache {
 }
 
 const channelWatchStateCache = new Map<string, ChannelWatchStateCache>();
+
+// Pure formatting helpers moved to module level (avoid re-allocating per render)
+const formatSeconds = (sec: number): string => {
+  if (!sec || isNaN(sec) || sec < 0) return '00:00';
+  const totalSeconds = Math.floor(sec);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
+const parseYtDuration = (duration?: string): string => {
+  if (!duration) return '';
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return '';
+  const h = match[1];
+  const m = match[2] || '0';
+  const s = match[3] || '0';
+  if (h) return `${h}:${m.padStart(2, '0')}:${s.padStart(2, '0')}`;
+  return `${m}:${s.padStart(2, '0')}`;
+};
+
+const formatViews = (views?: string | number): string => {
+  if (!views) return '';
+  const num = typeof views === 'string' ? parseInt(views, 10) : views;
+  if (isNaN(num)) return '';
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1).replace(/\.0$/, '')}M views`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K views`;
+  return `${num} views`;
+};
+
+const formatTimeAgo = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins || 1}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hours ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} months ago`;
+  return `${Math.floor(months / 12)} years ago`;
+};
 
 export interface YouTubeWatchTogetherProps {
   channel: CommunityChannel;
@@ -120,48 +178,13 @@ export function YouTubeWatchTogether({
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
 
-  const [ytVideos, setYtVideos] = useState<
-    Array<{
-      id: string;
-      title: string;
-      channel: string;
-      thumbnail: string;
-      duration: string;
-      views?: string;
-      uploadedAt?: string;
-    }>
-  >([]);
-
-  const [ytPlaylist, setYtPlaylist] = useState<
-    Array<{
-      id: string;
-      title: string;
-      channel: string;
-      thumbnail: string;
-      duration: string;
-      views?: string;
-      uploadedAt?: string;
-      addedBy: string;
-    }>
-  >([]);
+  const [ytVideos, setYtVideos] = useState<YouTubeVideoItem[]>([]);
+  const [ytPlaylist, setYtPlaylist] = useState<YouTubeVideoItem[]>([]);
   ytPlaylistRef.current = ytPlaylist;
 
   const [ytIsSearching, setYtIsSearching] = useState(false);
   const [ytSearchError, setYtSearchError] = useState<string | null>(null);
-  const ytCacheRef = useRef<
-    Map<
-      string,
-      Array<{
-        id: string;
-        title: string;
-        channel: string;
-        thumbnail: string;
-        duration: string;
-        views?: string;
-        uploadedAt?: string;
-      }>
-    >
-  >(new Map());
+  const ytCacheRef = useRef<Map<string, YouTubeVideoItem[]>>(new Map());
 
   const ytCategories = [
     { id: 'semua', label: '🔥 Trending', q: '', categoryId: '' },
@@ -171,52 +194,6 @@ export function YouTubeWatchTogether({
     { id: 'entertainment', label: '🎉 Hiburan', q: '', categoryId: '24' },
     { id: 'lofi', label: '☕ Lofi', q: 'lofi hip hop radio beats', categoryId: '' },
   ];
-
-  const formatSeconds = (sec: number): string => {
-    if (!sec || isNaN(sec) || sec < 0) return '00:00';
-    const totalSeconds = Math.floor(sec);
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    if (h > 0) {
-      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const parseYtDuration = (duration?: string): string => {
-    if (!duration) return '';
-    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!match) return '';
-    const h = match[1];
-    const m = match[2] || '0';
-    const s = match[3] || '0';
-    if (h) return `${h}:${m.padStart(2, '0')}:${s.padStart(2, '0')}`;
-    return `${m}:${s.padStart(2, '0')}`;
-  };
-
-  const formatViews = (views?: string | number): string => {
-    if (!views) return '';
-    const num = typeof views === 'string' ? parseInt(views, 10) : views;
-    if (isNaN(num)) return '';
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1).replace(/\.0$/, '')}M views`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K views`;
-    return `${num} views`;
-  };
-
-  const formatTimeAgo = (dateStr?: string): string => {
-    if (!dateStr) return '';
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins || 1}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours} hours ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 30) return `${days} days ago`;
-    const months = Math.floor(days / 30);
-    if (months < 12) return `${months} months ago`;
-    return `${Math.floor(months / 12)} years ago`;
-  };
 
   // Load YouTube IFrame API script
   useEffect(() => {
@@ -831,15 +808,7 @@ export function YouTubeWatchTogether({
       setYtIsSearching(true);
       setYtSearchError(null);
       try {
-        let items: Array<{
-          id: string;
-          title: string;
-          channel: string;
-          thumbnail: string;
-          duration: string;
-          views?: string;
-          uploadedAt?: string;
-        }> = [];
+        let items: YouTubeVideoItem[] = [];
 
         // 1. Primary: Unlimited Zero-Quota Search & Trending via Backend Scraper
         try {
@@ -974,15 +943,7 @@ export function YouTubeWatchTogether({
     };
   }, [submittedSearchQuery, ytCategory, searchTriggerCount]);
 
-  const handleSelectVideo = (video: {
-    id: string;
-    title: string;
-    channel: string;
-    thumbnail: string;
-    duration: string;
-    views?: string;
-    uploadedAt?: string;
-  }) => {
+  const handleSelectVideo = (video: YouTubeVideoItem) => {
     if (!canEdit) {
       toast.info('Hanya host yang dapat mengganti video saat ini.');
       return;
@@ -1030,15 +991,7 @@ export function YouTubeWatchTogether({
 
   const handleAddToQueue = (
     e: React.MouseEvent,
-    video: {
-      id: string;
-      title: string;
-      channel: string;
-      thumbnail: string;
-      duration: string;
-      views?: string;
-      uploadedAt?: string;
-    },
+    video: YouTubeVideoItem,
   ) => {
     e.stopPropagation();
     if (!canEdit) {
@@ -1193,6 +1146,124 @@ export function YouTubeWatchTogether({
       action: 'YOUTUBE_TOGGLE_EDIT_PERMISSION',
       payload: { allowEveryoneEdit: nextVal },
     });
+  };
+
+  // Reusable Search Bar Component (DRY for active player view and idle search view)
+  const renderSearchBar = (
+    placeholder = 'Ketik lalu tekan Enter / Paste URL YouTube...',
+    className?: string,
+  ) => (
+    <form
+      onSubmit={handleSearchSubmit}
+      className={cn('relative w-full shrink-0 flex items-center', className)}
+    >
+      <input
+        type="text"
+        value={ytSearchQuery}
+        onChange={(e) => setYtSearchQuery(e.target.value)}
+        onPaste={(e) => {
+          const pasted = e.clipboardData.getData('text');
+          const match = pasted.match(
+            /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+          );
+          if (match) {
+            e.preventDefault();
+            handlePlayYouTubeUrl(pasted);
+            setYtSearchQuery('');
+            setSubmittedSearchQuery('');
+          }
+        }}
+        placeholder={placeholder}
+        className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-20 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+      />
+      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+        {ytSearchQuery && (
+          <button
+            type="button"
+            onClick={() => {
+              setYtSearchQuery('');
+              if (submittedSearchQuery) setSubmittedSearchQuery('');
+            }}
+            className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            title="Hapus pencarian"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button
+          type="submit"
+          className="p-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors cursor-pointer active:scale-95"
+          title="Cari (Enter)"
+          aria-label="Cari"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      </div>
+    </form>
+  );
+
+  // Reusable Video Card Component (DRY for active search panel and idle search view)
+  const renderVideoCard = (video: YouTubeVideoItem) => {
+    const isQueuedOrPlaying =
+      activeVideoId === video.id || ytPlaylist.some((p) => p.id === video.id);
+
+    return (
+      <div
+        key={video.id}
+        onClick={() => handleSelectVideo(video)}
+        className="group cursor-pointer flex flex-col"
+      >
+        <div className="relative aspect-video rounded-xl overflow-hidden bg-card border border-border group-hover:border-primary/40 transition-all">
+          <img
+            src={video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
+            alt={video.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (!target.src.includes('mqdefault')) {
+                target.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
+              }
+            }}
+          />
+
+          {isQueuedOrPlaying ? (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-full bg-[#23a55a] flex items-center justify-center text-white shadow-xl">
+                <Check className="w-5 h-5 stroke-[3]" />
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => handleAddToQueue(e, video)}
+              title="Add to queue"
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          )}
+
+          {video.duration && (
+            <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+              {video.duration}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-2.5 flex flex-col">
+          <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+            {video.title}
+          </p>
+          <span className="text-[11px] text-muted-foreground mt-1 truncate">
+            {video.channel}
+          </span>
+          <span className="text-[11px] text-muted-foreground mt-0.5">
+            {[video.views, video.uploadedAt].filter(Boolean).join(' • ')}
+          </span>
+        </div>
+      </div>
+    );
   };
 
   // Reusable Host Button & Popover Component
@@ -1728,50 +1799,7 @@ export function YouTubeWatchTogether({
           >
             {/* Sticky Search Header Bar */}
             <div className="sticky top-0 z-20 bg-background pt-1.5 pb-2 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
-              <form onSubmit={handleSearchSubmit} className="relative w-full shrink-0 flex items-center">
-                <input
-                  type="text"
-                  value={ytSearchQuery}
-                  onChange={(e) => setYtSearchQuery(e.target.value)}
-                  onPaste={(e) => {
-                    const pasted = e.clipboardData.getData('text');
-                    const match = pasted.match(
-                      /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-                    );
-                    if (match) {
-                      e.preventDefault();
-                      handlePlayYouTubeUrl(pasted);
-                      setYtSearchQuery('');
-                      setSubmittedSearchQuery('');
-                    }
-                  }}
-                  placeholder="Ketik lalu tekan Enter / Paste URL YouTube..."
-                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-20 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-                />
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {ytSearchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setYtSearchQuery('');
-                        if (submittedSearchQuery) setSubmittedSearchQuery('');
-                      }}
-                      className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                      title="Hapus pencarian"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    className="p-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors cursor-pointer active:scale-95"
-                    title="Cari (Enter)"
-                  >
-                    <Search className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </form>
-
+              {renderSearchBar()}
             </div>
 
             {/* Section Title */}
@@ -1794,67 +1822,7 @@ export function YouTubeWatchTogether({
 
             {/* Responsive Video Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 pb-4">
-              {ytVideos.map((video) => {
-                const isQueuedOrPlaying =
-                  activeVideoId === video.id || ytPlaylist.some((p) => p.id === video.id);
-                return (
-                  <div
-                    key={video.id}
-                    onClick={() => handleSelectVideo(video)}
-                    className="group cursor-pointer flex flex-col"
-                  >
-                    <div className="relative aspect-video rounded-xl overflow-hidden bg-card border border-border group-hover:border-primary/40 transition-all">
-                      <img
-                        src={video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
-                        alt={video.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          if (!target.src.includes('mqdefault')) {
-                            target.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
-                          }
-                        }}
-                      />
-
-                      {isQueuedOrPlaying ? (
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                          <div className="w-9 h-9 rounded-full bg-[#23a55a] flex items-center justify-center text-white shadow-xl">
-                            <Check className="w-5 h-5 stroke-[3]" />
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => handleAddToQueue(e, video)}
-                          title="Add to queue"
-                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4 stroke-[2.5]" />
-                        </button>
-                      )}
-
-                      {video.duration && (
-                        <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
-                          {video.duration}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-2 flex flex-col">
-                      <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                        {video.title}
-                      </p>
-                      <span className="text-[11px] text-muted-foreground mt-1 truncate">
-                        {video.channel}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground mt-0.5">
-                        {[video.views, video.uploadedAt].filter(Boolean).join(' • ')}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+              {ytVideos.map(renderVideoCard)}
             </div>
           </div>
         </div>
@@ -1870,53 +1838,8 @@ export function YouTubeWatchTogether({
           <div className="sticky top-0 z-30 bg-background pt-2 pb-1.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-xs">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {renderHostPopover()}
-
-              <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-xl flex items-center">
-                <input
-                  type="text"
-                  value={ytSearchQuery}
-                  onChange={(e) => setYtSearchQuery(e.target.value)}
-                  onPaste={(e) => {
-                    const pasted = e.clipboardData.getData('text');
-                    const match = pasted.match(
-                      /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-                    );
-                    if (match) {
-                      e.preventDefault();
-                      handlePlayYouTubeUrl(pasted);
-                      setYtSearchQuery('');
-                      setSubmittedSearchQuery('');
-                    }
-                  }}
-                  placeholder="Ketik kata kunci atau tempel URL YouTube..."
-                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-20 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-amber-400 transition-colors"
-                />
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {ytSearchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setYtSearchQuery('');
-                        if (submittedSearchQuery) setSubmittedSearchQuery('');
-                      }}
-                      className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                      title="Hapus pencarian"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    className="p-1.5 rounded-full bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer active:scale-95"
-                    title="Cari (Enter)"
-                    aria-label="Cari"
-                  >
-                    <Search className="w-4 h-4" />
-                  </button>
-                </div>
-              </form>
+              {renderSearchBar('Ketik kata kunci atau tempel URL YouTube...', 'flex-1 max-w-xl')}
             </div>
-
           </div>
 
           <div className="flex items-center gap-2 text-foreground font-bold text-sm shrink-0">
@@ -1937,55 +1860,7 @@ export function YouTubeWatchTogether({
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
-            {ytVideos.map((video) => (
-              <div
-                key={video.id}
-                onClick={() => handleSelectVideo(video)}
-                className="group cursor-pointer flex flex-col"
-              >
-                <div className="relative aspect-video rounded-xl overflow-hidden bg-card border border-border group-hover:border-primary/40 transition-all">
-                  <img
-                    src={video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
-                    alt={video.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      if (!target.src.includes('mqdefault')) {
-                        target.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
-                      }
-                    }}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={(e) => handleAddToQueue(e, video)}
-                    title="Add to queue"
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-
-                  {video.duration && (
-                    <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
-                      {video.duration}
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-2.5 flex flex-col">
-                  <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                    {video.title}
-                  </p>
-                  <span className="text-[11px] text-muted-foreground mt-1 truncate">
-                    {video.channel}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground mt-0.5">
-                    {[video.views, video.uploadedAt].filter(Boolean).join(' • ')}
-                  </span>
-                </div>
-              </div>
-            ))}
+            {ytVideos.map(renderVideoCard)}
           </div>
         </div>
       )}
