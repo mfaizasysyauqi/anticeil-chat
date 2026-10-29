@@ -1667,28 +1667,6 @@ export function YouTubeWatchTogether({
                 </div>
               </form>
 
-              {/* Category Badges */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] shrink-0">
-                {ytCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setYtCategory(cat.id);
-                      setYtSearchQuery('');
-                      setSubmittedSearchQuery('');
-                    }}
-                    className={cn(
-                      'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
-                      ytCategory === cat.id && !submittedSearchQuery
-                        ? 'bg-primary text-primary-foreground shadow-xs'
-                        : 'bg-card border border-border text-foreground/80 hover:text-foreground hover:bg-muted',
-                    )}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Section Title */}
@@ -1834,26 +1812,6 @@ export function YouTubeWatchTogether({
               </form>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] shrink-0">
-              {ytCategories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setYtCategory(cat.id);
-                    setYtSearchQuery('');
-                  }}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
-                    ytCategory === cat.id && !ytSearchQuery
-                      ? 'bg-primary text-primary-foreground shadow-xs'
-                      : 'bg-card border border-border text-foreground/80 hover:text-foreground hover:bg-muted',
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div className="flex items-center gap-2 text-foreground font-bold text-sm shrink-0">
