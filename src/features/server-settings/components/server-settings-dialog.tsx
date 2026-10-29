@@ -166,9 +166,10 @@ export function ServerSettingsDialog({
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent
           showCloseButton={false}
-          className="max-w-[900px] w-[calc(100vw-2rem)] h-[calc(100dvh-4rem)] max-h-[680px] gap-0 overflow-hidden p-0 flex rounded-[16px]"
+          className="max-w-[900px] w-[calc(100vw-2rem)] h-[calc(100dvh-4rem)] max-h-[680px] gap-0 overflow-hidden p-0 rounded-[16px]"
         >
           <DialogTitle className="sr-only">{t('Pengaturan Server')}</DialogTitle>
+          <div className="flex flex-row w-full h-full min-h-0 overflow-hidden">
 
           {/* Left sidebar */}
           <aside className="w-56 shrink-0 flex flex-col border-r bg-muted/30 overflow-y-auto [scrollbar-width:thin]">
@@ -248,7 +249,7 @@ export function ServerSettingsDialog({
           </aside>
 
           {/* Right content area */}
-          <div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
+          <div className="flex-1 min-w-0 overflow-y-auto [scrollbar-width:thin] relative">
             {/* Close button */}
             <button
               onClick={onClose}
@@ -388,6 +389,7 @@ export function ServerSettingsDialog({
                 />
               )}
             </div>
+          </div>
           </div>
         </DialogContent>
       </Dialog>
