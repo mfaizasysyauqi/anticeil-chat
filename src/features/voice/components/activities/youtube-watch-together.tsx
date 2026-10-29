@@ -49,6 +49,7 @@ export function YouTubeWatchTogether({
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [ytSearchQuery, setYtSearchQuery] = useState('');
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
+  const [searchTriggerCount, setSearchTriggerCount] = useState(0);
   const [ytCategory, setYtCategory] = useState<string>('semua');
   const [isExpandedVideo, setIsExpandedVideo] = useState(false);
   const [isExpandedPlaylistOpen, setIsExpandedPlaylistOpen] = useState(false);
@@ -892,7 +893,7 @@ export function YouTubeWatchTogether({
     return () => {
       isCancelled = true;
     };
-  }, [submittedSearchQuery, ytCategory]);
+  }, [submittedSearchQuery, ytCategory, searchTriggerCount]);
 
   const handleSelectVideo = (video: {
     id: string;
@@ -1044,6 +1045,7 @@ export function YouTubeWatchTogether({
 
     // Keyword search: trigger on-submit
     setSubmittedSearchQuery(raw);
+    setSearchTriggerCount((c) => c + 1);
   };
 
   const handleTransferHost = (participant: any) => {
@@ -1901,21 +1903,50 @@ export function YouTubeWatchTogether({
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {renderHostPopover()}
 
-              <div className="relative flex-1 max-w-xl">
+              <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-xl flex items-center">
                 <input
                   type="text"
                   value={ytSearchQuery}
                   onChange={(e) => setYtSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handlePlayYouTubeUrl(ytSearchQuery);
+                  onPaste={(e) => {
+                    const pasted = e.clipboardData.getData('text');
+                    const match = pasted.match(
+                      /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+                    );
+                    if (match) {
+                      e.preventDefault();
+                      handlePlayYouTubeUrl(pasted);
+                      setYtSearchQuery('');
+                      setSubmittedSearchQuery('');
                     }
                   }}
-                  placeholder="Search or paste YouTube URL"
-                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-11 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                  placeholder="Ketik kata kunci atau tempel URL YouTube..."
+                  className="w-full bg-muted/60 border border-border rounded-full pl-5 pr-20 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-amber-400 transition-colors"
                 />
-                <Search className="w-4 h-4 text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {ytSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setYtSearchQuery('');
+                        if (submittedSearchQuery) setSubmittedSearchQuery('');
+                      }}
+                      className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      title="Hapus pencarian"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="p-1.5 rounded-full bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer active:scale-95"
+                    title="Cari (Enter)"
+                    aria-label="Cari"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] shrink-0">
@@ -1942,7 +1973,7 @@ export function YouTubeWatchTogether({
 
           <div className="flex items-center gap-2 text-foreground font-bold text-sm shrink-0">
             <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-            <span>{ytSearchQuery ? `Hasil Pencarian: "${ytSearchQuery}"` : 'Trending Videos'}</span>
+            <span>{submittedSearchQuery || ytSearchQuery ? `Hasil Pencarian: "${submittedSearchQuery || ytSearchQuery}"` : 'Trending Videos'}</span>
           </div>
 
           {ytIsSearching && (

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { Socket } from 'socket.io-client';
 import {
   Volume2,
+  Hash,
   Play,
   MessageSquare,
   Menu,
@@ -919,7 +920,13 @@ export function CommunityCallStage({
               <Menu className="w-5 h-5 text-foreground" />
             </button>
           )}
-          <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
+          {channel.type === 'voice' ? (
+            <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
+          ) : channel.category === 'DIRECT MESSAGES' || channel.isDirectMessage ? (
+            <span className="text-muted-foreground font-bold text-base shrink-0 select-none">@</span>
+          ) : (
+            <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
+          )}
           <span className="text-sm font-bold text-foreground truncate max-w-[140px] sm:max-w-[200px]">
             {channel.name}
           </span>
@@ -1010,21 +1017,24 @@ export function CommunityCallStage({
             />
           </div>
 
-          <ActivityFilmstrip
-            isFilmstripCollapsed={isFilmstripCollapsed}
-            onToggleFilmstrip={() => setIsFilmstripCollapsed(!isFilmstripCollapsed)}
-            totalInCall={totalInCall}
-            isVideoOff={isVideoOff}
-            localStream={localStream}
-            currentUserName={currentUserName}
-            currentUser={currentUser}
-            isSpeakingLocal={isSpeakingLocal}
-            isMuted={isMuted}
-            participants={participants}
-            isScreenSharing={isScreenSharing}
-            screenStream={screenStream}
-            onCopyCallLink={handleCopyCallLink}
-          />
+          {/* Filmstrip is ONLY shown in voice channels. In text channels there is no video call. */}
+          {channel.type === 'voice' && (
+            <ActivityFilmstrip
+              isFilmstripCollapsed={isFilmstripCollapsed}
+              onToggleFilmstrip={() => setIsFilmstripCollapsed(!isFilmstripCollapsed)}
+              totalInCall={totalInCall}
+              isVideoOff={isVideoOff}
+              localStream={localStream}
+              currentUserName={currentUserName}
+              currentUser={currentUser}
+              isSpeakingLocal={isSpeakingLocal}
+              isMuted={isMuted}
+              participants={participants}
+              isScreenSharing={isScreenSharing}
+              screenStream={screenStream}
+              onCopyCallLink={handleCopyCallLink}
+            />
+          )}
         </div>
       ) : (
         <CallParticipantGrid
@@ -1047,6 +1057,9 @@ export function CommunityCallStage({
 
       {/* Discord Bottom Control Dock */}
       <CallControlsBar
+        isTextChannel={channel.type !== 'voice'}
+        currentUser={currentUser}
+        currentUserName={currentUserName}
         isMuted={isMuted}
         isVideoOff={isVideoOff}
         isScreenSharing={isScreenSharing}
@@ -1061,6 +1074,13 @@ export function CommunityCallStage({
         onEndCall={onEndCall}
         onTogglePiP={onTogglePiP}
         onToggleFullscreen={handleToggleFullscreen}
+        onToggleChat={() => {
+          if (onToggleActivity) {
+            onToggleActivity();
+          } else {
+            onTogglePiP();
+          }
+        }}
       />
 
       {/* Discord-Style Activities Launcher Modal */}
