@@ -143,6 +143,9 @@ export type CommunityMember = {
   projectRole?: string | null;
   status: 'online' | 'idle' | 'offline';
   customStatus?: string;
+  bio?: string;
+  activity?: string;
+  joinedAt?: string;
 };
 
 export type CommunityAuditEntry = {

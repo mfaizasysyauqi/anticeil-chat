@@ -7,6 +7,7 @@ import {
   Hash,
   Lock,
   Users,
+  UserRound,
   Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,13 @@ export function ChannelTopHeaderBar({
   setSearchQuery,
   t,
 }: ChannelTopHeaderBarProps) {
+  const isDmMode = Boolean(
+    isHome ||
+    activeChannel?.category === 'DIRECT MESSAGES' ||
+    activeChannel?.isDirectMessage ||
+    activeChannel?.id?.startsWith('dm-')
+  );
+
   return (
     <div className={`h-12 border-b border-sidebar-border ${channelPaddingClass} flex items-center justify-between shrink-0 bg-background z-10`}>
       <div className="flex items-center gap-2 min-w-0">
@@ -133,26 +141,30 @@ export function ChannelTopHeaderBar({
         )}
       </div>
 
-      {/* Top Bar Actions: Exactly Discord Signature (Threads, Bell, Pin, Member List, Search) */}
+      {/* Top Bar Actions: Exactly Discord Signature (Threads, Bell, Pin, Member List / User Profile, Search) */}
       <div className="flex items-center gap-2">
-        {/* 1. Threads Popover */}
-        <ThreadsPopover
-          open={isThreadsPopoverOpen}
-          onOpenChange={setIsThreadsPopoverOpen}
-          channelThreads={channelThreads}
-          threadSearchQuery={threadSearchQuery}
-          setThreadSearchQuery={setThreadSearchQuery}
-          onOpenCreateThreadModal={onOpenCreateThreadModal}
-          onSelectThread={onSelectThread}
-        />
+        {/* 1. Threads Popover (Server channels only) */}
+        {!isDmMode && (
+          <ThreadsPopover
+            open={isThreadsPopoverOpen}
+            onOpenChange={setIsThreadsPopoverOpen}
+            channelThreads={channelThreads}
+            threadSearchQuery={threadSearchQuery}
+            setThreadSearchQuery={setThreadSearchQuery}
+            onOpenCreateThreadModal={onOpenCreateThreadModal}
+            onSelectThread={onSelectThread}
+          />
+        )}
 
-        {/* 2. Notification Settings Dropdown */}
-        <ChannelNotificationDropdown
-          open={isNotificationDropdownOpen}
-          onOpenChange={setIsNotificationDropdownOpen}
-          channelNotification={channelNotification}
-          onUpdateNotification={onUpdateNotification}
-        />
+        {/* 2. Notification Settings Dropdown (Server channels only) */}
+        {!isDmMode && (
+          <ChannelNotificationDropdown
+            open={isNotificationDropdownOpen}
+            onOpenChange={setIsNotificationDropdownOpen}
+            channelNotification={channelNotification}
+            onUpdateNotification={onUpdateNotification}
+          />
+        )}
 
         {/* 3. Pinned Messages Popover */}
         <PinnedMessagesPopover
@@ -163,7 +175,7 @@ export function ChannelTopHeaderBar({
           onTogglePin={onTogglePin}
         />
 
-        {/* 4. Member List Toggle */}
+        {/* 4. Member List Toggle (Server) / Show User Profile Toggle (DM / Friends mode) */}
         <Tooltip delayDuration={150}>
           <TooltipTrigger asChild>
             <Button
@@ -180,13 +192,36 @@ export function ChannelTopHeaderBar({
                 'h-8 w-8 transition-colors cursor-pointer',
                 showMemberList ? 'text-foreground bg-accent' : 'text-foreground/70 hover:text-foreground hover:bg-accent/60',
               )}
-              title={isHome ? 'Daftar Teman' : 'Daftar Anggota'}
+              title={
+                isDmMode
+                  ? showMemberList
+                    ? t('Sembunyikan Profil Pengguna')
+                    : t('Tampilkan Profil Pengguna')
+                  : showMemberList
+                  ? t('Sembunyikan Daftar Anggota')
+                  : t('Tampilkan Daftar Anggota')
+              }
+              aria-label={
+                isDmMode
+                  ? showMemberList
+                    ? t('Sembunyikan Profil Pengguna')
+                    : t('Tampilkan Profil Pengguna')
+                  : showMemberList
+                  ? t('Sembunyikan Daftar Anggota')
+                  : t('Tampilkan Daftar Anggota')
+              }
             >
-              <Users className="w-5 h-5" />
+              {isDmMode ? <UserRound className="w-5 h-5" /> : <Users className="w-5 h-5" />}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-            {showMemberList ? 'Sembunyikan Daftar Anggota' : 'Tampilkan Daftar Anggota'}
+            {isDmMode
+              ? showMemberList
+                ? t('Sembunyikan Profil Pengguna')
+                : t('Tampilkan Profil Pengguna')
+              : showMemberList
+              ? t('Sembunyikan Daftar Anggota')
+              : t('Tampilkan Daftar Anggota')}
           </TooltipContent>
         </Tooltip>
 

@@ -25,7 +25,7 @@ import {
   ServersView,
   useServerModals,
 } from '@/features/servers';
-import { UserBottomDock } from '@/features/profile';
+import { UserBottomDock, DmUserProfileSidebar } from '@/features/profile';
 import { FriendsView, AddFriendDialog, type FriendRequest, useFriendsManager } from '@/features/friends';
 import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
@@ -2376,16 +2376,77 @@ export function CommunityPage() {
     />
   );
 
-  // Component: Members Sidebar Content
-  // Component: Members Sidebar Content (delegates to ServerMembersSidebar feature component)
-  const renderMembersSidebarContent = () => (
-    <ServerMembersSidebar
-      displayMembers={displayMembers}
-      onInviteClick={() => setIsInviteOpen(true)}
-      onStartDM={handleStartDM}
-      t={t}
-    />
+  // Active DM partner resolution for user profile sidebar
+  const isDmMode = Boolean(
+    isHome ||
+    activeChannel?.category === 'DIRECT MESSAGES' ||
+    activeChannel?.isDirectMessage ||
+    activeChannel?.id?.startsWith('dm-')
   );
+
+  const activeDmUserId = useMemo(() => {
+    if (!activeChannel) return undefined;
+    if (activeChannel.dmUserId) return activeChannel.dmUserId;
+    if (activeChannel.id?.startsWith('dm-')) {
+      const parts = activeChannel.id.slice(3).split('-').filter(Boolean);
+      return parts.find((p) => p !== currentUser?.id) || parts[0];
+    }
+    return undefined;
+  }, [activeChannel, currentUser?.id]);
+
+  const activeDmMember = useMemo(() => {
+    if (!activeDmUserId) return undefined;
+    return (
+      members.find((m) => m.id === activeDmUserId) ||
+      friends.allFriends.find((f: any) => f.id === activeDmUserId)
+    );
+  }, [activeDmUserId, members, friends.allFriends]);
+
+  // Component: Members / DM User Profile Sidebar Content
+  const renderMembersSidebarContent = () => {
+    if (isDmMode && activeDmUserId) {
+      return (
+        <DmUserProfileSidebar
+          userId={activeDmUserId}
+          member={activeDmMember}
+          currentUser={currentUser}
+          hubs={hubs}
+          friends={friends.allFriends}
+          onStartCall={(callType) => {
+            if (activeDmUserId) {
+              handleCreateCallLog({
+                peerId: activeDmUserId,
+                peerName: activeDmMember?.name || activeChannel?.name || 'Direct Message',
+                peerAvatar: activeDmMember?.avatar || null,
+                type: 'outgoing',
+                isVideo: callType === 'video',
+                channelId: activeChannel?.id,
+                duration: 'Ongoing',
+              });
+            }
+          }}
+          onSelectHub={(hubId) => {
+            setActiveHubId(hubId);
+            setIsMobileMembersOpen(false);
+          }}
+          onClose={() => {
+            setShowMemberList(false);
+            setIsMobileMembersOpen(false);
+          }}
+          t={t}
+        />
+      );
+    }
+
+    return (
+      <ServerMembersSidebar
+        displayMembers={displayMembers}
+        onInviteClick={() => setIsInviteOpen(true)}
+        onStartDM={handleStartDM}
+        t={t}
+      />
+    );
+  };
 
   return (
     <LockedFeatureGuard
@@ -2557,9 +2618,9 @@ export function CommunityPage() {
           t={t}
         />
 
-        {/* DESKTOP MEMBERS SIDEBAR (w-60 - Hidden in Voice Channels like Discord) */}
+        {/* DESKTOP MEMBERS / USER PROFILE SIDEBAR */}
         {showMemberList && !isFriendsView && activeChannel?.type !== 'voice' && activeCallChannelId !== activeChannel?.id && (
-          <div className="hidden lg:flex shrink-0">
+          <div className={cn("hidden lg:flex shrink-0", isDmMode && activeDmUserId ? "w-80" : "w-60")}>
             {renderMembersSidebarContent()}
           </div>
         )}
