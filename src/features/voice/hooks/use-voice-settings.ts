@@ -72,7 +72,8 @@ export function useVoiceSettings() {
   const refreshDevices = useCallback(async () => {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.enumerateDevices) return;
     try {
-      // Request mic permission first to get labels
+      // Ensure mic permission so browser exposes real device labels
+      try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); s.getTracks().forEach((t) => t.stop()); } catch {}
       const devices = await navigator.mediaDevices.enumerateDevices();
       const inputs = devices.filter((d) => d.kind === 'audioinput');
       const outputs = devices.filter((d) => d.kind === 'audiooutput');

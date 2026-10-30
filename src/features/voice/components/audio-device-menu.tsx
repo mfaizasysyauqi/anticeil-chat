@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Mic,
   Headphones,
@@ -48,6 +48,29 @@ export function AudioDeviceMenu({
   const devices = isInput ? audioInputDevices : audioOutputDevices;
   const currentDeviceId = isInput ? settings.inputDeviceId : settings.outputDeviceId;
   const currentVolume = isInput ? settings.inputVolume : settings.outputVolume;
+
+  // Parse device label into Discord-like title & subtitle
+  // e.g. "Microphone Array (Realtek(R) Audio)" -> title: "Realtek(R) Audio", subtitle: "Microphone Array"
+  // e.g. "Speakers (Realtek(R) Audio)" -> title: "Realtek(R) Audio", subtitle: "Speakers"
+  const parseDeviceName = (rawLabel: string) => {
+    if (!rawLabel) return { title: isInput ? 'Microphone' : 'Speakers', subtitle: '' };
+    const match = rawLabel.match(/^(.*?)\s*\((.*?)\)$/);
+    if (match) {
+      const typePart = match[1].trim(); // "Microphone Array" or "Speakers"
+      const brandPart = match[2].trim(); // "Realtek(R) Audio"
+      return { title: brandPart, subtitle: typePart };
+    }
+    return { title: rawLabel, subtitle: isInput ? 'Microphone' : 'Speakers' };
+  };
+
+  const firstRealDevice = devices.find((d) => {
+    if (d.deviceId === 'default' || d.deviceId === 'communications') return false;
+    const lbl = d.label.toLowerCase();
+    if (lbl.startsWith('default - ') || lbl.startsWith('default–')) return false;
+    if (lbl.startsWith('communications - ') || lbl.startsWith('communications–')) return false;
+    return true;
+  });
+  const defaultSubtitle = firstRealDevice ? parseDeviceName(firstRealDevice.label).title : (isInput ? 'Realtek(R) Audio' : 'Realtek(R) Audio');
 
   const getSelectedDeviceLabel = () => {
     if (currentDeviceId === 'default') {
@@ -122,7 +145,7 @@ export function AudioDeviceMenu({
                     {isInput ? <Mic className="w-4 h-4 text-muted-foreground shrink-0" /> : <Headphones className="w-4 h-4 text-muted-foreground shrink-0" />}
                     <div className="flex flex-col min-w-0">
                       <span className="font-medium text-xs text-foreground truncate">Windows Default</span>
-                      <span className="text-[10px] text-muted-foreground truncate">System audio device</span>
+                      <span className="text-[10px] text-muted-foreground truncate">{defaultSubtitle}</span>
                     </div>
                   </div>
                   <div className={cn(
@@ -159,9 +182,7 @@ export function AudioDeviceMenu({
                       <div className="flex items-center gap-2.5 min-w-0">
                         {isInput ? <Mic className="w-4 h-4 text-muted-foreground shrink-0" /> : <Headphones className="w-4 h-4 text-muted-foreground shrink-0" />}
                         <div className="flex flex-col min-w-0">
-                          <span className="font-medium text-xs text-foreground truncate">
-                            {device.label || `${isInput ? 'Microphone' : 'Speaker'} ${idx + 1}`}
-                          </span>
+                          {(() => { const { title, subtitle } = parseDeviceName(device.label); return (<><span className="font-medium text-xs text-foreground truncate">{title}</span>{subtitle && <span className="text-[10px] text-muted-foreground truncate">{subtitle}</span>}</>); })()}
                         </div>
                       </div>
                       <div className={cn(
