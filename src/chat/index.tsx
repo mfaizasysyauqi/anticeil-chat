@@ -59,6 +59,14 @@ const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
   getToken: () => localStorage.getItem('token') || localStorage.getItem('ap_token'),
   getProjectId: () => localStorage.getItem('projectId') || 'default',
+  getUser: () => {
+    try {
+      const raw = localStorage.getItem('user') || localStorage.getItem('currentUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  },
 };
 const userMutations: any = {
   useUpdateUser: () => ({ mutateAsync: async () => {}, mutate: () => {} }),

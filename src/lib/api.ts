@@ -21,13 +21,15 @@ export const api = {
   post: async <T = any>(url: string, data?: any, _config?: any): Promise<T> => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('ap_token') || '';
+      // Ensure a JSON body is sent when Content-Type is application/json to avoid Fastify FST_ERR_CTP_EMPTY_JSON_BODY
+      const payload = data !== undefined ? data : {};
       const res = await fetch(`${API_BASE_URL}/api${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: data ? JSON.stringify(data) : undefined,
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(res.statusText);
       return (await res.json()) as T;
@@ -38,13 +40,14 @@ export const api = {
   put: async <T = any>(url: string, data?: any, _config?: any): Promise<T> => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('ap_token') || '';
+      const payload = data !== undefined ? data : {};
       const res = await fetch(`${API_BASE_URL}/api${url}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: data ? JSON.stringify(data) : undefined,
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(res.statusText);
       return (await res.json()) as T;
