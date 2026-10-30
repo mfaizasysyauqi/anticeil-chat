@@ -1538,6 +1538,7 @@ export function CommunityPage() {
     displayMembers,
     currentUser,
     members,
+    dmChannels,
     t,
   });
 
@@ -1878,11 +1879,8 @@ export function CommunityPage() {
 
   const activeDmMember = useMemo(() => {
     if (!activeDmUserId) return undefined;
-    return (
-      members.find((m) => m.id === activeDmUserId) ||
-      friends.allFriends.find((f: any) => f.id === activeDmUserId)
-    );
-  }, [activeDmUserId, members, friends.allFriends]);
+    return allKnownMembers.find((m) => m.id === activeDmUserId);
+  }, [activeDmUserId, allKnownMembers]);
 
   // Component: Members / DM User Profile Sidebar Content
   const renderMembersSidebarContent = () => {

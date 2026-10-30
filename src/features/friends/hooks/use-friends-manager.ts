@@ -1,13 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import type { CommunityMember } from '@/chat/chat-types';
-import type { FriendRequest, FriendsTab } from '../types';
+import type { CommunityMember, CommunityChannel } from '@/chat/chat-types';
+import type { FriendMember, FriendRequest, FriendsTab } from '../types';
 import { friendsApi } from '../api/friends-api';
 
 export interface UseFriendsManagerOptions {
   displayMembers: CommunityMember[];
   currentUser: any;
   members: CommunityMember[];
+  dmChannels?: CommunityChannel[];
   t: (key: string) => string;
 }
 
@@ -15,6 +16,7 @@ export function useFriendsManager({
   displayMembers,
   currentUser,
   members,
+  dmChannels,
   t,
 }: UseFriendsManagerOptions) {
   const [friendsTab, setFriendsTab] = useState<FriendsTab>('online');
@@ -42,14 +44,88 @@ export function useFriendsManager({
   }, [fetchFriendRequests]);
 
   const allFriends = useMemo(() => {
-    // Other known real members who are not the current user
-    const otherMembers = members.filter(
-      (m) =>
-        m.id !== currentUser?.id &&
-        (!currentUser?.email || m.email?.toLowerCase() !== currentUser?.email?.toLowerCase()),
-    );
+    const friendMap = new Map<string, FriendMember>();
 
-    return persistedFriends
+    // 1. Other real workspace members (not current user)
+    displayMembers
+      .concat(members)
+      .filter(
+        (m) =>
+          m.id !== currentUser?.id &&
+          (!currentUser?.email || m.email?.toLowerCase() !== currentUser?.email?.toLowerCase()) &&
+          (!currentUser?.name || m.name?.toLowerCase() !== currentUser?.name?.toLowerCase()),
+      )
+      .forEach((m) => {
+        const isGeneric = !m.name || m.name.toLowerCase() === 'pengguna' || m.name.toLowerCase() === 'pengguna anticeil';
+        if (isGeneric) return;
+        const key = m.id || m.email || m.name;
+        if (!friendMap.has(key)) {
+          friendMap.set(key, {
+            id: m.id,
+            name: m.name,
+            username: m.username || m.email?.split('@')[0] || null,
+            avatar: m.avatar || null,
+            email: m.email || '',
+            status: (m.status || 'online') as any,
+          });
+        }
+      });
+
+    // 2. Friends from active DM channels in sidebar
+    (dmChannels || [])
+      .filter((dm) => {
+        const name = (dm.name || '').toLowerCase().trim();
+        return (
+          typeof dm.id === 'string' &&
+          dm.id.startsWith('dm-') &&
+          dm.type !== 'voice' &&
+          name &&
+          name !== 'pengguna' &&
+          name !== 'pengguna anticeil' &&
+          name !== 'general voice' &&
+          name !== 'general' &&
+          name !== 'forum-diskusi'
+        );
+      })
+      .forEach((dm) => {
+        const member = members
+          .concat(displayMembers)
+          .find(
+            (m) =>
+              m.id === dm.dmUserId ||
+              (m.id && dm.id.includes(m.id)) ||
+              (m.name && m.name.toLowerCase() === dm.name.toLowerCase()),
+          );
+        const name = member?.name || dm.name;
+        const isSelf =
+          (currentUser?.id && (dm.dmUserId === currentUser.id || member?.id === currentUser.id)) ||
+          (currentUser?.name && name.toLowerCase() === currentUser.name.toLowerCase()) ||
+          (currentUser?.email && member?.email?.toLowerCase() === currentUser.email.toLowerCase());
+        const isGeneric = name.toLowerCase() === 'pengguna' || name.toLowerCase() === 'pengguna anticeil';
+        if (isSelf || isGeneric) return;
+
+        const key = member?.id || dm.dmUserId || dm.name;
+        if (friendMap.has(key)) {
+          const existing = friendMap.get(key)!;
+          friendMap.set(key, {
+            ...existing,
+            avatar: member?.avatar || existing.avatar,
+            username: member?.username || existing.username,
+          });
+        } else {
+          friendMap.set(key, {
+            id: member?.id || dm.dmUserId || dm.id,
+            name,
+            username: member?.username || null,
+            avatar: member?.avatar || null,
+            email: member?.email || '',
+            status: (member?.status || 'online') as any,
+          });
+        }
+      });
+
+    // 3. Persisted friends from database
+    persistedFriends
       .filter((f) => {
         const isSelf =
           (currentUser?.id && f.id === currentUser.id) ||
@@ -58,49 +134,46 @@ export function useFriendsManager({
           (currentUser?.name && f.name?.toLowerCase() === currentUser.name.toLowerCase());
         return !isSelf;
       })
-      .map((f) => {
-        // Enrich friend profile from members directory (fixes missing photo / generic 'Pengguna' name)
-        let match = members.find(
-          (m) =>
-            (f.id && m.id === f.id) ||
-            (f.email && m.email && m.email.toLowerCase() === f.email.toLowerCase()) ||
-            (f.username && m.username && m.username.toLowerCase() === f.username.toLowerCase()) ||
-            (f.name && m.name && m.name.toLowerCase() === f.name.toLowerCase()),
-        );
-
+      .forEach((f) => {
+        let match = members
+          .concat(displayMembers)
+          .find(
+            (m) =>
+              (f.id && m.id === f.id) ||
+              (f.email && m.email && m.email.toLowerCase() === f.email.toLowerCase()) ||
+              (f.username && m.username && m.username.toLowerCase() === f.username.toLowerCase()) ||
+              (f.name && m.name && m.name.toLowerCase() === f.name.toLowerCase()),
+          );
         const isGeneric =
           !f.name ||
           f.name.toLowerCase() === 'pengguna' ||
           f.name.toLowerCase() === 'pengguna anticeil' ||
           f.name.toLowerCase() === 'user' ||
           f.name.toLowerCase() === 'teman';
-
-        // Fallback: If generic 'Pengguna' and only 1 other member in workspace, it's definitely them
-        if (!match && isGeneric && otherMembers.length > 0) {
-          match = otherMembers[0];
+        if (isGeneric && !match) {
+          const other = displayMembers.concat(members).find((m) => m.id !== currentUser?.id);
+          if (other) match = other;
         }
 
-        if (match) {
-          return {
-            ...f,
-            id: match.id || f.id,
-            name: isGeneric && match.name ? match.name : f.name || match.name,
-            avatar: match.avatar || f.avatar,
-            username: match.username || f.username || match.email?.split('@')[0],
-            email: match.email || f.email,
-          };
-        }
-        return f;
-      })
-      .filter((f) => {
-        const isGeneric = !f.name || f.name.toLowerCase() === 'pengguna' || f.name.toLowerCase() === 'pengguna anticeil';
-        const isSelf =
-          (currentUser?.id && f.id === currentUser.id) ||
-          (currentUser?.email && f.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-          (currentUser?.name && f.name?.toLowerCase() === currentUser.name.toLowerCase());
-        return !isGeneric && !isSelf;
+        const name = isGeneric && match?.name ? match.name : f.name || match?.name || '';
+        const finalGeneric = !name || name.toLowerCase() === 'pengguna' || name.toLowerCase() === 'pengguna anticeil';
+        if (finalGeneric) return;
+
+        const friendItem: FriendMember = {
+          id: match?.id || f.id,
+          name,
+          username: match?.username || f.username || match?.email?.split('@')[0] || null,
+          avatar: match?.avatar || f.avatar || null,
+          email: match?.email || f.email || '',
+          status: (f.status || match?.status || 'online') as any,
+        };
+
+        const key = friendItem.id || friendItem.email || friendItem.name;
+        friendMap.set(key, friendItem);
       });
-  }, [persistedFriends, currentUser, members]);
+
+    return Array.from(friendMap.values());
+  }, [persistedFriends, currentUser, members, displayMembers, dmChannels]);
 
   const onlineFriends = useMemo(() => {
     return allFriends.filter((f) => f.status !== 'offline');
