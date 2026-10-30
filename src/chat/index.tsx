@@ -1660,6 +1660,27 @@ export function CommunityPage() {
     />
   );
 
+  // Comprehensive directory of all known members (friends + server members + current user)
+  // Ensures DM avatars in sidebar and chat headers never lose their photo
+  const allKnownMembers = useMemo(() => {
+    const map = new Map<string, CommunityMember>();
+    members.forEach((m) => map.set(m.id, m));
+    displayMembers.forEach((m) => map.set(m.id, m));
+    (friends.allFriends || []).forEach((f) => {
+      const existing = map.get(f.id);
+      map.set(f.id, {
+        id: f.id,
+        name: f.name || existing?.name || 'Member',
+        email: f.email || existing?.email || '',
+        avatar: f.avatar || existing?.avatar || null,
+        username: f.username || existing?.username || null,
+        role: existing?.role || 'member',
+        status: (f.status as any) || existing?.status || 'online',
+      });
+    });
+    return Array.from(map.values());
+  }, [members, displayMembers, friends.allFriends]);
+
   // Component: Channels Sidebar Content (delegates to ChannelsSidebar feature component)
   const renderChannelsSidebarContent = (onItemClick?: () => void) => (
     <ChannelsSidebar
@@ -1678,7 +1699,7 @@ export function CommunityPage() {
       setFriendsTab={friends.setFriendsTab}
       friendRequests={friends.friendRequests}
       dmChannels={dmChannels}
-      members={friends.effectiveMembers || members}
+      members={allKnownMembers}
       collapsedCategories={collapsedCategories}
       setCollapsedCategories={setCollapsedCategories}
       threadsMap={threadsMap}

@@ -6,19 +6,44 @@ export const friendsApi = {
     try {
       const data = await api.get<any[]>('/v1/community/friends');
       if (!Array.isArray(data)) return [];
-      return data.map((f: any) => ({
-        id: f.id,
-        name:
+      return data.map((f: any) => {
+        // Backend may return nested friend/user/member object or flat fields
+        const u = f.friend || f.user || f.member || f.targetUser || f.sender || f.receiver || f;
+        const firstName = u.firstName || f.firstName || '';
+        const lastName = u.lastName || f.lastName || '';
+        const fullName =
+          u.name ||
           f.name ||
+          u.displayName ||
           f.displayName ||
-          `${f.firstName || ''} ${f.lastName || ''}`.trim() ||
+          `${firstName} ${lastName}`.trim() ||
+          u.email?.split('@')[0] ||
           f.email?.split('@')[0] ||
-          'Pengguna Anticeil',
-        username: f.username || f.email?.split('@')[0] || null,
-        avatar: f.imageUrl || f.profileImageUrl || f.avatar || f.picture || null,
-        email: f.email || '',
-        status: f.status || 'online',
-      }));
+          'Pengguna Anticeil';
+        const username =
+          u.username ||
+          f.username ||
+          u.email?.split('@')[0]?.toLowerCase().replace(/[^a-z0-9_]/g, '') ||
+          null;
+        const avatar =
+          u.imageUrl ||
+          u.profileImageUrl ||
+          u.avatar ||
+          u.picture ||
+          f.imageUrl ||
+          f.profileImageUrl ||
+          f.avatar ||
+          f.picture ||
+          null;
+        return {
+          id: u.id || f.id || f.friendId || f.userId,
+          name: fullName,
+          username,
+          avatar,
+          email: u.email || f.email || '',
+          status: u.status || f.status || 'online',
+        };
+      });
     } catch {
       return [];
     }

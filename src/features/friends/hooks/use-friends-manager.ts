@@ -42,10 +42,32 @@ export function useFriendsManager({
   }, [fetchFriendRequests]);
 
   const allFriends = useMemo(() => {
-    return persistedFriends.filter(
-      (f) => f.id !== currentUser?.id && f.email !== currentUser?.email,
-    );
-  }, [persistedFriends, currentUser]);
+    return persistedFriends
+      .filter((f) => f.id !== currentUser?.id && f.email !== currentUser?.email)
+      .map((f) => {
+        // Enrich friend profile from members directory (fixes missing photo / generic 'Pengguna' name)
+        const match = members.find(
+          (m) =>
+            (f.id && m.id === f.id) ||
+            (f.email && m.email && m.email.toLowerCase() === f.email.toLowerCase()) ||
+            (f.username && m.username && m.username.toLowerCase() === f.username.toLowerCase()) ||
+            (f.name && m.name && m.name.toLowerCase() === f.name.toLowerCase()),
+        );
+        if (match) {
+          const isGeneric =
+            !f.name ||
+            f.name.toLowerCase() === 'pengguna' ||
+            f.name.toLowerCase() === 'pengguna anticeil';
+          return {
+            ...f,
+            name: isGeneric && match.name ? match.name : f.name || match.name,
+            avatar: match.avatar || f.avatar,
+            username: match.username || f.username,
+          };
+        }
+        return f;
+      });
+  }, [persistedFriends, currentUser, members]);
 
   const onlineFriends = useMemo(() => {
     return allFriends.filter((f) => f.status !== 'offline');
