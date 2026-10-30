@@ -322,7 +322,9 @@ export function HomeChannelsSidebar({
             typeof dm.id === 'string' &&
             dm.id.startsWith('dm-') &&
             dm.type !== 'voice' &&
-            !dm.name.toLowerCase().includes('general voice'),
+            !dm.name.toLowerCase().includes('general voice') &&
+            dm.name.toLowerCase() !== 'pengguna' &&
+            dm.name.toLowerCase() !== 'pengguna anticeil',
         ).length === 0 ? (
           <div className="px-2.5 py-3 text-[11px] text-muted-foreground/60 leading-relaxed text-center">
             <p>{t('Belum ada pesan langsung.')}</p>
@@ -344,11 +346,20 @@ export function HomeChannelsSidebar({
                   typeof dm.id === 'string' &&
                   dm.id.startsWith('dm-') &&
                   dm.type !== 'voice' &&
-                  !dm.name.toLowerCase().includes('general voice'),
+                  !dm.name.toLowerCase().includes('general voice') &&
+                  dm.name.toLowerCase() !== 'pengguna' &&
+                  dm.name.toLowerCase() !== 'pengguna anticeil',
               )
               .map((dm) => {
               const isActiveDm = activeChannelId === dm.id;
-              const member = members.find((m) => m.id === dm.dmUserId || `dm-${m.id}` === dm.id || (m.id && dm.id.includes(m.id)));
+              const member = members.find(
+                (m) =>
+                  m.id === dm.dmUserId ||
+                  `dm-${m.id}` === dm.id ||
+                  (m.id && dm.id.includes(m.id)) ||
+                  (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) ||
+                  (m.username && dm.name && m.username.toLowerCase() === dm.name.toLowerCase()),
+              );
               return (
                 <button
                   key={dm.id}

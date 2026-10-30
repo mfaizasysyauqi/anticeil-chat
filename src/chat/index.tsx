@@ -61,7 +61,10 @@ const authenticationSession: any = {
   getProjectId: () => localStorage.getItem('projectId') || 'default',
   getUser: () => {
     try {
-      const raw = localStorage.getItem('user') || localStorage.getItem('currentUser');
+      const raw =
+        localStorage.getItem('user') ||
+        localStorage.getItem('currentUser') ||
+        localStorage.getItem('anticeil_current_user');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -961,8 +964,9 @@ export function CommunityPage() {
             if (Array.isArray(friendsRes) && myId) {
               friendsRes.forEach((f) => {
                 if (!f.id || f.id === myId) return;
-                const dmId = getDmChannelId(myId, f.id);
                 const dmName = f.name || f.username || 'Direct Message';
+                if (dmName.toLowerCase() === 'pengguna' || dmName.toLowerCase() === 'pengguna anticeil') return;
+                const dmId = getDmChannelId(myId, f.id);
                 friendDms.push({
                   id: dmId,
                   name: dmName,
@@ -1545,13 +1549,22 @@ export function CommunityPage() {
 
     setChannels((prev) => {
       let changed = false;
-      const currentList = [...prev];
+      // Purge any stale 'pengguna' or 'general voice' channels
+      const currentList = prev.filter((c) => {
+        if (c.category !== 'DIRECT MESSAGES') return true;
+        const name = (c.name || '').toLowerCase().trim();
+        return name !== 'pengguna' && name !== 'pengguna anticeil' && name !== 'general voice';
+      });
+      if (currentList.length !== prev.length) {
+        changed = true;
+      }
       friendsList.forEach((friend) => {
         if (!friend.id || friend.id === currentUser.id) return;
+        const dmName = friend.name || friend.username || 'Direct Message';
+        if (dmName.toLowerCase() === 'pengguna' || dmName.toLowerCase() === 'pengguna anticeil') return;
         const dmId = getDmChannelId(currentUser.id, friend.id);
         const exists = currentList.some((c) => c.id === dmId);
         if (!exists) {
-          const dmName = friend.name || friend.username || 'Direct Message';
           const newDm: CommunityChannel = {
             id: dmId,
             name: dmName,

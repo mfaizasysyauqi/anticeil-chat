@@ -64,9 +64,9 @@ export function loadStoredDmChannels(): CommunityChannel[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // Strict filter: ONLY real DM channels (ID starts with 'dm-', text type only, not a server channel, not named after server channels)
+    // Strict filter: ONLY real DM channels (ID starts with 'dm-', text type only, not a server channel, not named after server channels, no generic placeholders)
     const validDms = parsed.filter((c: any) => {
-      const name = (c?.name || '').toLowerCase();
+      const name = (c?.name || '').toLowerCase().trim();
       const id = String(c?.id || '');
       return (
         id.startsWith('dm-') &&
@@ -77,7 +77,9 @@ export function loadStoredDmChannels(): CommunityChannel[] {
         c?.type !== 'kanban' &&
         name !== 'general voice' &&
         name !== 'general' &&
-        name !== 'forum-diskusi'
+        name !== 'forum-diskusi' &&
+        name !== 'pengguna' &&
+        name !== 'pengguna anticeil'
       );
     });
     localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(validDms));
@@ -91,7 +93,7 @@ export function saveStoredDmChannels(channels: CommunityChannel[]): void {
   try {
     if (typeof window === 'undefined') return;
     const dmsOnly = channels.filter((c: any) => {
-      const name = (c?.name || '').toLowerCase();
+      const name = (c?.name || '').toLowerCase().trim();
       const id = String(c?.id || '');
       return (
         id.startsWith('dm-') &&
@@ -102,7 +104,9 @@ export function saveStoredDmChannels(channels: CommunityChannel[]): void {
         c?.type !== 'kanban' &&
         name !== 'general voice' &&
         name !== 'general' &&
-        name !== 'forum-diskusi'
+        name !== 'forum-diskusi' &&
+        name !== 'pengguna' &&
+        name !== 'pengguna anticeil'
       );
     });
     localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(dmsOnly));

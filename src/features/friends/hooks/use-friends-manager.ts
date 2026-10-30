@@ -42,30 +42,63 @@ export function useFriendsManager({
   }, [fetchFriendRequests]);
 
   const allFriends = useMemo(() => {
+    // Other known real members who are not the current user
+    const otherMembers = members.filter(
+      (m) =>
+        m.id !== currentUser?.id &&
+        (!currentUser?.email || m.email?.toLowerCase() !== currentUser?.email?.toLowerCase()),
+    );
+
     return persistedFriends
-      .filter((f) => f.id !== currentUser?.id && f.email !== currentUser?.email)
+      .filter((f) => {
+        const isSelf =
+          (currentUser?.id && f.id === currentUser.id) ||
+          (currentUser?.email && f.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+          (currentUser?.username && f.username?.toLowerCase() === currentUser.username.toLowerCase()) ||
+          (currentUser?.name && f.name?.toLowerCase() === currentUser.name.toLowerCase());
+        return !isSelf;
+      })
       .map((f) => {
         // Enrich friend profile from members directory (fixes missing photo / generic 'Pengguna' name)
-        const match = members.find(
+        let match = members.find(
           (m) =>
             (f.id && m.id === f.id) ||
             (f.email && m.email && m.email.toLowerCase() === f.email.toLowerCase()) ||
             (f.username && m.username && m.username.toLowerCase() === f.username.toLowerCase()) ||
             (f.name && m.name && m.name.toLowerCase() === f.name.toLowerCase()),
         );
+
+        const isGeneric =
+          !f.name ||
+          f.name.toLowerCase() === 'pengguna' ||
+          f.name.toLowerCase() === 'pengguna anticeil' ||
+          f.name.toLowerCase() === 'user' ||
+          f.name.toLowerCase() === 'teman';
+
+        // Fallback: If generic 'Pengguna' and only 1 other member in workspace, it's definitely them
+        if (!match && isGeneric && otherMembers.length > 0) {
+          match = otherMembers[0];
+        }
+
         if (match) {
-          const isGeneric =
-            !f.name ||
-            f.name.toLowerCase() === 'pengguna' ||
-            f.name.toLowerCase() === 'pengguna anticeil';
           return {
             ...f,
+            id: match.id || f.id,
             name: isGeneric && match.name ? match.name : f.name || match.name,
             avatar: match.avatar || f.avatar,
-            username: match.username || f.username,
+            username: match.username || f.username || match.email?.split('@')[0],
+            email: match.email || f.email,
           };
         }
         return f;
+      })
+      .filter((f) => {
+        const isGeneric = !f.name || f.name.toLowerCase() === 'pengguna' || f.name.toLowerCase() === 'pengguna anticeil';
+        const isSelf =
+          (currentUser?.id && f.id === currentUser.id) ||
+          (currentUser?.email && f.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+          (currentUser?.name && f.name?.toLowerCase() === currentUser.name.toLowerCase());
+        return !isGeneric && !isSelf;
       });
   }, [persistedFriends, currentUser, members]);
 
