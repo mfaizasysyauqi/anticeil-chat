@@ -18,6 +18,8 @@ import {
   Volume2,
   MessagesSquare,
   Columns3,
+  Calendar,
+  Gem,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -60,6 +62,8 @@ export interface ServerChannelsSidebarProps {
   onOpenEditChannel: (channel: CommunityChannel) => void;
   onUpdateHubIcon?: (file: File) => Promise<void> | void;
   setIsCallPiP: (pip: boolean) => void;
+  calendarEvents?: any[];
+  onOpenServerEvents?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -85,6 +89,8 @@ export function ServerChannelsSidebar({
   onOpenEditChannel,
   onUpdateHubIcon,
   setIsCallPiP,
+  calendarEvents = [],
+  onOpenServerEvents,
   t,
 }: ServerChannelsSidebarProps) {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
@@ -229,6 +235,38 @@ export function ServerChannelsSidebar({
 
       {/* Scroll Area: Server channels grouped by category */}
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin]">
+        {/* Discord-style Server Events & Boost Entry */}
+        {activeHub && (
+          <div className="space-y-0.5 mb-3">
+            {(() => {
+              const count = calendarEvents.filter((ev) => ev.hubId === activeHub.id || (ev.hubName && ev.hubName.toLowerCase() === activeHub.name.toLowerCase())).length;
+              return (
+                <button
+                  type="button"
+                  onClick={() => onOpenServerEvents?.()}
+                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-[6px] hover:bg-sidebar-accent/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer group text-xs font-semibold"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Calendar className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
+                    <span className="truncate">{count} {count === 1 ? 'Event' : 'Events'}</span>
+                  </div>
+                </button>
+              );
+            })()}
+
+            <button
+              type="button"
+              onClick={() => onOpenServerSettings('boost')}
+              className="w-full flex items-center justify-between px-2 py-1.5 rounded-[6px] hover:bg-sidebar-accent/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer group text-xs font-semibold"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Gem className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
+                <span className="truncate">Server Boosts</span>
+              </div>
+            </button>
+          </div>
+        )}
+
         <div className="space-y-4">
           {hubChannels.length === 0 ? (
             <div className="px-2.5 py-4 text-center">

@@ -29,6 +29,7 @@ import { FriendsView, AddFriendDialog, type FriendRequest, useFriendsManager, fr
 import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
 import { CalendarView, type CalendarEvent, useCalendarEvents } from '@/features/calendar';
+import { ServerEventsModal } from '@/features/events';
 import { AssignmentsView, type AssignmentItem, useAssignments } from '@/features/assignments';
 import { CallsView, type CallLogItem, useCallLogs } from '@/features/calls';
 import { AppsView } from '@/features/apps';
@@ -485,6 +486,7 @@ export function CommunityPage() {
     setEvents: setCalendarEvents,
     handleCreateEvent: createCalendarEvent,
   } = useCalendarEvents();
+  const [isServerEventsModalOpen, setIsServerEventsModalOpen] = useState(false);
 
   const {
     assignments,
@@ -1722,6 +1724,8 @@ export function CommunityPage() {
       activeThread={activeThread}
       setActiveThread={setActiveThread}
       activeCallCounts={activeCallCounts}
+      calendarEvents={calendarEvents}
+      onOpenServerEvents={() => setIsServerEventsModalOpen(true)}
       onItemClick={onItemClick}
       onOpenDmSearch={() =>
         requireAuth(
@@ -2107,7 +2111,20 @@ export function CommunityPage() {
         )}
 
         {/* Community Dialogs & Modals Portal */}
-        <CommunityDialogsPortal
+        <ServerEventsModal
+        isOpen={isServerEventsModalOpen}
+        onClose={() => setIsServerEventsModalOpen(false)}
+        activeHub={activeHub}
+        channels={channels}
+        events={calendarEvents}
+        onCreateEvent={createCalendarEvent}
+        currentUser={currentUser}
+        onJoinChannel={(chId) => {
+          setActiveCallChannelId(chId);
+          setActiveChannelId(chId);
+        }}
+      />
+      <CommunityDialogsPortal
           serverModals={serverModals}
           channelModals={channelModals}
           mediaModals={mediaModals}

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { HomeChannelsSidebar } from './home-channels-sidebar';
 import { ServerChannelsSidebar } from './server-channels-sidebar';
 import type {
@@ -45,6 +45,8 @@ export interface ChannelsSidebarProps {
   onOpenEditHub?: () => void;
   onOpenDeleteHub?: () => void;
   setIsCallPiP: (pip: boolean) => void;
+  calendarEvents?: any[];
+  onOpenServerEvents?: () => void;
   userBottomDock?: React.ReactNode;
   t: (key: string, params?: Record<string, any>) => string;
 }
