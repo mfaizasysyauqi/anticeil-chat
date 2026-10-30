@@ -825,12 +825,37 @@ export const chatApi = {
   // ── Server Invitations (Fullstack Database) ──────────────────────────
   async getServerInvitations(): Promise<ServerInvitation[]> {
     try {
-      const res = await api.get<ServerInvitation[]>('/v1/community/server-invitations');
-      if (Array.isArray(res)) return res;
+      const res = await api.get<any>('/v1/community/server-invitations');
+      // Backend may return array directly or wrapped: { data: [] } or { invitations: [] }
+      const raw: any[] = Array.isArray(res) ? res : (res?.data ?? res?.invitations ?? []);
+      return raw.map((r: any) => {
+        const hub = r.hub || r.server || {};
+        const inviter = r.inviter || r.sender || r.from || {};
+        return {
+          id: r.id,
+          serverId: r.serverId || r.hubId || hub.id || r.id,
+          serverName: r.serverName || r.hubName || hub.name || 'Server',
+          serverDescription: r.serverDescription || hub.description || undefined,
+          serverIconUrl: r.serverIconUrl || hub.iconUrl || undefined,
+          inviterName:
+            r.inviterName ||
+            r.senderName ||
+            inviter.name ||
+            inviter.displayName ||
+            [inviter.firstName, inviter.lastName].filter(Boolean).join(' ').trim() ||
+            'Pengguna Anticeil',
+          inviterUsername:
+            r.inviterUsername || r.senderUsername || inviter.username || undefined,
+          inviterAvatar:
+            r.inviterAvatar || r.senderAvatar || inviter.imageUrl || inviter.avatar || undefined,
+          createdAt: r.createdAt,
+          membersCount: r.membersCount || hub.membersCount || undefined,
+        } satisfies ServerInvitation;
+      });
     } catch (e) {
       console.warn('Failed to fetch server invitations from API', e);
+      return [];
     }
-    return [];
   },
 
   async inviteUserToServer(
