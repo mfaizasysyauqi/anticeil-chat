@@ -381,7 +381,7 @@ export function MessagesFeed({
                                         </div>
                                       ) : (
                                         <p className="text-xs text-white/70 mt-1 truncate font-medium">
-                                          Game ended. Start a new one?
+                                          App ended. Start a new one?
                                         </p>
                                       )}
                                     </div>
