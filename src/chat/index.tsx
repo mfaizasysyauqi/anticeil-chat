@@ -784,7 +784,16 @@ export function CommunityPage() {
   }, [hubChannels]);
 
   const dmChannels = useMemo(() => {
-    return channels.filter((c) => c.category === 'DIRECT MESSAGES');
+    return channels.filter(
+      (c) =>
+        c.category === 'DIRECT MESSAGES' &&
+        typeof c.id === 'string' &&
+        c.id.startsWith('dm-') &&
+        (!c.hubId || c.hubId === 'anticeil') &&
+        c.type !== 'voice' &&
+        c.type !== 'forum' &&
+        c.type !== 'kanban',
+    );
   }, [channels]);
 
   const isHome = activeHubId === 'anticeil';
@@ -968,14 +977,16 @@ export function CommunityPage() {
             }
 
             const dmMap = new Map<string, CommunityChannel>();
-            storedDms.forEach((dm) => dmMap.set(dm.id, dm));
+            storedDms
+              .filter((dm) => typeof dm.id === 'string' && dm.id.startsWith('dm-') && dm.type !== 'voice')
+              .forEach((dm) => dmMap.set(dm.id, dm));
             friendDms.forEach((dm) => {
               if (!dmMap.has(dm.id)) dmMap.set(dm.id, dm);
             });
             const allDms = Array.from(dmMap.values());
             saveStoredDmChannels(allDms);
 
-            const serverChannels = channelsRes.filter((c) => c.category !== 'DIRECT MESSAGES');
+            const serverChannels = channelsRes.filter((c) => c.category !== 'DIRECT MESSAGES' && !c.id.startsWith('dm-'));
             const mergedAllChannels = [...allDms, ...serverChannels];
             setChannels(mergedAllChannels);
 

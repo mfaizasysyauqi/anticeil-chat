@@ -317,7 +317,7 @@ export function HomeChannelsSidebar({
         </div>
 
         {/* Direct Messages List */}
-        {dmChannels.length === 0 ? (
+        {dmChannels.filter((dm) => typeof dm.id === 'string' && dm.id.startsWith('dm-') && dm.type !== 'voice').length === 0 ? (
           <div className="px-2.5 py-3 text-[11px] text-muted-foreground/60 leading-relaxed text-center">
             <p>{t('Belum ada pesan langsung.')}</p>
             <button
@@ -332,7 +332,9 @@ export function HomeChannelsSidebar({
           </div>
         ) : (
           <div className="space-y-0.5">
-            {dmChannels.map((dm) => {
+            {dmChannels
+              .filter((dm) => typeof dm.id === 'string' && dm.id.startsWith('dm-') && dm.type !== 'voice')
+              .map((dm) => {
               const isActiveDm = activeChannelId === dm.id;
               const member = members.find((m) => m.id === dm.dmUserId || `dm-${m.id}` === dm.id || (m.id && dm.id.includes(m.id)));
               return (
