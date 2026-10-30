@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   Mic,
   Headphones,
@@ -133,8 +133,18 @@ export function AudioDeviceMenu({
                   </div>
                 </button>
 
-                {/* Real enumerated devices */}
-                {devices.map((device, idx) => {
+                {/* Real enumerated devices — deduplicated like Discord */}
+                {devices
+                  .filter((d) => {
+                    if (d.deviceId === 'default') return false;
+                    if (d.deviceId === 'communications') return false;
+                    const lbl = d.label.toLowerCase();
+                    if (lbl.startsWith('default - ') || lbl.startsWith('default\u2013')) return false;
+                    if (lbl.startsWith('communications - ') || lbl.startsWith('communications\u2013')) return false;
+                    return true;
+                  })
+                  .filter((d, i, arr) => arr.findIndex((x) => x.label === d.label) === i)
+                  .map((device, idx) => {
                   const isSelected = currentDeviceId === device.deviceId;
                   return (
                     <button
