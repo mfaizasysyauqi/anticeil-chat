@@ -63,7 +63,14 @@ export function loadStoredDmChannels(): CommunityChannel[] {
     const raw = localStorage.getItem(STORAGE_KEY_DM_CHANNELS);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Strict filter: only real DM channels. Purges stale server-channel entries.
+    return parsed.filter(
+      (c: any) =>
+        c?.isDirectMessage === true ||
+        c?.category === 'DIRECT MESSAGES' ||
+        (typeof c?.id === 'string' && c.id.startsWith('dm-')),
+    );
   } catch {
     return [];
   }
