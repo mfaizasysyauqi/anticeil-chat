@@ -1406,9 +1406,10 @@ export function CommunityPage() {
 
 
   // Start DM
-  const handleStartDM = (member: CommunityMember) => {
+  const handleStartDM = (member: any) => {
+    if (!member) return;
     const dmId = currentUser?.id ? getDmChannelId(currentUser.id, member.id) : `dm-${member.id}`;
-    const dmName = member.name || member.username || 'Direct Message';
+    const dmName = member.name || member.username || member.firstName || 'Direct Message';
     setChannels((prev) => {
       const existing = prev.find((c) => c.id === dmId);
       const updated = existing
@@ -1417,7 +1418,7 @@ export function CommunityPage() {
             {
               id: dmId,
               name: dmName,
-              description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role})`,
+              description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role || 'Member'})`,
               category: 'DIRECT MESSAGES' as const,
               hubId: 'anticeil',
               isDirectMessage: true,
@@ -1432,6 +1433,7 @@ export function CommunityPage() {
     // DMs live in Home hub, auto-switch
     setActiveHubId('anticeil');
     setActiveChannelId(dmId);
+    setHomeView('friends');
     setIsMobileChannelsOpen(false);
     setIsMobileMembersOpen(false);
   };
@@ -1627,7 +1629,7 @@ export function CommunityPage() {
       activeChannelId={activeChannelId}
       onSelectFriend={(f) => {
         setUnreadCounts((prev) => ({ ...prev, [f.id]: 0, [`dm-${f.id}`]: 0 }));
-        handleStartDirectMessage(f);
+        handleStartDM(f);
       }}
       onOpenAddFriend={() =>
         requireAuth(
@@ -1770,35 +1772,6 @@ export function CommunityPage() {
     );
   };
 
-  const handleStartDirectMessage = (member: any) => {
-    if (!member) return;
-    const dmId = currentUser?.id ? getDmChannelId(currentUser.id, member.id) : `dm-${member.id}`;
-    const dmName = member.name || member.username || member.firstName || 'Direct Message';
-    setChannels((prev) => {
-      const existing = prev.find((c) => c.id === dmId);
-      const updated = existing
-        ? prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c))
-        : [
-            {
-              id: dmId,
-              name: dmName,
-              description: `Percakapan langsung dengan ${dmName}`,
-              category: 'DIRECT MESSAGES' as const,
-              hubId: 'anticeil',
-              isDirectMessage: true,
-              dmUserId: member.id,
-              type: 'text' as const,
-            },
-            ...prev,
-          ];
-      saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
-      return updated;
-    });
-    setActiveHubId('anticeil');
-    setActiveChannelId(dmId);
-    setHomeView('friends');
-  };
-
   // Component: Discord-Style Friends Main Page (delegates to reusable FriendsView feature component)
   const renderFriendsMainPage = () => (
     <FriendsView
@@ -1816,7 +1789,7 @@ export function CommunityPage() {
         }
         friends.onTabChange(tab);
       }}
-      onStartDM={handleStartDirectMessage}
+      onStartDM={handleStartDM}
       onOpenDmSearch={() =>
         requireAuth(
           () => {
@@ -1971,7 +1944,7 @@ export function CommunityPage() {
           callLogs={callLogs}
           friends={friends}
           handleCreateCallLog={handleCreateCallLog}
-          handleStartDirectMessage={handleStartDirectMessage}
+          handleStartDirectMessage={handleStartDM}
           isAppsView={isAppsView}
           members={members}
           activeCallChannelId={activeCallChannelId}
