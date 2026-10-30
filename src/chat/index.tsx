@@ -53,6 +53,7 @@ import { ChatMobileDrawers } from './components/chat-mobile-drawers';
 import { ChatMainView } from './components/chat-main-view';
 import { useActivityLauncher } from './hooks/use-activity-launcher';
 import { useMessageActions } from './hooks/use-message-actions';
+import { useThreadManager } from './hooks/use-thread-manager';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -755,32 +756,121 @@ export function CommunityPage() {
     mutedUntil: null,
   });
 
-  // ── Discord Threads (Screenshot 3) ───────────────────────────────────
-  const [isThreadsPopoverOpen, setIsThreadsPopoverOpen] = useState(false);
-  const [channelThreads, setChannelThreads] = useState<CommunityThread[]>([]);
-  const [threadSearchQuery, setThreadSearchQuery] = useState('');
-  const [isCreateThreadModalOpen, setIsCreateThreadModalOpen] = useState(false);
-  const [newThreadName, setNewThreadName] = useState('');
-  const [newThreadInitialMsg, setNewThreadInitialMsg] = useState('');
-  const [isSubmittingThread, setIsSubmittingThread] = useState(false);
-  const [activeThread, setActiveThread] = useState<CommunityThread | null>(null);
-  const [threadMessages, setThreadMessages] = useState<CommunityMessage[]>([]);
-  const [threadInputText, setThreadInputText] = useState('');
-  const [isThreadDrawerOpen, setIsThreadDrawerOpen] = useState(false);
+  // Channels filtered by selected Hub
+  const hubChannels = useMemo(() => {
+    return channels.filter(
+      (c) => (c.hubId || 'anticeil') === (activeHubId || 'anticeil') && c.category === 'CHANNELS',
+    );
+  }, [channels, activeHubId]);
 
-  // Forum Channel states (matching Discord Screenshot 3)
-  const [forumSearchQuery, setForumSearchQuery] = useState('');
-  const [forumSort, setForumSort] = useState<'newest' | 'active'>('newest');
-  const [isForumComposerOpen, setIsForumComposerOpen] = useState(false);
-  const [forumNewTitle, setForumNewTitle] = useState('');
-  const [forumNewMessage, setForumNewMessage] = useState('');
-  const [isSubmittingForumPost, setIsSubmittingForumPost] = useState(false);
+  const textChannels = useMemo(() => {
+    return hubChannels.filter((c) => c.type === 'text' || !c.type);
+  }, [hubChannels]);
+
+  const voiceChannels = useMemo(() => {
+    return hubChannels.filter((c) => c.type === 'voice');
+  }, [hubChannels]);
+
+  const forumChannels = useMemo(() => {
+    return hubChannels.filter((c) => c.type === 'forum');
+  }, [hubChannels]);
+
+  const dmChannels = useMemo(() => {
+    return channels.filter((c) => c.category === 'DIRECT MESSAGES');
+  }, [channels]);
+
+  const isHome = activeHubId === 'anticeil';
+
+  // Active channel resolution: Home prefers explicit activeChannelId (DM chat) or null (Friends page).
+  // Servers MUST strictly isolate channels to the active server!
+  const activeChannel = useMemo(() => {
+    if (isHome) {
+      if (!activeChannelId) return null;
+      const found = dmChannels.find((c) => c.id === activeChannelId);
+      if (found) return found;
+      if (activeChannelId.startsWith('dm-')) {
+        const parts = activeChannelId.slice(3).split('-').filter(Boolean);
+        const otherUserId = parts.find((p) => p !== currentUser?.id) || parts[0];
+        const otherMember = members.find((m) => m.id === otherUserId);
+        const dmName = otherMember?.name || otherMember?.username || 'Direct Message';
+        return {
+          id: activeChannelId,
+          name: dmName,
+          description: `Percakapan langsung dengan ${dmName}`,
+          category: 'DIRECT MESSAGES',
+          hubId: 'anticeil',
+          isDirectMessage: true,
+          dmUserId: otherUserId,
+          type: 'text',
+        } as CommunityChannel;
+      }
+      return null;
+    }
+    if (hubChannels.length === 0) return null;
+    if (activeChannelId) {
+      const current = hubChannels.find((c) => c.id === activeChannelId);
+      if (current) return current;
+    }
+    // If activity is selected or activeCallChannelId is set, prefer voice channel over defaulting to first text channel
+    if (selectedActivityAppId || activeCallChannelId) {
+      const voiceCh = hubChannels.find((c) => c.type === 'voice');
+      if (voiceCh) return voiceCh;
+    }
+    return hubChannels[0] || null;
+  }, [isHome, activeChannelId, dmChannels, hubChannels, selectedActivityAppId, activeCallChannelId, members, currentUser]);
+
+  // ── Discord Threads & Forum (Feature-First Hook) ─────────────────────
+  const {
+    isThreadsPopoverOpen,
+    setIsThreadsPopoverOpen,
+    channelThreads,
+    setChannelThreads,
+    threadSearchQuery,
+    setThreadSearchQuery,
+    isCreateThreadModalOpen,
+    setIsCreateThreadModalOpen,
+    newThreadName,
+    setNewThreadName,
+    newThreadInitialMsg,
+    setNewThreadInitialMsg,
+    isSubmittingThread,
+    setIsSubmittingThread,
+    activeThread,
+    setActiveThread,
+    threadMessages,
+    setThreadMessages,
+    threadInputText,
+    setThreadInputText,
+    isThreadDrawerOpen,
+    setIsThreadDrawerOpen,
+    forumSearchQuery,
+    setForumSearchQuery,
+    forumSort,
+    setForumSort,
+    isForumComposerOpen,
+    setIsForumComposerOpen,
+    forumNewTitle,
+    setForumNewTitle,
+    forumNewMessage,
+    setForumNewMessage,
+    isSubmittingForumPost,
+    setIsSubmittingForumPost,
+    threadsMap,
+    setThreadsMap,
+    handleCreateThread,
+    handleSendThreadMessage,
+    handleCreateForumPost,
+  } = useThreadManager({
+    activeChannel,
+    activeChannelId,
+    currentUser,
+    t,
+  });
   const [collapsedCategories, setCollapsedCategories] = useState<{ text: boolean; voice: boolean; forum: boolean }>({
     text: false,
     voice: false,
     forum: false,
   });
-  const [threadsMap, setThreadsMap] = useState<Record<string, CommunityThread[]>>({});
 
   // Audio / mic dummy state for Discord user footer
   const [isMuted, setIsMuted] = useState(false);
@@ -1030,27 +1120,6 @@ export function CommunityPage() {
   }, [activeChannelId]);
 
 
-  // Load thread messages when an active thread is selected
-  useEffect(() => {
-    if (!activeThread) return;
-    let mounted = true;
-    const loadThreadMsgs = async () => {
-      try {
-        const msgs = await communityApi.getThreadMessages(activeThread.id);
-        if (mounted && msgs) {
-          setThreadMessages(msgs);
-        }
-      } catch (err) {
-        console.warn('Failed to load thread messages', activeThread.id, err);
-      }
-    };
-    loadThreadMsgs();
-    return () => {
-      mounted = false;
-    };
-  }, [activeThread?.id]);
-
-
   // 3. WebSocket Realtime Listeners (Feature-First Hook)
   useCommunitySocket({
     socket,
@@ -1060,69 +1129,6 @@ export function CommunityPage() {
     setActiveChannelId,
     setActiveCallCounts,
   });
-
-  // Channels filtered by selected Hub
-  const hubChannels = useMemo(() => {
-    return channels.filter(
-      (c) => (c.hubId || 'anticeil') === (activeHubId || 'anticeil') && c.category === 'CHANNELS',
-    );
-  }, [channels, activeHubId]);
-
-  const textChannels = useMemo(() => {
-    return hubChannels.filter((c) => c.type === 'text' || !c.type);
-  }, [hubChannels]);
-
-  const voiceChannels = useMemo(() => {
-    return hubChannels.filter((c) => c.type === 'voice');
-  }, [hubChannels]);
-
-  const forumChannels = useMemo(() => {
-    return hubChannels.filter((c) => c.type === 'forum');
-  }, [hubChannels]);
-
-  const dmChannels = useMemo(() => {
-    return channels.filter((c) => c.category === 'DIRECT MESSAGES');
-  }, [channels]);
-
-  const isHome = activeHubId === 'anticeil';
-
-  // Active channel resolution: Home prefers explicit activeChannelId (DM chat) or null (Friends page).
-  // Servers MUST strictly isolate channels to the active server!
-  const activeChannel = useMemo(() => {
-    if (isHome) {
-      if (!activeChannelId) return null;
-      const found = dmChannels.find((c) => c.id === activeChannelId);
-      if (found) return found;
-      if (activeChannelId.startsWith('dm-')) {
-        const parts = activeChannelId.slice(3).split('-').filter(Boolean);
-        const otherUserId = parts.find((p) => p !== currentUser?.id) || parts[0];
-        const otherMember = members.find((m) => m.id === otherUserId);
-        const dmName = otherMember?.name || otherMember?.username || 'Direct Message';
-        return {
-          id: activeChannelId,
-          name: dmName,
-          description: `Percakapan langsung dengan ${dmName}`,
-          category: 'DIRECT MESSAGES',
-          hubId: 'anticeil',
-          isDirectMessage: true,
-          dmUserId: otherUserId,
-          type: 'text',
-        } as CommunityChannel;
-      }
-      return null;
-    }
-    if (hubChannels.length === 0) return null;
-    if (activeChannelId) {
-      const current = hubChannels.find((c) => c.id === activeChannelId);
-      if (current) return current;
-    }
-    // If activity is selected or activeCallChannelId is set, prefer voice channel over defaulting to first text channel
-    if (selectedActivityAppId || activeCallChannelId) {
-      const voiceCh = hubChannels.find((c) => c.type === 'voice');
-      if (voiceCh) return voiceCh;
-    }
-    return hubChannels[0] || null;
-  }, [isHome, activeChannelId, dmChannels, hubChannels, selectedActivityAppId, activeCallChannelId, members, currentUser]);
 
   // Canonicalize DM channel ID when opened with legacy single-user id (e.g. ?channel=dm-userId)
   useEffect(() => {
@@ -1364,108 +1370,6 @@ export function CommunityPage() {
     } catch (err) {
       console.error('Failed to update notification settings', err);
       toast.error('Gagal memperbarui notifikasi saluran');
-    }
-  };
-
-  // ── Thread Handlers (Feature-First) ──────────────────────────────────
-  const handleCreateThread = async (name: string, initialMessage?: string) => {
-    if (!activeChannel) return;
-    try {
-      const created = await communityApi.createThread(activeChannel.id, {
-        name,
-        creatorName: currentUser?.firstName || currentUser?.email || 'You',
-        creatorAvatar: currentUser?.imageUrl ?? null,
-        initialMessage,
-      });
-
-      setChannelThreads((prev) => [created, ...prev.filter((t) => t.id !== created.id)]);
-      setActiveThread(created);
-      setIsThreadDrawerOpen(true);
-      setIsCreateThreadModalOpen(false);
-      setIsThreadsPopoverOpen(false);
-      toast.success(`Thread #${created.name} berhasil dibuat! 🧵`);
-    } catch (err) {
-      console.error('Failed to create thread', err);
-      toast.error('Gagal membuat thread');
-      throw err;
-    }
-  };
-
-  const handleSendThreadMessage = async (contentOrEvent?: string | React.FormEvent) => {
-    if (contentOrEvent && typeof contentOrEvent !== 'string') {
-      contentOrEvent.preventDefault();
-    }
-    const content = typeof contentOrEvent === 'string' ? contentOrEvent : threadInputText.trim();
-    if (!content || !activeThread || !activeChannel) return;
-    if (typeof contentOrEvent !== 'string') {
-      setThreadInputText('');
-    }
-    const newMsg: CommunityMessage = {
-      id: `msg_th_${Date.now()}`,
-      channelId: activeChannel.id,
-      threadId: activeThread.id,
-      senderId: currentUser?.id || 'me',
-      senderName: currentUser?.firstName || currentUser?.email || 'You',
-      senderEmail: currentUser?.email || '',
-      senderAvatar: currentUser?.imageUrl ?? null,
-      senderRole: 'member',
-      content,
-      createdAt: new Date().toISOString(),
-    };
-
-    setThreadMessages((prev) => [...prev, newMsg]);
-
-    try {
-      const res = await communityApi.sendThreadMessage(activeThread.id, activeChannel.id, {
-        content,
-        senderName: currentUser?.firstName || currentUser?.email || 'You',
-        senderAvatar: currentUser?.imageUrl ?? null,
-      });
-      if (res && res.id) {
-        setThreadMessages((prev) => prev.map((m) => (m.id === newMsg.id ? res : m)));
-        setActiveThread((prev) => (prev ? { ...prev, messageCount: (prev.messageCount || 0) + 1, lastMessageAt: new Date().toISOString() } : null));
-        setChannelThreads((prev) =>
-          prev.map((t) =>
-            t.id === activeThread.id
-              ? { ...t, messageCount: (t.messageCount || 0) + 1, lastMessageAt: new Date().toISOString() }
-              : t,
-          ),
-        );
-      }
-    } catch (err) {
-      console.error('Failed to send thread message', err);
-    }
-  };
-
-  // ── Forum Channel Create Post Handler (Screenshot 3) ────────────────
-  const handleCreateForumPost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeChannel || !forumNewTitle.trim()) return;
-    setIsSubmittingForumPost(true);
-    try {
-      const created = await communityApi.createThread(activeChannel.id, {
-        name: forumNewTitle.trim(),
-        creatorName: currentUser?.firstName || currentUser?.email || 'You',
-        creatorAvatar: currentUser?.imageUrl ?? null,
-        initialMessage: forumNewMessage.trim() || undefined,
-      });
-      if (created) {
-        setChannelThreads((prev) => [created, ...prev.filter((t) => t.id !== created.id)]);
-        setThreadsMap((prev) => ({
-          ...prev,
-          [activeChannel.id]: [created, ...(prev[activeChannel.id] || []).filter((t) => t.id !== created.id)],
-        }));
-        setActiveThread(created);
-        setIsForumComposerOpen(false);
-        setForumNewTitle('');
-        setForumNewMessage('');
-        toast.success(t(`Post "${created.name}" berhasil dibuat! 💬`));
-      }
-    } catch (err) {
-      console.error('Failed to create forum post', err);
-      toast.error(t('Gagal membuat forum post'));
-    } finally {
-      setIsSubmittingForumPost(false);
     }
   };
 
