@@ -335,7 +335,7 @@ export function MessagesFeed({
                                 >
                                   {/* Invitation Header Label */}
                                   <span className="text-[11px] font-bold text-white/75 tracking-wider uppercase block mb-3.5">
-                                    {isActivityCurrentlyActive ? 'App Invitation' : 'Game Invitation'}
+                                    App Invitation
                                   </span>
 
                                   {/* Main App Info Row */}
