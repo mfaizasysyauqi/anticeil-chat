@@ -53,53 +53,35 @@ export function PendingRequestsTab({
                 </div>
               </div>
 
-              {req.direction === 'incoming' ? (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Tooltip delayDuration={150}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => onAcceptRequest(req)}
-                        className="size-9 rounded-full bg-emerald-500/10 hover:bg-emerald-600 text-emerald-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                      >
-                        <UserCheck className="w-4 h-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                      {t('Terima')}
-                    </TooltipContent>
-                  </Tooltip>
+              <div className="flex items-center gap-2 shrink-0">
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onAcceptRequest(req)}
+                      className="size-9 rounded-full bg-emerald-500/10 hover:bg-emerald-600 text-emerald-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <UserCheck className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
+                    {t('Terima')}
+                  </TooltipContent>
+                </Tooltip>
 
-                  <Tooltip delayDuration={150}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => onRejectRequest(req)}
-                        className="size-9 rounded-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                      >
-                        <UserX className="w-4 h-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                      {t('Tolak')}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Tooltip delayDuration={150}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => onCancelRequest(req)}
-                        className="size-9 rounded-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                      {t('Batalkan')}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              )}
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => (req.direction === 'incoming' ? onRejectRequest(req) : onCancelRequest(req))}
+                      className="size-9 rounded-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      {req.direction === 'incoming' ? <UserX className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
+                    {req.direction === 'incoming' ? t('Tolak') : t('Batalkan')}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           ))}
         </div>

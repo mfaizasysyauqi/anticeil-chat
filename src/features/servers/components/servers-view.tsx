@@ -19,6 +19,7 @@ import {
   Hash,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
@@ -456,25 +457,34 @@ export function ServersView({
                         <span>{inv.membersCount ? `${inv.membersCount.toLocaleString()} Anggota` : 'Komunitas Aktif'}</span>
                       </span>
 
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleRejectInvitation(inv)}
-                          className="h-8 px-3 text-xs font-semibold text-muted-foreground hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5 mr-1" />
-                          <span>{t('Tolak')}</span>
-                        </Button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Tooltip delayDuration={150}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => handleAcceptInvitation(inv)}
+                              className="size-9 rounded-full bg-emerald-500/10 hover:bg-emerald-600 text-emerald-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <Check className="w-4 h-4 stroke-[2.5]" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
+                            {t('Gabung Server')}
+                          </TooltipContent>
+                        </Tooltip>
 
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptInvitation(inv)}
-                          className="h-8 px-3.5 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-black cursor-pointer shadow-2xs gap-1"
-                        >
-                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                          <span>{t('Gabung Server')}</span>
-                        </Button>
+                        <Tooltip delayDuration={150}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => handleRejectInvitation(inv)}
+                              className="size-9 rounded-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
+                            {t('Tolak')}
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   </div>

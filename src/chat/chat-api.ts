@@ -491,14 +491,7 @@ export const chatApi = {
     } catch {}
     const stored = loadStoredRoles(hubId);
     if (stored.length > 0) return stored;
-    const defaults: CommunityCustomRole[] = [
-      { id: 'role-owner', hubId, name: 'Owner', color: '#ef4444', permissions: ['ADMINISTRATOR', 'MANAGE_CHANNELS', 'KICK_MEMBERS', 'BAN_MEMBERS'] },
-      { id: 'role-admin', hubId, name: 'Admin', color: '#8b5cf6', permissions: ['MANAGE_CHANNELS', 'KICK_MEMBERS', 'MANAGE_WEBHOOKS'] },
-      { id: 'role-mod', hubId, name: 'Moderator', color: '#3b82f6', permissions: ['KICK_MEMBERS', 'MANAGE_MESSAGES'] },
-      { id: 'role-member', hubId, name: 'Member', color: '#64748b', permissions: ['SEND_MESSAGES', 'ATTACH_FILES', 'ADD_REACTIONS'] },
-    ];
-    saveStoredRoles(hubId, defaults);
-    return defaults;
+    return [];
   },
 
   async createRole(hubId: string, payload: { name: string; color: string; permissions?: string[] }): Promise<CommunityCustomRole> {
@@ -724,11 +717,11 @@ export const chatApi = {
     channelActivity.sort((a, b) => b.messageCount - a.messageCount);
 
     return {
-      totalMessages: Math.max(totalMessages, 12),
-      totalChannels: Math.max(storedChannels.length, 3),
-      totalMembers: 4,
-      totalBots: 2,
-      botMessages: Math.max(botMessages, 5),
+      totalMessages,
+      totalChannels: storedChannels.length,
+      totalMembers: 0,
+      totalBots: 0,
+      botMessages,
       channelActivity,
     };
   },
