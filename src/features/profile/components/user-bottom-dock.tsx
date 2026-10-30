@@ -1,9 +1,20 @@
-import React from 'react';
-import { Mic, MicOff, Headphones, Settings, Radio, Maximize2, PhoneOff, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Mic,
+  MicOff,
+  Headphones,
+  Settings,
+  Radio,
+  Maximize2,
+  PhoneOff,
+  LogOut,
+  ChevronUp,
+} from 'lucide-react';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
+import { AudioDeviceMenu, VoiceVideoSettingsModal } from '@/features/voice';
 
 interface UserBottomDockProps {
   currentUser: any;
@@ -44,6 +55,7 @@ export function UserBottomDock({
   className,
 }: UserBottomDockProps) {
   const { t } = useTranslation();
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   return (
     <div
@@ -91,7 +103,7 @@ export function UserBottomDock({
         </div>
       )}
 
-      {/* User Dock Bar - Strictly contained inside sidebar width, background matches sidebar theme exactly */}
+      {/* User Dock Bar */}
       {!currentUser ? (
         <div className="w-full h-[64px] px-2.5 flex items-center justify-between gap-2">
           <Button
@@ -159,24 +171,51 @@ export function UserBottomDock({
             </div>
           </div>
 
-          {/* Action icons: Mic, Headphones, Settings, Logout */}
+          {/* Action icons with Discord-style Chevron Menus */}
           <div className="flex items-center gap-0.5 text-muted-foreground shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsMuted(!isMuted)}
-              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
-              title={isMuted ? t('Bunyikan') : t('Bisu')}
-            >
-              {isMuted ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDeafened(!isDeafened)}
-              className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
-              title={isDeafened ? t('Batal Tulikan') : t('Tulikan')}
-            >
-              <Headphones className={cn('w-3.5 h-3.5', isDeafened && 'text-red-400')} />
-            </button>
+            {/* Mic Button with Input Device Chevron Menu */}
+            <div className="flex items-center rounded-md hover:bg-sidebar-accent/60">
+              <button
+                type="button"
+                onClick={() => setIsMuted(!isMuted)}
+                className="h-7 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                title={isMuted ? t('Bunyikan') : t('Bisu')}
+              >
+                {isMuted ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5" />}
+              </button>
+              <AudioDeviceMenu type="input" onOpenFullSettings={() => setIsVoiceModalOpen(true)}>
+                <button
+                  type="button"
+                  className="h-7 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pr-1"
+                  title={t('Pengaturan Perangkat Masukan')}
+                >
+                  <ChevronUp className="w-3 h-3" />
+                </button>
+              </AudioDeviceMenu>
+            </div>
+
+            {/* Headphones Button with Output Device Chevron Menu */}
+            <div className="flex items-center rounded-md hover:bg-sidebar-accent/60">
+              <button
+                type="button"
+                onClick={() => setIsDeafened(!isDeafened)}
+                className="h-7 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                title={isDeafened ? t('Batal Tulikan') : t('Tulikan')}
+              >
+                <Headphones className={cn('w-3.5 h-3.5', isDeafened && 'text-red-400')} />
+              </button>
+              <AudioDeviceMenu type="output" onOpenFullSettings={() => setIsVoiceModalOpen(true)}>
+                <button
+                  type="button"
+                  className="h-7 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pr-1"
+                  title={t('Pengaturan Perangkat Keluaran')}
+                >
+                  <ChevronUp className="w-3 h-3" />
+                </button>
+              </AudioDeviceMenu>
+            </div>
+
+            {/* Settings button */}
             <button
               type="button"
               onClick={onOpenEditProfile}
@@ -185,6 +224,7 @@ export function UserBottomDock({
             >
               <Settings className="w-3.5 h-3.5" />
             </button>
+
             {onLogout && (
               <button
                 type="button"
@@ -198,6 +238,12 @@ export function UserBottomDock({
           </div>
         </div>
       )}
+
+      {/* Voice & Video Full Settings Modal (100% Match Discord Screenshots) */}
+      <VoiceVideoSettingsModal
+        open={isVoiceModalOpen}
+        onOpenChange={setIsVoiceModalOpen}
+      />
     </div>
   );
 }
