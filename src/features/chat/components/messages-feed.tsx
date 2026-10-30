@@ -53,6 +53,7 @@ export interface MessagesFeedProps {
   onStartThread: (initialName: string, initialContent: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onJoinActivity?: (appId: string, channelId?: string) => void;
+  onJumpToMessage?: (messageId: string) => void;
   activeActivityAppId?: string | null;
   activeCallChannelId?: string | null;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
@@ -73,6 +74,7 @@ export function MessagesFeed({
   onStartThread,
   onDeleteMessage,
   onJoinActivity,
+  onJumpToMessage,
   activeActivityAppId,
   activeCallChannelId,
   messagesEndRef,
@@ -163,8 +165,12 @@ export function MessagesFeed({
                     <div className="flex flex-col">
                   {/* Discord Reply Quote Spine */}
                   {msg.replyTo && (
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative">
-                      <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-muted-foreground/40 pointer-events-none" />
+                    <div
+                      onClick={() => msg.replyTo?.id && onJumpToMessage?.(msg.replyTo.id)}
+                      className="group/reply flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative cursor-pointer hover:text-foreground transition-colors"
+                      title="Klik untuk melompat ke pesan yang dibalas"
+                    >
+                      <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-muted-foreground/40 pointer-events-none group-hover/reply:border-foreground/60 transition-colors" />
                       <CommunityAvatar
                         name={msg.replyTo.senderName || 'Pengguna'}
                         imageUrl={msg.replyTo.senderAvatar}
@@ -172,32 +178,40 @@ export function MessagesFeed({
                         className="shrink-0"
                         showStatus={false}
                       />
-                      <span className="font-semibold text-foreground/90">@{msg.replyTo.senderName}</span>
-                      <span className="truncate max-w-[280px] opacity-80 italic">{msg.replyTo.content || '[Lampiran]'}</span>
+                      <span className="font-semibold text-foreground/90 group-hover/reply:underline">@{msg.replyTo.senderName}</span>
+                      <span className="truncate max-w-[280px] opacity-80 italic group-hover/reply:opacity-100">{msg.replyTo.content || '[Lampiran]'}</span>
                     </div>
                   )}
 
-                  {/* Discord Command Header / Interaction spine when launched by someone */}
+                  {/* Discord Command Header / Interaction spine with Click to see command */}
                   {act && (
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative">
+                    <div
+                      onClick={() => onJumpToMessage?.(msg.id)}
+                      className="group/cmd flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative cursor-pointer hover:text-foreground transition-colors"
+                      title="Klik untuk melihat pesan command"
+                    >
                       {/* Curved spine connector line */}
-                      <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-border/80 pointer-events-none" />
-                      <CommunityAvatar
-                        name={act.startedBy || msg.senderName}
-                        imageUrl={act.startedByAvatar || msg.senderAvatar}
-                        size={16}
-                        className="shrink-0"
-                        showStatus={false}
-                      />
-                      <span className="font-semibold text-foreground/90 hover:underline cursor-pointer">
-                        {act.startedBy || msg.senderName}
+                      <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-border/80 pointer-events-none group-hover/cmd:border-foreground/60 transition-colors" />
+                      {/* App icon badge */}
+                      <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+                        {act.appId === 'watch-together' || act.appId === 'youtube' ? (
+                          <svg className="w-2.5 h-2 fill-[#ff0000]" viewBox="0 0 24 24">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                          </svg>
+                        ) : (
+                          <span className="text-[10px] leading-none">{act.icon || '🚀'}</span>
+                        )}
+                      </div>
+                      <span className="bg-[#5865f2] text-white text-[9px] font-bold px-1 py-0.2 rounded-[3px] flex items-center gap-0.5 leading-none shadow-2xs">
+                        <Check className="w-2 h-2 stroke-[3]" />
+                        <span>APP</span>
                       </span>
-                      <span>used</span>
-                      <span className="font-semibold text-[#5865f2] hover:underline cursor-pointer flex items-center gap-1">
-                        <svg className="w-3 h-3 fill-current inline shrink-0" viewBox="0 0 24 24">
-                          <path d="M7 3a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm-10 10a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" />
-                        </svg>
-                        Launch
+                      <span className="font-semibold text-foreground/90 group-hover/cmd:underline">
+                        {act.name}
+                      </span>
+                      <span className="italic opacity-85 group-hover/cmd:opacity-100 group-hover/cmd:underline flex items-center gap-1 text-[11px]">
+                        Click to see command
+                        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded bg-muted/80 text-[10px] font-bold not-italic">/</span>
                       </span>
                     </div>
                   )}

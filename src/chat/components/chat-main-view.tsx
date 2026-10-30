@@ -497,6 +497,7 @@ export function ChatMainView({
         }}
         onDeleteMessage={handleDeleteMessage}
         onJoinActivity={(appId, channelId) => handleLaunchActivity(appId, true, channelId)}
+        onJumpToMessage={handleJumpToMessage}
         activeActivityAppId={selectedActivityAppId}
         activeCallChannelId={activeCallChannelId}
         messagesEndRef={messagesEndRef}
