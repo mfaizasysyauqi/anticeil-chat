@@ -41,36 +41,19 @@ export function useFriendsManager({
     fetchFriendRequests();
   }, [fetchFriendRequests]);
 
-  const effectiveMembers = useMemo(() => {
-    if (persistedFriends.length === 0) return displayMembers;
-    const map = new Map<string, any>();
-    displayMembers.forEach((m) => map.set(m.id, m));
-    persistedFriends.forEach((f) => {
-      if (!map.has(f.id)) {
-        map.set(f.id, {
-          id: f.id,
-          name: f.name,
-          username: f.username || f.name.toLowerCase().replace(/\s+/g, ''),
-          avatar: f.avatar || null,
-          status: 'online',
-          role: 'member',
-        });
-      }
-    });
-    return Array.from(map.values());
-  }, [displayMembers, persistedFriends]);
+  const allFriends = useMemo(() => {
+    return persistedFriends.filter(
+      (f) => f.id !== currentUser?.id && f.email !== currentUser?.email,
+    );
+  }, [persistedFriends, currentUser]);
 
   const onlineFriends = useMemo(() => {
-    return effectiveMembers.filter(
-      (m) => m.id !== currentUser?.id && m.email !== currentUser?.email && m.status !== 'offline',
-    );
-  }, [effectiveMembers, currentUser]);
+    return allFriends.filter((f) => f.status !== 'offline');
+  }, [allFriends]);
 
-  const allFriends = useMemo(() => {
-    return effectiveMembers.filter(
-      (m) => m.id !== currentUser?.id && m.email !== currentUser?.email,
-    );
-  }, [effectiveMembers, currentUser]);
+  const effectiveMembers = useMemo(() => {
+    return allFriends;
+  }, [allFriends]);
 
   const filteredFriends = useMemo(() => {
     const list = friendsTab === 'online' ? onlineFriends : allFriends;

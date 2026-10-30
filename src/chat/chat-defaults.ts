@@ -64,20 +64,23 @@ export function loadStoredDmChannels(): CommunityChannel[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // Strict filter: ONLY real DM channels (ID starts with 'dm-', category 'DIRECT MESSAGES', text type only, not a server channel)
-    const validDms = parsed.filter(
-      (c: any) =>
-        typeof c?.id === 'string' &&
-        c.id.startsWith('dm-') &&
-        c.category === 'DIRECT MESSAGES' &&
-        (!c.hubId || c.hubId === 'anticeil') &&
-        c.type !== 'voice' &&
-        c.type !== 'forum' &&
-        c.type !== 'kanban',
-    );
-    if (validDms.length !== parsed.length) {
-      localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(validDms));
-    }
+    // Strict filter: ONLY real DM channels (ID starts with 'dm-', text type only, not a server channel, not named after server channels)
+    const validDms = parsed.filter((c: any) => {
+      const name = (c?.name || '').toLowerCase();
+      const id = String(c?.id || '');
+      return (
+        id.startsWith('dm-') &&
+        c?.category === 'DIRECT MESSAGES' &&
+        (!c?.hubId || c.hubId === 'anticeil') &&
+        c?.type !== 'voice' &&
+        c?.type !== 'forum' &&
+        c?.type !== 'kanban' &&
+        name !== 'general voice' &&
+        name !== 'general' &&
+        name !== 'forum-diskusi'
+      );
+    });
+    localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(validDms));
     return validDms;
   } catch {
     return [];
@@ -87,16 +90,21 @@ export function loadStoredDmChannels(): CommunityChannel[] {
 export function saveStoredDmChannels(channels: CommunityChannel[]): void {
   try {
     if (typeof window === 'undefined') return;
-    const dmsOnly = channels.filter(
-      (c) =>
-        typeof c?.id === 'string' &&
-        c.id.startsWith('dm-') &&
-        c.category === 'DIRECT MESSAGES' &&
-        (!c.hubId || c.hubId === 'anticeil') &&
-        c.type !== 'voice' &&
-        c.type !== 'forum' &&
-        c.type !== 'kanban',
-    );
+    const dmsOnly = channels.filter((c: any) => {
+      const name = (c?.name || '').toLowerCase();
+      const id = String(c?.id || '');
+      return (
+        id.startsWith('dm-') &&
+        c?.category === 'DIRECT MESSAGES' &&
+        (!c?.hubId || c.hubId === 'anticeil') &&
+        c?.type !== 'voice' &&
+        c?.type !== 'forum' &&
+        c?.type !== 'kanban' &&
+        name !== 'general voice' &&
+        name !== 'general' &&
+        name !== 'forum-diskusi'
+      );
+    });
     localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(dmsOnly));
   } catch (err) {
     console.error('Failed to save DM channels to storage', err);
