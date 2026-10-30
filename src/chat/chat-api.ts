@@ -539,18 +539,7 @@ export const chatApi = {
     } catch {}
     const stored = loadStoredInvites(hubId);
     if (stored.length > 0) return stored;
-    const defaultInvite: CommunityInvite = {
-      id: `inv_default_${hubId}`,
-      hubId,
-      code: Math.random().toString(36).slice(2, 8).toUpperCase(),
-      inviterName: 'Sistem',
-      uses: 1,
-      maxUses: 0,
-      expiresAt: null,
-      createdAt: new Date().toISOString(),
-    };
-    saveStoredInvites(hubId, [defaultInvite]);
-    return [defaultInvite];
+    return [];
   },
 
   async createInvite(
@@ -655,17 +644,7 @@ export const chatApi = {
     } catch {}
     const stored = loadStoredAuditLog(hubId);
     if (stored.length > 0) return stored;
-    const initialLog: CommunityAuditEntry = {
-      id: `audit_init_${hubId}`,
-      hubId,
-      action: 'HUB_INITIALIZED',
-      actorName: 'Sistem Anticeil',
-      targetName: 'Server Komunitas',
-      details: { info: 'Server diaktifkan dengan modul lengkap' },
-      createdAt: new Date().toISOString(),
-    };
-    saveStoredAuditLog(hubId, [initialLog]);
-    return [initialLog];
+    return [];
   },
 
   recordAudit(
