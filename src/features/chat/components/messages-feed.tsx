@@ -209,9 +209,11 @@ export function MessagesFeed({
                       <span className="font-semibold text-foreground/90 group-hover/cmd:underline">
                         {act.name}
                       </span>
-                      <span className="italic opacity-85 group-hover/cmd:opacity-100 group-hover/cmd:underline flex items-center gap-1 text-[11px]">
-                        Click to see command
-                        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded bg-muted/80 text-[10px] font-bold not-italic">/</span>
+                      <span className="font-semibold text-[#5865f2] group-hover/cmd:underline flex items-center gap-1">
+                        <svg className="w-3 h-3 fill-current shrink-0" viewBox="0 0 24 24">
+                          <path d="M7 3a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm-10 10a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" />
+                        </svg>
+                        Launch
                       </span>
                     </div>
                   )}
