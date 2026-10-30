@@ -19,6 +19,7 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CommunityChannel, CommunityMember } from '@/chat/chat-types';
 
 export interface HomeChannelsSidebarProps {
+  currentUser?: any;
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
   homeView?: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
@@ -47,6 +48,7 @@ function formatSidebarBadge(count: number | string | undefined): string | null {
 }
 
 export function HomeChannelsSidebar({
+  currentUser,
   activeChannelId,
   setActiveChannelId,
   homeView = 'friends',
@@ -352,14 +354,23 @@ export function HomeChannelsSidebar({
               )
               .map((dm) => {
               const isActiveDm = activeChannelId === dm.id;
-              const member = members.find(
-                (m) =>
-                  m.id === dm.dmUserId ||
-                  `dm-${m.id}` === dm.id ||
-                  (m.id && dm.id.includes(m.id)) ||
-                  (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) ||
-                  (m.username && dm.name && m.username.toLowerCase() === dm.name.toLowerCase()),
-              );
+              const member = members.find((m) => {
+                const isSelf =
+                  (currentUser?.id && m.id === currentUser.id) ||
+                  (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                  (currentUser?.name && m.name && m.name.toLowerCase() === currentUser.name.toLowerCase());
+                if (isSelf) return false;
+
+                // 1. Match by DM name (primary identifier of DM partner)
+                if (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) return true;
+                if (m.username && dm.name && m.username.toLowerCase() === dm.name.toLowerCase()) return true;
+
+                // 2. Match by DM user ID
+                if (dm.dmUserId && m.id === dm.dmUserId) return true;
+                if (m.id && `dm-${m.id}` === dm.id) return true;
+                if (m.id && dm.id.includes(m.id)) return true;
+                return false;
+              });
               return (
                 <button
                   key={dm.id}

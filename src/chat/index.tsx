@@ -1698,6 +1698,7 @@ export function CommunityPage() {
   // Component: Channels Sidebar Content (delegates to ChannelsSidebar feature component)
   const renderChannelsSidebarContent = (onItemClick?: () => void) => (
     <ChannelsSidebar
+      currentUser={currentUser}
       isHome={isHome}
       activeHub={activeHub}
       channels={channels}

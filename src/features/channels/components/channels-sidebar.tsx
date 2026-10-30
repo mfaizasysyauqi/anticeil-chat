@@ -10,6 +10,7 @@ import type {
 import type { ServerSettingsSection } from '@/features/server-settings';
 
 export interface ChannelsSidebarProps {
+  currentUser?: any;
   isHome: boolean;
   activeHub: CommunityHub | null;
   channels: CommunityChannel[];
