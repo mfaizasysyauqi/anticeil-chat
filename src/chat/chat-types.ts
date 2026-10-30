@@ -87,7 +87,16 @@ export type CommunityAttachment = {
   };
 };
 
+export type CommunityMessageReply = {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  senderAvatar?: string | null;
+};
+
 export type CommunityMessage = {
+  replyTo?: CommunityMessageReply | null;
   id: string;
   channelId: string;
   senderId: string;

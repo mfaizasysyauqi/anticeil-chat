@@ -37,6 +37,8 @@ export interface UseMessageActionsOptions {
   setIsPinnedPopoverOpen: (open: boolean) => void;
   setAuthFeatureInfo: (info: { title: string; desc: string }) => void;
   setIsAuthRequiredOpen: (open: boolean) => void;
+  replyingToMessage?: CommunityMessage | null;
+  setReplyingToMessage?: React.Dispatch<React.SetStateAction<CommunityMessage | null>>;
   createCalendarEvent: (event: any) => Promise<any>;
   t: (key: string) => string;
 }
@@ -58,6 +60,8 @@ export function useMessageActions({
   setIsPinnedPopoverOpen,
   setAuthFeatureInfo,
   setIsAuthRequiredOpen,
+  replyingToMessage,
+  setReplyingToMessage,
   createCalendarEvent,
   t,
 }: UseMessageActionsOptions) {
@@ -116,12 +120,20 @@ export function useMessageActions({
       senderRole: myRole,
       content: trimmedContent,
       attachments: stagedAttachment ? [stagedAttachment] : undefined,
+      replyTo: replyingToMessage ? {
+        id: replyingToMessage.id,
+        senderId: replyingToMessage.senderId,
+        senderName: replyingToMessage.senderName,
+        content: replyingToMessage.content,
+        senderAvatar: replyingToMessage.senderAvatar,
+      } : null,
     };
 
     if (!customContent) {
       setInputText('');
     }
     setStagedAttachment(null);
+    setReplyingToMessage?.(null);
 
     try {
       const saved = await communityApi.sendMessage(activeChannel.id, payload);

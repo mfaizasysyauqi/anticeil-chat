@@ -136,6 +136,12 @@ export const chatApi = {
     return { success: true, id };
   },
 
+  async markChannelRead(channelId: string, userId: string): Promise<void> {
+    try {
+      await api.post(`/v1/community/channels/${channelId}/read`, { userId });
+    } catch {}
+  },
+
   // ── Messages ──────────────────────────────────────────────────────────
   async getMessages(channelId: string): Promise<CommunityMessage[]> {
     try {

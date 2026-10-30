@@ -123,6 +123,8 @@ export interface ChatMainViewProps {
   displayMembers: CommunityMember[];
   handleKanbanCardsUpdate: (cards: KanbanCard[]) => void;
   // Feed & Input props
+  replyingToMessage?: CommunityMessage | null;
+  setReplyingToMessage?: React.Dispatch<React.SetStateAction<CommunityMessage | null>>;
   filteredMessages: CommunityMessage[];
   claimedGifts: Record<string, boolean>;
   setClaimedGifts: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
@@ -256,6 +258,8 @@ export function ChatMainView({
   handleSendThreadMessage,
   displayMembers,
   handleKanbanCardsUpdate,
+  replyingToMessage,
+  setReplyingToMessage,
   filteredMessages,
   claimedGifts,
   setClaimedGifts,
@@ -485,6 +489,7 @@ export function ChatMainView({
         onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
         onToggleReaction={handleToggleReaction}
         onTogglePin={handleTogglePin}
+        onReply={(msg) => setReplyingToMessage?.(msg)}
         onStartThread={(initialName, initialContent) => {
           setNewThreadName(initialName);
           setNewThreadInitialMsg(initialContent);
@@ -505,6 +510,8 @@ export function ChatMainView({
         setStagedAttachment={setStagedAttachment}
         inputText={inputText}
         setInputText={setInputText}
+        replyingTo={replyingToMessage}
+        onCancelReply={() => setReplyingToMessage?.(null)}
         onSendMessage={handleSendMessage}
         onFileSelect={handleFileChange}
         onOpenGiftModal={() => setIsGiftModalOpen(true)}
@@ -566,7 +573,8 @@ export function ChatMainView({
           setIsPinnedPopoverOpen={setIsPinnedPopoverOpen}
           pinnedMessages={pinnedMessages}
           onJumpToMessage={handleJumpToMessage}
-          onTogglePin={handleTogglePin}
+        onTogglePin={handleTogglePin}
+
           showMemberList={showMemberList}
           setShowMemberList={setShowMemberList}
           onOpenMobileMembers={() => setIsMobileMembersOpen(true)}

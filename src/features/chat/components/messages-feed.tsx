@@ -4,6 +4,7 @@ import {
   Plus,
   Pin,
   MessageSquare,
+  Reply,
   Trash2,
   Paperclip,
   Check,
@@ -48,6 +49,7 @@ export interface MessagesFeedProps {
   onOpenCreateChannel: () => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onTogglePin: (messageId: string) => void;
+  onReply?: (message: CommunityMessage) => void;
   onStartThread: (initialName: string, initialContent: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onJoinActivity?: (appId: string, channelId?: string) => void;
@@ -65,6 +67,7 @@ export function MessagesFeed({
   onOpenCreateChannel,
   onToggleReaction,
   onTogglePin,
+  onReply,
   onStartThread,
   onDeleteMessage,
   onJoinActivity,
@@ -154,6 +157,22 @@ export function MessagesFeed({
                     )}
 
                     <div className="flex flex-col">
+                  {/* Discord Reply Quote Spine */}
+                  {msg.replyTo && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative">
+                      <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-muted-foreground/40 pointer-events-none" />
+                      <CommunityAvatar
+                        name={msg.replyTo.senderName || 'Pengguna'}
+                        imageUrl={msg.replyTo.senderAvatar}
+                        size={16}
+                        className="shrink-0"
+                        showStatus={false}
+                      />
+                      <span className="font-semibold text-foreground/90">@{msg.replyTo.senderName}</span>
+                      <span className="truncate max-w-[280px] opacity-80 italic">{msg.replyTo.content || '[Lampiran]'}</span>
+                    </div>
+                  )}
+
                   {/* Discord Command Header / Interaction spine when launched by someone */}
                   {act && (
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative">
@@ -565,6 +584,17 @@ export function MessagesFeed({
                   </button>
 
                   <Separator orientation="vertical" className="h-4 mx-0.5" />
+
+                  {/* Reply to Message Button */}
+                  {onReply && (
+                    <button
+                      onClick={() => onReply(msg)}
+                      className="p-1 hover:bg-muted text-muted-foreground hover:text-foreground rounded transition-colors"
+                      title="Balas Pesan (Reply)"
+                    >
+                      <Reply className="w-3.5 h-3.5" />
+                    </button>
+                  )}
 
                   {/* Pin/Unpin Message Button */}
                   <button

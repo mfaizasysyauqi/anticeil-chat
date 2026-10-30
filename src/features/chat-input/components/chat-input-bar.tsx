@@ -63,6 +63,8 @@ export interface ChatInputBarProps {
   // Apps props
   isTemplatePopoverOpen: boolean;
   setIsTemplatePopoverOpen: (open: boolean) => void;
+  replyingTo?: { id: string; senderName: string; content: string } | null;
+  onCancelReply?: () => void;
   appsSearchQuery: string;
   setAppsSearchQuery: (q: string) => void;
   onLaunchActivity: (id: string) => void;
@@ -100,6 +102,8 @@ export function ChatInputBar({
   onOpenQuickAddSticker,
   isTemplatePopoverOpen,
   setIsTemplatePopoverOpen,
+  replyingTo,
+  onCancelReply,
   appsSearchQuery,
   setAppsSearchQuery,
   onLaunchActivity,
@@ -139,6 +143,25 @@ export function ChatInputBar({
 
   return (
     <div className={`shrink-0 ${channelPaddingClass} pb-3 pt-0 bg-transparent z-10 flex flex-col gap-1.5`}>
+      {/* Discord Reply Banner */}
+      {replyingTo && (
+        <div className="px-3 py-1.5 rounded-[12px] bg-[#111214] border border-white/10 shadow-lg flex items-center justify-between text-xs animate-in slide-in-from-bottom-1 select-none">
+          <div className="flex items-center gap-2 truncate">
+            <span className="text-muted-foreground">Membalas <span className="font-semibold text-primary">@{replyingTo.senderName}</span>:</span>
+            <span className="truncate max-w-[260px] italic text-[#dbdee1]/80">{replyingTo.content || '[Lampiran]'}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCancelReply}
+            className="h-5 w-5 text-muted-foreground hover:text-foreground cursor-pointer rounded-full"
+            title="Batalkan Balasan"
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      )}
+
       {/* Staged Attachment Indicator */}
       {stagedAttachment && (
         <div className="p-2 rounded-[12px] bg-[#111214] border border-white/10 shadow-2xl backdrop-blur-md flex items-center justify-between text-xs animate-in slide-in-from-bottom-1">

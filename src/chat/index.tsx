@@ -458,8 +458,10 @@ export function CommunityPage() {
     return [...storedDms, ...DEFAULT_CHANNELS];
   });
   const [activeChannelId, setActiveChannelId] = useState<string>(() => {
+
     return new URLSearchParams(window.location.search).get('channel') || '';
   });
+  const [replyingToMessage, setReplyingToMessage] = useState<CommunityMessage | null>(null);
   const [messagesMap, setMessagesMap] = useState<Record<string, CommunityMessage[]>>({});
   const [members, setMembers] = useState<CommunityMember[]>([]);
 
@@ -1303,9 +1305,38 @@ export function CommunityPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Mark channel read when opened
   useEffect(() => {
+    if (activeChannelId && currentUser?.id) {
+      communityApi.markChannelRead(activeChannelId, currentUser.id);
+    }
+  }, [activeChannelId, currentUser?.id]);
+
+  // Auto scroll - initial scroll to unread divider
+  useEffect(() => {
+    if (!activeChannelId) return;
+    setReplyingToMessage(null);
+    const unreadCount = activeChannel?.unreadCount || 0;
+    if (unreadCount > 0) {
+      requestAnimationFrame(() => {
+        const divider = document.getElementById('discord-unread-divider');
+        if (divider) {
+          divider.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          scrollToBottom();
+        }
+      });
+    } else {
+      scrollToBottom();
+    }
+  }, [activeChannelId]);
+
+  useEffect(() => {
+    // Only auto scroll to bottom when new messages arrive
     scrollToBottom();
-  }, [activeChannelId, currentMessages.length]);
+  }, [currentMessages.length]);
+
+
 
   const {
     handleSendMessage,
@@ -1324,6 +1355,8 @@ export function CommunityPage() {
     activeChannel,
     activeHub,
     members,
+    replyingToMessage,
+    setReplyingToMessage,
     inputText,
     setInputText,
     stagedAttachment,
@@ -2063,6 +2096,8 @@ export function CommunityPage() {
           handleSendThreadMessage={handleSendThreadMessage}
           displayMembers={displayMembers}
           handleKanbanCardsUpdate={handleKanbanCardsUpdate}
+          replyingToMessage={replyingToMessage}
+          setReplyingToMessage={setReplyingToMessage}
           filteredMessages={filteredMessages}
           claimedGifts={claimedGifts}
           setClaimedGifts={setClaimedGifts}
