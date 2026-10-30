@@ -53,6 +53,8 @@ export interface MessagesFeedProps {
   onStartThread: (initialName: string, initialContent: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onJoinActivity?: (appId: string, channelId?: string) => void;
+  activeActivityAppId?: string | null;
+  activeCallChannelId?: string | null;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
   t: (key: string) => string;
 }
@@ -71,6 +73,8 @@ export function MessagesFeed({
   onStartThread,
   onDeleteMessage,
   onJoinActivity,
+  activeActivityAppId,
+  activeCallChannelId,
   messagesEndRef,
   t,
 }: MessagesFeedProps) {
@@ -292,9 +296,18 @@ export function MessagesFeed({
                                 currentUser?.name ||
                                 currentUser?.email?.split('@')[0] ||
                                 '';
-                              const isAlreadyPlaying =
+                              const isActivityCurrentlyActive = Boolean(
+                                activeActivityAppId &&
+                                (activeActivityAppId === itemAct.appId ||
+                                 (activeActivityAppId === 'watch-together' && itemAct.appId === 'youtube') ||
+                                 (activeActivityAppId === 'youtube' && itemAct.appId === 'watch-together')) &&
+                                (!itemAct.channelId || !activeCallChannelId || itemAct.channelId === activeCallChannelId)
+                              );
+
+                              const isAlreadyPlaying = isActivityCurrentlyActive && (
                                 (currentUser?.id && (itemAct.startedById === currentUser.id || msg.senderId === currentUser.id)) ||
-                                (currentUserName && itemAct.startedBy === currentUserName);
+                                (currentUserName && itemAct.startedBy === currentUserName)
+                              );
 
                               return (
                                 <div
@@ -306,7 +319,7 @@ export function MessagesFeed({
                                 >
                                   {/* Invitation Header Label */}
                                   <span className="text-[11px] font-bold text-white/75 tracking-wider uppercase block mb-3.5">
-                                    App Invitation
+                                    {isActivityCurrentlyActive ? 'App Invitation' : 'Game Invitation'}
                                   </span>
 
                                   {/* Main App Info Row */}
@@ -339,16 +352,22 @@ export function MessagesFeed({
                                       <h4 className="text-sm sm:text-base font-bold text-white leading-tight truncate">
                                         {itemAct.name}
                                       </h4>
-                                      <div className="flex items-center gap-1.5 mt-1.5">
-                                        <CommunityAvatar
-                                          name={itemAct.startedBy || 'Player'}
-                                          imageUrl={itemAct.startedByAvatar}
-                                          size={16}
-                                          className="shrink-0"
-                                          showStatus={false}
-                                        />
-                                        <span className="text-xs text-white/90 font-medium">1 Using</span>
-                                      </div>
+                                      {isActivityCurrentlyActive ? (
+                                        <div className="flex items-center gap-1.5 mt-1.5">
+                                          <CommunityAvatar
+                                            name={itemAct.startedBy || 'Player'}
+                                            imageUrl={itemAct.startedByAvatar}
+                                            size={16}
+                                            className="shrink-0"
+                                            showStatus={false}
+                                          />
+                                          <span className="text-xs text-white/90 font-medium">1 Using</span>
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-white/70 mt-1 truncate font-medium">
+                                          Game ended. Start a new one?
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
 
@@ -366,7 +385,7 @@ export function MessagesFeed({
                                         : 'bg-white hover:bg-zinc-200 text-zinc-950',
                                     )}
                                   >
-                                    <span>{isAlreadyPlaying ? 'Joined' : 'Join'}</span>
+                                    <span>{isAlreadyPlaying ? 'Joined' : isActivityCurrentlyActive ? 'Join' : 'Play'}</span>
                                   </button>
                                 </div>
                               );
