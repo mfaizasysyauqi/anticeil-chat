@@ -8,8 +8,8 @@ import {
   CommunityMessage,
   CommunityRole,
 } from '@/chat/chat-types';
-import { EXTENDED_DISCORD_APPS } from '@/lib/constants';
-import { communityApi } from '@/lib/api';
+import { EXTENDED_DISCORD_APPS } from '../anticeil-media-data';
+import { communityApi } from '../chat-api';
 
 export interface UseActivityLauncherOptions {
   channels: CommunityChannel[];

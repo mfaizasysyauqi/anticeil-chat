@@ -103,7 +103,11 @@ export function useFriendsManager({
         return;
       }
 
-      await friendsApi.sendFriendRequest(cleanInput, resolvedUserId);
+      await friendsApi.sendFriendRequest(cleanInput, resolvedUserId, {
+        senderName: currentUser?.name,
+        senderUsername: currentUser?.username || currentUser?.email?.split('@')[0],
+        senderAvatar: currentUser?.imageUrl || currentUser?.avatar || null,
+      });
 
       // Optimistic update
       setFriendRequests((prev) => [
@@ -119,6 +123,7 @@ export function useFriendsManager({
       ]);
       toast.success(t('Permintaan pertemanan terkirim ke') + ` ${found ? found.name : cleanInput}!`);
       setAddFriendInput('');
+      fetchFriendRequests();
     } catch {
       toast.error(t('Gagal mengirim permintaan pertemanan.'));
     } finally {

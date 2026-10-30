@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import type { ServerInvitation } from '@/lib/community-hubs';
 import {
   loadStoredChannels,
   saveStoredChannels,
@@ -819,6 +820,41 @@ export const chatApi = {
       return { found: true, user: found };
     }
     return { found: false };
+  },
+
+  // ── Server Invitations (Fullstack Database) ──────────────────────────
+  async getServerInvitations(): Promise<ServerInvitation[]> {
+    try {
+      const res = await api.get<ServerInvitation[]>('/v1/community/server-invitations');
+      if (Array.isArray(res)) return res;
+    } catch (e) {
+      console.warn('Failed to fetch server invitations from API', e);
+    }
+    return [];
+  },
+
+  async inviteUserToServer(
+    hubId: string,
+    targetUserId?: string,
+    targetUsername?: string,
+  ): Promise<{ success: boolean; alreadyMember?: boolean; alreadyInvited?: boolean; message?: string; user?: any }> {
+    try {
+      return await api.post(`/v1/community/hubs/${hubId}/invite-user`, {
+        targetUserId,
+        targetUsername,
+      });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Gagal mengirim undangan server';
+      return { success: false, message: msg };
+    }
+  },
+
+  async acceptServerInvitation(invitationId: string): Promise<{ success: boolean; hub?: CommunityHub }> {
+    return api.post(`/v1/community/server-invitations/${invitationId}/accept`);
+  },
+
+  async rejectServerInvitation(invitationId: string): Promise<{ success: boolean }> {
+    return api.post(`/v1/community/server-invitations/${invitationId}/reject`);
   },
 
   // ── Pinned Messages ───────────────────────────────────────────────────

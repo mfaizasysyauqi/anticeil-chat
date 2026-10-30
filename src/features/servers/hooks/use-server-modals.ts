@@ -307,43 +307,52 @@ export function useServerModals({
     toast.success(t('Server berhasil dihapus!'));
   };
 
-  // Invite by Username
-  const handleInviteByUsername = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const rawUser = inviteUsername.trim().replace(/^@/, '');
-    if (!rawUser) {
+  // Invite by Username / User Selection (Sends pending server invitation, no auto-join)
+  const handleInviteByUsername = async (
+    targetOrEvent?: React.FormEvent | string,
+    targetUserId?: string,
+  ): Promise<boolean | void> => {
+    if (targetOrEvent && typeof targetOrEvent !== 'string' && 'preventDefault' in targetOrEvent) {
+      targetOrEvent.preventDefault();
+    }
+    const rawUser = typeof targetOrEvent === 'string' ? targetOrEvent.trim().replace(/^@/, '') : inviteUsername.trim().replace(/^@/, '');
+    if (!rawUser && !targetUserId) {
       toast.error(t('Masukkan username yang ingin diundang'));
-      return;
+      return false;
     }
 
     const currentHubId = activeHub?.id;
     if (!currentHubId) {
       toast.error(t('Server tidak valid.'));
-      return;
+      return false;
     }
 
     try {
       setIsInvitingUsername(true);
       setUserNotFound(null);
-      const res = await communityApi.inviteMemberByUsername(currentHubId, rawUser);
-      if (res.found && res.user) {
-        if (res.alreadyMember) {
-          toast.info(t(`@${res.user.username || rawUser} sudah menjadi anggota server ini.`));
-        } else {
-          toast.success(t(`Berhasil menambahkan @${res.user.username || rawUser} ke server! 🎉`));
-          setMembers?.((prev) => {
-            if (prev.some((m) => m.id === res.user!.id)) return prev;
-            return [...prev, res.user!];
-          });
-        }
+      const res = await communityApi.inviteUserToServer(currentHubId, targetUserId, rawUser);
+      if (res.alreadyMember) {
+        toast.info(res.message || t(`Pengguna sudah menjadi anggota server ini.`));
+        return true;
+      }
+      if (res.alreadyInvited) {
+        toast.info(res.message || t(`Undangan sudah pernah dikirim ke pengguna ini.`));
+        return true;
+      }
+      if (res.success) {
+        toast.success(res.message || t(`Undangan ke server berhasil dikirim! 📩`));
         setInviteUsername('');
         setUserNotFound(null);
-      } else {
-        setUserNotFound(rawUser);
+        return true;
       }
+      setUserNotFound(rawUser);
+      toast.error(res.message || t('Pengguna tidak ditemukan.'));
+      return false;
     } catch (err) {
       console.error('Invite by username failed', err);
+      setUserNotFound(rawUser);
       toast.error(t('Gagal mengundang pengguna. Silakan coba lagi.'));
+      return false;
     } finally {
       setIsInvitingUsername(false);
     }

@@ -313,29 +313,8 @@ export function CommunityDialogsPortal({
         open={serverModals.isInviteOpen}
         onOpenChange={serverModals.setIsInviteOpen}
         activeServer={activeHub}
-        onInviteUsername={async (username) => {
-          const currentHubId = activeHub?.id;
-          if (!currentHubId) return false;
-          try {
-            const res = await communityApi.inviteMemberByUsername(currentHubId, username);
-            if (res.found && res.user) {
-              if (res.alreadyMember) {
-                toast.info(t(`@${res.user.username || username} sudah menjadi anggota server ini.`));
-              } else {
-                toast.success(t(`Berhasil menambahkan @${res.user.username || username} ke server! 🎉`));
-                setMembers((prev) => {
-                  if (prev.some((m) => m.id === res.user!.id)) return prev;
-                  return [...prev, res.user!];
-                });
-              }
-              return true;
-            }
-            return false;
-          } catch (err) {
-            toast.error(t('Gagal mengundang pengguna. Silakan coba lagi.'));
-            return false;
-          }
-        }}
+        onInviteUsername={serverModals.handleInviteByUsername}
+        members={members}
         t={t}
       />
 

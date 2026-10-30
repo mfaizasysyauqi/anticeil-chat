@@ -1002,7 +1002,7 @@ export function YouTubeWatchTogether({
             <p className="text-[11px] text-muted-foreground truncate">{item.channel}</p>
             <div className="flex items-center gap-1.5 mt-1.5">
               <CommunityAvatar
-                name={item.addedBy}
+                name={item.addedBy || 'User'}
                 imageUrl={
                   item.addedBy === currentUserName
                     ? currentUser?.imageUrl || currentUser?.avatar

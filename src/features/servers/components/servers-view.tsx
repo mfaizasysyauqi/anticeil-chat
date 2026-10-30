@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Globe,
   Plus,
@@ -33,7 +33,7 @@ import {
   saveStoredHubs,
   type ServerInvitation,
 } from '@/lib/community-hubs';
-import { chatApi } from '@/chat/chat-api';
+import { chatApi, communityApi } from '@/chat/chat-api';
 import { ServerIcon } from './server-icon';
 import { toast } from 'sonner';
 
@@ -59,6 +59,17 @@ export function ServersView({
     loadStoredServerInvitations()
   );
 
+  const fetchServerInvitations = useCallback(async () => {
+    try {
+      const live = await communityApi.getServerInvitations();
+      if (Array.isArray(live)) {
+        setServerInvitations(live);
+      }
+    } catch {
+      setServerInvitations(loadStoredServerInvitations());
+    }
+  }, []);
+
   // Real Public Servers from Backend DB
   const [publicServers, setPublicServers] = useState<CommunityHub[]>([]);
   const [isLoadingPublic, setIsLoadingPublic] = useState(false);
@@ -66,10 +77,11 @@ export function ServersView({
   const [isJoiningByCode, setIsJoiningByCode] = useState(false);
 
   useEffect(() => {
-    const handleUpdate = () => setServerInvitations(loadStoredServerInvitations());
+    fetchServerInvitations();
+    const handleUpdate = () => fetchServerInvitations();
     window.addEventListener('anticeil_server_invites_changed', handleUpdate);
     return () => window.removeEventListener('anticeil_server_invites_changed', handleUpdate);
-  }, []);
+  }, [fetchServerInvitations]);
 
   // Fetch real public hubs from database
   useEffect(() => {
@@ -150,21 +162,8 @@ export function ServersView({
 
   const handleAcceptInvitation = async (invite: ServerInvitation) => {
     try {
-      if (invite.serverId) {
-        await chatApi.joinHub(invite.serverId);
-      }
-    } catch (e) {
-      console.warn('Backend joinHub call:', e);
-    }
-
-    const updated = serverInvitations.filter((i) => i.id !== invite.id);
-    setServerInvitations(updated);
-    saveStoredServerInvitations(updated);
-
-    // Persist as joined hub
-    const existing = loadStoredHubs();
-    if (!existing.some((h) => h.id === invite.serverId)) {
-      const newHub: CommunityHub = {
+      const res = await communityApi.acceptServerInvitation(invite.id);
+      const joinedHub: CommunityHub = res?.hub || {
         id: invite.serverId,
         name: invite.serverName,
         description: invite.serverDescription,
@@ -174,18 +173,35 @@ export function ServersView({
         role: 'member',
         membersCount: (invite.membersCount || 1) + 1,
       };
-      saveStoredHubs([...existing, newHub]);
-    }
 
-    toast.success(`Berhasil bergabung dengan ${invite.serverName}! 🎉`);
-    onSelectServer(invite.serverId);
+      const updated = serverInvitations.filter((i) => i.id !== invite.id);
+      setServerInvitations(updated);
+      saveStoredServerInvitations(updated);
+
+      // Persist as joined hub
+      const existing = loadStoredHubs();
+      if (!existing.some((h) => h.id === joinedHub.id)) {
+        saveStoredHubs([...existing, joinedHub]);
+      }
+
+      toast.success(`Berhasil bergabung dengan ${joinedHub.name}! 🎉`);
+      onSelectServer(joinedHub.id);
+    } catch (e) {
+      console.warn('Backend acceptServerInvitation call:', e);
+      toast.error(t('Gagal menerima undangan server'));
+    }
   };
 
-  const handleRejectInvitation = (invite: ServerInvitation) => {
+  const handleRejectInvitation = async (invite: ServerInvitation) => {
     const updated = serverInvitations.filter((i) => i.id !== invite.id);
     setServerInvitations(updated);
     saveStoredServerInvitations(updated);
-    toast.info(`Undangan server ${invite.serverName} telah ditolak.`);
+    try {
+      await communityApi.rejectServerInvitation(invite.id);
+      toast.info(`Undangan server ${invite.serverName} telah ditolak.`);
+    } catch {
+      toast.info(`Undangan server ${invite.serverName} telah dihapus.`);
+    }
   };
 
   return (
