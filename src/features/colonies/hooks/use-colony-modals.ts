@@ -81,7 +81,7 @@ export function useColonyModals({
 
       let colonyChannels = await colonyApi.getChannels(createdHub.id);
       if (!colonyChannels || colonyChannels.length === 0) {
-        const [defaultCh, defaultVoice, defaultForum] = await Promise.all([
+        const [defaultCh, defaultVoice] = await Promise.all([
           colonyApi.createChannel({
             name: 'general',
             description: `Saluran obrolan umum untuk server ${createdHub.name}`,
@@ -90,21 +90,14 @@ export function useColonyModals({
             type: 'text',
           }),
           colonyApi.createChannel({
-            name: 'General Voice',
+            name: 'General',
             description: `Saluran suara & video untuk server ${createdHub.name}`,
             category: 'CHANNELS',
             colonyId: createdHub.id,
             type: 'voice',
           }),
-          colonyApi.createChannel({
-            name: 'forum-diskusi',
-            description: `Ruang diskusi topik untuk server ${createdHub.name}`,
-            category: 'CHANNELS',
-            colonyId: createdHub.id,
-            type: 'forum',
-          }),
         ]);
-        colonyChannels = [defaultCh, defaultVoice, defaultForum];
+        colonyChannels = [defaultCh, defaultVoice];
       }
       setChannels((prev) => [...prev.filter((c) => c.colonyId !== createdHub.id), ...colonyChannels]);
       setActiveChannelId(colonyChannels[0].id);
@@ -136,25 +129,17 @@ export function useColonyModals({
       };
       const defaultVoice: ColonyChannel = {
         id: `ch_${Date.now()}_voice`,
-        name: 'General Voice',
+        name: 'General',
         description: `Saluran suara & video untuk server ${newHub.name}`,
         category: 'CHANNELS',
         colonyId: newId,
         type: 'voice',
       };
-      const defaultForum: ColonyChannel = {
-        id: `ch_${Date.now()}_forum`,
-        name: 'forum-diskusi',
-        description: `Ruang diskusi topik untuk server ${newHub.name}`,
-        category: 'CHANNELS',
-        colonyId: newId,
-        type: 'forum',
-      };
 
       const updatedHubs = [...colonies, newHub];
       setColonies(updatedHubs);
       saveStoredColonies(updatedHubs);
-      setChannels((prev) => [...prev, defaultText, defaultVoice, defaultForum]);
+      setChannels((prev) => [...prev, defaultText, defaultVoice]);
       setActiveColonyId(newId);
       setActiveChannelId(defaultText.id);
 
