@@ -47,7 +47,7 @@ import {
   ChatInputBar,
   processFileInput,
 } from '@/features/chat-input';
-import { MessagesFeed, renderFormattedMessage, useCommunitySocket, CommunityDialogsPortal } from '@/features/chat';
+import { MessagesFeed, renderFormattedMessage, useCommunitySocket, ChatDialogsPortal } from '@/features/chat';
 import { useMediaModals } from '@/features/media';
 import { ChatDesktopSidebar } from './components/chat-desktop-sidebar';
 import { ChatMobileDrawers } from './components/chat-mobile-drawers';
@@ -92,7 +92,7 @@ const queryClient: any = {
 };
 
 import { useSocket } from '@/providers/socket-provider';
-import { CommunityCallStage, DISCORD_APPS } from '@/features/voice';
+import { CallStage, DISCORD_APPS } from '@/features/voice';
 import {
   DISCORD_EMOJI_SERVERS,
   DISCORD_EMOJIS,
@@ -2163,7 +2163,7 @@ export function CommunityPage() {
           setActiveChannelId(chId);
         }}
       />
-      <CommunityDialogsPortal
+      <ChatDialogsPortal
           colonyModals={colonyModals}
           channelModals={channelModals}
           mediaModals={mediaModals}

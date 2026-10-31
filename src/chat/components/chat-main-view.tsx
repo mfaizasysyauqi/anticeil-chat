@@ -11,7 +11,7 @@ import { AppsView } from '@/features/apps';
 import { ColoniesView } from '@/features/colonies';
 import { ChannelTopHeaderBar, ForumChannelView } from '@/features/channels';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
-import { CommunityCallStage } from '@/features/voice';
+import { CallStage } from '@/features/voice';
 import { MessagesFeed } from '@/features/chat';
 import { ChatInputBar } from '@/features/chat-input';
 import {
@@ -605,7 +605,7 @@ export function ChatMainView({
             }}
             className="w-full min-h-[50%] overflow-hidden flex flex-col"
           >
-            <CommunityCallStage
+            <CallStage
               channel={activeChannel!}
               activeHub={activeHub}
               currentUser={currentUser}

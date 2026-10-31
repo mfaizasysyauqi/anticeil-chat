@@ -36,7 +36,7 @@ export function YouTubeBadgeIcon({ className = 'w-5 h-3.5' }: { className?: stri
   );
 }
 
-export interface CommunityCallStageProps {
+export interface CallStageProps {
   channel: CommunityChannel;
   activeHub?: CommunityHub | null;
   currentUser: {
@@ -61,6 +61,8 @@ export interface CommunityCallStageProps {
   onOpenMobileChannels?: () => void;
 }
 
+export type CommunityCallStageProps = CallStageProps;
+
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -68,7 +70,7 @@ const ICE_SERVERS = {
   ],
 };
 
-export function CommunityCallStage({
+export function CallStage({
   channel,
   activeHub,
   currentUser,
@@ -1120,3 +1122,5 @@ export function CommunityCallStage({
     </div>
   );
 }
+
+export const CommunityCallStage = CallStage;

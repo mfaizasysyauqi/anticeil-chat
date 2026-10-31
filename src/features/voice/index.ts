@@ -8,7 +8,7 @@ export * from './components/voice-invite-dialog';
 export * from './components/pip-call-stage';
 export * from './components/activity-filmstrip';
 export * from './components/activities/activity-stage';
-export * from './components/community-call-stage';
+export * from './components/call-stage';
 export * from './hooks/use-voice-settings';
 export * from './components/audio-device-menu';
 export * from './components/voice-video-settings-modal';

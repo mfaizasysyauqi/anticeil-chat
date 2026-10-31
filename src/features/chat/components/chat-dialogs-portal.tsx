@@ -23,10 +23,10 @@ import {
 } from '@/features/channels';
 
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
-import { CommunityCallStage, UserSettingsModal } from '@/features/voice';
+import { CallStage, UserSettingsModal } from '@/features/voice';
 import { AuthRequiredDialog } from '@/features/auth';
 
-export interface CommunityDialogsPortalProps {
+export interface ChatDialogsPortalProps {
   colonyModals: ReturnType<typeof useColonyModals>;
   channelModals: ReturnType<typeof useChannelModals>;
   mediaModals: ReturnType<typeof useMediaModals>;
@@ -97,7 +97,9 @@ export interface CommunityDialogsPortalProps {
   t: (key: string, params?: Record<string, any>) => string;
 }
 
-export function CommunityDialogsPortal({
+export type CommunityDialogsPortalProps = ChatDialogsPortalProps;
+
+export function ChatDialogsPortal({
   colonyModals,
   channelModals,
   mediaModals,
@@ -390,7 +392,7 @@ export function CommunityDialogsPortal({
         const pipChannel = channels.find((c) => c.id === activeCallChannelId);
         if (!pipChannel) return null;
         return (
-          <CommunityCallStage
+          <CallStage
             channel={pipChannel}
             activeHub={activeHub}
             currentUser={currentUser}
@@ -425,3 +427,5 @@ export function CommunityDialogsPortal({
     </>
   );
 }
+
+export const CommunityDialogsPortal = ChatDialogsPortal;
