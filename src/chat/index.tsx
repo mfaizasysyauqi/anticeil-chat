@@ -55,6 +55,7 @@ import { ChatMainView } from './components/chat-main-view';
 import { useActivityLauncher } from './hooks/use-activity-launcher';
 import { useMessageActions } from './hooks/use-message-actions';
 import { useThreadManager } from './hooks/use-thread-manager';
+import { useUrlSync } from './hooks/use-url-sync';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -392,55 +393,14 @@ export function ColonyPage() {
     };
   }, [channels]);
 
-  // Broadcast activeColonyId to Unified Mini Rail
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('anticeil_active_colony_changed', { detail: activeColonyId }));
-    window.dispatchEvent(new CustomEvent('anticeil_active_hub_changed', { detail: activeColonyId }));
-  }, [activeColonyId]);
-
-  // Synchronize browser URL address bar with active hub and active channel
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const url = new URL(window.location.href);
-      let changed = false;
-      if (activeColonyId && activeColonyId !== 'anticeil') {
-        if (url.searchParams.get('colony') !== activeColonyId) {
-          url.searchParams.set('colony', activeColonyId);
-          url.searchParams.delete('hub');
-          changed = true;
-        }
-      } else if (url.searchParams.has('colony') || url.searchParams.has('hub')) {
-        url.searchParams.delete('colony');
-        url.searchParams.delete('hub');
-        changed = true;
-      }
-
-      if (activeChannelId) {
-        if (url.searchParams.get('channel') !== activeChannelId) {
-          url.searchParams.set('channel', activeChannelId);
-          changed = true;
-        }
-      } else if (url.searchParams.has('channel') && channels.length > 0) {
-        url.searchParams.delete('channel');
-        changed = true;
-      }
-
-      if (selectedActivityAppId) {
-        if (url.searchParams.get('activity') !== selectedActivityAppId) {
-          url.searchParams.set('activity', selectedActivityAppId);
-          changed = true;
-        }
-      } else if (url.searchParams.has('activity') && channels.length > 0 && !isActivityOpen) {
-        url.searchParams.delete('activity');
-        changed = true;
-      }
-
-      if (changed) {
-        window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
-      }
-    } catch {}
-  }, [activeColonyId, activeChannelId, selectedActivityAppId, channels.length, isActivityOpen]);
+  // ── Browser URL & Rail Sync Hook ──────────────────────────────────
+  useUrlSync({
+    activeColonyId,
+    activeChannelId,
+    selectedActivityAppId,
+    channelsCount: channels.length,
+    isActivityOpen,
+  });
 
   const [inputText, setInputText] = useState('');
   const [stagedAttachment, setStagedAttachment] = useState<ColonyAttachment | null>(null);
