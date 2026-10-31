@@ -35,6 +35,8 @@ export type ColonyChannel = {
   contentVisibility?: 'default' | 'spoiler' | 'nsfw';
   categoryId?: string;
   categoryName?: string;
+  isMuted?: boolean;
+  mutedUntil?: string | null;
 };
 
 export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {

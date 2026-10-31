@@ -23,6 +23,7 @@ import {
   FolderPlus,
   Trash2,
   CheckCheck,
+  Check,
   BellOff,
   Pencil,
 } from 'lucide-react';
@@ -133,9 +134,11 @@ export function ColonyChannelsSidebar({
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
   const [editingCategory, setEditingCategory] = React.useState<ColonyCategory | null>(null);
   const [editCategoryName, setEditCategoryName] = React.useState('');
+  const [hideMutedChannels, setHideMutedChannels] = React.useState(false);
 
   const colonyChannels = channels
     .filter((c) => (c.colonyId || 'anticeil') === (activeColony?.id || 'anticeil') && !c.isDirectMessage)
+    .filter((c) => !hideMutedChannels || !c.isMuted)
     .map((c) => ({
       ...c,
       type: resolveChannelType(c),
@@ -533,8 +536,10 @@ export function ColonyChannelsSidebar({
         </div>
       </div>
 
-      {/* Scroll Area: Server channels grouped by category */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin]">
+      {/* Scroll Area: Server channels grouped by category with right-click menu on empty space */}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin] flex flex-col">
         {/* Discord-style Server Events & Boost Entry */}
         {activeColony && (
           <div className="space-y-0.5 mb-3">
@@ -1241,7 +1246,57 @@ export function ColonyChannelsSidebar({
             </>
           )}
         </div>
+
+        {/* Empty space filler so right clicking anywhere below channels opens the menu */}
+        <div className="flex-1 min-h-[140px] cursor-default" />
       </div>
+    </ContextMenuTrigger>
+
+    <ContextMenuContent className="w-56 bg-card border-border text-foreground">
+      <ContextMenuItem
+        onClick={() => {
+          setHideMutedChannels((prev) => !prev);
+          toast.info(hideMutedChannels ? t('Menampilkan channel yang dibisukan') : t('Menyembunyikan channel yang dibisukan'));
+        }}
+        className="flex items-center justify-between cursor-pointer"
+      >
+        <span>{t('Hide Muted Channels')}</span>
+        <div
+          className={cn(
+            'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+            hideMutedChannels
+              ? 'bg-primary border-primary text-primary-foreground'
+              : 'border-muted-foreground/60',
+          )}
+        >
+          {hideMutedChannels && <Check className="w-3 h-3 stroke-[3]" />}
+        </div>
+      </ContextMenuItem>
+
+      <ContextMenuSeparator />
+
+      <ContextMenuItem
+        onClick={() => onOpenCreateChannel('CHANNELS', 'text')}
+        className="cursor-pointer"
+      >
+        <span>{t('Create Channel')}</span>
+      </ContextMenuItem>
+
+      <ContextMenuItem
+        onClick={() => onOpenCreateCategory?.()}
+        className="cursor-pointer"
+      >
+        <span>{t('Create Category')}</span>
+      </ContextMenuItem>
+
+      <ContextMenuItem
+        onClick={() => onOpenInvite()}
+        className="cursor-pointer"
+      >
+        <span>{t('Invite to Server')}</span>
+      </ContextMenuItem>
+    </ContextMenuContent>
+  </ContextMenu>
 
       {/* Edit Category Dialog */}
       <Dialog open={Boolean(editingCategory)} onOpenChange={(open) => !open && setEditingCategory(null)}>

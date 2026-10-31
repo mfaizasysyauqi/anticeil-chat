@@ -1105,13 +1105,13 @@ export function YouTubeWatchTogether({
           {/* Right Column (Desktop) or Main Browse Area (Mobile when mobileTab === 'browse') */}
           <div
             className={cn(
-              'flex-1 min-h-0 flex flex-col pt-0 pb-3 md:py-3 gap-2 md:gap-3 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]',
+              'flex-1 min-h-0 flex flex-col pt-0 pb-3 md:pb-4 gap-2 md:gap-3 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]',
               isExpandedVideo ? 'hidden' : (mobileTab === 'browse' ? 'flex' : 'hidden md:flex'),
               CHANNEL_HORIZONTAL_PADDING,
             )}
           >
-            {/* Sticky Search Header Bar */}
-            <div className="sticky top-0 z-20 bg-background pt-1.5 pb-2 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-3 px-3 sm:-mx-4 sm:px-4 shadow-xs">
+            {/* Sticky Search Header Bar: Flush at top (pt-0 on parent) so scrolled cards are completely covered */}
+            <div className="sticky top-0 z-20 bg-background pt-3 pb-2.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-3 px-3 sm:-mx-4 sm:px-4 shadow-xs">
               {renderSearchBar()}
             </div>
 
@@ -1148,7 +1148,7 @@ export function YouTubeWatchTogether({
           )}
         >
           {/* Fixed / Sticky Header: Host Popover, Search Bar, and Categories */}
-          <div className="sticky top-0 z-30 bg-background pt-2 pb-1.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-3 px-3 sm:-mx-4 sm:px-4 shadow-xs">
+          <div className="sticky top-0 z-30 bg-background pt-3 pb-2.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-3 px-3 sm:-mx-4 sm:px-4 shadow-xs">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {renderHostPopover()}
               {renderSearchBar('Ketik kata kunci atau tempel URL YouTube...', 'flex-1 max-w-xl')}
