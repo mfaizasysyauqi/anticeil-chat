@@ -1067,8 +1067,10 @@ export function CallStage({
       {/* Discord Bottom Control Dock */}
       <CallControlsBar
         isTextChannel={channel.type !== 'voice'}
+        participants={participants}
         currentUser={currentUser}
         currentUserName={currentUserName}
+        isSpeakingLocal={isSpeakingLocal}
         isMuted={isMuted}
         isVideoOff={isVideoOff}
         isScreenSharing={isScreenSharing}

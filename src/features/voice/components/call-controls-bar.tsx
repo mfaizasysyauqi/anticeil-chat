@@ -33,6 +33,12 @@ import { DiscordAppDefinition } from '../data/discord-activities';
 
 export interface CallControlsBarProps {
   isTextChannel?: boolean;
+  participants?: Array<{
+    socketId: string;
+    userName: string;
+    userAvatar?: string | null;
+    isSpeaking?: boolean;
+  }>;
   currentUser?: {
     id?: string;
     firstName?: string;
@@ -41,6 +47,7 @@ export interface CallControlsBarProps {
     imageUrl?: string | null;
   } | null | undefined;
   currentUserName?: string;
+  isSpeakingLocal?: boolean;
   isMuted: boolean;
   isVideoOff: boolean;
   isScreenSharing: boolean;
@@ -61,8 +68,10 @@ export interface CallControlsBarProps {
 
 export function CallControlsBar({
   isTextChannel = false,
+  participants,
   currentUser,
   currentUserName,
+  isSpeakingLocal = false,
   isMuted,
   isVideoOff,
   isScreenSharing,
@@ -88,15 +97,53 @@ export function CallControlsBar({
           CHANNEL_HORIZONTAL_PADDING,
         )}
       >
-        {/* Left: Cuma foto profile di pojok kiri (sesuai SS kedua) */}
-        <div className="flex items-center justify-start">
-          <CommunityAvatar
-            name={currentUserName || 'You'}
-            imageUrl={currentUser?.imageUrl}
-            size={36}
-            showStatus={false}
-            className="ring-2 ring-border/80 shrink-0"
-          />
+        {/* Left: Foto profile peserta (Discord style: no extra border, hover shows username) */}
+        <div className="flex items-center justify-start gap-1.5">
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="cursor-pointer inline-flex shrink-0">
+                  <CommunityAvatar
+                    name={currentUserName || 'You'}
+                    imageUrl={currentUser?.imageUrl}
+                    size={36}
+                    showStatus={false}
+                    className={cn(
+                      'shrink-0 aspect-square rounded-full transition-all',
+                      isSpeakingLocal && 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-background',
+                    )}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs font-semibold">
+                {currentUserName || 'You'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {participants?.map((p) => (
+            <TooltipProvider key={p.socketId} delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-pointer inline-flex shrink-0">
+                    <CommunityAvatar
+                      name={p.userName}
+                      imageUrl={p.userAvatar}
+                      size={36}
+                      showStatus={false}
+                      className={cn(
+                        'shrink-0 aspect-square rounded-full transition-all',
+                        p.isSpeaking && 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-background',
+                      )}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  {p.userName}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
         </div>
 
         {/* Center: Menu simpel cuma show chat, minimize activity, sama leave chat */}
