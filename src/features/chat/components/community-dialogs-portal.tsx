@@ -21,9 +21,9 @@ import {
   ChannelSettingsDialog,
   type useChannelModals,
 } from '@/features/channels';
-import { EditProfileDialog } from '@/features/profile';
+
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
-import { CommunityCallStage } from '@/features/voice';
+import { CommunityCallStage, UserSettingsModal } from '@/features/voice';
 import { AuthRequiredDialog } from '@/features/auth';
 
 export interface CommunityDialogsPortalProps {
@@ -54,9 +54,10 @@ export interface CommunityDialogsPortalProps {
   setIsGiftModalOpen: (open: boolean) => void;
   handleSendGift: (gift: any) => void;
 
-  // Profile
-  isEditProfileOpen: boolean;
-  setIsEditProfileOpen: (open: boolean) => void;
+  // User Settings
+  isUserSettingsOpen: boolean;
+  setIsUserSettingsOpen: (open: boolean) => void;
+  userSettingsInitialSection?: 'account' | 'voice' | 'camera' | 'appearance';
   currentUserName: string;
   updateNameMutation: any;
   updateUsernameMutation: any;
@@ -119,8 +120,9 @@ export function CommunityDialogsPortal({
   isGiftModalOpen,
   setIsGiftModalOpen,
   handleSendGift,
-  isEditProfileOpen,
-  setIsEditProfileOpen,
+  isUserSettingsOpen,
+  setIsUserSettingsOpen,
+  userSettingsInitialSection,
   currentUserName,
   updateNameMutation,
   updateUsernameMutation,
@@ -318,10 +320,10 @@ export function CommunityDialogsPortal({
         t={t}
       />
 
-      {/* Edit Profile & Identity Dialog */}
-      <EditProfileDialog
-        open={isEditProfileOpen}
-        onOpenChange={setIsEditProfileOpen}
+      {/* Unified User Settings Modal (Discord-style) */}
+      <UserSettingsModal
+        open={isUserSettingsOpen}
+        onOpenChange={setIsUserSettingsOpen}
         currentUser={currentUser}
         currentUserName={currentUserName}
         onSaveDisplayName={async (name) => {
@@ -346,7 +348,7 @@ export function CommunityDialogsPortal({
         setTheme={setTheme}
         onGoogleSignIn={handleGoogleSignIn}
         onLogout={handleLogout}
-        t={t}
+        initialSection={userSettingsInitialSection}
       />
 
       {/* Create Thread Modal */}

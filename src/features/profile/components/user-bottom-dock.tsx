@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Mic,
   MicOff,
@@ -14,7 +14,7 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import { AudioDeviceMenu, UserSettingsModal } from '@/features/voice';
+import { AudioDeviceMenu } from '@/features/voice';
 
 interface UserBottomDockProps {
   currentUser: any;
@@ -23,7 +23,7 @@ interface UserBottomDockProps {
   setIsMuted: (muted: boolean) => void;
   isDeafened: boolean;
   setIsDeafened: (deafened: boolean) => void;
-  onOpenEditProfile: () => void;
+  onOpenSettings?: (section?: 'account' | 'voice' | 'camera' | 'appearance') => void;
   onLogout?: () => void;
   onGoogleSignIn?: () => void;
   activeCallChannelId?: string | null;
@@ -34,13 +34,6 @@ interface UserBottomDockProps {
   onReturnToCall?: () => void;
   onDisconnectCall?: () => void;
   className?: string;
-  // account props forwarded to UserSettingsModal
-  onSaveDisplayName?: (name: string) => Promise<void> | void;
-  isSavingDisplayName?: boolean;
-  onSaveUsername?: (username: string) => Promise<void> | void;
-  isSavingUsername?: boolean;
-  theme?: any;
-  setTheme?: (theme: any) => void;
 }
 
 export function UserBottomDock({
@@ -50,7 +43,7 @@ export function UserBottomDock({
   setIsMuted,
   isDeafened,
   setIsDeafened,
-  onOpenEditProfile,
+  onOpenSettings,
   onLogout,
   onGoogleSignIn,
   activeCallChannelId,
@@ -60,16 +53,8 @@ export function UserBottomDock({
   onReturnToCall,
   onDisconnectCall,
   className,
-  onSaveDisplayName,
-  isSavingDisplayName,
-  onSaveUsername,
-  isSavingUsername,
-  theme,
-  setTheme,
 }: UserBottomDockProps) {
   const { t } = useTranslation();
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
     <div
@@ -123,7 +108,7 @@ export function UserBottomDock({
           <Button
             type="button"
             size="sm"
-            onClick={onGoogleSignIn || onOpenEditProfile}
+            onClick={onGoogleSignIn || (() => onOpenSettings?.('account'))}
             className="flex-1 flex items-center justify-center gap-2 h-9 text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer shadow-xs rounded-lg"
           >
             <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
@@ -148,9 +133,9 @@ export function UserBottomDock({
           </Button>
           <button
             type="button"
-            onClick={onOpenEditProfile}
+            onClick={() => onOpenSettings?.('account')}
             className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-lg cursor-pointer transition-colors shrink-0"
-            title={t('Pengaturan')}
+            title={t('Pengaturan Pengguna')}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -158,7 +143,7 @@ export function UserBottomDock({
       ) : (
         <div className="w-full h-[64px] px-2 flex items-center justify-between">
           <div
-            onClick={onOpenEditProfile}
+            onClick={() => onOpenSettings?.('account')}
             className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-sidebar-accent/60 cursor-pointer transition-colors group/user"
             title={t('Ubah profil & pengaturan akun')}
           >
@@ -197,7 +182,7 @@ export function UserBottomDock({
               >
                 {isMuted ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5" />}
               </button>
-              <AudioDeviceMenu type="input" onOpenFullSettings={() => setIsVoiceModalOpen(true)}>
+              <AudioDeviceMenu type="input" onOpenFullSettings={() => onOpenSettings?.('voice')}>
                 <button
                   type="button"
                   className="h-7 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pr-1"
@@ -218,7 +203,7 @@ export function UserBottomDock({
               >
                 <Headphones className={cn('w-3.5 h-3.5', isDeafened && 'text-red-400')} />
               </button>
-              <AudioDeviceMenu type="output" onOpenFullSettings={() => setIsVoiceModalOpen(true)}>
+              <AudioDeviceMenu type="output" onOpenFullSettings={() => onOpenSettings?.('voice')}>
                 <button
                   type="button"
                   className="h-7 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pr-1"
@@ -232,9 +217,9 @@ export function UserBottomDock({
             {/* Settings button */}
             <button
               type="button"
-              onClick={() => setIsSettingsOpen(true)}
+              onClick={() => onOpenSettings?.('account')}
               className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
-              title={t('Pengaturan')}
+              title={t('Pengaturan Pengguna')}
             >
               <Settings className="w-3.5 h-3.5" />
             </button>
@@ -252,22 +237,6 @@ export function UserBottomDock({
           </div>
         </div>
       )}
-
-      {/* Unified User Settings Modal (Discord-style) */}
-      <UserSettingsModal
-        open={isSettingsOpen}
-        onOpenChange={setIsSettingsOpen}
-        currentUser={currentUser}
-        currentUserName={currentUserName}
-        onSaveDisplayName={onSaveDisplayName ?? (() => {})}
-        isSavingDisplayName={isSavingDisplayName}
-        onSaveUsername={onSaveUsername ?? (() => {})}
-        isSavingUsername={isSavingUsername}
-        theme={theme}
-        setTheme={setTheme ?? (() => {})}
-        onGoogleSignIn={onGoogleSignIn ?? (() => {})}
-        onLogout={onLogout ?? (() => {})}
-      />
     </div>
   );
 }

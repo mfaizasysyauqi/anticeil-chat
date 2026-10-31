@@ -914,7 +914,12 @@ export function CommunityPage() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Edit Profile dialog state
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
+  const [userSettingsInitialSection, setUserSettingsInitialSection] = useState<'account' | 'voice' | 'camera' | 'appearance'>('account');
+  const handleOpenUserSettings = (section: 'account' | 'voice' | 'camera' | 'appearance' = 'account') => {
+    setUserSettingsInitialSection(section);
+    setIsUserSettingsOpen(true);
+  };
 
   // DM Search Dialog (Discord-style "Find or start a conversation")
   const [isDmSearchOpen, setIsDmSearchOpen] = useState(false);
@@ -1842,7 +1847,7 @@ export function CommunityPage() {
         setIsMuted={setIsMuted}
         isDeafened={isDeafened}
         setIsDeafened={setIsDeafened}
-        onOpenEditProfile={() => setIsEditProfileOpen(true)}
+        onOpenSettings={handleOpenUserSettings}
         onLogout={handleLogout}
         onGoogleSignIn={handleGoogleSignIn}
         activeCallChannelId={activeCallChannelId}
@@ -1857,12 +1862,6 @@ export function CommunityPage() {
           setActiveCallChannelId(null);
           setIsActivityOpen(false);
         }}
-        onSaveDisplayName={(name) => updateNameMutation.mutate(name)}
-        isSavingDisplayName={updateNameMutation.isPending}
-        onSaveUsername={(username) => updateUsernameMutation.mutate(username)}
-        isSavingUsername={updateUsernameMutation.isPending}
-        theme={theme}
-        setTheme={setTheme}
       />
     );
   };
@@ -2196,8 +2195,9 @@ export function CommunityPage() {
           isGiftModalOpen={isGiftModalOpen}
           setIsGiftModalOpen={setIsGiftModalOpen}
           handleSendGift={handleSendGift}
-          isEditProfileOpen={isEditProfileOpen}
-          setIsEditProfileOpen={setIsEditProfileOpen}
+          isUserSettingsOpen={isUserSettingsOpen}
+          setIsUserSettingsOpen={setIsUserSettingsOpen}
+          userSettingsInitialSection={userSettingsInitialSection}
           currentUserName={currentUserName}
           updateNameMutation={updateNameMutation}
           updateUsernameMutation={updateUsernameMutation}
