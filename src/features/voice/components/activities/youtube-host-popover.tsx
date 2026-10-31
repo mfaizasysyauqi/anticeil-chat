@@ -83,14 +83,14 @@ export function YouTubeHostPopover({
           />
           <div
             className={cn(
-              'absolute top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#111214] border border-border/80 shadow-2xl p-4 z-50 text-foreground animate-in fade-in zoom-in-95 duration-150',
+              'absolute top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-card border border-border shadow-2xl p-4 z-50 text-foreground animate-in fade-in zoom-in-95 duration-150',
               align === 'right' ? 'right-0' : 'left-0',
             )}
           >
             {/* Permission Card */}
-            <div className="flex items-center justify-between p-3 rounded-xl border border-sky-500/40 bg-sky-500/5">
+            <div className="flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <Lock className="w-4 h-4 text-sky-400 shrink-0" />
+                <Lock className="w-4 h-4 text-primary shrink-0" />
                 <span className="text-xs text-foreground font-medium leading-tight">
                   Allow everyone to edit the playlist and video state
                 </span>
@@ -103,7 +103,7 @@ export function YouTubeHostPopover({
                 onClick={handleToggleAllowEveryone}
                 className={cn(
                   'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                  allowEveryoneEdit ? 'bg-sky-500' : 'bg-zinc-700',
+                  allowEveryoneEdit ? 'bg-primary' : 'bg-muted-foreground/30',
                   !isMeHost && 'opacity-60 cursor-not-allowed',
                 )}
               >
@@ -124,7 +124,7 @@ export function YouTubeHostPopover({
             {/* Participants List */}
             <div className="space-y-1.5 max-h-48 overflow-y-auto [scrollbar-width:thin]">
               {/* Current User Row */}
-              <div className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors">
+              <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="shrink-0 rounded-full overflow-hidden">
                     <CommunityAvatar
@@ -139,14 +139,14 @@ export function YouTubeHostPopover({
                   </span>
                 </div>
                 {isMeHost ? (
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-[10px] tracking-wide shrink-0">
+                  <span className="px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold text-[10px] tracking-wide shrink-0 shadow-xs">
                     HOST
                   </span>
                 ) : (
                   <button
                     type="button"
                     onClick={handleClaimHost}
-                    className="px-2.5 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground text-xs font-medium cursor-pointer shrink-0 transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary text-foreground text-xs font-medium cursor-pointer shrink-0 transition-colors"
                   >
                     Make Host
                   </button>
@@ -159,7 +159,7 @@ export function YouTubeHostPopover({
                 return (
                   <div
                     key={p.socketId}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="shrink-0 rounded-full overflow-hidden">
@@ -175,14 +175,14 @@ export function YouTubeHostPopover({
                       </span>
                     </div>
                     {isRemoteHost ? (
-                      <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-[10px] tracking-wide shrink-0">
+                      <span className="px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground font-bold text-[10px] tracking-wide shrink-0 shadow-xs">
                         HOST
                       </span>
                     ) : isMeHost ? (
                       <button
                         type="button"
                         onClick={() => handleTransferHost(p)}
-                        className="px-2.5 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground text-xs font-medium cursor-pointer shrink-0 transition-colors"
+                        className="px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary text-foreground text-xs font-medium cursor-pointer shrink-0 transition-colors"
                       >
                         Make Host
                       </button>

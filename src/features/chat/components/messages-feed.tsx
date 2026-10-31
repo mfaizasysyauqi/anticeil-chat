@@ -204,14 +204,14 @@ export function MessagesFeed({
                           <span className="text-[10px] leading-none">{act.icon || '🚀'}</span>
                         )}
                       </div>
-                      <span className="bg-[#5865f2] text-white text-[9px] font-bold px-1 py-0.2 rounded-[3px] flex items-center gap-0.5 leading-none shadow-2xs">
+                      <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.2 rounded-[3px] flex items-center gap-0.5 leading-none shadow-2xs">
                         <Check className="w-2 h-2 stroke-[3]" />
                         <span>APP</span>
                       </span>
                       <span className="font-semibold text-foreground/90 group-hover/cmd:underline">
                         {act.name}
                       </span>
-                      <span className="font-semibold text-[#5865f2] group-hover/cmd:underline flex items-center gap-1">
+                      <span className="font-semibold text-primary group-hover/cmd:underline flex items-center gap-1">
                         <svg className="w-3 h-3 fill-current shrink-0" viewBox="0 0 24 24">
                           <path d="M7 3a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm-10 10a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm10 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" />
                         </svg>
@@ -262,7 +262,7 @@ export function MessagesFeed({
                           {act ? act.name : msg.senderName}
                         </span>
                         {act ? (
-                          <span className="bg-[#5865f2] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center gap-0.5 leading-none shadow-xs">
+                          <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center gap-0.5 leading-none shadow-xs">
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                             <span>APP</span>
                           </span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Smile, TrendingUp, Search, Plus, Loader2 } from 'lucide-react';
+import { Smile, TrendingUp, Search, Plus, Loader2, Compass } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -209,7 +209,7 @@ export function MediaPickerPopover({
                     ? `Cari di #${selectedGifCategory}...`
                     : "Search Tenor GIFs..."
                   : activeMediaTab === 'stickers'
-                  ? "Cari stiker di semua server..."
+                  ? "Cari stiker di semua colony..."
                   : "Cari emoji..."
               }
               className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -253,7 +253,7 @@ export function MediaPickerPopover({
             {activeHub && (
               <div
                 className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border border-white/20 text-white font-bold text-xs flex items-center justify-center shadow-xs cursor-pointer overflow-hidden"
-                title={`Server: ${activeHub.name}`}
+                title={`Colony: ${activeHub.name}`}
               >
                 {activeHub.iconUrl ? (
                   <img src={activeHub.iconUrl} alt={activeHub.name} className="w-full h-full object-cover" />
@@ -264,12 +264,13 @@ export function MediaPickerPopover({
             )}
 
             {/* Standard Unicode / Discord Library */}
-            <div
-              className="w-8 h-8 rounded-full bg-muted border border-border/40 text-muted-foreground flex items-center justify-center text-xs font-bold cursor-pointer"
+            <button
+              type="button"
+              className="w-8 h-8 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/50 flex items-center justify-center transition-all cursor-pointer"
               title="Koleksi Standar Anticeil"
             >
-              🌐
-            </div>
+              <Compass className="w-4 h-4" />
+            </button>
 
             {/* Quick Add Media Shortcut Button */}
             <div className="mt-auto pt-2 border-t border-border flex flex-col gap-1.5">
@@ -277,8 +278,8 @@ export function MediaPickerPopover({
                 <button
                   type="button"
                   onClick={onOpenQuickAddEmoji}
-                  className="w-8 h-8 rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border/60 flex items-center justify-center transition-all cursor-pointer shadow-xs"
-                  title="Tambah emoji kustom baru ke server ini (PostgreSQL)"
+                  className="w-8 h-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/30 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                  title="Tambah emoji kustom baru ke colony ini (PostgreSQL)"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                 </button>
@@ -287,8 +288,8 @@ export function MediaPickerPopover({
                 <button
                   type="button"
                   onClick={onOpenQuickAddSticker}
-                  className="w-8 h-8 rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border/60 flex items-center justify-center transition-all cursor-pointer shadow-xs"
-                  title="Tambah stiker kustom baru ke server ini (PostgreSQL)"
+                  className="w-8 h-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/30 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                  title="Tambah stiker kustom baru ke colony ini (PostgreSQL)"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                 </button>
@@ -305,7 +306,7 @@ export function MediaPickerPopover({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {activeHub?.name || 'Server'} — Kustom ({serverDbEmojis.length})
+                      {activeHub?.name || 'Colony'} — Kustom ({serverDbEmojis.length})
                     </span>
                     <button
                       type="button"
@@ -318,7 +319,7 @@ export function MediaPickerPopover({
 
                   {serverDbEmojis.length === 0 ? (
                     <div className="p-3 rounded-xl bg-muted/40 border border-border text-center text-xs text-muted-foreground">
-                      Belum ada emoji kustom di server ini.{' '}
+                      Belum ada emoji kustom di colony ini.{' '}
                       <button
                         type="button"
                         onClick={onOpenQuickAddEmoji}
@@ -387,7 +388,7 @@ export function MediaPickerPopover({
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {activeHub?.name || 'Server'} — Stiker ({serverDbStickers.length})
+                    {activeHub?.name || 'Colony'} — Stiker ({serverDbStickers.length})
                   </span>
                   <button
                     type="button"
@@ -400,7 +401,7 @@ export function MediaPickerPopover({
 
                 {serverDbStickers.length === 0 ? (
                   <div className="p-4 rounded-xl bg-muted/40 border border-border text-center text-xs text-muted-foreground">
-                    Belum ada stiker di server ini.{' '}
+                    Belum ada stiker di colony ini.{' '}
                     <button
                       type="button"
                       onClick={onOpenQuickAddSticker}

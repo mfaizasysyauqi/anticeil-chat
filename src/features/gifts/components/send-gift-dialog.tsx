@@ -73,7 +73,7 @@ export function SendGiftDialog({
                   </div>
                   <div className="flex items-center gap-2">
                     <span>💎</span>
-                    <span>2 Server Boosts</span>
+                    <span>2 Colony Boosts</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>👤</span>
@@ -141,7 +141,7 @@ export function SendGiftDialog({
               <button
                 type="button"
                 onClick={() => onSendGift('nitro_basic')}
-                className="mt-4 w-full py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border/60 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
+                className="mt-4 w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/30 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
               >
                 Send Nitro Basic Gift
               </button>
