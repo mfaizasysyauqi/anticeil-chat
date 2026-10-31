@@ -1178,11 +1178,11 @@ export function CommunityPage() {
     });
   }, [hubChannels]);
 
-  // Auto-fetch and sync channels when switching to a server
+  // Auto-fetch and sync channels when switching to a colony
   useEffect(() => {
     if (!activeHubId || activeHubId === 'anticeil') return;
     let mounted = true;
-    const loadHubChannels = async () => {
+    const loadColonyChannels = async () => {
       try {
         const res = await communityApi.getChannels(activeHubId);
         if (mounted && Array.isArray(res)) {
@@ -1233,7 +1233,7 @@ export function CommunityPage() {
         console.warn('Failed to load channels for hub', activeHubId, err);
       }
     };
-    loadHubChannels();
+    loadColonyChannels();
     return () => {
       mounted = false;
     };
