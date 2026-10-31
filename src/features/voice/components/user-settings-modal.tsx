@@ -311,8 +311,18 @@ export function UserSettingsModal({
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('Username Unik')}</div>
-                          <div className="text-sm font-semibold text-foreground mt-0.5 font-mono">
-                            {currentUser?.username ? `@${currentUser.username}` : t('Belum diatur')}
+                          <div className="text-sm font-semibold text-foreground mt-0.5 font-mono flex items-center gap-2">
+                            {currentUser?.username ? (
+                              <>
+                                <span className="text-primary font-bold">@{currentUser.username}</span>
+                                <span className="text-[10px] text-emerald-500 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full">{t('Aktif')}</span>
+                              </>
+                            ) : (
+                              <span className="text-amber-500 font-semibold flex items-center gap-1.5 text-xs">
+                                <span>{t('Belum disimpan')}</span>
+                                <span className="text-[10px] text-muted-foreground font-normal">({t('Gunakan saran & tekan Simpan')})</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                         <span className="text-[10px] text-amber-500 font-semibold bg-amber-500/10 px-2 py-0.5 rounded">{t('Cooldown 14 Hari')}</span>
