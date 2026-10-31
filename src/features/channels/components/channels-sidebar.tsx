@@ -1,13 +1,13 @@
 ﻿import React from 'react';
 import { HomeChannelsSidebar } from './home-channels-sidebar';
-import { ServerChannelsSidebar } from './server-channels-sidebar';
+import { ColonyChannelsSidebar } from './colony-channels-sidebar';
 import type {
   CommunityHub,
   CommunityChannel,
   CommunityMember,
   CommunityChannelType,
 } from '@/chat/chat-types';
-import type { ServerSettingsSection } from '@/features/server-settings';
+import type { ColonySettingsSection } from '@/features/colony-settings';
 
 export interface ChannelsSidebarProps {
   currentUser?: any;
@@ -19,8 +19,8 @@ export interface ChannelsSidebarProps {
   activeCallChannelId: string | null;
   setActiveCallChannelId: (id: string | null) => void;
   isFriendsView: boolean;
-  homeView?: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
-  setHomeView?: (view: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
+  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
+  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
   messageRequestsCount?: number | string;
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
@@ -37,7 +37,7 @@ export interface ChannelsSidebarProps {
   onItemClick?: () => void;
   onOpenDmSearch: () => void;
   onOpenInvite: () => void;
-  onOpenServerSettings: (section?: ServerSettingsSection) => void;
+  onOpenServerSettings: (section?: ColonySettingsSection) => void;
   onOpenCreateChannel: (category: string, type?: CommunityChannelType) => void;
   onOpenCreateHub?: () => void;
   onOpenEditChannel: (channel: CommunityChannel) => void;
@@ -59,7 +59,7 @@ export function ChannelsSidebar(props: ChannelsSidebarProps) {
       {isHome ? (
         <HomeChannelsSidebar {...props} />
       ) : (
-        <ServerChannelsSidebar {...props} />
+        <ColonyChannelsSidebar {...props} />
       )}
       {userBottomDock}
     </div>

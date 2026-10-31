@@ -21,6 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
@@ -28,75 +29,84 @@ import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CommunityHub } from '@/chat/chat-types';
 import {
-  loadStoredServerInvitations,
-  saveStoredServerInvitations,
+  loadStoredColonyInvitations,
+  saveStoredColonyInvitations,
   loadStoredHubs,
   saveStoredHubs,
-  type ServerInvitation,
+  type ColonyInvitation,
 } from '@/lib/community-hubs';
 import { chatApi, communityApi } from '@/chat/chat-api';
-import { ServerIcon } from './server-icon';
+import { ColonyIcon } from './colony-icon';
 import { toast } from 'sonner';
 
-export interface ServersViewProps {
-  servers: CommunityHub[];
-  onSelectServer: (serverId: string) => void;
-  onOpenCreateServer: () => void;
+export interface ColoniesViewProps {
+  colonies?: CommunityHub[];
+  servers?: CommunityHub[];
+  onSelectColony?: (colonyId: string) => void;
+  onSelectServer?: (serverId: string) => void;
+  onOpenCreateColony?: () => void;
+  onOpenCreateServer?: () => void;
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
 }
 
-export function ServersView({
+export function ColoniesView({
+  colonies,
   servers,
+  onSelectColony,
   onSelectServer,
+  onOpenCreateColony,
   onOpenCreateServer,
   onOpenSidebar,
   horizontalPadding = 'px-4',
-}: ServersViewProps) {
+}: ColoniesViewProps) {
+  const colonyList = colonies ?? servers ?? [];
+  const handleSelectColony = onSelectColony ?? onSelectServer ?? (() => {});
+  const handleOpenCreateColony = onOpenCreateColony ?? onOpenCreateServer ?? (() => {});
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'joined' | 'pending' | 'explore'>('joined');
   const [searchQuery, setSearchQuery] = useState('');
-  const [serverInvitations, setServerInvitations] = useState<ServerInvitation[]>(() =>
-    loadStoredServerInvitations()
+  const [colonyInvitations, setColonyInvitations] = useState<ColonyInvitation[]>(() =>
+    loadStoredColonyInvitations()
   );
 
-  const fetchServerInvitations = useCallback(async () => {
+  const fetchColonyInvitations = useCallback(async () => {
     try {
       const live = await communityApi.getServerInvitations();
       if (Array.isArray(live)) {
-        setServerInvitations(live);
+        setColonyInvitations(live);
       }
     } catch {
-      setServerInvitations(loadStoredServerInvitations());
+      setColonyInvitations(loadStoredColonyInvitations());
     }
   }, []);
 
   // Real Public Servers from Backend DB
-  const [publicServers, setPublicServers] = useState<CommunityHub[]>([]);
+  const [publicColonies, setPublicColonies] = useState<CommunityHub[]>([]);
   const [isLoadingPublic, setIsLoadingPublic] = useState(false);
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [isJoiningByCode, setIsJoiningByCode] = useState(false);
 
   useEffect(() => {
-    fetchServerInvitations();
-    const handleUpdate = () => fetchServerInvitations();
+    fetchColonyInvitations();
+    const handleUpdate = () => fetchColonyInvitations();
     window.addEventListener('anticeil_server_invites_changed', handleUpdate);
     return () => window.removeEventListener('anticeil_server_invites_changed', handleUpdate);
-  }, [fetchServerInvitations]);
+  }, [fetchColonyInvitations]);
 
   // Fetch real public hubs from database
   useEffect(() => {
     let mounted = true;
-    const fetchPublicServers = async () => {
+    const fetchPublicColonies = async () => {
       setIsLoadingPublic(true);
       try {
         const all = await chatApi.getHubs();
         if (mounted && Array.isArray(all)) {
           // Filter out DM hub and servers the current user is already member of
           const available = all.filter(
-            (h) => h.id !== 'anticeil' && !servers.some((s) => s.id === h.id)
+            (h) => h.id !== 'anticeil' && !colonyList.some((s) => s.id === h.id)
           );
-          setPublicServers(available);
+          setPublicColonies(available);
         }
       } catch (err) {
         console.warn('Failed to load public hubs from API', err);
@@ -105,29 +115,29 @@ export function ServersView({
       }
     };
 
-    fetchPublicServers();
+    fetchPublicColonies();
     return () => {
       mounted = false;
     };
-  }, [servers, activeTab]);
+  }, [colonyList, activeTab]);
 
   // Exclude default home if desired or keep all
-  const myServers = servers.filter((s) => s.id !== 'anticeil');
+  const myColonies = colonyList.filter((s) => s.id !== 'anticeil');
 
-  const filteredMyServers = myServers.filter(
+  const filteredMyColonies = myColonies.filter(
     (s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredPendingInvites = serverInvitations.filter(
+  const filteredPendingInvites = colonyInvitations.filter(
     (inv) =>
-      inv.serverName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inv.inviterName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (inv.serverDescription && inv.serverDescription.toLowerCase().includes(searchQuery.toLowerCase()))
+      ((inv.colonyName || inv.serverName || "Colony") || inv.serverName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inv.inviterName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inv.colonyDescription && inv.colonyDescription.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredExplore = publicServers.filter(
+  const filteredExplore = publicColonies.filter(
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -138,9 +148,9 @@ export function ServersView({
       const codeOrId = community.inviteCode || community.id;
       const joined = await chatApi.joinHub(codeOrId);
       toast.success(t('Berhasil bergabung dengan {{name}}! 🎉', { name: community.name }));
-      onSelectServer(joined.id || community.id);
+      handleSelectColony(joined.id || community.id);
     } catch {
-      toast.error(t('Gagal bergabung ke server'));
+      toast.error(t('Gagal bergabung ke colony'));
     }
   };
 
@@ -153,7 +163,7 @@ export function ServersView({
       const joined = await chatApi.joinHub(code);
       toast.success(t('Berhasil bergabung dengan {{name}}! 🎉', { name: joined.name }));
       setInviteCodeInput('');
-      onSelectServer(joined.id);
+      handleSelectColony(joined.id);
     } catch {
       toast.error(t('Kode undangan tidak valid atau server tidak ditemukan'));
     } finally {
@@ -161,23 +171,23 @@ export function ServersView({
     }
   };
 
-  const handleAcceptInvitation = async (invite: ServerInvitation) => {
+  const handleAcceptInvitation = async (invite: ColonyInvitation) => {
     try {
       const res = await communityApi.acceptServerInvitation(invite.id);
       const joinedHub: CommunityHub = res?.hub || {
-        id: invite.serverId,
-        name: invite.serverName,
-        description: invite.serverDescription,
-        initials: invite.serverName.slice(0, 2).toUpperCase(),
+        id: invite.colonyId || invite.serverId || invite.id,
+        name: (invite.colonyName || invite.serverName || "Colony"),
+        description: invite.colonyDescription,
+        initials: (invite.colonyName || invite.serverName || "Colony").slice(0, 2).toUpperCase(),
         iconType: 'initials',
-        iconUrl: invite.serverIconUrl,
+        iconUrl: invite.colonyIconUrl,
         role: 'member',
         membersCount: (invite.membersCount || 1) + 1,
       };
 
-      const updated = serverInvitations.filter((i) => i.id !== invite.id);
-      setServerInvitations(updated);
-      saveStoredServerInvitations(updated);
+      const updated = colonyInvitations.filter((i) => i.id !== invite.id);
+      setColonyInvitations(updated);
+      saveStoredColonyInvitations(updated);
 
       // Persist as joined hub
       const existing = loadStoredHubs();
@@ -186,22 +196,22 @@ export function ServersView({
       }
 
       toast.success(`Berhasil bergabung dengan ${joinedHub.name}! 🎉`);
-      onSelectServer(joinedHub.id);
+      handleSelectColony(joinedHub.id);
     } catch (e) {
-      console.warn('Backend acceptServerInvitation call:', e);
+      console.warn('Backend acceptColonyInvitation call:', e);
       toast.error(t('Gagal menerima undangan server'));
     }
   };
 
-  const handleRejectInvitation = async (invite: ServerInvitation) => {
-    const updated = serverInvitations.filter((i) => i.id !== invite.id);
-    setServerInvitations(updated);
-    saveStoredServerInvitations(updated);
+  const handleRejectInvitation = async (invite: ColonyInvitation) => {
+    const updated = colonyInvitations.filter((i) => i.id !== invite.id);
+    setColonyInvitations(updated);
+    saveStoredColonyInvitations(updated);
     try {
       await communityApi.rejectServerInvitation(invite.id);
-      toast.info(`Undangan server ${invite.serverName} telah ditolak.`);
+      toast.info(`Undangan server ${(invite.colonyName || invite.serverName || "Colony")} telah ditolak.`);
     } catch {
-      toast.info(`Undangan server ${invite.serverName} telah dihapus.`);
+      toast.info(`Undangan server ${(invite.colonyName || invite.serverName || "Colony")} telah dihapus.`);
     }
   };
 
@@ -232,7 +242,7 @@ export function ServersView({
 
           <div className="flex items-center gap-2 shrink-0">
             <Globe className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{t('Server')}</span>
+            <span className="text-sm font-bold text-foreground">{t('Colony')}</span>
           </div>
 
           <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
@@ -248,9 +258,9 @@ export function ServersView({
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              <span>{t('Server Saya')}</span>
-              {myServers.length > 0 && (
-                <span className="text-[10px] text-muted-foreground/70">({myServers.length})</span>
+              <span>{t('Colony Saya')}</span>
+              {myColonies.length > 0 && (
+                <span className="text-[10px] text-muted-foreground/70">({myColonies.length})</span>
               )}
             </button>
 
@@ -264,9 +274,9 @@ export function ServersView({
               )}
             >
               <span>{t('Tertunda')}</span>
-              {serverInvitations.length > 0 && (
+              {colonyInvitations.length > 0 && (
                 <span className="size-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {serverInvitations.length}
+                  {colonyInvitations.length}
                 </span>
               )}
             </button>
@@ -281,18 +291,18 @@ export function ServersView({
               )}
             >
               <Compass className="w-3.5 h-3.5" />
-              <span>{t('Jelajahi Server')}</span>
+              <span>{t('Jelajahi Colony')}</span>
             </button>
 
             {/* Emerald Highlight Button: Buat Server Baru */}
             <Button
               size="xs"
-              onClick={onOpenCreateServer}
+              onClick={handleOpenCreateColony}
               className="px-2.5 py-1 text-xs font-bold transition-all bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 flex items-center gap-1 ml-0.5 shadow-2xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">{t('Buat Server')}</span>
-              <span className="sm:hidden">{t('Server')}</span>
+              <span className="hidden sm:inline">{t('Buat Colony')}</span>
+              <span className="sm:hidden">{t('Colony')}</span>
             </Button>
           </div>
         </div>
@@ -320,11 +330,11 @@ export function ServersView({
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Daftar Komunitas yang Anda Ikuti ({filteredMyServers.length})
+                Daftar Komunitas yang Anda Ikuti ({filteredMyColonies.length})
               </h2>
             </div>
 
-            {filteredMyServers.length === 0 ? (
+            {filteredMyColonies.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
                 <Globe className="w-12 h-12 stroke-1 mb-3 text-muted-foreground/60" />
                 <h3 className="text-sm font-bold text-foreground">Belum Bergabung dengan Server</h3>
@@ -334,7 +344,7 @@ export function ServersView({
                 <div className="flex items-center gap-2 mt-4">
                   <Button
                     size="sm"
-                    onClick={onOpenCreateServer}
+                    onClick={handleOpenCreateColony}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-8 text-xs cursor-pointer shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" /> Buat Server
@@ -351,15 +361,15 @@ export function ServersView({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredMyServers.map((srv) => (
+                {filteredMyColonies.map((srv) => (
                   <div
                     key={srv.id}
-                    onClick={() => onSelectServer(srv.id)}
+                    onClick={() => handleSelectColony(srv.id)}
                     className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs group relative overflow-hidden"
                   >
                     <div className="flex items-start gap-3">
                       <div className="size-12 rounded-[14px] bg-sidebar-accent border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs group-hover:scale-105 transition-transform">
-                        <ServerIcon hub={srv} />
+                        <ColonyIcon hub={srv} />
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -382,7 +392,7 @@ export function ServersView({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onSelectServer(srv.id);
+                          handleSelectColony(srv.id);
                         }}
                         className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all"
                       >
@@ -421,22 +431,22 @@ export function ServersView({
                   >
                     <div className="flex items-start gap-3">
                       <div className="size-12 rounded-[14px] bg-sidebar-accent border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs font-bold text-base text-foreground group-hover:scale-105 transition-transform">
-                        {inv.serverIconUrl ? (
-                          <img src={inv.serverIconUrl} alt={inv.serverName} className="w-full h-full object-cover" />
+                        {inv.colonyIconUrl ? (
+                          <img src={inv.colonyIconUrl} alt={(inv.colonyName || inv.serverName || "Colony")} className="w-full h-full object-cover" />
                         ) : (
-                          inv.serverName.charAt(0).toUpperCase()
+                          (inv.colonyName || inv.serverName || "Colony").charAt(0).toUpperCase()
                         )}
                       </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-foreground truncate">{inv.serverName}</h3>
+                          <h3 className="text-sm font-bold text-foreground truncate">{(inv.colonyName || inv.serverName || "Colony")}</h3>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">
                             Undangan Masuk
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-                          {inv.serverDescription || 'Komunitas Anticeil untuk kolaborasi dan obrolan santai.'}
+                          {inv.colonyDescription || 'Komunitas Anticeil untuk kolaborasi dan obrolan santai.'}
                         </p>
                         <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
                           {inv.inviterAvatar && (
@@ -444,7 +454,7 @@ export function ServersView({
                           )}
                           <span>
                             Diundang oleh <strong className="text-foreground">{inv.inviterName}</strong>
-                            {inv.inviterUsername ? ` (@${inv.inviterUsername})` : ''}
+                            {(inv.inviterUsername || inv.inviterName || "") ? ` (@${(inv.inviterUsername || inv.inviterName || "")})` : ''}
                             {inv.createdAt ? ` • ${inv.createdAt}` : ''}
                           </span>
                         </div>
@@ -551,11 +561,11 @@ export function ServersView({
                 </p>
                 <Button
                   size="sm"
-                  onClick={onOpenCreateServer}
+                  onClick={handleOpenCreateColony}
                   className="mt-3.5 h-8 px-3 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-2xs"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
-                  <span>{t('Buat Server Baru')}</span>
+                  <span>{t('Buat Colony Baru')}</span>
                 </Button>
               </div>
             ) : (
@@ -567,7 +577,7 @@ export function ServersView({
                   >
                     <div className="flex items-start gap-3">
                       <div className="size-12 rounded-[14px] bg-sidebar-accent border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs group-hover:scale-105 transition-transform">
-                        <ServerIcon hub={pub} />
+                        <ColonyIcon hub={pub} />
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -605,3 +615,8 @@ export function ServersView({
     </div>
   );
 }
+
+
+// Backward-compatible alias
+export const ServersView = ColoniesView;
+export type ServerViewProps = ColoniesViewProps;

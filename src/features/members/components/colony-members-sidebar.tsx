@@ -6,19 +6,19 @@ import { CommunityMember } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from './role-badge';
 
-export interface ServerMembersSidebarProps {
+export interface ColonyMembersSidebarProps {
   displayMembers: CommunityMember[];
   onInviteClick: () => void;
   onStartDM: (member: CommunityMember) => void;
   t: (key: string) => string;
 }
 
-export function ServerMembersSidebar({
+export function ColonyMembersSidebar({
   displayMembers,
   onInviteClick,
   onStartDM,
   t,
-}: ServerMembersSidebarProps) {
+}: ColonyMembersSidebarProps) {
   const roleGroups = useMemo(
     () => [
       {
@@ -57,7 +57,7 @@ export function ServerMembersSidebar({
       {/* Header: NON-SCROLLABLE APP BAR */}
       <div className="h-12 border-b border-sidebar-border px-4 flex items-center justify-between font-semibold text-xs text-muted-foreground uppercase tracking-wider shrink-0 bg-sidebar z-10">
         <span>
-          {t('Anggota Server')} ({displayMembers.length})
+          {t('Anggota Colony')} ({displayMembers.length})
         </span>
         <Button
           variant="ghost"

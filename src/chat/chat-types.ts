@@ -211,6 +211,16 @@ export type CommunityHubStats = {
 // ── Domain Aliases (Aligning Code with UI/UX: Server, Channel, Chat) ──
 import type { CommunityHub } from '@/lib/community-hubs';
 
+export type Colony = CommunityHub;
+export type ColonyId = string;
+export type ColonyRole = CommunityRole;
+export type ColonyMember = CommunityMember;
+export type ColonyInvite = CommunityInvite;
+export type ColonyBan = CommunityBan;
+export type ColonyCustomRole = CommunityCustomRole;
+export type ColonyStats = CommunityHubStats;
+export type ColonyAuditEntry = CommunityAuditEntry;
+
 export type Server = CommunityHub;
 export type ServerId = string;
 export type ServerRole = CommunityRole;

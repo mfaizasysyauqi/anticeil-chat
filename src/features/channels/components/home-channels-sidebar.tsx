@@ -22,8 +22,8 @@ export interface HomeChannelsSidebarProps {
   currentUser?: any;
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
-  homeView?: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
-  setHomeView?: (view: 'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
+  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
+  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
   messageRequestsCount?: number | string;
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
@@ -118,12 +118,12 @@ export function HomeChannelsSidebar({
           <button
             onClick={() => {
               setActiveChannelId('');
-              setHomeView?.('servers');
+              setHomeView?.('colonies');
               onItemClick?.();
             }}
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
-              !activeChannelId && homeView === 'servers'
+              !activeChannelId && homeView === 'colonies'
                 ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
                 : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
@@ -131,12 +131,12 @@ export function HomeChannelsSidebar({
             <Compass
               className={cn(
                 'w-4 h-4 shrink-0 transition-colors',
-                !activeChannelId && homeView === 'servers'
+                !activeChannelId && homeView === 'colonies'
                   ? 'text-primary'
                   : 'text-muted-foreground group-hover:text-foreground',
               )}
             />
-            <span className="flex-1 font-medium">{t('Server & Komunitas')}</span>
+            <span className="flex-1 font-medium">{t('Colony & Komunitas')}</span>
           </button>
 
           {/* Message Requests */}

@@ -44,7 +44,7 @@ export function ProfileTab({
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-1">{t('Profil Server')}</h2>
+      <h2 className="text-xl font-bold mb-1">{t('Profil Colony')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
         {t('Atur bagaimana server Anda tampil di link undangan dan daftar server.')}
       </p>
@@ -118,7 +118,7 @@ export function ProfileTab({
       <div className="space-y-4">
         <div>
           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('Nama Server')}
+            {t('Nama Colony')}
           </label>
           <Input
             value={serverSettingsEditName}

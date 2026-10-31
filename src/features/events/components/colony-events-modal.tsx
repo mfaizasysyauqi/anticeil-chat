@@ -30,7 +30,7 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CommunityHub, CommunityChannel } from '@/chat/chat-types';
 import type { CalendarEvent } from '@/features/calendar/types';
 
-export interface ServerEventsModalProps {
+export interface ColonyEventsModalProps {
   isOpen: boolean;
   onClose: () => void;
   activeHub: CommunityHub | null;
@@ -41,7 +41,7 @@ export interface ServerEventsModalProps {
   onJoinChannel?: (channelId: string) => void;
 }
 
-export function ServerEventsModal({
+export function ColonyEventsModal({
   isOpen,
   onClose,
   activeHub,
@@ -50,7 +50,7 @@ export function ServerEventsModal({
   onCreateEvent,
   currentUser,
   onJoinChannel,
-}: ServerEventsModalProps) {
+}: ColonyEventsModalProps) {
   const [viewState, setViewState] = useState<'list' | 'create' | 'share'>('list');
   const [createdShareEvent, setCreatedShareEvent] = useState<CalendarEvent | null>(null);
 

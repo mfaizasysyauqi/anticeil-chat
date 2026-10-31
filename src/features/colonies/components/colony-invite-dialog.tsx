@@ -27,7 +27,7 @@ import { friendsApi } from '@/features/friends/api/friends-api';
 import type { CommunityHub, CommunityMember } from '@/chat/chat-types';
 import type { FriendMember } from '@/features/friends/types';
 
-export interface ServerInviteDialogProps {
+export interface ColonyInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activeServer?: CommunityHub | null;
@@ -37,7 +37,7 @@ export interface ServerInviteDialogProps {
   t: (key: string) => string;
 }
 
-export function ServerInviteDialog({
+export function ColonyInviteDialog({
   open,
   onOpenChange,
   activeServer,
@@ -45,7 +45,7 @@ export function ServerInviteDialog({
   onInviteUsername,
   members = [],
   t,
-}: ServerInviteDialogProps) {
+}: ColonyInviteDialogProps) {
   const currentServer = activeServer ?? activeHub;
   const [searchQuery, setSearchQuery] = useState('');
   const [candidateUsers, setCandidateUsers] = useState<FriendMember[]>([]);
@@ -212,7 +212,7 @@ export function ServerInviteDialog({
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <UserPlus className="w-5 h-5 text-primary" />
               <span>
-                {t('Undang Teman ke')} {currentServer?.name || 'Server'}
+                {t('Undang Teman ke Colony')} {currentServer?.name || 'Server'}
               </span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -411,5 +411,7 @@ export function ServerInviteDialog({
 }
 
 // Backward-compatible alias
-export const HubInviteDialog = ServerInviteDialog;
-export type HubInviteDialogProps = ServerInviteDialogProps;
+
+// Backward-compatible alias
+export const ServerInviteDialog = ColonyInviteDialog;
+export type ServerInviteDialogProps = ColonyInviteDialogProps;

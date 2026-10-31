@@ -41,7 +41,7 @@ import type {
 } from '@/chat/chat-types';
 import {
   ProfileTab,
-  ServerTagsTab,
+  ColonyTagsTab,
   AnalyticsTab,
   BoostTab,
   EmojisTab,
@@ -53,9 +53,9 @@ import {
   BansTab,
 } from './tabs';
 
-export type ServerSettingsSection =
+export type ColonySettingsSection =
   | 'profile'
-  | 'server-tag'
+  | 'colony-tag'
   | 'engagement'
   | 'boost'
   | 'emoji'
@@ -67,21 +67,21 @@ export type ServerSettingsSection =
   | 'bans'
   | 'delete';
 
-interface ServerSettingsDialogProps {
+interface ColonySettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   activeHub: CommunityHub | null;
   currentUser: CommunityMember | null;
   members: CommunityMember[];
   channels: CommunityChannel[];
-  initialSection?: ServerSettingsSection;
+  initialSection?: ColonySettingsSection;
   onUpdateHub: (hubId: string, updates: Partial<CommunityHub>) => Promise<void>;
   onDeleteHub: (hub: CommunityHub) => void;
   onOpenWebhooks?: () => void;
   onUpdateMembers?: (updater: (prev: CommunityMember[]) => CommunityMember[]) => void;
 }
 
-export function ServerSettingsDialog({
+export function ColonySettingsDialog({
   isOpen,
   onClose,
   activeHub,
@@ -93,14 +93,14 @@ export function ServerSettingsDialog({
   onDeleteHub,
   onOpenWebhooks,
   onUpdateMembers,
-}: ServerSettingsDialogProps) {
+}: ColonySettingsDialogProps) {
   const { t } = useTranslation();
 
-  const [serverSettingsSection, setServerSettingsSection] = useState<ServerSettingsSection>(initialSection);
+  const [serverSettingsSection, setColonySettingsSection] = useState<ColonySettingsSection>(initialSection);
 
   useEffect(() => {
     if (isOpen && initialSection) {
-      setServerSettingsSection(initialSection);
+      setColonySettingsSection(initialSection);
     }
   }, [isOpen, initialSection]);
 
@@ -168,7 +168,7 @@ export function ServerSettingsDialog({
           showCloseButton={false}
           className="max-w-[900px] w-[calc(100vw-2rem)] h-[calc(100dvh-4rem)] max-h-[680px] gap-0 overflow-hidden p-0 rounded-[16px]"
         >
-          <DialogTitle className="sr-only">{t('Pengaturan Server')}</DialogTitle>
+          <DialogTitle className="sr-only">{t('Pengaturan Colony')}</DialogTitle>
           <div className="flex flex-row w-full h-full min-h-0 overflow-hidden">
 
           {/* Left sidebar */}
@@ -181,15 +181,15 @@ export function ServerSettingsDialog({
 
             <nav className="p-2 space-y-0.5 text-xs">
               {[
-                { id: 'profile' as const, label: t('Profil Server'), icon: Globe },
-                { id: 'server-tag' as const, label: t('Tag Server'), icon: Tag },
+                { id: 'profile' as const, label: t('Profil Colony'), icon: Globe },
+                { id: 'colony-tag' as const, label: t('Tag Colony'), icon: Tag },
                 { id: 'engagement' as const, label: t('Engagement'), icon: BarChart3 },
                 { id: 'boost' as const, label: t('Server Boost'), icon: Zap },
                 { id: 'emoji' as const, label: t('Emoji Kustom'), icon: Smile },
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
-                  onClick={() => setServerSettingsSection(id)}
+                  onClick={() => setColonySettingsSection(id)}
                   className={cn(
                     'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md font-medium text-left transition-colors',
                     serverSettingsSection === id
@@ -218,7 +218,7 @@ export function ServerSettingsDialog({
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
-                  onClick={() => setServerSettingsSection(id)}
+                  onClick={() => setColonySettingsSection(id)}
                   className={cn(
                     'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md font-medium text-left transition-colors',
                     serverSettingsSection === id
@@ -243,7 +243,7 @@ export function ServerSettingsDialog({
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md font-medium text-left text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <Trash2 className="h-4 w-4 shrink-0" />
-                {t('Hapus Server')}
+                {t('Hapus Colony')}
               </button>
             </nav>
           </aside>
@@ -280,8 +280,8 @@ export function ServerSettingsDialog({
               )}
 
               {/* 2. TAG SERVER */}
-              {serverSettingsSection === 'server-tag' && (
-                <ServerTagsTab
+              {serverSettingsSection === 'colony-tag' && (
+                <ColonyTagsTab
                   activeHub={activeHub}
                   serverTags={serverTags}
                   setServerTags={setServerTags}

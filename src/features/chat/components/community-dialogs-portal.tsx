@@ -5,13 +5,13 @@ import { communityApi } from '@/chat/chat-api';
 import { SendGiftDialog } from '@/features/gifts';
 import { QuickAddEmojiDialog, QuickAddStickerDialog, type useMediaModals } from '@/features/media';
 import {
-  CreateOrJoinServerDialog,
-  EditServerDialog,
-  DeleteServerDialog,
-  ServerInviteDialog,
-  type useServerModals,
-} from '@/features/servers';
-import { ServerSettingsDialog } from '@/features/server-settings';
+  CreateOrJoinColonyDialog,
+  EditColonyDialog,
+  DeleteColonyDialog,
+  ColonyInviteDialog,
+  type useColonyModals,
+} from '@/features/colonies';
+import { ColonySettingsDialog } from '@/features/colony-settings';
 import { WebhookDialog } from '@/features/webhooks';
 import {
   CreateChannelDialog,
@@ -27,7 +27,7 @@ import { CommunityCallStage, UserSettingsModal } from '@/features/voice';
 import { AuthRequiredDialog } from '@/features/auth';
 
 export interface CommunityDialogsPortalProps {
-  serverModals: ReturnType<typeof useServerModals>;
+  colonyModals: ReturnType<typeof useColonyModals>;
   channelModals: ReturnType<typeof useChannelModals>;
   mediaModals: ReturnType<typeof useMediaModals>;
   activeHub: CommunityHub | null;
@@ -98,7 +98,7 @@ export interface CommunityDialogsPortalProps {
 }
 
 export function CommunityDialogsPortal({
-  serverModals,
+  colonyModals,
   channelModals,
   mediaModals,
   activeHub,
@@ -192,55 +192,55 @@ export function CommunityDialogsPortal({
       />
 
       {/* Create or Join Server Dialog */}
-      <CreateOrJoinServerDialog
-        open={serverModals.isCreateHubOpen}
-        onOpenChange={serverModals.setIsCreateHubOpen}
-        newServerName={serverModals.newHubName}
-        setNewServerName={serverModals.setNewHubName}
-        newServerDesc={serverModals.newHubDesc}
-        setNewServerDesc={serverModals.setNewHubDesc}
-        newServerIconUrl={serverModals.newHubIconUrl}
-        setNewServerIconUrl={serverModals.setNewHubIconUrl}
-        joinInviteCode={serverModals.joinInviteCode}
-        setJoinInviteCode={serverModals.setJoinInviteCode}
-        isJoiningServer={serverModals.isJoiningHub}
-        onCreateServerSubmit={serverModals.handleCreateHubSubmit}
-        onJoinServer={serverModals.handleJoinHub}
+      <CreateOrJoinColonyDialog
+        open={colonyModals.isCreateHubOpen}
+        onOpenChange={colonyModals.setIsCreateHubOpen}
+        newServerName={colonyModals.newHubName}
+        setNewServerName={colonyModals.setNewHubName}
+        newServerDesc={colonyModals.newHubDesc}
+        setNewServerDesc={colonyModals.setNewHubDesc}
+        newServerIconUrl={colonyModals.newHubIconUrl}
+        setNewServerIconUrl={colonyModals.setNewHubIconUrl}
+        joinInviteCode={colonyModals.joinInviteCode}
+        setJoinInviteCode={colonyModals.setJoinInviteCode}
+        isJoiningServer={colonyModals.isJoiningHub}
+        onCreateServerSubmit={colonyModals.handleCreateHubSubmit}
+        onJoinServer={colonyModals.handleJoinHub}
         t={t}
       />
 
       {/* Server Settings Dialog */}
-      <ServerSettingsDialog
-        isOpen={serverModals.isServerSettingsOpen}
-        initialSection={serverModals.serverSettingsSection}
-        onClose={() => serverModals.setIsServerSettingsOpen(false)}
+      <ColonySettingsDialog
+        isOpen={colonyModals.isServerSettingsOpen}
+        initialSection={colonyModals.serverSettingsSection}
+        onClose={() => colonyModals.setIsServerSettingsOpen(false)}
         activeHub={activeHub}
         currentUser={currentUser}
         members={members}
         channels={channels}
         onUpdateHub={onUpdateHub}
-        onDeleteHub={(hub) => serverModals.setHubToDelete(hub)}
+        onDeleteHub={(hub) => colonyModals.setHubToDelete(hub)}
         onOpenWebhooks={() => channelModals.setIsWebhookDialogOpen(true)}
         onUpdateMembers={setMembers}
       />
 
       {/* Edit Server Dialog */}
-      <EditServerDialog
-        serverToEdit={serverModals.hubToEdit}
-        onClose={() => serverModals.setHubToEdit(null)}
-        editServerName={serverModals.editHubName}
-        setEditServerName={serverModals.setEditHubName}
-        editServerDesc={serverModals.editHubDesc}
-        setEditServerDesc={serverModals.setEditHubDesc}
-        onEditServerSubmit={serverModals.handleEditHubSubmit}
+      <EditColonyDialog
+        serverToEdit={colonyModals.hubToEdit}
+        onClose={() => colonyModals.setHubToEdit(null)}
+        editServerName={colonyModals.editHubName}
+        setEditServerName={colonyModals.setEditHubName}
+        editServerDesc={colonyModals.editHubDesc}
+        setEditServerDesc={colonyModals.setEditHubDesc}
+        onEditServerSubmit={colonyModals.handleEditHubSubmit}
         t={t}
       />
 
       {/* Delete Server Dialog */}
-      <DeleteServerDialog
-        serverToDelete={serverModals.hubToDelete}
-        onClose={() => serverModals.setHubToDelete(null)}
-        onDeleteConfirm={serverModals.handleDeleteHubConfirm}
+      <DeleteColonyDialog
+        serverToDelete={colonyModals.hubToDelete}
+        onClose={() => colonyModals.setHubToDelete(null)}
+        onDeleteConfirm={colonyModals.handleDeleteHubConfirm}
         t={t}
       />
 
@@ -311,11 +311,11 @@ export function CommunityDialogsPortal({
       />
 
       {/* Server Invite Dialog */}
-      <ServerInviteDialog
-        open={serverModals.isInviteOpen}
-        onOpenChange={serverModals.setIsInviteOpen}
+      <ColonyInviteDialog
+        open={colonyModals.isInviteOpen}
+        onOpenChange={colonyModals.setIsInviteOpen}
         activeServer={activeHub}
-        onInviteUsername={serverModals.handleInviteByUsername}
+        onInviteUsername={colonyModals.handleInviteByUsername}
         members={members}
         t={t}
       />

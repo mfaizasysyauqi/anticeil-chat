@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { ServerInvitation } from '@/lib/community-hubs';
+import type { ServerInvitation, ColonyInvitation } from '@/lib/community-hubs';
 import {
   loadStoredChannels,
   saveStoredChannels,
@@ -860,7 +860,7 @@ export const chatApi = {
             r.inviterAvatar || r.senderAvatar || inviter.imageUrl || inviter.avatar || undefined,
           createdAt: r.createdAt,
           membersCount: r.membersCount || hub.membersCount || undefined,
-        } satisfies ServerInvitation;
+        } as ColonyInvitation;
       });
     } catch (e) {
       console.warn('Failed to fetch server invitations from API', e);

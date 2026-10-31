@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { CommunityHub } from '@/chat/chat-types';
 
-export interface EditServerDialogProps {
+export interface EditColonyDialogProps {
   serverToEdit?: CommunityHub | null;
   hubToEdit?: CommunityHub | null;
   onClose: () => void;
@@ -30,7 +30,7 @@ export interface EditServerDialogProps {
   onEditHubSubmit?: (e: React.FormEvent) => void;
 }
 
-export function EditServerDialog({
+export function EditColonyDialog({
   serverToEdit,
   hubToEdit,
   onClose,
@@ -45,7 +45,7 @@ export function EditServerDialog({
   editHubDesc,
   setEditHubDesc,
   onEditHubSubmit,
-}: EditServerDialogProps) {
+}: EditColonyDialogProps) {
   const targetServer = serverToEdit ?? hubToEdit;
   const serverName = editServerName ?? editHubName ?? '';
   const setServerName = setEditServerName ?? setEditHubName ?? (() => {});
@@ -66,7 +66,7 @@ export function EditServerDialog({
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-1.5">
-              <label className="text-xs font-semibold">{t('Nama Server')}</label>
+              <label className="text-xs font-semibold">{t('Nama Colony')}</label>
               <Input
                 value={serverName}
                 onChange={(e) => setServerName(e.target.value)}
@@ -107,5 +107,7 @@ export function EditServerDialog({
 }
 
 // Backward-compatible alias
-export const EditHubDialog = EditServerDialog;
-export type EditHubDialogProps = EditServerDialogProps;
+export const EditServerDialog = EditColonyDialog;
+export type EditServerDialogProps = EditColonyDialogProps;
+export const EditHubDialog = EditColonyDialog;
+export type EditHubDialogProps = EditColonyDialogProps;

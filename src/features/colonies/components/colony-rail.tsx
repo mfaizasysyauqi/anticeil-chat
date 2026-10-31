@@ -5,10 +5,10 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { CommunityHub } from '@/lib/community-hubs';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import { ServerIcon } from './server-icon';
+import { ServerIcon } from './colony-icon';
 import { toast } from 'sonner';
 
-export interface ServerRailProps {
+export interface ColonyRailProps {
   servers?: CommunityHub[];
   hubs?: CommunityHub[];
   activeServerId?: string;
@@ -21,7 +21,7 @@ export interface ServerRailProps {
   platformName?: string;
   renderServerIcon?: (server: CommunityHub) => React.ReactNode;
   renderHubIcon?: (hub: CommunityHub) => React.ReactNode;
-  railMode?: 'servers' | 'friends';
+  railMode?: 'colonies' | 'servers' | 'friends';
   onToggleRailMode?: () => void;
   friends?: any[];
   activeChannelId?: string;
@@ -82,7 +82,7 @@ function sumFriendUnread(counts: Record<string, number | string> | undefined, fr
   return formatUnreadBadge(total);
 }
 
-export function ServerRail({
+export function ColonyRail({
   servers,
   hubs,
   activeServerId,
@@ -101,12 +101,12 @@ export function ServerRail({
   activeChannelId,
   onSelectFriend,
   onOpenAddFriend,
-}: ServerRailProps) {
+}: ColonyRailProps) {
   const { t } = useTranslation();
 
-  const [internalMode, setInternalMode] = useState<'servers' | 'friends'>(() => {
+  const [internalMode, setInternalMode] = useState<'colonies' | 'servers' | 'friends'>(() => {
     try {
-      return (localStorage.getItem('anticeil_rail_mode') as any) || 'servers';
+      return (localStorage.getItem('anticeil_rail_mode') as any) || 'colonies';
     } catch {
       return 'servers';
     }
@@ -124,7 +124,7 @@ export function ServerRail({
       try {
         localStorage.setItem('anticeil_rail_mode', next);
       } catch {}
-      toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Server'));
+      toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Colony'));
     }
   };
 
@@ -208,7 +208,7 @@ export function ServerRail({
                   'group relative size-10 rounded-[14px] bg-sidebar-accent hover:bg-sidebar-accent/80 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
                   isFriendsMode ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
-                aria-label={isFriendsMode ? 'Mode Teman. Klik untuk ganti ke Mode Server' : 'Mode Server. Klik untuk ganti ke Mode Teman'}
+                aria-label={isFriendsMode ? 'Mode Teman. Klik untuk ganti ke Mode Colony' : 'Mode Colony. Klik untuk ganti ke Mode Teman'}
               >
                 {isFriendsMode ? (
                   <Users className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-foreground" />
@@ -232,7 +232,7 @@ export function ServerRail({
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-              {isFriendsMode ? t('Mode: Teman (Klik untuk Mode Server)') : t('Mode: Server (Klik untuk Mode Teman)')}
+              {isFriendsMode ? t('Mode: Teman (Klik untuk Mode Colony)') : t('Mode: Colony (Klik untuk Mode Teman)')}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -254,7 +254,7 @@ export function ServerRail({
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-              {isFriendsMode ? t('Tambah Teman Baru') : t('Buat Server Baru')}
+              {isFriendsMode ? t('Tambah Teman Baru') : t('Buat Colony Baru')}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -393,5 +393,7 @@ export function ServerRail({
 }
 
 // Backward-compatible alias
-export const HubRail = ServerRail;
-export type HubRailProps = ServerRailProps;
+
+// Backward-compatible alias
+export const ServerRail = ColonyRail;
+export type ServerRailProps = ColonyRailProps;

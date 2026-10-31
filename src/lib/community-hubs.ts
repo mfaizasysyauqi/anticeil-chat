@@ -59,7 +59,26 @@ export function saveStoredHubs(hubs: CommunityHub[]): void {
   }
 }
 
-export type ServerInvitation = {
+export type ColonyInvitation = {
+  id: string;
+  colonyId?: string;
+  colonyName?: string;
+  colonyDescription?: string;
+  colonyIconUrl?: string;
+  inviterId?: string;
+  inviterName?: string;
+  inviterUsername?: string;
+  inviterAvatar?: string;
+  membersCount?: number;
+  createdAt?: string;
+  serverId?: string;
+  serverName?: string;
+  serverDescription?: string;
+  serverIconUrl?: string;
+};
+
+export type ServerInvitation = ColonyInvitation;
+export type LegacyServerInvitation = {
   id: string;
   serverId: string;
   serverName: string;
@@ -76,7 +95,9 @@ const STORAGE_KEY_SERVER_INVITES = 'anticeil_server_invitations_v1';
 
 export const DEFAULT_SERVER_INVITATIONS: ServerInvitation[] = [];
 
-export function loadStoredServerInvitations(): ServerInvitation[] {
+export const loadStoredServerInvitations = loadStoredColonyInvitations;
+export const saveStoredServerInvitations = saveStoredColonyInvitations;
+export function loadStoredColonyInvitations(): ServerInvitation[] {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_SERVER_INVITES) : null;
     if (!raw) return DEFAULT_SERVER_INVITATIONS;
@@ -91,7 +112,7 @@ export function loadStoredServerInvitations(): ServerInvitation[] {
   }
 }
 
-export function saveStoredServerInvitations(invitations: ServerInvitation[]): void {
+export function saveStoredColonyInvitations(invitations: ServerInvitation[]): void {
   try {
     localStorage.setItem(STORAGE_KEY_SERVER_INVITES, JSON.stringify(invitations));
     window.dispatchEvent(new Event('anticeil_server_invites_changed'));

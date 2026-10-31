@@ -20,16 +20,16 @@ import { useTheme } from '@/core/theme';
 import { useResponsive, LAYOUT_SIZES } from '@/core';
 import { parseJwt } from '@/lib/utils';
 import {
-  ServerRail,
-  ServersView,
-  useServerModals,
-} from '@/features/servers';
+  ColonyRail,
+  ColoniesView,
+  useColonyModals,
+} from '@/features/colonies';
 import { UserBottomDock, DmUserProfileSidebar } from '@/features/profile';
 import { FriendsView, AddFriendDialog, type FriendRequest, useFriendsManager, friendsApi } from '@/features/friends';
 import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
 import { CalendarView, type CalendarEvent, useCalendarEvents } from '@/features/calendar';
-import { ServerEventsModal } from '@/features/events';
+import { ColonyEventsModal } from '@/features/events';
 import { AssignmentsView, type AssignmentItem, useAssignments } from '@/features/assignments';
 import { CallsView, type CallLogItem, useCallLogs } from '@/features/calls';
 import { AppsView } from '@/features/apps';
@@ -41,8 +41,8 @@ import {
   useResizableSidebar,
   useChannelModals,
 } from '@/features/channels';
-import { ServerMembersSidebar } from '@/features/members';
-import type { ServerSettingsSection } from '@/features/server-settings';
+import { ColonyMembersSidebar } from '@/features/members';
+import type { ColonySettingsSection } from '@/features/colony-settings';
 import {
   ChatInputBar,
   processFileInput,
@@ -480,7 +480,7 @@ export function CommunityPage() {
   }));
 
   // Home View Mode: Friends Hub vs Servers vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
-  const [homeView, setHomeView] = useState<'friends' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
+  const [homeView, setHomeView] = useState<'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
 
   // Feature-First Hooks (Fullstack connected to PostgreSQL DB)
   const {
@@ -488,7 +488,7 @@ export function CommunityPage() {
     setEvents: setCalendarEvents,
     handleCreateEvent: createCalendarEvent,
   } = useCalendarEvents();
-  const [isServerEventsModalOpen, setIsServerEventsModalOpen] = useState(false);
+  const [isColonyEventsModalOpen, setIsColonyEventsModalOpen] = useState(false);
 
   const {
     assignments,
@@ -620,7 +620,7 @@ export function CommunityPage() {
   const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
 
   // Server Modals & Actions (Feature-First Hook)
-  const serverModals = useServerModals({
+  const colonyModals = useColonyModals({
     hubs,
     setHubs,
     channels,
@@ -670,8 +670,8 @@ export function CommunityPage() {
     isServerSettingsOpen,
     setIsServerSettingsOpen,
     serverSettingsSection,
-    setServerSettingsSection,
-  } = serverModals;
+    setColonySettingsSection,
+  } = colonyModals;
 
   // Channel Modals & Actions (Feature-First Hook)
   const channelModals = useChannelModals({
@@ -1293,7 +1293,7 @@ export function CommunityPage() {
   const isAssignmentsView = isHome && !activeChannel && homeView === 'assignments';
   const isCallsView = isHome && !activeChannel && homeView === 'calls';
   const isAppsView = isHome && !activeChannel && homeView === 'apps';
-  const isServersView = isHome && !activeChannel && homeView === 'servers';
+  const isColoniesView = isHome && !activeChannel && (homeView === 'colonies' || homeView === 'servers');
 
   // Active messages & filter
   const currentMessages = activeChannel ? messagesMap[activeChannel.id] || [] : [];
@@ -1650,16 +1650,16 @@ export function CommunityPage() {
       } else {
         setActiveHubId('anticeil');
         setActiveChannelId('');
-        setHomeView('servers');
+        setHomeView('colonies');
       }
       toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Server'));
       return next;
     });
   };
 
-  // Component: Server Rail (delegates to reusable ServerRail feature component)
+  // Component: Server Rail (delegates to reusable ColonyRail feature component)
   const renderDiscordHubRail = () => (
-    <ServerRail
+    <ColonyRail
       servers={hubs}
       activeServerId={activeHubId}
       unreadCounts={unreadCounts}
@@ -1760,7 +1760,7 @@ export function CommunityPage() {
       setActiveThread={setActiveThread}
       activeCallCounts={activeCallCounts}
       calendarEvents={calendarEvents}
-      onOpenServerEvents={() => setIsServerEventsModalOpen(true)}
+      onOpenServerEvents={() => setIsColonyEventsModalOpen(true)}
       onItemClick={onItemClick}
       onOpenDmSearch={() =>
         requireAuth(
@@ -1781,7 +1781,7 @@ export function CommunityPage() {
       }
       onOpenServerSettings={(section) => {
         requireAuth(() => {
-          if (section) setServerSettingsSection(section);
+          if (section) setColonySettingsSection(section);
           setIsServerSettingsOpen(true);
         });
       }}
@@ -1959,7 +1959,7 @@ export function CommunityPage() {
     }
 
     return (
-      <ServerMembersSidebar
+      <ColonyMembersSidebar
         displayMembers={displayMembers}
         onInviteClick={() => setIsInviteOpen(true)}
         onStartDM={handleStartDM}
@@ -2041,7 +2041,7 @@ export function CommunityPage() {
           activeCallChannelId={activeCallChannelId}
           handleLaunchActivity={handleLaunchActivity}
           handleStartDM={handleStartDM}
-          isServersView={isServersView}
+          isColoniesView={isColoniesView}
           requireAuth={requireAuth}
           setIsCreateHubOpen={setIsCreateHubOpen}
           activeChannel={activeChannel}
@@ -2148,9 +2148,9 @@ export function CommunityPage() {
         )}
 
         {/* Community Dialogs & Modals Portal */}
-        <ServerEventsModal
-        isOpen={isServerEventsModalOpen}
-        onClose={() => setIsServerEventsModalOpen(false)}
+        <ColonyEventsModal
+        isOpen={isColonyEventsModalOpen}
+        onClose={() => setIsColonyEventsModalOpen(false)}
         activeHub={activeHub}
         channels={channels}
         events={calendarEvents}
@@ -2162,7 +2162,7 @@ export function CommunityPage() {
         }}
       />
       <CommunityDialogsPortal
-          serverModals={serverModals}
+          colonyModals={colonyModals}
           channelModals={channelModals}
           mediaModals={mediaModals}
           activeHub={activeHub}

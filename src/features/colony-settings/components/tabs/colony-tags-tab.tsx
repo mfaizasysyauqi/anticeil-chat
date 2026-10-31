@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import type { CommunityHub } from '@/chat/chat-types';
 
-interface ServerTagsTabProps {
+interface ColonyTagsTabProps {
   activeHub: CommunityHub;
   serverTags: string[];
   setServerTags: React.Dispatch<React.SetStateAction<string[]>>;
@@ -14,13 +14,13 @@ interface ServerTagsTabProps {
   t: (key: string) => string;
 }
 
-export function ServerTagsTab({
+export function ColonyTagsTab({
   activeHub,
   serverTags,
   setServerTags,
   onUpdateHub,
   t,
-}: ServerTagsTabProps) {
+}: ColonyTagsTabProps) {
   const [newTagInput, setNewTagInput] = useState('');
 
   const handleAddTag = () => {
@@ -33,7 +33,7 @@ export function ServerTagsTab({
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-1">{t('Tag Server')}</h2>
+      <h2 className="text-xl font-bold mb-1">{t('Tag Colony')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
         {t('Tambahkan tag untuk memudahkan anggota menemukan topik dan kategori server Anda.')}
       </p>
@@ -41,7 +41,7 @@ export function ServerTagsTab({
       <div className="space-y-6">
         <div className="rounded-lg border bg-card/40 p-4">
           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 block">
-            {t('Tag Server Saat Ini')} ({serverTags.length})
+            {t('Tag Colony Saat Ini')} ({serverTags.length})
           </label>
           <div className="flex flex-wrap gap-2 min-h-10 items-center">
             {serverTags.length === 0 ? (

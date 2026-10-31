@@ -2,10 +2,10 @@ import { useState } from 'react';
 import type { CommunityHub, CommunityChannel, CommunityMember } from '@/chat/chat-types';
 import { communityApi } from '@/chat/chat-api';
 import { saveStoredHubs } from '@/chat/chat-defaults';
-import type { ServerSettingsSection } from '@/features/server-settings';
+import type { ColonySettingsSection } from '@/features/colony-settings';
 import { toast } from 'sonner';
 
-interface UseServerModalsOptions {
+interface UseColonyModalsOptions {
   hubs: CommunityHub[];
   setHubs: React.Dispatch<React.SetStateAction<CommunityHub[]>>;
   channels: CommunityChannel[];
@@ -21,7 +21,7 @@ interface UseServerModalsOptions {
   t: (key: string) => string;
 }
 
-export function useServerModals({
+export function useColonyModals({
   hubs,
   setHubs,
   channels,
@@ -35,7 +35,7 @@ export function useServerModals({
   setIsActivityOpen,
   setMembers,
   t,
-}: UseServerModalsOptions) {
+}: UseColonyModalsOptions) {
   // Create / Join Server Modal
   const [isCreateHubOpen, setIsCreateHubOpen] = useState(false);
   const [newHubName, setNewHubName] = useState('');
@@ -60,7 +60,7 @@ export function useServerModals({
 
   // Server Settings Modal
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
-  const [serverSettingsSection, setServerSettingsSection] = useState<ServerSettingsSection>('profile');
+  const [serverSettingsSection, setColonySettingsSection] = useState<ColonySettingsSection>('profile');
 
   // Create Server Submit
   const handleCreateHubSubmit = async (e: React.FormEvent) => {
@@ -402,6 +402,6 @@ export function useServerModals({
     isServerSettingsOpen,
     setIsServerSettingsOpen,
     serverSettingsSection,
-    setServerSettingsSection,
+    setColonySettingsSection,
   };
 }

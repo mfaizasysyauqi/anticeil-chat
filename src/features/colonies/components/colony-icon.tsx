@@ -3,12 +3,12 @@ import { Sparkles, Bot, Layers, Terminal, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CommunityHub } from '@/chat/chat-types';
 
-export interface ServerIconProps {
+export interface ColonyIconProps {
   hub: CommunityHub;
   className?: string;
 }
 
-export function ServerIcon({ hub, className }: ServerIconProps) {
+export function ColonyIcon({ hub, className }: ColonyIconProps) {
   if (hub.iconUrl) {
     return (
       <img
@@ -49,6 +49,8 @@ export function ServerIcon({ hub, className }: ServerIconProps) {
   }
 }
 
-// Backward-compatible alias
-export const HubIcon = ServerIcon;
-export type HubIconProps = ServerIconProps;
+// Backward-compatible aliases
+export const ServerIcon = ColonyIcon;
+export type ServerIconProps = ColonyIconProps;
+export const HubIcon = ColonyIcon;
+export type HubIconProps = ColonyIconProps;

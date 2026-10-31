@@ -8,7 +8,7 @@ import { CalendarView, type CalendarEvent } from '@/features/calendar';
 import { AssignmentsView, type AssignmentItem } from '@/features/assignments';
 import { CallsView, type CallLogItem } from '@/features/calls';
 import { AppsView } from '@/features/apps';
-import { ServersView } from '@/features/servers';
+import { ColoniesView } from '@/features/colonies';
 import { ChannelTopHeaderBar, ForumChannelView } from '@/features/channels';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
 import { CommunityCallStage } from '@/features/voice';
@@ -61,7 +61,7 @@ export interface ChatMainViewProps {
   activeCallChannelId: string | null;
   handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string) => void;
   handleStartDM: (member: CommunityMember) => void;
-  isServersView: boolean;
+  isColoniesView: boolean;
   requireAuth: (action: () => void, title?: string, desc?: string) => void;
   setIsCreateHubOpen: (open: boolean) => void;
   // Channel view props
@@ -201,7 +201,7 @@ export function ChatMainView({
   activeCallChannelId,
   handleLaunchActivity,
   handleStartDM,
-  isServersView,
+  isColoniesView,
   requireAuth,
   setIsCreateHubOpen,
   activeChannel,
@@ -454,9 +454,9 @@ export function ChatMainView({
     );
   }
 
-  if (isServersView) {
+  if (isColoniesView) {
     return (
-      <ServersView
+      <ColoniesView
         servers={hubs}
         onSelectServer={(hubId) => {
           setActiveHubId(hubId);

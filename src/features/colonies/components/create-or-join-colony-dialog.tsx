@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
-export interface CreateOrJoinServerDialogProps {
+export interface CreateOrJoinColonyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   newServerName?: string;
@@ -41,7 +41,7 @@ export interface CreateOrJoinServerDialogProps {
   setNewHubIconUrl?: (val: string) => void;
 }
 
-export function CreateOrJoinServerDialog({
+export function CreateOrJoinColonyDialog({
   open,
   onOpenChange,
   newServerName,
@@ -65,7 +65,7 @@ export function CreateOrJoinServerDialog({
   setNewHubDesc,
   newHubIconUrl,
   setNewHubIconUrl,
-}: CreateOrJoinServerDialogProps) {
+}: CreateOrJoinColonyDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const serverName = newServerName ?? newHubName ?? '';
@@ -85,14 +85,14 @@ export function CreateOrJoinServerDialog({
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <Server className="w-5 h-5 text-primary" />
-              <span>{t('Server Komunitas')}</span>
+              <span>{t('Colony Komunitas')}</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              {t('Buat server baru untuk proyek Anda atau gabung ke server lain menggunakan kode/link undangan.')}
+              {t('Buat colony baru untuk proyek Anda atau gabung ke colony lain menggunakan kode/link undangan.')}
             </DialogDescription>
             <TabsList className="grid w-full grid-cols-2 mt-2">
               <TabsTrigger value="create" className="data-[state=active]:text-primary">
-                {t('Buat Server Baru')}
+                {t('Buat Colony Baru')}
               </TabsTrigger>
               <TabsTrigger value="join" className="data-[state=active]:text-primary">
                 {t('Gabung via Link/Kode')}
@@ -128,7 +128,7 @@ export function CreateOrJoinServerDialog({
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     className="relative group/avatar size-20 rounded-[20px] border-2 border-dashed border-primary/40 hover:border-primary flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all bg-primary/5 hover:bg-primary/10"
-                    title={t('Unggah Foto Server')}
+                    title={t('Unggah Foto Colony')}
                   >
                     {serverIconUrl ? (
                       <img src={serverIconUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -143,7 +143,7 @@ export function CreateOrJoinServerDialog({
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs font-semibold">{t('Nama Server')}</label>
+                  <label className="text-xs font-semibold">{t('Nama Colony')}</label>
                   <Input
                     value={serverName}
                     onChange={(e) => setServerName(e.target.value)}
@@ -226,5 +226,7 @@ export function CreateOrJoinServerDialog({
 }
 
 // Backward-compatible alias
-export const CreateOrJoinHubDialog = CreateOrJoinServerDialog;
-export type CreateOrJoinHubDialogProps = CreateOrJoinServerDialogProps;
+export const CreateOrJoinServerDialog = CreateOrJoinColonyDialog;
+export type CreateOrJoinServerDialogProps = CreateOrJoinColonyDialogProps;
+export const CreateOrJoinHubDialog = CreateOrJoinColonyDialog;
+export type CreateOrJoinHubDialogProps = CreateOrJoinColonyDialogProps;

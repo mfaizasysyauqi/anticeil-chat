@@ -19,9 +19,9 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
 
   return (
     <div className="w-full min-w-0">
-      <h2 className="text-xl font-bold mb-1">{t('Server Boost Perks')}</h2>
+      <h2 className="text-xl font-bold mb-1">{t('Colony Boost Perks')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
-        {t('Tingkatkan performa server Anda untuk membuka batas kapasitas, audio HD, dan kustomisasi ekstra.')}
+        {t('Tingkatkan performa colony Anda untuk membuka batas kapasitas, audio HD, dan kustomisasi ekstra.')}
       </p>
 
       {/* Hero Boost Banner */}
@@ -70,7 +70,7 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
                 });
                 toast.success(t(`Server berhasil di-boost! Sekarang di Tingkat ${res.boostTier} ⚡🎉`));
               } catch {
-                toast.error(t('Gagal melakukan boost server.'));
+                toast.error(t('Gagal melakukan boost colony.'));
               } finally {
                 setIsBoostingServer(false);
               }
@@ -78,7 +78,7 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
             className="w-full sm:w-auto shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer shadow-xs rounded-[6px] transition-all flex items-center justify-center gap-2 h-9 px-4"
           >
             <Zap className="w-4 h-4 fill-primary-foreground/30" />
-            <span className="truncate">{isBoostingServer ? t('Memproses...') : t('Boost Server Ini (+1 Boost)')}</span>
+            <span className="truncate">{isBoostingServer ? t('Memproses...') : t('Boost Colony Ini (+1 Boost)')}</span>
           </Button>
         </div>
 
@@ -106,7 +106,7 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
             tier: 1,
             boostsRequired: 2,
             title: t('Tingkat 1 — Dasar Komunitas'),
-            perks: [t('+50 Slot Emoji Kustom Server'), t('Kualitas Audio Suara 128 Kbps'), t('Banner Server Kustom')],
+            perks: [t('+50 Slot Emoji Kustom Server'), t('Kualitas Audio Suara 128 Kbps'), t('Banner Colony Kustom')],
           },
           {
             tier: 2,

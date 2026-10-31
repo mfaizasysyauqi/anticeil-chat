@@ -38,9 +38,9 @@ import {
   type CommunityChannelType,
   resolveChannelType,
 } from '@/chat/chat-types';
-import type { ServerSettingsSection } from '@/features/server-settings';
+import type { ColonySettingsSection } from '@/features/colony-settings';
 
-export interface ServerChannelsSidebarProps {
+export interface ColonyChannelsSidebarProps {
   activeHub: CommunityHub | null;
   channels: CommunityChannel[];
   activeChannelId: string;
@@ -56,7 +56,7 @@ export interface ServerChannelsSidebarProps {
   activeCallCounts?: Record<string, number>;
   onItemClick?: () => void;
   onOpenInvite: () => void;
-  onOpenServerSettings: (section?: ServerSettingsSection) => void;
+  onOpenServerSettings: (section?: ColonySettingsSection) => void;
   onOpenCreateChannel: (category: string, type?: CommunityChannelType) => void;
   onOpenCreateHub?: () => void;
   onOpenEditChannel: (channel: CommunityChannel) => void;
@@ -67,7 +67,7 @@ export interface ServerChannelsSidebarProps {
   t: (key: string, params?: Record<string, any>) => string;
 }
 
-export function ServerChannelsSidebar({
+export function ColonyChannelsSidebar({
   activeHub,
   channels,
   activeChannelId,
@@ -92,7 +92,7 @@ export function ServerChannelsSidebar({
   calendarEvents = [],
   onOpenServerEvents,
   t,
-}: ServerChannelsSidebarProps) {
+}: ColonyChannelsSidebarProps) {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
 
   const hubChannels = channels
@@ -154,7 +154,7 @@ export function ServerChannelsSidebar({
                 }}
                 className="cursor-pointer font-medium text-primary focus:text-primary focus:bg-primary/10"
               >
-                <Camera className="w-4 h-4 mr-2 text-primary" /> {t('Ubah Foto Server')}
+                <Camera className="w-4 h-4 mr-2 text-primary" /> {t('Ubah Foto Colony')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* Boost */}
@@ -164,7 +164,7 @@ export function ServerChannelsSidebar({
                 }}
                 className="cursor-pointer font-medium text-primary focus:text-primary focus:bg-primary/10"
               >
-                <Zap className="w-4 h-4 mr-2 text-primary" /> {t('Server Boost')}
+                <Zap className="w-4 h-4 mr-2 text-primary" /> {t('Colony Boost')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* Invite & Settings */}
@@ -185,7 +185,7 @@ export function ServerChannelsSidebar({
                 }}
                 className="cursor-pointer"
               >
-                <Settings className="w-4 h-4 mr-2" /> {t('Pengaturan Server')}
+                <Settings className="w-4 h-4 mr-2" /> {t('Pengaturan Colony')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* Channel & Category */}
@@ -221,7 +221,7 @@ export function ServerChannelsSidebar({
                 }}
                 className="cursor-pointer"
               >
-                <Edit2 className="w-4 h-4 mr-2" /> {t('Edit Profil Server')}
+                <Edit2 className="w-4 h-4 mr-2" /> {t('Edit Profil Colony')}
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/templates" className="flex items-center">
