@@ -13,6 +13,7 @@ export * from './components/colony-channels-sidebar';
 export * from './hooks/use-resizable-sidebar';
 export * from './hooks/use-channel-modals';
 export * from './hooks/use-channel-pins-notifications';
+export * from './api/channels-api';
 
 // Backward compatibility alias
 export { ColonyChannelsSidebar as ServerChannelsSidebar } from './components/colony-channels-sidebar';
