@@ -165,9 +165,9 @@ export function ActivityFilmstrip({
               <Button
                 size="sm"
                 onClick={onCopyCallLink}
-                className="h-7 text-xs bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 gap-1.5"
+                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs gap-1.5 transition-colors cursor-pointer border-0 shrink-0"
               >
-                <Copy className="w-3 h-3" /> Salin Link
+                <Copy className="w-3 h-3 text-white" /> Salin Link
               </Button>
             </div>
           )}
