@@ -16,6 +16,7 @@ export const channelsApi = {
       if (Array.isArray(res)) {
         const normalized = res.map((c) => ({
           ...c,
+          name: c.name === 'general' ? 'General' : c.name,
           type: resolveChannelType(c),
         }));
         const stored = loadStoredChannels();
@@ -31,6 +32,7 @@ export const channelsApi = {
     } catch {}
     const stored = loadStoredChannels().map((c) => ({
       ...c,
+      name: c.name === 'general' ? 'General' : c.name,
       type: resolveChannelType(c),
     }));
     return colonyId ? stored.filter((c) => (c.colonyId || 'anticeil') === colonyId) : stored;
