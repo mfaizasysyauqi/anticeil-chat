@@ -213,7 +213,7 @@ export function ServerRail({
                 {isFriendsMode ? (
                   <Users className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-foreground" />
                 ) : (
-                  <Globe className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-muted-foreground group-hover:text-foreground" />
+                  <Compass className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-muted-foreground group-hover:text-foreground" />
                 )}
 
                 {/* Badge: total server unreads (when in server mode) or total DM unreads (when in friend mode) */}
