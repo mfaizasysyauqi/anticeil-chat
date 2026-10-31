@@ -14,7 +14,7 @@ export type ColonyRole =
 
 export type {
   ColonyId,
-  CommunityCustomEmoji,
+  ColonyCustomEmoji,
   Colony,
 } from '@/lib/colony';
 
@@ -54,7 +54,7 @@ export function resolveChannelType(channel?: Partial<ColonyChannel> | null): Col
   return 'text';
 }
 
-export type CommunityAttachment = {
+export type ColonyAttachment = {
   type: 'image' | 'video' | 'audio' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
   url: string;
   name: string;
@@ -106,7 +106,7 @@ export type ColonyMessage = {
   senderRole: ColonyRole;
   content: string;
   createdAt: string;
-  attachments?: CommunityAttachment[];
+  attachments?: ColonyAttachment[];
   reactions?: Record<string, string[]>; // emoji: [userId, ...]
   isPinned?: boolean;
   pinnedAt?: string | null;
@@ -157,7 +157,7 @@ export type ColonyMember = {
   joinedAt?: string;
 };
 
-export type CommunityAuditEntry = {
+export type ColonyAuditEntry = {
   id: string;
   colonyId: string;
   action: string;
@@ -167,7 +167,7 @@ export type CommunityAuditEntry = {
   createdAt: string;
 };
 
-export type CommunityInvite = {
+export type ColonyInvite = {
   id: string;
   colonyId: string;
   code: string;
@@ -189,7 +189,7 @@ export type ColonyBan = {
   createdAt: string;
 };
 
-export type CommunityCustomRole = {
+export type ColonyCustomRole = {
   id: string;
   colonyId: string;
   name: string;
@@ -208,7 +208,7 @@ export type ColonyStats = {
   channelActivity: Array<{ channelId: string; channelName: string; messageCount: number }>;
 };
 
-import type { Colony } from '@/lib/colony';
+import type { Colony, ColonyCustomEmoji } from '@/lib/colony';
 
 // ── Domain Aliases ────────────────────────────────────────────────────
 
@@ -219,13 +219,20 @@ export type ServerRole = ColonyRole;
 export type Channel = ColonyChannel;
 export type ChannelType = ColonyChannelType;
 export type ChatMessage = ColonyMessage;
-export type ChatAttachment = CommunityAttachment;
+export type ChatAttachment = ColonyAttachment;
 export type ChatThread = ColonyThread;
 export type ServerMember = ColonyMember;
-export type ServerInvite = CommunityInvite;
+export type ServerInvite = ColonyInvite;
 export type ServerBan = ColonyBan;
-export type ServerCustomRole = CommunityCustomRole;
+export type ServerCustomRole = ColonyCustomRole;
 export type ServerStats = ColonyStats;
-export type ServerAuditEntry = CommunityAuditEntry;
+export type ServerAuditEntry = ColonyAuditEntry;
 export type ChannelNotification = ColonyChannelNotification;
 export type ChannelNotificationLevel = ColonyChannelNotificationLevel;
+
+// ── Compatibility Aliases ──
+export type CommunityAuditEntry = ColonyAuditEntry;
+export type CommunityInvite = ColonyInvite;
+export type CommunityCustomRole = ColonyCustomRole;
+export type CommunityCustomEmoji = ColonyCustomEmoji;
+export type CommunityAttachment = ColonyAttachment;

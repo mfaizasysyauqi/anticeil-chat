@@ -58,9 +58,9 @@ export interface ColonyChannelsSidebarProps {
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
   onOpenCreateChannel: (category: string, type?: ColonyChannelType) => void;
-  onOpenCreateHub?: () => void;
+  onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
-  onUpdateHubIcon?: (file: File) => Promise<void> | void;
+  onUpdateColonyIcon?: (file: File) => Promise<void> | void;
   setIsCallPiP: (pip: boolean) => void;
   calendarEvents?: any[];
   onOpenServerEvents?: () => void;
@@ -86,9 +86,9 @@ export function ColonyChannelsSidebar({
   onOpenInvite,
   onOpenServerSettings,
   onOpenCreateChannel,
-  onOpenCreateHub,
+  onOpenCreateColony,
   onOpenEditChannel,
-  onUpdateHubIcon,
+  onUpdateColonyIcon,
   setIsCallPiP,
   calendarEvents = [],
   onOpenServerEvents,
@@ -119,8 +119,8 @@ export function ColonyChannelsSidebar({
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file || !activeColony) return;
-              if (onUpdateHubIcon) {
-                await onUpdateHubIcon(file);
+              if (onUpdateColonyIcon) {
+                await onUpdateColonyIcon(file);
               }
               e.target.value = '';
             }}
@@ -194,7 +194,7 @@ export function ColonyChannelsSidebar({
               <DropdownMenuItem onClick={() => onOpenCreateChannel('CHANNELS', 'text')} className="cursor-pointer">
                 <Plus className="w-4 h-4 mr-2" /> {t('Buat Channel')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenCreateHub?.()} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => onOpenCreateColony?.()} className="cursor-pointer">
                 <Layers className="w-4 h-4 mr-2" /> {t('Buat Server Baru')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />

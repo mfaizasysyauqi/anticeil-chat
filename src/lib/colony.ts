@@ -1,6 +1,6 @@
 export type ColonyId = 'anticeil' | 'direct-messages' | string;
 
-export type CommunityCustomEmoji = {
+export type ColonyCustomEmoji = {
   id: string;
   name: string;
   char?: string;
@@ -20,7 +20,7 @@ export type Colony = {
   iconUrl?: string;
   role?: 'owner' | 'admin' | 'moderator' | 'member';
   tags?: string[];
-  emojis?: CommunityCustomEmoji[];
+  emojis?: ColonyCustomEmoji[];
   boostsCount?: number;
   boostTier?: number;
 };

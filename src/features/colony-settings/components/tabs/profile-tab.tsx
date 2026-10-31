@@ -19,7 +19,7 @@ interface ProfileTabProps {
   setServerSettingsEditColor: (val: string) => void;
   serverSettingsEditIconUrl: string;
   setServerSettingsEditIconUrl: (val: string) => void;
-  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   onClose: () => void;
   t: (key: string) => string;
 }
@@ -36,7 +36,7 @@ export function ProfileTab({
   setServerSettingsEditColor,
   serverSettingsEditIconUrl,
   setServerSettingsEditIconUrl,
-  onUpdateHub,
+  onUpdateColony,
   onClose,
   t,
 }: ProfileTabProps) {
@@ -173,7 +173,7 @@ export function ProfileTab({
       <div className="mt-8 flex gap-3">
         <Button
           onClick={async () => {
-            await onUpdateHub(activeColony.id, {
+            await onUpdateColony(activeColony.id, {
               name: serverSettingsEditName,
               description: serverSettingsEditDesc,
               color: serverSettingsEditColor,

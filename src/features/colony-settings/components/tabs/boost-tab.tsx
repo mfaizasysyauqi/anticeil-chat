@@ -10,11 +10,11 @@ import type { Colony } from '@/chat/chat-types';
 
 interface BoostTabProps {
   activeColony: Colony;
-  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   t: (key: string) => string;
 }
 
-export function BoostTab({ activeColony, onUpdateHub, t }: BoostTabProps) {
+export function BoostTab({ activeColony, onUpdateColony, t }: BoostTabProps) {
   const [isBoostingServer, setIsBoostingServer] = useState(false);
 
   return (
@@ -64,7 +64,7 @@ export function BoostTab({ activeColony, onUpdateHub, t }: BoostTabProps) {
               try {
                 const res = await colonyApi.boostHub(activeColony.id);
                 confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-                await onUpdateHub(activeColony.id, {
+                await onUpdateColony(activeColony.id, {
                   boostsCount: res.boostsCount,
                   boostTier: res.boostTier,
                 });

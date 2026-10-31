@@ -76,7 +76,7 @@ interface ColonySettingsDialogProps {
   members: ColonyMember[];
   channels: ColonyChannel[];
   initialSection?: ColonySettingsSection;
-  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   onDeleteHub: (hub: Colony) => void;
   onOpenWebhooks?: () => void;
   onUpdateMembers?: (updater: (prev: ColonyMember[]) => ColonyMember[]) => void;
@@ -90,7 +90,7 @@ export function ColonySettingsDialog({
   members,
   channels,
   initialSection = 'profile',
-  onUpdateHub,
+  onUpdateColony,
   onDeleteHub,
   onOpenWebhooks,
   onUpdateMembers,
@@ -255,7 +255,7 @@ export function ColonySettingsDialog({
                   setServerSettingsEditColor={setServerSettingsEditColor}
                   serverSettingsEditIconUrl={serverSettingsEditIconUrl}
                   setServerSettingsEditIconUrl={setServerSettingsEditIconUrl}
-                  onUpdateHub={onUpdateHub}
+                  onUpdateColony={onUpdateColony}
                   onClose={onClose}
                   t={t}
                 />
@@ -267,7 +267,7 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   serverTags={serverTags}
                   setServerTags={setServerTags}
-                  onUpdateHub={onUpdateHub}
+                  onUpdateColony={onUpdateColony}
                   t={t}
                 />
               )}
@@ -288,7 +288,7 @@ export function ColonySettingsDialog({
               {serverSettingsSection === 'boost' && (
                 <BoostTab
                   activeColony={activeColony}
-                  onUpdateHub={onUpdateHub}
+                  onUpdateColony={onUpdateColony}
                   t={t}
                 />
               )}
@@ -299,7 +299,7 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   serverEmojis={serverEmojis}
                   setServerEmojis={setServerEmojis}
-                  onUpdateHub={onUpdateHub}
+                  onUpdateColony={onUpdateColony}
                   t={t}
                 />
               )}

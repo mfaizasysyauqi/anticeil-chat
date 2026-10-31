@@ -37,7 +37,7 @@ export interface ChatDialogsPortalProps {
   setMembers: React.Dispatch<React.SetStateAction<ColonyMember[]>>;
   channels: ColonyChannel[];
   colonyChannels: ColonyChannel[];
-  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
 
   // Dm search & direct messaging
   isDmSearchOpen: boolean;
@@ -110,7 +110,7 @@ export function ChatDialogsPortal({
   setMembers,
   channels,
   colonyChannels,
-  onUpdateHub,
+  onUpdateColony,
   isDmSearchOpen,
   setIsDmSearchOpen,
   dmSearchQuery,
@@ -205,9 +205,9 @@ export function ChatDialogsPortal({
         setNewServerIconUrl={colonyModals.setNewHubIconUrl}
         joinInviteCode={colonyModals.joinInviteCode}
         setJoinInviteCode={colonyModals.setJoinInviteCode}
-        isJoiningServer={colonyModals.isJoiningHub}
+        isJoiningServer={colonyModals.isJoiningColony}
         onCreateServerSubmit={colonyModals.handleCreateHubSubmit}
-        onJoinServer={colonyModals.handleJoinHub}
+        onJoinServer={colonyModals.handleJoinColony}
         t={t}
       />
 
@@ -220,16 +220,16 @@ export function ChatDialogsPortal({
         currentUser={currentUser}
         members={members}
         channels={channels}
-        onUpdateHub={onUpdateHub}
-        onDeleteHub={(hub) => colonyModals.setHubToDelete(hub)}
+        onUpdateColony={onUpdateColony}
+        onDeleteHub={(hub) => colonyModals.setColonyToDelete(hub)}
         onOpenWebhooks={() => channelModals.setIsWebhookDialogOpen(true)}
         onUpdateMembers={setMembers}
       />
 
       {/* Edit Server Dialog */}
       <EditColonyDialog
-        serverToEdit={colonyModals.hubToEdit}
-        onClose={() => colonyModals.setHubToEdit(null)}
+        serverToEdit={colonyModals.colonyToEdit}
+        onClose={() => colonyModals.setColonyToEdit(null)}
         editServerName={colonyModals.editHubName}
         setEditServerName={colonyModals.setEditHubName}
         editServerDesc={colonyModals.editHubDesc}
@@ -240,8 +240,8 @@ export function ChatDialogsPortal({
 
       {/* Delete Server Dialog */}
       <DeleteColonyDialog
-        serverToDelete={colonyModals.hubToDelete}
-        onClose={() => colonyModals.setHubToDelete(null)}
+        serverToDelete={colonyModals.colonyToDelete}
+        onClose={() => colonyModals.setColonyToDelete(null)}
         onDeleteConfirm={colonyModals.handleDeleteHubConfirm}
         t={t}
       />

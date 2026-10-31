@@ -42,15 +42,15 @@ export function useColonyModals({
   const [newHubDesc, setNewHubDesc] = useState('');
   const [newHubIconUrl, setNewHubIconUrl] = useState('');
   const [joinInviteCode, setJoinInviteCode] = useState('');
-  const [isJoiningHub, setIsJoiningHub] = useState(false);
+  const [isJoiningColony, setIsJoiningColony] = useState(false);
 
   // Edit Server Modal
-  const [hubToEdit, setHubToEdit] = useState<Colony | null>(null);
+  const [colonyToEdit, setColonyToEdit] = useState<Colony | null>(null);
   const [editHubName, setEditHubName] = useState('');
   const [editHubDesc, setEditHubDesc] = useState('');
 
   // Delete Server Modal
-  const [hubToDelete, setHubToDelete] = useState<Colony | null>(null);
+  const [colonyToDelete, setColonyToDelete] = useState<Colony | null>(null);
 
   // Server Invite Modal
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -68,7 +68,7 @@ export function useColonyModals({
     if (!newHubName.trim()) return;
 
     try {
-      const createdHub = await colonyApi.createHub({
+      const createdHub = await colonyApi.createColony({
         name: newHubName.trim(),
         description: newHubDesc.trim() || undefined,
         iconUrl: newHubIconUrl || undefined,
@@ -115,7 +115,7 @@ export function useColonyModals({
       setNewHubIconUrl('');
       toast.success(t('Server baru berhasil dibuat!'));
     } catch (err) {
-      console.warn('API createHub fallback', err);
+      console.warn('API createColony fallback', err);
       const newId = `hub_${Date.now()}`;
       const newHub: Colony = {
         id: newId,
@@ -167,7 +167,7 @@ export function useColonyModals({
   };
 
   // Join Server via Invite Code/Link
-  const handleJoinHub = async (codeToJoin?: string) => {
+  const handleJoinColony = async (codeToJoin?: string) => {
     const rawCode = (codeToJoin || joinInviteCode).trim();
     if (!rawCode) {
       toast.error(t('Masukkan kode atau link undangan yang valid.'));
@@ -182,7 +182,7 @@ export function useColonyModals({
     }
 
     try {
-      setIsJoiningHub(true);
+      setIsJoiningColony(true);
       const joinedHub = await colonyApi.joinHub(code);
       setColonies((prev) => {
         const next = [...prev.filter((h) => h.id !== joinedHub.id), joinedHub];
@@ -231,13 +231,13 @@ export function useColonyModals({
     } catch {
       toast.error(t('Kode undangan tidak valid atau server tidak ditemukan.'));
     } finally {
-      setIsJoiningHub(false);
+      setIsJoiningColony(false);
     }
   };
 
   // Open Edit Hub
-  const handleOpenEditHub = (hub: Colony) => {
-    setHubToEdit(hub);
+  const handleOpenEditColony = (hub: Colony) => {
+    setColonyToEdit(hub);
     setEditHubName(hub.name);
     setEditHubDesc(hub.description || '');
   };
@@ -245,22 +245,22 @@ export function useColonyModals({
   // Edit Server Submit
   const handleEditHubSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hubToEdit || !editHubName.trim()) return;
+    if (!colonyToEdit || !editHubName.trim()) return;
 
     const newName = editHubName.trim();
     try {
-      const updated = await colonyApi.updateColony(hubToEdit.id, {
+      const updated = await colonyApi.updateColony(colonyToEdit.id, {
         name: newName,
         description: editHubDesc.trim() || undefined,
       });
       const updatedHubs = colonies.map((h) => (h.id === updated.id ? { ...h, ...updated } : h));
       setColonies(updatedHubs);
       saveStoredColonies(updatedHubs);
-      setHubToEdit(null);
+      setColonyToEdit(null);
       toast.success(t('Nama server berhasil diperbarui!'));
     } catch {
       const updatedHubs: Colony[] = colonies.map((h) => {
-        if (h.id === hubToEdit.id) {
+        if (h.id === colonyToEdit.id) {
           return {
             ...h,
             name: newName,
@@ -273,37 +273,37 @@ export function useColonyModals({
 
       setColonies(updatedHubs);
       saveStoredColonies(updatedHubs);
-      setHubToEdit(null);
+      setColonyToEdit(null);
       toast.success(t('Nama server berhasil diperbarui!'));
     }
   };
 
   // Delete Server Confirm
   const handleDeleteHubConfirm = async () => {
-    if (!hubToDelete) return;
-    if (hubToDelete.id === 'anticeil') {
+    if (!colonyToDelete) return;
+    if (colonyToDelete.id === 'anticeil') {
       toast.error(t('Server default tidak dapat dihapus.'));
-      setHubToDelete(null);
+      setColonyToDelete(null);
       return;
     }
 
     try {
-      await colonyApi.deleteHub(hubToDelete.id);
+      await colonyApi.deleteColony(colonyToDelete.id);
     } catch (err) {
-      console.warn('API deleteHub error', err);
+      console.warn('API deleteColony error', err);
     }
 
-    const updatedHubs = colonies.filter((h) => h.id !== hubToDelete.id);
+    const updatedHubs = colonies.filter((h) => h.id !== colonyToDelete.id);
     setColonies(updatedHubs);
     saveStoredColonies(updatedHubs);
 
-    setChannels((prev) => prev.filter((c) => c.colonyId !== hubToDelete.id));
+    setChannels((prev) => prev.filter((c) => c.colonyId !== colonyToDelete.id));
     setActiveColonyId('anticeil');
 
     const firstDm = channels.find((c) => c.category === 'DIRECT MESSAGES');
     setActiveChannelId(firstDm?.id || '');
 
-    setHubToDelete(null);
+    setColonyToDelete(null);
     toast.success(t('Server berhasil dihapus!'));
   };
 
@@ -370,23 +370,23 @@ export function useColonyModals({
     setNewHubIconUrl,
     joinInviteCode,
     setJoinInviteCode,
-    isJoiningHub,
+    isJoiningColony,
     handleCreateHubSubmit,
-    handleJoinHub,
+    handleJoinColony,
 
     // Edit
-    hubToEdit,
-    setHubToEdit,
+    colonyToEdit,
+    setColonyToEdit,
     editHubName,
     setEditHubName,
     editHubDesc,
     setEditHubDesc,
-    handleOpenEditHub,
+    handleOpenEditColony,
     handleEditHubSubmit,
 
     // Delete
-    hubToDelete,
-    setHubToDelete,
+    colonyToDelete,
+    setColonyToDelete,
     handleDeleteHubConfirm,
 
     // Invite

@@ -47,7 +47,7 @@ import {
   ChatInputBar,
   processFileInput,
 } from '@/features/chat-input';
-import { MessagesFeed, renderFormattedMessage, useCommunitySocket, ChatDialogsPortal } from '@/features/chat';
+import { MessagesFeed, renderFormattedMessage, useColonySocket, ChatDialogsPortal } from '@/features/chat';
 import { useMediaModals } from '@/features/media';
 import { ChatDesktopSidebar } from './components/chat-desktop-sidebar';
 import { ChatMobileDrawers } from './components/chat-mobile-drawers';
@@ -163,7 +163,7 @@ import {
   saveStoredDmChannels,
 } from './chat-defaults';
 import {
-  CommunityAttachment,
+  ColonyAttachment,
   ColonyChannel,
   ColonyChannelType,
   Colony,
@@ -184,7 +184,7 @@ import {
 
 
 // Rich message parser (supports **bold**, `code`, @mentions, and links)
-export function CommunityPage() {
+export function ColonyPage() {
   const { t } = useTranslation();
   const { theme, setTheme, toggleTheme } = useTheme();
   const { isMobile, isTablet, isDesktop, deviceMode } = useResponsive();
@@ -550,7 +550,7 @@ export function CommunityPage() {
         }
       }
     };
-    const handleOpenCreateHub = () => {
+    const handleOpenCreateColony = () => {
       setIsCreateHubOpen(true);
     };
     const handleOpenAddFriend = () => {
@@ -558,12 +558,12 @@ export function CommunityPage() {
     };
     window.addEventListener('anticeil_switch_colony', handleSwitchColony as EventListener);
     window.addEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
-    window.addEventListener('anticeil_open_create_hub', handleOpenCreateHub);
+    window.addEventListener('anticeil_open_create_colony', handleOpenCreateColony);
     window.addEventListener('anticeil_open_add_friend', handleOpenAddFriend);
     return () => {
       window.removeEventListener('anticeil_switch_colony', handleSwitchColony as EventListener);
       window.removeEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
-      window.removeEventListener('anticeil_open_create_hub', handleOpenCreateHub);
+      window.removeEventListener('anticeil_open_create_colony', handleOpenCreateColony);
       window.removeEventListener('anticeil_open_add_friend', handleOpenAddFriend);
     };
   }, [channels]);
@@ -619,7 +619,7 @@ export function CommunityPage() {
   }, [activeColonyId, activeChannelId, selectedActivityAppId, channels.length, isActivityOpen]);
 
   const [inputText, setInputText] = useState('');
-  const [stagedAttachment, setStagedAttachment] = useState<CommunityAttachment | null>(null);
+  const [stagedAttachment, setStagedAttachment] = useState<ColonyAttachment | null>(null);
   const [showMemberList, setShowMemberList] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
@@ -651,19 +651,19 @@ export function CommunityPage() {
     setNewHubIconUrl,
     joinInviteCode,
     setJoinInviteCode,
-    isJoiningHub,
+    isJoiningColony,
     handleCreateHubSubmit,
-    handleJoinHub,
-    hubToEdit,
-    setHubToEdit,
+    handleJoinColony,
+    colonyToEdit,
+    setColonyToEdit,
     editHubName,
     setEditHubName,
     editHubDesc,
     setEditHubDesc,
-    handleOpenEditHub,
+    handleOpenEditColony,
     handleEditHubSubmit,
-    hubToDelete,
-    setHubToDelete,
+    colonyToDelete,
+    setColonyToDelete,
     handleDeleteHubConfirm,
     isInviteOpen,
     setIsInviteOpen,
@@ -1071,7 +1071,7 @@ export function CommunityPage() {
       setIsActivityOpen(true);
     }
     if (inviteParam) {
-      handleJoinHub(inviteParam);
+      handleJoinColony(inviteParam);
     }
 
     return () => {
@@ -1121,7 +1121,7 @@ export function CommunityPage() {
 
 
   // 3. WebSocket Realtime Listeners (Feature-First Hook)
-  useCommunitySocket({
+  useColonySocket({
     socket,
     activeChannelId,
     setMessagesMap,
@@ -1764,7 +1764,7 @@ export function CommunityPage() {
           t('Masuk ke Anticeil untuk membuat saluran obrolan atau panggilan suara.'),
         );
       }}
-      onOpenCreateHub={() =>
+      onOpenCreateColony={() =>
         requireAuth(
           () => setIsCreateHubOpen(true),
           t('Buat Server'),
@@ -1772,7 +1772,7 @@ export function CommunityPage() {
         )
       }
       onOpenEditChannel={(ch) => handleOpenEditChannel(ch)}
-      onUpdateHubIcon={async (file) => {
+      onUpdateColonyIcon={async (file) => {
         if (!activeColony) return;
         if (file.size > 5 * 1024 * 1024) {
           toast.error(t('Ukuran file maksimal 5 MB.'));
@@ -1796,8 +1796,8 @@ export function CommunityPage() {
         };
         reader.readAsDataURL(file);
       }}
-      onOpenEditHub={() => setHubToEdit(activeColony)}
-      onOpenDeleteHub={() => setHubToDelete(activeColony)}
+      onOpenEditColony={() => setColonyToEdit(activeColony)}
+      onOpenDeleteColony={() => setColonyToDelete(activeColony)}
       setIsCallPiP={setIsCallPiP}
       selectedActivityAppId={selectedActivityAppId}
       userBottomDock={null}
@@ -1914,7 +1914,7 @@ export function CommunityPage() {
               });
             }
           }}
-          onSelectHub={(colonyId) => {
+          onSelectColony={(colonyId) => {
             setActiveColonyId(colonyId);
             setIsMobileMembersOpen(false);
           }}
@@ -2142,7 +2142,7 @@ export function CommunityPage() {
           setMembers={setMembers}
           channels={channels}
           colonyChannels={colonyChannels}
-          onUpdateHub={async (colonyId, updates) => {
+          onUpdateColony={async (colonyId, updates) => {
             if (!activeColony) return;
             const updated = { ...activeColony, ...updates };
             setColonies((prev) => {
@@ -2216,5 +2216,6 @@ export function CommunityPage() {
     </LockedFeatureGuard>
   );
 }
-export { CommunityPage as MessagesPage };
-export default CommunityPage;
+export { ColonyPage as MessagesPage };
+export { ColonyPage as CommunityPage };
+export default ColonyPage;

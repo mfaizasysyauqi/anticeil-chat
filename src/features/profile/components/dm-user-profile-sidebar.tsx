@@ -27,7 +27,7 @@ export interface DmUserProfileSidebarProps {
   colonies?: Colony[];
   friends?: any[];
   onStartCall?: (type: 'voice' | 'video') => void;
-  onSelectHub?: (colonyId: string) => void;
+  onSelectColony?: (colonyId: string) => void;
   onClose?: () => void;
   t: (key: string) => string;
 }
@@ -38,7 +38,7 @@ export function DmUserProfileSidebar({
   currentUser,
   colonies = [],
   onStartCall,
-  onSelectHub,
+  onSelectColony,
   onClose,
   t,
 }: DmUserProfileSidebarProps) {
@@ -314,7 +314,7 @@ export function DmUserProfileSidebar({
                   <button
                     key={hub.id}
                     type="button"
-                    onClick={() => onSelectHub?.(hub.id)}
+                    onClick={() => onSelectColony?.(hub.id)}
                     className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left hover:bg-sidebar-accent transition-colors group cursor-pointer"
                   >
                     <div className="w-7 h-7 rounded-lg bg-amber-400/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-amber-400 group-hover:text-black transition-colors">

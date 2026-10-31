@@ -39,11 +39,11 @@ export interface ChannelsSidebarProps {
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
   onOpenCreateChannel: (category: string, type?: ColonyChannelType) => void;
-  onOpenCreateHub?: () => void;
+  onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
-  onUpdateHubIcon?: (file: File) => Promise<void> | void;
-  onOpenEditHub?: () => void;
-  onOpenDeleteHub?: () => void;
+  onUpdateColonyIcon?: (file: File) => Promise<void> | void;
+  onOpenEditColony?: () => void;
+  onOpenDeleteColony?: () => void;
   setIsCallPiP: (pip: boolean) => void;
   calendarEvents?: any[];
   onOpenServerEvents?: () => void;

@@ -10,7 +10,7 @@ interface ColonyTagsTabProps {
   activeColony: Colony;
   serverTags: string[];
   setServerTags: React.Dispatch<React.SetStateAction<string[]>>;
-  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   t: (key: string) => string;
 }
 
@@ -18,7 +18,7 @@ export function ColonyTagsTab({
   activeColony,
   serverTags,
   setServerTags,
-  onUpdateHub,
+  onUpdateColony,
   t,
 }: ColonyTagsTabProps) {
   const [newTagInput, setNewTagInput] = useState('');
@@ -123,7 +123,7 @@ export function ColonyTagsTab({
         <div className="pt-2">
           <Button
             onClick={async () => {
-              await onUpdateHub(activeColony.id, { tags: serverTags });
+              await onUpdateColony(activeColony.id, { tags: serverTags });
               toast.success(t('Tag server berhasil disimpan! 🏷️'));
             }}
           >

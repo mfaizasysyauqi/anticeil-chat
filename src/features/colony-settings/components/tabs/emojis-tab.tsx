@@ -9,7 +9,7 @@ interface EmojisTabProps {
   activeColony: Colony;
   serverEmojis: CommunityCustomEmoji[];
   setServerEmojis: React.Dispatch<React.SetStateAction<CommunityCustomEmoji[]>>;
-  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   t: (key: string) => string;
 }
 
@@ -17,7 +17,7 @@ export function EmojisTab({
   activeColony,
   serverEmojis,
   setServerEmojis,
-  onUpdateHub,
+  onUpdateColony,
   t,
 }: EmojisTabProps) {
   const [newEmojiName, setNewEmojiName] = useState('');
@@ -52,7 +52,7 @@ export function EmojisTab({
                     onClick={async () => {
                       const next = serverEmojis.filter((e) => e.id !== em.id);
                       setServerEmojis(next);
-                      await onUpdateHub(activeColony.id, { emojis: next });
+                      await onUpdateColony(activeColony.id, { emojis: next });
                       toast.success(t(`Emoji :${em.name}: dihapus`));
                     }}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px]"
@@ -122,7 +122,7 @@ export function EmojisTab({
               setServerEmojis(next);
               setNewEmojiName('');
               setNewEmojiChar('');
-              await onUpdateHub(activeColony.id, { emojis: next });
+              await onUpdateColony(activeColony.id, { emojis: next });
               toast.success(t(`Emoji :${newEm.name}: berhasil ditambahkan! ✨`));
             }}
           >

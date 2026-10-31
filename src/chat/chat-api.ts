@@ -23,10 +23,10 @@ import {
   ColonyMember,
   ColonyMessage,
   Colony,
-  CommunityAuditEntry,
-  CommunityInvite,
+  ColonyAuditEntry,
+  ColonyInvite,
   ColonyBan,
-  CommunityCustomRole,
+  ColonyCustomRole,
   ColonyStats,
   ColonyRole,
   ColonyChannelNotification,
@@ -354,7 +354,7 @@ export const chatApi = {
     return loadStoredColonies();
   },
 
-  async createHub(payload: {
+  async createColony(payload: {
     name: string;
     description?: string;
     color?: string;
@@ -362,7 +362,7 @@ export const chatApi = {
     iconUrl?: string;
   }): Promise<Colony> {
     const newId = `hub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const newHub: Colony = {
+    const newColony: Colony = {
       id: newId,
       name: payload.name,
       iconType: payload.iconUrl ? (undefined as any) : ('code' as any),
@@ -387,23 +387,23 @@ export const chatApi = {
       const res = await api.post<Colony>('/v1/colony/colonies', {
         ...payload,
         id: newId,
-        tags: newHub.tags,
-        emojis: newHub.emojis,
+        tags: newColony.tags,
+        emojis: newColony.emojis,
       });
       if (res && res.id) {
         const stored = loadStoredColonies();
         const updated = [...stored.filter((h) => h.id !== res.id), res];
         saveStoredColonies(updated);
-        this.recordAudit(res.id, 'HUB_CREATED', 'Admin', res.name);
+        this.recordAudit(res.id, 'COLONY_CREATED', 'Admin', res.name);
         return res;
       }
     } catch {}
 
     const stored = loadStoredColonies();
-    const updated = [...stored.filter((h) => h.id !== newId), newHub];
+    const updated = [...stored.filter((h) => h.id !== newId), newColony];
     saveStoredColonies(updated);
-    this.recordAudit(newId, 'HUB_CREATED', 'Admin', newHub.name);
-    return newHub;
+    this.recordAudit(newId, 'COLONY_CREATED', 'Admin', newColony.name);
+    return newColony;
   },
 
   async updateColony(
@@ -451,7 +451,7 @@ export const chatApi = {
     return fallback;
   },
 
-  async deleteHub(id: string): Promise<{ success: boolean; id: string }> {
+  async deleteColony(id: string): Promise<{ success: boolean; id: string }> {
     try {
       await api.delete(`/v1/colony/colonies/${id}`);
     } catch {}
@@ -461,7 +461,7 @@ export const chatApi = {
     return { success: true, id };
   },
 
-  async boostHub(id: string): Promise<{ success: boolean; boostsCount: number; boostTier: number }> {
+  async boostColony(id: string): Promise<{ success: boolean; boostsCount: number; boostTier: number }> {
     try {
       const res = await api.post<{ success: boolean; boostsCount: number; boostTier: number }>(
         `/v1/colony/colonies/${id}/boost`,
@@ -519,9 +519,9 @@ export const chatApi = {
   },
 
   // ── Roles Management ──────────────────────────────────────────────────
-  async getRoles(colonyId: string): Promise<CommunityCustomRole[]> {
+  async getRoles(colonyId: string): Promise<ColonyCustomRole[]> {
     try {
-      const res = await api.get<CommunityCustomRole[]>(`/v1/colony/colonies/${colonyId}/roles`);
+      const res = await api.get<ColonyCustomRole[]>(`/v1/colony/colonies/${colonyId}/roles`);
       if (Array.isArray(res) && res.length > 0) {
         saveStoredRoles(colonyId, res);
         return res;
@@ -532,8 +532,8 @@ export const chatApi = {
     return [];
   },
 
-  async createRole(colonyId: string, payload: { name: string; color: string; permissions?: string[] }): Promise<CommunityCustomRole> {
-    const newRole: CommunityCustomRole = {
+  async createRole(colonyId: string, payload: { name: string; color: string; permissions?: string[] }): Promise<ColonyCustomRole> {
+    const newRole: ColonyCustomRole = {
       id: `role_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       colonyId,
       name: payload.name,
@@ -541,7 +541,7 @@ export const chatApi = {
       permissions: payload.permissions || ['SEND_MESSAGES'],
     };
     try {
-      const res = await api.post<CommunityCustomRole>(`/v1/colony/colonies/${colonyId}/roles`, newRole);
+      const res = await api.post<ColonyCustomRole>(`/v1/colony/colonies/${colonyId}/roles`, newRole);
       if (res && res.id) {
         const stored = loadStoredRoles(colonyId);
         saveStoredRoles(colonyId, [...stored, res]);
@@ -567,9 +567,9 @@ export const chatApi = {
   },
 
   // ── Invites Management ────────────────────────────────────────────────
-  async getInvites(colonyId: string): Promise<CommunityInvite[]> {
+  async getInvites(colonyId: string): Promise<ColonyInvite[]> {
     try {
-      const res = await api.get<CommunityInvite[]>(`/v1/colony/colonies/${colonyId}/invites`);
+      const res = await api.get<ColonyInvite[]>(`/v1/colony/colonies/${colonyId}/invites`);
       if (Array.isArray(res) && res.length > 0) {
         saveStoredInvites(colonyId, res);
         return res;
@@ -583,9 +583,9 @@ export const chatApi = {
   async createInvite(
     colonyId: string,
     payload: { maxUses?: number; expiresAt?: string | null },
-  ): Promise<CommunityInvite> {
+  ): Promise<ColonyInvite> {
     const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const newInvite: CommunityInvite = {
+    const newInvite: ColonyInvite = {
       id: `inv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       colonyId,
       code,
@@ -596,7 +596,7 @@ export const chatApi = {
       createdAt: new Date().toISOString(),
     };
     try {
-      const res = await api.post<CommunityInvite>(`/v1/colony/colonies/${colonyId}/invites`, newInvite);
+      const res = await api.post<ColonyInvite>(`/v1/colony/colonies/${colonyId}/invites`, newInvite);
       if (res && res.id) {
         const stored = loadStoredInvites(colonyId);
         saveStoredInvites(colonyId, [res, ...stored]);
@@ -672,9 +672,9 @@ export const chatApi = {
   },
 
   // ── Audit Log ─────────────────────────────────────────────────────────
-  async getAuditLog(colonyId: string): Promise<CommunityAuditEntry[]> {
+  async getAuditLog(colonyId: string): Promise<ColonyAuditEntry[]> {
     try {
-      const res = await api.get<CommunityAuditEntry[]>(`/v1/colony/colonies/${colonyId}/audit-log`);
+      const res = await api.get<ColonyAuditEntry[]>(`/v1/colony/colonies/${colonyId}/audit-log`);
       if (Array.isArray(res) && res.length > 0) {
         saveStoredAuditLog(colonyId, res);
         return res;
@@ -692,7 +692,7 @@ export const chatApi = {
     targetName: string = '',
     details?: any,
   ): void {
-    const entry: CommunityAuditEntry = {
+    const entry: ColonyAuditEntry = {
       id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       colonyId,
       action,
@@ -799,7 +799,7 @@ export const chatApi = {
         }
       }
     } catch {}
-    const newHub: Colony = {
+    const newColony: Colony = {
       id: cleanId,
       name: `Server Komunitas`,
       iconType: 'code' as any,
@@ -810,8 +810,8 @@ export const chatApi = {
       color: 'bg-emerald-600',
       role: 'member',
     };
-    saveStoredColonies([...stored, newHub]);
-    return newHub;
+    saveStoredColonies([...stored, newColony]);
+    return newColony;
   },
 
   async inviteMemberByUsername(
@@ -1174,6 +1174,10 @@ export const chatApi = {
       return { success: false };
     }
   },
+
+  boostHub(id: string) { return this.boostColony(id); },
+  createHub(payload: any) { return this.createColony(payload); },
+  deleteHub(id: string) { return this.deleteColony(id); },
 
   async searchGifs(query: string = '', limit: number = 20): Promise<DiscordGifItem[]> {
     try {
