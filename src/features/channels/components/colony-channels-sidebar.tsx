@@ -20,6 +20,8 @@ import {
   Columns3,
   Calendar,
   Gem,
+  FolderPlus,
+  Trash2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,6 +41,7 @@ import {
   resolveChannelType,
 } from '@/chat/chat-types';
 import type { ColonySettingsSection } from '@/features/colony-settings';
+import type { ColonyCategory } from '../api/categories-api';
 
 export interface ColonyChannelsSidebarProps {
   activeColony: Colony | null;
@@ -57,7 +60,10 @@ export interface ColonyChannelsSidebarProps {
   onItemClick?: () => void;
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
-  onOpenCreateChannel: (category: string, type?: ColonyChannelType) => void;
+  onOpenCreateChannel: (category: string, type?: ColonyChannelType, categoryId?: string) => void;
+  onOpenCreateCategory?: () => void;
+  onDeleteCategory?: (categoryId: string) => void;
+  categories?: ColonyCategory[];
   onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
   onUpdateColonyIcon?: (file: File) => Promise<void> | void;
@@ -87,6 +93,9 @@ export function ColonyChannelsSidebar({
   onOpenServerSettings,
   onOpenCreateChannel,
   onOpenCreateColony,
+  onOpenCreateCategory,
+  onDeleteCategory,
+  categories = [],
   onOpenEditChannel,
   onUpdateColonyIcon,
   setIsCallPiP,
@@ -103,10 +112,268 @@ export function ColonyChannelsSidebar({
       ...c,
       type: resolveChannelType(c),
     }));
-  const textChannels = colonyChannels.filter((c) => c.type === 'text');
-  const voiceChannels = colonyChannels.filter((c) => c.type === 'voice');
-  const forumChannels = colonyChannels.filter((c) => c.type === 'forum');
-  const kanbanChannels = colonyChannels.filter((c) => c.type === 'kanban');
+  const colonyCategories = (categories || []).filter(
+    (cat) => cat.colonyId === (activeColony?.id || 'anticeil')
+  );
+
+  const uncategorizedChannels = colonyChannels.filter(
+    (c) =>
+      !c.categoryId &&
+      (!c.categoryName || !colonyCategories.some((cat) => cat.name.toUpperCase() === c.categoryName?.toUpperCase()))
+  );
+  const textChannels = uncategorizedChannels.filter((c) => c.type === 'text');
+  const voiceChannels = uncategorizedChannels.filter((c) => c.type === 'voice');
+  const forumChannels = uncategorizedChannels.filter((c) => c.type === 'forum');
+  const kanbanChannels = uncategorizedChannels.filter((c) => c.type === 'kanban');
+
+  const renderChannelItem = (ch: ColonyChannel) => {
+    const isActiveCh = activeChannelId === ch.id;
+
+    if (ch.type === 'voice') {
+      return (
+        <div
+          key={ch.id}
+          onClick={() => {
+            setActiveChannelId(ch.id);
+            setActiveCallChannelId(ch.id);
+            setIsCallPiP(false);
+            onItemClick?.();
+          }}
+          className={cn(
+            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
+            isActiveCh
+              ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+              : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          )}
+        >
+          <Volume2
+            className={cn(
+              'w-4 h-4 shrink-0 transition-colors',
+              isActiveCh ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
+            )}
+          />
+          <span className="truncate flex-1">{ch.name}</span>
+          {ch.isPrivate && (
+            <span title="Private Channel">
+              <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+            </span>
+          )}
+          {activeCallCounts[ch.id] && activeCallCounts[ch.id] > 0 ? (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
+              <Radio className="w-2.5 h-2.5" />
+              {activeCallCounts[ch.id]}
+            </span>
+          ) : null}
+
+          <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenInvite();
+              }}
+              title={t('Buat Undangan')}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditChannel(ch);
+              }}
+              title={t('Pengaturan Channel')}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (ch.type === 'forum') {
+      return (
+        <div key={ch.id} className="space-y-0.5">
+          <div
+            onClick={() => {
+              setActiveChannelId(ch.id);
+              setActiveThread(null);
+              onItemClick?.();
+            }}
+            className={cn(
+              'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
+              isActiveCh
+                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <MessagesSquare
+              className={cn(
+                'w-4 h-4 shrink-0 transition-colors',
+                isActiveCh ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
+              )}
+            />
+            <span className="truncate flex-1">{ch.name}</span>
+            {ch.isPrivate && (
+              <span title="Private Channel">
+                <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+              </span>
+            )}
+            <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenInvite();
+                }}
+                title={t('Buat Undangan')}
+                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEditChannel(ch);
+                }}
+                title={t('Pengaturan Channel')}
+                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (ch.type === 'kanban') {
+      return (
+        <div key={ch.id} className="relative group">
+          <div
+            onClick={() => {
+              setActiveChannelId(ch.id);
+              onItemClick?.();
+            }}
+            className={cn(
+              'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
+              isActiveCh
+                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Columns3
+              className={cn(
+                'w-4 h-4 shrink-0 transition-colors',
+                isActiveCh ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
+              )}
+            />
+            <span className="truncate flex-1">{ch.name}</span>
+            {ch.isPrivate && (
+              <span title="Private Channel">
+                <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+              </span>
+            )}
+            <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenInvite();
+                }}
+                title={t('Buat Undangan')}
+                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEditChannel(ch);
+                }}
+                title={t('Pengaturan Channel')}
+                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Default: text
+    return (
+      <div key={ch.id} className="space-y-0.5">
+        <div
+          onClick={() => {
+            setActiveChannelId(ch.id);
+            onItemClick?.();
+          }}
+          className={cn(
+            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
+            isActiveCh
+              ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+              : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          )}
+        >
+          <Hash
+            className={cn(
+              'w-4 h-4 shrink-0 transition-colors',
+              isActiveCh ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
+            )}
+          />
+          <span className="truncate flex-1">{ch.name}</span>
+          {ch.isPrivate && (
+            <span title="Private Channel">
+              <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+            </span>
+          )}
+
+          {activeCallChannelId === ch.id &&
+            (selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube') && (
+              <div
+                className="w-5 h-3.5 bg-red-600 rounded flex items-center justify-center shrink-0 shadow-xs"
+                title="Watch Together Aktif"
+              >
+                <svg className="w-2.5 h-2.5 fill-white text-white ml-0.5" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            )}
+
+          <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenInvite();
+              }}
+              title={t('Buat Undangan')}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditChannel(ch);
+              }}
+              title={t('Pengaturan Channel')}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -193,6 +460,9 @@ export function ColonyChannelsSidebar({
               {/* Channel & Category */}
               <DropdownMenuItem onClick={() => onOpenCreateChannel('CHANNELS', 'text')} className="cursor-pointer">
                 <Plus className="w-4 h-4 mr-2" /> {t('Buat Channel')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onOpenCreateCategory?.()} className="cursor-pointer">
+                <FolderPlus className="w-4 h-4 mr-2" /> {t('Buat Kategori')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onOpenCreateColony?.()} className="cursor-pointer">
                 <Layers className="w-4 h-4 mr-2" /> {t('Buat Server Baru')}
@@ -287,6 +557,82 @@ export function ColonyChannelsSidebar({
             </div>
           ) : (
             <>
+              {/* 0. CUSTOM DISCORD-STYLE CATEGORIES */}
+              {colonyCategories.map((cat) => {
+                const catChannels = colonyChannels.filter(
+                  (c) => c.categoryId === cat.id || (c.categoryName && c.categoryName.toUpperCase() === cat.name.toUpperCase()),
+                );
+                const isCollapsed = Boolean(collapsedCategories?.[cat.id]);
+
+                return (
+                  <div key={cat.id} className="space-y-1 mb-2">
+                    <div
+                      onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, [cat.id]: !prev?.[cat.id] }))}
+                      className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
+                    >
+                      <div className="flex items-center gap-1 min-w-0">
+                        <ChevronDown
+                          className={cn(
+                            'w-3 h-3 transition-transform duration-200 shrink-0',
+                            isCollapsed && '-rotate-90',
+                          )}
+                        />
+                        <span className="truncate">{cat.name}</span>
+                        <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                          ({catChannels.length})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <Tooltip delayDuration={150}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenCreateChannel('CHANNELS', 'text', cat.id);
+                              }}
+                              className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
+                              title={t('Buat Channel')}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
+                            {t('Buat Channel')}
+                          </TooltipContent>
+                        </Tooltip>
+                        {onDeleteCategory && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(t('Hapus kategori ini? Channel di dalamnya tidak akan terhapus.'))) {
+                                onDeleteCategory(cat.id);
+                              }
+                            }}
+                            className="opacity-0 group-hover/cat:opacity-100 text-muted-foreground hover:text-destructive p-0.5 rounded transition-all cursor-pointer"
+                            title={t('Hapus Kategori')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {!isCollapsed && (
+                      <div className="space-y-0.5">
+                        {catChannels.length === 0 ? (
+                          <div className="px-3 py-1 text-[11px] text-muted-foreground/50 italic">
+                            {t('Belum ada channel')}
+                          </div>
+                        ) : (
+                          catChannels.map(renderChannelItem)
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
               {/* 1. TEXT CHANNELS CATEGORY */}
               {textChannels.length > 0 && (
                 <div>

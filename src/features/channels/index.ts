@@ -17,3 +17,6 @@ export * from './api/channels-api';
 
 // Backward compatibility alias
 export { ColonyChannelsSidebar as ServerChannelsSidebar } from './components/colony-channels-sidebar';
+
+export * from './api/categories-api';
+export * from './components/create-category-dialog';

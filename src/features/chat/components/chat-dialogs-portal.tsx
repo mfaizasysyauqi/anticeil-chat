@@ -19,6 +19,7 @@ import {
   DeleteChannelDialog,
   DmSearchDialog,
   ChannelSettingsDialog,
+  CreateCategoryDialog,
   type useChannelModals,
 } from '@/features/channels';
 
@@ -270,6 +271,19 @@ export function ChatDialogsPortal({
         newChannelIsPrivate={channelModals.newChannelIsPrivate}
         setNewChannelIsPrivate={channelModals.setNewChannelIsPrivate}
         onCreateChannelSubmit={channelModals.handleCreateChannelSubmit}
+        categories={channelModals.categories}
+        targetCategoryId={channelModals.targetCategoryId}
+        setTargetCategoryId={channelModals.setTargetCategoryId}
+        t={t}
+      />
+
+      {/* Create Category Dialog */}
+      <CreateCategoryDialog
+        open={channelModals.isCreateCategoryOpen}
+        onOpenChange={channelModals.setIsCreateCategoryOpen}
+        categoryName={channelModals.newCategoryName}
+        setCategoryName={channelModals.setNewCategoryName}
+        onSubmit={channelModals.handleCreateCategorySubmit}
         t={t}
       />
 

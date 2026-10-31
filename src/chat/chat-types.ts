@@ -33,6 +33,8 @@ export type ColonyChannel = {
   isPrivate?: boolean;
   slowmode?: number;
   contentVisibility?: 'default' | 'spoiler' | 'nsfw';
+  categoryId?: string;
+  categoryName?: string;
 };
 
 export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {

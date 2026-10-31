@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import type { Colony } from '@/chat/chat-types';
+import type { ColonyCategory } from '../api/categories-api';
 
 export interface CreateChannelDialogProps {
   open: boolean;
@@ -28,6 +29,9 @@ export interface CreateChannelDialogProps {
   setNewChannelIsPrivate: (isPrivate: boolean) => void;
   onCreateChannelSubmit: (e: React.FormEvent) => void;
   t: (key: string) => string;
+  categories?: ColonyCategory[];
+  targetCategoryId?: string;
+  setTargetCategoryId?: (id: string) => void;
 }
 
 export function CreateChannelDialog({
@@ -43,6 +47,9 @@ export function CreateChannelDialog({
   setNewChannelIsPrivate,
   onCreateChannelSubmit,
   t,
+  categories,
+  targetCategoryId,
+  setTargetCategoryId,
 }: CreateChannelDialogProps) {
   const channelTypes = [
     {
@@ -143,6 +150,27 @@ export function CreateChannelDialog({
                 })}
               </div>
             </div>
+
+            {/* 1.5 CATEGORY SELECTION (IF CUSTOM CATEGORIES EXIST) */}
+            {categories && categories.length > 0 && (
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  {t('KATEGORI')}
+                </label>
+                <select
+                  value={targetCategoryId || ''}
+                  onChange={(e) => setTargetCategoryId?.(e.target.value)}
+                  className="w-full bg-muted/40 border border-border text-foreground rounded-lg h-9 px-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+                >
+                  <option value="">{t('Tanpa Kategori (Default)')}</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* 2. CHANNEL NAME */}
             <div>

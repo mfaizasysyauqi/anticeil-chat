@@ -8,6 +8,7 @@ import type {
   ColonyChannelType,
 } from '@/chat/chat-types';
 import type { ColonySettingsSection } from '@/features/colony-settings';
+import type { ColonyCategory } from '../api/categories-api';
 
 export interface ChannelsSidebarProps {
   currentUser?: any;
@@ -38,7 +39,10 @@ export interface ChannelsSidebarProps {
   onOpenDmSearch: () => void;
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
-  onOpenCreateChannel: (category: string, type?: ColonyChannelType) => void;
+  onOpenCreateChannel: (category: string, type?: ColonyChannelType, categoryId?: string) => void;
+  onOpenCreateCategory?: () => void;
+  onDeleteCategory?: (categoryId: string) => void;
+  categories?: ColonyCategory[];
   onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
   onUpdateColonyIcon?: (file: File) => Promise<void> | void;

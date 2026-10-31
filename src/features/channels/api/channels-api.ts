@@ -45,12 +45,15 @@ export const channelsApi = {
     colonyId?: string;
     type?: ColonyChannelType;
     isPrivate?: boolean;
+    categoryId?: string;
+    categoryName?: string;
   }): Promise<ColonyChannel> {
     try {
       const res = await api.post<ColonyChannel>('/v1/colony/channels', payload);
       if (res && res.id) {
         const stored = loadStoredChannels();
-        const updated = [...stored.filter((c) => c.id !== res.id), res];
+        const merged = { ...res, categoryId: payload.categoryId || res.categoryId, categoryName: payload.categoryName || res.categoryName };
+        const updated = [...stored.filter((c) => c.id !== res.id), merged];
         saveStoredChannels(updated);
         return res;
       }
@@ -63,6 +66,8 @@ export const channelsApi = {
       colonyId: payload.colonyId || 'anticeil',
       type: payload.type || 'text',
       isPrivate: payload.isPrivate || false,
+      categoryId: payload.categoryId,
+      categoryName: payload.categoryName,
     };
     const stored = loadStoredChannels();
     const updated = [...stored.filter((c) => c.id !== newChannel.id), newChannel];

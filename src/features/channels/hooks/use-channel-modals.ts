@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ColonyChannel, ColonyChannelType } from '@/chat/chat-types';
 import { colonyApi } from '@/chat/chat-api';
+import { categoriesApi, type ColonyCategory } from '../api/categories-api';
 import { toast } from 'sonner';
 
 interface UseChannelModalsOptions {
@@ -27,6 +28,19 @@ export function useChannelModals({
   const [newChannelCategory, setNewChannelCategory] = useState<'CHANNELS' | 'DIRECT MESSAGES'>('CHANNELS');
   const [newChannelType, setNewChannelType] = useState<ColonyChannelType>('text');
   const [newChannelIsPrivate, setNewChannelIsPrivate] = useState(false);
+  const [targetCategoryId, setTargetCategoryId] = useState<string>('');
+
+  // Category State & Modals
+  const [categories, setCategories] = useState<ColonyCategory[]>(() => {
+    return categoriesApi.getCategories(activeColonyId);
+  });
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  // Listen to category changes
+  React.useEffect(() => {
+    setCategories(categoriesApi.getCategories(activeColonyId));
+  }, [activeColonyId]);
 
   // Edit Channel Modal
   const [channelToEdit, setChannelToEdit] = useState<ColonyChannel | null>(null);
@@ -61,6 +75,8 @@ export function useChannelModals({
         colonyId: activeColonyId === 'direct-messages' ? 'anticeil' : activeColonyId,
         type: newChannelType,
         isPrivate: newChannelIsPrivate,
+        categoryId: targetCategoryId || undefined,
+        categoryName: categories.find((c) => c.id === targetCategoryId)?.name || undefined,
       });
 
       setChannels((prev) => {
@@ -73,6 +89,7 @@ export function useChannelModals({
       setNewChannelDesc('');
       setNewChannelType('text');
       setNewChannelIsPrivate(false);
+      setTargetCategoryId('');
       toast.success(t(`Channel ${created.name} berhasil dibuat!`));
     } catch (err) {
       console.error('Failed to create channel', err);
@@ -150,7 +167,42 @@ export function useChannelModals({
     }
   };
 
+  // Category Handlers
+  const handleCreateCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    const cat = categoriesApi.createCategory(activeColonyId, newCategoryName.trim());
+    setCategories((prev) => [...prev.filter((c) => c.id !== cat.id), cat]);
+    setIsCreateCategoryOpen(false);
+    setNewCategoryName('');
+    toast.success(t(`Kategori ${cat.name} berhasil dibuat!`));
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    categoriesApi.deleteCategory(categoryId, activeColonyId);
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+    setChannels((prev) =>
+      prev.map((c) =>
+        c.categoryId === categoryId
+          ? { ...c, categoryId: undefined, categoryName: undefined }
+          : c
+      )
+    );
+    toast.success(t('Kategori berhasil dihapus'));
+  };
+
   return {
+    // Categories
+    categories,
+    isCreateCategoryOpen,
+    setIsCreateCategoryOpen,
+    newCategoryName,
+    setNewCategoryName,
+    targetCategoryId,
+    setTargetCategoryId,
+    handleCreateCategorySubmit,
+    handleDeleteCategory,
+
     // Create
     isCreateChannelOpen,
     setIsCreateChannelOpen,

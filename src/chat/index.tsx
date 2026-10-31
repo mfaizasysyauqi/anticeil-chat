@@ -1410,6 +1410,9 @@ export function ColonyPage() {
       activeCallCounts={activeCallCounts}
       calendarEvents={calendarEvents}
       onOpenServerEvents={() => setIsColonyEventsModalOpen(true)}
+      categories={channelModals.categories}
+      onOpenCreateCategory={() => channelModals.setIsCreateCategoryOpen(true)}
+      onDeleteCategory={channelModals.handleDeleteCategory}
       onItemClick={onItemClick}
       onOpenDmSearch={() =>
         requireAuth(
@@ -1434,11 +1437,12 @@ export function ColonyPage() {
           setIsServerSettingsOpen(true);
         });
       }}
-      onOpenCreateChannel={(category, type = 'text') => {
+      onOpenCreateChannel={(category, type = 'text', categoryId) => {
         requireAuth(
           () => {
             setNewChannelCategory(category as any);
             setNewChannelType(type);
+            channelModals.setTargetCategoryId(categoryId || '');
             setIsCreateChannelOpen(true);
           },
           t('Buat Saluran'),
