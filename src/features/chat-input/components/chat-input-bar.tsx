@@ -146,9 +146,9 @@ export function ChatInputBar({
       {/* Discord Reply Banner */}
       {replyingTo && (
         <div className="px-3 py-1.5 rounded-[12px] bg-[#111214] border border-white/10 shadow-lg flex items-center justify-between text-xs animate-in slide-in-from-bottom-1 select-none">
-          <div className="flex items-center gap-2 truncate">
+          <div className="flex items-center gap-2 min-w-0 pr-2">
             <span className="text-muted-foreground">Membalas <span className="font-semibold text-primary">@{replyingTo.senderName}</span>:</span>
-            <span className="truncate max-w-[260px] italic text-[#dbdee1]/80">{replyingTo.content || '[Lampiran]'}</span>
+            <span className="truncate max-w-[280px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-[#dbdee1]/90">{replyingTo.content || '[Lampiran]'}</span>
           </div>
           <Button
             variant="ghost"

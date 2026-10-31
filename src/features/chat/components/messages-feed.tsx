@@ -167,7 +167,7 @@ export function MessagesFeed({
                   {msg.replyTo && (
                     <div
                       onClick={() => msg.replyTo?.id && onJumpToMessage?.(msg.replyTo.id)}
-                      className="group/reply flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative cursor-pointer hover:text-foreground transition-colors"
+                      className="group/reply flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative cursor-pointer hover:text-foreground transition-colors max-w-full"
                       title="Klik untuk melompat ke pesan yang dibalas"
                     >
                       <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-muted-foreground/40 pointer-events-none group-hover/reply:border-foreground/60 transition-colors" />
@@ -178,8 +178,10 @@ export function MessagesFeed({
                         className="shrink-0"
                         showStatus={false}
                       />
-                      <span className="font-semibold text-foreground/90 group-hover/reply:underline">@{msg.replyTo.senderName}</span>
-                      <span className="truncate max-w-[280px] opacity-80 italic group-hover/reply:opacity-100">{msg.replyTo.content || '[Lampiran]'}</span>
+                      <span className="font-semibold text-foreground/90 shrink-0 group-hover/reply:underline">@{msg.replyTo.senderName}</span>
+                      <span className="truncate max-w-[320px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-muted-foreground/80 group-hover/reply:text-foreground/90 transition-colors">
+                        {msg.replyTo.content || '[Lampiran]'}
+                      </span>
                     </div>
                   )}
 
