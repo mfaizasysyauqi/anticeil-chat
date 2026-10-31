@@ -41,7 +41,6 @@ export interface UserSettingsModalProps {
   setTheme: (theme: any) => void;
   onGoogleSignIn: () => void;
   onLogout: () => void;
-  /** Optional: open directly to a section */
   initialSection?: SettingsSection;
 }
 
@@ -75,7 +74,6 @@ export function UserSettingsModal({
     stopMicTest,
   } = useVoiceSettings();
 
-  // Reset section when opened
   useEffect(() => {
     if (open) setActiveSection(initialSection);
   }, [open, initialSection]);
@@ -130,14 +128,16 @@ export function UserSettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 max-w-none w-screen h-screen sm:w-[900px] sm:h-[680px] sm:max-w-[900px] sm:max-h-[680px] overflow-hidden bg-[#313338] border-0 sm:border sm:border-[#1e1f22] flex flex-row rounded-none sm:rounded-xl">
-
+      <DialogContent
+        showCloseButton={false}
+        className="p-0 w-full h-full sm:w-[calc(100vw-3rem)] sm:h-[calc(100vh-2.5rem)] max-w-[1240px] max-h-[860px] overflow-hidden bg-background border border-border flex flex-row rounded-none sm:rounded-[20px] shadow-2xl"
+      >
         {/* ── Left Sidebar ── */}
-        <div className="w-[232px] shrink-0 bg-[#2b2d31] flex flex-col py-4 overflow-y-auto">
+        <div className="w-[240px] sm:w-[260px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col py-6 px-3 sm:px-4 overflow-y-auto select-none">
           {/* User mini-card */}
           {currentUser && (
-            <div className="px-3 mb-4">
-              <div className="flex items-center gap-2.5 p-2 rounded-lg bg-[#35373c]/60">
+            <div className="px-1 mb-5">
+              <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-sidebar-accent/80 border border-sidebar-border">
                 <CommunityAvatar
                   name={currentUserName}
                   email={currentUser?.email}
@@ -147,7 +147,7 @@ export function UserSettingsModal({
                   className="shrink-0"
                 />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold text-white truncate">{currentUserName}</span>
+                  <span className="text-xs font-bold text-foreground truncate">{currentUserName}</span>
                   <span className="text-[10px] text-muted-foreground font-mono truncate">
                     {currentUser?.username
                       ? `@${currentUser.username}`
@@ -161,40 +161,42 @@ export function UserSettingsModal({
           )}
 
           {/* Nav groups */}
-          {groups.map((group) => {
-            const items = navSections.filter((s) => s.group === group.key);
-            return (
-              <div key={group.key} className="px-2 mb-2">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
-                  {group.label}
+          <div className="space-y-4 flex-1">
+            {groups.map((group) => {
+              const items = navSections.filter((s) => s.group === group.key);
+              return (
+                <div key={group.key} className="space-y-0.5">
+                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2.5 py-1">
+                    {group.label}
+                  </div>
+                  {items.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveSection(item.id)}
+                      className={cn(
+                        'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left',
+                        activeSection === item.id
+                          ? 'bg-sidebar-accent text-foreground font-bold shadow-2xs'
+                          : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground',
+                      )}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
                 </div>
-                {items.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveSection(item.id)}
-                    className={cn(
-                      'w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer text-left',
-                      activeSection === item.id
-                        ? 'bg-[#35373c] text-white'
-                        : 'text-muted-foreground hover:bg-[#35373c]/50 hover:text-foreground',
-                    )}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {/* Divider + Logout */}
-          <div className="px-2 mt-auto pt-3 border-t border-[#35373c]/60">
+          <div className="pt-4 border-t border-sidebar-border mt-auto">
             {currentUser ? (
               <button
                 type="button"
                 onClick={() => { onOpenChange(false); onLogout(); }}
-                className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
               >
                 <LogOut className="w-4 h-4" />
                 <span>{t('Keluar Akun')}</span>
@@ -203,7 +205,7 @@ export function UserSettingsModal({
               <button
                 type="button"
                 onClick={onGoogleSignIn}
-                className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm font-medium text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors cursor-pointer text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
               >
                 <AtSign className="w-4 h-4" />
                 <span>{t('Masuk')}</span>
@@ -213,55 +215,63 @@ export function UserSettingsModal({
         </div>
 
         {/* ── Right Content ── */}
-        <div className="flex-1 flex flex-col min-w-0 relative">
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-[#35373c] text-muted-foreground hover:text-white hover:bg-[#4e5058] transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        <div className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
+          {/* Signature Discord ESC Close button (SINGLE button, top right) */}
+          <div className="absolute top-5 right-6 z-20">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="flex flex-col items-center gap-1 group cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+              title={t('Tutup (ESC)')}
+            >
+              <div className="size-8 rounded-full border border-border group-hover:border-foreground flex items-center justify-center transition-colors bg-card shadow-2xs">
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </div>
+              <span className="text-[9px] font-bold tracking-wider uppercase opacity-75 group-hover:opacity-100">ESC</span>
+            </button>
+          </div>
 
-          <div className="flex-1 overflow-y-auto px-8 py-6 [scrollbar-width:thin] space-y-6">
+          <div className="flex-1 overflow-y-auto px-6 sm:px-10 py-7 [scrollbar-width:thin] space-y-6 max-w-3xl">
 
             {/* ── ACCOUNT ── */}
             {activeSection === 'account' && (
               <>
-                <h2 className="text-lg font-bold text-white border-b border-[#3f4147] pb-3">{t('Akun')}</h2>
+                <h2 className="text-lg font-bold text-foreground border-b border-border pb-3">{t('Akun')}</h2>
 
                 {!currentUser ? (
-                  <div className="p-5 rounded-xl border border-[#3f4147] bg-[#2b2d31] text-center space-y-4">
-                    <div className="mx-auto size-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                  <div className="p-6 rounded-xl border border-border bg-card text-center space-y-4">
+                    <div className="mx-auto size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <AtSign className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold text-white">{t('Masuk ke Anticeil')}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{t('Masuk menggunakan akun Google Anda untuk mengobrol, bergabung ke server, dan berkolaborasi.')}</p>
+                      <h4 className="text-sm font-semibold text-foreground">{t('Masuk ke Anticeil')}</h4>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                        {t('Masuk menggunakan akun Google Anda untuk mengobrol, bergabung ke server, dan berkolaborasi.')}
+                      </p>
                     </div>
-                    <Button type="button" onClick={onGoogleSignIn} className="w-full gap-2 text-xs font-semibold cursor-pointer">
+                    <Button type="button" onClick={onGoogleSignIn} className="w-full sm:w-auto px-6 gap-2 text-xs font-semibold cursor-pointer shadow-xs">
                       {t('Masuk dengan Google')}
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {/* Profile header card */}
-                    <div className="rounded-xl overflow-hidden border border-[#3f4147]">
-                      <div className="h-16 bg-gradient-to-r from-indigo-600 to-violet-600" />
-                      <div className="bg-[#2b2d31] px-4 pb-4 pt-0 relative">
-                        <div className="flex items-end gap-3 -mt-8 mb-3">
+                    <div className="rounded-xl overflow-hidden border border-border bg-card shadow-xs">
+                      <div className="h-20 bg-gradient-to-r from-primary via-primary/80 to-secondary" />
+                      <div className="px-5 pb-5 pt-0 relative">
+                        <div className="flex items-end gap-3 -mt-10 mb-3">
                           <CommunityAvatar
                             name={currentUserName}
                             email={currentUser?.email}
                             imageUrl={currentUser?.imageUrl}
-                            size={68}
+                            size={72}
                             showStatus={false}
-                            className="shrink-0 ring-4 ring-[#2b2d31] rounded-full"
+                            className="shrink-0 ring-4 ring-card rounded-full shadow-md"
                           />
                         </div>
                         <div>
-                          <div className="text-base font-bold text-white">{currentUserName}</div>
-                          <div className="text-xs text-muted-foreground font-mono">
+                          <div className="text-base font-bold text-foreground">{currentUserName}</div>
+                          <div className="text-xs text-muted-foreground font-mono mt-0.5">
                             {currentUser?.username ? `@${currentUser.username}` : currentUser?.email || ''}
                           </div>
                         </div>
@@ -269,13 +279,13 @@ export function UserSettingsModal({
                     </div>
 
                     {/* Display Name */}
-                    <div className="p-4 rounded-xl border border-[#3f4147] bg-[#2b2d31] space-y-3">
+                    <div className="p-4 rounded-xl border border-border bg-card space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('Nama Tampilan (Display Name)')}</div>
-                          <div className="text-sm font-semibold text-white mt-0.5">{currentUserName}</div>
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('Nama Tampilan (Display Name)')}</div>
+                          <div className="text-sm font-semibold text-foreground mt-0.5">{currentUserName}</div>
                         </div>
-                        <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">{t('Bebas Diubah')}</span>
+                        <span className="text-[10px] text-emerald-500 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">{t('Bebas Diubah')}</span>
                       </div>
                       <form onSubmit={handleDisplayNameSubmit} className="flex gap-2">
                         <Input
@@ -283,13 +293,13 @@ export function UserSettingsModal({
                           onChange={(e) => setEditDisplayNameInput(e.target.value)}
                           placeholder={t('Nama Lengkap Anda')}
                           maxLength={100}
-                          className="text-xs h-9 bg-[#1e1f22] border-[#3f4147] text-white"
+                          className="text-xs h-9 bg-input border-border text-foreground"
                         />
                         <Button
                           type="submit"
                           size="sm"
                           disabled={isSavingDisplayName || !editDisplayNameInput.trim() || editDisplayNameInput.trim() === currentUserName}
-                          className="shrink-0 h-9 text-xs cursor-pointer bg-indigo-600 hover:bg-indigo-500"
+                          className="shrink-0 h-9 text-xs cursor-pointer font-bold shadow-xs"
                         >
                           {isSavingDisplayName ? t('Menyimpan...') : t('Simpan')}
                         </Button>
@@ -297,15 +307,15 @@ export function UserSettingsModal({
                     </div>
 
                     {/* Username */}
-                    <div className="p-4 rounded-xl border border-[#3f4147] bg-[#2b2d31] space-y-3">
+                    <div className="p-4 rounded-xl border border-border bg-card space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('Username Unik')}</div>
-                          <div className="text-sm font-semibold text-white mt-0.5 font-mono">
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('Username Unik')}</div>
+                          <div className="text-sm font-semibold text-foreground mt-0.5 font-mono">
                             {currentUser?.username ? `@${currentUser.username}` : t('Belum diatur')}
                           </div>
                         </div>
-                        <span className="text-[10px] text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded">{t('Cooldown 14 Hari')}</span>
+                        <span className="text-[10px] text-amber-500 font-semibold bg-amber-500/10 px-2 py-0.5 rounded">{t('Cooldown 14 Hari')}</span>
                       </div>
                       <form onSubmit={handleUsernameSubmit} className="space-y-2">
                         <div className="relative">
@@ -316,11 +326,11 @@ export function UserSettingsModal({
                             placeholder="username_anda"
                             disabled={isUsernameCooldownActive}
                             maxLength={32}
-                            className="pl-7 text-xs font-mono h-9 bg-[#1e1f22] border-[#3f4147] text-white"
+                            className="pl-7 text-xs font-mono h-9 bg-input border-border text-foreground"
                           />
                         </div>
                         {isUsernameCooldownActive ? (
-                          <div className="flex items-center gap-1.5 text-amber-400 text-xs">
+                          <div className="flex items-center gap-1.5 text-amber-500 text-xs">
                             <Clock className="w-3.5 h-3.5 shrink-0" />
                             <span>{t('Dapat diubah pada:')} <strong>{dayjs(usernameCooldownEnd).format('DD MMM YYYY, HH:mm')}</strong></span>
                           </div>
@@ -331,7 +341,7 @@ export function UserSettingsModal({
                               type="submit"
                               size="sm"
                               disabled={isUsernameCooldownActive || isSavingUsername || !editUsernameInput.trim() || editUsernameInput.trim() === currentUser?.username}
-                              className="h-8 text-xs cursor-pointer bg-indigo-600 hover:bg-indigo-500"
+                              className="h-8 text-xs cursor-pointer font-bold shadow-xs"
                             >
                               {isSavingUsername ? t('Menyimpan...') : t('Simpan Username')}
                             </Button>
@@ -341,17 +351,17 @@ export function UserSettingsModal({
                     </div>
 
                     {/* Email / Auth status */}
-                    <div className="p-4 rounded-xl border border-[#3f4147] bg-[#2b2d31] flex items-center justify-between">
+                    <div className="p-4 rounded-xl border border-border bg-card flex items-center justify-between">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="size-9 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                          <UserCheck className="w-4 h-4 text-emerald-400" />
+                          <UserCheck className="w-4 h-4 text-emerald-500" />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-xs font-semibold text-white truncate">{currentUser?.email || t('Akun Anticeil')}</div>
+                          <div className="text-xs font-semibold text-foreground truncate">{currentUser?.email || t('Akun Anticeil')}</div>
                           <div className="text-[10px] text-muted-foreground">{t('Sesi login terautentikasi dan tersinkronisasi')}</div>
                         </div>
                       </div>
-                      <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+                      <span className="text-[10px] text-emerald-500 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" />
                         {t('Aktif')}
                       </span>
@@ -364,15 +374,15 @@ export function UserSettingsModal({
             {/* ── APPEARANCE ── */}
             {activeSection === 'appearance' && (
               <>
-                <h2 className="text-lg font-bold text-white border-b border-[#3f4147] pb-3">{t('Tampilan')}</h2>
-                <div className="p-4 rounded-xl border border-[#3f4147] bg-[#2b2d31] space-y-3">
+                <h2 className="text-lg font-bold text-foreground border-b border-border pb-3">{t('Tampilan')}</h2>
+                <div className="p-5 rounded-xl border border-border bg-card space-y-4">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-0.5">{t('Tema')}</div>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">{t('Tema')}</div>
                     <p className="text-xs text-muted-foreground">{t('Pilih tema tampilan favorit Anda.')}</p>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                      { key: 'dark', icon: <Moon className="w-5 h-5 text-purple-400" />, label: 'Dark Mode', bg: 'bg-black' },
+                      { key: 'dark', icon: <Moon className="w-5 h-5 text-purple-400" />, label: 'Dark Mode (AMOLED)', bg: 'bg-black' },
                       { key: 'midnight', icon: <Sparkles className="w-5 h-5 text-sky-400" />, label: 'Midnight', bg: 'bg-[#313338]' },
                       { key: 'light', icon: <Sun className="w-5 h-5 text-amber-500" />, label: 'Light Mode', bg: 'bg-white' },
                     ].map(({ key, icon, label, bg }) => (
@@ -381,18 +391,18 @@ export function UserSettingsModal({
                         type="button"
                         onClick={() => setTheme(key)}
                         className={cn(
-                          'flex flex-col items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-all cursor-pointer',
+                          'flex flex-col items-center gap-2 p-3.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer',
                           theme === key
-                            ? 'border-indigo-500 bg-indigo-950/30 text-white shadow-[0_0_0_2px_rgba(99,102,241,0.3)]'
-                            : 'border-[#3f4147] bg-[#1e1f22] text-muted-foreground hover:border-[#5865f2]/50 hover:text-foreground',
+                            ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30 shadow-xs'
+                            : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground',
                         )}
                       >
-                        <div className={cn('w-8 h-8 rounded-full border border-white/10 flex items-center justify-center', bg)}>
+                        <div className={cn('w-9 h-9 rounded-full border border-border flex items-center justify-center shadow-2xs', bg)}>
                           {icon}
                         </div>
                         <span>{label}</span>
                         {theme === key && (
-                          <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wide">Aktif</span>
+                          <span className="text-[9px] text-primary font-bold uppercase tracking-wide">Aktif</span>
                         )}
                       </button>
                     ))}
@@ -404,84 +414,85 @@ export function UserSettingsModal({
             {/* ── VOICE ── */}
             {activeSection === 'voice' && (
               <>
-                <h2 className="text-lg font-bold text-white border-b border-[#3f4147] pb-3 flex items-center gap-2">
-                  <Mic className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-lg font-bold text-foreground border-b border-border pb-3 flex items-center gap-2">
+                  <Mic className="w-5 h-5 text-primary" />
                   Voice Settings
                 </h2>
 
                 {/* Device dropdowns */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className="p-4 rounded-xl border border-border bg-card space-y-3">
                     <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Microphone</label>
                     <select
                       value={settings.inputDeviceId}
                       onChange={(e) => updateSetting('inputDeviceId', e.target.value)}
-                      className="w-full h-10 px-3 bg-[#1e1f22] border border-[#3f4147] rounded-lg text-xs text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                      className="w-full h-10 px-3 bg-input border border-border rounded-lg text-xs text-foreground focus:border-primary focus:outline-none cursor-pointer"
                     >
                       <option value="default">Windows Default (Realtek Audio)</option>
                       {audioInputDevices.map((d, i) => (
                         <option key={d.deviceId || i} value={d.deviceId}>{d.label || `Microphone ${i + 1}`}</option>
                       ))}
                     </select>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 pt-1">
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span className="font-semibold text-white">Microphone Volume</span>
+                        <span className="font-semibold text-foreground">Microphone Volume</span>
                         <span className="font-mono">{settings.inputVolume}%</span>
                       </div>
                       <input type="range" min="0" max="100" value={settings.inputVolume}
                         onChange={(e) => updateSetting('inputVolume', Number(e.target.value))}
-                        className="w-full h-1.5 bg-[#3f4147] rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                        className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
+
+                  <div className="p-4 rounded-xl border border-border bg-card space-y-3">
                     <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Speaker</label>
                     <select
                       value={settings.outputDeviceId}
                       onChange={(e) => updateSetting('outputDeviceId', e.target.value)}
-                      className="w-full h-10 px-3 bg-[#1e1f22] border border-[#3f4147] rounded-lg text-xs text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                      className="w-full h-10 px-3 bg-input border border-border rounded-lg text-xs text-foreground focus:border-primary focus:outline-none cursor-pointer"
                     >
                       <option value="default">Windows Default (Realtek Audio)</option>
                       {audioOutputDevices.map((d, i) => (
                         <option key={d.deviceId || i} value={d.deviceId}>{d.label || `Speaker ${i + 1}`}</option>
                       ))}
                     </select>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 pt-1">
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span className="font-semibold text-white">Speaker Volume</span>
+                        <span className="font-semibold text-foreground">Speaker Volume</span>
                         <span className="font-mono">{settings.outputVolume}%</span>
                       </div>
                       <input type="range" min="0" max="100" value={settings.outputVolume}
                         onChange={(e) => updateSetting('outputVolume', Number(e.target.value))}
-                        className="w-full h-1.5 bg-[#3f4147] rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                        className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Mic Test */}
-                <div className="p-4 bg-[#1e1f22] rounded-xl border border-[#3f4147] space-y-3">
+                <div className="p-4 bg-card rounded-xl border border-border space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-white">Mic Test</h4>
+                      <h4 className="text-xs font-bold text-foreground">Mic Test</h4>
                       <p className="text-[11px] text-muted-foreground">Having mic issues? Test your microphone directly in real-time.</p>
                     </div>
                     <Button
                       type="button"
                       size="sm"
                       onClick={isMicTesting ? stopMicTest : startMicTest}
-                      className={cn('font-bold text-xs h-8 px-4 cursor-pointer', isMicTesting ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white')}
+                      className={cn('font-bold text-xs h-8 px-4 cursor-pointer', isMicTesting ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground' : 'shadow-xs')}
                     >
                       {isMicTesting ? 'Stop Testing' : 'Mic Test'}
                     </Button>
                   </div>
-                  <div className="flex items-center gap-1 h-3.5 bg-[#111214] p-1 rounded-md border border-[#3f4147] overflow-hidden">
+                  <div className="flex items-center gap-1 h-3.5 bg-muted p-1 rounded-md border border-border overflow-hidden">
                     {Array.from({ length: 48 }).map((_, idx) => {
                       const threshold = (idx / 48) * 100;
                       const isLit = isMicTesting && micVolumeLevel >= threshold;
                       return (
-                        <div key={idx} className={cn('flex-1 h-full rounded-sm transition-colors duration-75',
-                          isLit ? idx > 36 ? 'bg-rose-500' : idx > 24 ? 'bg-amber-400' : 'bg-emerald-500' : 'bg-[#3f4147]'
+                        <div key={idx} className={cn('flex-1 h-full rounded-xs transition-colors duration-75',
+                          isLit ? idx > 36 ? 'bg-rose-500' : idx > 24 ? 'bg-amber-400' : 'bg-emerald-500' : 'bg-muted-foreground/20'
                         )} />
                       );
                     })}
@@ -501,17 +512,17 @@ export function UserSettingsModal({
                         key={key}
                         onClick={() => updateSetting('inputProfile', key as any)}
                         className={cn(
-                          'p-3 rounded-xl border transition-all cursor-pointer flex items-start justify-between',
-                          settings.inputProfile === key ? 'bg-indigo-950/20 border-indigo-500/60' : 'bg-[#1e1f22] border-[#3f4147] hover:border-[#5865f2]/40',
+                          'p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between',
+                          settings.inputProfile === key ? 'bg-primary/10 border-primary ring-1 ring-primary/40' : 'bg-card border-border hover:border-border/80',
                         )}
                       >
                         <div>
-                          <div className="text-xs font-bold text-white">{title}</div>
+                          <div className="text-xs font-bold text-foreground">{title}</div>
                           <div className="text-[11px] text-muted-foreground">{desc}</div>
                         </div>
                         <div className={cn('size-4 rounded-full border flex items-center justify-center shrink-0 ml-3 mt-0.5',
-                          settings.inputProfile === key ? 'border-indigo-500 bg-indigo-500' : 'border-muted-foreground/40')}>
-                          {settings.inputProfile === key && <div className="size-1.5 rounded-full bg-white" />}
+                          settings.inputProfile === key ? 'border-primary bg-primary' : 'border-muted-foreground/40')}>
+                          {settings.inputProfile === key && <div className="size-1.5 rounded-full bg-primary-foreground" />}
                         </div>
                       </div>
                     ))}
@@ -519,32 +530,32 @@ export function UserSettingsModal({
                 </div>
 
                 {/* Advanced */}
-                <div className="space-y-4 pt-2 border-t border-[#3f4147]">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-white">Noise Suppression</h4>
+                      <h4 className="text-xs font-bold text-foreground">Noise Suppression</h4>
                       <p className="text-[11px] text-muted-foreground">Reduces background noise. Powered by Krisp Engine.</p>
                     </div>
                     <select
                       value={settings.noiseSuppression}
                       onChange={(e) => updateSetting('noiseSuppression', e.target.value as NoiseSuppressionType)}
-                      className="h-8 px-2.5 bg-[#1e1f22] border border-[#3f4147] rounded-lg text-xs font-semibold text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                      className="h-8 px-2.5 bg-input border border-border rounded-lg text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
                     >
                       <option value="krisp">Krisp (AI Isolation)</option>
                       <option value="standard">Standard</option>
                       <option value="none">Off</option>
                     </select>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
                     <div>
-                      <h4 className="text-xs font-bold text-white">Echo Cancellation</h4>
+                      <h4 className="text-xs font-bold text-foreground">Echo Cancellation</h4>
                       <p className="text-[11px] text-muted-foreground">Prevents speaker audio feedback loops.</p>
                     </div>
                     <Switch checked={settings.echoCancellation} onCheckedChange={(val) => updateSetting('echoCancellation', val)} />
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
                     <div>
-                      <h4 className="text-xs font-bold text-white">Push to Talk</h4>
+                      <h4 className="text-xs font-bold text-foreground">Push to Talk</h4>
                       <p className="text-[11px] text-muted-foreground">Hold a key to transmit your voice instead of automatic voice activation.</p>
                     </div>
                     <Switch checked={settings.pushToTalk} onCheckedChange={(val) => updateSetting('pushToTalk', val)} />
@@ -558,16 +569,16 @@ export function UserSettingsModal({
             {/* ── CAMERA ── */}
             {activeSection === 'camera' && (
               <>
-                <h2 className="text-lg font-bold text-white border-b border-[#3f4147] pb-3 flex items-center gap-2">
-                  <Video className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-lg font-bold text-foreground border-b border-border pb-3 flex items-center gap-2">
+                  <Video className="w-5 h-5 text-primary" />
                   Camera Settings
                 </h2>
-                <div className="space-y-2">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-3">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Camera Device</label>
                   <select
                     value={settings.cameraDeviceId}
                     onChange={(e) => updateSetting('cameraDeviceId', e.target.value)}
-                    className="w-full h-10 px-3 bg-[#1e1f22] border border-[#3f4147] rounded-lg text-xs text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                    className="w-full h-10 px-3 bg-input border border-border rounded-lg text-xs text-foreground focus:border-primary focus:outline-none cursor-pointer"
                   >
                     <option value="default">Default Web Camera</option>
                     {videoInputDevices.map((d, i) => (
@@ -584,4 +595,3 @@ export function UserSettingsModal({
     </Dialog>
   );
 }
-
