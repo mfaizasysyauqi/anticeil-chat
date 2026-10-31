@@ -37,12 +37,12 @@ import {
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
-import type { CommunityHub, CommunityChannel } from '@/chat/chat-types';
+import type { Colony, ColonyChannel } from '@/chat/chat-types';
 
 export interface CalendarViewProps {
   events: CalendarEvent[];
-  hubs: CommunityHub[];
-  channels: CommunityChannel[];
+  colonies: Colony[];
+  channels: ColonyChannel[];
   onJoinChannel?: (channelId: string) => void;
   onOpenSidebar: () => void;
   onCreateEvent?: (event: Omit<CalendarEvent, 'id'>) => void;
@@ -51,7 +51,7 @@ export interface CalendarViewProps {
 
 export function CalendarView({
   events: initialEvents,
-  hubs,
+  colonies,
   channels,
   onJoinChannel,
   onOpenSidebar,
@@ -70,11 +70,11 @@ export function CalendarView({
   const [newType, setNewType] = useState<'meeting' | 'task' | 'activity'>('meeting');
   const [newDate, setNewDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [newTime, setNewTime] = useState('14:00');
-  const [selectedHubId, setSelectedHubId] = useState(hubs[0]?.id || 'anticeil');
+  const [selectedColonyId, setSelectedColonyId] = useState(colonies[0]?.id || 'anticeil');
   const [selectedChannelId, setSelectedChannelId] = useState('');
 
   const voiceChannels = channels.filter(
-    (c) => (c.hubId || 'anticeil') === selectedHubId && c.type === 'voice'
+    (c) => (c.colonyId || 'anticeil') === selectedColonyId && c.type === 'voice'
   );
 
   const filteredEvents = initialEvents.filter((ev) => {
@@ -139,7 +139,7 @@ export function CalendarView({
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    const hub = hubs.find((h) => h.id === selectedHubId);
+    const hub = colonies.find((h) => h.id === selectedColonyId);
     const channel = channels.find((c) => c.id === selectedChannelId);
 
     const startDateTime = `${newDate}T${newTime}:00`;
@@ -149,7 +149,7 @@ export function CalendarView({
       description: newDescription.trim(),
       type: newType,
       startTime: startDateTime,
-      hubId: selectedHubId,
+      colonyId: selectedColonyId,
       hubName: hub?.name || 'Komunitas Anticeil',
       channelId: selectedChannelId || undefined,
       channelName: channel?.name || 'General Voice',
@@ -718,9 +718,9 @@ export function CalendarView({
                     Pilih Server / Komunitas
                   </label>
                   <Select
-                    value={selectedHubId}
+                    value={selectedColonyId}
                     onValueChange={(val) => {
-                      setSelectedHubId(val);
+                      setSelectedColonyId(val);
                       setSelectedChannelId('');
                     }}
                   >
@@ -728,7 +728,7 @@ export function CalendarView({
                       <SelectValue placeholder="Pilih Server..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {hubs.map((h) => (
+                      {colonies.map((h) => (
                         <SelectItem key={h.id} value={h.id}>
                           {h.name}
                         </SelectItem>

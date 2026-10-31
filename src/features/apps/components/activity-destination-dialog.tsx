@@ -24,22 +24,22 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { DiscordAppDefinition } from '@/features/voice/data/discord-activities';
-import type { CommunityChannel, CommunityHub, CommunityMember } from '@/chat/chat-types';
+import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 
 export interface ActivityDestinationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   app: DiscordAppDefinition | null;
-  hubs: CommunityHub[];
-  channels: CommunityChannel[];
-  members?: CommunityMember[];
+  colonies: Colony[];
+  channels: ColonyChannel[];
+  members?: ColonyMember[];
   onConfirmLaunch: (options: {
     targetType: 'dm' | 'server';
-    hubId?: string;
+    colonyId?: string;
     channelId: string;
     targetName: string;
     appId: string;
-    member?: CommunityMember;
+    member?: ColonyMember;
   }) => void;
 }
 
@@ -47,7 +47,7 @@ export function ActivityDestinationDialog({
   open,
   onOpenChange,
   app,
-  hubs,
+  colonies,
   channels,
   members = [],
   onConfirmLaunch,
@@ -57,29 +57,29 @@ export function ActivityDestinationDialog({
 
   // Server & Channel Selection
   const availableServers = useMemo(() => {
-    return hubs.filter((h) => h.id !== 'anticeil');
-  }, [hubs]);
+    return colonies.filter((h) => h.id !== 'anticeil');
+  }, [colonies]);
 
-  const [selectedHubId, setSelectedHubId] = useState<string>(() => {
+  const [selectedColonyId, setSelectedColonyId] = useState<string>(() => {
     return availableServers[0]?.id || '';
   });
 
-  // Update selectedHubId if none selected
+  // Update selectedColonyId if none selected
   React.useEffect(() => {
-    if (!selectedHubId && availableServers.length > 0) {
-      setSelectedHubId(availableServers[0].id);
+    if (!selectedColonyId && availableServers.length > 0) {
+      setSelectedColonyId(availableServers[0].id);
     }
-  }, [selectedHubId, availableServers]);
+  }, [selectedColonyId, availableServers]);
 
-  const selectedHub = useMemo(() => {
-    return availableServers.find((h) => h.id === selectedHubId) || availableServers[0];
-  }, [availableServers, selectedHubId]);
+  const selectedColony = useMemo(() => {
+    return availableServers.find((h) => h.id === selectedColonyId) || availableServers[0];
+  }, [availableServers, selectedColonyId]);
 
   // Channels for the selected server
   const serverChannels = useMemo(() => {
-    if (!selectedHubId) return [];
-    return channels.filter((c) => (c.hubId || 'anticeil') === selectedHubId && !c.isDirectMessage);
-  }, [channels, selectedHubId]);
+    if (!selectedColonyId) return [];
+    return channels.filter((c) => (c.colonyId || 'anticeil') === selectedColonyId && !c.isDirectMessage);
+  }, [channels, selectedColonyId]);
 
   const voiceChannels = useMemo(() => {
     return serverChannels.filter((c) => c.type === 'voice');
@@ -100,7 +100,7 @@ export function ActivityDestinationDialog({
     } else {
       setSelectedChannelId('');
     }
-  }, [selectedHubId, textChannels, serverChannels]);
+  }, [selectedColonyId, textChannels, serverChannels]);
 
   // DM / Friends Selection
   const availableDMs = useMemo(() => {
@@ -111,7 +111,7 @@ export function ActivityDestinationDialog({
     return availableDMs[0]?.id || '';
   });
 
-  const [selectedMember, setSelectedMember] = useState<CommunityMember | null>(null);
+  const [selectedMember, setSelectedMember] = useState<ColonyMember | null>(null);
 
   // Filtered members / DMs for search
   const filteredMembers = useMemo(() => {
@@ -133,9 +133,9 @@ export function ActivityDestinationDialog({
       if (!ch) return;
       onConfirmLaunch({
         targetType: 'server',
-        hubId: selectedHubId,
+        colonyId: selectedColonyId,
         channelId: ch.id,
-        targetName: `${selectedHub?.name || 'Server'} - #${ch.name}`,
+        targetName: `${selectedColony?.name || 'Server'} - #${ch.name}`,
         appId: app.id,
       });
     } else {
@@ -258,11 +258,11 @@ export function ActivityDestinationDialog({
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-32 overflow-y-auto [scrollbar-width:thin] p-0.5">
                       {availableServers.map((hub) => {
-                        const isSelected = selectedHubId === hub.id;
+                        const isSelected = selectedColonyId === hub.id;
                         return (
                           <div
                             key={hub.id}
-                            onClick={() => setSelectedHubId(hub.id)}
+                            onClick={() => setSelectedColonyId(hub.id)}
                             className={cn(
                               'flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all text-left select-none',
                               isSelected
@@ -290,7 +290,7 @@ export function ActivityDestinationDialog({
                   {/* Step 2: Choose Channel in Selected Server */}
                   <div className="space-y-1.5 pt-1 border-t border-border/50">
                     <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
-                      <span>2. Pilih Saluran di {selectedHub?.name}</span>
+                      <span>2. Pilih Saluran di {selectedColony?.name}</span>
                       <span className="text-[10px] text-emerald-500 font-semibold">
                         Disarankan: Saluran Suara
                       </span>

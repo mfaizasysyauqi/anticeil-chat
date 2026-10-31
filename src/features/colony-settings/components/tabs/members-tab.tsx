@@ -10,21 +10,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import { communityApi } from '@/chat/chat-api';
+import { colonyApi } from '@/chat/chat-api';
 import { toast } from 'sonner';
-import type { CommunityHub, CommunityMember } from '@/chat/chat-types';
+import type { Colony, ColonyMember } from '@/chat/chat-types';
 
 interface MembersTabProps {
-  activeHub: CommunityHub;
-  currentUser: CommunityMember | null;
-  members: CommunityMember[];
-  onUpdateMembers?: (updater: (prev: CommunityMember[]) => CommunityMember[]) => void;
-  onInitiateBan: (member: CommunityMember) => void;
+  activeColony: Colony;
+  currentUser: ColonyMember | null;
+  members: ColonyMember[];
+  onUpdateMembers?: (updater: (prev: ColonyMember[]) => ColonyMember[]) => void;
+  onInitiateBan: (member: ColonyMember) => void;
   t: (key: string) => string;
 }
 
 export function MembersTab({
-  activeHub,
+  activeColony,
   currentUser,
   members,
   onUpdateMembers,
@@ -98,7 +98,7 @@ export function MembersTab({
                           onUpdateMembers?.((prev) =>
                             prev.map((item) => (item.id === m.id ? { ...item, role: r } : item)),
                           );
-                          await communityApi.updateMemberRole(activeHub.id, m.id, r);
+                          await colonyApi.updateMemberRole(activeColony.id, m.id, r);
                           toast.success(t(`Peran ${m.name} diubah menjadi ${r}`));
                         }}
                         className="capitalize cursor-pointer"
@@ -121,7 +121,7 @@ export function MembersTab({
                       <DropdownMenuItem
                         onClick={async () => {
                           onUpdateMembers?.((prev) => prev.filter((item) => item.id !== m.id));
-                          await communityApi.kickMember(activeHub.id, m.id);
+                          await colonyApi.kickMember(activeColony.id, m.id);
                           toast.success(t(`${m.name} dikeluarkan dari server`));
                         }}
                         className="text-red-500 cursor-pointer"

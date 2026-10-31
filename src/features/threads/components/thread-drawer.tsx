@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { useTranslation } from '@/core/i18n';
-import type { CommunityThread, CommunityMessage } from '@/chat/chat-types';
+import type { ColonyThread, ColonyMessage } from '@/chat/chat-types';
 
 interface ThreadDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  activeThread: CommunityThread | null;
-  threadMessages: CommunityMessage[];
+  activeThread: ColonyThread | null;
+  threadMessages: ColonyMessage[];
   onSendMessage: (content: string) => Promise<void>;
   renderFormattedMessage?: (content: string) => React.ReactNode;
 }

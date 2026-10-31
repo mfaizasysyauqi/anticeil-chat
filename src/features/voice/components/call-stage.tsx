@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import { CommunityChannel, CommunityHub } from '@/chat/chat-types';
+import { ColonyChannel, Colony } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';
@@ -37,8 +37,8 @@ export function YouTubeBadgeIcon({ className = 'w-5 h-3.5' }: { className?: stri
 }
 
 export interface CallStageProps {
-  channel: CommunityChannel;
-  activeHub?: CommunityHub | null;
+  channel: ColonyChannel;
+  activeColony?: Colony | null;
   currentUser: {
     id?: string;
     firstName?: string;
@@ -72,7 +72,7 @@ const ICE_SERVERS = {
 
 export function CallStage({
   channel,
-  activeHub,
+  activeColony,
   currentUser,
   isPlusOrAbove,
   socket,
@@ -105,8 +105,8 @@ export function CallStage({
   const [isInviteVoiceOpen, setIsInviteVoiceOpen] = useState(false);
   const [copiedVoiceCallLink, setCopiedVoiceCallLink] = useState(false);
 
-  const hubId = activeHub?.id || channel.hubId || 'anticeil';
-  const inviteCode = activeHub?.inviteCode || activeHub?.id || channel.hubId || '';
+  const colonyId = activeColony?.id || channel.colonyId || 'anticeil';
+  const inviteCode = activeColony?.inviteCode || activeColony?.id || channel.colonyId || '';
 
   // Upgrade modal state for Free Plan 2-person limit
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -121,9 +121,9 @@ export function CallStage({
   // Dynamically generate invite URL, embedding the active activity so joiners launch it instantly
   const callInviteUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const base = `${window.location.origin}/messages?hub=${encodeURIComponent(hubId)}&channel=${encodeURIComponent(channel.id)}&invite=${encodeURIComponent(inviteCode)}`;
+    const base = `${window.location.origin}/messages?hub=${encodeURIComponent(colonyId)}&channel=${encodeURIComponent(channel.id)}&invite=${encodeURIComponent(inviteCode)}`;
     return activeAppId ? `${base}&activity=${encodeURIComponent(activeAppId)}` : base;
-  }, [hubId, channel.id, inviteCode, activeAppId]);
+  }, [colonyId, channel.id, inviteCode, activeAppId]);
 
   useEffect(() => {
     if (initialAppId) {
@@ -1113,7 +1113,7 @@ export function CallStage({
         open={isInviteVoiceOpen}
         onOpenChange={setIsInviteVoiceOpen}
         channel={channel}
-        activeHub={activeHub}
+        activeColony={activeColony}
         callInviteUrl={callInviteUrl}
         copiedVoiceCallLink={copiedVoiceCallLink}
         onCopyCallLink={handleExecuteCopyCallLink}

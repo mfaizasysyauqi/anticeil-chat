@@ -1,4 +1,4 @@
-export type CommunityHubId = 'anticeil' | 'direct-messages' | string;
+export type ColonyId = 'anticeil' | 'direct-messages' | string;
 
 export type CommunityCustomEmoji = {
   id: string;
@@ -7,8 +7,8 @@ export type CommunityCustomEmoji = {
   url?: string;
 };
 
-export type CommunityHub = {
-  id: CommunityHubId;
+export type Colony = {
+  id: ColonyId;
   name: string;
   iconType?: 'logo' | 'spark' | 'bot' | 'templates' | 'code' | 'dm' | 'initials';
   initials: string;
@@ -25,7 +25,7 @@ export type CommunityHub = {
   boostTier?: number;
 };
 
-export const DEFAULT_HUBS: CommunityHub[] = [
+export const DEFAULT_COLONIES: Colony[] = [
   {
     id: 'anticeil',
     name: 'Pesan Langsung',
@@ -35,24 +35,24 @@ export const DEFAULT_HUBS: CommunityHub[] = [
   },
 ];
 
-const STORAGE_KEY_HUBS = 'anticeil_community_hubs_v3';
+const STORAGE_KEY_COLONIES = 'anticeil_community_hubs_v3';
 
-export function loadStoredHubs(): CommunityHub[] {
+export function loadStoredColonies(): Colony[] {
   try {
     const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
-    if (!token) return DEFAULT_HUBS;
-    const raw = localStorage.getItem(STORAGE_KEY_HUBS);
-    if (!raw) return DEFAULT_HUBS;
+    if (!token) return DEFAULT_COLONIES;
+    const raw = localStorage.getItem(STORAGE_KEY_COLONIES);
+    if (!raw) return DEFAULT_COLONIES;
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_HUBS;
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_COLONIES;
   } catch {
-    return DEFAULT_HUBS;
+    return DEFAULT_COLONIES;
   }
 }
 
-export function saveStoredHubs(hubs: CommunityHub[]): void {
+export function saveStoredColonies(colonies: Colony[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY_HUBS, JSON.stringify(hubs));
+    localStorage.setItem(STORAGE_KEY_COLONIES, JSON.stringify(colonies));
     window.dispatchEvent(new Event('anticeil_hubs_changed'));
   } catch (err) {
     console.error('Failed to save community hubs to storage', err);
@@ -121,9 +121,3 @@ export function saveStoredColonyInvitations(invitations: ServerInvitation[]): vo
   }
 }
 
-// ── Colony Domain Aliases ───────────────────────────
-export type ColonyId = CommunityHubId;
-export type Colony = CommunityHub;
-export const DEFAULT_COLONIES = DEFAULT_HUBS;
-export const loadStoredColonies = loadStoredHubs;
-export const saveStoredColonies = saveStoredHubs;

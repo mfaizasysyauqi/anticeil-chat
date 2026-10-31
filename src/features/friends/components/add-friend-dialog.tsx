@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/core/i18n';
 import { friendsApi } from '../api/friends-api';
 import type { FriendMember, FriendRequest } from '../types';
-import type { CommunityMember } from '@/chat/chat-types';
+import type { ColonyMember } from '@/chat/chat-types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export interface AddFriendDialogProps {
@@ -23,7 +23,7 @@ export interface AddFriendDialogProps {
   currentUser?: any;
   allFriends?: FriendMember[];
   friendRequests?: FriendRequest[];
-  members?: CommunityMember[];
+  members?: ColonyMember[];
 }
 
 export function AddFriendDialog({

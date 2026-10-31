@@ -9,18 +9,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import type { CommunityChannel, CommunityMember } from '@/chat/chat-types';
+import type { ColonyChannel, ColonyMember } from '@/chat/chat-types';
 
 export interface DmSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dmSearchQuery: string;
   setDmSearchQuery: (query: string) => void;
-  dmChannels: CommunityChannel[];
-  members: CommunityMember[];
+  dmChannels: ColonyChannel[];
+  members: ColonyMember[];
   currentUser: any;
   onSelectDmChannel: (channelId: string) => void;
-  onStartDM: (member: CommunityMember) => void;
+  onStartDM: (member: ColonyMember) => void;
   t: (key: string) => string;
 }
 

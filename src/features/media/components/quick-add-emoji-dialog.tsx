@@ -8,12 +8,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 export interface QuickAddEmojiDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  activeHub: CommunityHub | null;
+  activeColony: Colony | null;
   quickEmojiName: string;
   setQuickEmojiName: (name: string) => void;
   quickEmojiCode: string;
@@ -27,7 +27,7 @@ export interface QuickAddEmojiDialogProps {
 export function QuickAddEmojiDialog({
   open,
   onOpenChange,
-  activeHub,
+  activeColony,
   quickEmojiName,
   setQuickEmojiName,
   quickEmojiCode,
@@ -45,7 +45,7 @@ export function QuickAddEmojiDialog({
             ✨ Tambah Emoji Kustom ke Server
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Emoji ini akan disimpan ke database PostgreSQL server {activeHub?.name || ''} dan dapat digunakan oleh anggota server.
+            Emoji ini akan disimpan ke database PostgreSQL server {activeColony?.name || ''} dan dapat digunakan oleh anggota server.
           </DialogDescription>
         </DialogHeader>
 

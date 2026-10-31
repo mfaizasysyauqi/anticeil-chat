@@ -1,10 +1,10 @@
 import { api } from '@/lib/api';
-import type { ServerInvitation, ColonyInvitation } from '@/lib/community-hubs';
+import type { ServerInvitation, ColonyInvitation } from '@/lib/colony';
 import {
   loadStoredChannels,
   saveStoredChannels,
-  loadStoredHubs,
-  saveStoredHubs,
+  loadStoredColonies,
+  saveStoredColonies,
   loadStoredMessages,
   saveStoredMessages,
   loadStoredInvites,
@@ -15,32 +15,32 @@ import {
   saveStoredRoles,
   loadStoredAuditLog,
   saveStoredAuditLog,
-  DEFAULT_HUBS,
+  DEFAULT_COLONIES,
 } from './chat-defaults';
 import {
-  CommunityChannel,
-  CommunityChannelType,
-  CommunityMember,
-  CommunityMessage,
-  CommunityHub,
+  ColonyChannel,
+  ColonyChannelType,
+  ColonyMember,
+  ColonyMessage,
+  Colony,
   CommunityAuditEntry,
   CommunityInvite,
-  CommunityBan,
+  ColonyBan,
   CommunityCustomRole,
-  CommunityHubStats,
-  CommunityRole,
-  CommunityChannelNotification,
-  CommunityThread,
+  ColonyStats,
+  ColonyRole,
+  ColonyChannelNotification,
+  ColonyThread,
   resolveChannelType,
 } from './chat-types';
 import { DiscordEmoji, DiscordSticker, DiscordGifItem } from './anticeil-media-data';
 
 export const chatApi = {
   // ── Channels ──────────────────────────────────────────────────────────
-  async getChannels(hubId?: string): Promise<CommunityChannel[]> {
+  async getChannels(colonyId?: string): Promise<ColonyChannel[]> {
     try {
-      const res = await api.get<CommunityChannel[]>('/v1/community/channels', {
-        params: hubId ? { hubId } : undefined,
+      const res = await api.get<ColonyChannel[]>('/v1/community/channels', {
+        params: colonyId ? { hubId: colonyId } : undefined,
       });
       if (Array.isArray(res)) {
         const normalized = res.map((c) => ({
@@ -48,8 +48,8 @@ export const chatApi = {
           type: resolveChannelType(c),
         }));
         const stored = loadStoredChannels();
-        if (hubId) {
-          const others = stored.filter((c) => (c.hubId || 'anticeil') !== hubId);
+        if (colonyId) {
+          const others = stored.filter((c) => (c.colonyId || 'anticeil') !== colonyId);
           saveStoredChannels([...others, ...normalized]);
         } else {
           const existingDms = stored.filter((c) => c.category === 'DIRECT MESSAGES' || c.isDirectMessage);
@@ -62,19 +62,19 @@ export const chatApi = {
       ...c,
       type: resolveChannelType(c),
     }));
-    return hubId ? stored.filter((c) => (c.hubId || 'anticeil') === hubId) : stored;
+    return colonyId ? stored.filter((c) => (c.colonyId || 'anticeil') === colonyId) : stored;
   },
 
   async createChannel(payload: {
     name: string;
     description: string;
     category: 'CHANNELS' | 'DIRECT MESSAGES';
-    hubId?: string;
-    type?: CommunityChannelType;
+    colonyId?: string;
+    type?: ColonyChannelType;
     isPrivate?: boolean;
-  }): Promise<CommunityChannel> {
+  }): Promise<ColonyChannel> {
     try {
-      const res = await api.post<CommunityChannel>('/v1/community/channels', payload);
+      const res = await api.post<ColonyChannel>('/v1/community/channels', payload);
       if (res && res.id) {
         const stored = loadStoredChannels();
         const updated = [...stored.filter((c) => c.id !== res.id), res];
@@ -82,12 +82,12 @@ export const chatApi = {
         return res;
       }
     } catch {}
-    const newChannel: CommunityChannel = {
+    const newChannel: ColonyChannel = {
       id: `ch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       name: payload.name,
       description: payload.description,
       category: payload.category,
-      hubId: payload.hubId || 'anticeil',
+      colonyId: payload.colonyId || 'anticeil',
       type: payload.type || 'text',
       isPrivate: payload.isPrivate || false,
     };
@@ -99,10 +99,10 @@ export const chatApi = {
 
   async updateChannel(
     id: string,
-    payload: Partial<CommunityChannel>,
-  ): Promise<CommunityChannel> {
+    payload: Partial<ColonyChannel>,
+  ): Promise<ColonyChannel> {
     try {
-      const res = await api.put<CommunityChannel>(`/v1/community/channels/${id}`, payload);
+      const res = await api.put<ColonyChannel>(`/v1/community/channels/${id}`, payload);
       if (res && res.id) {
         const stored = loadStoredChannels();
         saveStoredChannels(stored.map((c) => (c.id === id ? res : c)));
@@ -116,12 +116,12 @@ export const chatApi = {
       saveStoredChannels(stored.map((c) => (c.id === id ? target! : c)));
       return target;
     }
-    const fallback: CommunityChannel = {
+    const fallback: ColonyChannel = {
       id,
       name: payload.name || 'Channel',
       description: payload.description || '',
       category: 'CHANNELS',
-      hubId: 'anticeil',
+      colonyId: 'anticeil',
     };
     saveStoredChannels([...stored, fallback]);
     return fallback;
@@ -143,19 +143,19 @@ export const chatApi = {
   },
 
   // ── Messages ──────────────────────────────────────────────────────────
-  async getMessages(channelId: string): Promise<CommunityMessage[]> {
+  async getMessages(channelId: string): Promise<ColonyMessage[]> {
     try {
       if (channelId.startsWith('dm-')) {
         const parts = channelId.slice(3).split('-').filter(Boolean);
-        const reqs = [api.get<CommunityMessage[]>(`/v1/community/channels/${channelId}/messages`)];
+        const reqs = [api.get<ColonyMessage[]>(`/v1/community/channels/${channelId}/messages`)];
         if (parts.length === 2) {
           reqs.push(
-            api.get<CommunityMessage[]>(`/v1/community/channels/dm-${parts[0]}/messages`).catch(() => []),
-            api.get<CommunityMessage[]>(`/v1/community/channels/dm-${parts[1]}/messages`).catch(() => []),
+            api.get<ColonyMessage[]>(`/v1/community/channels/dm-${parts[0]}/messages`).catch(() => []),
+            api.get<ColonyMessage[]>(`/v1/community/channels/dm-${parts[1]}/messages`).catch(() => []),
           );
         }
         const results = await Promise.all(reqs.map((p) => p.catch(() => [])));
-        const allMsgs: CommunityMessage[] = [];
+        const allMsgs: ColonyMessage[] = [];
         const seen = new Set<string>();
         results.forEach((res) => {
           if (Array.isArray(res)) {
@@ -174,7 +174,7 @@ export const chatApi = {
         return allMsgs;
       }
 
-      const res = await api.get<CommunityMessage[]>(`/v1/community/channels/${channelId}/messages`);
+      const res = await api.get<ColonyMessage[]>(`/v1/community/channels/${channelId}/messages`);
       if (Array.isArray(res)) {
         const stored = loadStoredMessages();
         stored[channelId] = res;
@@ -188,9 +188,9 @@ export const chatApi = {
 
   async sendMessage(
     channelId: string,
-    payload: Partial<CommunityMessage>,
-  ): Promise<CommunityMessage> {
-    const fallbackMsg: CommunityMessage = {
+    payload: Partial<ColonyMessage>,
+  ): Promise<ColonyMessage> {
+    const fallbackMsg: ColonyMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       channelId,
       senderId: payload.senderId || 'me',
@@ -205,7 +205,7 @@ export const chatApi = {
     };
 
     try {
-      const res = await api.post<CommunityMessage>(`/v1/community/channels/${channelId}/messages`, {
+      const res = await api.post<ColonyMessage>(`/v1/community/channels/${channelId}/messages`, {
         ...payload,
         channelId,
       });
@@ -250,7 +250,7 @@ export const chatApi = {
       }
     } catch {}
     const stored = loadStoredMessages();
-    let targetMsg: CommunityMessage | null = null;
+    let targetMsg: ColonyMessage | null = null;
     for (const chId in stored) {
       const msg = stored[chId].find((m) => m.id === messageId);
       if (msg) {
@@ -278,7 +278,7 @@ export const chatApi = {
   },
 
   // ── Members & Friends (Fetches real workspace users from /v1/community/members with /v1/users fallback) ──
-  async getMembers(projectId?: string, hubId?: string): Promise<CommunityMember[]> {
+  async getMembers(projectId?: string, colonyId?: string): Promise<ColonyMember[]> {
     try {
       // 1. Try community members endpoint (always available for workspace/community users)
       const commRes = await api.get<any>('/v1/community/members');
@@ -343,15 +343,15 @@ export const chatApi = {
   },
 
   // ── Hubs (Servers) & Invites ──────────────────────────────────────────
-  async getHubs(): Promise<CommunityHub[]> {
+  async getColonies(): Promise<Colony[]> {
     try {
-      const res = await api.get<CommunityHub[]>('/v1/community/hubs');
+      const res = await api.get<Colony[]>('/v1/community/hubs');
       if (Array.isArray(res) && res.length > 0) {
-        saveStoredHubs(res);
+        saveStoredColonies(res);
         return res;
       }
     } catch {}
-    return loadStoredHubs();
+    return loadStoredColonies();
   },
 
   async createHub(payload: {
@@ -360,9 +360,9 @@ export const chatApi = {
     color?: string;
     icon?: string;
     iconUrl?: string;
-  }): Promise<CommunityHub> {
+  }): Promise<Colony> {
     const newId = `hub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const newHub: CommunityHub = {
+    const newHub: Colony = {
       id: newId,
       name: payload.name,
       iconType: payload.iconUrl ? (undefined as any) : ('code' as any),
@@ -384,29 +384,29 @@ export const chatApi = {
     };
 
     try {
-      const res = await api.post<CommunityHub>('/v1/community/hubs', {
+      const res = await api.post<Colony>('/v1/community/hubs', {
         ...payload,
         id: newId,
         tags: newHub.tags,
         emojis: newHub.emojis,
       });
       if (res && res.id) {
-        const stored = loadStoredHubs();
+        const stored = loadStoredColonies();
         const updated = [...stored.filter((h) => h.id !== res.id), res];
-        saveStoredHubs(updated);
+        saveStoredColonies(updated);
         this.recordAudit(res.id, 'HUB_CREATED', 'Admin', res.name);
         return res;
       }
     } catch {}
 
-    const stored = loadStoredHubs();
+    const stored = loadStoredColonies();
     const updated = [...stored.filter((h) => h.id !== newId), newHub];
-    saveStoredHubs(updated);
+    saveStoredColonies(updated);
     this.recordAudit(newId, 'HUB_CREATED', 'Admin', newHub.name);
     return newHub;
   },
 
-  async updateHub(
+  async updateColony(
     id: string,
     payload: {
       name?: string;
@@ -419,26 +419,26 @@ export const chatApi = {
       boostsCount?: number;
       boostTier?: number;
     },
-  ): Promise<CommunityHub> {
+  ): Promise<Colony> {
     try {
-      const res = await api.put<CommunityHub>(`/v1/community/hubs/${id}`, payload);
+      const res = await api.put<Colony>(`/v1/community/hubs/${id}`, payload);
       if (res && res.id) {
-        const stored = loadStoredHubs();
-        saveStoredHubs(stored.map((h) => (h.id === id ? res : h)));
+        const stored = loadStoredColonies();
+        saveStoredColonies(stored.map((h) => (h.id === id ? res : h)));
         this.recordAudit(id, 'HUB_UPDATED', 'Admin', payload.name || id, payload);
         return res;
       }
     } catch {}
 
-    const stored = loadStoredHubs();
+    const stored = loadStoredColonies();
     let target = stored.find((h) => h.id === id);
     if (target) {
       target = { ...target, ...payload };
-      saveStoredHubs(stored.map((h) => (h.id === id ? target! : h)));
+      saveStoredColonies(stored.map((h) => (h.id === id ? target! : h)));
       this.recordAudit(id, 'HUB_UPDATED', 'Admin', payload.name || id, payload);
       return target;
     }
-    const fallback: CommunityHub = {
+    const fallback: Colony = {
       id,
       name: payload.name || 'Server',
       description: payload.description || '',
@@ -447,7 +447,7 @@ export const chatApi = {
       role: 'owner',
       ...payload,
     };
-    saveStoredHubs([...stored, fallback]);
+    saveStoredColonies([...stored, fallback]);
     return fallback;
   },
 
@@ -455,8 +455,8 @@ export const chatApi = {
     try {
       await api.delete(`/v1/community/hubs/${id}`);
     } catch {}
-    const stored = loadStoredHubs();
-    saveStoredHubs(stored.filter((h) => h.id !== id));
+    const stored = loadStoredColonies();
+    saveStoredColonies(stored.filter((h) => h.id !== id));
     this.recordAudit(id, 'HUB_DELETED', 'Admin', id);
     return { success: true, id };
   },
@@ -467,8 +467,8 @@ export const chatApi = {
         `/v1/community/hubs/${id}/boost`,
       );
       if (res && typeof res.boostsCount === 'number') {
-        const stored = loadStoredHubs();
-        saveStoredHubs(
+        const stored = loadStoredColonies();
+        saveStoredColonies(
           stored.map((h) =>
             h.id === id
               ? { ...h, boostsCount: res.boostsCount, boostTier: res.boostTier }
@@ -482,7 +482,7 @@ export const chatApi = {
       }
     } catch {}
 
-    const stored = loadStoredHubs();
+    const stored = loadStoredColonies();
     let count = 1;
     let tier = 0;
     const target = stored.find((h) => h.id === id);
@@ -491,7 +491,7 @@ export const chatApi = {
       tier = count >= 14 ? 3 : count >= 7 ? 2 : count >= 2 ? 1 : 0;
       target.boostsCount = count;
       target.boostTier = tier;
-      saveStoredHubs(stored.map((h) => (h.id === id ? target : h)));
+      saveStoredColonies(stored.map((h) => (h.id === id ? target : h)));
     }
     this.recordAudit(id, 'SERVER_BOOST', 'Admin', `Boost Tier ${tier}`, { boostsCount: count });
     return { success: true, boostsCount: count, boostTier: tier };
@@ -499,95 +499,95 @@ export const chatApi = {
 
   // ── Member Actions: Role & Kick ──────────────────────────────────────
   async updateMemberRole(
-    hubId: string,
+    colonyId: string,
     userId: string,
-    role: CommunityRole,
-  ): Promise<{ success: boolean; userId: string; role: CommunityRole }> {
+    role: ColonyRole,
+  ): Promise<{ success: boolean; userId: string; role: ColonyRole }> {
     try {
-      await api.put(`/v1/community/hubs/${hubId}/members/${userId}/role`, { role });
+      await api.put(`/v1/community/hubs/${colonyId}/members/${userId}/role`, { role });
     } catch {}
-    this.recordAudit(hubId, 'MEMBER_ROLE_CHANGE', 'Admin', userId, { newRole: role });
+    this.recordAudit(colonyId, 'MEMBER_ROLE_CHANGE', 'Admin', userId, { newRole: role });
     return { success: true, userId, role };
   },
 
-  async kickMember(hubId: string, userId: string): Promise<{ success: boolean; userId: string }> {
+  async kickMember(colonyId: string, userId: string): Promise<{ success: boolean; userId: string }> {
     try {
-      await api.delete(`/v1/community/hubs/${hubId}/members/${userId}`);
+      await api.delete(`/v1/community/hubs/${colonyId}/members/${userId}`);
     } catch {}
-    this.recordAudit(hubId, 'MEMBER_KICK', 'Admin', userId);
+    this.recordAudit(colonyId, 'MEMBER_KICK', 'Admin', userId);
     return { success: true, userId };
   },
 
   // ── Roles Management ──────────────────────────────────────────────────
-  async getRoles(hubId: string): Promise<CommunityCustomRole[]> {
+  async getRoles(colonyId: string): Promise<CommunityCustomRole[]> {
     try {
-      const res = await api.get<CommunityCustomRole[]>(`/v1/community/hubs/${hubId}/roles`);
+      const res = await api.get<CommunityCustomRole[]>(`/v1/community/hubs/${colonyId}/roles`);
       if (Array.isArray(res) && res.length > 0) {
-        saveStoredRoles(hubId, res);
+        saveStoredRoles(colonyId, res);
         return res;
       }
     } catch {}
-    const stored = loadStoredRoles(hubId);
+    const stored = loadStoredRoles(colonyId);
     if (stored.length > 0) return stored;
     return [];
   },
 
-  async createRole(hubId: string, payload: { name: string; color: string; permissions?: string[] }): Promise<CommunityCustomRole> {
+  async createRole(colonyId: string, payload: { name: string; color: string; permissions?: string[] }): Promise<CommunityCustomRole> {
     const newRole: CommunityCustomRole = {
       id: `role_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      hubId,
+      colonyId,
       name: payload.name,
       color: payload.color || '#6366f1',
       permissions: payload.permissions || ['SEND_MESSAGES'],
     };
     try {
-      const res = await api.post<CommunityCustomRole>(`/v1/community/hubs/${hubId}/roles`, newRole);
+      const res = await api.post<CommunityCustomRole>(`/v1/community/hubs/${colonyId}/roles`, newRole);
       if (res && res.id) {
-        const stored = loadStoredRoles(hubId);
-        saveStoredRoles(hubId, [...stored, res]);
-        this.recordAudit(hubId, 'ROLE_CREATED', 'Admin', res.name, { color: res.color });
+        const stored = loadStoredRoles(colonyId);
+        saveStoredRoles(colonyId, [...stored, res]);
+        this.recordAudit(colonyId, 'ROLE_CREATED', 'Admin', res.name, { color: res.color });
         return res;
       }
     } catch {}
-    const stored = loadStoredRoles(hubId);
+    const stored = loadStoredRoles(colonyId);
     const updated = [...stored, newRole];
-    saveStoredRoles(hubId, updated);
-    this.recordAudit(hubId, 'ROLE_CREATED', 'Admin', newRole.name, { color: newRole.color });
+    saveStoredRoles(colonyId, updated);
+    this.recordAudit(colonyId, 'ROLE_CREATED', 'Admin', newRole.name, { color: newRole.color });
     return newRole;
   },
 
-  async deleteRole(hubId: string, roleId: string): Promise<{ success: boolean; id: string }> {
+  async deleteRole(colonyId: string, roleId: string): Promise<{ success: boolean; id: string }> {
     try {
-      await api.delete(`/v1/community/hubs/${hubId}/roles/${roleId}`);
+      await api.delete(`/v1/community/hubs/${colonyId}/roles/${roleId}`);
     } catch {}
-    const stored = loadStoredRoles(hubId);
-    saveStoredRoles(hubId, stored.filter((r) => r.id !== roleId));
-    this.recordAudit(hubId, 'ROLE_DELETED', 'Admin', roleId);
+    const stored = loadStoredRoles(colonyId);
+    saveStoredRoles(colonyId, stored.filter((r) => r.id !== roleId));
+    this.recordAudit(colonyId, 'ROLE_DELETED', 'Admin', roleId);
     return { success: true, id: roleId };
   },
 
   // ── Invites Management ────────────────────────────────────────────────
-  async getInvites(hubId: string): Promise<CommunityInvite[]> {
+  async getInvites(colonyId: string): Promise<CommunityInvite[]> {
     try {
-      const res = await api.get<CommunityInvite[]>(`/v1/community/hubs/${hubId}/invites`);
+      const res = await api.get<CommunityInvite[]>(`/v1/community/hubs/${colonyId}/invites`);
       if (Array.isArray(res) && res.length > 0) {
-        saveStoredInvites(hubId, res);
+        saveStoredInvites(colonyId, res);
         return res;
       }
     } catch {}
-    const stored = loadStoredInvites(hubId);
+    const stored = loadStoredInvites(colonyId);
     if (stored.length > 0) return stored;
     return [];
   },
 
   async createInvite(
-    hubId: string,
+    colonyId: string,
     payload: { maxUses?: number; expiresAt?: string | null },
   ): Promise<CommunityInvite> {
     const code = Math.random().toString(36).slice(2, 8).toUpperCase();
     const newInvite: CommunityInvite = {
       id: `inv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      hubId,
+      colonyId,
       code,
       inviterName: 'Admin',
       uses: 0,
@@ -596,49 +596,49 @@ export const chatApi = {
       createdAt: new Date().toISOString(),
     };
     try {
-      const res = await api.post<CommunityInvite>(`/v1/community/hubs/${hubId}/invites`, newInvite);
+      const res = await api.post<CommunityInvite>(`/v1/community/hubs/${colonyId}/invites`, newInvite);
       if (res && res.id) {
-        const stored = loadStoredInvites(hubId);
-        saveStoredInvites(hubId, [res, ...stored]);
-        this.recordAudit(hubId, 'INVITE_CREATE', 'Admin', res.code);
+        const stored = loadStoredInvites(colonyId);
+        saveStoredInvites(colonyId, [res, ...stored]);
+        this.recordAudit(colonyId, 'INVITE_CREATE', 'Admin', res.code);
         return res;
       }
     } catch {}
-    const stored = loadStoredInvites(hubId);
-    saveStoredInvites(hubId, [newInvite, ...stored]);
-    this.recordAudit(hubId, 'INVITE_CREATE', 'Admin', newInvite.code);
+    const stored = loadStoredInvites(colonyId);
+    saveStoredInvites(colonyId, [newInvite, ...stored]);
+    this.recordAudit(colonyId, 'INVITE_CREATE', 'Admin', newInvite.code);
     return newInvite;
   },
 
-  async revokeInvite(hubId: string, inviteId: string): Promise<{ success: boolean; id: string }> {
+  async revokeInvite(colonyId: string, inviteId: string): Promise<{ success: boolean; id: string }> {
     try {
-      await api.delete(`/v1/community/hubs/${hubId}/invites/${inviteId}`);
+      await api.delete(`/v1/community/hubs/${colonyId}/invites/${inviteId}`);
     } catch {}
-    const stored = loadStoredInvites(hubId);
-    saveStoredInvites(hubId, stored.filter((i) => i.id !== inviteId && i.code !== inviteId));
-    this.recordAudit(hubId, 'INVITE_REVOKE', 'Admin', inviteId);
+    const stored = loadStoredInvites(colonyId);
+    saveStoredInvites(colonyId, stored.filter((i) => i.id !== inviteId && i.code !== inviteId));
+    this.recordAudit(colonyId, 'INVITE_REVOKE', 'Admin', inviteId);
     return { success: true, id: inviteId };
   },
 
   // ── Bans Management ───────────────────────────────────────────────────
-  async getBans(hubId: string): Promise<CommunityBan[]> {
+  async getBans(colonyId: string): Promise<ColonyBan[]> {
     try {
-      const res = await api.get<CommunityBan[]>(`/v1/community/hubs/${hubId}/bans`);
+      const res = await api.get<ColonyBan[]>(`/v1/community/hubs/${colonyId}/bans`);
       if (Array.isArray(res)) {
-        saveStoredBans(hubId, res);
+        saveStoredBans(colonyId, res);
         return res;
       }
     } catch {}
-    return loadStoredBans(hubId);
+    return loadStoredBans(colonyId);
   },
 
   async banUser(
-    hubId: string,
+    colonyId: string,
     payload: { userId: string; userName: string; userEmail?: string; reason: string },
-  ): Promise<CommunityBan> {
-    const newBan: CommunityBan = {
+  ): Promise<ColonyBan> {
+    const newBan: ColonyBan = {
       id: `ban_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      hubId,
+      colonyId,
       userId: payload.userId,
       userName: payload.userName,
       userEmail: payload.userEmail,
@@ -647,46 +647,46 @@ export const chatApi = {
       createdAt: new Date().toISOString(),
     };
     try {
-      const res = await api.post<CommunityBan>(`/v1/community/hubs/${hubId}/bans`, newBan);
+      const res = await api.post<ColonyBan>(`/v1/community/hubs/${colonyId}/bans`, newBan);
       if (res && res.id) {
-        const stored = loadStoredBans(hubId);
-        saveStoredBans(hubId, [res, ...stored.filter((b) => b.userId !== payload.userId)]);
-        this.recordAudit(hubId, 'MEMBER_BAN', 'Admin', payload.userName, { reason: payload.reason });
+        const stored = loadStoredBans(colonyId);
+        saveStoredBans(colonyId, [res, ...stored.filter((b) => b.userId !== payload.userId)]);
+        this.recordAudit(colonyId, 'MEMBER_BAN', 'Admin', payload.userName, { reason: payload.reason });
         return res;
       }
     } catch {}
-    const stored = loadStoredBans(hubId);
-    saveStoredBans(hubId, [newBan, ...stored.filter((b) => b.userId !== payload.userId)]);
-    this.recordAudit(hubId, 'MEMBER_BAN', 'Admin', payload.userName, { reason: payload.reason });
+    const stored = loadStoredBans(colonyId);
+    saveStoredBans(colonyId, [newBan, ...stored.filter((b) => b.userId !== payload.userId)]);
+    this.recordAudit(colonyId, 'MEMBER_BAN', 'Admin', payload.userName, { reason: payload.reason });
     return newBan;
   },
 
-  async unbanUser(hubId: string, userId: string): Promise<{ success: boolean; userId: string }> {
+  async unbanUser(colonyId: string, userId: string): Promise<{ success: boolean; userId: string }> {
     try {
-      await api.delete(`/v1/community/hubs/${hubId}/bans/${userId}`);
+      await api.delete(`/v1/community/hubs/${colonyId}/bans/${userId}`);
     } catch {}
-    const stored = loadStoredBans(hubId);
-    saveStoredBans(hubId, stored.filter((b) => b.userId !== userId && b.id !== userId));
-    this.recordAudit(hubId, 'MEMBER_UNBAN', 'Admin', userId);
+    const stored = loadStoredBans(colonyId);
+    saveStoredBans(colonyId, stored.filter((b) => b.userId !== userId && b.id !== userId));
+    this.recordAudit(colonyId, 'MEMBER_UNBAN', 'Admin', userId);
     return { success: true, userId };
   },
 
   // ── Audit Log ─────────────────────────────────────────────────────────
-  async getAuditLog(hubId: string): Promise<CommunityAuditEntry[]> {
+  async getAuditLog(colonyId: string): Promise<CommunityAuditEntry[]> {
     try {
-      const res = await api.get<CommunityAuditEntry[]>(`/v1/community/hubs/${hubId}/audit-log`);
+      const res = await api.get<CommunityAuditEntry[]>(`/v1/community/hubs/${colonyId}/audit-log`);
       if (Array.isArray(res) && res.length > 0) {
-        saveStoredAuditLog(hubId, res);
+        saveStoredAuditLog(colonyId, res);
         return res;
       }
     } catch {}
-    const stored = loadStoredAuditLog(hubId);
+    const stored = loadStoredAuditLog(colonyId);
     if (stored.length > 0) return stored;
     return [];
   },
 
   recordAudit(
-    hubId: string,
+    colonyId: string,
     action: string,
     actorName: string,
     targetName: string = '',
@@ -694,27 +694,27 @@ export const chatApi = {
   ): void {
     const entry: CommunityAuditEntry = {
       id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      hubId,
+      colonyId,
       action,
       actorName: actorName || 'Admin',
       targetName,
       details,
       createdAt: new Date().toISOString(),
     };
-    const stored = loadStoredAuditLog(hubId);
+    const stored = loadStoredAuditLog(colonyId);
     const updated = [entry, ...stored].slice(0, 100);
-    saveStoredAuditLog(hubId, updated);
+    saveStoredAuditLog(colonyId, updated);
   },
 
   // ── Engagement / Stats ────────────────────────────────────────────────
-  async getHubStats(hubId: string): Promise<CommunityHubStats> {
+  async getHubStats(colonyId: string): Promise<ColonyStats> {
     try {
-      const res = await api.get<CommunityHubStats>(`/v1/community/hubs/${hubId}/stats`);
+      const res = await api.get<ColonyStats>(`/v1/community/hubs/${colonyId}/stats`);
       if (res && typeof res.totalMessages === 'number') {
         return res;
       }
     } catch {}
-    const storedChannels = loadStoredChannels().filter((c) => (c.hubId || 'anticeil') === hubId);
+    const storedChannels = loadStoredChannels().filter((c) => (c.colonyId || 'anticeil') === colonyId);
     const storedMessages = loadStoredMessages();
     let totalMessages = 0;
     let botMessages = 0;
@@ -747,7 +747,7 @@ export const chatApi = {
     inviteCode: string,
   ): Promise<{ id: string; name: string; description: string; membersCount: number; color?: string }> {
     const cleanId = inviteCode.startsWith('hub_') ? inviteCode : `hub_${inviteCode}`;
-    const stored = loadStoredHubs();
+    const stored = loadStoredColonies();
     const found = stored.find((h) => h.inviteCode === inviteCode || h.id === inviteCode || h.id === cleanId);
     if (found) {
       return {
@@ -759,7 +759,7 @@ export const chatApi = {
       };
     }
     try {
-      const allHubs = await api.get<CommunityHub[]>('/v1/community/hubs');
+      const allHubs = await api.get<Colony[]>('/v1/community/hubs');
       if (Array.isArray(allHubs)) {
         const foundInDb = allHubs.find((h) => h.inviteCode === inviteCode || h.id === inviteCode || h.id === cleanId);
         if (foundInDb) {
@@ -781,25 +781,25 @@ export const chatApi = {
     };
   },
 
-  async joinHub(inviteCode: string): Promise<CommunityHub> {
+  async joinHub(inviteCode: string): Promise<Colony> {
     const cleanId = inviteCode.startsWith('hub_') ? inviteCode : `hub_${inviteCode}`;
-    const stored = loadStoredHubs();
+    const stored = loadStoredColonies();
     const existing = stored.find((h) => h.inviteCode === inviteCode || h.id === inviteCode || h.id === cleanId);
     if (existing) {
       return existing;
     }
     try {
-      const allHubs = await api.get<CommunityHub[]>('/v1/community/hubs');
+      const allHubs = await api.get<Colony[]>('/v1/community/hubs');
       if (Array.isArray(allHubs)) {
         const foundInDb = allHubs.find((h) => h.inviteCode === inviteCode || h.id === inviteCode || h.id === cleanId);
         if (foundInDb) {
           const next = [...stored.filter((h) => h.id !== foundInDb.id), foundInDb];
-          saveStoredHubs(next);
+          saveStoredColonies(next);
           return foundInDb;
         }
       }
     } catch {}
-    const newHub: CommunityHub = {
+    const newHub: Colony = {
       id: cleanId,
       name: `Server Komunitas`,
       iconType: 'code' as any,
@@ -810,14 +810,14 @@ export const chatApi = {
       color: 'bg-emerald-600',
       role: 'member',
     };
-    saveStoredHubs([...stored, newHub]);
+    saveStoredColonies([...stored, newHub]);
     return newHub;
   },
 
   async inviteMemberByUsername(
-    hubId: string,
+    colonyId: string,
     username: string,
-  ): Promise<{ found: boolean; alreadyMember?: boolean; user?: CommunityMember }> {
+  ): Promise<{ found: boolean; alreadyMember?: boolean; user?: ColonyMember }> {
     const members = await messagesApi.getMembers();
     const cleanUser = username.trim().replace(/^@/, '').toLowerCase();
     const found = members.find(
@@ -843,7 +843,7 @@ export const chatApi = {
         const inviter = r.inviter || r.sender || r.from || {};
         return {
           id: r.id,
-          serverId: r.serverId || r.hubId || hub.id || r.id,
+          serverId: r.serverId || r.colonyId || hub.id || r.id,
           serverName: r.serverName || r.hubName || hub.name || 'Server',
           serverDescription: r.serverDescription || hub.description || undefined,
           serverIconUrl: r.serverIconUrl || hub.iconUrl || undefined,
@@ -869,12 +869,12 @@ export const chatApi = {
   },
 
   async inviteUserToServer(
-    hubId: string,
+    colonyId: string,
     targetUserId?: string,
     targetUsername?: string,
   ): Promise<{ success: boolean; alreadyMember?: boolean; alreadyInvited?: boolean; message?: string; user?: any }> {
     try {
-      return await api.post(`/v1/community/hubs/${hubId}/invite-user`, {
+      return await api.post(`/v1/community/hubs/${colonyId}/invite-user`, {
         targetUserId,
         targetUsername,
       });
@@ -884,7 +884,7 @@ export const chatApi = {
     }
   },
 
-  async acceptServerInvitation(invitationId: string): Promise<{ success: boolean; hub?: CommunityHub }> {
+  async acceptServerInvitation(invitationId: string): Promise<{ success: boolean; hub?: Colony }> {
     return api.post(`/v1/community/server-invitations/${invitationId}/accept`);
   },
 
@@ -893,9 +893,9 @@ export const chatApi = {
   },
 
   // ── Pinned Messages ───────────────────────────────────────────────────
-  async getPinnedMessages(channelId: string): Promise<CommunityMessage[]> {
+  async getPinnedMessages(channelId: string): Promise<ColonyMessage[]> {
     try {
-      const res = await api.get<CommunityMessage[]>(`/v1/community/channels/${channelId}/pins`);
+      const res = await api.get<ColonyMessage[]>(`/v1/community/channels/${channelId}/pins`);
       if (Array.isArray(res)) return res;
     } catch {}
     const stored = loadStoredMessages();
@@ -907,9 +907,9 @@ export const chatApi = {
     messageId: string,
     channelId: string,
     userName?: string,
-  ): Promise<CommunityMessage> {
+  ): Promise<ColonyMessage> {
     try {
-      const res = await api.post<CommunityMessage>(`/v1/community/messages/${messageId}/pin`, {
+      const res = await api.post<ColonyMessage>(`/v1/community/messages/${messageId}/pin`, {
         userName,
       });
       if (res && res.id) {
@@ -925,7 +925,7 @@ export const chatApi = {
     // Fallback sync
     const stored = loadStoredMessages();
     const list = stored[channelId] || [];
-    let updatedMsg: CommunityMessage | null = null;
+    let updatedMsg: ColonyMessage | null = null;
     stored[channelId] = list.map((m) => {
       if (m.id === messageId) {
         const nextPinned = !m.isPinned;
@@ -940,13 +940,13 @@ export const chatApi = {
       return m;
     });
     saveStoredMessages(stored);
-    return updatedMsg || ({ id: messageId } as CommunityMessage);
+    return updatedMsg || ({ id: messageId } as ColonyMessage);
   },
 
   // ── Channel Notifications ─────────────────────────────────────────────
-  async getChannelNotification(channelId: string): Promise<CommunityChannelNotification> {
+  async getChannelNotification(channelId: string): Promise<ColonyChannelNotification> {
     try {
-      const res = await api.get<CommunityChannelNotification>(`/v1/community/channels/${channelId}/notifications`);
+      const res = await api.get<ColonyChannelNotification>(`/v1/community/channels/${channelId}/notifications`);
       if (res && res.channelId) return res;
     } catch {}
     const saved = localStorage.getItem(`anticeil_notif_${channelId}`);
@@ -966,10 +966,10 @@ export const chatApi = {
 
   async updateChannelNotification(
     channelId: string,
-    payload: Partial<CommunityChannelNotification>,
-  ): Promise<CommunityChannelNotification> {
+    payload: Partial<ColonyChannelNotification>,
+  ): Promise<ColonyChannelNotification> {
     try {
-      const res = await api.put<CommunityChannelNotification>(`/v1/community/channels/${channelId}/notifications`, payload);
+      const res = await api.put<ColonyChannelNotification>(`/v1/community/channels/${channelId}/notifications`, payload);
       if (res && res.channelId) {
         localStorage.setItem(`anticeil_notif_${channelId}`, JSON.stringify(res));
         return res;
@@ -977,7 +977,7 @@ export const chatApi = {
     } catch {}
 
     const current = await this.getChannelNotification(channelId);
-    const updated: CommunityChannelNotification = {
+    const updated: ColonyChannelNotification = {
       ...current,
       ...payload,
     };
@@ -986,9 +986,9 @@ export const chatApi = {
   },
 
   // ── Threads ───────────────────────────────────────────────────────────
-  async getThreads(channelId: string, search?: string): Promise<CommunityThread[]> {
+  async getThreads(channelId: string, search?: string): Promise<ColonyThread[]> {
     try {
-      const res = await api.get<CommunityThread[]>(`/v1/community/channels/${channelId}/threads`, {
+      const res = await api.get<ColonyThread[]>(`/v1/community/channels/${channelId}/threads`, {
         params: search ? { search } : undefined,
       });
       if (Array.isArray(res)) {
@@ -1000,7 +1000,7 @@ export const chatApi = {
     const saved = localStorage.getItem(`anticeil_threads_${channelId}`);
     if (saved) {
       try {
-        const list: CommunityThread[] = JSON.parse(saved);
+        const list: ColonyThread[] = JSON.parse(saved);
         if (search) {
           return list.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()));
         }
@@ -1018,8 +1018,8 @@ export const chatApi = {
       creatorAvatar?: string | null;
       initialMessage?: string;
     },
-  ): Promise<CommunityThread> {
-    const fallbackThread: CommunityThread = {
+  ): Promise<ColonyThread> {
+    const fallbackThread: ColonyThread = {
       id: `thread_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       channelId,
       name: payload.name.trim(),
@@ -1032,7 +1032,7 @@ export const chatApi = {
     };
 
     try {
-      const res = await api.post<CommunityThread>(`/v1/community/channels/${channelId}/threads`, payload);
+      const res = await api.post<ColonyThread>(`/v1/community/channels/${channelId}/threads`, payload);
       if (res && res.id) {
         const current = await this.getThreads(channelId);
         localStorage.setItem(`anticeil_threads_${channelId}`, JSON.stringify([res, ...current]));
@@ -1045,9 +1045,9 @@ export const chatApi = {
     return fallbackThread;
   },
 
-  async getThreadMessages(threadId: string): Promise<CommunityMessage[]> {
+  async getThreadMessages(threadId: string): Promise<ColonyMessage[]> {
     try {
-      const res = await api.get<CommunityMessage[]>(`/v1/community/threads/${threadId}/messages`);
+      const res = await api.get<ColonyMessage[]>(`/v1/community/threads/${threadId}/messages`);
       if (Array.isArray(res)) return res;
     } catch {}
 
@@ -1062,12 +1062,12 @@ export const chatApi = {
 
   async sendThreadMessage(
     threadId: string,
-    payloadOrChannelId: string | Partial<CommunityMessage>,
-    maybePayload?: Partial<CommunityMessage>,
-  ): Promise<CommunityMessage> {
+    payloadOrChannelId: string | Partial<ColonyMessage>,
+    maybePayload?: Partial<ColonyMessage>,
+  ): Promise<ColonyMessage> {
     const payload = typeof payloadOrChannelId === 'string' ? (maybePayload || {}) : payloadOrChannelId;
     const channelId = typeof payloadOrChannelId === 'string' ? payloadOrChannelId : (payload.channelId || '');
-    const fallbackMsg: CommunityMessage = {
+    const fallbackMsg: ColonyMessage = {
       id: `msg_th_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       channelId,
       threadId,
@@ -1083,7 +1083,7 @@ export const chatApi = {
     };
 
     try {
-      const res = await api.post<CommunityMessage>(`/v1/community/threads/${threadId}/messages`, {
+      const res = await api.post<ColonyMessage>(`/v1/community/threads/${threadId}/messages`, {
         channelId,
         content: payload.content,
         senderName: payload.senderName,
@@ -1107,7 +1107,7 @@ export const chatApi = {
   async testWebhook(payload: {
     channelId?: string;
     channel?: string;
-    hubId?: string;
+    colonyId?: string;
     botName?: string;
     content: string;
   }): Promise<any> {
@@ -1115,55 +1115,55 @@ export const chatApi = {
   },
 
   // ── Server Emojis (DB — no dummy data) ──────────────────────────────────
-  async getServerEmojis(hubId: string): Promise<DiscordEmoji[]> {
+  async getServerEmojis(colonyId: string): Promise<DiscordEmoji[]> {
     try {
-      const res = await api.get<any[]>(`/v1/community/hubs/${hubId}/emojis`);
+      const res = await api.get<any[]>(`/v1/community/hubs/${colonyId}/emojis`);
       if (Array.isArray(res)) {
         return res.map((r) => ({
           id: r.id, name: r.name, code: r.code, url: r.url,
-          server: hubId, category: hubId,
+          server: colonyId, category: colonyId,
         }));
       }
     } catch {}
     return [];
   },
 
-  async addServerEmoji(hubId: string, payload: { name: string; code: string; url: string }): Promise<DiscordEmoji | null> {
+  async addServerEmoji(colonyId: string, payload: { name: string; code: string; url: string }): Promise<DiscordEmoji | null> {
     try {
-      const res = await api.post<any>(`/v1/community/hubs/${hubId}/emojis`, payload);
-      if (res?.id) return { id: res.id, name: res.name, code: res.code, url: res.url, server: hubId, category: hubId };
+      const res = await api.post<any>(`/v1/community/hubs/${colonyId}/emojis`, payload);
+      if (res?.id) return { id: res.id, name: res.name, code: res.code, url: res.url, server: colonyId, category: colonyId };
     } catch {}
     return null;
   },
 
-  async deleteServerEmoji(hubId: string, emojiId: string): Promise<void> {
-    try { await api.delete(`/v1/community/hubs/${hubId}/emojis/${emojiId}`); } catch {}
+  async deleteServerEmoji(colonyId: string, emojiId: string): Promise<void> {
+    try { await api.delete(`/v1/community/hubs/${colonyId}/emojis/${emojiId}`); } catch {}
   },
 
   // ── Server Stickers (DB — no dummy data) ────────────────────────────────
-  async getServerStickers(hubId: string): Promise<DiscordSticker[]> {
+  async getServerStickers(colonyId: string): Promise<DiscordSticker[]> {
     try {
-      const res = await api.get<any[]>(`/v1/community/hubs/${hubId}/stickers`);
+      const res = await api.get<any[]>(`/v1/community/hubs/${colonyId}/stickers`);
       if (Array.isArray(res)) {
         return res.map((r) => ({
           id: r.id, name: r.name, url: r.url,
-          server: hubId, tags: r.tags || [],
+          server: colonyId, tags: r.tags || [],
         }));
       }
     } catch {}
     return [];
   },
 
-  async addServerSticker(hubId: string, payload: { name: string; url: string; tags?: string[] }): Promise<DiscordSticker | null> {
+  async addServerSticker(colonyId: string, payload: { name: string; url: string; tags?: string[] }): Promise<DiscordSticker | null> {
     try {
-      const res = await api.post<any>(`/v1/community/hubs/${hubId}/stickers`, payload);
-      if (res?.id) return { id: res.id, name: res.name, url: res.url, server: hubId, tags: res.tags || [] };
+      const res = await api.post<any>(`/v1/community/hubs/${colonyId}/stickers`, payload);
+      if (res?.id) return { id: res.id, name: res.name, url: res.url, server: colonyId, tags: res.tags || [] };
     } catch {}
     return null;
   },
 
-  async deleteServerSticker(hubId: string, stickerId: string): Promise<void> {
-    try { await api.delete(`/v1/community/hubs/${hubId}/stickers/${stickerId}`); } catch {}
+  async deleteServerSticker(colonyId: string, stickerId: string): Promise<void> {
+    try { await api.delete(`/v1/community/hubs/${colonyId}/stickers/${stickerId}`); } catch {}
   },
 
   async claimGift(messageId: string, userName?: string): Promise<{ success: boolean }> {
@@ -1187,8 +1187,5 @@ export const chatApi = {
 };
 
 export const messagesApi = chatApi;
-export const communityApi = chatApi;
-
-
-// ── Colony API Alias ───────────────────────────────
 export const colonyApi = chatApi;
+

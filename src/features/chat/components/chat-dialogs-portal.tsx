@@ -1,7 +1,7 @@
 import React from 'react';
 import { toast } from 'sonner';
-import type { CommunityHub, CommunityChannel, CommunityMember } from '@/chat/chat-types';
-import { communityApi } from '@/chat/chat-api';
+import type { Colony, ColonyChannel, ColonyMember } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
 import { SendGiftDialog } from '@/features/gifts';
 import { QuickAddEmojiDialog, QuickAddStickerDialog, type useMediaModals } from '@/features/media';
 import {
@@ -30,24 +30,24 @@ export interface ChatDialogsPortalProps {
   colonyModals: ReturnType<typeof useColonyModals>;
   channelModals: ReturnType<typeof useChannelModals>;
   mediaModals: ReturnType<typeof useMediaModals>;
-  activeHub: CommunityHub | null;
-  activeChannel: CommunityChannel | null;
+  activeColony: Colony | null;
+  activeChannel: ColonyChannel | null;
   currentUser: any;
-  members: CommunityMember[];
-  setMembers: React.Dispatch<React.SetStateAction<CommunityMember[]>>;
-  channels: CommunityChannel[];
-  hubChannels: CommunityChannel[];
-  onUpdateHub: (hubId: string, updates: Partial<CommunityHub>) => Promise<void>;
+  members: ColonyMember[];
+  setMembers: React.Dispatch<React.SetStateAction<ColonyMember[]>>;
+  channels: ColonyChannel[];
+  colonyChannels: ColonyChannel[];
+  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
 
   // Dm search & direct messaging
   isDmSearchOpen: boolean;
   setIsDmSearchOpen: (open: boolean) => void;
   dmSearchQuery: string;
   setDmSearchQuery: (q: string) => void;
-  dmChannels: CommunityChannel[];
-  setActiveHubId: (id: string) => void;
+  dmChannels: ColonyChannel[];
+  setActiveColonyId: (id: string) => void;
   setActiveChannelId: (id: string) => void;
-  handleStartDM: (member: CommunityMember) => void;
+  handleStartDM: (member: ColonyMember) => void;
 
   // Gift
   isGiftModalOpen: boolean;
@@ -103,20 +103,20 @@ export function ChatDialogsPortal({
   colonyModals,
   channelModals,
   mediaModals,
-  activeHub,
+  activeColony,
   activeChannel,
   currentUser,
   members,
   setMembers,
   channels,
-  hubChannels,
+  colonyChannels,
   onUpdateHub,
   isDmSearchOpen,
   setIsDmSearchOpen,
   dmSearchQuery,
   setDmSearchQuery,
   dmChannels,
-  setActiveHubId,
+  setActiveColonyId,
   setActiveChannelId,
   handleStartDM,
   isGiftModalOpen,
@@ -169,7 +169,7 @@ export function ChatDialogsPortal({
       <QuickAddEmojiDialog
         open={mediaModals.isQuickAddEmojiOpen}
         onOpenChange={mediaModals.setIsQuickAddEmojiOpen}
-        activeHub={activeHub}
+        activeColony={activeColony}
         quickEmojiName={mediaModals.quickEmojiName}
         setQuickEmojiName={mediaModals.setQuickEmojiName}
         quickEmojiCode={mediaModals.quickEmojiCode}
@@ -184,7 +184,7 @@ export function ChatDialogsPortal({
       <QuickAddStickerDialog
         open={mediaModals.isQuickAddStickerOpen}
         onOpenChange={mediaModals.setIsQuickAddStickerOpen}
-        activeHub={activeHub}
+        activeColony={activeColony}
         quickStickerName={mediaModals.quickStickerName}
         setQuickStickerName={mediaModals.setQuickStickerName}
         quickStickerUrl={mediaModals.quickStickerUrl}
@@ -216,7 +216,7 @@ export function ChatDialogsPortal({
         isOpen={colonyModals.isServerSettingsOpen}
         initialSection={colonyModals.serverSettingsSection}
         onClose={() => colonyModals.setIsServerSettingsOpen(false)}
-        activeHub={activeHub}
+        activeColony={activeColony}
         currentUser={currentUser}
         members={members}
         channels={channels}
@@ -251,8 +251,8 @@ export function ChatDialogsPortal({
         isOpen={channelModals.isWebhookDialogOpen}
         onClose={() => channelModals.setIsWebhookDialogOpen(false)}
         activeChannel={activeChannel}
-        hubChannels={hubChannels}
-        activeHub={activeHub}
+        colonyChannels={colonyChannels}
+        activeColony={activeColony}
         onSelectChannel={(chId) => setActiveChannelId(chId)}
         onCreateChannel={() => channelModals.setIsCreateChannelOpen(true)}
       />
@@ -261,7 +261,7 @@ export function ChatDialogsPortal({
       <CreateChannelDialog
         open={channelModals.isCreateChannelOpen}
         onOpenChange={channelModals.setIsCreateChannelOpen}
-        activeHub={activeHub}
+        activeColony={activeColony}
         newChannelCategory={channelModals.newChannelCategory}
         newChannelType={channelModals.newChannelType}
         setNewChannelType={channelModals.setNewChannelType}
@@ -305,7 +305,7 @@ export function ChatDialogsPortal({
         members={members}
         currentUser={currentUser}
         onSelectDmChannel={(channelId) => {
-          setActiveHubId('anticeil');
+          setActiveColonyId('anticeil');
           setActiveChannelId(channelId);
         }}
         onStartDM={handleStartDM}
@@ -316,7 +316,7 @@ export function ChatDialogsPortal({
       <ColonyInviteDialog
         open={colonyModals.isInviteOpen}
         onOpenChange={colonyModals.setIsInviteOpen}
-        activeServer={activeHub}
+        activeServer={activeColony}
         onInviteUsername={colonyModals.handleInviteByUsername}
         members={members}
         t={t}
@@ -394,7 +394,7 @@ export function ChatDialogsPortal({
         return (
           <CallStage
             channel={pipChannel}
-            activeHub={activeHub}
+            activeColony={activeColony}
             currentUser={currentUser}
             isPlusOrAbove={isPlusOrAbove}
             socket={socket}

@@ -15,10 +15,10 @@ import { CallStage } from '@/features/voice';
 import { MessagesFeed } from '@/features/chat';
 import { ChatInputBar } from '@/features/chat-input';
 import {
-  CommunityChannel,
-  CommunityHub,
-  CommunityMember,
-  CommunityMessage,
+  ColonyChannel,
+  Colony,
+  ColonyMember,
+  ColonyMessage,
   CommunityAttachment,
 } from '../chat-types';
 
@@ -38,10 +38,10 @@ export interface ChatMainViewProps {
   handleJumpToNotification: (n: NotificationItem) => void;
   isCalendarView: boolean;
   calendarEvents: CalendarEvent[];
-  hubs: CommunityHub[];
-  channels: CommunityChannel[];
-  hubChannels: CommunityChannel[];
-  setActiveHubId: (id: string) => void;
+  colonies: Colony[];
+  channels: ColonyChannel[];
+  colonyChannels: ColonyChannel[];
+  setActiveColonyId: (id: string) => void;
   setActiveChannelId: (id: string) => void;
   setActiveCallChannelId: (id: string | null) => void;
   createCalendarEvent: (event: Partial<CalendarEvent>) => void;
@@ -57,15 +57,15 @@ export interface ChatMainViewProps {
   handleCreateCallLog: (log: any) => void;
   handleStartDirectMessage: (friend: any) => void;
   isAppsView: boolean;
-  members: CommunityMember[];
+  members: ColonyMember[];
   activeCallChannelId: string | null;
   handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string) => void;
-  handleStartDM: (member: CommunityMember) => void;
+  handleStartDM: (member: ColonyMember) => void;
   isColoniesView: boolean;
   requireAuth: (action: () => void, title?: string, desc?: string) => void;
   setIsCreateHubOpen: (open: boolean) => void;
   // Channel view props
-  activeChannel: CommunityChannel | null;
+  activeChannel: ColonyChannel | null;
   isHome: boolean;
   isCallPiP: boolean;
   isThreadsPopoverOpen: boolean;
@@ -82,7 +82,7 @@ export interface ChatMainViewProps {
   handleUpdateNotification: (level?: any, isMuted?: boolean, muteDuration?: string | null) => void;
   isPinnedPopoverOpen: boolean;
   setIsPinnedPopoverOpen: (open: boolean) => void;
-  pinnedMessages: CommunityMessage[];
+  pinnedMessages: ColonyMessage[];
   handleJumpToMessage: (id: string) => void;
   handleTogglePin: (id: string) => void;
   showMemberList: boolean;
@@ -91,7 +91,7 @@ export interface ChatMainViewProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   // Call stage props
-  activeHub: CommunityHub | null;
+  activeColony: Colony | null;
   currentUser: any;
   isPlusOrAbove: boolean;
   socket: any;
@@ -121,12 +121,12 @@ export interface ChatMainViewProps {
   setThreadInputText: (text: string) => void;
   handleSendThreadMessage: (e: React.FormEvent) => void;
   // Kanban props
-  displayMembers: CommunityMember[];
+  displayMembers: ColonyMember[];
   handleKanbanCardsUpdate: (cards: KanbanCard[]) => void;
   // Feed & Input props
-  replyingToMessage?: CommunityMessage | null;
-  setReplyingToMessage?: React.Dispatch<React.SetStateAction<CommunityMessage | null>>;
-  filteredMessages: CommunityMessage[];
+  replyingToMessage?: ColonyMessage | null;
+  setReplyingToMessage?: React.Dispatch<React.SetStateAction<ColonyMessage | null>>;
+  filteredMessages: ColonyMessage[];
   claimedGifts: Record<string, boolean>;
   setClaimedGifts: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   setIsCreateChannelOpen: (open: boolean) => void;
@@ -182,10 +182,10 @@ export function ChatMainView({
   handleJumpToNotification,
   isCalendarView,
   calendarEvents,
-  hubs,
+  colonies,
   channels,
-  hubChannels,
-  setActiveHubId,
+  colonyChannels,
+  setActiveColonyId,
   setActiveChannelId,
   setActiveCallChannelId,
   createCalendarEvent,
@@ -230,7 +230,7 @@ export function ChatMainView({
   setIsMobileMembersOpen,
   searchQuery,
   setSearchQuery,
-  activeHub,
+  activeColony,
   currentUser,
   isPlusOrAbove,
   socket,
@@ -391,12 +391,12 @@ export function ChatMainView({
     return (
       <CalendarView
         events={calendarEvents}
-        hubs={hubs}
+        colonies={colonies}
         channels={channels}
         onJoinChannel={(channelId) => {
           const targetChannel = channels.find((c) => c.id === channelId);
-          if (targetChannel?.hubId) {
-            setActiveHubId(targetChannel.hubId);
+          if (targetChannel?.colonyId) {
+            setActiveColonyId(targetChannel.colonyId);
           }
           setActiveChannelId(channelId);
           setActiveCallChannelId(channelId);
@@ -412,9 +412,9 @@ export function ChatMainView({
     return (
       <AssignmentsView
         assignments={assignments}
-        hubs={hubs}
-        onOpenBoard={(hubId, channelId) => {
-          setActiveHubId(hubId);
+        colonies={colonies}
+        onOpenBoard={(colonyId, channelId) => {
+          setActiveColonyId(colonyId);
           setActiveChannelId(channelId);
         }}
         onToggleComplete={handleToggleComplete}
@@ -429,7 +429,7 @@ export function ChatMainView({
       <CallsView
         calls={callLogs}
         friends={friends.allFriends}
-        hubs={hubs}
+        colonies={colonies}
         onStartCall={(friend) => {
           handleCreateCallLog({
             peerId: friend.id,
@@ -451,14 +451,14 @@ export function ChatMainView({
     return (
       <AppsView
         channels={channels}
-        hubs={hubs}
+        colonies={colonies}
         members={members}
         activeCallChannelId={activeCallChannelId}
         onLaunchActivity={handleLaunchActivity}
         onOpenSidebar={() => setIsMobileChannelsOpen(true)}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
         onStartDM={handleStartDM}
-        setActiveHubId={setActiveHubId}
+        setActiveColonyId={setActiveColonyId}
         setActiveChannelId={setActiveChannelId}
       />
     );
@@ -467,11 +467,11 @@ export function ChatMainView({
   if (isColoniesView) {
     return (
       <ColoniesView
-        servers={hubs}
-        onSelectServer={(hubId) => {
-          setActiveHubId(hubId);
+        servers={colonies}
+        onSelectServer={(colonyId) => {
+          setActiveColonyId(colonyId);
           const firstCh = channels.find(
-            (c) => (c.hubId || 'anticeil') === hubId && c.category === 'CHANNELS',
+            (c) => (c.colonyId || 'anticeil') === colonyId && c.category === 'CHANNELS',
           );
           setActiveChannelId(firstCh?.id || '');
         }}
@@ -519,7 +519,7 @@ export function ChatMainView({
       {/* Chat Input Bar */}
       <ChatInputBar
         activeChannel={activeChannel}
-        activeHub={activeHub}
+        activeColony={activeColony}
         channelPaddingClass={isSplit ? 'px-3 sm:px-4' : CHANNEL_HORIZONTAL_PADDING}
         stagedAttachment={stagedAttachment}
         setStagedAttachment={setStagedAttachment}
@@ -607,7 +607,7 @@ export function ChatMainView({
           >
             <CallStage
               channel={activeChannel!}
-              activeHub={activeHub}
+              activeColony={activeColony}
               currentUser={currentUser}
               isPlusOrAbove={isPlusOrAbove}
               socket={socket}
@@ -635,10 +635,10 @@ export function ChatMainView({
                   handleCreateCallLog?.({
                     peerId: activeChannel.dmUserId || activeChannel.id,
                     peerName: isDmChannel ? (dmFriend?.name || activeChannel.name) : activeChannel.name,
-                    peerAvatar: isDmChannel ? (dmFriend?.avatar || dmFriend?.imageUrl || null) : (activeHub?.iconUrl || null),
-                    hubId: isDmChannel ? undefined : activeHub?.id,
-                    hubName: isDmChannel ? undefined : activeHub?.name,
-                    hubIcon: isDmChannel ? undefined : (activeHub?.iconUrl || null),
+                    peerAvatar: isDmChannel ? (dmFriend?.avatar || dmFriend?.imageUrl || null) : (activeColony?.iconUrl || null),
+                    colonyId: isDmChannel ? undefined : activeColony?.id,
+                    hubName: isDmChannel ? undefined : activeColony?.name,
+                    hubIcon: isDmChannel ? undefined : (activeColony?.iconUrl || null),
                     isDm: isDmChannel,
                     type: 'outgoing',
                     isVideo: activeChannel.type === 'voice' || Boolean(selectedActivityAppId),
@@ -649,7 +649,7 @@ export function ChatMainView({
                 setActiveCallChannelId(null);
                 setSelectedActivityAppId(null);
                 setIsActivityOpen(false);
-                const defaultTextChannel = hubChannels.find((c) => c.type === 'text' || !c.type);
+                const defaultTextChannel = colonyChannels.find((c) => c.type === 'text' || !c.type);
                 if (defaultTextChannel && activeChannel?.type === 'voice') {
                   setActiveChannelId(defaultTextChannel.id);
                 }
@@ -736,7 +736,7 @@ export function ChatMainView({
       ) : activeChannel?.type === 'kanban' ? (
         <KanbanChannelView
           activeChannel={activeChannel}
-          activeHub={activeHub}
+          activeColony={activeColony}
           displayMembers={displayMembers}
           currentUser={currentUser}
           onOpenSidebar={() => setIsMobileChannelsOpen(true)}

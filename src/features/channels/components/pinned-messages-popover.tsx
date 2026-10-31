@@ -3,7 +3,7 @@ import { Pin, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import { CommunityMessage } from '@/chat/chat-types';
+import { ColonyMessage } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -13,7 +13,7 @@ dayjs.extend(relativeTime);
 export interface PinnedMessagesPopoverProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  pinnedMessages: CommunityMessage[];
+  pinnedMessages: ColonyMessage[];
   onJumpToMessage: (id: string) => void;
   onTogglePin: (id: string) => void;
 }

@@ -17,17 +17,17 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { api } from '@/lib/api';
-import type { CommunityMember, CommunityHub } from '@/chat/chat-types';
+import type { ColonyMember, Colony } from '@/chat/chat-types';
 import dayjs from 'dayjs';
 
 export interface DmUserProfileSidebarProps {
   userId: string;
-  member?: CommunityMember;
+  member?: ColonyMember;
   currentUser?: any;
-  hubs?: CommunityHub[];
+  colonies?: Colony[];
   friends?: any[];
   onStartCall?: (type: 'voice' | 'video') => void;
-  onSelectHub?: (hubId: string) => void;
+  onSelectHub?: (colonyId: string) => void;
   onClose?: () => void;
   t: (key: string) => string;
 }
@@ -36,7 +36,7 @@ export function DmUserProfileSidebar({
   userId,
   member,
   currentUser,
-  hubs = [],
+  colonies = [],
   onStartCall,
   onSelectHub,
   onClose,
@@ -115,8 +115,8 @@ export function DmUserProfileSidebar({
 
   // Mutual hubs
   const mutualHubs = useMemo(() => {
-    return hubs.filter((h) => h.id !== 'anticeil');
-  }, [hubs]);
+    return colonies.filter((h) => h.id !== 'anticeil');
+  }, [colonies]);
 
   const handleCopyUsername = () => {
     navigator.clipboard.writeText(`@${username}`);

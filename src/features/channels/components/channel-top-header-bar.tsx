@@ -22,10 +22,10 @@ import { cn } from '@/lib/utils';
 import { ThreadsPopover, type ChannelThreadItem } from '@/features/threads';
 import { ChannelNotificationDropdown, type ChannelNotificationSettings } from './channel-notification-dropdown';
 import { PinnedMessagesPopover } from './pinned-messages-popover';
-import type { CommunityChannel, CommunityMessage } from '@/chat/chat-types';
+import type { ColonyChannel, ColonyMessage } from '@/chat/chat-types';
 
 export interface ChannelTopHeaderBarProps {
-  activeChannel: CommunityChannel | null;
+  activeChannel: ColonyChannel | null;
   channelPaddingClass?: string;
   isHome?: boolean;
   onOpenMobileChannels: () => void;
@@ -49,7 +49,7 @@ export interface ChannelTopHeaderBarProps {
   // Pinned messages props
   isPinnedPopoverOpen: boolean;
   setIsPinnedPopoverOpen: (open: boolean) => void;
-  pinnedMessages: CommunityMessage[];
+  pinnedMessages: ColonyMessage[];
   onJumpToMessage: (msgId: string) => void;
   onTogglePin: (msgId: string) => void;
   // Member list props

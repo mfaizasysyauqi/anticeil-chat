@@ -3,20 +3,20 @@ import { RefreshCw, MessageSquare, Hash, Users, Bot, Activity } from 'lucide-rea
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityHub, CommunityHubStats, CommunityChannel, CommunityMember } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { Colony, ColonyStats, ColonyChannel, ColonyMember } from '@/chat/chat-types';
 
 interface AnalyticsTabProps {
-  activeHub: CommunityHub;
-  serverStats: CommunityHubStats | null;
-  setServerStats: React.Dispatch<React.SetStateAction<CommunityHubStats | null>>;
-  channels: CommunityChannel[];
-  members: CommunityMember[];
+  activeColony: Colony;
+  serverStats: ColonyStats | null;
+  setServerStats: React.Dispatch<React.SetStateAction<ColonyStats | null>>;
+  channels: ColonyChannel[];
+  members: ColonyMember[];
   t: (key: string) => string;
 }
 
 export function AnalyticsTab({
-  activeHub,
+  activeColony,
   serverStats,
   setServerStats,
   channels,
@@ -31,7 +31,7 @@ export function AnalyticsTab({
           variant="ghost"
           size="sm"
           onClick={async () => {
-            const stats = await communityApi.getHubStats(activeHub.id);
+            const stats = await colonyApi.getHubStats(activeColony.id);
             setServerStats(stats);
             toast.success(t('Data analitik diperbarui! 📊'));
           }}
@@ -60,7 +60,7 @@ export function AnalyticsTab({
             <Hash className="w-4 h-4 text-emerald-500" />
           </div>
           <p className="text-2xl font-bold mt-2">
-            {serverStats?.totalChannels || channels.filter((c) => (c.hubId || 'anticeil') === activeHub?.id).length}
+            {serverStats?.totalChannels || channels.filter((c) => (c.colonyId || 'anticeil') === activeColony?.id).length}
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5">{t('Saluran teks & DM')}</p>
         </Card>

@@ -13,12 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 export interface CreateChannelDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  activeHub: CommunityHub | null;
+  activeColony: Colony | null;
   newChannelCategory: string;
   newChannelType: 'text' | 'voice' | 'forum' | 'kanban';
   setNewChannelType: (type: 'text' | 'voice' | 'forum' | 'kanban') => void;
@@ -33,7 +33,7 @@ export interface CreateChannelDialogProps {
 export function CreateChannelDialog({
   open,
   onOpenChange,
-  activeHub,
+  activeColony,
   newChannelCategory,
   newChannelType,
   setNewChannelType,
@@ -81,7 +81,7 @@ export function CreateChannelDialog({
               {t('Create Channel')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              in {newChannelCategory === 'CHANNELS' ? (activeHub?.name || 'Channels') : 'Direct Messages'}
+              in {newChannelCategory === 'CHANNELS' ? (activeColony?.name || 'Channels') : 'Direct Messages'}
             </DialogDescription>
           </DialogHeader>
 

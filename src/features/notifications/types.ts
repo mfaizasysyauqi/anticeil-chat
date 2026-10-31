@@ -9,7 +9,7 @@ export interface NotificationItem {
   summary: string;
   channelId: string;
   channelName: string;
-  hubId?: string;
+  colonyId?: string;
   hubName?: string;
   createdAt: string;
   isRead: boolean;

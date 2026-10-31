@@ -4,18 +4,18 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 interface ColonyTagsTabProps {
-  activeHub: CommunityHub;
+  activeColony: Colony;
   serverTags: string[];
   setServerTags: React.Dispatch<React.SetStateAction<string[]>>;
-  onUpdateHub: (hubId: string, updates: Partial<CommunityHub>) => Promise<void>;
+  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   t: (key: string) => string;
 }
 
 export function ColonyTagsTab({
-  activeHub,
+  activeColony,
   serverTags,
   setServerTags,
   onUpdateHub,
@@ -123,7 +123,7 @@ export function ColonyTagsTab({
         <div className="pt-2">
           <Button
             onClick={async () => {
-              await onUpdateHub(activeHub.id, { tags: serverTags });
+              await onUpdateHub(activeColony.id, { tags: serverTags });
               toast.success(t('Tag server berhasil disimpan! 🏷️'));
             }}
           >

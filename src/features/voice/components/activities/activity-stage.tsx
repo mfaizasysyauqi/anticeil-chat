@@ -1,6 +1,6 @@
 import React from 'react';
 import { Socket } from 'socket.io-client';
-import { CommunityChannel } from '@/chat/chat-types';
+import { ColonyChannel } from '@/chat/chat-types';
 import { DiscordAppDefinition } from '../../data/discord-activities';
 import { YouTubeWatchTogether } from './youtube-watch-together';
 import { WhiteboardCanvas } from './whiteboard-canvas';
@@ -10,7 +10,7 @@ import { ScreenShareView } from './screen-share-view';
 export interface ActivityStageProps {
   activeAppId: string;
   currentActiveApp?: DiscordAppDefinition | null;
-  channel: CommunityChannel;
+  channel: ColonyChannel;
   currentUserName: string;
   currentUser?: any;
   participants?: any[];

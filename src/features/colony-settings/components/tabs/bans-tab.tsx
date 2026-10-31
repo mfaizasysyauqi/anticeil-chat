@@ -3,18 +3,18 @@ import { Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityHub, CommunityBan } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { Colony, ColonyBan } from '@/chat/chat-types';
 
 interface BansTabProps {
-  activeHub: CommunityHub;
-  serverBans: CommunityBan[];
-  setServerBans: React.Dispatch<React.SetStateAction<CommunityBan[]>>;
+  activeColony: Colony;
+  serverBans: ColonyBan[];
+  setServerBans: React.Dispatch<React.SetStateAction<ColonyBan[]>>;
   t: (key: string) => string;
 }
 
 export function BansTab({
-  activeHub,
+  activeColony,
   serverBans,
   setServerBans,
   t,
@@ -57,7 +57,7 @@ export function BansTab({
                 variant="outline"
                 onClick={async () => {
                   setServerBans((prev) => prev.filter((b) => b.userId !== ban.userId));
-                  await communityApi.unbanUser(activeHub.id, ban.userId);
+                  await colonyApi.unbanUser(activeColony.id, ban.userId);
                   toast.success(t(`Blokir untuk ${ban.userName} telah dibatalkan! ✅`));
                 }}
               >

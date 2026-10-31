@@ -9,11 +9,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 export interface EditColonyDialogProps {
-  serverToEdit?: CommunityHub | null;
-  hubToEdit?: CommunityHub | null;
+  serverToEdit?: Colony | null;
+  hubToEdit?: Colony | null;
   onClose: () => void;
   editServerName?: string;
   setEditServerName?: (name: string) => void;

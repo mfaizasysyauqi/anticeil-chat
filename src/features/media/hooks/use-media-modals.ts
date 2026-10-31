@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker } from '@/chat/anticeil-media-data';
-import { communityApi } from '@/chat/chat-api';
+import { colonyApi } from '@/chat/chat-api';
 import { toast } from 'sonner';
 
 interface UseMediaModalsOptions {
-  activeHub: CommunityHub | undefined;
+  activeColony: Colony | undefined;
 }
 
-export function useMediaModals({ activeHub }: UseMediaModalsOptions) {
+export function useMediaModals({ activeColony }: UseMediaModalsOptions) {
   // Media Picker state
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [activeMediaTab, setActiveMediaTab] = useState<'gifs' | 'stickers' | 'emojis'>('emojis');
@@ -35,7 +35,7 @@ export function useMediaModals({ activeHub }: UseMediaModalsOptions) {
 
   // Load Server Emojis and Stickers from DB for active server
   useEffect(() => {
-    if (!activeHub?.id) {
+    if (!activeColony?.id) {
       setServerDbEmojis([]);
       setServerDbStickers([]);
       return;
@@ -45,15 +45,15 @@ export function useMediaModals({ activeHub }: UseMediaModalsOptions) {
       try {
         setIsLoadingServerMedia(true);
         const [emojis, stickers] = await Promise.all([
-          communityApi.getServerEmojis(activeHub.id),
-          communityApi.getServerStickers(activeHub.id),
+          colonyApi.getServerEmojis(activeColony.id),
+          colonyApi.getServerStickers(activeColony.id),
         ]);
         if (mounted) {
           setServerDbEmojis(emojis || []);
           setServerDbStickers(stickers || []);
         }
       } catch (err) {
-        console.warn('Failed to load server emojis/stickers', activeHub.id, err);
+        console.warn('Failed to load server emojis/stickers', activeColony.id, err);
       } finally {
         if (mounted) setIsLoadingServerMedia(false);
       }
@@ -62,14 +62,14 @@ export function useMediaModals({ activeHub }: UseMediaModalsOptions) {
     return () => {
       mounted = false;
     };
-  }, [activeHub?.id, isMediaPickerOpen]);
+  }, [activeColony?.id, isMediaPickerOpen]);
 
   const handleQuickAddEmoji = async () => {
-    if (!activeHub?.id || !quickEmojiName.trim() || !quickEmojiUrl.trim()) return;
+    if (!activeColony?.id || !quickEmojiName.trim() || !quickEmojiUrl.trim()) return;
     try {
       setIsSubmittingServerMedia(true);
       const code = quickEmojiCode.trim() || `:${quickEmojiName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')}:`;
-      const created = await communityApi.addServerEmoji(activeHub.id, {
+      const created = await colonyApi.addServerEmoji(activeColony.id, {
         name: quickEmojiName.trim(),
         code,
         url: quickEmojiUrl.trim(),
@@ -90,10 +90,10 @@ export function useMediaModals({ activeHub }: UseMediaModalsOptions) {
   };
 
   const handleQuickAddSticker = async () => {
-    if (!activeHub?.id || !quickStickerName.trim() || !quickStickerUrl.trim()) return;
+    if (!activeColony?.id || !quickStickerName.trim() || !quickStickerUrl.trim()) return;
     try {
       setIsSubmittingServerMedia(true);
-      const created = await communityApi.addServerSticker(activeHub.id, {
+      const created = await colonyApi.addServerSticker(activeColony.id, {
         name: quickStickerName.trim(),
         url: quickStickerUrl.trim(),
       });

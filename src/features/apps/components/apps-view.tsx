@@ -17,32 +17,32 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
 import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/discord-activities';
-import type { CommunityChannel, CommunityHub, CommunityMember } from '@/chat/chat-types';
+import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
 
 export interface AppsViewProps {
-  channels: CommunityChannel[];
-  hubs?: CommunityHub[];
-  members?: CommunityMember[];
+  channels: ColonyChannel[];
+  colonies?: Colony[];
+  members?: ColonyMember[];
   activeCallChannelId?: string | null;
   onLaunchActivity: (appId: string, fromChat?: boolean, targetChannelId?: string) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
-  onStartDM?: (member: CommunityMember) => void;
-  setActiveHubId?: (hubId: string) => void;
+  onStartDM?: (member: ColonyMember) => void;
+  setActiveColonyId?: (colonyId: string) => void;
   setActiveChannelId?: (chId: string) => void;
 }
 
 export function AppsView({
   channels,
-  hubs = [],
+  colonies = [],
   members = [],
   activeCallChannelId,
   onLaunchActivity,
   onOpenSidebar,
   horizontalPadding = 'px-4 sm:px-6',
   onStartDM,
-  setActiveHubId,
+  setActiveColonyId,
   setActiveChannelId,
 }: AppsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,15 +80,15 @@ export function AppsView({
 
   const handleConfirmLaunch = (options: {
     targetType: 'dm' | 'server';
-    hubId?: string;
+    colonyId?: string;
     channelId: string;
     targetName: string;
     appId: string;
-    member?: CommunityMember;
+    member?: ColonyMember;
   }) => {
     if (options.targetType === 'server') {
-      if (options.hubId && setActiveHubId) {
-        setActiveHubId(options.hubId);
+      if (options.colonyId && setActiveColonyId) {
+        setActiveColonyId(options.colonyId);
       }
       if (options.channelId && setActiveChannelId) {
         setActiveChannelId(options.channelId);
@@ -98,7 +98,7 @@ export function AppsView({
       if (options.member && onStartDM) {
         onStartDM(options.member);
       } else {
-        if (setActiveHubId) setActiveHubId('anticeil');
+        if (setActiveColonyId) setActiveColonyId('anticeil');
         if (options.channelId && setActiveChannelId) {
           setActiveChannelId(options.channelId);
         }
@@ -285,7 +285,7 @@ export function AppsView({
         open={isLaunchDialogOpen}
         onOpenChange={setIsLaunchDialogOpen}
         app={selectedAppForLaunch}
-        hubs={hubs}
+        colonies={colonies}
         channels={channels}
         members={members}
         onConfirmLaunch={handleConfirmLaunch}

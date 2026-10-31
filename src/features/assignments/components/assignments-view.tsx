@@ -29,13 +29,13 @@ import {
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { AssignmentItem, AssignmentTab } from '../types';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 import { toast } from 'sonner';
 
 export interface AssignmentsViewProps {
   assignments: AssignmentItem[];
-  hubs: CommunityHub[];
-  onOpenBoard?: (hubId: string, channelId: string) => void;
+  colonies: Colony[];
+  onOpenBoard?: (colonyId: string, channelId: string) => void;
   onToggleComplete?: (assignmentId: string, isCompleted: boolean) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
@@ -43,7 +43,7 @@ export interface AssignmentsViewProps {
 
 export function AssignmentsView({
   assignments,
-  hubs,
+  colonies,
   onOpenBoard,
   onToggleComplete,
   onOpenSidebar,
@@ -51,7 +51,7 @@ export function AssignmentsView({
 }: AssignmentsViewProps) {
   const [activeTab, setActiveTab] = useState<AssignmentTab>('assigned_to_me');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedHubFilter, setSelectedHubFilter] = useState('all');
+  const [selectedColonyFilter, setSelectedColonyFilter] = useState('all');
 
   const now = dayjs();
 
@@ -63,7 +63,7 @@ export function AssignmentsView({
       (item.channelName && item.channelName.toLowerCase().includes(searchQuery.toLowerCase()));
 
     // Hub filter
-    const matchesHub = selectedHubFilter === 'all' || item.hubId === selectedHubFilter;
+    const matchesHub = selectedColonyFilter === 'all' || item.colonyId === selectedColonyFilter;
 
     if (!matchesSearch || !matchesHub) return false;
 
@@ -179,8 +179,8 @@ export function AssignmentsView({
           />
 
           <Select
-            value={selectedHubFilter}
-            onValueChange={setSelectedHubFilter}
+            value={selectedColonyFilter}
+            onValueChange={setSelectedColonyFilter}
           >
             <SelectTrigger
               size="xs"
@@ -190,7 +190,7 @@ export function AssignmentsView({
             </SelectTrigger>
             <SelectContent align="end">
               <SelectItem value="all">Semua Server</SelectItem>
-              {hubs.map((h) => (
+              {colonies.map((h) => (
                 <SelectItem key={h.id} value={h.id}>
                   {h.name}
                 </SelectItem>
@@ -336,7 +336,7 @@ export function AssignmentsView({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onOpenBoard?.(item.hubId, item.channelId)}
+                      onClick={() => onOpenBoard?.(item.colonyId, item.channelId)}
                       className="h-7 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
                     >
                       <span>Buka di Papan</span>

@@ -152,34 +152,34 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 
-import { chatApi, communityApi } from './chat-api';
+import { chatApi, colonyApi } from './chat-api';
 import {
   DEFAULT_CHANNELS,
-  DEFAULT_HUBS,
-  loadStoredHubs,
-  saveStoredHubs,
+  DEFAULT_COLONIES,
+  loadStoredColonies,
+  saveStoredColonies,
   getDmChannelId,
   loadStoredDmChannels,
   saveStoredDmChannels,
 } from './chat-defaults';
 import {
   CommunityAttachment,
-  CommunityChannel,
-  CommunityChannelType,
-  CommunityHub,
-  CommunityHubId,
-  CommunityMember,
-  CommunityMessage,
-  CommunityRole,
+  ColonyChannel,
+  ColonyChannelType,
+  Colony,
+  ColonyId,
+  ColonyMember,
+  ColonyMessage,
+  ColonyRole,
   CommunityAuditEntry,
   CommunityInvite,
-  CommunityBan,
+  ColonyBan,
   CommunityCustomRole,
-  CommunityHubStats,
+  ColonyStats,
   CommunityCustomEmoji,
-  CommunityChannelNotification,
-  CommunityChannelNotificationLevel,
-  CommunityThread,
+  ColonyChannelNotification,
+  ColonyChannelNotificationLevel,
+  ColonyThread,
 } from './chat-types';
 
 
@@ -226,11 +226,11 @@ export function CommunityPage() {
     keysToRemove.forEach((k) => localStorage.removeItem(k));
     sessionStorage.clear();
     setCurrentUser(null);
-    setHubs(DEFAULT_HUBS);
+    setColonies(DEFAULT_COLONIES);
     setChannels([]);
     setMembers([]);
     setMessagesMap({});
-    setActiveHubId('anticeil');
+    setActiveColonyId('anticeil');
     setActiveChannelId('');
     window.dispatchEvent(new Event('storage'));
     toast.success(t('Berhasil keluar dari akun.'));
@@ -446,14 +446,14 @@ export function CommunityPage() {
   }, [socket]);
 
   // Discord Hubs & Channels state
-  const [hubs, setHubs] = useState<CommunityHub[]>(() => loadStoredHubs());
-  const [activeHubId, setActiveHubId] = useState<CommunityHubId>(() => {
+  const [colonies, setColonies] = useState<Colony[]>(() => loadStoredColonies());
+  const [activeColonyId, setActiveColonyId] = useState<ColonyId>(() => {
     const params = new URLSearchParams(window.location.search);
     const fromUrl = params.get('hub') || (params.get('invite')?.startsWith('hub_') ? params.get('invite') : null);
     return fromUrl || 'anticeil';
   });
 
-  const [channels, setChannels] = useState<CommunityChannel[]>(() => {
+  const [channels, setChannels] = useState<ColonyChannel[]>(() => {
     const storedDms = loadStoredDmChannels();
     return [...storedDms, ...DEFAULT_CHANNELS];
   });
@@ -461,9 +461,9 @@ export function CommunityPage() {
 
     return new URLSearchParams(window.location.search).get('channel') || '';
   });
-  const [replyingToMessage, setReplyingToMessage] = useState<CommunityMessage | null>(null);
-  const [messagesMap, setMessagesMap] = useState<Record<string, CommunityMessage[]>>({});
-  const [members, setMembers] = useState<CommunityMember[]>([]);
+  const [replyingToMessage, setReplyingToMessage] = useState<ColonyMessage | null>(null);
+  const [messagesMap, setMessagesMap] = useState<Record<string, ColonyMessage[]>>({});
+  const [members, setMembers] = useState<ColonyMember[]>([]);
 
   // Discord-style unread message counter badges for mini rail (servers & friends)
   // Key 'anticeil' = NOTIFICATION-ONLY count (shown on logo badge)
@@ -530,21 +530,21 @@ export function CommunityPage() {
     });
   }, [unreadNotifCount]);
 
-  const activeHub = useMemo(() => {
-    return hubs.find((h) => h.id === activeHubId) || hubs[0];
-  }, [hubs, activeHubId]);
+  const activeColony = useMemo(() => {
+    return colonies.find((h) => h.id === activeColonyId) || colonies[0];
+  }, [colonies, activeColonyId]);
 
   // Listen to switch_hub and open_create_hub events from the Unified Mini Rail
   useEffect(() => {
-    const handleSwitchHub = (e: any) => {
-      const hubId = e.detail;
-      if (hubId) {
-        setActiveHubId(hubId);
-        if (hubId === 'anticeil') {
+    const handleSwitchColony = (e: any) => {
+      const colonyId = e.detail;
+      if (colonyId) {
+        setActiveColonyId(colonyId);
+        if (colonyId === 'anticeil') {
           setActiveChannelId('');
         } else {
           const firstCh = channels.find(
-            (c) => (c.hubId || 'anticeil') === hubId && c.category === 'CHANNELS',
+            (c) => (c.colonyId || 'anticeil') === colonyId && c.category === 'CHANNELS',
           );
           if (firstCh) setActiveChannelId(firstCh.id);
         }
@@ -556,20 +556,20 @@ export function CommunityPage() {
     const handleOpenAddFriend = () => {
       setIsAddFriendDialogOpen(true);
     };
-    window.addEventListener('anticeil_switch_hub', handleSwitchHub as EventListener);
+    window.addEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
     window.addEventListener('anticeil_open_create_hub', handleOpenCreateHub);
     window.addEventListener('anticeil_open_add_friend', handleOpenAddFriend);
     return () => {
-      window.removeEventListener('anticeil_switch_hub', handleSwitchHub as EventListener);
+      window.removeEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
       window.removeEventListener('anticeil_open_create_hub', handleOpenCreateHub);
       window.removeEventListener('anticeil_open_add_friend', handleOpenAddFriend);
     };
   }, [channels]);
 
-  // Broadcast activeHubId to Unified Mini Rail
+  // Broadcast activeColonyId to Unified Mini Rail
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('anticeil_active_hub_changed', { detail: activeHubId }));
-  }, [activeHubId]);
+    window.dispatchEvent(new CustomEvent('anticeil_active_hub_changed', { detail: activeColonyId }));
+  }, [activeColonyId]);
 
   // Synchronize browser URL address bar with active hub and active channel
   useEffect(() => {
@@ -577,9 +577,9 @@ export function CommunityPage() {
     try {
       const url = new URL(window.location.href);
       let changed = false;
-      if (activeHubId && activeHubId !== 'anticeil') {
-        if (url.searchParams.get('hub') !== activeHubId) {
-          url.searchParams.set('hub', activeHubId);
+      if (activeColonyId && activeColonyId !== 'anticeil') {
+        if (url.searchParams.get('hub') !== activeColonyId) {
+          url.searchParams.set('hub', activeColonyId);
           changed = true;
         }
       } else if (url.searchParams.has('hub')) {
@@ -611,7 +611,7 @@ export function CommunityPage() {
         window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
       }
     } catch {}
-  }, [activeHubId, activeChannelId, selectedActivityAppId, channels.length, isActivityOpen]);
+  }, [activeColonyId, activeChannelId, selectedActivityAppId, channels.length, isActivityOpen]);
 
   const [inputText, setInputText] = useState('');
   const [stagedAttachment, setStagedAttachment] = useState<CommunityAttachment | null>(null);
@@ -621,12 +621,12 @@ export function CommunityPage() {
 
   // Server Modals & Actions (Feature-First Hook)
   const colonyModals = useColonyModals({
-    hubs,
-    setHubs,
+    colonies,
+    setColonies,
     channels,
     setChannels,
-    activeHub,
-    setActiveHubId,
+    activeColony,
+    setActiveColonyId,
     setActiveChannelId,
     setActiveCallChannelId,
     setIsCallPiP,
@@ -675,7 +675,7 @@ export function CommunityPage() {
 
   // Channel Modals & Actions (Feature-First Hook)
   const channelModals = useChannelModals({
-    activeHubId,
+    activeColonyId,
     channels,
     setChannels,
     activeChannelId,
@@ -719,7 +719,7 @@ export function CommunityPage() {
 
   // Media Modals & Quick Add (Feature-First Hook)
   const mediaModals = useMediaModals({
-    activeHub,
+    activeColony,
   });
   const {
     isMediaPickerOpen,
@@ -758,12 +758,12 @@ export function CommunityPage() {
 
   // ── Discord Pinned Messages (Screenshot 1) ───────────────────────────
   const [isPinnedPopoverOpen, setIsPinnedPopoverOpen] = useState(false);
-  const [pinnedMessages, setPinnedMessages] = useState<CommunityMessage[]>([]);
+  const [pinnedMessages, setPinnedMessages] = useState<ColonyMessage[]>([]);
   const [isLoadingPins, setIsLoadingPins] = useState(false);
 
   // ── Discord Notification Settings (Screenshot 2) ─────────────────────
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
-  const [channelNotification, setChannelNotification] = useState<CommunityChannelNotification>({
+  const [channelNotification, setChannelNotification] = useState<ColonyChannelNotification>({
     channelId: '',
     userId: 'me',
     level: 'default',
@@ -772,23 +772,23 @@ export function CommunityPage() {
   });
 
   // Channels filtered by selected Hub
-  const hubChannels = useMemo(() => {
+  const colonyChannels = useMemo(() => {
     return channels.filter(
-      (c) => (c.hubId || 'anticeil') === (activeHubId || 'anticeil') && c.category === 'CHANNELS',
+      (c) => (c.colonyId || 'anticeil') === (activeColonyId || 'anticeil') && c.category === 'CHANNELS',
     );
-  }, [channels, activeHubId]);
+  }, [channels, activeColonyId]);
 
   const textChannels = useMemo(() => {
-    return hubChannels.filter((c) => c.type === 'text' || !c.type);
-  }, [hubChannels]);
+    return colonyChannels.filter((c) => c.type === 'text' || !c.type);
+  }, [colonyChannels]);
 
   const voiceChannels = useMemo(() => {
-    return hubChannels.filter((c) => c.type === 'voice');
-  }, [hubChannels]);
+    return colonyChannels.filter((c) => c.type === 'voice');
+  }, [colonyChannels]);
 
   const forumChannels = useMemo(() => {
-    return hubChannels.filter((c) => c.type === 'forum');
-  }, [hubChannels]);
+    return colonyChannels.filter((c) => c.type === 'forum');
+  }, [colonyChannels]);
 
   const dmChannels = useMemo(() => {
     return channels.filter(
@@ -796,14 +796,14 @@ export function CommunityPage() {
         c.category === 'DIRECT MESSAGES' &&
         typeof c.id === 'string' &&
         c.id.startsWith('dm-') &&
-        (!c.hubId || c.hubId === 'anticeil') &&
+        (!c.colonyId || c.colonyId === 'anticeil') &&
         c.type !== 'voice' &&
         c.type !== 'forum' &&
         c.type !== 'kanban',
     );
   }, [channels]);
 
-  const isHome = activeHubId === 'anticeil';
+  const isHome = activeColonyId === 'anticeil';
 
   // Active channel resolution: Home prefers explicit activeChannelId (DM chat) or null (Friends page).
   // Servers MUST strictly isolate channels to the active server!
@@ -822,21 +822,21 @@ export function CommunityPage() {
           name: dmName,
           description: `Percakapan langsung dengan ${dmName}`,
           category: 'DIRECT MESSAGES',
-          hubId: 'anticeil',
+          colonyId: 'anticeil',
           isDirectMessage: true,
           dmUserId: otherUserId,
           type: 'text',
-        } as CommunityChannel;
+        } as ColonyChannel;
       }
       return null;
     }
-    if (hubChannels.length === 0) return null;
+    if (colonyChannels.length === 0) return null;
     if (activeChannelId) {
-      const current = hubChannels.find((c) => c.id === activeChannelId);
+      const current = colonyChannels.find((c) => c.id === activeChannelId);
       if (current) return current;
     }
-    return hubChannels[0] || null;
-  }, [isHome, activeChannelId, dmChannels, hubChannels, members, currentUser]);
+    return colonyChannels[0] || null;
+  }, [isHome, activeChannelId, dmChannels, colonyChannels, members, currentUser]);
 
   // ── Discord Threads & Forum (Feature-First Hook) ─────────────────────
   const {
@@ -944,8 +944,8 @@ export function CommunityPage() {
         if (mounted) {
           setChannels([]);
           setMembers([]);
-          setHubs(DEFAULT_HUBS);
-          setActiveHubId('anticeil');
+          setColonies(DEFAULT_COLONIES);
+          setActiveColonyId('anticeil');
           setActiveChannelId('');
         }
         return;
@@ -953,15 +953,15 @@ export function CommunityPage() {
       try {
         const currentProjectId = authenticationSession.getProjectId();
         const [channelsRes, membersRes, hubsRes, friendsRes] = await Promise.all([
-          communityApi.getChannels(),
-          communityApi.getMembers(currentProjectId || undefined),
-          communityApi.getHubs(),
+          colonyApi.getChannels(),
+          colonyApi.getMembers(currentProjectId || undefined),
+          colonyApi.getColonies(),
           friendsApi.getFriends().catch(() => []),
         ]);
         if (mounted) {
           if (Array.isArray(channelsRes)) {
             const storedDms = loadStoredDmChannels();
-            const friendDms: CommunityChannel[] = [];
+            const friendDms: ColonyChannel[] = [];
             const effectiveUser = authenticationSession.getUser() || currentUser;
             const myId = effectiveUser?.id;
 
@@ -976,7 +976,7 @@ export function CommunityPage() {
                   name: dmName,
                   description: `Percakapan langsung dengan ${dmName}`,
                   category: 'DIRECT MESSAGES',
-                  hubId: 'anticeil',
+                  colonyId: 'anticeil',
                   isDirectMessage: true,
                   dmUserId: f.id,
                   type: 'text',
@@ -984,7 +984,7 @@ export function CommunityPage() {
               });
             }
 
-            const dmMap = new Map<string, CommunityChannel>();
+            const dmMap = new Map<string, ColonyChannel>();
             storedDms
               .filter((dm) => typeof dm.id === 'string' && dm.id.startsWith('dm-') && dm.type !== 'voice')
               .forEach((dm) => dmMap.set(dm.id, dm));
@@ -1008,7 +1008,7 @@ export function CommunityPage() {
             if (targetChannelParam) {
               let matchedChannel = mergedAllChannels.find((c) => c.id === targetChannelParam);
               if (!matchedChannel && targetActivityParam) {
-                matchedChannel = mergedAllChannels.find((c) => (c.hubId || 'anticeil') === activeHubId && c.type === 'voice');
+                matchedChannel = mergedAllChannels.find((c) => (c.colonyId || 'anticeil') === activeColonyId && c.type === 'voice');
               }
               if (matchedChannel) {
                 setActiveChannelId(matchedChannel.id);
@@ -1019,16 +1019,16 @@ export function CommunityPage() {
               }
             } else if (targetActivityParam) {
               const activeVoice = channelsRes.find(
-                (c) => (c.hubId || 'anticeil') === activeHubId && c.type === 'voice',
+                (c) => (c.colonyId || 'anticeil') === activeColonyId && c.type === 'voice',
               );
               if (activeVoice) {
                 setActiveChannelId(activeVoice.id);
                 setActiveCallChannelId(activeVoice.id);
                 setIsCallPiP(false);
               }
-            } else if (channelsRes.length > 0 && activeHubId !== 'anticeil') {
+            } else if (channelsRes.length > 0 && activeColonyId !== 'anticeil') {
               const activeVoice = channelsRes.find(
-                (c) => (c.hubId || 'anticeil') === activeHubId && c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0,
+                (c) => (c.colonyId || 'anticeil') === activeColonyId && c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0,
               );
               if (activeVoice) {
                 setActiveChannelId(activeVoice.id);
@@ -1043,10 +1043,10 @@ export function CommunityPage() {
             setMembers(membersRes);
           }
           if (Array.isArray(hubsRes) && hubsRes.length > 0) {
-            setHubs((prev) => {
-              const home = prev.find((h) => h.id === 'anticeil') || DEFAULT_HUBS[0];
+            setColonies((prev) => {
+              const home = prev.find((h) => h.id === 'anticeil') || DEFAULT_COLONIES[0];
               const merged = [home, ...hubsRes.filter((s) => s.id !== 'anticeil')];
-              saveStoredHubs(merged);
+              saveStoredColonies(merged);
               return merged;
             });
           }
@@ -1081,10 +1081,10 @@ export function CommunityPage() {
     const loadChannelData = async () => {
       try {
         const [msgs, pins, notif, ths] = await Promise.all([
-          communityApi.getMessages(activeChannelId),
-          communityApi.getPinnedMessages(activeChannelId),
-          communityApi.getChannelNotification(activeChannelId),
-          communityApi.getThreads(activeChannelId),
+          colonyApi.getMessages(activeChannelId),
+          colonyApi.getPinnedMessages(activeChannelId),
+          colonyApi.getChannelNotification(activeChannelId),
+          colonyApi.getThreads(activeChannelId),
         ]);
         if (mounted) {
           if (msgs) {
@@ -1138,12 +1138,12 @@ export function CommunityPage() {
       setChannels((prev) => {
         const exists = prev.some((c) => c.id === canonicalId);
         if (exists) return prev;
-        const newDm: CommunityChannel = {
+        const newDm: ColonyChannel = {
           id: canonicalId,
           name: dmName,
           description: `Percakapan langsung dengan ${dmName}`,
           category: 'DIRECT MESSAGES',
-          hubId: 'anticeil',
+          colonyId: 'anticeil',
           isDirectMessage: true,
           dmUserId: otherUserId,
           type: 'text',
@@ -1164,30 +1164,30 @@ export function CommunityPage() {
 
   // Load threads for all forum channels in the active hub so sidebar shows child threads
   useEffect(() => {
-    if (!hubChannels.length) return;
-    const forumChannels = hubChannels.filter((c) => c.type === 'forum');
+    if (!colonyChannels.length) return;
+    const forumChannels = colonyChannels.filter((c) => c.type === 'forum');
     if (!forumChannels.length) return;
 
     forumChannels.forEach(async (fc) => {
       try {
-        const ths = await communityApi.getThreads(fc.id);
+        const ths = await colonyApi.getThreads(fc.id);
         if (ths) {
           setThreadsMap((prev) => ({ ...prev, [fc.id]: ths }));
         }
       } catch {}
     });
-  }, [hubChannels]);
+  }, [colonyChannels]);
 
   // Auto-fetch and sync channels when switching to a colony
   useEffect(() => {
-    if (!activeHubId || activeHubId === 'anticeil') return;
+    if (!activeColonyId || activeColonyId === 'anticeil') return;
     let mounted = true;
     const loadColonyChannels = async () => {
       try {
-        const res = await communityApi.getChannels(activeHubId);
+        const res = await colonyApi.getChannels(activeColonyId);
         if (mounted && Array.isArray(res)) {
           setChannels((prev) => {
-            const others = prev.filter((c) => (c.hubId || 'anticeil') !== activeHubId);
+            const others = prev.filter((c) => (c.colonyId || 'anticeil') !== activeColonyId);
             return [...others, ...res];
           });
           const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
@@ -1230,14 +1230,14 @@ export function CommunityPage() {
           }
         }
       } catch (err) {
-        console.warn('Failed to load channels for hub', activeHubId, err);
+        console.warn('Failed to load channels for colony', activeColonyId, err);
       }
     };
     loadColonyChannels();
     return () => {
       mounted = false;
     };
-  }, [activeHubId]);
+  }, [activeColonyId]);
 
   // Automatically connect to voice call when switching to or opening a voice channel
   useEffect(() => {
@@ -1276,7 +1276,7 @@ export function CommunityPage() {
   // Mark channel read when opened
   useEffect(() => {
     if (activeChannelId && currentUser?.id) {
-      communityApi.markChannelRead(activeChannelId, currentUser.id);
+      colonyApi.markChannelRead(activeChannelId, currentUser.id);
     }
   }, [activeChannelId, currentUser?.id]);
 
@@ -1321,7 +1321,7 @@ export function CommunityPage() {
   } = useMessageActions({
     currentUser,
     activeChannel,
-    activeHub,
+    activeColony,
     members,
     replyingToMessage,
     setReplyingToMessage,
@@ -1348,15 +1348,15 @@ export function CommunityPage() {
     dmChannels,
     activeChannel,
     activeCallChannelId,
-    activeHubId,
-    activeHub,
+    activeColonyId,
+    activeColony,
     currentUser,
     members,
     socket,
     t,
     setSelectedActivityAppId,
     setIsTemplatePopoverOpen,
-    setActiveHubId,
+    setActiveColonyId,
     setActiveChannelId,
     setActiveCallChannelId,
     setIsCallPiP,
@@ -1366,7 +1366,7 @@ export function CommunityPage() {
 
   // ── Update Channel Notification Settings Handler ─────────────────────
   const handleUpdateNotification = async (
-    level?: CommunityChannelNotificationLevel,
+    level?: ColonyChannelNotificationLevel,
     muteState?: boolean,
     mutedUntil?: string | null,
   ) => {
@@ -1383,7 +1383,7 @@ export function CommunityPage() {
     }));
 
     try {
-      await communityApi.updateChannelNotification(activeChannel.id, {
+      await colonyApi.updateChannelNotification(activeChannel.id, {
         level: nextLevel,
         isMuted: nextMuted,
         mutedUntil: nextUntil,
@@ -1446,7 +1446,7 @@ export function CommunityPage() {
               name: dmName,
               description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role || 'Member'})`,
               category: 'DIRECT MESSAGES' as const,
-              hubId: 'anticeil',
+              colonyId: 'anticeil',
               isDirectMessage: true,
               dmUserId: member.id,
               type: 'text' as const,
@@ -1457,7 +1457,7 @@ export function CommunityPage() {
       return updated;
     });
     // DMs live in Home hub, auto-switch
-    setActiveHubId('anticeil');
+    setActiveColonyId('anticeil');
     setActiveChannelId(dmId);
     setHomeView('friends');
     setIsMobileChannelsOpen(false);
@@ -1486,8 +1486,8 @@ export function CommunityPage() {
 
   const handleJumpToNotification = (item: NotificationItem) => {
     handleMarkNotificationRead(item.id);
-    if (item.hubId && item.hubId !== activeHubId) {
-      setActiveHubId(item.hubId);
+    if (item.colonyId && item.colonyId !== activeColonyId) {
+      setActiveColonyId(item.colonyId);
     }
     setActiveChannelId(item.channelId);
   };
@@ -1502,15 +1502,15 @@ export function CommunityPage() {
     currentUser?.email?.split('@')[0] ||
     'Pengguna Anticeil';
 
-  const displayMembers: CommunityMember[] = useMemo(() => {
-    const isOwner = activeHub?.role === 'owner';
-    const isAdmin = activeHub?.role === 'admin';
+  const displayMembers: ColonyMember[] = useMemo(() => {
+    const isOwner = activeColony?.role === 'owner';
+    const isAdmin = activeColony?.role === 'admin';
     const list = members.map((m) => {
       if (m.id === currentUser?.id || m.email === currentUser?.email) {
         return {
           ...m,
           username: m.username || currentUser?.username || null,
-          role: isOwner ? ('owner' as CommunityRole) : isAdmin ? ('admin' as CommunityRole) : (m.role || 'member'),
+          role: isOwner ? ('owner' as ColonyRole) : isAdmin ? ('admin' as ColonyRole) : (m.role || 'member'),
           roleLabel: isOwner ? 'Pemilik' : isAdmin ? 'Admin' : undefined,
         };
       }
@@ -1518,7 +1518,7 @@ export function CommunityPage() {
     });
 
     if (currentUser && !list.some((m) => m.id === currentUser.id || m.email === currentUser.email)) {
-      const currentRole: CommunityRole = isOwner ? 'owner' : isAdmin ? 'admin' : 'member';
+      const currentRole: ColonyRole = isOwner ? 'owner' : isAdmin ? 'admin' : 'member';
       const currentLabel = isOwner ? 'Pemilik' : isAdmin ? 'Admin' : undefined;
       list.unshift({
         id: currentUser.id,
@@ -1534,7 +1534,7 @@ export function CommunityPage() {
       });
     }
     return list;
-  }, [members, currentUser, activeHub]);
+  }, [members, currentUser, activeColony]);
 
   // Friends Manager (Feature-First Hook)
   const friends = useFriendsManager({
@@ -1569,12 +1569,12 @@ export function CommunityPage() {
         const dmId = getDmChannelId(currentUser.id, friend.id);
         const exists = currentList.some((c) => c.id === dmId);
         if (!exists) {
-          const newDm: CommunityChannel = {
+          const newDm: ColonyChannel = {
             id: dmId,
             name: dmName,
             description: `Percakapan langsung dengan ${dmName}`,
             category: 'DIRECT MESSAGES',
-            hubId: 'anticeil',
+            colonyId: 'anticeil',
             isDirectMessage: true,
             dmUserId: friend.id,
             type: 'text',
@@ -1607,11 +1607,11 @@ export function CommunityPage() {
         localStorage.setItem('anticeil_rail_mode', next);
       } catch {}
       if (next === 'friends') {
-        setActiveHubId('anticeil');
+        setActiveColonyId('anticeil');
         setActiveChannelId('');
         setHomeView('friends');
       } else {
-        setActiveHubId('anticeil');
+        setActiveColonyId('anticeil');
         setActiveChannelId('');
         setHomeView('colonies');
       }
@@ -1623,8 +1623,8 @@ export function CommunityPage() {
   // Component: Server Rail (delegates to reusable ColonyRail feature component)
   const renderDiscordHubRail = () => (
     <ColonyRail
-      servers={hubs}
-      activeServerId={activeHubId}
+      servers={colonies}
+      activeServerId={activeColonyId}
       unreadCounts={unreadCounts}
       onSelectServer={(id) => {
         if (id !== 'anticeil') {
@@ -1638,12 +1638,12 @@ export function CommunityPage() {
           setIsAuthRequiredOpen(true);
           return;
         }
-        setActiveHubId(id);
+        setActiveColonyId(id);
         if (id === 'anticeil') {
           setActiveChannelId('');
         } else {
           const firstCh = channels.find(
-            (c) => (c.hubId || 'anticeil') === id && c.category === 'CHANNELS',
+            (c) => (c.colonyId || 'anticeil') === id && c.category === 'CHANNELS',
           );
           setActiveChannelId(firstCh?.id || '');
         }
@@ -1677,7 +1677,7 @@ export function CommunityPage() {
   // Comprehensive directory of all known members (friends + server members + current user)
   // Ensures DM avatars in sidebar and chat headers never lose their photo
   const allKnownMembers = useMemo(() => {
-    const map = new Map<string, CommunityMember>();
+    const map = new Map<string, ColonyMember>();
     members.forEach((m) => map.set(m.id, m));
     displayMembers.forEach((m) => map.set(m.id, m));
     (friends.allFriends || []).forEach((f) => {
@@ -1700,7 +1700,7 @@ export function CommunityPage() {
     <ChannelsSidebar
       currentUser={currentUser}
       isHome={isHome}
-      activeHub={activeHub}
+      activeColony={activeColony}
       channels={channels}
       activeChannelId={activeChannelId}
       setActiveChannelId={setActiveChannelId}
@@ -1768,7 +1768,7 @@ export function CommunityPage() {
       }
       onOpenEditChannel={(ch) => handleOpenEditChannel(ch)}
       onUpdateHubIcon={async (file) => {
-        if (!activeHub) return;
+        if (!activeColony) return;
         if (file.size > 5 * 1024 * 1024) {
           toast.error(t('Ukuran file maksimal 5 MB.'));
           return;
@@ -1777,22 +1777,22 @@ export function CommunityPage() {
         reader.onload = async (event) => {
           const res = event.target?.result as string;
           if (res) {
-            const updated: CommunityHub = { ...activeHub, iconUrl: res };
-            setHubs((prev) => {
-              const next = prev.map((h) => (h.id === activeHub.id ? updated : h));
-              saveStoredHubs(next);
+            const updated: Colony = { ...activeColony, iconUrl: res };
+            setColonies((prev) => {
+              const next = prev.map((h) => (h.id === activeColony.id ? updated : h));
+              saveStoredColonies(next);
               return next;
             });
             try {
-              await communityApi.updateHub(activeHub.id, { iconUrl: res });
+              await colonyApi.updateColony(activeColony.id, { iconUrl: res });
             } catch {}
             toast.success(t('Foto server berhasil diperbarui! 🖼️'));
           }
         };
         reader.readAsDataURL(file);
       }}
-      onOpenEditHub={() => setHubToEdit(activeHub)}
-      onOpenDeleteHub={() => setHubToDelete(activeHub)}
+      onOpenEditHub={() => setHubToEdit(activeColony)}
+      onOpenDeleteHub={() => setHubToDelete(activeColony)}
       setIsCallPiP={setIsCallPiP}
       selectedActivityAppId={selectedActivityAppId}
       userBottomDock={null}
@@ -1816,7 +1816,7 @@ export function CommunityPage() {
         onGoogleSignIn={handleGoogleSignIn}
         activeCallChannelId={activeCallChannelId}
         activeCallChannelName={activeCallChannel?.name}
-        activeHubName={activeHub?.name}
+        activeColonyName={activeColony?.name}
         isActivityChannel={!!activeCallChannelId && activeCallChannel?.type !== 'voice'}
         onReturnToCall={() => {
           setActiveChannelId(activeCallChannelId!);
@@ -1894,7 +1894,7 @@ export function CommunityPage() {
           userId={activeDmUserId}
           member={activeDmMember}
           currentUser={currentUser}
-          hubs={hubs}
+          colonies={colonies}
           friends={friends.allFriends}
           onStartCall={(callType) => {
             if (activeDmUserId) {
@@ -1909,8 +1909,8 @@ export function CommunityPage() {
               });
             }
           }}
-          onSelectHub={(hubId) => {
-            setActiveHubId(hubId);
+          onSelectHub={(colonyId) => {
+            setActiveColonyId(colonyId);
             setIsMobileMembersOpen(false);
           }}
           onClose={() => {
@@ -1985,10 +1985,10 @@ export function CommunityPage() {
           handleJumpToNotification={handleJumpToNotification}
           isCalendarView={isCalendarView}
           calendarEvents={calendarEvents}
-          hubs={hubs}
+          colonies={colonies}
           channels={channels}
-          hubChannels={hubChannels}
-          setActiveHubId={setActiveHubId}
+          colonyChannels={colonyChannels}
+          setActiveColonyId={setActiveColonyId}
           setActiveChannelId={setActiveChannelId}
           setActiveCallChannelId={setActiveCallChannelId}
           createCalendarEvent={createCalendarEvent}
@@ -2033,7 +2033,7 @@ export function CommunityPage() {
           setIsMobileMembersOpen={setIsMobileMembersOpen}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          activeHub={activeHub}
+          activeColony={activeColony}
           currentUser={currentUser}
           isPlusOrAbove={isPlusOrAbove}
           socket={socket}
@@ -2116,7 +2116,7 @@ export function CommunityPage() {
         <ColonyEventsModal
         isOpen={isColonyEventsModalOpen}
         onClose={() => setIsColonyEventsModalOpen(false)}
-        activeHub={activeHub}
+        activeColony={activeColony}
         channels={channels}
         events={calendarEvents}
         onCreateEvent={createCalendarEvent}
@@ -2130,23 +2130,23 @@ export function CommunityPage() {
           colonyModals={colonyModals}
           channelModals={channelModals}
           mediaModals={mediaModals}
-          activeHub={activeHub}
+          activeColony={activeColony}
           activeChannel={activeChannel}
           currentUser={currentUser}
           members={members}
           setMembers={setMembers}
           channels={channels}
-          hubChannels={hubChannels}
-          onUpdateHub={async (hubId, updates) => {
-            if (!activeHub) return;
-            const updated = { ...activeHub, ...updates };
-            setHubs((prev) => {
-              const next = prev.map((h) => (h.id === hubId ? updated : h));
-              saveStoredHubs(next);
+          colonyChannels={colonyChannels}
+          onUpdateHub={async (colonyId, updates) => {
+            if (!activeColony) return;
+            const updated = { ...activeColony, ...updates };
+            setColonies((prev) => {
+              const next = prev.map((h) => (h.id === colonyId ? updated : h));
+              saveStoredColonies(next);
               return next;
             });
             try {
-              await communityApi.updateHub(hubId, updates);
+              await colonyApi.updateColony(colonyId, updates);
             } catch {}
           }}
           isDmSearchOpen={isDmSearchOpen}
@@ -2154,7 +2154,7 @@ export function CommunityPage() {
           dmSearchQuery={dmSearchQuery}
           setDmSearchQuery={setDmSearchQuery}
           dmChannels={dmChannels}
-          setActiveHubId={setActiveHubId}
+          setActiveColonyId={setActiveColonyId}
           setActiveChannelId={setActiveChannelId}
           handleStartDM={handleStartDM}
           isGiftModalOpen={isGiftModalOpen}

@@ -24,16 +24,16 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { friendsApi } from '@/features/friends/api/friends-api';
-import type { CommunityHub, CommunityMember } from '@/chat/chat-types';
+import type { Colony, ColonyMember } from '@/chat/chat-types';
 import type { FriendMember } from '@/features/friends/types';
 
 export interface ColonyInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  activeServer?: CommunityHub | null;
-  activeHub?: CommunityHub | null;
+  activeServer?: Colony | null;
+  activeColony?: Colony | null;
   onInviteUsername: (username: string, userId?: string) => Promise<boolean | void>;
-  members?: CommunityMember[];
+  members?: ColonyMember[];
   t: (key: string) => string;
 }
 
@@ -41,12 +41,12 @@ export function ColonyInviteDialog({
   open,
   onOpenChange,
   activeServer,
-  activeHub,
+  activeColony,
   onInviteUsername,
   members = [],
   t,
 }: ColonyInviteDialogProps) {
-  const currentServer = activeServer ?? activeHub;
+  const currentServer = activeServer ?? activeColony;
   const [searchQuery, setSearchQuery] = useState('');
   const [candidateUsers, setCandidateUsers] = useState<FriendMember[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);

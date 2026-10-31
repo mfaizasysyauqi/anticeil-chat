@@ -29,15 +29,15 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityChannel, CommunityHub } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { ColonyChannel, Colony } from '@/chat/chat-types';
 
 interface WebhookDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  activeChannel: CommunityChannel | null;
-  hubChannels: CommunityChannel[];
-  activeHub: CommunityHub | null;
+  activeChannel: ColonyChannel | null;
+  colonyChannels: ColonyChannel[];
+  activeColony: Colony | null;
   onSelectChannel?: (channelId: string) => void;
   onCreateChannel?: () => void;
 }
@@ -46,8 +46,8 @@ export function WebhookDialog({
   isOpen,
   onClose,
   activeChannel,
-  hubChannels,
-  activeHub,
+  colonyChannels,
+  activeColony,
   onSelectChannel,
   onCreateChannel,
 }: WebhookDialogProps) {
@@ -58,8 +58,8 @@ export function WebhookDialog({
   const [isCopiedHubId, setIsCopiedHubId] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
 
-  const effectiveChannel = activeChannel || (hubChannels.length > 0 ? hubChannels[0] : null);
-  const serverId = activeHub?.id || 'anticeil';
+  const effectiveChannel = activeChannel || (colonyChannels.length > 0 ? colonyChannels[0] : null);
+  const serverId = activeColony?.id || 'anticeil';
   const channelId = effectiveChannel?.id || '';
   const channelName = effectiveChannel?.name || 'saluran';
   const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://anticeil.com'}/api/v1/community/webhook?channelId=${channelId || 'general'}&hubId=${serverId}`;
@@ -144,7 +144,7 @@ export function WebhookDialog({
           ) : (
             <>
               {/* Channel selector if server has multiple channels */}
-              {hubChannels.length > 1 && (
+              {colonyChannels.length > 1 && (
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                     <Hash className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ export function WebhookDialog({
                       <SelectValue placeholder={t('Pilih Saluran')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {hubChannels.map((c) => (
+                      {colonyChannels.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           #{c.name} {c.description ? `— ${c.description}` : ''}
                         </SelectItem>
@@ -291,10 +291,10 @@ export function WebhookDialog({
                     onClick={async () => {
                       setIsTestingWebhook(true);
                       try {
-                        await communityApi.testWebhook({
+                        await colonyApi.testWebhook({
                           channelId,
                           channel: channelName,
-                          hubId: serverId,
+                          colonyId: serverId,
                           botName: 'Anticeil Ping Bot',
                           content: `👋 **Tes Webhook Berhasil!** Terkoneksi ke saluran **#${channelName}** (ID Server: \`${serverId}\`). Automasi Flow Builder Anda siap mengirim pesan ke sini! 🚀`,
                         });

@@ -11,10 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { CommunityChannel } from '@/chat/chat-types';
+import type { ColonyChannel } from '@/chat/chat-types';
 
 export interface EditChannelDialogProps {
-  channelToEdit: CommunityChannel | null;
+  channelToEdit: ColonyChannel | null;
   onClose: () => void;
   editChannelType: 'text' | 'voice' | 'forum' | 'kanban';
   setEditChannelType: (type: 'text' | 'voice' | 'forum' | 'kanban') => void;

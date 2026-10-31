@@ -8,11 +8,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 export interface DeleteColonyDialogProps {
-  serverToDelete?: CommunityHub | null;
-  hubToDelete?: CommunityHub | null;
+  serverToDelete?: Colony | null;
+  hubToDelete?: Colony | null;
   onClose: () => void;
   onDeleteConfirm: () => void;
   t: (key: string, params?: Record<string, any>) => string;

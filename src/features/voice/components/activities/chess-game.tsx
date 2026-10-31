@@ -20,10 +20,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { CommunityChannel } from '@/chat/chat-types';
+import { ColonyChannel } from '@/chat/chat-types';
 
 export interface ChessGameProps {
-  channel: CommunityChannel;
+  channel: ColonyChannel;
   socket: Socket | null;
   currentUserName?: string;
   currentUser?: any;

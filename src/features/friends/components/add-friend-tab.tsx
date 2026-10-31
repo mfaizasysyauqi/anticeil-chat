@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from '@/core/i18n';
 import { friendsApi } from '../api/friends-api';
 import type { FriendMember, FriendRequest } from '../types';
-import type { CommunityMember } from '@/chat/chat-types';
+import type { ColonyMember } from '@/chat/chat-types';
 
 export interface AddFriendTabProps {
   onAddFriend: (username: string, userId?: string) => Promise<void> | void;
@@ -15,7 +15,7 @@ export interface AddFriendTabProps {
   currentUser?: any;
   allFriends?: FriendMember[];
   friendRequests?: FriendRequest[];
-  members?: CommunityMember[];
+  members?: ColonyMember[];
 }
 
 export function AddFriendTab({

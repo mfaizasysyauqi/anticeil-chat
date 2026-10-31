@@ -1,14 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import type { CommunityMember, CommunityChannel } from '@/chat/chat-types';
+import type { ColonyMember, ColonyChannel } from '@/chat/chat-types';
 import type { FriendMember, FriendRequest, FriendsTab } from '../types';
 import { friendsApi } from '../api/friends-api';
 
 export interface UseFriendsManagerOptions {
-  displayMembers: CommunityMember[];
+  displayMembers: ColonyMember[];
   currentUser: any;
-  members: CommunityMember[];
-  dmChannels?: CommunityChannel[];
+  members: ColonyMember[];
+  dmChannels?: ColonyChannel[];
   t: (key: string) => string;
 }
 

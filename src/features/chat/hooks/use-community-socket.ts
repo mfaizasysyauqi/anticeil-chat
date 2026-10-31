@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { type CommunityMessage, type CommunityChannel, resolveChannelType } from '@/chat/chat-types';
+import { type ColonyMessage, type ColonyChannel, resolveChannelType } from '@/chat/chat-types';
 import { saveStoredChannels, saveStoredMessages, loadStoredMessages } from '@/chat/chat-defaults';
 
 export interface UseCommunitySocketOptions {
   socket: any;
   activeChannelId: string;
-  setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, CommunityMessage[]>>>;
-  setChannels: React.Dispatch<React.SetStateAction<CommunityChannel[]>>;
+  setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, ColonyMessage[]>>>;
+  setChannels: React.Dispatch<React.SetStateAction<ColonyChannel[]>>;
   setActiveChannelId: React.Dispatch<React.SetStateAction<string>>;
   setActiveCallCounts?: React.Dispatch<React.SetStateAction<Record<string, number>>>;
 }
@@ -31,7 +31,7 @@ export function useCommunitySocket({
       }
     };
 
-    const handleIncomingMessage = (newMsg: CommunityMessage) => {
+    const handleIncomingMessage = (newMsg: ColonyMessage) => {
       if (!newMsg?.channelId) return;
       setMessagesMap((prev) => {
         const keysToUpdate = new Set<string>([newMsg.channelId]);
@@ -109,9 +109,9 @@ export function useCommunitySocket({
       });
     };
 
-    const handleChannelCreated = (rawCh: CommunityChannel) => {
+    const handleChannelCreated = (rawCh: ColonyChannel) => {
       if (!rawCh?.id) return;
-      const newCh: CommunityChannel = {
+      const newCh: ColonyChannel = {
         ...rawCh,
         type: resolveChannelType(rawCh),
       };
@@ -127,9 +127,9 @@ export function useCommunitySocket({
       });
     };
 
-    const handleChannelUpdated = (rawCh: CommunityChannel) => {
+    const handleChannelUpdated = (rawCh: ColonyChannel) => {
       if (!rawCh?.id) return;
-      const updatedCh: CommunityChannel = {
+      const updatedCh: ColonyChannel = {
         ...rawCh,
         type: resolveChannelType(rawCh),
       };

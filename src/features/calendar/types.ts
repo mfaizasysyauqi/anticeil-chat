@@ -5,7 +5,7 @@ export interface CalendarEvent {
   type: 'meeting' | 'task' | 'activity';
   startTime: string; // ISO string (e.g. 2026-10-28T14:00:00)
   endTime?: string;
-  hubId?: string;
+  colonyId?: string;
   hubName?: string;
   channelId?: string;
   channelName?: string;

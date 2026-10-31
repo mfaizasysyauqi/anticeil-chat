@@ -2,18 +2,18 @@ import React from 'react';
 import { HomeChannelsSidebar } from './home-channels-sidebar';
 import { ColonyChannelsSidebar } from './colony-channels-sidebar';
 import type {
-  CommunityHub,
-  CommunityChannel,
-  CommunityMember,
-  CommunityChannelType,
+  Colony,
+  ColonyChannel,
+  ColonyMember,
+  ColonyChannelType,
 } from '@/chat/chat-types';
 import type { ColonySettingsSection } from '@/features/colony-settings';
 
 export interface ChannelsSidebarProps {
   currentUser?: any;
   isHome: boolean;
-  activeHub: CommunityHub | null;
-  channels: CommunityChannel[];
+  activeColony: Colony | null;
+  channels: ColonyChannel[];
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
   activeCallChannelId: string | null;
@@ -25,8 +25,8 @@ export interface ChannelsSidebarProps {
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
   friendRequests: any[];
-  dmChannels: CommunityChannel[];
-  members: CommunityMember[];
+  dmChannels: ColonyChannel[];
+  members: ColonyMember[];
   collapsedCategories: any;
   setCollapsedCategories: any;
   threadsMap: Record<string, any[]>;
@@ -38,9 +38,9 @@ export interface ChannelsSidebarProps {
   onOpenDmSearch: () => void;
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
-  onOpenCreateChannel: (category: string, type?: CommunityChannelType) => void;
+  onOpenCreateChannel: (category: string, type?: ColonyChannelType) => void;
   onOpenCreateHub?: () => void;
-  onOpenEditChannel: (channel: CommunityChannel) => void;
+  onOpenEditChannel: (channel: ColonyChannel) => void;
   onUpdateHubIcon?: (file: File) => Promise<void> | void;
   onOpenEditHub?: () => void;
   onOpenDeleteHub?: () => void;

@@ -6,13 +6,13 @@ import {
   recordTextMessage,
   validateTextMessage,
 } from '@/features/chat-input';
-import { communityApi } from '../chat-api';
+import { colonyApi } from '../chat-api';
 import type {
-  CommunityChannel,
-  CommunityHub,
-  CommunityMember,
-  CommunityMessage,
-  CommunityRole,
+  ColonyChannel,
+  Colony,
+  ColonyMember,
+  ColonyMessage,
+  ColonyRole,
 } from '@/chat/chat-types';
 import type {
   DiscordEmoji,
@@ -22,23 +22,23 @@ import type {
 
 export interface UseMessageActionsOptions {
   currentUser: any;
-  activeChannel: CommunityChannel | null;
-  activeHub?: CommunityHub | null;
-  members: CommunityMember[];
+  activeChannel: ColonyChannel | null;
+  activeColony?: Colony | null;
+  members: ColonyMember[];
   inputText: string;
   setInputText: React.Dispatch<React.SetStateAction<string>>;
   stagedAttachment: any;
   setStagedAttachment: (att: any) => void;
-  messagesMap: Record<string, CommunityMessage[]>;
-  setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, CommunityMessage[]>>>;
-  setPinnedMessages: React.Dispatch<React.SetStateAction<CommunityMessage[]>>;
+  messagesMap: Record<string, ColonyMessage[]>;
+  setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, ColonyMessage[]>>>;
+  setPinnedMessages: React.Dispatch<React.SetStateAction<ColonyMessage[]>>;
   setIsMediaPickerOpen: (open: boolean) => void;
   setIsGiftModalOpen: (open: boolean) => void;
   setIsPinnedPopoverOpen: (open: boolean) => void;
   setAuthFeatureInfo: (info: { title: string; desc: string }) => void;
   setIsAuthRequiredOpen: (open: boolean) => void;
-  replyingToMessage?: CommunityMessage | null;
-  setReplyingToMessage?: React.Dispatch<React.SetStateAction<CommunityMessage | null>>;
+  replyingToMessage?: ColonyMessage | null;
+  setReplyingToMessage?: React.Dispatch<React.SetStateAction<ColonyMessage | null>>;
   createCalendarEvent: (event: any) => Promise<any>;
   t: (key: string) => string;
 }
@@ -46,7 +46,7 @@ export interface UseMessageActionsOptions {
 export function useMessageActions({
   currentUser,
   activeChannel,
-  activeHub,
+  activeColony,
   members,
   inputText,
   setInputText,
@@ -104,14 +104,14 @@ export function useMessageActions({
       'Pengguna Anticeil';
 
     const myMemberInfo = members.find((m) => m.id === currentUserId || m.email === currentUser?.email);
-    let myRole: CommunityRole = myMemberInfo?.role || 'member';
-    if (activeHub?.role === 'owner') {
+    let myRole: ColonyRole = myMemberInfo?.role || 'member';
+    if (activeColony?.role === 'owner') {
       myRole = 'owner';
-    } else if (activeHub?.role === 'admin') {
+    } else if (activeColony?.role === 'admin') {
       myRole = 'admin';
     }
 
-    const payload: Partial<CommunityMessage> = {
+    const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
       senderName: currentUserName,
@@ -136,7 +136,7 @@ export function useMessageActions({
     setReplyingToMessage?.(null);
 
     try {
-      const saved = await communityApi.sendMessage(activeChannel.id, payload);
+      const saved = await colonyApi.sendMessage(activeChannel.id, payload);
       setMessagesMap((prev) => {
         const list = prev[activeChannel.id] || [];
         if (list.some((m) => m.id === saved.id)) return prev;
@@ -164,8 +164,8 @@ export function useMessageActions({
         description: textToSend,
         type: 'task',
         startTime: scheduledDate.toISOString(),
-        hubId: activeHub?.id,
-        hubName: activeHub?.name,
+        colonyId: activeColony?.id,
+        hubName: activeColony?.name,
         channelId: activeChannel?.id,
         channelName: activeChannel?.name,
         status: 'scheduled',
@@ -220,11 +220,11 @@ export function useMessageActions({
       'Pengguna Anticeil';
 
     const myMemberInfo = members.find((m) => m.id === currentUserId || m.email === currentUser?.email);
-    let myRole: CommunityRole = myMemberInfo?.role || 'member';
-    if (activeHub?.role === 'owner') myRole = 'owner';
-    else if (activeHub?.role === 'admin') myRole = 'admin';
+    let myRole: ColonyRole = myMemberInfo?.role || 'member';
+    if (activeColony?.role === 'owner') myRole = 'owner';
+    else if (activeColony?.role === 'admin') myRole = 'admin';
 
-    const payload: Partial<CommunityMessage> = {
+    const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
       senderName: currentUserName,
@@ -242,7 +242,7 @@ export function useMessageActions({
     };
 
     try {
-      const saved = await communityApi.sendMessage(activeChannel.id, payload);
+      const saved = await colonyApi.sendMessage(activeChannel.id, payload);
       setMessagesMap((prev) => {
         const list = prev[activeChannel.id] || [];
         if (list.some((m) => m.id === saved.id)) return prev;
@@ -270,11 +270,11 @@ export function useMessageActions({
       'Pengguna Anticeil';
 
     const myMemberInfo = members.find((m) => m.id === currentUserId || m.email === currentUser?.email);
-    let myRole: CommunityRole = myMemberInfo?.role || 'member';
-    if (activeHub?.role === 'owner') myRole = 'owner';
-    else if (activeHub?.role === 'admin') myRole = 'admin';
+    let myRole: ColonyRole = myMemberInfo?.role || 'member';
+    if (activeColony?.role === 'owner') myRole = 'owner';
+    else if (activeColony?.role === 'admin') myRole = 'admin';
 
-    const payload: Partial<CommunityMessage> = {
+    const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
       senderName: currentUserName,
@@ -292,7 +292,7 @@ export function useMessageActions({
     };
 
     try {
-      const saved = await communityApi.sendMessage(activeChannel.id, payload);
+      const saved = await colonyApi.sendMessage(activeChannel.id, payload);
       setMessagesMap((prev) => {
         const list = prev[activeChannel.id] || [];
         if (list.some((m) => m.id === saved.id)) return prev;
@@ -315,11 +315,11 @@ export function useMessageActions({
       'Pengguna Anticeil';
 
     const myMemberInfo = members.find((m) => m.id === currentUserId || m.email === currentUser?.email);
-    let myRole: CommunityRole = myMemberInfo?.role || 'member';
-    if (activeHub?.role === 'owner') myRole = 'owner';
-    else if (activeHub?.role === 'admin') myRole = 'admin';
+    let myRole: ColonyRole = myMemberInfo?.role || 'member';
+    if (activeColony?.role === 'owner') myRole = 'owner';
+    else if (activeColony?.role === 'admin') myRole = 'admin';
 
-    const payload: Partial<CommunityMessage> = {
+    const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
       senderName: currentUserName,
@@ -344,7 +344,7 @@ export function useMessageActions({
     };
 
     try {
-      const saved = await communityApi.sendMessage(activeChannel.id, payload);
+      const saved = await colonyApi.sendMessage(activeChannel.id, payload);
       setMessagesMap((prev) => {
         const list = prev[activeChannel.id] || [];
         if (list.some((m) => m.id === saved.id)) return prev;
@@ -377,7 +377,7 @@ export function useMessageActions({
       };
     });
     try {
-      await communityApi.deleteMessage(msgId);
+      await colonyApi.deleteMessage(msgId);
     } catch (err) {
       console.error('Failed to delete message', err);
     }
@@ -409,7 +409,7 @@ export function useMessageActions({
     });
 
     try {
-      await communityApi.toggleReaction(msgId, emoji, currentUserId);
+      await colonyApi.toggleReaction(msgId, emoji, currentUserId);
     } catch (err) {
       console.error('Failed to toggle reaction', err);
     }
@@ -419,7 +419,7 @@ export function useMessageActions({
   const handleTogglePin = async (msgId: string) => {
     if (!activeChannel) return;
     try {
-      const updated = await communityApi.togglePinMessage(
+      const updated = await colonyApi.togglePinMessage(
         msgId,
         activeChannel.id,
         currentUser?.firstName || currentUser?.email || 'You',

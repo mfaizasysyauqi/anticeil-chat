@@ -1,4 +1,4 @@
-export type CommunityRole =
+export type ColonyRole =
   | 'owner'
   | 'admin'
   | 'moderator'
@@ -13,29 +13,29 @@ export type CommunityRole =
   | 'pro';
 
 export type {
-  CommunityHubId,
+  ColonyId,
   CommunityCustomEmoji,
-  CommunityHub,
-} from '@/lib/community-hubs';
+  Colony,
+} from '@/lib/colony';
 
-export type CommunityChannelType = 'text' | 'voice' | 'forum' | 'kanban';
+export type ColonyChannelType = 'text' | 'voice' | 'forum' | 'kanban';
 
-export type CommunityChannel = {
+export type ColonyChannel = {
   id: string;
   name: string;
   description: string;
   category: 'CHANNELS' | 'DIRECT MESSAGES';
-  hubId?: string;
+  colonyId?: string;
   isDirectMessage?: boolean;
   dmUserId?: string;
   unreadCount?: number;
-  type?: CommunityChannelType;
+  type?: ColonyChannelType;
   isPrivate?: boolean;
   slowmode?: number;
   contentVisibility?: 'default' | 'spoiler' | 'nsfw';
 };
 
-export function resolveChannelType(channel?: Partial<CommunityChannel> | null): CommunityChannelType {
+export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {
   if (!channel) return 'text';
   const rawType = (channel.type || '').toLowerCase();
   if (rawType === 'voice' || rawType === 'forum' || rawType === 'kanban') {
@@ -87,7 +87,7 @@ export type CommunityAttachment = {
   };
 };
 
-export type CommunityMessageReply = {
+export type ColonyMessageReply = {
   id: string;
   senderId: string;
   senderName: string;
@@ -95,15 +95,15 @@ export type CommunityMessageReply = {
   senderAvatar?: string | null;
 };
 
-export type CommunityMessage = {
-  replyTo?: CommunityMessageReply | null;
+export type ColonyMessage = {
+  replyTo?: ColonyMessageReply | null;
   id: string;
   channelId: string;
   senderId: string;
   senderName: string;
   senderEmail: string;
   senderAvatar?: string | null;
-  senderRole: CommunityRole;
+  senderRole: ColonyRole;
   content: string;
   createdAt: string;
   attachments?: CommunityAttachment[];
@@ -114,18 +114,18 @@ export type CommunityMessage = {
   threadId?: string | null;
 };
 
-export type CommunityChannelNotificationLevel = 'default' | 'all' | 'mentions' | 'nothing';
+export type ColonyChannelNotificationLevel = 'default' | 'all' | 'mentions' | 'nothing';
 
-export type CommunityChannelNotification = {
+export type ColonyChannelNotification = {
   id?: string;
   channelId: string;
   userId: string;
-  level: CommunityChannelNotificationLevel;
+  level: ColonyChannelNotificationLevel;
   isMuted: boolean;
   mutedUntil?: string | null;
 };
 
-export type CommunityThread = {
+export type ColonyThread = {
   id: string;
   channelId: string;
   name: string;
@@ -140,13 +140,13 @@ export type CommunityThread = {
   updatedAt?: string;
 };
 
-export type CommunityMember = {
+export type ColonyMember = {
   id: string;
   name: string;
   email: string;
   username?: string | null;
   avatar?: string | null;
-  role: CommunityRole;
+  role: ColonyRole;
   roleLabel?: string;
   platformRole?: string;
   projectRole?: string | null;
@@ -159,7 +159,7 @@ export type CommunityMember = {
 
 export type CommunityAuditEntry = {
   id: string;
-  hubId: string;
+  colonyId: string;
   action: string;
   actorName: string;
   targetName?: string;
@@ -169,7 +169,7 @@ export type CommunityAuditEntry = {
 
 export type CommunityInvite = {
   id: string;
-  hubId: string;
+  colonyId: string;
   code: string;
   inviterName?: string;
   uses: number;
@@ -178,9 +178,9 @@ export type CommunityInvite = {
   createdAt: string;
 };
 
-export type CommunityBan = {
+export type ColonyBan = {
   id: string;
-  hubId: string;
+  colonyId: string;
   userId: string;
   userName: string;
   userEmail?: string;
@@ -191,7 +191,7 @@ export type CommunityBan = {
 
 export type CommunityCustomRole = {
   id: string;
-  hubId: string;
+  colonyId: string;
   name: string;
   color: string;
   permissions: string[];
@@ -199,7 +199,7 @@ export type CommunityCustomRole = {
   position?: number;
 };
 
-export type CommunityHubStats = {
+export type ColonyStats = {
   totalMessages: number;
   totalChannels: number;
   totalMembers: number;
@@ -208,34 +208,24 @@ export type CommunityHubStats = {
   channelActivity: Array<{ channelId: string; channelName: string; messageCount: number }>;
 };
 
-// ── Domain Aliases (Aligning Code with UI/UX: Server, Channel, Chat) ──
-import type { CommunityHub } from '@/lib/community-hubs';
+import type { Colony } from '@/lib/colony';
 
-export type Colony = CommunityHub;
-export type ColonyId = string;
-export type ColonyRole = CommunityRole;
-export type ColonyMember = CommunityMember;
-export type ColonyInvite = CommunityInvite;
-export type ColonyBan = CommunityBan;
-export type ColonyCustomRole = CommunityCustomRole;
-export type ColonyStats = CommunityHubStats;
-export type ColonyAuditEntry = CommunityAuditEntry;
-export type ColonyChannel = CommunityChannel;
-export type ColonyMessage = CommunityMessage;
+// ── Domain Aliases ────────────────────────────────────────────────────
 
-export type Server = CommunityHub;
+
+export type Server = Colony;
 export type ServerId = string;
-export type ServerRole = CommunityRole;
-export type Channel = CommunityChannel;
-export type ChannelType = CommunityChannelType;
-export type ChatMessage = CommunityMessage;
+export type ServerRole = ColonyRole;
+export type Channel = ColonyChannel;
+export type ChannelType = ColonyChannelType;
+export type ChatMessage = ColonyMessage;
 export type ChatAttachment = CommunityAttachment;
-export type ChatThread = CommunityThread;
-export type ServerMember = CommunityMember;
+export type ChatThread = ColonyThread;
+export type ServerMember = ColonyMember;
 export type ServerInvite = CommunityInvite;
-export type ServerBan = CommunityBan;
+export type ServerBan = ColonyBan;
 export type ServerCustomRole = CommunityCustomRole;
-export type ServerStats = CommunityHubStats;
+export type ServerStats = ColonyStats;
 export type ServerAuditEntry = CommunityAuditEntry;
-export type ChannelNotification = CommunityChannelNotification;
-export type ChannelNotificationLevel = CommunityChannelNotificationLevel;
+export type ChannelNotification = ColonyChannelNotification;
+export type ChannelNotificationLevel = ColonyChannelNotificationLevel;

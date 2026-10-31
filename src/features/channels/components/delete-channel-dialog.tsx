@@ -8,10 +8,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { CommunityChannel } from '@/chat/chat-types';
+import type { ColonyChannel } from '@/chat/chat-types';
 
 export interface DeleteChannelDialogProps {
-  channelToDelete: CommunityChannel | null;
+  channelToDelete: ColonyChannel | null;
   onClose: () => void;
   onDeleteConfirm: () => void;
   t: (key: string) => string;

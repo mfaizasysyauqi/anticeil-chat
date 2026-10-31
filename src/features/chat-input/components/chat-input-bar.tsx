@@ -27,12 +27,12 @@ import { ChatAppsPopover } from './chat-apps-popover';
 import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { MAX_MESSAGE_CHARS } from '../utils/text-limit';
-import type { CommunityChannel, CommunityHub } from '@/chat/chat-types';
+import type { ColonyChannel, Colony } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/anticeil-media-data';
 
 export interface ChatInputBarProps {
-  activeChannel: CommunityChannel | null;
-  activeHub: CommunityHub | null;
+  activeChannel: ColonyChannel | null;
+  activeColony: Colony | null;
   channelPaddingClass?: string;
   stagedAttachment: { name: string; size?: string; url?: string; type?: string } | null;
   setStagedAttachment: (attachment: any) => void;
@@ -73,7 +73,7 @@ export interface ChatInputBarProps {
 
 export function ChatInputBar({
   activeChannel,
-  activeHub,
+  activeColony,
   channelPaddingClass = 'px-4 lg:px-6',
   stagedAttachment,
   setStagedAttachment,
@@ -367,7 +367,7 @@ export function ChatInputBar({
             setMediaSearchQuery={setMediaSearchQuery}
             selectedGifCategory={selectedGifCategory}
             setSelectedGifCategory={setSelectedGifCategory}
-            activeHub={activeHub}
+            activeColony={activeColony}
             serverDbEmojis={serverDbEmojis}
             serverDbStickers={serverDbStickers}
             onSelectEmoji={onSelectEmoji}

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { communityApi } from '../chat-api';
+import { colonyApi } from '../chat-api';
 import type {
-  CommunityChannel,
-  CommunityThread,
-  CommunityMessage,
+  ColonyChannel,
+  ColonyThread,
+  ColonyMessage,
 } from '@/chat/chat-types';
 
 export interface UseThreadManagerOptions {
-  activeChannel: CommunityChannel | null;
+  activeChannel: ColonyChannel | null;
   activeChannelId?: string;
   currentUser: any;
   t: (key: string) => string;
@@ -22,14 +22,14 @@ export function useThreadManager({
 }: UseThreadManagerOptions) {
   // ── Discord Threads ───────────────────────────────────
   const [isThreadsPopoverOpen, setIsThreadsPopoverOpen] = useState(false);
-  const [channelThreads, setChannelThreads] = useState<CommunityThread[]>([]);
+  const [channelThreads, setChannelThreads] = useState<ColonyThread[]>([]);
   const [threadSearchQuery, setThreadSearchQuery] = useState('');
   const [isCreateThreadModalOpen, setIsCreateThreadModalOpen] = useState(false);
   const [newThreadName, setNewThreadName] = useState('');
   const [newThreadInitialMsg, setNewThreadInitialMsg] = useState('');
   const [isSubmittingThread, setIsSubmittingThread] = useState(false);
-  const [activeThread, setActiveThread] = useState<CommunityThread | null>(null);
-  const [threadMessages, setThreadMessages] = useState<CommunityMessage[]>([]);
+  const [activeThread, setActiveThread] = useState<ColonyThread | null>(null);
+  const [threadMessages, setThreadMessages] = useState<ColonyMessage[]>([]);
   const [threadInputText, setThreadInputText] = useState('');
   const [isThreadDrawerOpen, setIsThreadDrawerOpen] = useState(false);
 
@@ -40,7 +40,7 @@ export function useThreadManager({
   const [forumNewTitle, setForumNewTitle] = useState('');
   const [forumNewMessage, setForumNewMessage] = useState('');
   const [isSubmittingForumPost, setIsSubmittingForumPost] = useState(false);
-  const [threadsMap, setThreadsMap] = useState<Record<string, CommunityThread[]>>({});
+  const [threadsMap, setThreadsMap] = useState<Record<string, ColonyThread[]>>({});
 
   // Load thread messages when an active thread is selected
   useEffect(() => {
@@ -48,7 +48,7 @@ export function useThreadManager({
     let mounted = true;
     const loadThreadMsgs = async () => {
       try {
-        const msgs = await communityApi.getThreadMessages(activeThread.id);
+        const msgs = await colonyApi.getThreadMessages(activeThread.id);
         if (mounted && msgs) {
           setThreadMessages(msgs);
         }
@@ -66,7 +66,7 @@ export function useThreadManager({
   const handleCreateThread = async (name: string, initialMessage?: string) => {
     if (!activeChannel) return;
     try {
-      const created = await communityApi.createThread(activeChannel.id, {
+      const created = await colonyApi.createThread(activeChannel.id, {
         name,
         creatorName: currentUser?.firstName || currentUser?.email || 'You',
         creatorAvatar: currentUser?.imageUrl ?? null,
@@ -95,7 +95,7 @@ export function useThreadManager({
     if (typeof contentOrEvent !== 'string') {
       setThreadInputText('');
     }
-    const newMsg: CommunityMessage = {
+    const newMsg: ColonyMessage = {
       id: `msg_th_${Date.now()}`,
       channelId: activeChannel.id,
       threadId: activeThread.id,
@@ -111,7 +111,7 @@ export function useThreadManager({
     setThreadMessages((prev) => [...prev, newMsg]);
 
     try {
-      const res = await communityApi.sendThreadMessage(activeThread.id, activeChannel.id, {
+      const res = await colonyApi.sendThreadMessage(activeThread.id, activeChannel.id, {
         content,
         senderName: currentUser?.firstName || currentUser?.email || 'You',
         senderAvatar: currentUser?.imageUrl ?? null,
@@ -150,7 +150,7 @@ export function useThreadManager({
     if (!activeChannel || !forumNewTitle.trim()) return;
     setIsSubmittingForumPost(true);
     try {
-      const created = await communityApi.createThread(activeChannel.id, {
+      const created = await colonyApi.createThread(activeChannel.id, {
         name: forumNewTitle.trim(),
         creatorName: currentUser?.firstName || currentUser?.email || 'You',
         creatorAvatar: currentUser?.imageUrl ?? null,

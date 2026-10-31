@@ -2,35 +2,35 @@ import { useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import {
-  CommunityChannel,
-  CommunityHub,
-  CommunityMember,
-  CommunityMessage,
-  CommunityRole,
+  ColonyChannel,
+  Colony,
+  ColonyMember,
+  ColonyMessage,
+  ColonyRole,
 } from '@/chat/chat-types';
 import { EXTENDED_DISCORD_APPS } from '../anticeil-media-data';
-import { communityApi } from '../chat-api';
+import { colonyApi } from '../chat-api';
 
 export interface UseActivityLauncherOptions {
-  channels: CommunityChannel[];
-  setChannels: React.Dispatch<React.SetStateAction<CommunityChannel[]>>;
-  dmChannels: CommunityChannel[];
-  activeChannel: CommunityChannel | null;
+  channels: ColonyChannel[];
+  setChannels: React.Dispatch<React.SetStateAction<ColonyChannel[]>>;
+  dmChannels: ColonyChannel[];
+  activeChannel: ColonyChannel | null;
   activeCallChannelId: string | null;
-  activeHubId: string;
-  activeHub: CommunityHub | null;
+  activeColonyId: string;
+  activeColony: Colony | null;
   currentUser: any;
-  members: CommunityMember[];
+  members: ColonyMember[];
   socket?: Socket | null;
   t: (key: string) => string;
   setSelectedActivityAppId: (appId: string) => void;
   setIsTemplatePopoverOpen: (open: boolean) => void;
-  setActiveHubId: (id: string) => void;
+  setActiveColonyId: (id: string) => void;
   setActiveChannelId: (id: string) => void;
   setActiveCallChannelId: (id: string | null) => void;
   setIsCallPiP: (pip: boolean) => void;
   setIsActivityOpen: (open: boolean) => void;
-  setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, CommunityMessage[]>>>;
+  setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, ColonyMessage[]>>>;
 }
 
 export function useActivityLauncher(options: UseActivityLauncherOptions) {
@@ -40,15 +40,15 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
     dmChannels,
     activeChannel,
     activeCallChannelId,
-    activeHubId,
-    activeHub,
+    activeColonyId,
+    activeColony,
     currentUser,
     members,
     socket,
     t,
     setSelectedActivityAppId,
     setIsTemplatePopoverOpen,
-    setActiveHubId,
+    setActiveColonyId,
     setActiveChannelId,
     setActiveCallChannelId,
     setIsCallPiP,
@@ -72,19 +72,19 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       const isDM = targetChannelId?.startsWith('dm-') || targetChannel?.isDirectMessage;
 
       // 2. Resolve destination channel for voice/activity stage:
-      let voiceDest: CommunityChannel | null = null;
+      let voiceDest: ColonyChannel | null = null;
 
       if (isDM) {
         // In DM, the DM channel itself is the call/activity stage
         const dmId = targetChannelId || targetChannel?.id || 'dm-chat';
         let dmCh = channels.find((c) => c.id === dmId);
         if (!dmCh) {
-          const fallbackDM: CommunityChannel = {
+          const fallbackDM: ColonyChannel = {
             id: dmId,
             name: targetChannel?.name || 'Direct Message',
             description: `Direct Message (${dmId})`,
             category: 'DIRECT MESSAGES',
-            hubId: 'anticeil',
+            colonyId: 'anticeil',
             isDirectMessage: true,
             type: 'text',
           };
@@ -122,8 +122,8 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       };
 
       if (voiceDest) {
-        if (voiceDest.hubId && voiceDest.hubId !== activeHubId) {
-          setActiveHubId(voiceDest.hubId);
+        if (voiceDest.colonyId && voiceDest.colonyId !== activeColonyId) {
+          setActiveColonyId(voiceDest.colonyId);
         }
         setActiveChannelId(voiceDest.id);
         setActiveCallChannelId(voiceDest.id);
@@ -153,9 +153,9 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
           textChannelToSendId = targetChannelId;
         } else {
           // Voice channel selected in server: post to the hub's main text channel or to the voice channel's chat
-          const hubId = voiceDest?.hubId || activeHubId;
+          const colonyId = voiceDest?.colonyId || activeColonyId;
           const hubTextCh = channels.find(
-            (c) => (c.hubId || 'anticeil') === hubId && (c.type === 'text' || !c.type),
+            (c) => (c.colonyId || 'anticeil') === colonyId && (c.type === 'text' || !c.type),
           );
           textChannelToSendId = hubTextCh?.id || targetChannelId || voiceDest?.id || null;
         }
@@ -171,11 +171,11 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
           const myMemberInfo = members.find(
             (m) => m.id === currentUserId || m.email === currentUser?.email,
           );
-          let myRole: CommunityRole = myMemberInfo?.role || 'member';
-          if (activeHub?.role === 'owner') myRole = 'owner';
-          else if (activeHub?.role === 'admin') myRole = 'admin';
+          let myRole: ColonyRole = myMemberInfo?.role || 'member';
+          if (activeColony?.role === 'owner') myRole = 'owner';
+          else if (activeColony?.role === 'admin') myRole = 'admin';
 
-          const payload: Partial<CommunityMessage> = {
+          const payload: Partial<ColonyMessage> = {
             channelId: textChannelToSendId,
             senderId: currentUserId,
             senderName: currentUserName,
@@ -207,7 +207,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
           };
 
           try {
-            const saved = await communityApi.sendMessage(textChannelToSendId, payload);
+            const saved = await colonyApi.sendMessage(textChannelToSendId, payload);
             setMessagesMap((prev) => {
               const list = prev[textChannelToSendId!] || [];
               if (list.some((m) => m.id === saved.id)) return prev;
@@ -215,7 +215,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
             });
           } catch (err) {
             console.error('Failed to send activity invite message', err);
-            const optimisticMsg: CommunityMessage = {
+            const optimisticMsg: ColonyMessage = {
               id: `msg-act-${Date.now()}`,
               channelId: textChannelToSendId,
               senderId: currentUserId,
@@ -243,8 +243,8 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       dmChannels,
       activeChannel,
       activeCallChannelId,
-      activeHubId,
-      setActiveHubId,
+      activeColonyId,
+      setActiveColonyId,
       setActiveChannelId,
       setActiveCallChannelId,
       setIsCallPiP,
@@ -253,7 +253,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       t,
       currentUser,
       members,
-      activeHub,
+      activeColony,
       setMessagesMap,
     ],
   );

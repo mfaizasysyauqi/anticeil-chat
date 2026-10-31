@@ -33,16 +33,16 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
-  type CommunityHub,
-  type CommunityChannel,
-  type CommunityChannelType,
+  type Colony,
+  type ColonyChannel,
+  type ColonyChannelType,
   resolveChannelType,
 } from '@/chat/chat-types';
 import type { ColonySettingsSection } from '@/features/colony-settings';
 
 export interface ColonyChannelsSidebarProps {
-  activeHub: CommunityHub | null;
-  channels: CommunityChannel[];
+  activeColony: Colony | null;
+  channels: ColonyChannel[];
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
   activeCallChannelId: string | null;
@@ -57,9 +57,9 @@ export interface ColonyChannelsSidebarProps {
   onItemClick?: () => void;
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
-  onOpenCreateChannel: (category: string, type?: CommunityChannelType) => void;
+  onOpenCreateChannel: (category: string, type?: ColonyChannelType) => void;
   onOpenCreateHub?: () => void;
-  onOpenEditChannel: (channel: CommunityChannel) => void;
+  onOpenEditChannel: (channel: ColonyChannel) => void;
   onUpdateHubIcon?: (file: File) => Promise<void> | void;
   setIsCallPiP: (pip: boolean) => void;
   calendarEvents?: any[];
@@ -69,7 +69,7 @@ export interface ColonyChannelsSidebarProps {
 }
 
 export function ColonyChannelsSidebar({
-  activeHub,
+  activeColony,
   channels,
   activeChannelId,
   setActiveChannelId,
@@ -97,16 +97,16 @@ export function ColonyChannelsSidebar({
 }: ColonyChannelsSidebarProps) {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
 
-  const hubChannels = channels
-    .filter((c) => (c.hubId || 'anticeil') === (activeHub?.id || 'anticeil') && !c.isDirectMessage)
+  const colonyChannels = channels
+    .filter((c) => (c.colonyId || 'anticeil') === (activeColony?.id || 'anticeil') && !c.isDirectMessage)
     .map((c) => ({
       ...c,
       type: resolveChannelType(c),
     }));
-  const textChannels = hubChannels.filter((c) => c.type === 'text');
-  const voiceChannels = hubChannels.filter((c) => c.type === 'voice');
-  const forumChannels = hubChannels.filter((c) => c.type === 'forum');
-  const kanbanChannels = hubChannels.filter((c) => c.type === 'kanban');
+  const textChannels = colonyChannels.filter((c) => c.type === 'text');
+  const voiceChannels = colonyChannels.filter((c) => c.type === 'voice');
+  const forumChannels = colonyChannels.filter((c) => c.type === 'forum');
+  const kanbanChannels = colonyChannels.filter((c) => c.type === 'kanban');
 
   return (
     <>
@@ -118,7 +118,7 @@ export function ColonyChannelsSidebar({
             ref={serverIconQuickInputRef}
             onChange={async (e) => {
               const file = e.target.files?.[0];
-              if (!file || !activeHub) return;
+              if (!file || !activeColony) return;
               if (onUpdateHubIcon) {
                 await onUpdateHubIcon(file);
               }
@@ -134,15 +134,15 @@ export function ColonyChannelsSidebar({
                 className="w-full h-8 px-2 flex items-center justify-between rounded-md hover:bg-sidebar-accent/60 transition-colors cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-sidebar-ring group"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  {activeHub?.iconUrl ? (
+                  {activeColony?.iconUrl ? (
                     <img
-                      src={activeHub.iconUrl}
-                      alt={activeHub.name}
+                      src={activeColony.iconUrl}
+                      alt={activeColony.name}
                       className="w-5 h-5 rounded-[6px] object-cover shrink-0 border border-white/10"
                     />
                   ) : null}
                   <span className="text-sm font-semibold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">
-                    {activeHub?.name || t('Server')}
+                    {activeColony?.name || t('Server')}
                   </span>
                 </div>
                 <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0 ml-1 transition-colors" />
@@ -172,7 +172,7 @@ export function ColonyChannelsSidebar({
               {/* Invite & Settings */}
               <DropdownMenuItem
                 onClick={() => {
-                  const code = activeHub?.inviteCode || activeHub?.id;
+                  const code = activeColony?.inviteCode || activeColony?.id;
                   const url = `${window.location.origin}/messages?invite=${code}`;
                   navigator.clipboard.writeText(url);
                   toast.success(t('Link undangan berhasil disalin! 📋'));
@@ -238,10 +238,10 @@ export function ColonyChannelsSidebar({
       {/* Scroll Area: Server channels grouped by category */}
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin]">
         {/* Discord-style Server Events & Boost Entry */}
-        {activeHub && (
+        {activeColony && (
           <div className="space-y-0.5 mb-3">
             {(() => {
-              const count = calendarEvents.filter((ev) => ev.hubId === activeHub.id || (ev.hubName && ev.hubName.toLowerCase() === activeHub.name.toLowerCase())).length;
+              const count = calendarEvents.filter((ev) => ev.colonyId === activeColony.id || (ev.hubName && ev.hubName.toLowerCase() === activeColony.name.toLowerCase())).length;
               return (
                 <button
                   type="button"
@@ -270,7 +270,7 @@ export function ColonyChannelsSidebar({
         )}
 
         <div className="space-y-4">
-          {hubChannels.length === 0 ? (
+          {colonyChannels.length === 0 ? (
             <div className="px-2.5 py-4 text-center">
               <p className="text-[11px] text-muted-foreground/60 leading-relaxed mb-2">
                 {t('Belum ada channel')}

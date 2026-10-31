@@ -3,18 +3,18 @@ import { Plus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import type { CommunityHub, CommunityCustomEmoji } from '@/chat/chat-types';
+import type { Colony, CommunityCustomEmoji } from '@/chat/chat-types';
 
 interface EmojisTabProps {
-  activeHub: CommunityHub;
+  activeColony: Colony;
   serverEmojis: CommunityCustomEmoji[];
   setServerEmojis: React.Dispatch<React.SetStateAction<CommunityCustomEmoji[]>>;
-  onUpdateHub: (hubId: string, updates: Partial<CommunityHub>) => Promise<void>;
+  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   t: (key: string) => string;
 }
 
 export function EmojisTab({
-  activeHub,
+  activeColony,
   serverEmojis,
   setServerEmojis,
   onUpdateHub,
@@ -52,7 +52,7 @@ export function EmojisTab({
                     onClick={async () => {
                       const next = serverEmojis.filter((e) => e.id !== em.id);
                       setServerEmojis(next);
-                      await onUpdateHub(activeHub.id, { emojis: next });
+                      await onUpdateHub(activeColony.id, { emojis: next });
                       toast.success(t(`Emoji :${em.name}: dihapus`));
                     }}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px]"
@@ -122,7 +122,7 @@ export function EmojisTab({
               setServerEmojis(next);
               setNewEmojiName('');
               setNewEmojiChar('');
-              await onUpdateHub(activeHub.id, { emojis: next });
+              await onUpdateHub(activeColony.id, { emojis: next });
               toast.success(t(`Emoji :${newEm.name}: berhasil ditambahkan! ✨`));
             }}
           >

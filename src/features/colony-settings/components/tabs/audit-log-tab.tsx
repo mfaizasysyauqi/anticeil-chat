@@ -5,18 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityHub, CommunityAuditEntry } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { Colony, CommunityAuditEntry } from '@/chat/chat-types';
 
 interface AuditLogTabProps {
-  activeHub: CommunityHub;
+  activeColony: Colony;
   serverAuditLogs: CommunityAuditEntry[];
   setServerAuditLogs: React.Dispatch<React.SetStateAction<CommunityAuditEntry[]>>;
   t: (key: string) => string;
 }
 
 export function AuditLogTab({
-  activeHub,
+  activeColony,
   serverAuditLogs,
   setServerAuditLogs,
   t,
@@ -40,7 +40,7 @@ export function AuditLogTab({
           variant="ghost"
           size="sm"
           onClick={async () => {
-            const logs = await communityApi.getAuditLog(activeHub.id);
+            const logs = await colonyApi.getAuditLog(activeColony.id);
             setServerAuditLogs(logs);
             toast.success(t('Log audit dimuat ulang! 📜'));
           }}

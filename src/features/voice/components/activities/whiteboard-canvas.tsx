@@ -6,11 +6,11 @@ import '@excalidraw/excalidraw/index.css';
 import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
-import { CommunityChannel } from '@/chat/chat-types';
+import { ColonyChannel } from '@/chat/chat-types';
 import { toast } from 'sonner';
 
 export interface WhiteboardCanvasProps {
-  channel: CommunityChannel;
+  channel: ColonyChannel;
   socket: Socket | null;
   currentUser?: any;
   currentUserName?: string;

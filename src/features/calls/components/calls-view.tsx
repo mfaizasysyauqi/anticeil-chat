@@ -22,12 +22,12 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CallLogItem, CallsTab } from '../types';
 import type { FriendMember } from '@/features/friends';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 export interface CallsViewProps {
   calls: CallLogItem[];
   friends: FriendMember[];
-  hubs?: CommunityHub[];
+  colonies?: Colony[];
   onStartCall: (friend: FriendMember, isVideo?: boolean) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
@@ -36,7 +36,7 @@ export interface CallsViewProps {
 export function CallsView({
   calls,
   friends,
-  hubs = [],
+  colonies = [],
   onStartCall,
   onOpenSidebar,
   horizontalPadding = 'px-4 sm:px-6',
@@ -223,7 +223,7 @@ export function CallsView({
             ) : (
               filteredCalls.map((call) => {
                 // Determine whether this is a Server voice channel or Friend DM call
-                const isExplicitServer = Boolean(call.hubName || call.hubId);
+                const isExplicitServer = Boolean(call.hubName || call.colonyId);
                 const isGeneralVoiceName =
                   call.peerName.toLowerCase().includes('voice') ||
                   call.peerName.toLowerCase() === 'general' ||
@@ -239,12 +239,12 @@ export function CallsView({
 
                 // Find matching hub if it's a server call
                 const matchedHub =
-                  hubs.find(
+                  colonies.find(
                     (h) =>
-                      (call.hubId && h.id === call.hubId) ||
+                      (call.colonyId && h.id === call.colonyId) ||
                       (call.hubName && h.name.toLowerCase() === call.hubName.toLowerCase()) ||
                       h.id === call.peerId
-                  ) || hubs.find((h) => h.id !== 'anticeil') || hubs[0];
+                  ) || colonies.find((h) => h.id !== 'anticeil') || colonies[0];
 
                 const serverName = call.hubName || (matchedHub?.id !== 'anticeil' ? matchedHub?.name : null) || 'Server Komunitas';
                 const serverIcon = call.hubIcon || (matchedHub?.id !== 'anticeil' ? matchedHub?.iconUrl : null) || null;

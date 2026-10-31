@@ -1,10 +1,10 @@
 import React from 'react';
 import { Sparkles, Bot, Layers, Terminal, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 export interface ColonyIconProps {
-  hub: CommunityHub;
+  hub: Colony;
   className?: string;
 }
 

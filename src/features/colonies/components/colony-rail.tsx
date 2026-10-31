@@ -3,24 +3,24 @@ import { Plus, Users, Globe, UserPlus, Compass } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import type { CommunityHub } from '@/lib/community-hubs';
+import type { Colony } from '@/lib/colony';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ServerIcon } from './colony-icon';
 import { toast } from 'sonner';
 
 export interface ColonyRailProps {
-  servers?: CommunityHub[];
-  hubs?: CommunityHub[];
+  servers?: Colony[];
+  colonies?: Colony[];
   activeServerId?: string;
-  activeHubId?: string;
+  activeColonyId?: string;
   unreadCounts?: Record<string, number | string>;
   onSelectServer?: (serverId: string) => void;
-  onSelectHub?: (hubId: string) => void;
+  onSelectHub?: (colonyId: string) => void;
   onOpenCreateServer?: () => void;
   onOpenCreateHub?: () => void;
   platformName?: string;
-  renderServerIcon?: (server: CommunityHub) => React.ReactNode;
-  renderHubIcon?: (hub: CommunityHub) => React.ReactNode;
+  renderServerIcon?: (server: Colony) => React.ReactNode;
+  renderHubIcon?: (hub: Colony) => React.ReactNode;
   railMode?: 'colonies' | 'servers' | 'friends';
   onToggleRailMode?: () => void;
   friends?: any[];
@@ -41,7 +41,7 @@ function formatUnreadBadge(count: number | string | undefined): string | null {
 }
 
 /** Sum all server (non-DM, non-anticeil) unread counts */
-function sumServerUnread(counts: Record<string, number | string> | undefined, servers: CommunityHub[]): string | null {
+function sumServerUnread(counts: Record<string, number | string> | undefined, servers: Colony[]): string | null {
   if (!counts) return null;
   let total = 0;
   for (const srv of servers) {
@@ -84,9 +84,9 @@ function sumFriendUnread(counts: Record<string, number | string> | undefined, fr
 
 export function ColonyRail({
   servers,
-  hubs,
+  colonies,
   activeServerId,
-  activeHubId,
+  activeColonyId,
   unreadCounts,
   onSelectServer,
   onSelectHub,
@@ -128,8 +128,8 @@ export function ColonyRail({
     }
   };
 
-  const serverList = servers || hubs || [];
-  const currentActiveId = activeServerId || activeHubId || '';
+  const serverList = servers || colonies || [];
+  const currentActiveId = activeServerId || activeColonyId || '';
   const handleSelect = onSelectServer || onSelectHub || (() => {});
   const handleCreate = onOpenCreateServer || onOpenCreateHub || (() => {});
   const renderIcon = renderServerIcon || renderHubIcon || ((srv) => <ServerIcon hub={srv} />);

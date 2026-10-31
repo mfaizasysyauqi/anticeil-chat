@@ -1,9 +1,9 @@
-import { CommunityChannel, CommunityHub, CommunityMember, CommunityMessage } from './chat-types';
-export { DEFAULT_HUBS, loadStoredHubs, saveStoredHubs, DEFAULT_COLONIES, loadStoredColonies, saveStoredColonies } from '@/lib/community-hubs';
+import { ColonyChannel, Colony, ColonyMember, ColonyMessage } from './chat-types';
+export { DEFAULT_COLONIES, loadStoredColonies, saveStoredColonies } from '@/lib/colony';
 
-export const DEFAULT_CHANNELS: CommunityChannel[] = [];
-export const DEFAULT_MEMBERS: CommunityMember[] = [];
-export const INITIAL_MESSAGES: Record<string, CommunityMessage[]> = {};
+export const DEFAULT_CHANNELS: ColonyChannel[] = [];
+export const DEFAULT_MEMBERS: ColonyMember[] = [];
+export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {};
 
 // Domain aliases
 export const INITIAL_CHAT_MESSAGES = INITIAL_MESSAGES;
@@ -11,7 +11,7 @@ export const INITIAL_CHAT_MESSAGES = INITIAL_MESSAGES;
 const STORAGE_KEY_MESSAGES = 'anticeil_community_messages_v3';
 const STORAGE_KEY_CHANNELS = 'anticeil_community_channels_v3';
 
-export function loadStoredMessages(): Record<string, CommunityMessage[]> {
+export function loadStoredMessages(): Record<string, ColonyMessage[]> {
   try {
     const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
     if (!token) return {};
@@ -23,7 +23,7 @@ export function loadStoredMessages(): Record<string, CommunityMessage[]> {
   }
 }
 
-export function saveStoredMessages(messages: Record<string, CommunityMessage[]>): void {
+export function saveStoredMessages(messages: Record<string, ColonyMessage[]>): void {
   try {
     localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
   } catch (err) {
@@ -34,7 +34,7 @@ export function saveStoredMessages(messages: Record<string, CommunityMessage[]>)
 export const loadStoredChatMessages = loadStoredMessages;
 export const saveStoredChatMessages = saveStoredMessages;
 
-export function loadStoredChannels(): CommunityChannel[] {
+export function loadStoredChannels(): ColonyChannel[] {
   try {
     const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
     if (!token) return [];
@@ -46,7 +46,7 @@ export function loadStoredChannels(): CommunityChannel[] {
   }
 }
 
-export function saveStoredChannels(channels: CommunityChannel[]): void {
+export function saveStoredChannels(channels: ColonyChannel[]): void {
   try {
     localStorage.setItem(STORAGE_KEY_CHANNELS, JSON.stringify(channels));
   } catch (err) {
@@ -57,7 +57,7 @@ export function saveStoredChannels(channels: CommunityChannel[]): void {
 // ── Direct Messages Storage ──
 const STORAGE_KEY_DM_CHANNELS = 'anticeil_community_dm_channels_v3';
 
-export function loadStoredDmChannels(): CommunityChannel[] {
+export function loadStoredDmChannels(): ColonyChannel[] {
   try {
     if (typeof window === 'undefined') return [];
     const raw = localStorage.getItem(STORAGE_KEY_DM_CHANNELS);
@@ -71,7 +71,7 @@ export function loadStoredDmChannels(): CommunityChannel[] {
       return (
         id.startsWith('dm-') &&
         c?.category === 'DIRECT MESSAGES' &&
-        (!c?.hubId || c.hubId === 'anticeil') &&
+        (!c?.colonyId || c.colonyId === 'anticeil') &&
         c?.type !== 'voice' &&
         c?.type !== 'forum' &&
         c?.type !== 'kanban' &&
@@ -89,7 +89,7 @@ export function loadStoredDmChannels(): CommunityChannel[] {
   }
 }
 
-export function saveStoredDmChannels(channels: CommunityChannel[]): void {
+export function saveStoredDmChannels(channels: ColonyChannel[]): void {
   try {
     if (typeof window === 'undefined') return;
     const dmsOnly = channels.filter((c: any) => {
@@ -98,7 +98,7 @@ export function saveStoredDmChannels(channels: CommunityChannel[]): void {
       return (
         id.startsWith('dm-') &&
         c?.category === 'DIRECT MESSAGES' &&
-        (!c?.hubId || c.hubId === 'anticeil') &&
+        (!c?.colonyId || c.colonyId === 'anticeil') &&
         c?.type !== 'voice' &&
         c?.type !== 'forum' &&
         c?.type !== 'kanban' &&
@@ -121,9 +121,9 @@ const STORAGE_KEY_BANS = 'anticeil_community_bans_v3';
 const STORAGE_KEY_ROLES = 'anticeil_community_roles_v3';
 const STORAGE_KEY_AUDIT = 'anticeil_community_audit_v3';
 
-export function loadStoredInvites(hubId: string): any[] {
+export function loadStoredInvites(colonyId: string): any[] {
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEY_INVITES}_${hubId}`);
+    const raw = localStorage.getItem(`${STORAGE_KEY_INVITES}_${colonyId}`);
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {
@@ -131,17 +131,17 @@ export function loadStoredInvites(hubId: string): any[] {
   }
 }
 
-export function saveStoredInvites(hubId: string, invites: any[]): void {
+export function saveStoredInvites(colonyId: string, invites: any[]): void {
   try {
-    localStorage.setItem(`${STORAGE_KEY_INVITES}_${hubId}`, JSON.stringify(invites));
+    localStorage.setItem(`${STORAGE_KEY_INVITES}_${colonyId}`, JSON.stringify(invites));
   } catch (err) {
     console.error('Failed to save invites', err);
   }
 }
 
-export function loadStoredBans(hubId: string): any[] {
+export function loadStoredBans(colonyId: string): any[] {
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEY_BANS}_${hubId}`);
+    const raw = localStorage.getItem(`${STORAGE_KEY_BANS}_${colonyId}`);
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {
@@ -149,17 +149,17 @@ export function loadStoredBans(hubId: string): any[] {
   }
 }
 
-export function saveStoredBans(hubId: string, bans: any[]): void {
+export function saveStoredBans(colonyId: string, bans: any[]): void {
   try {
-    localStorage.setItem(`${STORAGE_KEY_BANS}_${hubId}`, JSON.stringify(bans));
+    localStorage.setItem(`${STORAGE_KEY_BANS}_${colonyId}`, JSON.stringify(bans));
   } catch (err) {
     console.error('Failed to save bans', err);
   }
 }
 
-export function loadStoredRoles(hubId: string): any[] {
+export function loadStoredRoles(colonyId: string): any[] {
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEY_ROLES}_${hubId}`);
+    const raw = localStorage.getItem(`${STORAGE_KEY_ROLES}_${colonyId}`);
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {
@@ -167,17 +167,17 @@ export function loadStoredRoles(hubId: string): any[] {
   }
 }
 
-export function saveStoredRoles(hubId: string, roles: any[]): void {
+export function saveStoredRoles(colonyId: string, roles: any[]): void {
   try {
-    localStorage.setItem(`${STORAGE_KEY_ROLES}_${hubId}`, JSON.stringify(roles));
+    localStorage.setItem(`${STORAGE_KEY_ROLES}_${colonyId}`, JSON.stringify(roles));
   } catch (err) {
     console.error('Failed to save roles', err);
   }
 }
 
-export function loadStoredAuditLog(hubId: string): any[] {
+export function loadStoredAuditLog(colonyId: string): any[] {
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEY_AUDIT}_${hubId}`);
+    const raw = localStorage.getItem(`${STORAGE_KEY_AUDIT}_${colonyId}`);
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {
@@ -185,9 +185,9 @@ export function loadStoredAuditLog(hubId: string): any[] {
   }
 }
 
-export function saveStoredAuditLog(hubId: string, logs: any[]): void {
+export function saveStoredAuditLog(colonyId: string, logs: any[]): void {
   try {
-    localStorage.setItem(`${STORAGE_KEY_AUDIT}_${hubId}`, JSON.stringify(logs));
+    localStorage.setItem(`${STORAGE_KEY_AUDIT}_${colonyId}`, JSON.stringify(logs));
   } catch (err) {
     console.error('Failed to save audit logs', err);
   }

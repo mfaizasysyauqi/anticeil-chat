@@ -8,7 +8,7 @@ export interface CallLogItem {
   channelId?: string;
   timestamp: string;
   duration?: string;
-  hubId?: string;
+  colonyId?: string;
   hubName?: string;
   hubIcon?: string | null;
   isDm?: boolean;

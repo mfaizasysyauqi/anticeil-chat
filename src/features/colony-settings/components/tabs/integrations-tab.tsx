@@ -3,18 +3,18 @@ import { Webhook, Copy, Bot, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityHub } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { Colony } from '@/chat/chat-types';
 
 interface IntegrationsTabProps {
-  activeHub: CommunityHub;
+  activeColony: Colony;
   onClose: () => void;
   onOpenWebhooks?: () => void;
   t: (key: string) => string;
 }
 
 export function IntegrationsTab({
-  activeHub,
+  activeColony,
   onClose,
   onOpenWebhooks,
   t,
@@ -54,13 +54,13 @@ export function IntegrationsTab({
           </div>
 
           <div className="rounded bg-muted/50 p-2.5 flex items-center justify-between text-xs font-mono">
-            <span className="truncate pr-2">{`${window.location.origin}/api/v1/community/webhook?hubId=${activeHub?.id}`}</span>
+            <span className="truncate pr-2">{`${window.location.origin}/api/v1/community/webhook?hubId=${activeColony?.id}`}</span>
             <Button
               size="sm"
               variant="ghost"
               className="h-6 px-2 text-[11px]"
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/api/v1/community/webhook?hubId=${activeHub?.id}`);
+                navigator.clipboard.writeText(`${window.location.origin}/api/v1/community/webhook?hubId=${activeColony?.id}`);
                 toast.success(t('URL Webhook disalin! 📋'));
               }}
             >
@@ -84,10 +84,10 @@ export function IntegrationsTab({
               variant="outline"
               className="h-7 text-xs"
               onClick={async () => {
-                await communityApi.testWebhook({
-                  hubId: activeHub.id,
+                await colonyApi.testWebhook({
+                  colonyId: activeColony.id,
                   botName: 'Anticeil Integration Assistant',
-                  content: `Halo! Integrasi automasi server #${activeHub.name} berjalan dengan normal. 🤖✨`,
+                  content: `Halo! Integrasi automasi server #${activeColony.name} berjalan dengan normal. 🤖✨`,
                 });
                 toast.success(t('Pesan tes bot berhasil dikirim ke saluran! 🚀'));
               }}

@@ -10,18 +10,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityHub, CommunityInvite } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { Colony, CommunityInvite } from '@/chat/chat-types';
 
 interface InvitesTabProps {
-  activeHub: CommunityHub;
+  activeColony: Colony;
   serverInvites: CommunityInvite[];
   setServerInvites: React.Dispatch<React.SetStateAction<CommunityInvite[]>>;
   t: (key: string) => string;
 }
 
 export function InvitesTab({
-  activeHub,
+  activeColony,
   serverInvites,
   setServerInvites,
   t,
@@ -47,7 +47,7 @@ export function InvitesTab({
         <div className="flex gap-2">
           <Input
             readOnly
-            value={`${window.location.origin}/messages?invite=${activeHub?.inviteCode || activeHub?.id}`}
+            value={`${window.location.origin}/messages?invite=${activeColony?.inviteCode || activeColony?.id}`}
             className="text-xs font-mono"
           />
           <Button
@@ -55,7 +55,7 @@ export function InvitesTab({
             variant="outline"
             onClick={() => {
               navigator.clipboard.writeText(
-                `${window.location.origin}/messages?invite=${activeHub?.inviteCode || activeHub?.id}`,
+                `${window.location.origin}/messages?invite=${activeColony?.inviteCode || activeColony?.id}`,
               );
               toast.success(t('Link undangan disalin! 📋'));
             }}
@@ -118,7 +118,7 @@ export function InvitesTab({
                       Date.now() +
                         (newInviteExpiry === '1d' ? 86400000 : newInviteExpiry === '7d' ? 7 * 86400000 : 30 * 86400000),
                     ).toISOString();
-              const inv = await communityApi.createInvite(activeHub.id, {
+              const inv = await colonyApi.createInvite(activeColony.id, {
                 maxUses: newInviteMaxUses,
                 expiresAt: expiryDate,
               });
@@ -167,7 +167,7 @@ export function InvitesTab({
                   className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                   onClick={async () => {
                     setServerInvites((prev) => prev.filter((i) => i.id !== inv.id));
-                    await communityApi.revokeInvite(activeHub.id, inv.id);
+                    await colonyApi.revokeInvite(activeColony.id, inv.id);
                     toast.success(t('Tautan undangan berhasil dibatalkan'));
                   }}
                 >

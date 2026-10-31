@@ -28,17 +28,17 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { communityApi } from '@/chat/chat-api';
+import { colonyApi } from '@/chat/chat-api';
 import type {
-  CommunityHub,
-  CommunityMember,
+  Colony,
+  ColonyMember,
   CommunityCustomRole,
   CommunityInvite,
-  CommunityBan,
+  ColonyBan,
   CommunityAuditEntry,
-  CommunityHubStats,
+  ColonyStats,
   CommunityCustomEmoji,
-  CommunityChannel,
+  ColonyChannel,
 } from '@/chat/chat-types';
 import {
   ProfileTab,
@@ -71,21 +71,21 @@ export type ColonySettingsSection =
 interface ColonySettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  activeHub: CommunityHub | null;
-  currentUser: CommunityMember | null;
-  members: CommunityMember[];
-  channels: CommunityChannel[];
+  activeColony: Colony | null;
+  currentUser: ColonyMember | null;
+  members: ColonyMember[];
+  channels: ColonyChannel[];
   initialSection?: ColonySettingsSection;
-  onUpdateHub: (hubId: string, updates: Partial<CommunityHub>) => Promise<void>;
-  onDeleteHub: (hub: CommunityHub) => void;
+  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onDeleteHub: (hub: Colony) => void;
   onOpenWebhooks?: () => void;
-  onUpdateMembers?: (updater: (prev: CommunityMember[]) => CommunityMember[]) => void;
+  onUpdateMembers?: (updater: (prev: ColonyMember[]) => ColonyMember[]) => void;
 }
 
 export function ColonySettingsDialog({
   isOpen,
   onClose,
-  activeHub,
+  activeColony,
   currentUser,
   members,
   channels,
@@ -112,27 +112,27 @@ export function ColonySettingsDialog({
 
   const [serverTags, setServerTags] = useState<string[]>([]);
   const [serverEmojis, setServerEmojis] = useState<CommunityCustomEmoji[]>([]);
-  const [serverStats, setServerStats] = useState<CommunityHubStats | null>(null);
+  const [serverStats, setServerStats] = useState<ColonyStats | null>(null);
   const [serverInvites, setServerInvites] = useState<CommunityInvite[]>([]);
-  const [serverBans, setServerBans] = useState<CommunityBan[]>([]);
+  const [serverBans, setServerBans] = useState<ColonyBan[]>([]);
   const [serverRoles, setServerRoles] = useState<CommunityCustomRole[]>([]);
   const [serverAuditLogs, setServerAuditLogs] = useState<CommunityAuditEntry[]>([]);
 
   // Ban dialog sub-flow
   const [isBanningUser, setIsBanningUser] = useState(false);
-  const [banTargetMember, setBanTargetMember] = useState<CommunityMember | null>(null);
+  const [banTargetMember, setBanTargetMember] = useState<ColonyMember | null>(null);
   const [banReasonInput, setBanReasonInput] = useState('');
 
   // Load sub-data on open
   useEffect(() => {
-    if (!isOpen || !activeHub) return;
-    setServerSettingsEditName(activeHub.name || '');
-    setServerSettingsEditDesc(activeHub.description || '');
-    setServerSettingsEditColor(activeHub.color || 'bg-indigo-600');
-    setServerSettingsEditIconUrl(activeHub.iconUrl || '');
-    setServerTags(activeHub.tags || ['komunitas', 'anticeil']);
+    if (!isOpen || !activeColony) return;
+    setServerSettingsEditName(activeColony.name || '');
+    setServerSettingsEditDesc(activeColony.description || '');
+    setServerSettingsEditColor(activeColony.color || 'bg-indigo-600');
+    setServerSettingsEditIconUrl(activeColony.iconUrl || '');
+    setServerTags(activeColony.tags || ['komunitas', 'anticeil']);
     setServerEmojis(
-      activeHub.emojis || [
+      activeColony.emojis || [
         { id: '1', name: 'rocket', char: '🚀' },
         { id: '2', name: 'fire', char: '🔥' },
         { id: '3', name: 'robot', char: '🤖' },
@@ -142,11 +142,11 @@ export function ColonySettingsDialog({
     const loadData = async () => {
       try {
         const [rolesRes, invitesRes, bansRes, auditRes, statsRes] = await Promise.all([
-          communityApi.getRoles(activeHub.id),
-          communityApi.getInvites(activeHub.id),
-          communityApi.getBans(activeHub.id),
-          communityApi.getAuditLog(activeHub.id),
-          communityApi.getHubStats(activeHub.id),
+          colonyApi.getRoles(activeColony.id),
+          colonyApi.getInvites(activeColony.id),
+          colonyApi.getBans(activeColony.id),
+          colonyApi.getAuditLog(activeColony.id),
+          colonyApi.getHubStats(activeColony.id),
         ]);
         setServerRoles(rolesRes || []);
         setServerInvites(invitesRes || []);
@@ -158,14 +158,14 @@ export function ColonySettingsDialog({
       }
     };
     loadData();
-  }, [isOpen, activeHub?.id]);
+  }, [isOpen, activeColony?.id]);
 
-  if (!isOpen || !activeHub) return null;
+  if (!isOpen || !activeColony) return null;
 
   const colonyGroups: SettingsNavGroup[] = [
     {
       key: 'COLONY_SETTINGS',
-      title: activeHub?.name || t('Colony'),
+      title: activeColony?.name || t('Colony'),
       items: [
         { id: 'profile', label: t('Profil Colony'), icon: <Globe className="h-4 w-4 shrink-0" /> },
         { id: 'colony-tag', label: t('Tag Colony'), icon: <Tag className="h-4 w-4 shrink-0" /> },
@@ -200,25 +200,25 @@ export function ColonySettingsDialog({
         initialMobileView={initialSection && initialSection !== 'profile' ? 'detail' : 'menu'}
         sidebarHeader={
           <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/50 border border-sidebar-border">
-            {activeHub?.iconUrl ? (
+            {activeColony?.iconUrl ? (
               <img
-                src={activeHub.iconUrl}
-                alt={activeHub.name}
+                src={activeColony.iconUrl}
+                alt={activeColony.name}
                 className="w-8 h-8 rounded-lg object-cover shrink-0"
               />
             ) : (
               <div
                 className={cn(
                   'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0',
-                  activeHub?.color || 'bg-indigo-600',
+                  activeColony?.color || 'bg-indigo-600',
                 )}
               >
-                {activeHub?.name ? activeHub.name.charAt(0).toUpperCase() : 'C'}
+                {activeColony?.name ? activeColony.name.charAt(0).toUpperCase() : 'C'}
               </div>
             )}
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-foreground truncate">
-                {activeHub?.name || t('Colony')}
+                {activeColony?.name || t('Colony')}
               </div>
               <div className="text-[10px] text-muted-foreground truncate">
                 {members.length} {t('Anggota')}
@@ -231,7 +231,7 @@ export function ColonySettingsDialog({
             type="button"
             onClick={() => {
               onClose();
-              onDeleteHub(activeHub);
+              onDeleteHub(activeColony);
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
           >
@@ -244,7 +244,7 @@ export function ColonySettingsDialog({
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   members={members}
                   serverTags={serverTags}
                   serverSettingsEditName={serverSettingsEditName}
@@ -264,7 +264,7 @@ export function ColonySettingsDialog({
               {/* 2. TAG SERVER */}
               {serverSettingsSection === 'colony-tag' && (
                 <ColonyTagsTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   serverTags={serverTags}
                   setServerTags={setServerTags}
                   onUpdateHub={onUpdateHub}
@@ -275,7 +275,7 @@ export function ColonySettingsDialog({
               {/* 3. ENGAGEMENT */}
               {serverSettingsSection === 'engagement' && (
                 <AnalyticsTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   serverStats={serverStats}
                   setServerStats={setServerStats}
                   channels={channels}
@@ -287,7 +287,7 @@ export function ColonySettingsDialog({
               {/* 4. BOOST PERKS */}
               {serverSettingsSection === 'boost' && (
                 <BoostTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   onUpdateHub={onUpdateHub}
                   t={t}
                 />
@@ -296,7 +296,7 @@ export function ColonySettingsDialog({
               {/* 5. EMOJI */}
               {serverSettingsSection === 'emoji' && (
                 <EmojisTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   serverEmojis={serverEmojis}
                   setServerEmojis={setServerEmojis}
                   onUpdateHub={onUpdateHub}
@@ -307,7 +307,7 @@ export function ColonySettingsDialog({
               {/* 6. ANGGOTA (MEMBERS) */}
               {serverSettingsSection === 'members' && (
                 <MembersTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   currentUser={currentUser}
                   members={members}
                   onUpdateMembers={onUpdateMembers}
@@ -323,7 +323,7 @@ export function ColonySettingsDialog({
               {/* 7. PERAN (ROLES) */}
               {serverSettingsSection === 'roles' && (
                 <RolesTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   serverRoles={serverRoles}
                   setServerRoles={setServerRoles}
                   members={members}
@@ -334,7 +334,7 @@ export function ColonySettingsDialog({
               {/* 8. UNDANGAN (INVITES) */}
               {serverSettingsSection === 'invites' && (
                 <InvitesTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   serverInvites={serverInvites}
                   setServerInvites={setServerInvites}
                   t={t}
@@ -344,7 +344,7 @@ export function ColonySettingsDialog({
               {/* 9. INTEGRASI */}
               {serverSettingsSection === 'integrations' && (
                 <IntegrationsTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   onClose={onClose}
                   onOpenWebhooks={onOpenWebhooks}
                   t={t}
@@ -354,7 +354,7 @@ export function ColonySettingsDialog({
               {/* 10. LOG AUDIT */}
               {serverSettingsSection === 'audit-log' && (
                 <AuditLogTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   serverAuditLogs={serverAuditLogs}
                   setServerAuditLogs={setServerAuditLogs}
                   t={t}
@@ -364,7 +364,7 @@ export function ColonySettingsDialog({
               {/* 11. BAN */}
               {serverSettingsSection === 'bans' && (
                 <BansTab
-                  activeHub={activeHub}
+                  activeColony={activeColony}
                   serverBans={serverBans}
                   setServerBans={setServerBans}
                   t={t}
@@ -414,8 +414,8 @@ export function ColonySettingsDialog({
               variant="destructive"
               size="sm"
               onClick={async () => {
-                if (!activeHub || !banTargetMember) return;
-                const banned = await communityApi.banUser(activeHub.id, {
+                if (!activeColony || !banTargetMember) return;
+                const banned = await colonyApi.banUser(activeColony.id, {
                   userId: banTargetMember.id,
                   userName: banTargetMember.name,
                   userEmail: banTargetMember.email,

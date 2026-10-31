@@ -5,11 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import type { CommunityHub, CommunityMember } from '@/chat/chat-types';
+import type { Colony, ColonyMember } from '@/chat/chat-types';
 
 interface ProfileTabProps {
-  activeHub: CommunityHub;
-  members: CommunityMember[];
+  activeColony: Colony;
+  members: ColonyMember[];
   serverTags: string[];
   serverSettingsEditName: string;
   setServerSettingsEditName: (val: string) => void;
@@ -19,13 +19,13 @@ interface ProfileTabProps {
   setServerSettingsEditColor: (val: string) => void;
   serverSettingsEditIconUrl: string;
   setServerSettingsEditIconUrl: (val: string) => void;
-  onUpdateHub: (hubId: string, updates: Partial<CommunityHub>) => Promise<void>;
+  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   onClose: () => void;
   t: (key: string) => string;
 }
 
 export function ProfileTab({
-  activeHub,
+  activeColony,
   members,
   serverTags,
   serverSettingsEditName,
@@ -87,22 +87,22 @@ export function ProfileTab({
             {serverSettingsEditIconUrl ? (
               <img src={serverSettingsEditIconUrl} alt="Server icon" className="w-full h-full object-cover" />
             ) : (
-              activeHub?.initials || activeHub?.name?.slice(0, 2) || 'SV'
+              activeColony?.initials || activeColony?.name?.slice(0, 2) || 'SV'
             )}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-semibold transition-opacity">
               <Camera className="w-4 h-4 mb-0.5" />
               <span>{t('Ganti')}</span>
             </div>
           </div>
-          <p className="font-semibold mt-2 text-sm">{serverSettingsEditName || activeHub?.name || 'Server'}</p>
+          <p className="font-semibold mt-2 text-sm">{serverSettingsEditName || activeColony?.name || 'Server'}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             {members.length > 0
               ? `${members.filter((m) => m.status === 'online').length} Online • ${members.length} Anggota`
               : '1 Online • 1 Anggota'}
           </p>
-          {(serverSettingsEditDesc || activeHub?.description) && (
+          {(serverSettingsEditDesc || activeColony?.description) && (
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-              {serverSettingsEditDesc || activeHub?.description}
+              {serverSettingsEditDesc || activeColony?.description}
             </p>
           )}
           <div className="flex flex-wrap gap-1 mt-2.5">
@@ -173,7 +173,7 @@ export function ProfileTab({
       <div className="mt-8 flex gap-3">
         <Button
           onClick={async () => {
-            await onUpdateHub(activeHub.id, {
+            await onUpdateHub(activeColony.id, {
               name: serverSettingsEditName,
               description: serverSettingsEditDesc,
               color: serverSettingsEditColor,

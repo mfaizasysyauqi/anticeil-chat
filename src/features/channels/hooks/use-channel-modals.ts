@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import type { CommunityChannel, CommunityChannelType } from '@/chat/chat-types';
-import { communityApi } from '@/chat/chat-api';
+import type { ColonyChannel, ColonyChannelType } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
 import { toast } from 'sonner';
 
 interface UseChannelModalsOptions {
-  activeHubId: string;
-  channels: CommunityChannel[];
-  setChannels: React.Dispatch<React.SetStateAction<CommunityChannel[]>>;
+  activeColonyId: string;
+  channels: ColonyChannel[];
+  setChannels: React.Dispatch<React.SetStateAction<ColonyChannel[]>>;
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
   t: (key: string) => string;
 }
 
 export function useChannelModals({
-  activeHubId,
+  activeColonyId,
   channels,
   setChannels,
   activeChannelId,
@@ -25,20 +25,20 @@ export function useChannelModals({
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelDesc, setNewChannelDesc] = useState('');
   const [newChannelCategory, setNewChannelCategory] = useState<'CHANNELS' | 'DIRECT MESSAGES'>('CHANNELS');
-  const [newChannelType, setNewChannelType] = useState<CommunityChannelType>('text');
+  const [newChannelType, setNewChannelType] = useState<ColonyChannelType>('text');
   const [newChannelIsPrivate, setNewChannelIsPrivate] = useState(false);
 
   // Edit Channel Modal
-  const [channelToEdit, setChannelToEdit] = useState<CommunityChannel | null>(null);
+  const [channelToEdit, setChannelToEdit] = useState<ColonyChannel | null>(null);
   const [editChannelName, setEditChannelName] = useState('');
   const [editChannelDesc, setEditChannelDesc] = useState('');
-  const [editChannelType, setEditChannelType] = useState<CommunityChannelType>('text');
+  const [editChannelType, setEditChannelType] = useState<ColonyChannelType>('text');
 
   // Delete Channel Modal
-  const [channelToDelete, setChannelToDelete] = useState<CommunityChannel | null>(null);
+  const [channelToDelete, setChannelToDelete] = useState<ColonyChannel | null>(null);
 
   // Channel Settings Dialog
-  const [channelForSettings, setChannelForSettings] = useState<CommunityChannel | null>(null);
+  const [channelForSettings, setChannelForSettings] = useState<ColonyChannel | null>(null);
 
   // Webhook Dialog
   const [isWebhookDialogOpen, setIsWebhookDialogOpen] = useState(false);
@@ -54,11 +54,11 @@ export function useChannelModals({
         : newChannelName.trim().toLowerCase().replace(/\s+/g, '-');
 
     try {
-      const created = await communityApi.createChannel({
+      const created = await colonyApi.createChannel({
         name: formattedName,
         description: newChannelDesc.trim(),
         category: newChannelCategory,
-        hubId: activeHubId === 'direct-messages' ? 'anticeil' : activeHubId,
+        colonyId: activeColonyId === 'direct-messages' ? 'anticeil' : activeColonyId,
         type: newChannelType,
         isPrivate: newChannelIsPrivate,
       });
@@ -80,15 +80,15 @@ export function useChannelModals({
   };
 
   // Open Edit Channel
-  const handleOpenEditChannel = (channel: CommunityChannel, e?: React.MouseEvent) => {
+  const handleOpenEditChannel = (channel: ColonyChannel, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setChannelForSettings(channel);
   };
 
   // Update Channel Settings (from Settings dialog)
-  const handleUpdateChannelSettings = async (channelId: string, updates: Partial<CommunityChannel>) => {
+  const handleUpdateChannelSettings = async (channelId: string, updates: Partial<ColonyChannel>) => {
     try {
-      const updated = await communityApi.updateChannel(channelId, {
+      const updated = await colonyApi.updateChannel(channelId, {
         name: updates.name,
         description: updates.description,
         type: updates.type,
@@ -112,7 +112,7 @@ export function useChannelModals({
     if (!channelToEdit || !editChannelName.trim()) return;
 
     try {
-      const updated = await communityApi.updateChannel(channelToEdit.id, {
+      const updated = await colonyApi.updateChannel(channelToEdit.id, {
         name: editChannelName.trim(),
         description: editChannelDesc.trim(),
         type: editChannelType,
@@ -128,7 +128,7 @@ export function useChannelModals({
   };
 
   // Open Delete Channel Modal
-  const handleOpenDeleteChannel = (channel: CommunityChannel, e: React.MouseEvent) => {
+  const handleOpenDeleteChannel = (channel: ColonyChannel, e: React.MouseEvent) => {
     e.stopPropagation();
     setChannelToDelete(channel);
   };
@@ -144,7 +144,7 @@ export function useChannelModals({
     setChannelToDelete(null);
 
     try {
-      await communityApi.deleteChannel(id);
+      await colonyApi.deleteChannel(id);
     } catch (err) {
       console.error('Failed to delete channel', err);
     }

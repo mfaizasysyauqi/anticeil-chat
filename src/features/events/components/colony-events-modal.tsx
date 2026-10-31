@@ -27,14 +27,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import type { CommunityHub, CommunityChannel } from '@/chat/chat-types';
+import type { Colony, ColonyChannel } from '@/chat/chat-types';
 import type { CalendarEvent } from '@/features/calendar/types';
 
 export interface ColonyEventsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeHub: CommunityHub | null;
-  channels: CommunityChannel[];
+  activeColony: Colony | null;
+  channels: ColonyChannel[];
   events: CalendarEvent[];
   onCreateEvent: (eventData: Partial<CalendarEvent>) => Promise<CalendarEvent | null>;
   currentUser?: any;
@@ -44,7 +44,7 @@ export interface ColonyEventsModalProps {
 export function ColonyEventsModal({
   isOpen,
   onClose,
-  activeHub,
+  activeColony,
   channels,
   events,
   onCreateEvent,
@@ -69,12 +69,12 @@ export function ColonyEventsModal({
 
   // Filter server specific events
   const serverEvents = events.filter((ev) => {
-    if (!activeHub) return true;
-    return ev.hubId === activeHub.id || (ev.hubName && ev.hubName.toLowerCase() === activeHub.name.toLowerCase());
+    if (!activeColony) return true;
+    return ev.colonyId === activeColony.id || (ev.hubName && ev.hubName.toLowerCase() === activeColony.name.toLowerCase());
   });
 
   const voiceChannels = channels.filter(
-    (c) => (c.hubId === activeHub?.id || !c.hubId) && c.type === 'voice'
+    (c) => (c.colonyId === activeColony?.id || !c.colonyId) && c.type === 'voice'
   );
 
   const resetForm = () => {
@@ -112,8 +112,8 @@ export function ColonyEventsModal({
         title: topic,
         description,
         type: locationType === 'voice' ? 'activity' : 'meeting',
-        hubId: activeHub?.id || 'anticeil',
-        hubName: activeHub?.name || 'Anticeil',
+        colonyId: activeColony?.id || 'anticeil',
+        hubName: activeColony?.name || 'Anticeil',
         channelId: locationType === 'voice' ? selectedChannelId : undefined,
         channelName: locationType === 'voice' ? (selectedCh?.name || 'Voice') : externalLocation,
         startTime: startDateTime,
@@ -132,7 +132,7 @@ export function ColonyEventsModal({
   };
 
   const getShareLink = () => {
-    const code = activeHub?.inviteCode || activeHub?.id || 'anticeil';
+    const code = activeColony?.inviteCode || activeColony?.id || 'anticeil';
     return `${window.location.origin}/messages?invite=${code}&event=${createdShareEvent?.id || ''}`;
   };
 

@@ -39,14 +39,14 @@ import {
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { KanbanCard, KanbanColumn, KanbanPriority } from '../types';
-import type { CommunityChannel, CommunityHub, CommunityMember } from '@/chat/chat-types';
+import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { assignmentsApi } from '@/features/assignments/api/assignments-api';
 import { toast } from 'sonner';
 
 export interface KanbanChannelViewProps {
-  activeChannel: CommunityChannel;
-  activeHub: CommunityHub | null;
-  displayMembers: CommunityMember[];
+  activeChannel: ColonyChannel;
+  activeColony: Colony | null;
+  displayMembers: ColonyMember[];
   currentUser: any;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
@@ -62,7 +62,7 @@ const DEFAULT_COLUMNS: KanbanColumn[] = [
 
 export function KanbanChannelView({
   activeChannel,
-  activeHub,
+  activeColony,
   displayMembers,
   currentUser,
   onOpenSidebar,
@@ -96,7 +96,7 @@ export function KanbanChannelView({
   const fetchCards = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await assignmentsApi.getAssignments(activeChannel.id, activeHub?.id);
+      const data = await assignmentsApi.getAssignments(activeChannel.id, activeColony?.id);
       if (Array.isArray(data)) {
         const mapped: KanbanCard[] = data.map((d: any) => ({
           id: d.id,
@@ -105,8 +105,8 @@ export function KanbanChannelView({
           columnId: d.columnId || 'todo',
           channelId: d.channelId || activeChannel.id,
           channelName: d.channelName || activeChannel.name,
-          hubId: d.hubId || activeHub?.id || 'anticeil',
-          hubName: d.hubName || activeHub?.name || 'Anticeil',
+          colonyId: d.colonyId || activeColony?.id || 'anticeil',
+          hubName: d.hubName || activeColony?.name || 'Anticeil',
           assigneeId: d.assigneeId || d.userId,
           assigneeName: d.assigneeName || 'Member',
           assigneeAvatar: d.assigneeAvatar || null,
@@ -127,7 +127,7 @@ export function KanbanChannelView({
     } finally {
       setIsLoading(false);
     }
-  }, [activeChannel.id, activeHub?.id, activeChannel.name, activeHub?.name]);
+  }, [activeChannel.id, activeColony?.id, activeChannel.name, activeColony?.name]);
 
   useEffect(() => {
     fetchCards();
@@ -205,8 +205,8 @@ export function KanbanChannelView({
       columnId: targetColumnId,
       channelId: activeChannel.id,
       channelName: activeChannel.name,
-      hubId: activeHub?.id || 'anticeil',
-      hubName: activeHub?.name || 'Komunitas',
+      colonyId: activeColony?.id || 'anticeil',
+      hubName: activeColony?.name || 'Komunitas',
       assigneeId: assignee.id,
       assigneeName: assignee.name,
       assigneeAvatar: assignee.avatar || null,

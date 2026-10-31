@@ -30,18 +30,18 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import {
-  type CommunityChannel,
-  type CommunityChannelType,
+  type ColonyChannel,
+  type ColonyChannelType,
   resolveChannelType,
 } from '@/chat/chat-types';
 import { toast } from 'sonner';
 
 interface ChannelSettingsDialogProps {
-  channel: CommunityChannel | null;
+  channel: ColonyChannel | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateChannel: (channelId: string, updates: Partial<CommunityChannel>) => Promise<void>;
-  onDeleteChannel: (channel: CommunityChannel) => void;
+  onUpdateChannel: (channelId: string, updates: Partial<ColonyChannel>) => Promise<void>;
+  onDeleteChannel: (channel: ColonyChannel) => void;
   onOpenWebhooks?: (channelId: string) => void;
 }
 
@@ -77,7 +77,7 @@ export function ChannelSettingsDialog({
 
   // Form State
   const [name, setName] = useState('');
-  const [channelType, setChannelType] = useState<CommunityChannelType>('text');
+  const [channelType, setChannelType] = useState<ColonyChannelType>('text');
   const [topic, setTopic] = useState('');
   const [slowmode, setSlowmode] = useState(0);
   const [contentVisibility, setContentVisibility] = useState<'default' | 'spoiler' | 'nsfw'>('default');

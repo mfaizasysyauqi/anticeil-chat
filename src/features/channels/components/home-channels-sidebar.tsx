@@ -16,7 +16,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import type { CommunityChannel, CommunityMember } from '@/chat/chat-types';
+import type { ColonyChannel, ColonyMember } from '@/chat/chat-types';
 
 export interface HomeChannelsSidebarProps {
   currentUser?: any;
@@ -28,8 +28,8 @@ export interface HomeChannelsSidebarProps {
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
   friendRequests: any[];
-  dmChannels: CommunityChannel[];
-  members: CommunityMember[];
+  dmChannels: ColonyChannel[];
+  members: ColonyMember[];
   activeCallCounts?: Record<string, number>;
   onItemClick?: () => void;
   onOpenDmSearch: () => void;

@@ -18,7 +18,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
-import { CommunityChannel } from '@/chat/chat-types';
+import { ColonyChannel } from '@/chat/chat-types';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { api } from '@/lib/api';
 
@@ -81,7 +81,7 @@ const formatTimeAgo = (dateStr?: string): string => {
 };
 
 export interface YouTubeWatchTogetherProps {
-  channel: CommunityChannel;
+  channel: ColonyChannel;
   currentUserName: string;
   currentUser?: any;
   participants?: any[];

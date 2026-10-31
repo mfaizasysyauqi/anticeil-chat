@@ -22,8 +22,8 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
 import { renderFormattedMessage } from '../utils/format-message';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityChannel, CommunityMessage, CommunityRole } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { ColonyChannel, ColonyMessage, ColonyRole } from '@/chat/chat-types';
 import dayjs from 'dayjs';
 
 function formatDateDivider(dateStr?: string): string {
@@ -40,16 +40,16 @@ function formatDateDivider(dateStr?: string): string {
 }
 
 export interface MessagesFeedProps {
-  activeChannel: CommunityChannel | null;
+  activeChannel: ColonyChannel | null;
   channelPaddingClass?: string;
-  filteredMessages: CommunityMessage[];
+  filteredMessages: ColonyMessage[];
   currentUser: any;
   claimedGifts: Record<string, boolean>;
   setClaimedGifts: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   onOpenCreateChannel: () => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onTogglePin: (messageId: string) => void;
-  onReply?: (message: CommunityMessage) => void;
+  onReply?: (message: ColonyMessage) => void;
   onStartThread: (initialName: string, initialContent: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onJoinActivity?: (appId: string, channelId?: string) => void;
@@ -267,7 +267,7 @@ export function MessagesFeed({
                             <span>APP</span>
                           </span>
                         ) : (
-                          <RoleBadge role={msg.senderRole as CommunityRole} />
+                          <RoleBadge role={msg.senderRole as ColonyRole} />
                         )}
                         {msg.isPinned && (
                           <span className="inline-flex items-center gap-1 text-[10px] text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
@@ -502,7 +502,7 @@ export function MessagesFeed({
                                         setClaimedGifts((prev) => ({ ...prev, [msg.id]: true }));
                                         confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 } });
                                         toast.success('🎉 Hadiah Nitro berhasil diklaim ke akun Anda!');
-                                        await communityApi.claimGift(msg.id, currentUser?.firstName || currentUser?.name || 'User');
+                                        await colonyApi.claimGift(msg.id, currentUser?.firstName || currentUser?.name || 'User');
                                       }}
                                       className={cn(
                                         "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer",

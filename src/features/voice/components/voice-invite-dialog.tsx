@@ -10,15 +10,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { CommunityChannel, CommunityHub } from '@/chat/chat-types';
+import { ColonyChannel, Colony } from '@/chat/chat-types';
 import { DiscordAppDefinition } from '../data/discord-activities';
 import { toast } from 'sonner';
 
 export interface VoiceInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  channel: CommunityChannel;
-  activeHub?: CommunityHub | null;
+  channel: ColonyChannel;
+  activeColony?: Colony | null;
   callInviteUrl: string;
   copiedVoiceCallLink?: boolean;
   onCopyCallLink?: () => void;
@@ -29,7 +29,7 @@ export function VoiceInviteDialog({
   open,
   onOpenChange,
   channel,
-  activeHub,
+  activeColony,
   callInviteUrl,
   copiedVoiceCallLink: externalCopied,
   onCopyCallLink,
@@ -81,7 +81,7 @@ export function VoiceInviteDialog({
                 Undang Teman ke Panggilan
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
-                <span>{activeHub?.name || 'Server'} • #{channel.name}</span>
+                <span>{activeColony?.name || 'Server'} • #{channel.name}</span>
                 {currentActiveApp && (
                   <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 shrink-0">
                     🎮 {currentActiveApp.title}

@@ -2,14 +2,14 @@ import React, { useMemo } from 'react';
 import { Users, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import { CommunityMember } from '@/chat/chat-types';
+import { ColonyMember } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from './role-badge';
 
 export interface ColonyMembersSidebarProps {
-  displayMembers: CommunityMember[];
+  displayMembers: ColonyMember[];
   onInviteClick: () => void;
-  onStartDM: (member: CommunityMember) => void;
+  onStartDM: (member: ColonyMember) => void;
   t: (key: string) => string;
 }
 
@@ -24,28 +24,28 @@ export function ColonyMembersSidebar({
       {
         key: 'owner',
         title: t('Pemilik Server'),
-        filter: (m: CommunityMember) => m.role === 'owner',
+        filter: (m: ColonyMember) => m.role === 'owner',
       },
       {
         key: 'admin',
         title: t('Admin Server'),
-        filter: (m: CommunityMember) => m.role === 'admin',
+        filter: (m: ColonyMember) => m.role === 'admin',
       },
       {
         key: 'bot',
         title: t('Bot & Integrasi'),
-        filter: (m: CommunityMember) => m.role === 'bot',
+        filter: (m: ColonyMember) => m.role === 'bot',
       },
       {
         key: 'online',
         title: t('Online'),
-        filter: (m: CommunityMember) =>
+        filter: (m: ColonyMember) =>
           m.role !== 'owner' && m.role !== 'admin' && m.role !== 'bot' && m.status !== 'offline',
       },
       {
         key: 'offline',
         title: t('Offline'),
-        filter: (m: CommunityMember) =>
+        filter: (m: ColonyMember) =>
           m.role !== 'owner' && m.role !== 'admin' && m.role !== 'bot' && m.status === 'offline',
       },
     ],

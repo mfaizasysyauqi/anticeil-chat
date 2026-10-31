@@ -1,33 +1,33 @@
 import { useState } from 'react';
-import type { CommunityHub, CommunityChannel, CommunityMember } from '@/chat/chat-types';
-import { communityApi } from '@/chat/chat-api';
-import { saveStoredHubs } from '@/chat/chat-defaults';
+import type { Colony, ColonyChannel, ColonyMember } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import { saveStoredColonies } from '@/chat/chat-defaults';
 import type { ColonySettingsSection } from '@/features/colony-settings';
 import { toast } from 'sonner';
 
 interface UseColonyModalsOptions {
-  hubs: CommunityHub[];
-  setHubs: React.Dispatch<React.SetStateAction<CommunityHub[]>>;
-  channels: CommunityChannel[];
-  setChannels: React.Dispatch<React.SetStateAction<CommunityChannel[]>>;
-  activeHub: CommunityHub | undefined;
-  setActiveHubId: (id: string) => void;
+  colonies: Colony[];
+  setColonies: React.Dispatch<React.SetStateAction<Colony[]>>;
+  channels: ColonyChannel[];
+  setChannels: React.Dispatch<React.SetStateAction<ColonyChannel[]>>;
+  activeColony: Colony | undefined;
+  setActiveColonyId: (id: string) => void;
   setActiveChannelId: (id: string) => void;
   setActiveCallChannelId?: (id: string | null) => void;
   setIsCallPiP?: (val: boolean) => void;
   setSelectedActivityAppId?: (id: string | null) => void;
   setIsActivityOpen?: (val: boolean) => void;
-  setMembers?: React.Dispatch<React.SetStateAction<CommunityMember[]>>;
+  setMembers?: React.Dispatch<React.SetStateAction<ColonyMember[]>>;
   t: (key: string) => string;
 }
 
 export function useColonyModals({
-  hubs,
-  setHubs,
+  colonies,
+  setColonies,
   channels,
   setChannels,
-  activeHub,
-  setActiveHubId,
+  activeColony,
+  setActiveColonyId,
   setActiveChannelId,
   setActiveCallChannelId,
   setIsCallPiP,
@@ -45,12 +45,12 @@ export function useColonyModals({
   const [isJoiningHub, setIsJoiningHub] = useState(false);
 
   // Edit Server Modal
-  const [hubToEdit, setHubToEdit] = useState<CommunityHub | null>(null);
+  const [hubToEdit, setHubToEdit] = useState<Colony | null>(null);
   const [editHubName, setEditHubName] = useState('');
   const [editHubDesc, setEditHubDesc] = useState('');
 
   // Delete Server Modal
-  const [hubToDelete, setHubToDelete] = useState<CommunityHub | null>(null);
+  const [hubToDelete, setHubToDelete] = useState<Colony | null>(null);
 
   // Server Invite Modal
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -68,46 +68,46 @@ export function useColonyModals({
     if (!newHubName.trim()) return;
 
     try {
-      const createdHub = await communityApi.createHub({
+      const createdHub = await colonyApi.createHub({
         name: newHubName.trim(),
         description: newHubDesc.trim() || undefined,
         iconUrl: newHubIconUrl || undefined,
       });
 
-      const updatedHubs = [...hubs.filter((h) => h.id !== createdHub.id), createdHub];
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
-      setActiveHubId(createdHub.id);
+      const updatedHubs = [...colonies.filter((h) => h.id !== createdHub.id), createdHub];
+      setColonies(updatedHubs);
+      saveStoredColonies(updatedHubs);
+      setActiveColonyId(createdHub.id);
 
-      let hubChannels = await communityApi.getChannels(createdHub.id);
-      if (!hubChannels || hubChannels.length === 0) {
+      let colonyChannels = await colonyApi.getChannels(createdHub.id);
+      if (!colonyChannels || colonyChannels.length === 0) {
         const [defaultCh, defaultVoice, defaultForum] = await Promise.all([
-          communityApi.createChannel({
+          colonyApi.createChannel({
             name: 'general',
             description: `Saluran obrolan umum untuk server ${createdHub.name}`,
             category: 'CHANNELS',
-            hubId: createdHub.id,
+            colonyId: createdHub.id,
             type: 'text',
           }),
-          communityApi.createChannel({
+          colonyApi.createChannel({
             name: 'General Voice',
             description: `Saluran suara & video untuk server ${createdHub.name}`,
             category: 'CHANNELS',
-            hubId: createdHub.id,
+            colonyId: createdHub.id,
             type: 'voice',
           }),
-          communityApi.createChannel({
+          colonyApi.createChannel({
             name: 'forum-diskusi',
             description: `Ruang diskusi topik untuk server ${createdHub.name}`,
             category: 'CHANNELS',
-            hubId: createdHub.id,
+            colonyId: createdHub.id,
             type: 'forum',
           }),
         ]);
-        hubChannels = [defaultCh, defaultVoice, defaultForum];
+        colonyChannels = [defaultCh, defaultVoice, defaultForum];
       }
-      setChannels((prev) => [...prev.filter((c) => c.hubId !== createdHub.id), ...hubChannels]);
-      setActiveChannelId(hubChannels[0].id);
+      setChannels((prev) => [...prev.filter((c) => c.colonyId !== createdHub.id), ...colonyChannels]);
+      setActiveChannelId(colonyChannels[0].id);
 
       setIsCreateHubOpen(false);
       setNewHubName('');
@@ -117,7 +117,7 @@ export function useColonyModals({
     } catch (err) {
       console.warn('API createHub fallback', err);
       const newId = `hub_${Date.now()}`;
-      const newHub: CommunityHub = {
+      const newHub: Colony = {
         id: newId,
         name: newHubName.trim(),
         iconType: undefined as any,
@@ -126,36 +126,36 @@ export function useColonyModals({
         iconUrl: newHubIconUrl || undefined,
       };
 
-      const defaultText: CommunityChannel = {
+      const defaultText: ColonyChannel = {
         id: `ch_${Date.now()}_gen`,
         name: 'general',
         description: `Saluran obrolan umum untuk server ${newHub.name}`,
         category: 'CHANNELS',
-        hubId: newId,
+        colonyId: newId,
         type: 'text',
       };
-      const defaultVoice: CommunityChannel = {
+      const defaultVoice: ColonyChannel = {
         id: `ch_${Date.now()}_voice`,
         name: 'General Voice',
         description: `Saluran suara & video untuk server ${newHub.name}`,
         category: 'CHANNELS',
-        hubId: newId,
+        colonyId: newId,
         type: 'voice',
       };
-      const defaultForum: CommunityChannel = {
+      const defaultForum: ColonyChannel = {
         id: `ch_${Date.now()}_forum`,
         name: 'forum-diskusi',
         description: `Ruang diskusi topik untuk server ${newHub.name}`,
         category: 'CHANNELS',
-        hubId: newId,
+        colonyId: newId,
         type: 'forum',
       };
 
-      const updatedHubs = [...hubs, newHub];
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
+      const updatedHubs = [...colonies, newHub];
+      setColonies(updatedHubs);
+      saveStoredColonies(updatedHubs);
       setChannels((prev) => [...prev, defaultText, defaultVoice, defaultForum]);
-      setActiveHubId(newId);
+      setActiveColonyId(newId);
       setActiveChannelId(defaultText.id);
 
       setIsCreateHubOpen(false);
@@ -183,17 +183,17 @@ export function useColonyModals({
 
     try {
       setIsJoiningHub(true);
-      const joinedHub = await communityApi.joinHub(code);
-      setHubs((prev) => {
+      const joinedHub = await colonyApi.joinHub(code);
+      setColonies((prev) => {
         const next = [...prev.filter((h) => h.id !== joinedHub.id), joinedHub];
-        saveStoredHubs(next);
+        saveStoredColonies(next);
         return next;
       });
-      setActiveHubId(joinedHub.id);
+      setActiveColonyId(joinedHub.id);
 
-      const hubChannels = await communityApi.getChannels(joinedHub.id);
-      if (hubChannels && hubChannels.length > 0) {
-        setChannels((prev) => [...prev.filter((c) => c.hubId !== joinedHub.id), ...hubChannels]);
+      const colonyChannels = await colonyApi.getChannels(joinedHub.id);
+      if (colonyChannels && colonyChannels.length > 0) {
+        setChannels((prev) => [...prev.filter((c) => c.colonyId !== joinedHub.id), ...colonyChannels]);
         const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
         const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
         if (targetActivityParam) {
@@ -201,9 +201,9 @@ export function useColonyModals({
           setSelectedActivityAppId?.(normalizedAct);
           setIsActivityOpen?.(true);
         }
-        let matchedChannel = hubChannels.find((c) => c.id === targetChannelParam);
+        let matchedChannel = colonyChannels.find((c) => c.id === targetChannelParam);
         if (!matchedChannel && targetActivityParam) {
-          matchedChannel = hubChannels.find((c) => c.type === 'voice');
+          matchedChannel = colonyChannels.find((c) => c.type === 'voice');
         }
         if (matchedChannel) {
           setActiveChannelId(matchedChannel.id);
@@ -212,7 +212,7 @@ export function useColonyModals({
             setIsCallPiP?.(false);
           }
         } else {
-          setActiveChannelId(hubChannels[0].id);
+          setActiveChannelId(colonyChannels[0].id);
         }
       }
 
@@ -236,7 +236,7 @@ export function useColonyModals({
   };
 
   // Open Edit Hub
-  const handleOpenEditHub = (hub: CommunityHub) => {
+  const handleOpenEditHub = (hub: Colony) => {
     setHubToEdit(hub);
     setEditHubName(hub.name);
     setEditHubDesc(hub.description || '');
@@ -249,17 +249,17 @@ export function useColonyModals({
 
     const newName = editHubName.trim();
     try {
-      const updated = await communityApi.updateHub(hubToEdit.id, {
+      const updated = await colonyApi.updateColony(hubToEdit.id, {
         name: newName,
         description: editHubDesc.trim() || undefined,
       });
-      const updatedHubs = hubs.map((h) => (h.id === updated.id ? { ...h, ...updated } : h));
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
+      const updatedHubs = colonies.map((h) => (h.id === updated.id ? { ...h, ...updated } : h));
+      setColonies(updatedHubs);
+      saveStoredColonies(updatedHubs);
       setHubToEdit(null);
       toast.success(t('Nama server berhasil diperbarui!'));
     } catch {
-      const updatedHubs: CommunityHub[] = hubs.map((h) => {
+      const updatedHubs: Colony[] = colonies.map((h) => {
         if (h.id === hubToEdit.id) {
           return {
             ...h,
@@ -271,8 +271,8 @@ export function useColonyModals({
         return h;
       });
 
-      setHubs(updatedHubs);
-      saveStoredHubs(updatedHubs);
+      setColonies(updatedHubs);
+      saveStoredColonies(updatedHubs);
       setHubToEdit(null);
       toast.success(t('Nama server berhasil diperbarui!'));
     }
@@ -288,17 +288,17 @@ export function useColonyModals({
     }
 
     try {
-      await communityApi.deleteHub(hubToDelete.id);
+      await colonyApi.deleteHub(hubToDelete.id);
     } catch (err) {
       console.warn('API deleteHub error', err);
     }
 
-    const updatedHubs = hubs.filter((h) => h.id !== hubToDelete.id);
-    setHubs(updatedHubs);
-    saveStoredHubs(updatedHubs);
+    const updatedHubs = colonies.filter((h) => h.id !== hubToDelete.id);
+    setColonies(updatedHubs);
+    saveStoredColonies(updatedHubs);
 
-    setChannels((prev) => prev.filter((c) => c.hubId !== hubToDelete.id));
-    setActiveHubId('anticeil');
+    setChannels((prev) => prev.filter((c) => c.colonyId !== hubToDelete.id));
+    setActiveColonyId('anticeil');
 
     const firstDm = channels.find((c) => c.category === 'DIRECT MESSAGES');
     setActiveChannelId(firstDm?.id || '');
@@ -321,7 +321,7 @@ export function useColonyModals({
       return false;
     }
 
-    const currentHubId = activeHub?.id;
+    const currentHubId = activeColony?.id;
     if (!currentHubId) {
       toast.error(t('Server tidak valid.'));
       return false;
@@ -330,7 +330,7 @@ export function useColonyModals({
     try {
       setIsInvitingUsername(true);
       setUserNotFound(null);
-      const res = await communityApi.inviteUserToServer(currentHubId, targetUserId, rawUser);
+      const res = await colonyApi.inviteUserToServer(currentHubId, targetUserId, rawUser);
       if (res.alreadyMember) {
         toast.info(res.message || t(`Pengguna sudah menjadi anggota server ini.`));
         return true;

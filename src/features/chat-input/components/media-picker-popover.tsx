@@ -14,8 +14,8 @@ import {
   DiscordSticker,
   DiscordGifItem,
 } from '@/chat/anticeil-media-data';
-import type { CommunityHub } from '@/chat/chat-types';
-import { communityApi } from '@/chat/chat-api';
+import type { Colony } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
 
 export interface MediaPickerPopoverProps {
   open: boolean;
@@ -26,7 +26,7 @@ export interface MediaPickerPopoverProps {
   setMediaSearchQuery: (query: string) => void;
   selectedGifCategory: string | null;
   setSelectedGifCategory: (cat: string | null) => void;
-  activeHub: CommunityHub | null;
+  activeColony: Colony | null;
   serverDbEmojis: DiscordEmoji[];
   serverDbStickers: DiscordSticker[];
   onSelectEmoji: (emoji: DiscordEmoji) => void;
@@ -45,7 +45,7 @@ export function MediaPickerPopover({
   setMediaSearchQuery,
   selectedGifCategory,
   setSelectedGifCategory,
-  activeHub,
+  activeColony,
   serverDbEmojis,
   serverDbStickers,
   onSelectEmoji,
@@ -72,7 +72,7 @@ export function MediaPickerPopover({
     const timer = setTimeout(async () => {
       setIsLoadingGifs(true);
       try {
-        const results = await communityApi.searchGifs(query, 30);
+        const results = await colonyApi.searchGifs(query, 30);
         if (!cancelled) {
           setApiGifs(results && results.length > 0 ? results : []);
         }
@@ -250,15 +250,15 @@ export function MediaPickerPopover({
             <div className="w-6 h-px bg-border my-0.5" />
 
             {/* Current Active Hub */}
-            {activeHub && (
+            {activeColony && (
               <div
                 className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border border-white/20 text-white font-bold text-xs flex items-center justify-center shadow-xs cursor-pointer overflow-hidden"
-                title={`Colony: ${activeHub.name}`}
+                title={`Colony: ${activeColony.name}`}
               >
-                {activeHub.iconUrl ? (
-                  <img src={activeHub.iconUrl} alt={activeHub.name} className="w-full h-full object-cover" />
+                {activeColony.iconUrl ? (
+                  <img src={activeColony.iconUrl} alt={activeColony.name} className="w-full h-full object-cover" />
                 ) : (
-                  activeHub.name.slice(0, 2).toUpperCase()
+                  activeColony.name.slice(0, 2).toUpperCase()
                 )}
               </div>
             )}
@@ -306,7 +306,7 @@ export function MediaPickerPopover({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {activeHub?.name || 'Colony'} — Kustom ({serverDbEmojis.length})
+                      {activeColony?.name || 'Colony'} — Kustom ({serverDbEmojis.length})
                     </span>
                     <button
                       type="button"
@@ -388,7 +388,7 @@ export function MediaPickerPopover({
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {activeHub?.name || 'Colony'} — Stiker ({serverDbStickers.length})
+                    {activeColony?.name || 'Colony'} — Stiker ({serverDbStickers.length})
                   </span>
                   <button
                     type="button"

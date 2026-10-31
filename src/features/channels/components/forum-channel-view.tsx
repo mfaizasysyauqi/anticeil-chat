@@ -22,14 +22,14 @@ import {
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { renderFormattedMessage } from '@/features/chat';
 import dayjs from 'dayjs';
-import type { CommunityChannel, CommunityMessage, CommunityThread } from '@/chat/chat-types';
+import type { ColonyChannel, ColonyMessage, ColonyThread } from '@/chat/chat-types';
 
 export interface ForumChannelViewProps {
-  activeChannel: CommunityChannel | null;
-  activeThread: CommunityThread | null;
-  setActiveThread: (thread: CommunityThread | null) => void;
-  channelThreadsList: CommunityThread[];
-  threadMessages: CommunityMessage[];
+  activeChannel: ColonyChannel | null;
+  activeThread: ColonyThread | null;
+  setActiveThread: (thread: ColonyThread | null) => void;
+  channelThreadsList: ColonyThread[];
+  threadMessages: ColonyMessage[];
   forumSearchQuery: string;
   setForumSearchQuery: (query: string) => void;
   forumSort: 'active' | 'newest';

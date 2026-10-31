@@ -27,21 +27,21 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 import {
   loadStoredColonyInvitations,
   saveStoredColonyInvitations,
-  loadStoredHubs,
-  saveStoredHubs,
+  loadStoredColonies,
+  saveStoredColonies,
   type ColonyInvitation,
-} from '@/lib/community-hubs';
-import { chatApi, communityApi } from '@/chat/chat-api';
+} from '@/lib/colony';
+import { chatApi, colonyApi } from '@/chat/chat-api';
 import { ColonyIcon } from './colony-icon';
 import { toast } from 'sonner';
 
 export interface ColoniesViewProps {
-  colonies?: CommunityHub[];
-  servers?: CommunityHub[];
+  colonies?: Colony[];
+  servers?: Colony[];
   onSelectColony?: (colonyId: string) => void;
   onSelectServer?: (serverId: string) => void;
   onOpenCreateColony?: () => void;
@@ -72,7 +72,7 @@ export function ColoniesView({
 
   const fetchColonyInvitations = useCallback(async () => {
     try {
-      const live = await communityApi.getServerInvitations();
+      const live = await colonyApi.getServerInvitations();
       if (Array.isArray(live)) {
         setColonyInvitations(live);
       }
@@ -82,7 +82,7 @@ export function ColoniesView({
   }, []);
 
   // Real Public Servers from Backend DB
-  const [publicColonies, setPublicColonies] = useState<CommunityHub[]>([]);
+  const [publicColonies, setPublicColonies] = useState<Colony[]>([]);
   const [isLoadingPublic, setIsLoadingPublic] = useState(false);
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [isJoiningByCode, setIsJoiningByCode] = useState(false);
@@ -100,7 +100,7 @@ export function ColoniesView({
     const fetchPublicColonies = async () => {
       setIsLoadingPublic(true);
       try {
-        const all = await chatApi.getHubs();
+        const all = await chatApi.getColonies();
         if (mounted && Array.isArray(all)) {
           // Filter out DM hub and servers the current user is already member of
           const available = all.filter(
@@ -143,7 +143,7 @@ export function ColoniesView({
       (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleJoinPublic = async (community: CommunityHub) => {
+  const handleJoinPublic = async (community: Colony) => {
     try {
       const codeOrId = community.inviteCode || community.id;
       const joined = await chatApi.joinHub(codeOrId);
@@ -173,8 +173,8 @@ export function ColoniesView({
 
   const handleAcceptInvitation = async (invite: ColonyInvitation) => {
     try {
-      const res = await communityApi.acceptServerInvitation(invite.id);
-      const joinedHub: CommunityHub = res?.hub || {
+      const res = await colonyApi.acceptServerInvitation(invite.id);
+      const joinedHub: Colony = res?.hub || {
         id: invite.colonyId || invite.serverId || invite.id,
         name: (invite.colonyName || invite.serverName || "Colony"),
         description: invite.colonyDescription,
@@ -190,9 +190,9 @@ export function ColoniesView({
       saveStoredColonyInvitations(updated);
 
       // Persist as joined hub
-      const existing = loadStoredHubs();
+      const existing = loadStoredColonies();
       if (!existing.some((h) => h.id === joinedHub.id)) {
-        saveStoredHubs([...existing, joinedHub]);
+        saveStoredColonies([...existing, joinedHub]);
       }
 
       toast.success(`Berhasil bergabung dengan ${joinedHub.name}! 🎉`);
@@ -208,7 +208,7 @@ export function ColoniesView({
     setColonyInvitations(updated);
     saveStoredColonyInvitations(updated);
     try {
-      await communityApi.rejectServerInvitation(invite.id);
+      await colonyApi.rejectServerInvitation(invite.id);
       toast.info(`Undangan server ${(invite.colonyName || invite.serverName || "Colony")} telah ditolak.`);
     } catch {
       toast.info(`Undangan server ${(invite.colonyName || invite.serverName || "Colony")} telah dihapus.`);

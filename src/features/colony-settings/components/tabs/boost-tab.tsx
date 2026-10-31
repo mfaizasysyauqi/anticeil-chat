@@ -5,16 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { communityApi } from '@/chat/chat-api';
-import type { CommunityHub } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
+import type { Colony } from '@/chat/chat-types';
 
 interface BoostTabProps {
-  activeHub: CommunityHub;
-  onUpdateHub: (hubId: string, updates: Partial<CommunityHub>) => Promise<void>;
+  activeColony: Colony;
+  onUpdateHub: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   t: (key: string) => string;
 }
 
-export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
+export function BoostTab({ activeColony, onUpdateHub, t }: BoostTabProps) {
   const [isBoostingServer, setIsBoostingServer] = useState(false);
 
   return (
@@ -34,25 +34,25 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-bold text-base sm:text-lg text-foreground">
-                  {t('Tingkat')} {activeHub?.boostTier || 0}
+                  {t('Tingkat')} {activeColony?.boostTier || 0}
                 </h3>
                 <Badge
                   variant="outline"
                   className="text-[10px] font-semibold bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/30"
                 >
-                  {activeHub?.boostsCount || 0} {t('Boost Aktif')}
+                  {activeColony?.boostsCount || 0} {t('Boost Aktif')}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5 truncate sm:whitespace-normal">
-                {(activeHub?.boostTier || 0) >= 3
+                {(activeColony?.boostTier || 0) >= 3
                   ? t('Tingkat Maksimal Tercapai!')
                   : `${
-                      (activeHub?.boostTier || 0) === 2
-                        ? 14 - (activeHub?.boostsCount || 0)
-                        : (activeHub?.boostTier || 0) === 1
-                          ? 7 - (activeHub?.boostsCount || 0)
-                          : 2 - (activeHub?.boostsCount || 0)
-                    } boost lagi menuju Tingkat ${(activeHub?.boostTier || 0) + 1}`}
+                      (activeColony?.boostTier || 0) === 2
+                        ? 14 - (activeColony?.boostsCount || 0)
+                        : (activeColony?.boostTier || 0) === 1
+                          ? 7 - (activeColony?.boostsCount || 0)
+                          : 2 - (activeColony?.boostsCount || 0)
+                    } boost lagi menuju Tingkat ${(activeColony?.boostTier || 0) + 1}`}
               </p>
             </div>
           </div>
@@ -62,9 +62,9 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
             onClick={async () => {
               setIsBoostingServer(true);
               try {
-                const res = await communityApi.boostHub(activeHub.id);
+                const res = await colonyApi.boostHub(activeColony.id);
                 confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-                await onUpdateHub(activeHub.id, {
+                await onUpdateHub(activeColony.id, {
                   boostsCount: res.boostsCount,
                   boostTier: res.boostTier,
                 });
@@ -86,13 +86,13 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
         <div className="space-y-1.5">
           <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
             <span>{t('Kemajuan Boost')}</span>
-            <span>{activeHub?.boostsCount || 0} / 14</span>
+            <span>{activeColony?.boostsCount || 0} / 14</span>
           </div>
           <div className="w-full bg-muted/60 rounded-full h-2 overflow-hidden border border-border/40">
             <div
               className="bg-gradient-to-r from-primary via-emerald-400 to-amber-400 h-full rounded-full transition-all duration-500"
               style={{
-                width: `${Math.min(100, Math.max(5, ((activeHub?.boostsCount || 0) / 14) * 100))}%`,
+                width: `${Math.min(100, Math.max(5, ((activeColony?.boostsCount || 0) / 14) * 100))}%`,
               }}
             />
           </div>
@@ -121,7 +121,7 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
             perks: [t('+250 Slot Emoji Kustom Server'), t('Batas Upload File 100 MB'), t('Link Undangan Vanity Kustom')],
           },
         ].map((tInfo) => {
-          const isUnlocked = (activeHub?.boostTier || 0) >= tInfo.tier;
+          const isUnlocked = (activeColony?.boostTier || 0) >= tInfo.tier;
           return (
             <div
               key={tInfo.tier}

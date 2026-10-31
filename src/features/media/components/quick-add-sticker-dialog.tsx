@@ -8,12 +8,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { CommunityHub } from '@/chat/chat-types';
+import type { Colony } from '@/chat/chat-types';
 
 export interface QuickAddStickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  activeHub: CommunityHub | null;
+  activeColony: Colony | null;
   quickStickerName: string;
   setQuickStickerName: (name: string) => void;
   quickStickerUrl: string;
@@ -25,7 +25,7 @@ export interface QuickAddStickerDialogProps {
 export function QuickAddStickerDialog({
   open,
   onOpenChange,
-  activeHub,
+  activeColony,
   quickStickerName,
   setQuickStickerName,
   quickStickerUrl,
@@ -41,7 +41,7 @@ export function QuickAddStickerDialog({
             🏷️ Tambah Stiker Kustom ke Server
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Stiker ini akan disimpan ke database PostgreSQL server {activeHub?.name || ''} dan dapat dikirim langsung ke obrolan.
+            Stiker ini akan disimpan ke database PostgreSQL server {activeColony?.name || ''} dan dapat dikirim langsung ke obrolan.
           </DialogDescription>
         </DialogHeader>
 

@@ -7,7 +7,7 @@ export interface KanbanCard {
   columnId: string; // 'backlog' | 'todo' | 'in_progress' | 'review' | 'done'
   channelId: string;
   channelName?: string;
-  hubId: string;
+  colonyId: string;
   hubName?: string;
   assigneeId?: string;
   assigneeName?: string;

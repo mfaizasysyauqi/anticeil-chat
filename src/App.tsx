@@ -16,7 +16,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<CommunityPage />} />
         <Route path="/messages" element={<CommunityPage />} />
-        <Route path="/channels/:hubId?/:channelId?" element={<CommunityPage />} />
+        <Route path="/channels/:colonyId?/:channelId?" element={<CommunityPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster richColors position="top-right" theme={theme === 'light' ? 'light' : 'dark'} />

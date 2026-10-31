@@ -4,20 +4,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { communityApi } from '@/chat/chat-api';
+import { colonyApi } from '@/chat/chat-api';
 import { toast } from 'sonner';
-import type { CommunityHub, CommunityCustomRole, CommunityMember } from '@/chat/chat-types';
+import type { Colony, CommunityCustomRole, ColonyMember } from '@/chat/chat-types';
 
 interface RolesTabProps {
-  activeHub: CommunityHub;
+  activeColony: Colony;
   serverRoles: CommunityCustomRole[];
   setServerRoles: React.Dispatch<React.SetStateAction<CommunityCustomRole[]>>;
-  members: CommunityMember[];
+  members: ColonyMember[];
   t: (key: string) => string;
 }
 
 export function RolesTab({
-  activeHub,
+  activeColony,
   serverRoles,
   setServerRoles,
   members,
@@ -79,7 +79,7 @@ export function RolesTab({
             disabled={!newRoleName.trim()}
             onClick={async () => {
               if (!newRoleName.trim()) return;
-              const created = await communityApi.createRole(activeHub.id, {
+              const created = await colonyApi.createRole(activeColony.id, {
                 name: newRoleName.trim(),
                 color: newRoleColor,
               });
@@ -120,7 +120,7 @@ export function RolesTab({
                 className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                 onClick={async () => {
                   setServerRoles((prev) => prev.filter((r) => r.id !== role.id));
-                  await communityApi.deleteRole(activeHub.id, role.id);
+                  await colonyApi.deleteRole(activeColony.id, role.id);
                   toast.success(t(`Peran ${role.name} dihapus`));
                 }}
               >

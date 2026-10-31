@@ -28,7 +28,7 @@ interface UserBottomDockProps {
   onGoogleSignIn?: () => void;
   activeCallChannelId?: string | null;
   activeCallChannelName?: string;
-  activeHubName?: string;
+  activeColonyName?: string;
   /** True when the active call is a text-channel activity, not a voice channel call */
   isActivityChannel?: boolean;
   onReturnToCall?: () => void;
@@ -48,7 +48,7 @@ export function UserBottomDock({
   onGoogleSignIn,
   activeCallChannelId,
   activeCallChannelName,
-  activeHubName,
+  activeColonyName,
   isActivityChannel = false,
   onReturnToCall,
   onDisconnectCall,
@@ -74,7 +74,7 @@ export function UserBottomDock({
                   {isActivityChannel ? t('Aktivitas Berjalan') : t('Voice Terhubung')}
                 </span>
                 <span className="text-[10px] text-muted-foreground truncate">
-                  {activeCallChannelName || t('Panggilan')} / {activeHubName || t('Workspace')}
+                  {activeCallChannelName || t('Panggilan')} / {activeColonyName || t('Workspace')}
                 </span>
               </div>
             </div>

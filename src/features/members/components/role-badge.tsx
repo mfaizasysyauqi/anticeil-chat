@@ -1,10 +1,10 @@
 import React from 'react';
 import { Crown, Shield, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { CommunityRole } from '@/chat/chat-types';
+import { ColonyRole } from '@/chat/chat-types';
 
 export interface RoleBadgeProps {
-  role?: CommunityRole;
+  role?: ColonyRole;
   roleLabel?: string;
   defaultLabel?: string;
 }

@@ -2,11 +2,11 @@ import { api } from '@/lib/api';
 import type { AssignmentItem } from '../types';
 
 export const assignmentsApi = {
-  getAssignments: async (channelId?: string, hubId?: string): Promise<AssignmentItem[]> => {
+  getAssignments: async (channelId?: string, colonyId?: string): Promise<AssignmentItem[]> => {
     try {
       const params = new URLSearchParams();
       if (channelId) params.append('channelId', channelId);
-      if (hubId) params.append('hubId', hubId);
+      if (colonyId) params.append('hubId', colonyId);
       const queryString = params.toString() ? `?${params.toString()}` : '';
       const data = await api.get<AssignmentItem[]>(`/v1/community/assignments${queryString}`);
       return Array.isArray(data) ? data : [];
