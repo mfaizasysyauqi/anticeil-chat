@@ -2,6 +2,7 @@ import React from 'react';
 import { Users, MessageSquare, Menu, Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -108,16 +109,13 @@ export function FriendsHeader({
             )}
           </button>
 
-          {/* Yellow Highlight Button: Tambah Teman */}
-          <Button
-            size="xs"
+          {/* Top Bar Action Button: Tambah Teman */}
+          <TopBarActionButton
             onClick={onOpenAddFriendDialog}
-            className="px-2.5 py-1 text-xs font-bold transition-all bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 flex items-center gap-1 ml-0.5 cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span className="hidden sm:inline">{t('Tambah Teman')}</span>
-            <span className="sm:hidden">{t('Teman')}</span>
-          </Button>
+            icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
+            label={t('Tambah Teman')}
+            shortLabel={t('Teman')}
+          />
         </div>
       </div>
 
