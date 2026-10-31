@@ -112,7 +112,7 @@ export function AddFriendTab({
       </p>
 
       <form onSubmit={handleSearch}>
-        <div className="relative flex items-center rounded-lg bg-card border border-border focus-within:border-emerald-500/80 transition-colors p-2 shadow-2xs">
+        <div className="relative flex items-center rounded-lg bg-card border border-border focus-within:border-primary/80 transition-colors p-2 shadow-2xs">
           <Search className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
           <Input
             value={inputVal}
@@ -124,7 +124,7 @@ export function AddFriendTab({
           <Button
             type="submit"
             disabled={!inputVal.trim() || isSearching}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs h-8 px-4 shrink-0 transition-all cursor-pointer disabled:opacity-50"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 shrink-0 transition-all cursor-pointer disabled:opacity-50"
           >
             {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('Cari')}
           </Button>
@@ -134,7 +134,7 @@ export function AddFriendTab({
       {/* Results Section */}
       {isSearching ? (
         <div className="flex flex-col items-center justify-center py-12 text-center gap-2 text-muted-foreground">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
           <p className="text-xs">{t('Mencari pengguna...')}</p>
         </div>
       ) : hasSearched ? (
@@ -171,7 +171,7 @@ export function AddFriendTab({
                 return (
                   <div
                     key={user.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/60 hover:border-emerald-500/30 transition-all shadow-2xs"
+                    className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/60 hover:border-primary/30 transition-all shadow-2xs"
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-3">
                       <Avatar className="w-10 h-10 shrink-0 border border-border/50">
@@ -194,7 +194,7 @@ export function AddFriendTab({
                           {t('Akun Anda')}
                         </span>
                       ) : isFriend ? (
-                        <span className="text-[11px] font-medium text-emerald-400 px-3 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20 flex items-center gap-1.5">
+                        <span className="text-[11px] font-medium text-primary px-3 py-1 bg-primary/10 rounded-md border border-primary/20 flex items-center gap-1.5">
                           <Check className="w-3.5 h-3.5" />
                           {t('Sudah Berteman')}
                         </span>
@@ -208,7 +208,7 @@ export function AddFriendTab({
                           size="sm"
                           onClick={() => handleSendRequest(user)}
                           disabled={isSendingThis || isAddingFriend}
-                          className="h-8 px-3.5 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer transition-all shadow-2xs"
+                          className="h-8 px-3.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer transition-all shadow-2xs"
                         >
                           {isSendingThis ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -231,7 +231,7 @@ export function AddFriendTab({
         <>
           <Separator className="my-8" />
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-3">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3">
               <Sparkles className="w-8 h-8" />
             </div>
             <h3 className="text-sm font-semibold text-foreground mb-1">

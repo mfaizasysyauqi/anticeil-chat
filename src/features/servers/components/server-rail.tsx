@@ -207,8 +207,8 @@ export function ServerRail({
                 className={cn(
                   'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
                   isFriendsMode
-                    ? 'bg-amber-400 text-black shadow-xs shadow-amber-400/30 hover:bg-amber-300 hover:text-black'
-                    : 'bg-sidebar-accent text-amber-400 hover:bg-amber-400 hover:text-black dark:hover:text-black',
+                    ? 'bg-primary text-primary-foreground shadow-xs shadow-primary/30 hover:bg-primary/90'
+                    : 'bg-sidebar-accent text-muted-foreground hover:bg-primary/20 hover:text-primary',
                 )}
                 aria-label={isFriendsMode ? 'Mode Teman. Klik untuk ganti ke Mode Server' : 'Mode Server. Klik untuk ganti ke Mode Teman'}
               >
@@ -248,7 +248,7 @@ export function ServerRail({
                 onClick={isFriendsMode ? onOpenAddFriend : handleCreate}
                 className={cn(
                   'group relative size-10 rounded-[14px] bg-sidebar-accent flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
-                  'text-emerald-400 hover:bg-emerald-500 hover:text-white dark:hover:text-white',
+                  'text-primary hover:bg-primary hover:text-primary-foreground',
                 )}
               >
                 {isFriendsMode ? (

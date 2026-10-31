@@ -123,7 +123,7 @@ export function AddFriendDialog({
         <div className="p-5 pb-3 border-b border-border/50">
           <DialogHeader className="pb-1 text-left">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <UserPlus className="w-5 h-5 text-emerald-400" />
+              <UserPlus className="w-5 h-5 text-primary" />
               <span>{t('Tambah Teman')}</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -132,7 +132,7 @@ export function AddFriendDialog({
           </DialogHeader>
 
           <form onSubmit={handleSearch} className="mt-3">
-            <div className="relative flex items-center rounded-lg bg-background border border-border focus-within:border-emerald-500/80 transition-colors p-1.5 shadow-2xs">
+            <div className="relative flex items-center rounded-lg bg-background border border-border focus-within:border-primary/80 transition-colors p-1.5 shadow-2xs">
               <Search className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
               <Input
                 value={query}
@@ -144,7 +144,7 @@ export function AddFriendDialog({
               <Button
                 type="submit"
                 disabled={!query.trim() || isSearching}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs h-8 px-3.5 shrink-0 transition-all cursor-pointer disabled:opacity-50"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-3.5 shrink-0 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('Cari')}
               </Button>
@@ -156,7 +156,7 @@ export function AddFriendDialog({
         <div className="p-4 max-h-[300px] overflow-y-auto [scrollbar-width:thin]">
           {isSearching ? (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-2 text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
               <p className="text-xs">{t('Mencari pengguna...')}</p>
             </div>
           ) : hasSearched && searchResults.length === 0 ? (
@@ -206,7 +206,7 @@ export function AddFriendDialog({
                           {t('Akun Anda')}
                         </span>
                       ) : isFriend ? (
-                        <span className="text-[11px] font-medium text-emerald-400 px-2.5 py-1 bg-emerald-500/10 rounded border border-emerald-500/20 flex items-center gap-1">
+                        <span className="text-[11px] font-medium text-primary px-2.5 py-1 bg-primary/10 rounded border border-primary/20 flex items-center gap-1">
                           <Check className="w-3 h-3" />
                           {t('Teman')}
                         </span>
@@ -220,7 +220,7 @@ export function AddFriendDialog({
                           size="sm"
                           onClick={() => handleSendRequest(user)}
                           disabled={isSendingThis || isAddingFriend}
-                          className="h-7 px-3 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer transition-all"
+                          className="h-7 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer transition-all"
                         >
                           {isSendingThis ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -239,7 +239,7 @@ export function AddFriendDialog({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-2.5">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-2.5">
                 <Sparkles className="w-6 h-6" />
               </div>
               <p className="text-xs font-semibold text-foreground mb-1">{t('Mulai Mencari Teman')}</p>

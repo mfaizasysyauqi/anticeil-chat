@@ -84,17 +84,17 @@ export function CreateOrJoinServerDialog({
         <Tabs defaultValue="create" className="w-full">
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <Server className="w-5 h-5 text-emerald-400" />
+              <Server className="w-5 h-5 text-primary" />
               <span>{t('Server Komunitas')}</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               {t('Buat server baru untuk proyek Anda atau gabung ke server lain menggunakan kode/link undangan.')}
             </DialogDescription>
             <TabsList className="grid w-full grid-cols-2 mt-2">
-              <TabsTrigger value="create" className="data-[state=active]:text-emerald-400">
+              <TabsTrigger value="create" className="data-[state=active]:text-primary">
                 {t('Buat Server Baru')}
               </TabsTrigger>
-              <TabsTrigger value="join" className="data-[state=active]:text-emerald-400">
+              <TabsTrigger value="join" className="data-[state=active]:text-primary">
                 {t('Gabung via Link/Kode')}
               </TabsTrigger>
             </TabsList>
@@ -127,15 +127,15 @@ export function CreateOrJoinServerDialog({
                   />
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="relative group/avatar size-20 rounded-[20px] border-2 border-dashed border-emerald-500/40 hover:border-emerald-500 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all bg-emerald-500/5 hover:bg-emerald-500/10"
+                    className="relative group/avatar size-20 rounded-[20px] border-2 border-dashed border-primary/40 hover:border-primary flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all bg-primary/5 hover:bg-primary/10"
                     title={t('Unggah Foto Server')}
                   >
                     {serverIconUrl ? (
                       <img src={serverIconUrl} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex flex-col items-center justify-center text-muted-foreground group-hover/avatar:text-emerald-400 transition-colors">
-                        <Camera className="size-6 mb-1 text-emerald-400 opacity-80 group-hover/avatar:opacity-100" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80 group-hover/avatar:text-emerald-400">{t('Unggah')}</span>
+                      <div className="flex flex-col items-center justify-center text-muted-foreground group-hover/avatar:text-primary transition-colors">
+                        <Camera className="size-6 mb-1 text-primary opacity-80 group-hover/avatar:opacity-100" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary/80 group-hover/avatar:text-primary">{t('Unggah')}</span>
                       </div>
                     )}
                   </div>
@@ -148,7 +148,7 @@ export function CreateOrJoinServerDialog({
                     value={serverName}
                     onChange={(e) => setServerName(e.target.value)}
                     placeholder="contoh: Komunitas AI & Bot / Proyek Alpha"
-                    className="text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
+                    className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                     required
                     autoFocus
                   />
@@ -160,7 +160,7 @@ export function CreateOrJoinServerDialog({
                     value={serverDesc}
                     onChange={(e) => setServerDesc(e.target.value)}
                     placeholder="Ruang diskusi untuk alur kerja dan bot..."
-                    className="text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
+                    className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                   />
                 </div>
               </div>
@@ -176,7 +176,7 @@ export function CreateOrJoinServerDialog({
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs h-8 px-4 cursor-pointer transition-all shadow-xs"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 cursor-pointer transition-all shadow-xs"
                 >
                   {t('Buat Server')}
                 </Button>
@@ -192,7 +192,7 @@ export function CreateOrJoinServerDialog({
                   value={joinInviteCode}
                   onChange={(e) => setJoinInviteCode(e.target.value)}
                   placeholder="contoh: inv_9f2a1b atau https://.../messages?invite=..."
-                  className="text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
+                  className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                   autoFocus
                 />
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -213,7 +213,7 @@ export function CreateOrJoinServerDialog({
               <Button
                 onClick={handleJoin}
                 disabled={isJoining || !joinInviteCode.trim()}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs h-8 px-4 cursor-pointer transition-all shadow-xs disabled:opacity-50"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 cursor-pointer transition-all shadow-xs disabled:opacity-50"
               >
                 {isJoining ? t('Bergabung...') : t('Gabung Server')}
               </Button>

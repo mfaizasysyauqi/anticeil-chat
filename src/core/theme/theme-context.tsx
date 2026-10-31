@@ -56,15 +56,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', '#f4f4f5');
       root.style.setProperty('--accent-foreground', '#18181b');
       root.style.setProperty('--input', '#f4f4f5');
-      // Anticeil Secondary: Hijau Emerald / Teal (#0d9488)
-      root.style.setProperty('--secondary', '#0d9488');
-      root.style.setProperty('--secondary-foreground', '#ffffff');
-      // Anticeil Primary: Kuning Anticeil (#f59e0b)
-      root.style.setProperty('--primary', '43 96% 46%');
-      root.style.setProperty('--primary-foreground', '0 0% 0%');
-      root.style.setProperty('--primary-100', '43 96% 90%');
-      root.style.setProperty('--primary-300', '43 96% 65%');
-      root.style.setProperty('--ring', 'rgba(100, 116, 139, 0.35)');
+      // Anticeil Secondary: Warm Gold / Amber (#f59e0b)
+      root.style.setProperty('--secondary', '#f59e0b');
+      root.style.setProperty('--secondary-foreground', '#000000');
+      // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
+      root.style.setProperty('--primary', '173 80% 36%');
+      root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--primary-100', '173 80% 90%');
+      root.style.setProperty('--primary-300', '173 80% 45%');
+      root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.35)');
     } else if (theme === 'midnight') {
       // Midnight: Classic Discord Grey (#313338 / #2b2d31)
       root.classList.add('dark', 'theme-midnight');
@@ -85,15 +85,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', '#35373c');
       root.style.setProperty('--accent-foreground', '#ffffff');
       root.style.setProperty('--input', '#383a40');
-      // Anticeil Secondary: Hijau Teal (#14b8a6)
-      root.style.setProperty('--secondary', '#0f766e');
-      root.style.setProperty('--secondary-foreground', '#ffffff');
-      // Anticeil Primary: Kuning Anticeil (#f59e0b / #fbbf24)
-      root.style.setProperty('--primary', '45 93% 47%');
-      root.style.setProperty('--primary-foreground', '0 0% 0%');
-      root.style.setProperty('--primary-100', '45 93% 20%');
-      root.style.setProperty('--primary-300', '45 93% 70%');
-      root.style.setProperty('--ring', 'rgba(255, 255, 255, 0.2)');
+      // Anticeil Secondary: Warm Gold (#f59e0b)
+      root.style.setProperty('--secondary', '#f59e0b');
+      root.style.setProperty('--secondary-foreground', '#000000');
+      // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
+      root.style.setProperty('--primary', '173 80% 36%');
+      root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--primary-100', '173 80% 18%');
+      root.style.setProperty('--primary-300', '173 80% 55%');
+      root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.4)');
     } else {
       // Dark Mode: Discord AMOLED Pure Black with Anticeil Palette (#000000 / #09090b)
       root.classList.add('dark', 'theme-dark');
@@ -114,15 +114,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', '#18181b');
       root.style.setProperty('--accent-foreground', '#ffffff');
       root.style.setProperty('--input', '#121215');
-      // Anticeil Secondary: Hijau Emerald / Teal (#0d9488)
-      root.style.setProperty('--secondary', '#0d9488');
-      root.style.setProperty('--secondary-foreground', '#ffffff');
-      // Anticeil Primary: Kuning Anticeil Emas (#f59e0b / #fbbf24)
-      root.style.setProperty('--primary', '45 93% 47%');
-      root.style.setProperty('--primary-foreground', '0 0% 0%');
-      root.style.setProperty('--primary-100', '45 93% 20%');
-      root.style.setProperty('--primary-300', '45 93% 70%');
-      root.style.setProperty('--ring', 'rgba(255, 255, 255, 0.2)');
+      // Anticeil Secondary: Warm Gold (#f59e0b)
+      root.style.setProperty('--secondary', '#f59e0b');
+      root.style.setProperty('--secondary-foreground', '#000000');
+      // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
+      root.style.setProperty('--primary', '173 80% 36%');
+      root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--primary-100', '173 80% 18%');
+      root.style.setProperty('--primary-300', '173 80% 55%');
+      root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.4)');
     }
   }, [theme]);
 

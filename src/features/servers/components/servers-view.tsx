@@ -288,7 +288,7 @@ export function ServersView({
             <Button
               size="xs"
               onClick={onOpenCreateServer}
-              className="px-2.5 py-1 text-xs font-bold transition-all bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-0.5 shadow-2xs cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold transition-all bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 flex items-center gap-1 ml-0.5 shadow-2xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">{t('Buat Server')}</span>
@@ -335,7 +335,7 @@ export function ServersView({
                   <Button
                     size="sm"
                     onClick={onOpenCreateServer}
-                    className="bg-amber-400 hover:bg-amber-300 text-black font-bold h-8 text-xs cursor-pointer shadow-2xs"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-8 text-xs cursor-pointer shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" /> Buat Server
                   </Button>
@@ -384,7 +384,7 @@ export function ServersView({
                           e.stopPropagation();
                           onSelectServer(srv.id);
                         }}
-                        className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shadow-xs transition-all"
+                        className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all"
                       >
                         <span>Buka Server</span>
                         <ArrowRight className="w-3 h-3" />
@@ -417,7 +417,7 @@ export function ServersView({
                 {filteredPendingInvites.map((inv) => (
                   <div
                     key={inv.id}
-                    className="p-4 rounded-xl border border-border bg-card hover:border-amber-400/40 transition-all flex flex-col justify-between gap-3 shadow-xs group"
+                    className="p-4 rounded-xl border border-border bg-card hover:border-primary/40 transition-all flex flex-col justify-between gap-3 shadow-xs group"
                   >
                     <div className="flex items-start gap-3">
                       <div className="size-12 rounded-[14px] bg-sidebar-accent border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs font-bold text-base text-foreground group-hover:scale-105 transition-transform">
@@ -431,7 +431,7 @@ export function ServersView({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-foreground truncate">{inv.serverName}</h3>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">
                             Undangan Masuk
                           </span>
                         </div>
@@ -498,7 +498,7 @@ export function ServersView({
             {/* Quick Invite Code / Link Join Banner */}
             <div className="p-4 rounded-xl border border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-9 rounded-lg bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center shrink-0">
+                <div className="size-9 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
                   <LinkIcon className="w-4 h-4" />
                 </div>
                 <div>
@@ -523,7 +523,7 @@ export function ServersView({
                   type="submit"
                   size="sm"
                   disabled={!inviteCodeInput.trim() || isJoiningByCode}
-                  className="h-8 px-3 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-black shrink-0 cursor-pointer"
+                  className="h-8 px-3 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 cursor-pointer"
                 >
                   {isJoiningByCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1 stroke-[2.5]" />}
                   <span>{t('Gabung')}</span>
@@ -552,7 +552,7 @@ export function ServersView({
                 <Button
                   size="sm"
                   onClick={onOpenCreateServer}
-                  className="mt-3.5 h-8 px-3 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-black cursor-pointer shadow-2xs"
+                  className="mt-3.5 h-8 px-3 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-2xs"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
                   <span>{t('Buat Server Baru')}</span>
@@ -589,7 +589,7 @@ export function ServersView({
                       <Button
                         size="sm"
                         onClick={() => handleJoinPublic(pub)}
-                        className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-amber-400 hover:bg-amber-300 text-black shadow-xs transition-all"
+                        className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all"
                       >
                         <Plus className="w-3 h-3 stroke-[2.5]" />
                         <span>{t('Gabung Server')}</span>
