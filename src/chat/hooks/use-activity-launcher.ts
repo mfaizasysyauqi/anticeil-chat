@@ -124,10 +124,25 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         if (voiceDest.hubId && voiceDest.hubId !== activeHubId) {
           setActiveHubId(voiceDest.hubId);
         }
-        setActiveChannelId(voiceDest.id);
         setActiveCallChannelId(voiceDest.id);
-        setIsCallPiP(false);
         setIsActivityOpen(true);
+
+        // When joining from a chat invite in a text channel, stay on that
+        // text channel and show the activity minimised (PiP). Only switch
+        // to the full call stage when launching directly (e.g. from the
+        // voice channel toolbar or the activity picker).
+        const stayInTextChannel =
+          fromChatInvite &&
+          activeChannel &&
+          activeChannel.type !== 'voice' &&
+          activeChannel.id !== voiceDest.id;
+
+        if (stayInTextChannel) {
+          setIsCallPiP(true);
+        } else {
+          setActiveChannelId(voiceDest.id);
+          setIsCallPiP(false);
+        }
         socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
           channelId: voiceDest.id,
           action: 'START_ACTIVITY',
