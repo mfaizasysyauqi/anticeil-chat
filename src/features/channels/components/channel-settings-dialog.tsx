@@ -133,7 +133,7 @@ export function ChannelSettingsDialog({
     setIsSubmitting(true);
     try {
       await onUpdateChannel(channel.id, {
-        name: channelType === 'voice' ? name.trim() : name.trim().replace(/\s+/g, '-'),
+        name: channelType === 'voice' ? name.trim() : name.trim().toLowerCase().replace(/\s+/g, '-'),
         description: topic.trim(),
         type: channelType,
         slowmode,

@@ -160,7 +160,7 @@ export function CreateChannelDialog({
                   value={newChannelName}
                   onChange={(e) => {
                     const val = e.target.value;
-                    setNewChannelName(newChannelType === 'voice' ? val : val.replace(/\s+/g, '-'));
+                    setNewChannelName(newChannelType === 'voice' ? val : val.toLowerCase().replace(/\s+/g, '-'));
                   }}
                   placeholder="new-channel"
                   className="pl-8 pr-8 bg-muted/40 border border-border text-foreground placeholder:text-muted-foreground rounded-lg h-9 text-xs focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"

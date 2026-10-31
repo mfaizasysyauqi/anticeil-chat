@@ -41,7 +41,7 @@ export function loadStoredChannels(): ColonyChannel[] {
     const raw = localStorage.getItem(STORAGE_KEY_CHANNELS);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.map((c) => (c.name === 'general' ? { ...c, name: 'General' } : c)) : [];
+    return Array.isArray(parsed) ? parsed.map((c) => ((c.type === 'text' || !c.type) && c.name === 'General' ? { ...c, name: 'general' } : c)) : [];
   } catch {
     return [];
   }

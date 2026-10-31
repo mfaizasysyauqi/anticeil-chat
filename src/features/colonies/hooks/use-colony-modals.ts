@@ -83,7 +83,7 @@ export function useColonyModals({
       if (!colonyChannels || colonyChannels.length === 0) {
         const [defaultCh, defaultVoice] = await Promise.all([
           colonyApi.createChannel({
-            name: 'General',
+            name: 'general',
             description: `Saluran obrolan umum untuk server ${createdHub.name}`,
             category: 'CHANNELS',
             colonyId: createdHub.id,
@@ -121,7 +121,7 @@ export function useColonyModals({
 
       const defaultText: ColonyChannel = {
         id: `ch_${Date.now()}_gen`,
-        name: 'General',
+        name: 'general',
         description: `Saluran obrolan umum untuk server ${newHub.name}`,
         category: 'CHANNELS',
         colonyId: newId,
