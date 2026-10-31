@@ -199,14 +199,6 @@ export function ServerRail({
       <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
         {/* Switcher Button: Servers vs Friends (matches standard server icon aesthetic) */}
         <div className="relative group w-full flex items-center justify-center">
-          {/* Signature left pill indicator like standard server icons */}
-          <span
-            className={cn(
-              'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
-              isFriendsMode ? 'h-10' : 'h-0 group-hover:h-3.5 opacity-80',
-            )}
-          />
-
           <Tooltip delayDuration={150}>
             <TooltipTrigger asChild>
               <button
