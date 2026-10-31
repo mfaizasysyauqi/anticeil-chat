@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import {
   Dialog,
   DialogContent,
@@ -161,104 +162,85 @@ export function ColonySettingsDialog({
 
   if (!isOpen || !activeHub) return null;
 
+  const colonyGroups: SettingsNavGroup[] = [
+    {
+      key: 'COLONY_SETTINGS',
+      title: activeHub?.name || t('Colony'),
+      items: [
+        { id: 'profile', label: t('Profil Colony'), icon: <Globe className="h-4 w-4 shrink-0" /> },
+        { id: 'colony-tag', label: t('Tag Colony'), icon: <Tag className="h-4 w-4 shrink-0" /> },
+        { id: 'engagement', label: t('Engagement'), icon: <BarChart3 className="h-4 w-4 shrink-0" /> },
+        { id: 'boost', label: t('Colony Boost'), icon: <Zap className="h-4 w-4 shrink-0" /> },
+        { id: 'emoji', label: t('Emoji Kustom'), icon: <Smile className="h-4 w-4 shrink-0" /> },
+      ],
+    },
+    {
+      key: 'COLONY_MANAGEMENT',
+      title: t('Manajemen'),
+      items: [
+        { id: 'members', label: t('Anggota'), icon: <Users className="h-4 w-4 shrink-0" /> },
+        { id: 'roles', label: t('Peran'), icon: <KeyRound className="h-4 w-4 shrink-0" /> },
+        { id: 'invites', label: t('Undangan'), icon: <UserPlus className="h-4 w-4 shrink-0" /> },
+        { id: 'integrations', label: t('Integrasi'), icon: <Webhook className="h-4 w-4 shrink-0" /> },
+        { id: 'audit-log', label: t('Log Audit'), icon: <ScrollText className="h-4 w-4 shrink-0" /> },
+        { id: 'bans', label: t('Pemblokiran'), icon: <Ban className="h-4 w-4 shrink-0" /> },
+      ],
+    },
+  ];
+
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent
-          showCloseButton={false}
-          className="max-w-[900px] w-[calc(100vw-2rem)] h-[calc(100dvh-4rem)] max-h-[680px] gap-0 overflow-hidden p-0 rounded-[16px]"
-        >
-          <DialogTitle className="sr-only">{t('Pengaturan Colony')}</DialogTitle>
-          <div className="flex flex-row w-full h-full min-h-0 overflow-hidden">
-
-          {/* Left sidebar */}
-          <aside className="w-56 shrink-0 flex flex-col border-r bg-muted/30 overflow-y-auto [scrollbar-width:thin]">
-            <div className="px-3 pt-5 pb-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2">
-                {activeHub?.name || t('Server')}
-              </span>
-            </div>
-
-            <nav className="p-2 space-y-0.5 text-xs">
-              {[
-                { id: 'profile' as const, label: t('Profil Colony'), icon: Globe },
-                { id: 'colony-tag' as const, label: t('Tag Colony'), icon: Tag },
-                { id: 'engagement' as const, label: t('Engagement'), icon: BarChart3 },
-                { id: 'boost' as const, label: t('Server Boost'), icon: Zap },
-                { id: 'emoji' as const, label: t('Emoji Kustom'), icon: Smile },
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setColonySettingsSection(id)}
-                  className={cn(
-                    'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md font-medium text-left transition-colors',
-                    serverSettingsSection === id
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {label}
-                </button>
-              ))}
-
-              <div className="pt-3 pb-1 px-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  {t('Manajemen')}
-                </span>
-              </div>
-
-              {[
-                { id: 'members' as const, label: t('Anggota'), icon: Users },
-                { id: 'roles' as const, label: t('Peran'), icon: KeyRound },
-                { id: 'invites' as const, label: t('Undangan'), icon: UserPlus },
-                { id: 'integrations' as const, label: t('Integrasi'), icon: Webhook },
-                { id: 'audit-log' as const, label: t('Log Audit'), icon: ScrollText },
-                { id: 'bans' as const, label: t('Pemblokiran'), icon: Ban },
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setColonySettingsSection(id)}
-                  className={cn(
-                    'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md font-medium text-left transition-colors',
-                    serverSettingsSection === id
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {label}
-                </button>
-              ))}
-
-              <div className="pt-3 pb-1 px-2">
-                <div className="h-px bg-border my-1" />
-              </div>
-
-              <button
-                onClick={() => {
-                  onClose();
-                  onDeleteHub(activeHub);
-                }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md font-medium text-left text-destructive hover:bg-destructive/10 transition-colors"
+      <TwoPaneSettingsDialog
+        open={isOpen}
+        onOpenChange={(open) => !open && onClose()}
+        title={t('Pengaturan Colony')}
+        groups={colonyGroups}
+        activeSection={serverSettingsSection}
+        onSectionChange={(id) => setColonySettingsSection(id as ColonySettingsSection)}
+        initialMobileView={initialSection && initialSection !== 'profile' ? 'detail' : 'menu'}
+        sidebarHeader={
+          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/50 border border-sidebar-border">
+            {activeHub?.iconUrl ? (
+              <img
+                src={activeHub.iconUrl}
+                alt={activeHub.name}
+                className="w-8 h-8 rounded-lg object-cover shrink-0"
+              />
+            ) : (
+              <div
+                className={cn(
+                  'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0',
+                  activeHub?.color || 'bg-indigo-600',
+                )}
               >
-                <Trash2 className="h-4 w-4 shrink-0" />
-                {t('Hapus Colony')}
-              </button>
-            </nav>
-          </aside>
-
-          {/* Right content area */}
-          <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden [scrollbar-width:thin] relative">
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 z-10 p-1.5 rounded-full hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            <div className="px-5 sm:px-8 py-6 sm:py-8 max-w-2xl w-full">
+                {activeHub?.name ? activeHub.name.charAt(0).toUpperCase() : 'C'}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground truncate">
+                {activeHub?.name || t('Colony')}
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate">
+                {members.length} {t('Anggota')}
+              </div>
+            </div>
+          </div>
+        }
+        footerAction={
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onDeleteHub(activeHub);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
+          >
+            <Trash2 className="h-4 w-4 shrink-0" />
+            <span>{t('Hapus Colony')}</span>
+          </button>
+        }
+      >
+        <div className="max-w-2xl w-full">
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
@@ -389,10 +371,7 @@ export function ColonySettingsDialog({
                 />
               )}
             </div>
-          </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      </TwoPaneSettingsDialog>
 
       {/* DIALOG: BAN MEMBER SUB-MODAL */}
       <Dialog open={isBanningUser} onOpenChange={setIsBanningUser}>

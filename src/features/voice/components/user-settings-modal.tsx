@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  X,
   User,
   Mic,
   Video,
@@ -15,7 +14,7 @@ import {
   UserCheck,
   CheckCircle2,
 } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -113,127 +112,84 @@ export function UserSettingsModal({
     onSaveUsername(editUsernameInput.trim());
   };
 
-  // ── Sidebar nav items ──
-  const navSections: { id: SettingsSection; label: string; icon: React.ReactNode; group: string }[] = [
-    { id: 'account', label: t('Akun'), icon: <User className="w-4 h-4" />, group: 'USER_SETTINGS' },
-    { id: 'appearance', label: t('Tampilan'), icon: <Palette className="w-4 h-4" />, group: 'USER_SETTINGS' },
-    { id: 'voice', label: 'Voice', icon: <Mic className="w-4 h-4" />, group: 'APP_SETTINGS' },
-    { id: 'camera', label: 'Camera', icon: <Video className="w-4 h-4" />, group: 'APP_SETTINGS' },
-  ];
-
-  const groups = [
-    { key: 'USER_SETTINGS', label: t('Pengaturan Pengguna') },
-    { key: 'APP_SETTINGS', label: t('Pengaturan Aplikasi') },
+  const groups: SettingsNavGroup[] = [
+    {
+      key: 'USER_SETTINGS',
+      title: t('Pengaturan Pengguna'),
+      items: [
+        { id: 'account', label: t('Akun'), icon: <User className="w-4 h-4" /> },
+        { id: 'appearance', label: t('Tampilan'), icon: <Palette className="w-4 h-4" /> },
+      ],
+    },
+    {
+      key: 'APP_SETTINGS',
+      title: t('Pengaturan Aplikasi'),
+      items: [
+        { id: 'voice', label: 'Voice', icon: <Mic className="w-4 h-4" /> },
+        { id: 'camera', label: 'Camera', icon: <Video className="w-4 h-4" /> },
+      ],
+    },
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className="p-0 w-full h-full sm:w-[calc(100vw-3rem)] sm:h-[calc(100vh-2.5rem)] max-w-[1240px] max-h-[860px] overflow-hidden bg-background border border-border flex flex-row rounded-none sm:rounded-[20px] shadow-2xl"
-      >
-        {/* ── Left Sidebar ── */}
-        <div className="w-[240px] sm:w-[260px] shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col py-6 px-3 sm:px-4 overflow-y-auto select-none">
-          {/* User mini-card */}
-          {currentUser && (
-            <div className="px-1 mb-5">
-              <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-sidebar-accent/80 border border-sidebar-border">
-                <CommunityAvatar
-                  name={currentUserName}
-                  email={currentUser?.email}
-                  imageUrl={currentUser?.imageUrl}
-                  size={36}
-                  showStatus={false}
-                  className="shrink-0"
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold text-foreground truncate">{currentUserName}</span>
-                  <span className="text-[10px] text-muted-foreground font-mono truncate">
-                    {currentUser?.username
-                      ? `@${currentUser.username}`
-                      : currentUser?.email
-                      ? `@${currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '')}`
-                      : ''}
-                  </span>
-                </div>
-              </div>
+    <TwoPaneSettingsDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('Pengaturan Pengguna')}
+      groups={groups}
+      activeSection={activeSection}
+      onSectionChange={(id) => setActiveSection(id as SettingsSection)}
+      sidebarHeader={
+        currentUser ? (
+          <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-sidebar-accent/80 border border-sidebar-border">
+            <CommunityAvatar
+              name={currentUserName}
+              email={currentUser?.email}
+              imageUrl={currentUser?.imageUrl}
+              size={36}
+              showStatus={false}
+              className="shrink-0"
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-bold text-foreground truncate">{currentUserName}</span>
+              <span className="text-[10px] text-muted-foreground font-mono truncate">
+                {currentUser?.username
+                  ? `@${currentUser.username}`
+                  : currentUser?.email
+                  ? `@${currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '')}`
+                  : ''}
+              </span>
             </div>
-          )}
-
-          {/* Nav groups */}
-          <div className="space-y-4 flex-1">
-            {groups.map((group) => {
-              const items = navSections.filter((s) => s.group === group.key);
-              return (
-                <div key={group.key} className="space-y-0.5">
-                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2.5 py-1">
-                    {group.label}
-                  </div>
-                  {items.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setActiveSection(item.id)}
-                      className={cn(
-                        'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left',
-                        activeSection === item.id
-                          ? 'bg-sidebar-accent text-foreground font-bold shadow-2xs'
-                          : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground',
-                      )}
-                    >
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
           </div>
-
-          {/* Divider + Logout */}
-          <div className="pt-4 border-t border-sidebar-border mt-auto">
-            {currentUser ? (
-              <button
-                type="button"
-                onClick={() => { onOpenChange(false); onLogout(); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>{t('Keluar Akun')}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onGoogleSignIn}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
-              >
-                <AtSign className="w-4 h-4" />
-                <span>{t('Masuk')}</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Right Content ── */}
-        <div className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
-          {/* Signature Discord ESC Close button (SINGLE button, top right) */}
-          <div className="absolute top-5 right-6 z-20">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="flex flex-col items-center gap-1 group cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
-              title={t('Tutup (ESC)')}
-            >
-              <div className="size-8 rounded-full border border-border group-hover:border-foreground flex items-center justify-center transition-colors bg-card shadow-2xs">
-                <X className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <span className="text-[9px] font-bold tracking-wider uppercase opacity-75 group-hover:opacity-100">ESC</span>
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-6 sm:px-10 py-7 [scrollbar-width:thin] space-y-6 max-w-3xl">
-
-            {/* ── ACCOUNT ── */}
+        ) : undefined
+      }
+      footerAction={
+        currentUser ? (
+          <button
+            type="button"
+            onClick={() => {
+              onOpenChange(false);
+              onLogout();
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>{t('Keluar Akun')}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onGoogleSignIn}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
+          >
+            <AtSign className="w-4 h-4" />
+            <span>{t('Masuk')}</span>
+          </button>
+        )
+      }
+    >
+      <div className="space-y-6 max-w-2xl">
+        {/* ── ACCOUNT ── */}
             {activeSection === 'account' && (
               <>
                 <h2 className="text-lg font-bold text-foreground border-b border-border pb-3">{t('Akun')}</h2>
@@ -600,8 +556,6 @@ export function UserSettingsModal({
             )}
 
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    </TwoPaneSettingsDialog>
   );
 }
