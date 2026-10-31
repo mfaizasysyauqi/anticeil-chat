@@ -835,13 +835,8 @@ export function CommunityPage() {
       const current = hubChannels.find((c) => c.id === activeChannelId);
       if (current) return current;
     }
-    // If activity is selected or activeCallChannelId is set, prefer voice channel over defaulting to first text channel
-    if (selectedActivityAppId || activeCallChannelId) {
-      const voiceCh = hubChannels.find((c) => c.type === 'voice');
-      if (voiceCh) return voiceCh;
-    }
     return hubChannels[0] || null;
-  }, [isHome, activeChannelId, dmChannels, hubChannels, selectedActivityAppId, activeCallChannelId, members, currentUser]);
+  }, [isHome, activeChannelId, dmChannels, hubChannels, members, currentUser]);
 
   // ── Discord Threads & Forum (Feature-First Hook) ─────────────────────
   const {

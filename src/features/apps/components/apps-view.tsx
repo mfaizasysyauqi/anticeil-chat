@@ -73,7 +73,7 @@ export function AppsView({
       setSelectedAppForLaunch(app);
       setIsLaunchDialogOpen(true);
     } else {
-      const targetChannel = activeCallChannelId || voiceChannels[0]?.id;
+      const targetChannel = activeCallChannelId || undefined;
       onLaunchActivity(typeof appOrId === 'string' ? appOrId : 'watch-together', false, targetChannel);
     }
   };

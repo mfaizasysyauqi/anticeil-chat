@@ -91,16 +91,16 @@ export function ActivityDestinationDialog({
 
   const [selectedChannelId, setSelectedChannelId] = useState<string>('');
 
-  // Default selected channel: prefer first voice channel, otherwise first text channel
+  // Default selected channel: prefer first text channel, otherwise first server channel
   React.useEffect(() => {
-    if (voiceChannels.length > 0) {
-      setSelectedChannelId(voiceChannels[0].id);
+    if (textChannels.length > 0) {
+      setSelectedChannelId(textChannels[0].id);
     } else if (serverChannels.length > 0) {
       setSelectedChannelId(serverChannels[0].id);
     } else {
       setSelectedChannelId('');
     }
-  }, [selectedHubId, voiceChannels, serverChannels]);
+  }, [selectedHubId, textChannels, serverChannels]);
 
   // DM / Friends Selection
   const availableDMs = useMemo(() => {
