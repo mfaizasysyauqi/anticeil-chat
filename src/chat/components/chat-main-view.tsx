@@ -338,8 +338,8 @@ export function ChatMainView({
       if (rect.height <= 0) return;
       const relativeY = moveEv.clientY - rect.top;
       const pct = (relativeY / rect.height) * 100;
-      // Clamp: activity max 80% (min 20% chat), activity min 50% (50/50 max chat)
-      const clamped = Math.min(80, Math.max(50, Math.round(pct)));
+      // Clamp: activity max 70% (min 30% chat), activity min 50% (50/50 split)
+      const clamped = Math.min(70, Math.max(50, Math.round(pct)));
       setActivitySplitHeight(clamped);
     };
 
@@ -676,7 +676,7 @@ export function ChatMainView({
               {/* Chat Split Pane */}
               <div
                 style={{ height: `${100 - activitySplitHeight}%` }}
-                className="w-full min-h-[20%] max-h-[50%] overflow-hidden flex flex-col bg-background border-t border-border/70 shadow-lg shrink-0"
+                className="w-full min-h-[30%] max-h-[50%] overflow-hidden flex flex-col bg-background border-t border-border/70 shadow-lg shrink-0"
               >
                 {/* Compact Discord-style Chat Header */}
                 <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-card/60 backdrop-blur-xs shrink-0">
@@ -686,7 +686,7 @@ export function ChatMainView({
                       Obrolan #{activeChannel?.name}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-medium hidden sm:inline">
-                      (Tarik pembatas untuk ubah ukuran • max 50%)
+                      (Tarik pembatas untuk ubah ukuran • min 50% • max 70%)
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
