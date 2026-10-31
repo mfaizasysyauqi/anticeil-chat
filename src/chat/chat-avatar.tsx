@@ -109,7 +109,7 @@ export function ChatAvatar({
     </div>
   );
 
-  if (tooltipText || email) {
+  if (tooltipText) {
     return (
       <TooltipProvider>
         <Tooltip delayDuration={300}>
@@ -117,7 +117,7 @@ export function ChatAvatar({
             <div className="cursor-pointer inline-flex shrink-0">{avatarCircle}</div>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs font-medium">
-            {tooltipText || `${name} ${email ? `(${email})` : ''}`}
+            {tooltipText}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
