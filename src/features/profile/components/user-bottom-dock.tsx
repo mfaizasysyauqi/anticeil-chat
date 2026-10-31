@@ -14,7 +14,7 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import { AudioDeviceMenu, VoiceVideoSettingsModal } from '@/features/voice';
+import { AudioDeviceMenu, UserSettingsModal } from '@/features/voice';
 
 interface UserBottomDockProps {
   currentUser: any;
@@ -34,6 +34,13 @@ interface UserBottomDockProps {
   onReturnToCall?: () => void;
   onDisconnectCall?: () => void;
   className?: string;
+  // account props forwarded to UserSettingsModal
+  onSaveDisplayName?: (name: string) => Promise<void> | void;
+  isSavingDisplayName?: boolean;
+  onSaveUsername?: (username: string) => Promise<void> | void;
+  isSavingUsername?: boolean;
+  theme?: any;
+  setTheme?: (theme: any) => void;
 }
 
 export function UserBottomDock({
@@ -53,9 +60,16 @@ export function UserBottomDock({
   onReturnToCall,
   onDisconnectCall,
   className,
+  onSaveDisplayName,
+  isSavingDisplayName,
+  onSaveUsername,
+  isSavingUsername,
+  theme,
+  setTheme,
 }: UserBottomDockProps) {
   const { t } = useTranslation();
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
     <div
@@ -218,9 +232,9 @@ export function UserBottomDock({
             {/* Settings button */}
             <button
               type="button"
-              onClick={onOpenEditProfile}
+              onClick={() => setIsSettingsOpen(true)}
               className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md cursor-pointer transition-colors"
-              title={t('Pengaturan Akun')}
+              title={t('Pengaturan')}
             >
               <Settings className="w-3.5 h-3.5" />
             </button>
@@ -239,10 +253,20 @@ export function UserBottomDock({
         </div>
       )}
 
-      {/* Voice & Video Full Settings Modal (100% Match Discord Screenshots) */}
-      <VoiceVideoSettingsModal
-        open={isVoiceModalOpen}
-        onOpenChange={setIsVoiceModalOpen}
+      {/* Unified User Settings Modal (Discord-style) */}
+      <UserSettingsModal
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        currentUser={currentUser}
+        currentUserName={currentUserName}
+        onSaveDisplayName={onSaveDisplayName ?? (() => {})}
+        isSavingDisplayName={isSavingDisplayName}
+        onSaveUsername={onSaveUsername ?? (() => {})}
+        isSavingUsername={isSavingUsername}
+        theme={theme}
+        setTheme={setTheme ?? (() => {})}
+        onGoogleSignIn={onGoogleSignIn ?? (() => {})}
+        onLogout={onLogout ?? (() => {})}
       />
     </div>
   );

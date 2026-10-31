@@ -1860,6 +1860,12 @@ export function CommunityPage() {
           setActiveCallChannelId(null);
           setIsActivityOpen(false);
         }}
+        onSaveDisplayName={(name) => updateNameMutation.mutate(name)}
+        isSavingDisplayName={updateNameMutation.isPending}
+        onSaveUsername={(username) => updateUsernameMutation.mutate(username)}
+        isSavingUsername={updateUsernameMutation.isPending}
+        theme={theme}
+        setTheme={setTheme}
       />
     );
   };

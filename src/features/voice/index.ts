@@ -12,3 +12,4 @@ export * from './components/community-call-stage';
 export * from './hooks/use-voice-settings';
 export * from './components/audio-device-menu';
 export * from './components/voice-video-settings-modal';
+export * from './components/user-settings-modal';
