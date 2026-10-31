@@ -518,11 +518,19 @@ export function MediaPickerPopover({
                         onClick={() => setSelectedGifCategory(cat.id)}
                         className="rounded-xl overflow-hidden aspect-[16/9] relative group hover:ring-2 hover:ring-ring transition-all cursor-pointer shadow-md"
                       >
-                        <img
-                          src={cat.coverUrl}
-                          alt={cat.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform filter brightness-75 group-hover:brightness-90"
-                        />
+                        {cat.coverUrl ? (
+                          <img
+                            src={cat.coverUrl}
+                            alt={cat.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform filter brightness-75 group-hover:brightness-90"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-yellow-500/40 via-orange-500/30 to-pink-500/40 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-yellow-300 fill-current opacity-80" viewBox="0 0 24 24">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-2.5">
                           <span className="text-xs font-black text-white tracking-wide uppercase drop-shadow-md">
                             {cat.name}
