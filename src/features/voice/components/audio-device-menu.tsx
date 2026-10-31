@@ -273,9 +273,16 @@ export function AudioDeviceMenu({
           {/* Voice Settings Launcher */}
           <button
             type="button"
-            onClick={() => {
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               setIsOpen(false);
-              onOpenFullSettings();
+              setTimeout(() => {
+                onOpenFullSettings();
+              }, 100);
             }}
             className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-[#232428] text-foreground font-semibold text-xs transition-colors cursor-pointer"
           >
