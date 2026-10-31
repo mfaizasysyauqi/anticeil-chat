@@ -80,23 +80,19 @@ export function ActivityFilmstrip({
               <LocalVideoView stream={localStream} />
             ) : (
               <div className="flex flex-col items-center justify-center gap-1">
-                <div
+                <CommunityAvatar
+                  name={currentUserName}
+                  imageUrl={currentUser?.imageUrl}
+                  email={currentUser?.email}
+                  size={36}
+                  showStatus={false}
                   className={cn(
-                    'w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-all',
+                    'shrink-0 rounded-full transition-all aspect-square',
                     isSpeakingLocal
                       ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-card'
                       : 'ring-1 ring-border',
                   )}
-                >
-                  <CommunityAvatar
-                    name={currentUserName}
-                    imageUrl={currentUser?.imageUrl}
-                    email={currentUser?.email}
-                    size={36}
-                    showStatus={false}
-                    className="w-full h-full rounded-full"
-                  />
-                </div>
+                />
                 <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium truncate max-w-[75px] sm:max-w-[90px]">
                   {currentUserName}
                 </span>
@@ -119,15 +115,18 @@ export function ActivityFilmstrip({
                 <RemoteVideoView stream={peer.stream} isMuted={false} />
               ) : (
                 <div className="flex flex-col items-center justify-center gap-1">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center ring-1 ring-white/10">
-                    <CommunityAvatar
-                      name={peer.userName}
-                      imageUrl={peer.userAvatar}
-                      size={36}
-                      showStatus={false}
-                      className="w-full h-full rounded-full"
-                    />
-                  </div>
+                  <CommunityAvatar
+                    name={peer.userName}
+                    imageUrl={peer.userAvatar}
+                    size={36}
+                    showStatus={false}
+                    className={cn(
+                      'shrink-0 rounded-full transition-all aspect-square',
+                      peer.isSpeaking
+                        ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-card'
+                        : 'ring-1 ring-border',
+                    )}
+                  />
                   <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium truncate max-w-[75px] sm:max-w-[90px]">
                     {peer.userName}
                   </span>

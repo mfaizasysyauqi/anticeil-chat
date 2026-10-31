@@ -75,13 +75,13 @@ export function ChatAvatar({
   const avatarCircle = (
     <div
       className={cn(
-        'relative inline-flex shrink-0 rounded-full select-none items-center justify-center',
+        'relative inline-flex shrink-0 aspect-square rounded-full select-none items-center justify-center',
         className,
       )}
       style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
     >
       <div
-        className="rounded-full overflow-hidden flex items-center justify-center shadow-xs ring-1 ring-border/60 bg-card"
+        className="w-full h-full aspect-square rounded-full overflow-hidden flex items-center justify-center shadow-xs ring-1 ring-border/60 bg-card"
         style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
       >
         {imageUrl && !imageError ? (
@@ -90,7 +90,7 @@ export function ChatAvatar({
             alt={name}
             onError={() => setImageError(true)}
             style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
-            className="object-cover rounded-full bg-card"
+            className="w-full h-full object-cover rounded-full aspect-square bg-card"
           />
         ) : (
           <div

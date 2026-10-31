@@ -105,23 +105,19 @@ export function CallParticipantGrid({
               <LocalVideoView stream={localStream} />
             ) : (
               <div className="flex flex-col items-center justify-center gap-1">
-                <div
+                <CommunityAvatar
+                  name={currentUserName}
+                  imageUrl={currentUser?.imageUrl}
+                  email={currentUser?.email}
+                  size={44}
+                  showStatus={false}
                   className={cn(
-                    'w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all',
+                    'shrink-0 rounded-full transition-all aspect-square',
                     isSpeakingLocal
                       ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-card'
                       : 'ring-1 ring-border',
                   )}
-                >
-                  <CommunityAvatar
-                    name={currentUserName}
-                    imageUrl={currentUser?.imageUrl}
-                    email={currentUser?.email}
-                    size={44}
-                    showStatus={false}
-                    className="w-full h-full rounded-full"
-                  />
-                </div>
+                />
               </div>
             )}
             <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-xs flex items-center gap-1 text-[10px] font-semibold text-white border border-white/10">
@@ -140,15 +136,18 @@ export function CallParticipantGrid({
                 <RemoteVideoView stream={peer.stream} isMuted={false} />
               ) : (
                 <div className="flex flex-col items-center justify-center gap-1">
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center ring-1 ring-white/10">
-                    <CommunityAvatar
-                      name={peer.userName}
-                      imageUrl={peer.userAvatar}
-                      size={44}
-                      showStatus={false}
-                      className="w-full h-full rounded-full"
-                    />
-                  </div>
+                  <CommunityAvatar
+                    name={peer.userName}
+                    imageUrl={peer.userAvatar}
+                    size={44}
+                    showStatus={false}
+                    className={cn(
+                      'shrink-0 rounded-full transition-all aspect-square',
+                      peer.isSpeaking
+                        ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-card'
+                        : 'ring-1 ring-border',
+                    )}
+                  />
                   <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[90px]">
                     {peer.userName}
                   </span>
@@ -185,23 +184,19 @@ export function CallParticipantGrid({
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 py-6">
               <div className="relative">
-                <div
+                <CommunityAvatar
+                  name={currentUserName}
+                  imageUrl={currentUser?.imageUrl}
+                  email={currentUser?.email}
+                  size={96}
+                  showStatus={false}
                   className={cn(
-                    'w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 overflow-hidden',
+                    'shrink-0 rounded-full transition-all duration-300 relative z-10 aspect-square',
                     isSpeakingLocal
                       ? 'ring-4 ring-emerald-500 ring-offset-4 ring-offset-background scale-105'
                       : 'ring-2 ring-border',
                   )}
-                >
-                  <CommunityAvatar
-                    name={currentUserName}
-                    imageUrl={currentUser?.imageUrl}
-                    email={currentUser?.email}
-                    size={96}
-                    showStatus={false}
-                    className="w-full h-full rounded-full"
-                  />
-                </div>
+                />
                 {isSpeakingLocal && (
                   <div className="absolute inset-0 rounded-full bg-emerald-500/25 blur-xl animate-pulse -z-0" />
                 )}
@@ -279,22 +274,18 @@ export function CallParticipantGrid({
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 py-6">
                 <div className="relative">
-                  <div
+                  <CommunityAvatar
+                    name={peer.userName}
+                    imageUrl={peer.userAvatar}
+                    size={96}
+                    showStatus={false}
                     className={cn(
-                      'w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 overflow-hidden',
+                      'shrink-0 rounded-full transition-all duration-300 relative z-10 aspect-square',
                       peer.isSpeaking
                         ? 'ring-4 ring-emerald-500 ring-offset-4 ring-offset-background scale-105'
                         : 'ring-2 ring-border',
                     )}
-                  >
-                    <CommunityAvatar
-                      name={peer.userName}
-                      imageUrl={peer.userAvatar}
-                      size={96}
-                      showStatus={false}
-                      className="w-full h-full rounded-full"
-                    />
-                  </div>
+                  />
                   {peer.isSpeaking && (
                     <div className="absolute inset-0 rounded-full bg-emerald-500/25 blur-xl animate-pulse -z-0" />
                   )}
