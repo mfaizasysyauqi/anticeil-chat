@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Globe, UserPlus } from 'lucide-react';
+import { Plus, Users, Globe, UserPlus, Compass } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -169,7 +169,7 @@ export function ServerRail({
                 className={cn(
                   'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                   currentActiveId === mainServer.id && !activeChannelId?.startsWith('dm-')
-                    ? 'bg-primary/20 text-primary border border-primary/40 shadow-xs shadow-primary/10'
+                    ? 'bg-sidebar-accent text-foreground shadow-xs'
                     : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
                 )}
               >
@@ -205,18 +205,18 @@ export function ServerRail({
                 type="button"
                 onClick={handleToggleMode}
                 className={cn(
-                  'group relative size-10 rounded-[14px] flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
-                  isFriendsMode
-                    ? 'bg-primary text-primary-foreground shadow-xs shadow-primary/30 hover:bg-primary/90'
-                    : 'bg-sidebar-accent text-muted-foreground hover:bg-primary/20 hover:text-primary',
+                  'group relative size-10 rounded-[14px] bg-sidebar-accent hover:bg-sidebar-accent/80 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
+                  isFriendsMode ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
                 aria-label={isFriendsMode ? 'Mode Teman. Klik untuk ganti ke Mode Server' : 'Mode Server. Klik untuk ganti ke Mode Teman'}
               >
-                {isFriendsMode ? (
-                  <Users className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
-                ) : (
-                  <Globe className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
-                )}
+                <div className="size-7 rounded-full bg-muted/80 group-hover:bg-muted flex items-center justify-center transition-colors">
+                  {isFriendsMode ? (
+                    <Users className="w-4 h-4 transition-transform duration-200 group-hover:scale-110 text-foreground/80 group-hover:text-foreground" />
+                  ) : (
+                    <Compass className="w-4 h-4 transition-transform duration-200 group-hover:scale-110 text-foreground/80 group-hover:text-foreground" />
+                  )}
+                </div>
 
                 {/* Badge: total server unreads (when in server mode) or total DM unreads (when in friend mode) */}
                 {isFriendsMode
@@ -246,16 +246,15 @@ export function ServerRail({
               <button
                 type="button"
                 onClick={isFriendsMode ? onOpenAddFriend : handleCreate}
-                className={cn(
-                  'group relative size-10 rounded-[14px] bg-sidebar-accent flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold',
-                  'text-primary hover:bg-primary hover:text-primary-foreground',
-                )}
+                className="group relative size-10 rounded-[14px] bg-sidebar-accent hover:bg-sidebar-accent/80 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold text-muted-foreground hover:text-foreground"
               >
-                {isFriendsMode ? (
-                  <UserPlus className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-inherit" />
-                ) : (
-                  <Plus className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90 text-inherit" />
-                )}
+                <div className="size-7 rounded-full bg-muted/80 group-hover:bg-muted flex items-center justify-center transition-colors">
+                  {isFriendsMode ? (
+                    <UserPlus className="w-4 h-4 transition-transform duration-200 group-hover:scale-110 text-foreground/80 group-hover:text-foreground" />
+                  ) : (
+                    <Plus className="w-4 h-4 transition-transform duration-200 group-hover:rotate-90 text-foreground/80 group-hover:text-foreground" />
+                  )}
+                </div>
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
@@ -300,7 +299,7 @@ export function ServerRail({
                       className={cn(
                         'relative size-10 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isDmActive
-                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-sidebar shadow-xs'
+                          ? 'shadow-xs'
                           : 'hover:opacity-90',
                       )}
                     >
@@ -370,7 +369,7 @@ export function ServerRail({
                       className={cn(
                         'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isActive
-                          ? 'bg-primary/20 text-primary border border-primary/40 shadow-xs shadow-primary/10'
+                          ? 'bg-sidebar-accent text-foreground shadow-xs'
                           : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
                       )}
                     >
