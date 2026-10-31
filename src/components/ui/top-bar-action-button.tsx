@@ -47,3 +47,4 @@ export const TopBarActionButton = React.forwardRef<HTMLButtonElement, TopBarActi
 );
 
 TopBarActionButton.displayName = 'TopBarActionButton';
+

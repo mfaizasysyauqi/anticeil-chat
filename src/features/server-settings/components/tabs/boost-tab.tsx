@@ -18,29 +18,32 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
   const [isBoostingServer, setIsBoostingServer] = useState(false);
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       <h2 className="text-xl font-bold mb-1">{t('Server Boost Perks')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
         {t('Tingkatkan performa server Anda untuk membuka batas kapasitas, audio HD, dan kustomisasi ekstra.')}
       </p>
 
       {/* Hero Boost Banner */}
-      <div className="rounded-xl border bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-card p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-purple-400" />
+      <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/15 via-background to-card p-4 sm:p-6 mb-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+              <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-primary fill-primary/20" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-lg">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-base sm:text-lg text-foreground">
                   {t('Tingkat')} {activeHub?.boostTier || 0}
                 </h3>
-                <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-400 border-purple-500/30">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-semibold bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/30"
+                >
                   {activeHub?.boostsCount || 0} {t('Boost Aktif')}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 truncate sm:whitespace-normal">
                 {(activeHub?.boostTier || 0) >= 3
                   ? t('Tingkat Maksimal Tercapai!')
                   : `${
@@ -72,22 +75,22 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
                 setIsBoostingServer(false);
               }
             }}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-medium"
+            className="w-full sm:w-auto shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer shadow-xs rounded-[6px] transition-all flex items-center justify-center gap-2 h-9 px-4"
           >
-            <Zap className="w-4 h-4 mr-2" />
-            {isBoostingServer ? t('Memproses...') : t('Boost Server Ini (+1 Boost)')}
+            <Zap className="w-4 h-4 fill-primary-foreground/30" />
+            <span className="truncate">{isBoostingServer ? t('Memproses...') : t('Boost Server Ini (+1 Boost)')}</span>
           </Button>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-1.5">
-          <div className="flex justify-between text-[11px] text-muted-foreground">
+          <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
             <span>{t('Kemajuan Boost')}</span>
             <span>{activeHub?.boostsCount || 0} / 14</span>
           </div>
-          <div className="w-full bg-black/40 rounded-full h-2 overflow-hidden border border-white/5">
+          <div className="w-full bg-muted/60 rounded-full h-2 overflow-hidden border border-border/40">
             <div
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-primary via-emerald-400 to-amber-400 h-full rounded-full transition-all duration-500"
               style={{
                 width: `${Math.min(100, Math.max(5, ((activeHub?.boostsCount || 0) / 14) * 100))}%`,
               }}
@@ -124,17 +127,17 @@ export function BoostTab({ activeHub, onUpdateHub, t }: BoostTabProps) {
               key={tInfo.tier}
               className={cn(
                 'rounded-lg border p-4 transition-colors',
-                isUnlocked ? 'bg-purple-500/5 border-purple-500/20' : 'bg-card/40 opacity-70',
+                isUnlocked ? 'bg-primary/5 border-primary/30' : 'bg-card/40 border-border opacity-70',
               )}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-sm flex items-center gap-2">
-                  <Award className={cn('w-4 h-4', isUnlocked ? 'text-purple-400' : 'text-muted-foreground')} />
+                  <Award className={cn('w-4 h-4', isUnlocked ? 'text-primary' : 'text-muted-foreground')} />
                   {tInfo.title}
                 </span>
                 <Badge
                   variant={isUnlocked ? 'default' : 'outline'}
-                  className={isUnlocked ? 'bg-purple-600 text-[10px]' : 'text-[10px]'}
+                  className={isUnlocked ? 'bg-primary text-primary-foreground text-[10px] font-semibold' : 'text-[10px]'}
                 >
                   {isUnlocked ? t('Terbuka ✅') : `${tInfo.boostsRequired} Boost`}
                 </Badge>

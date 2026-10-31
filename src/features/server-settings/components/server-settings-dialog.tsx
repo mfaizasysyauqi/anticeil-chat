@@ -249,7 +249,7 @@ export function ServerSettingsDialog({
           </aside>
 
           {/* Right content area */}
-          <div className="flex-1 min-w-0 overflow-y-auto [scrollbar-width:thin] relative">
+          <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden [scrollbar-width:thin] relative">
             {/* Close button */}
             <button
               onClick={onClose}
@@ -258,7 +258,7 @@ export function ServerSettingsDialog({
               <X className="h-4 w-4" />
             </button>
 
-            <div className="px-8 py-8 max-w-2xl">
+            <div className="px-5 sm:px-8 py-6 sm:py-8 max-w-2xl w-full">
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
