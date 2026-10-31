@@ -1643,12 +1643,9 @@ export function CommunityPage() {
         setActiveChannelId('');
         setHomeView('friends');
       } else {
-        const firstServer = hubs.find((h) => h.id !== 'anticeil') || hubs[0];
-        if (firstServer) {
-          setActiveHubId(firstServer.id);
-          const firstCh = channels.find((c) => (c.hubId || 'anticeil') === firstServer.id && c.category === 'CHANNELS');
-          setActiveChannelId(firstCh?.id || '');
-        }
+        setActiveHubId('anticeil');
+        setActiveChannelId('');
+        setHomeView('servers');
       }
       toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Server'));
       return next;
