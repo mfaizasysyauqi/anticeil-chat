@@ -81,7 +81,7 @@ export function ChatAvatar({
       style={{ width: `${size}px`, height: `${size}px` }}
     >
       <div
-        className="w-full h-full rounded-full overflow-hidden flex items-center justify-center shadow-xs ring-1 ring-border/60"
+        className="w-full h-full rounded-full overflow-hidden flex items-center justify-center shadow-xs ring-1 ring-border/60 bg-card"
         style={{ width: `${size}px`, height: `${size}px` }}
       >
         {imageUrl && !imageError ? (
@@ -89,7 +89,7 @@ export function ChatAvatar({
             src={imageUrl}
             alt={name}
             onError={() => setImageError(true)}
-            className="w-full h-full object-cover rounded-full aspect-square"
+            className="w-full h-full object-cover rounded-full aspect-square bg-card"
           />
         ) : (
           <div

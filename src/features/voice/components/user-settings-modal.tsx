@@ -266,7 +266,7 @@ export function UserSettingsModal({
                             imageUrl={currentUser?.imageUrl}
                             size={72}
                             showStatus={false}
-                            className="shrink-0 ring-4 ring-card rounded-full shadow-md"
+                            className="shrink-0 ring-[6px] ring-card rounded-full shadow-lg bg-card"
                           />
                         </div>
                         <div>
