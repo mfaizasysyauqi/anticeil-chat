@@ -120,3 +120,10 @@ export function saveStoredColonyInvitations(invitations: ServerInvitation[]): vo
     console.error('Failed to save server invitations to storage', err);
   }
 }
+
+// ── Colony Domain Aliases ───────────────────────────
+export type ColonyId = CommunityHubId;
+export type Colony = CommunityHub;
+export const DEFAULT_COLONIES = DEFAULT_HUBS;
+export const loadStoredColonies = loadStoredHubs;
+export const saveStoredColonies = saveStoredHubs;

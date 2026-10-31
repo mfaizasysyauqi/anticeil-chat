@@ -1189,3 +1189,6 @@ export const chatApi = {
 export const messagesApi = chatApi;
 export const communityApi = chatApi;
 
+
+// ── Colony API Alias ───────────────────────────────
+export const colonyApi = chatApi;

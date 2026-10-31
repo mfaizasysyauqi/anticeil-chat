@@ -220,6 +220,8 @@ export type ColonyBan = CommunityBan;
 export type ColonyCustomRole = CommunityCustomRole;
 export type ColonyStats = CommunityHubStats;
 export type ColonyAuditEntry = CommunityAuditEntry;
+export type ColonyChannel = CommunityChannel;
+export type ColonyMessage = CommunityMessage;
 
 export type Server = CommunityHub;
 export type ServerId = string;

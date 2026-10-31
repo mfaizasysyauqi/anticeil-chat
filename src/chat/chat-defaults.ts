@@ -1,5 +1,5 @@
 import { CommunityChannel, CommunityHub, CommunityMember, CommunityMessage } from './chat-types';
-export { DEFAULT_HUBS, loadStoredHubs, saveStoredHubs } from '@/lib/community-hubs';
+export { DEFAULT_HUBS, loadStoredHubs, saveStoredHubs, DEFAULT_COLONIES, loadStoredColonies, saveStoredColonies } from '@/lib/community-hubs';
 
 export const DEFAULT_CHANNELS: CommunityChannel[] = [];
 export const DEFAULT_MEMBERS: CommunityMember[] = [];
