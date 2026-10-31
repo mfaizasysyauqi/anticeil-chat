@@ -57,6 +57,7 @@ import { useActivityLauncher } from './hooks/use-activity-launcher';
 import { useMessageActions } from './hooks/use-message-actions';
 import { useThreadManager } from './hooks/use-thread-manager';
 import { useUrlSync } from './hooks/use-url-sync';
+import { useColonyData } from './hooks/use-colony-data';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
 const authenticationSession: any = {
@@ -193,6 +194,25 @@ export function ColonyPage() {
   const navigate = useNavigate();
 
   const [isAddFriendDialogOpen, setIsAddFriendDialogOpen] = useState(false);
+  const openCreateColonyRef = useRef<() => void>(() => {});
+
+  // ── Feature-First Colony & Channel Data Hook ──────────────────────
+  const {
+    colonies,
+    setColonies,
+    activeColonyId,
+    setActiveColonyId,
+    channels,
+    setChannels,
+    activeChannelId,
+    setActiveChannelId,
+    members,
+    setMembers,
+    activeColony,
+  } = useColonyData({
+    onOpenCreateColony: () => openCreateColonyRef.current?.(),
+    onOpenAddFriend: () => setIsAddFriendDialogOpen(true),
+  });
 
   // ── Feature-First Auth & Session Hook ──────────────────────────────
   const {
@@ -271,25 +291,8 @@ export function ColonyPage() {
     };
   }, [socket]);
 
-  // Discord Hubs & Channels state
-  const [colonies, setColonies] = useState<Colony[]>(() => loadStoredColonies());
-  const [activeColonyId, setActiveColonyId] = useState<ColonyId>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get('colony') || params.get('hub') || (params.get('invite')?.startsWith('hub_') ? params.get('invite') : null);
-    return fromUrl || 'anticeil';
-  });
-
-  const [channels, setChannels] = useState<ColonyChannel[]>(() => {
-    const storedDms = loadStoredDmChannels();
-    return [...storedDms, ...DEFAULT_CHANNELS];
-  });
-  const [activeChannelId, setActiveChannelId] = useState<string>(() => {
-
-    return new URLSearchParams(window.location.search).get('channel') || '';
-  });
   const [replyingToMessage, setReplyingToMessage] = useState<ColonyMessage | null>(null);
   const [messagesMap, setMessagesMap] = useState<Record<string, ColonyMessage[]>>({});
-  const [members, setMembers] = useState<ColonyMember[]>([]);
 
   // Discord-style unread message counter badges for mini rail (servers & friends)
   // Key 'anticeil' = NOTIFICATION-ONLY count (shown on logo badge)
@@ -355,44 +358,6 @@ export function ColonyPage() {
       return { ...prev, anticeil: unreadNotifCount };
     });
   }, [unreadNotifCount]);
-
-  const activeColony = useMemo(() => {
-    return colonies.find((h) => h.id === activeColonyId) || colonies[0];
-  }, [colonies, activeColonyId]);
-
-  // Listen to switch_hub and open_create_hub events from the Unified Mini Rail
-  useEffect(() => {
-    const handleSwitchColony = (e: any) => {
-      const colonyId = e.detail;
-      if (colonyId) {
-        setActiveColonyId(colonyId);
-        if (colonyId === 'anticeil') {
-          setActiveChannelId('');
-        } else {
-          const firstCh = channels.find(
-            (c) => (c.colonyId || 'anticeil') === colonyId && c.category === 'CHANNELS',
-          );
-          if (firstCh) setActiveChannelId(firstCh.id);
-        }
-      }
-    };
-    const handleOpenCreateColony = () => {
-      setIsCreateHubOpen(true);
-    };
-    const handleOpenAddFriend = () => {
-      setIsAddFriendDialogOpen(true);
-    };
-    window.addEventListener('anticeil_switch_colony', handleSwitchColony as EventListener);
-    window.addEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
-    window.addEventListener('anticeil_open_create_colony', handleOpenCreateColony);
-    window.addEventListener('anticeil_open_add_friend', handleOpenAddFriend);
-    return () => {
-      window.removeEventListener('anticeil_switch_colony', handleSwitchColony as EventListener);
-      window.removeEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
-      window.removeEventListener('anticeil_open_create_colony', handleOpenCreateColony);
-      window.removeEventListener('anticeil_open_add_friend', handleOpenAddFriend);
-    };
-  }, [channels]);
 
   // ── Browser URL & Rail Sync Hook ──────────────────────────────────
   useUrlSync({
@@ -462,6 +427,8 @@ export function ColonyPage() {
     serverSettingsSection,
     setColonySettingsSection,
   } = colonyModals;
+
+  openCreateColonyRef.current = () => setIsCreateHubOpen(true);
 
   // Channel Modals & Actions (Feature-First Hook)
   const channelModals = useChannelModals({
