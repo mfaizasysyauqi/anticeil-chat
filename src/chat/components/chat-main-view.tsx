@@ -419,11 +419,13 @@ export function ChatMainView({
       <CallsView
         calls={callLogs}
         friends={friends.allFriends}
+        hubs={hubs}
         onStartCall={(friend) => {
           handleCreateCallLog({
             peerId: friend.id,
             peerName: friend.name,
             peerAvatar: friend.avatar || null,
+            isDm: true,
             type: 'outgoing',
             isVideo: false,
           });
@@ -621,10 +623,16 @@ export function ChatMainView({
                   const mins = Math.floor(elapsedSec / 60);
                   const secs = elapsedSec % 60;
                   const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                  const isDmChannel = Boolean(activeChannel.dmUserId);
+                  const dmFriend = isDmChannel ? friends.allFriends?.find((f: any) => f.id === activeChannel.dmUserId) : null;
                   handleCreateCallLog?.({
                     peerId: activeChannel.dmUserId || activeChannel.id,
-                    peerName: activeChannel.name,
-                    peerAvatar: null,
+                    peerName: isDmChannel ? (dmFriend?.name || activeChannel.name) : activeChannel.name,
+                    peerAvatar: isDmChannel ? (dmFriend?.avatar || dmFriend?.imageUrl || null) : (activeHub?.iconUrl || null),
+                    hubId: isDmChannel ? undefined : activeHub?.id,
+                    hubName: isDmChannel ? undefined : activeHub?.name,
+                    hubIcon: isDmChannel ? undefined : (activeHub?.iconUrl || null),
+                    isDm: isDmChannel,
                     type: 'outgoing',
                     isVideo: activeChannel.type === 'voice' || Boolean(selectedActivityAppId),
                     duration: durationStr,

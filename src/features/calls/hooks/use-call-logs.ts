@@ -38,6 +38,10 @@ export function useCallLogs(initialData: CallLogItem[] = []) {
           isVideo: Boolean(logData.isVideo),
           timestamp: new Date().toISOString(),
           duration: logData.duration,
+          hubId: logData.hubId,
+          hubName: logData.hubName,
+          hubIcon: logData.hubIcon,
+          isDm: logData.isDm,
         };
         setCalls((prev) => [item, ...prev]);
         return item;

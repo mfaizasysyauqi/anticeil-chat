@@ -3,7 +3,6 @@ import { Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import type { CommunityHub } from '@/chat/chat-types';
 
@@ -49,16 +48,20 @@ export function ServerTagsTab({
               <p className="text-xs text-muted-foreground italic">{t('Belum ada tag yang ditambahkan.')}</p>
             ) : (
               serverTags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="gap-1.5 py-1 px-2.5 text-xs">
+                <div
+                  key={tag}
+                  className="inline-flex items-center gap-1.5 py-1 pl-3 pr-1.5 rounded-full text-xs font-semibold bg-primary/15 text-primary border border-primary/30 shadow-2xs transition-all"
+                >
                   <span>#{tag}</span>
                   <button
                     type="button"
                     onClick={() => setServerTags((prev) => prev.filter((tItem) => tItem !== tag))}
-                    className="text-muted-foreground hover:text-foreground rounded-full"
+                    className="size-4 rounded-full flex items-center justify-center text-primary hover:text-primary-foreground hover:bg-primary transition-all cursor-pointer"
+                    title={t('Hapus Tag')}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3 h-3 stroke-[2.5]" />
                   </button>
-                </Badge>
+                </div>
               ))
             )}
           </div>
@@ -104,7 +107,7 @@ export function ServerTagsTab({
                     }
                   }}
                   className={cn(
-                    'text-xs px-2.5 py-1 rounded-full border transition-all text-left',
+                    'text-xs px-2.5 py-1 rounded-full border transition-all text-left cursor-pointer',
                     serverTags.includes(tName)
                       ? 'bg-primary/10 border-primary text-primary font-medium'
                       : 'bg-muted/40 hover:bg-muted text-muted-foreground',

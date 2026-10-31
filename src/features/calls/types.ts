@@ -8,6 +8,10 @@ export interface CallLogItem {
   channelId?: string;
   timestamp: string;
   duration?: string;
+  hubId?: string;
+  hubName?: string;
+  hubIcon?: string | null;
+  isDm?: boolean;
 }
 
 export type CallsTab = 'all' | 'missed';

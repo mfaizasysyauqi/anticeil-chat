@@ -221,11 +221,11 @@ export function CalendarView({
               )}
             </button>
 
-            {/* Yellow Highlight Button: Jadwalkan Meeting */}
+            {/* Theme Primary Button: Jadwalkan Meeting */}
             <Button
               size="xs"
               onClick={() => setIsScheduleOpen(true)}
-              className="px-2.5 py-1 text-xs font-bold transition-all bg-amber-400 hover:bg-amber-300 text-black shrink-0 flex items-center gap-1 ml-0.5"
+              className="px-2.5 py-1 text-xs font-bold transition-all bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 flex items-center gap-1.5 ml-0.5 shadow-xs cursor-pointer rounded-lg"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">Jadwalkan Meeting</span>

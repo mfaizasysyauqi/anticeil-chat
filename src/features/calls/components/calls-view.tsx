@@ -10,6 +10,8 @@ import {
   Clock,
   Search,
   Users,
+  Volume2,
+  User,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
@@ -20,10 +22,12 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CallLogItem, CallsTab } from '../types';
 import type { FriendMember } from '@/features/friends';
+import type { CommunityHub } from '@/chat/chat-types';
 
 export interface CallsViewProps {
   calls: CallLogItem[];
   friends: FriendMember[];
+  hubs?: CommunityHub[];
   onStartCall: (friend: FriendMember, isVideo?: boolean) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
@@ -32,6 +36,7 @@ export interface CallsViewProps {
 export function CallsView({
   calls,
   friends,
+  hubs = [],
   onStartCall,
   onOpenSidebar,
   horizontalPadding = 'px-4 sm:px-6',
@@ -40,7 +45,8 @@ export function CallsView({
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredCalls = calls.filter((c) => {
-    const matchesSearch = c.peerName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = c.peerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.hubName && c.hubName.toLowerCase().includes(searchQuery.toLowerCase()));
     if (!matchesSearch) return false;
     if (activeTab === 'missed') return c.type === 'missed';
     return true;
@@ -123,7 +129,7 @@ export function CallsView({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" />
+                <Users className="w-3.5 h-3.5 text-primary" />
                 <span>Panggilan Cepat (Speed Dial)</span>
               </h2>
             </div>
@@ -216,23 +222,54 @@ export function CallsView({
               </div>
             ) : (
               filteredCalls.map((call) => {
-                const friendMatch = friends.find((f) => f.id === call.peerId) || {
-                  id: call.peerId,
-                  name: call.peerName,
-                  avatar: call.peerAvatar,
-                };
+                // Determine whether this is a Server voice channel or Friend DM call
+                const isExplicitServer = Boolean(call.hubName || call.hubId);
+                const isGeneralVoiceName =
+                  call.peerName.toLowerCase().includes('voice') ||
+                  call.peerName.toLowerCase() === 'general' ||
+                  call.peerName.toLowerCase().startsWith('voice-');
+
+                const friendMatch = friends.find(
+                  (f) =>
+                    f.id === call.peerId ||
+                    (!isGeneralVoiceName && f.name.toLowerCase() === call.peerName.toLowerCase())
+                );
+
+                const isServerCall = isExplicitServer || (!friendMatch && isGeneralVoiceName) || (!friendMatch && !call.isDm);
+
+                // Find matching hub if it's a server call
+                const matchedHub =
+                  hubs.find(
+                    (h) =>
+                      (call.hubId && h.id === call.hubId) ||
+                      (call.hubName && h.name.toLowerCase() === call.hubName.toLowerCase()) ||
+                      h.id === call.peerId
+                  ) || hubs.find((h) => h.id !== 'anticeil') || hubs[0];
+
+                const serverName = call.hubName || (matchedHub?.id !== 'anticeil' ? matchedHub?.name : null) || 'Server Komunitas';
+                const serverIcon = call.hubIcon || (matchedHub?.id !== 'anticeil' ? matchedHub?.iconUrl : null) || null;
+
+                const displayName = isServerCall
+                  ? call.peerName
+                  : friendMatch?.name || call.peerName;
+
+                const avatarName = isServerCall ? serverName : displayName;
+                const avatarUrl = isServerCall
+                  ? serverIcon
+                  : friendMatch?.avatar || friendMatch?.imageUrl || call.peerAvatar;
 
                 return (
                   <div
                     key={call.id}
-                    className="p-3 rounded-xl border border-border bg-card hover:bg-muted/30 transition-all flex items-center justify-between gap-3 shadow-xs"
+                    className="p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-all flex items-center justify-between gap-3 shadow-xs"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="relative shrink-0">
                         <CommunityAvatar
-                          name={call.peerName}
-                          imageUrl={call.peerAvatar}
-                          size={40}
+                          name={avatarName}
+                          imageUrl={avatarUrl}
+                          size={42}
+                          className="rounded-xl shadow-2xs border border-border/60 bg-muted/20"
                         />
                         <span
                           className={cn(
@@ -254,24 +291,41 @@ export function CallsView({
                         </span>
                       </div>
 
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {isServerCall && (
+                            <Volume2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                          )}
                           <h3
                             className={cn(
                               'text-sm font-bold text-foreground truncate',
                               call.type === 'missed' && 'text-red-400'
                             )}
                           >
-                            {call.peerName}
+                            {displayName}
                           </h3>
+
+                          {/* Clear Badge identifying Server vs Friend */}
+                          {isServerCall ? (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25 flex items-center gap-1.5 shrink-0">
+                              <CommunityAvatar name={serverName} imageUrl={serverIcon} size={13} className="shrink-0" />
+                              <span className="truncate max-w-[120px]">{serverName}</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border flex items-center gap-1 shrink-0">
+                              <User className="w-3 h-3 text-primary" />
+                              <span>DM Langsung</span>
+                            </span>
+                          )}
+
                           {call.isVideo && (
-                            <span className="text-[10px] text-blue-400 font-semibold px-1.5 py-0.2 rounded bg-blue-500/10 flex items-center gap-1">
+                            <span className="text-[10px] text-blue-400 font-semibold px-1.5 py-0.2 rounded bg-blue-500/10 flex items-center gap-1 shrink-0">
                               <Video className="w-2.5 h-2.5" /> Video
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{dayjs(call.timestamp).format('DD MMM YYYY, HH:mm')}</span>
                           {call.duration && (
                             <>
@@ -279,6 +333,9 @@ export function CallsView({
                               <span className="font-mono">{call.duration}</span>
                             </>
                           )}
+                          <span className="text-muted-foreground/70 hidden sm:inline">
+                            • {isServerCall ? `Voice Channel ${serverName}` : 'Panggilan Suara Teman'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -286,9 +343,29 @@ export function CallsView({
                     <div className="flex items-center gap-1.5 shrink-0">
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => onStartCall(friendMatch as any, call.isVideo)}
-                        className="h-8 gap-1.5 text-xs font-semibold cursor-pointer hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all"
+                        onClick={() => {
+                          if (isServerCall) {
+                            // If it's a server call, start call or rejoin
+                            onStartCall(
+                              {
+                                id: call.peerId,
+                                name: displayName,
+                                avatar: avatarUrl,
+                              } as any,
+                              call.isVideo
+                            );
+                          } else {
+                            onStartCall(
+                              (friendMatch || {
+                                id: call.peerId,
+                                name: displayName,
+                                avatar: avatarUrl,
+                              }) as any,
+                              call.isVideo
+                            );
+                          }
+                        }}
+                        className="h-8 gap-1.5 text-xs font-bold cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all"
                       >
                         <PhoneCall className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Panggil Balik</span>

@@ -65,7 +65,6 @@ export function ServerEventsModal({
   const [startTime, setStartTime] = useState(dayjs().add(1, 'hour').minute(0).format('HH:mm'));
   const [frequency, setFrequency] = useState('none');
   const [description, setDescription] = useState('');
-  const [coverImage, setCoverImage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filter server specific events
@@ -88,7 +87,6 @@ export function ServerEventsModal({
     setStartTime(dayjs().add(1, 'hour').minute(0).format('HH:mm'));
     setFrequency('none');
     setDescription('');
-    setCoverImage('');
   };
 
   const handleOpenCreate = () => {
@@ -147,7 +145,7 @@ export function ServerEventsModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         aria-describedby={undefined}
-        className="max-w-[460px] p-0 bg-[#1e1f22] border-[#2b2d31] text-foreground rounded-2xl overflow-hidden shadow-2xl focus:outline-none"
+        className="max-w-[480px] p-0 bg-background border-border text-foreground rounded-2xl overflow-hidden shadow-2xl focus:outline-none"
       >
         <DialogTitle className="sr-only">Server Events</DialogTitle>
 
@@ -155,19 +153,19 @@ export function ServerEventsModal({
         {viewState === 'list' && (
           <div className="flex flex-col max-h-[85vh]">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2b2d31]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-indigo-400" />
-                  <span className="font-bold text-sm tracking-wide">
+                  <CalendarIcon className="w-5 h-5 text-primary" />
+                  <span className="font-bold text-sm tracking-wide text-foreground">
                     {serverEvents.length} {serverEvents.length === 1 ? 'Event' : 'Events'}
                   </span>
                 </div>
-                <div className="w-px h-4 bg-[#35363c]" />
+                <div className="w-px h-4 bg-border" />
                 <Button
                   size="sm"
                   onClick={handleOpenCreate}
-                  className="h-7 text-xs px-3 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-md shadow-sm"
+                  className="h-7 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-md shadow-xs cursor-pointer"
                 >
                   Create Event
                 </Button>
@@ -178,7 +176,7 @@ export function ServerEventsModal({
             <div className="p-4 space-y-3 overflow-y-auto max-h-[500px] [scrollbar-width:thin]">
               {serverEvents.length === 0 ? (
                 <div className="py-12 px-4 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-secondary/30 flex items-center justify-center mx-auto text-muted-foreground">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary">
                     <CalendarIcon className="w-6 h-6" />
                   </div>
                   <h4 className="text-sm font-semibold text-foreground">Belum ada event terjadwal</h4>
@@ -188,7 +186,7 @@ export function ServerEventsModal({
                   <Button
                     size="sm"
                     onClick={handleOpenCreate}
-                    className="mt-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs h-8 px-4"
+                    className="mt-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 shadow-xs cursor-pointer"
                   >
                     Buat Event Pertama
                   </Button>
@@ -198,6 +196,7 @@ export function ServerEventsModal({
                   const evDate = dayjs(ev.startTime);
                   const isFuture = evDate.isAfter(dayjs());
                   const diffMin = evDate.diff(dayjs(), 'minute');
+
                   let timeLabel = `Today at ${evDate.format('HH:mm')}`;
                   if (!evDate.isSame(dayjs(), 'day')) {
                     timeLabel = evDate.format('MMM D, YYYY [at] HH:mm');
@@ -209,14 +208,14 @@ export function ServerEventsModal({
                   return (
                     <div
                       key={ev.id}
-                      className="p-4 bg-[#2b2d31]/80 hover:bg-[#2b2d31] border border-white/5 rounded-xl space-y-3 transition-colors"
+                      className="p-4 bg-card hover:bg-muted/30 border border-border rounded-xl space-y-3 transition-colors shadow-2xs"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500 text-white uppercase tracking-wider">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-primary-foreground uppercase tracking-wider">
                             NEW
                           </span>
-                          <span className="text-xs font-semibold text-indigo-400">{timeLabel}</span>
+                          <span className="text-xs font-semibold text-primary">{timeLabel}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <CommunityAvatar
@@ -240,7 +239,7 @@ export function ServerEventsModal({
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5 truncate max-w-[200px]">
                           {ev.channelId ? (
                             <>
@@ -264,14 +263,14 @@ export function ServerEventsModal({
                                 onJoinChannel(ev.channelId!);
                                 onClose();
                               }}
-                              className="h-7 text-xs px-2.5 bg-[#313338] hover:bg-[#383a40]"
+                              className="h-7 text-xs px-2.5 font-semibold cursor-pointer"
                             >
                               Join Voice
                             </Button>
                           )}
                           <Button
                             size="sm"
-                            className="h-7 text-xs px-3 bg-[#23a55a] hover:bg-[#209250] text-white font-medium flex items-center gap-1 rounded-md"
+                            className="h-7 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1 rounded-md shadow-xs cursor-pointer"
                             onClick={() => toast.success('Kamu ditandai tertarik pada event ini! 🔔')}
                           >
                             <Check className="w-3.5 h-3.5" /> Interested
@@ -290,38 +289,38 @@ export function ServerEventsModal({
         {viewState === 'create' && (
           <div className="flex flex-col">
             {/* Step Progress Bar Header */}
-            <div className="px-6 pt-5 pb-3">
+            <div className="px-6 pt-5 pb-3 border-b border-border">
               <div className="grid grid-cols-3 gap-2 mb-2">
                 <div
                   className={`h-1 rounded-full transition-all ${
-                    step >= 1 ? 'bg-indigo-500' : 'bg-[#35363c]'
+                    step >= 1 ? 'bg-primary' : 'bg-muted'
                   }`}
                 />
                 <div
                   className={`h-1 rounded-full transition-all ${
-                    step >= 2 ? 'bg-indigo-500' : 'bg-[#35363c]'
+                    step >= 2 ? 'bg-primary' : 'bg-muted'
                   }`}
                 />
                 <div
                   className={`h-1 rounded-full transition-all ${
-                    step >= 3 ? 'bg-indigo-500' : 'bg-[#35363c]'
+                    step >= 3 ? 'bg-primary' : 'bg-muted'
                   }`}
                 />
               </div>
               <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
-                <span className={step === 1 ? 'text-indigo-400' : ''}>Location</span>
-                <span className={step === 2 ? 'text-indigo-400' : ''}>Event Info</span>
-                <span className={step === 3 ? 'text-indigo-400' : ''}>Review</span>
+                <span className={step === 1 ? 'text-primary font-bold' : ''}>Location</span>
+                <span className={step === 2 ? 'text-primary font-bold' : ''}>Event Info</span>
+                <span className={step === 3 ? 'text-primary font-bold' : ''}>Review</span>
               </div>
             </div>
 
             {/* Wizard Body */}
-            <div className="px-6 py-3 space-y-4 max-h-[480px] overflow-y-auto [scrollbar-width:thin]">
+            <div className="px-6 py-4 space-y-4 max-h-[480px] overflow-y-auto [scrollbar-width:thin]">
               {/* ── STEP 1: LOCATION ── */}
               {step === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">Where is your event?</h3>
+                    <h3 className="text-lg font-bold text-foreground">Where is your event?</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       So no one gets lost on where to go.
                     </p>
@@ -332,18 +331,18 @@ export function ServerEventsModal({
                     onClick={() => setLocationType('voice')}
                     className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                       locationType === 'voice'
-                        ? 'border-indigo-500/60 bg-indigo-500/10'
-                        : 'border-[#2b2d31] bg-[#2b2d31]/40 hover:bg-[#2b2d31]/80'
+                        ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                        : 'border-border bg-card hover:bg-muted/40'
                     }`}
                   >
                     <div
                       className={`size-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 transition-all ${
                         locationType === 'voice'
-                          ? 'border-indigo-500 bg-indigo-500'
+                          ? 'border-primary bg-primary text-primary-foreground'
                           : 'border-muted-foreground/40'
                       }`}
                     >
-                      {locationType === 'voice' && <div className="size-1.5 rounded-full bg-white" />}
+                      {locationType === 'voice' && <div className="size-1.5 rounded-full bg-primary-foreground" />}
                     </div>
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
@@ -361,18 +360,18 @@ export function ServerEventsModal({
                     onClick={() => setLocationType('external')}
                     className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                       locationType === 'external'
-                        ? 'border-indigo-500/60 bg-indigo-500/10'
-                        : 'border-[#2b2d31] bg-[#2b2d31]/40 hover:bg-[#2b2d31]/80'
+                        ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                        : 'border-border bg-card hover:bg-muted/40'
                     }`}
                   >
                     <div
                       className={`size-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 transition-all ${
                         locationType === 'external'
-                          ? 'border-indigo-500 bg-indigo-500'
+                          ? 'border-primary bg-primary text-primary-foreground'
                           : 'border-muted-foreground/40'
                       }`}
                     >
-                      {locationType === 'external' && <div className="size-1.5 rounded-full bg-white" />}
+                      {locationType === 'external' && <div className="size-1.5 rounded-full bg-primary-foreground" />}
                     </div>
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
@@ -392,10 +391,10 @@ export function ServerEventsModal({
                         Select a channel <span className="text-red-400">*</span>
                       </label>
                       <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-                        <SelectTrigger className="w-full bg-[#111214] border-[#2b2d31] text-xs h-10">
+                        <SelectTrigger className="w-full bg-card border-border text-xs h-10">
                           <SelectValue placeholder="Pilih Voice Channel" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#111214] border-[#2b2d31] text-xs">
+                        <SelectContent className="bg-card border-border text-xs">
                           {voiceChannels.length === 0 ? (
                             <SelectItem value="none" disabled>
                               Tidak ada voice channel
@@ -422,7 +421,7 @@ export function ServerEventsModal({
                         value={externalLocation}
                         onChange={(e) => setExternalLocation(e.target.value)}
                         placeholder="Add a location, link, or something."
-                        className="bg-[#111214] border-[#2b2d31] text-xs h-10"
+                        className="bg-card border-border text-xs h-10"
                       />
                     </div>
                   )}
@@ -433,7 +432,7 @@ export function ServerEventsModal({
               {step === 2 && (
                 <div className="space-y-3.5">
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">What's your event about?</h3>
+                    <h3 className="text-lg font-bold text-foreground">What's your event about?</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Fill out the details of your event.
                     </p>
@@ -447,7 +446,7 @@ export function ServerEventsModal({
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
                       placeholder="Judul acara komunitas..."
-                      className="bg-[#111214] border-[#2b2d31] text-xs h-9"
+                      className="bg-card border-border text-xs h-9"
                     />
                   </div>
 
@@ -460,7 +459,7 @@ export function ServerEventsModal({
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-[#111214] border-[#2b2d31] text-xs h-9 [color-scheme:dark]"
+                        className="bg-card border-border text-xs h-9"
                       />
                     </div>
                     <div className="space-y-1">
@@ -471,7 +470,7 @@ export function ServerEventsModal({
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="bg-[#111214] border-[#2b2d31] text-xs h-9 [color-scheme:dark]"
+                        className="bg-card border-border text-xs h-9"
                       />
                     </div>
                   </div>
@@ -481,10 +480,10 @@ export function ServerEventsModal({
                       Event Frequency <span className="text-red-400">*</span>
                     </label>
                     <Select value={frequency} onValueChange={setFrequency}>
-                      <SelectTrigger className="w-full bg-[#111214] border-[#2b2d31] text-xs h-9">
+                      <SelectTrigger className="w-full bg-card border-border text-xs h-9">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#111214] border-[#2b2d31] text-xs">
+                      <SelectContent className="bg-card border-border text-xs">
                         <SelectItem value="none">Does not repeat</SelectItem>
                         <SelectItem value="weekly">Weekly</SelectItem>
                         <SelectItem value="biweekly">Every other week</SelectItem>
@@ -503,7 +502,7 @@ export function ServerEventsModal({
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Jelaskan tentang apa acara ini..."
                       rows={3}
-                      className="w-full rounded-md border border-[#2b2d31] bg-[#111214] px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
+                      className="w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                     />
                   </div>
                 </div>
@@ -512,12 +511,12 @@ export function ServerEventsModal({
               {/* ── STEP 3: REVIEW ── */}
               {step === 3 && (
                 <div className="space-y-4">
-                  {/* Card Preview Discord Style */}
-                  <div className="p-4 bg-[#2b2d31] border border-white/5 rounded-xl space-y-3 shadow-lg">
+                  {/* Card Preview */}
+                  <div className="p-4 bg-card border border-border rounded-xl space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-indigo-400" />
-                        <span className="text-xs font-semibold text-indigo-400">
+                        <CalendarIcon className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-semibold text-primary">
                           {dayjs(`${startDate}T${startTime}`).isSame(dayjs(), 'day')
                             ? `Today at ${startTime}`
                             : `${dayjs(startDate).format('MMM D')} at ${startTime}`}
@@ -545,15 +544,15 @@ export function ServerEventsModal({
                       )}
                     </div>
 
-                    <div className="pt-2 border-t border-white/5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="pt-2 border-t border-border/60 flex items-center gap-2 text-xs text-muted-foreground">
                       {locationType === 'voice' ? (
                         <>
-                          <Volume2 className="w-3.5 h-3.5" />
+                          <Volume2 className="w-3.5 h-3.5 text-primary" />
                           <span>{channels.find((c) => c.id === selectedChannelId)?.name || 'General Voice'}</span>
                         </>
                       ) : (
                         <>
-                          <MapPin className="w-3.5 h-3.5" />
+                          <MapPin className="w-3.5 h-3.5 text-primary" />
                           <span>{externalLocation || 'External Location'}</span>
                         </>
                       )}
@@ -561,7 +560,7 @@ export function ServerEventsModal({
                   </div>
 
                   <div className="text-center py-2 space-y-1">
-                    <h4 className="text-lg font-bold text-foreground">Here's a preview of your event.</h4>
+                    <h4 className="text-base font-bold text-foreground">Here's a preview of your event.</h4>
                     <p className="text-xs text-muted-foreground">
                       This event will auto start when it's time and alert the channel.
                     </p>
@@ -571,13 +570,13 @@ export function ServerEventsModal({
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-between px-6 py-4 bg-[#111214]/60 border-t border-[#2b2d31]">
+            <div className="flex items-center justify-between px-6 py-4 bg-muted/30 border-t border-border">
               {step > 1 ? (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setStep((s) => (s - 1) as any)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   Back
                 </Button>
@@ -586,7 +585,7 @@ export function ServerEventsModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => setViewState('list')}
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -615,7 +614,7 @@ export function ServerEventsModal({
                       }
                       setStep((s) => (s + 1) as any);
                     }}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-5 h-8 font-medium rounded-md"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-8 font-semibold rounded-md shadow-xs cursor-pointer"
                   >
                     Next
                   </Button>
@@ -624,7 +623,7 @@ export function ServerEventsModal({
                     size="sm"
                     disabled={isSubmitting}
                     onClick={handleFinishCreate}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-5 h-8 font-medium rounded-md shadow-sm"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-8 font-semibold rounded-md shadow-xs cursor-pointer"
                   >
                     {isSubmitting ? 'Creating...' : 'Create Event'}
                   </Button>
@@ -637,20 +636,20 @@ export function ServerEventsModal({
         {/* ── VIEW 3: SHARE EVENT MODAL (DISCORD STYLE) ── */}
         {viewState === 'share' && (
           <div className="p-6 text-center space-y-4">
-            <div className="relative w-16 h-16 rounded-full bg-black/40 border border-white/10 flex items-center justify-center mx-auto shadow-inner">
-              <CalendarIcon className="w-8 h-8 text-foreground" />
-              <Sparkles className="w-4 h-4 text-cyan-400 absolute top-1 right-1" />
-              <Sparkles className="w-3.5 h-3.5 text-yellow-400 absolute bottom-1 left-1" />
+            <div className="relative w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto shadow-inner">
+              <CalendarIcon className="w-8 h-8 text-primary" />
+              <Sparkles className="w-4 h-4 text-primary absolute top-1 right-1" />
+              <Sparkles className="w-3.5 h-3.5 text-secondary absolute bottom-1 left-1" />
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-foreground">All set. Now share your event!</h3>
+              <h3 className="text-lg font-bold text-foreground">All set. Now share your event!</h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
                 Copy the event link below to invite people to your event. This also acts as a server invite link.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 p-1 bg-[#111214] border border-[#2b2d31] rounded-lg">
+            <div className="flex items-center gap-2 p-1.5 bg-card border border-border rounded-lg">
               <Input
                 readOnly
                 value={getShareLink()}
@@ -659,13 +658,13 @@ export function ServerEventsModal({
               <Button
                 size="sm"
                 onClick={copyShareLink}
-                className="h-8 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-md shrink-0"
+                className="h-8 px-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-md shrink-0 shadow-xs cursor-pointer"
               >
                 Copy
               </Button>
             </div>
 
-            <p className="text-[11px] text-muted-foreground/60 text-left">
+            <p className="text-[11px] text-muted-foreground/70 text-left">
               Your invite link expires in 7 days.
             </p>
 
@@ -676,7 +675,7 @@ export function ServerEventsModal({
                 onClick={() => {
                   setViewState('list');
                 }}
-                className="w-full text-xs h-9"
+                className="w-full text-xs h-9 cursor-pointer"
               >
                 Done
               </Button>
