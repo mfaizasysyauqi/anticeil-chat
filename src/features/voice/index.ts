@@ -10,6 +10,7 @@ export * from './components/activity-filmstrip';
 export * from './components/activities/activity-stage';
 export * from './components/call-stage';
 export * from './hooks/use-voice-settings';
+export * from './hooks/use-voice-call-state';
 export * from './components/audio-device-menu';
 export * from './components/voice-video-settings-modal';
 export * from './components/user-settings-modal';
