@@ -108,7 +108,6 @@ export function CallParticipantGrid({
                 <CommunityAvatar
                   name={currentUserName}
                   imageUrl={currentUser?.imageUrl}
-                  email={currentUser?.email}
                   size={44}
                   showStatus={false}
                   className={cn(
@@ -187,7 +186,6 @@ export function CallParticipantGrid({
                 <CommunityAvatar
                   name={currentUserName}
                   imageUrl={currentUser?.imageUrl}
-                  email={currentUser?.email}
                   size={96}
                   showStatus={false}
                   className={cn(

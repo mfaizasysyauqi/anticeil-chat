@@ -149,7 +149,6 @@ export function UserBottomDock({
           >
             <CommunityAvatar
               name={currentUserName}
-              email={currentUser?.email}
               imageUrl={currentUser?.imageUrl}
               size={34}
               status="online"

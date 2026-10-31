@@ -90,15 +90,13 @@ export function CallControlsBar({
       >
         {/* Left: Cuma foto profile di pojok kiri (sesuai SS kedua) */}
         <div className="flex items-center justify-start">
-          <div className="ring-2 ring-border/80 rounded-full overflow-hidden shadow-xs">
-            <CommunityAvatar
-              name={currentUserName || 'You'}
-              imageUrl={currentUser?.imageUrl}
-              email={currentUser?.email}
-              size={36}
-              showStatus={false}
-            />
-          </div>
+          <CommunityAvatar
+            name={currentUserName || 'You'}
+            imageUrl={currentUser?.imageUrl}
+            size={36}
+            showStatus={false}
+            className="ring-2 ring-border/80 shrink-0"
+          />
         </div>
 
         {/* Center: Menu simpel cuma show chat, minimize activity, sama leave chat */}

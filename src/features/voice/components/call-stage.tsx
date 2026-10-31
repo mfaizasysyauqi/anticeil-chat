@@ -953,24 +953,24 @@ export function CallStage({
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="flex items-center -space-x-1.5 overflow-hidden">
               {participants.slice(0, 3).map((p) => (
-                <div key={p.socketId} title={p.userName} className="ring-2 ring-background rounded-full overflow-hidden">
-                  <CommunityAvatar
-                    name={p.userName}
-                    imageUrl={p.userAvatar}
-                    size={24}
-                    showStatus={false}
-                  />
-                </div>
-              ))}
-              <div title={`${currentUserName} (Anda)`} className="ring-2 ring-background rounded-full overflow-hidden">
                 <CommunityAvatar
-                  name={currentUserName}
-                  imageUrl={currentUser?.imageUrl}
-                  email={currentUser?.email}
+                  key={p.socketId}
+                  name={p.userName}
+                  imageUrl={p.userAvatar}
                   size={24}
                   showStatus={false}
+                  tooltipText={p.userName}
+                  className="ring-2 ring-background shrink-0"
                 />
-              </div>
+              ))}
+              <CommunityAvatar
+                name={currentUserName}
+                imageUrl={currentUser?.imageUrl}
+                size={24}
+                showStatus={false}
+                tooltipText={`${currentUserName} (Anda)`}
+                className="ring-2 ring-background shrink-0"
+              />
             </div>
 
             <TooltipProvider delayDuration={150}>

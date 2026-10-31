@@ -83,7 +83,6 @@ export function ActivityFilmstrip({
                 <CommunityAvatar
                   name={currentUserName}
                   imageUrl={currentUser?.imageUrl}
-                  email={currentUser?.email}
                   size={36}
                   showStatus={false}
                   className={cn(

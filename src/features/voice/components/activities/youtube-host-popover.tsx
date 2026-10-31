@@ -48,14 +48,12 @@ export function YouTubeHostPopover({
         onClick={() => setIsHostMenuOpen((prev) => !prev)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border hover:border-border/80 text-foreground text-xs font-medium cursor-pointer transition-all shadow-xs"
       >
-        <div className="shrink-0 overflow-hidden rounded-full">
-          <CommunityAvatar
-            name={displayName}
-            imageUrl={displayAvatar}
-            size={20}
-            showStatus={false}
-          />
-        </div>
+        <CommunityAvatar
+          name={displayName}
+          imageUrl={displayAvatar}
+          size={20}
+          showStatus={false}
+        />
         <span className="truncate max-w-[130px] sm:max-w-none">
           {isMeHost ? (
             <>
@@ -126,14 +124,12 @@ export function YouTubeHostPopover({
               {/* Current User Row */}
               <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="shrink-0 rounded-full overflow-hidden">
-                    <CommunityAvatar
-                      name={currentUserName}
-                      imageUrl={currentUser?.imageUrl || currentUser?.avatar}
-                      size={28}
-                      showStatus={false}
-                    />
-                  </div>
+                  <CommunityAvatar
+                    name={currentUserName}
+                    imageUrl={currentUser?.imageUrl || currentUser?.avatar}
+                    size={28}
+                    showStatus={false}
+                  />
                   <span className="text-xs font-medium text-foreground truncate">
                     {currentUserName} (You)
                   </span>
@@ -162,14 +158,12 @@ export function YouTubeHostPopover({
                     className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="shrink-0 rounded-full overflow-hidden">
-                        <CommunityAvatar
-                          name={p.userName}
-                          imageUrl={p.userAvatar}
-                          size={28}
-                          showStatus={false}
-                        />
-                      </div>
+                      <CommunityAvatar
+                        name={p.userName}
+                        imageUrl={p.userAvatar}
+                        size={28}
+                        showStatus={false}
+                      />
                       <span className="text-xs font-medium text-foreground truncate">
                         {p.userName}
                       </span>
