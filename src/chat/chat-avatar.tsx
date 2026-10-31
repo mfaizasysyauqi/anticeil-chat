@@ -78,18 +78,19 @@ export function ChatAvatar({
         'relative inline-flex shrink-0 rounded-full select-none items-center justify-center',
         className,
       )}
-      style={{ width: `${size}px`, height: `${size}px` }}
+      style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
     >
       <div
-        className="w-full h-full rounded-full overflow-hidden flex items-center justify-center shadow-xs ring-1 ring-border/60 bg-card"
-        style={{ width: `${size}px`, height: `${size}px` }}
+        className="rounded-full overflow-hidden flex items-center justify-center shadow-xs ring-1 ring-border/60 bg-card"
+        style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
       >
         {imageUrl && !imageError ? (
           <img
             src={imageUrl}
             alt={name}
             onError={() => setImageError(true)}
-            className="w-full h-full object-cover rounded-full aspect-square bg-card"
+            style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
+            className="object-cover rounded-full bg-card"
           />
         ) : (
           <div
