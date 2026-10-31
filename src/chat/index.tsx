@@ -40,6 +40,7 @@ import {
   ChannelsSidebar,
   useResizableSidebar,
   useChannelModals,
+  useChannelPinsNotifications,
 } from '@/features/channels';
 import { ColonyMembersSidebar } from '@/features/members';
 import type { ColonySettingsSection } from '@/features/colony-settings';
@@ -545,21 +546,6 @@ export function ColonyPage() {
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [claimedGifts, setClaimedGifts] = useState<Record<string, boolean>>({});
 
-  // ── Discord Pinned Messages (Screenshot 1) ───────────────────────────
-  const [isPinnedPopoverOpen, setIsPinnedPopoverOpen] = useState(false);
-  const [pinnedMessages, setPinnedMessages] = useState<ColonyMessage[]>([]);
-  const [isLoadingPins, setIsLoadingPins] = useState(false);
-
-  // ── Discord Notification Settings (Screenshot 2) ─────────────────────
-  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
-  const [channelNotification, setChannelNotification] = useState<ColonyChannelNotification>({
-    channelId: '',
-    userId: 'me',
-    level: 'default',
-    isMuted: false,
-    mutedUntil: null,
-  });
-
   // Channels filtered by selected Hub
   const colonyChannels = useMemo(() => {
     return channels.filter(
@@ -626,6 +612,19 @@ export function ColonyPage() {
     }
     return colonyChannels[0] || null;
   }, [isHome, activeChannelId, dmChannels, colonyChannels, members, currentUser]);
+
+  // ── Feature-First Channel Pins & Notification Settings Hook ──────────
+  const {
+    isPinnedPopoverOpen,
+    setIsPinnedPopoverOpen,
+    pinnedMessages,
+    setPinnedMessages,
+    isNotificationDropdownOpen,
+    setIsNotificationDropdownOpen,
+    channelNotification,
+    setChannelNotification,
+    handleUpdateNotification,
+  } = useChannelPinsNotifications({ activeChannel });
 
   // ── Discord Threads & Forum (Feature-First Hook) ─────────────────────
   const {
@@ -1152,42 +1151,6 @@ export function ColonyPage() {
     setIsActivityOpen,
     setMessagesMap,
   });
-
-  // ── Update Channel Notification Settings Handler ─────────────────────
-  const handleUpdateNotification = async (
-    level?: ColonyChannelNotificationLevel,
-    muteState?: boolean,
-    mutedUntil?: string | null,
-  ) => {
-    if (!activeChannel) return;
-    const nextLevel = level !== undefined ? level : channelNotification.level;
-    const nextMuted = muteState !== undefined ? muteState : channelNotification.isMuted;
-    const nextUntil = mutedUntil !== undefined ? mutedUntil : channelNotification.mutedUntil;
-
-    setChannelNotification((prev) => ({
-      ...prev,
-      level: nextLevel,
-      isMuted: nextMuted,
-      mutedUntil: nextUntil,
-    }));
-
-    try {
-      await colonyApi.updateChannelNotification(activeChannel.id, {
-        level: nextLevel,
-        isMuted: nextMuted,
-        mutedUntil: nextUntil,
-      });
-      if (muteState !== undefined) {
-        toast.success(nextMuted ? 'Saluran dibisukan 🔕' : 'Saluran dibunyikan kembali 🔔');
-      } else {
-        toast.success(`Notifikasi saluran diatur ke: ${nextLevel}`);
-      }
-    } catch (err) {
-      console.error('Failed to update notification settings', err);
-      toast.error('Gagal memperbarui notifikasi saluran');
-    }
-  };
-
 
   const updateNameMutation = userMutations.useUpdateName({
     onSuccess: (data: any) => {

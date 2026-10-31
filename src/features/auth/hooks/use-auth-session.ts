@@ -226,3 +226,4 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     handleGoogleSignIn,
   };
 }
+

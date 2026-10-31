@@ -66,3 +66,4 @@ export function useUrlSync({
     } catch {}
   }, [activeColonyId, activeChannelId, selectedActivityAppId, channelsCount, isActivityOpen]);
 }
+
