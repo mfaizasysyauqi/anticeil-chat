@@ -37,8 +37,28 @@ export const DEFAULT_COLONIES: Colony[] = [
 
 const STORAGE_KEY_COLONIES = 'anticeil_colony_colonies_v3';
 
+export function cleanLegacyStorage(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith('anticeil_community_') ||
+          key.startsWith('anticeil_hub_') ||
+          key === 'anticeil_hubs')
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {}
+}
+
 export function loadStoredColonies(): Colony[] {
   try {
+    cleanLegacyStorage();
     const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
     if (!token) return DEFAULT_COLONIES;
     const raw = localStorage.getItem(STORAGE_KEY_COLONIES);
