@@ -240,6 +240,35 @@ export function YouTubeWatchTogether({
     setAllowEveryoneEdit,
   });
 
+  // Keyboard Navigation: Skip backward (-5s) and forward (+5s) via ArrowLeft / ArrowRight
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.closest('input, textarea, [contenteditable="true"]'))
+      ) {
+        return;
+      }
+
+      if (!activeVideoId) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleJumpRelative(-5);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleJumpRelative(5);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeVideoId, handleJumpRelative]);
+
   // YouTube API Search / Category fetch (only executes when submittedSearchQuery or ytCategory changes)
   useEffect(() => {
     const catObj = ytCategories.find((c) => c.id === ytCategory);
