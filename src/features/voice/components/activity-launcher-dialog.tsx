@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles } from 'lucide-react';
+import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -54,17 +54,28 @@ export function ActivityLauncherDialog({
           <DialogTitle className="sr-only">Activities</DialogTitle>
           <DialogDescription className="sr-only">Browse and launch activities in this voice call.</DialogDescription>
 
-          {/* Top Search Bar */}
+          {/* Top Search Bar & Close button */}
           <div className="p-3 pb-2 shrink-0">
-            <div className="relative w-full">
-              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={appSearchQuery}
-                onChange={(e) => setAppSearchQuery(e.target.value)}
-                placeholder="Search"
-                className="w-full h-9 bg-muted/50 border border-border focus:border-border focus:ring-1 focus:ring-ring rounded-lg pl-9 pr-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={appSearchQuery}
+                  onChange={(e) => setAppSearchQuery(e.target.value)}
+                  placeholder="Search"
+                  className="w-full h-9 bg-muted/50 border border-border focus:border-border focus:ring-1 focus:ring-ring rounded-lg pl-9 pr-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="size-9 rounded-lg border border-border/60 hover:border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                title="Tutup (ESC)"
+                aria-label="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
             {activeAppId !== null && (
               <div className="mt-2 px-2.5 py-1 rounded-lg bg-muted border border-border flex items-center justify-between text-xs">
