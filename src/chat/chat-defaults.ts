@@ -8,8 +8,8 @@ export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {};
 // Domain aliases
 export const INITIAL_CHAT_MESSAGES = INITIAL_MESSAGES;
 
-const STORAGE_KEY_MESSAGES = 'anticeil_community_messages_v3';
-const STORAGE_KEY_CHANNELS = 'anticeil_community_channels_v3';
+const STORAGE_KEY_MESSAGES = 'anticeil_colony_messages_v3';
+const STORAGE_KEY_CHANNELS = 'anticeil_colony_channels_v3';
 
 export function loadStoredMessages(): Record<string, ColonyMessage[]> {
   try {
@@ -55,7 +55,7 @@ export function saveStoredChannels(channels: ColonyChannel[]): void {
 }
 
 // ── Direct Messages Storage ──
-const STORAGE_KEY_DM_CHANNELS = 'anticeil_community_dm_channels_v3';
+const STORAGE_KEY_DM_CHANNELS = 'anticeil_colony_dm_channels_v3';
 
 export function loadStoredDmChannels(): ColonyChannel[] {
   try {
@@ -116,10 +116,10 @@ export function saveStoredDmChannels(channels: ColonyChannel[]): void {
 }
 
 // ── Extended Storage (Invites, Bans, Roles, Audit Log) ──
-const STORAGE_KEY_INVITES = 'anticeil_community_invites_v3';
-const STORAGE_KEY_BANS = 'anticeil_community_bans_v3';
-const STORAGE_KEY_ROLES = 'anticeil_community_roles_v3';
-const STORAGE_KEY_AUDIT = 'anticeil_community_audit_v3';
+const STORAGE_KEY_INVITES = 'anticeil_colony_invites_v3';
+const STORAGE_KEY_BANS = 'anticeil_colony_bans_v3';
+const STORAGE_KEY_ROLES = 'anticeil_colony_roles_v3';
+const STORAGE_KEY_AUDIT = 'anticeil_colony_audit_v3';
 
 export function loadStoredInvites(colonyId: string): any[] {
   try {

@@ -35,7 +35,7 @@ export const DEFAULT_COLONIES: Colony[] = [
   },
 ];
 
-const STORAGE_KEY_COLONIES = 'anticeil_community_hubs_v3';
+const STORAGE_KEY_COLONIES = 'anticeil_colony_colonies_v3';
 
 export function loadStoredColonies(): Colony[] {
   try {
@@ -53,6 +53,7 @@ export function loadStoredColonies(): Colony[] {
 export function saveStoredColonies(colonies: Colony[]): void {
   try {
     localStorage.setItem(STORAGE_KEY_COLONIES, JSON.stringify(colonies));
+    window.dispatchEvent(new Event('anticeil_colonies_changed'));
     window.dispatchEvent(new Event('anticeil_hubs_changed'));
   } catch (err) {
     console.error('Failed to save community hubs to storage', err);

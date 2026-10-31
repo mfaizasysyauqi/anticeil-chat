@@ -210,7 +210,7 @@ export function CommunityPage() {
       const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith('anticeil_community_') ||
+        (key.startsWith('anticeil_colony_') || key.startsWith('anticeil_community_') ||
           key.startsWith('anticeil_current_') ||
           key.startsWith('anticeil_threads_') ||
           key.startsWith('anticeil_notif_') ||
@@ -449,7 +449,7 @@ export function CommunityPage() {
   const [colonies, setColonies] = useState<Colony[]>(() => loadStoredColonies());
   const [activeColonyId, setActiveColonyId] = useState<ColonyId>(() => {
     const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get('hub') || (params.get('invite')?.startsWith('hub_') ? params.get('invite') : null);
+    const fromUrl = params.get('colony') || params.get('hub') || (params.get('invite')?.startsWith('hub_') ? params.get('invite') : null);
     return fromUrl || 'anticeil';
   });
 
@@ -556,10 +556,12 @@ export function CommunityPage() {
     const handleOpenAddFriend = () => {
       setIsAddFriendDialogOpen(true);
     };
+    window.addEventListener('anticeil_switch_colony', handleSwitchColony as EventListener);
     window.addEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
     window.addEventListener('anticeil_open_create_hub', handleOpenCreateHub);
     window.addEventListener('anticeil_open_add_friend', handleOpenAddFriend);
     return () => {
+      window.removeEventListener('anticeil_switch_colony', handleSwitchColony as EventListener);
       window.removeEventListener('anticeil_switch_hub', handleSwitchColony as EventListener);
       window.removeEventListener('anticeil_open_create_hub', handleOpenCreateHub);
       window.removeEventListener('anticeil_open_add_friend', handleOpenAddFriend);
@@ -568,6 +570,7 @@ export function CommunityPage() {
 
   // Broadcast activeColonyId to Unified Mini Rail
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent('anticeil_active_colony_changed', { detail: activeColonyId }));
     window.dispatchEvent(new CustomEvent('anticeil_active_hub_changed', { detail: activeColonyId }));
   }, [activeColonyId]);
 
@@ -578,11 +581,13 @@ export function CommunityPage() {
       const url = new URL(window.location.href);
       let changed = false;
       if (activeColonyId && activeColonyId !== 'anticeil') {
-        if (url.searchParams.get('hub') !== activeColonyId) {
-          url.searchParams.set('hub', activeColonyId);
+        if (url.searchParams.get('colony') !== activeColonyId) {
+          url.searchParams.set('colony', activeColonyId);
+          url.searchParams.delete('hub');
           changed = true;
         }
-      } else if (url.searchParams.has('hub')) {
+      } else if (url.searchParams.has('colony') || url.searchParams.has('hub')) {
+        url.searchParams.delete('colony');
         url.searchParams.delete('hub');
         changed = true;
       }
