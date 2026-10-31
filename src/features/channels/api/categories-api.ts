@@ -52,5 +52,9 @@ export const categoriesApi = {
     saveStoredColonyCategory(newCat);
     return newCat;
   },
+  updateCategory(category: ColonyCategory): void {
+    saveStoredColonyCategory(category);
+  },
   deleteCategory: deleteStoredColonyCategory,
 };
+

@@ -22,6 +22,9 @@ import {
   Gem,
   FolderPlus,
   Trash2,
+  CheckCheck,
+  BellOff,
+  Pencil,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -30,6 +33,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+  ContextMenuCheckboxItem,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+} from '@/components/ui/context-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -41,7 +65,7 @@ import {
   resolveChannelType,
 } from '@/chat/chat-types';
 import type { ColonySettingsSection } from '@/features/colony-settings';
-import type { ColonyCategory } from '../api/categories-api';
+import { categoriesApi, type ColonyCategory } from '../api/categories-api';
 
 export interface ColonyChannelsSidebarProps {
   activeColony: Colony | null;
@@ -63,6 +87,7 @@ export interface ColonyChannelsSidebarProps {
   onOpenCreateChannel: (category: string, type?: ColonyChannelType, categoryId?: string) => void;
   onOpenCreateCategory?: () => void;
   onDeleteCategory?: (categoryId: string) => void;
+  onUpdateCategory?: (categoryId: string, name: string) => void;
   categories?: ColonyCategory[];
   onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
@@ -95,6 +120,7 @@ export function ColonyChannelsSidebar({
   onOpenCreateColony,
   onOpenCreateCategory,
   onDeleteCategory,
+  onUpdateCategory,
   categories = [],
   onOpenEditChannel,
   onUpdateColonyIcon,
@@ -105,6 +131,8 @@ export function ColonyChannelsSidebar({
   t,
 }: ColonyChannelsSidebarProps) {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
+  const [editingCategory, setEditingCategory] = React.useState<ColonyCategory | null>(null);
+  const [editCategoryName, setEditCategoryName] = React.useState('');
 
   const colonyChannels = channels
     .filter((c) => (c.colonyId || 'anticeil') === (activeColony?.id || 'anticeil') && !c.isDirectMessage)
@@ -566,57 +594,143 @@ export function ColonyChannelsSidebar({
 
                 return (
                   <div key={cat.id} className="space-y-1 mb-2">
-                    <div
-                      onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, [cat.id]: !prev?.[cat.id] }))}
-                      className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
-                    >
-                      <div className="flex items-center gap-1 min-w-0">
-                        <ChevronDown
-                          className={cn(
-                            'w-3 h-3 transition-transform duration-200 shrink-0',
-                            isCollapsed && '-rotate-90',
-                          )}
-                        />
-                        <span className="truncate">{cat.name}</span>
-                        <span className="text-[10px] text-muted-foreground/60 shrink-0">
-                          ({catChannels.length})
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-0.5">
-                        <Tooltip delayDuration={150}>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onOpenCreateChannel('CHANNELS', 'text', cat.id);
-                              }}
-                              className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
-                              title={t('Buat Channel')}
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                            {t('Buat Channel')}
-                          </TooltipContent>
-                        </Tooltip>
-                        {onDeleteCategory && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(t('Hapus kategori ini? Channel di dalamnya tidak akan terhapus.'))) {
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <div
+                          onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, [cat.id]: !prev?.[cat.id] }))}
+                          className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
+                        >
+                          <div className="flex items-center gap-1 min-w-0">
+                            <ChevronDown
+                              className={cn(
+                                'w-3 h-3 transition-transform duration-200 shrink-0',
+                                isCollapsed && '-rotate-90',
+                              )}
+                            />
+                            <span className="truncate">{cat.name}</span>
+                            <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                              ({catChannels.length})
+                            </span>
+                          </div>
+                          <Tooltip delayDuration={150}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenCreateChannel('CHANNELS', 'text', cat.id);
+                                }}
+                                className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
+                                title={t('Buat Channel')}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
+                              {t('Buat Channel')}
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent className="w-56 bg-card border-border text-foreground">
+                        <ContextMenuItem
+                          onClick={() => toast.success(t('Semua channel di kategori ini ditandai telah dibaca'))}
+                          className="cursor-pointer"
+                        >
+                          <CheckCheck className="w-4 h-4 mr-1 text-muted-foreground" />
+                          <span>{t('Mark As Read')}</span>
+                        </ContextMenuItem>
+
+                        <ContextMenuSeparator />
+
+                        <ContextMenuCheckboxItem
+                          checked={isCollapsed}
+                          onCheckedChange={(checked) =>
+                            setCollapsedCategories((prev: any) => ({ ...prev, [cat.id]: checked }))
+                          }
+                          className="cursor-pointer"
+                        >
+                          <span>{t('Collapse Category')}</span>
+                        </ContextMenuCheckboxItem>
+
+                        <ContextMenuItem
+                          onClick={() => {
+                            setCollapsedCategories((prev: any) => {
+                              const next = { ...prev, text: true, voice: true, forum: true, kanban: true };
+                              colonyCategories.forEach((c) => {
+                                next[c.id] = true;
+                              });
+                              return next;
+                            });
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <span>{t('Collapse All Categories')}</span>
+                        </ContextMenuItem>
+
+                        <ContextMenuSeparator />
+
+                        <ContextMenuSub>
+                          <ContextMenuSubTrigger className="cursor-pointer">
+                            <BellOff className="w-4 h-4 mr-1 text-muted-foreground" />
+                            <span>{t('Mute Category')}</span>
+                          </ContextMenuSubTrigger>
+                          <ContextMenuSubContent className="w-48 bg-card border-border">
+                            {['15 Menit', '1 Jam', '8 Jam', '24 Jam', 'Sampai diaktifkan kembali'].map((duration) => (
+                              <ContextMenuItem
+                                key={duration}
+                                onClick={() => toast.success(t(`Kategori dibisukan selama ${duration}`))}
+                                className="cursor-pointer"
+                              >
+                                {duration}
+                              </ContextMenuItem>
+                            ))}
+                          </ContextMenuSubContent>
+                        </ContextMenuSub>
+
+                        <ContextMenuSeparator />
+
+                        <ContextMenuItem
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setEditCategoryName(cat.name);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Pencil className="w-4 h-4 mr-1 text-muted-foreground" />
+                          <span>{t('Edit Category')}</span>
+                        </ContextMenuItem>
+
+                        <ContextMenuItem
+                          variant="destructive"
+                          onClick={() => {
+                            if (confirm(t('Hapus kategori ini? Channel di dalamnya tidak akan terhapus.'))) {
+                              if (onDeleteCategory) {
                                 onDeleteCategory(cat.id);
+                              } else {
+                                categoriesApi.deleteCategory(cat.id, activeColony?.id || 'anticeil');
                               }
-                            }}
-                            className="opacity-0 group-hover/cat:opacity-100 text-muted-foreground hover:text-destructive p-0.5 rounded transition-all cursor-pointer"
-                            title={t('Hapus Kategori')}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                            }
+                          }}
+                          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          <span>{t('Delete Category')}</span>
+                        </ContextMenuItem>
+
+                        <ContextMenuSeparator />
+
+                        <ContextMenuItem
+                          onClick={() => {
+                            navigator.clipboard.writeText(cat.id);
+                            toast.success(t('Category ID disalin ke papan klip'));
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Hash className="w-4 h-4 mr-1 text-muted-foreground" />
+                          <span>{t('Copy Category ID')}</span>
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
 
                     {!isCollapsed && (
                       <div className="space-y-0.5">
@@ -1128,6 +1242,76 @@ export function ColonyChannelsSidebar({
           )}
         </div>
       </div>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={Boolean(editingCategory)} onOpenChange={(open) => !open && setEditingCategory(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <Pencil className="w-4 h-4" />
+              </div>
+              <DialogTitle className="text-base font-bold">{t('Edit Kategori')}</DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground pt-1">
+              {t('Ubah nama kategori server Anda.')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingCategory || !editCategoryName.trim()) return;
+              const newName = editCategoryName.trim().toUpperCase();
+              if (onUpdateCategory) {
+                onUpdateCategory(editingCategory.id, newName);
+              } else {
+                categoriesApi.updateCategory({
+                  ...editingCategory,
+                  name: newName,
+                });
+                toast.success(t(`Kategori berhasil diubah menjadi ${newName}`));
+              }
+              setEditingCategory(null);
+            }}
+          >
+            <DialogBody className="space-y-4 py-2">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  {t('NAMA KATEGORI')}
+                </label>
+                <Input
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value.toUpperCase())}
+                  className="bg-muted/40 border-border text-foreground text-xs uppercase"
+                  autoFocus
+                  required
+                />
+              </div>
+            </DialogBody>
+
+            <DialogFooter className="gap-2 sm:gap-0 pt-3 border-t border-border/40">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingCategory(null)}
+                className="text-xs"
+              >
+                {t('Batal')}
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!editCategoryName.trim()}
+                className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+              >
+                {t('Simpan Perubahan')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

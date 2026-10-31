@@ -1413,6 +1413,7 @@ export function ColonyPage() {
       categories={channelModals.categories}
       onOpenCreateCategory={() => channelModals.setIsCreateCategoryOpen(true)}
       onDeleteCategory={channelModals.handleDeleteCategory}
+      onUpdateCategory={channelModals.handleUpdateCategory}
       onItemClick={onItemClick}
       onOpenDmSearch={() =>
         requireAuth(

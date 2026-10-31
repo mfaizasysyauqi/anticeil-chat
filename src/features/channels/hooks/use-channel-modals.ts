@@ -39,7 +39,10 @@ export function useChannelModals({
 
   // Listen to category changes
   React.useEffect(() => {
-    setCategories(categoriesApi.getCategories(activeColonyId));
+    const refresh = () => setCategories(categoriesApi.getCategories(activeColonyId));
+    refresh();
+    window.addEventListener('anticeil_categories_changed', refresh);
+    return () => window.removeEventListener('anticeil_categories_changed', refresh);
   }, [activeColonyId]);
 
   // Edit Channel Modal
@@ -191,6 +194,15 @@ export function useChannelModals({
     toast.success(t('Kategori berhasil dihapus'));
   };
 
+  const handleUpdateCategory = (categoryId: string, name: string) => {
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat) return;
+    const updated = { ...cat, name: name.trim().toUpperCase() };
+    categoriesApi.updateCategory(updated);
+    setCategories((prev) => prev.map((c) => (c.id === categoryId ? updated : c)));
+    toast.success(t(`Kategori berhasil diubah menjadi ${updated.name}`));
+  };
+
   return {
     // Categories
     categories,
@@ -202,6 +214,7 @@ export function useChannelModals({
     setTargetCategoryId,
     handleCreateCategorySubmit,
     handleDeleteCategory,
+    handleUpdateCategory,
 
     // Create
     isCreateChannelOpen,

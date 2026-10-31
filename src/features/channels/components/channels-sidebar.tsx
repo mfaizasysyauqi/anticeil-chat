@@ -42,6 +42,7 @@ export interface ChannelsSidebarProps {
   onOpenCreateChannel: (category: string, type?: ColonyChannelType, categoryId?: string) => void;
   onOpenCreateCategory?: () => void;
   onDeleteCategory?: (categoryId: string) => void;
+  onUpdateCategory?: (categoryId: string, name: string) => void;
   categories?: ColonyCategory[];
   onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
