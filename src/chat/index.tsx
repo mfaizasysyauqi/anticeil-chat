@@ -1831,6 +1831,7 @@ export function CommunityPage() {
       onOpenEditHub={() => setHubToEdit(activeHub)}
       onOpenDeleteHub={() => setHubToDelete(activeHub)}
       setIsCallPiP={setIsCallPiP}
+      selectedActivityAppId={selectedActivityAppId}
       userBottomDock={null}
       t={t}
     />
@@ -2073,6 +2074,7 @@ export function CommunityPage() {
           currentUser={currentUser}
           isPlusOrAbove={isPlusOrAbove}
           socket={socket}
+          isActivityOpen={isActivityOpen}
           selectedActivityAppId={selectedActivityAppId}
           setSelectedActivityAppId={setSelectedActivityAppId}
           setIsActivityOpen={setIsActivityOpen}

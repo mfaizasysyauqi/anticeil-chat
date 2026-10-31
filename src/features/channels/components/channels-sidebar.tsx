@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { HomeChannelsSidebar } from './home-channels-sidebar';
 import { ColonyChannelsSidebar } from './colony-channels-sidebar';
 import type {
@@ -48,6 +48,7 @@ export interface ChannelsSidebarProps {
   calendarEvents?: any[];
   onOpenServerEvents?: () => void;
   userBottomDock?: React.ReactNode;
+  selectedActivityAppId?: string | null;
   t: (key: string, params?: Record<string, any>) => string;
 }
 

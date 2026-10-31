@@ -146,13 +146,21 @@ export function useYouTubePlayer({
 
     let isMounted = true;
     let pollInterval: any = null;
+    let targetElRetryCount = 0;
 
     const initOrLoad = () => {
       if (!isMounted) return;
       if (!window.YT || !window.YT.Player) return;
 
       const targetEl = document.getElementById('yt-watch-together-player-frame');
-      if (!targetEl) return;
+      if (!targetEl) {
+        // Target element might not be rendered yet in the DOM by React; retry up to 30 times (3 seconds)
+        if (targetElRetryCount < 30) {
+          targetElRetryCount++;
+          setTimeout(initOrLoad, 100);
+        }
+        return;
+      }
 
       if (playerRef.current) {
         try {
@@ -171,7 +179,24 @@ export function useYouTubePlayer({
               startSeconds: seekToTime,
             });
             setTimeout(() => {
-              try { playerRef.current?.playVideo?.(); } catch (e) {}
+              try {
+                const playPromise = playerRef.current?.playVideo?.();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                  playPromise.catch(() => {
+                    try {
+                      playerRef.current?.mute?.();
+                      playerRef.current?.playVideo?.();
+                      setNeedsUserGesture(true);
+                    } catch (e2) {}
+                  });
+                }
+              } catch (e) {
+                try {
+                  playerRef.current?.mute?.();
+                  playerRef.current?.playVideo?.();
+                  setNeedsUserGesture(true);
+                } catch (e2) {}
+              }
             }, 300);
           }
         } catch (err) {
@@ -205,8 +230,23 @@ export function useYouTubePlayer({
                   event.target.seekTo(initialSeekTimeRef.current, true);
                   initialSeekTimeRef.current = 0;
                 }
-                event.target.playVideo?.();
-              } catch (e) {}
+                const playPromise = event.target.playVideo?.();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                  playPromise.catch(() => {
+                    try {
+                      event.target.mute?.();
+                      event.target.playVideo?.();
+                      setNeedsUserGesture(true);
+                    } catch (e2) {}
+                  });
+                }
+              } catch (e) {
+                try {
+                  event.target.mute?.();
+                  event.target.playVideo?.();
+                  setNeedsUserGesture(true);
+                } catch (e2) {}
+              }
             },
             onStateChange: (event: any) => {
               if (!isMounted) return;
@@ -360,6 +400,22 @@ export function useYouTubePlayer({
       } catch (e) {}
     }
   };
+
+  // Automatically unlock sound & play on first click/key/touch anywhere in window when restricted
+  useEffect(() => {
+    if (!needsUserGesture) return;
+    const unlockOnGesture = () => {
+      handleUnlockAutoplay();
+    };
+    window.addEventListener('click', unlockOnGesture, { once: true });
+    window.addEventListener('keydown', unlockOnGesture, { once: true });
+    window.addEventListener('touchstart', unlockOnGesture, { once: true });
+    return () => {
+      window.removeEventListener('click', unlockOnGesture);
+      window.removeEventListener('keydown', unlockOnGesture);
+      window.removeEventListener('touchstart', unlockOnGesture);
+    };
+  }, [needsUserGesture]);
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);

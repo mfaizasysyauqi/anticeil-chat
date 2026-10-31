@@ -64,6 +64,7 @@ export interface ColonyChannelsSidebarProps {
   setIsCallPiP: (pip: boolean) => void;
   calendarEvents?: any[];
   onOpenServerEvents?: () => void;
+  selectedActivityAppId?: string | null;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -91,6 +92,7 @@ export function ColonyChannelsSidebar({
   setIsCallPiP,
   calendarEvents = [],
   onOpenServerEvents,
+  selectedActivityAppId,
   t,
 }: ColonyChannelsSidebarProps) {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
@@ -356,6 +358,19 @@ export function ColonyChannelsSidebar({
                               </span>
                             )}
 
+                            {/* Active YouTube Watch Together Badge (Discord-style) */}
+                            {activeCallChannelId === ch.id &&
+                              (selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube') && (
+                                <div
+                                  className="w-5 h-3.5 bg-red-600 rounded flex items-center justify-center shrink-0 shadow-xs"
+                                  title="Watch Together Aktif"
+                                >
+                                  <svg className="w-2.5 h-2.5 fill-white text-white ml-0.5" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                              )}
+
                             {/* Channel action buttons */}
                             <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
                               <button
@@ -574,6 +589,19 @@ export function ColonyChannelsSidebar({
                                 <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
                               </span>
                             )}
+
+                            {/* Active YouTube Watch Together Badge (Discord-style) */}
+                            {activeCallChannelId === ch.id &&
+                              (selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube') && (
+                                <div
+                                  className="w-5 h-3.5 bg-red-600 rounded flex items-center justify-center shrink-0 shadow-xs"
+                                  title="Watch Together Aktif"
+                                >
+                                  <svg className="w-2.5 h-2.5 fill-white text-white ml-0.5" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                              )}
 
                             {/* Channel action buttons */}
                             <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">

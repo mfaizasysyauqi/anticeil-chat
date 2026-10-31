@@ -909,104 +909,100 @@ export function CommunityCallStage({
   // Render Full Discord Stage View
   return (
     <div className="w-full h-full flex-1 min-h-0 flex flex-col bg-background text-foreground select-none relative overflow-hidden group/stage">
-      {/* Discord Top Stage App Bar */}
-      <div className={cn('h-12 w-full flex items-center justify-between bg-background select-none shrink-0 z-20', CHANNEL_HORIZONTAL_PADDING)}>
-        <div className="flex items-center gap-2 min-w-0">
-          {/* Burger Menu Button (Visible on Mobile/Tablet: md:hidden) */}
-          {onOpenMobileChannels && (
-            <button
-              type="button"
-              onClick={onOpenMobileChannels}
-              className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors mr-0.5 cursor-pointer shrink-0"
-              title="Buka Menu Sidebar"
-              aria-label="Buka Menu Sidebar"
-            >
-              <Menu className="w-5 h-5 text-foreground" />
-            </button>
-          )}
-          {channel.type === 'voice' ? (
+      {/* Discord Top Stage App Bar (Only shown in voice channels; in text channels ChannelTopHeaderBar is already shown at top) */}
+      {channel.type === 'voice' && (
+        <div className={cn('h-12 w-full flex items-center justify-between bg-background select-none shrink-0 z-20', CHANNEL_HORIZONTAL_PADDING)}>
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Burger Menu Button (Visible on Mobile/Tablet: md:hidden) */}
+            {onOpenMobileChannels && (
+              <button
+                type="button"
+                onClick={onOpenMobileChannels}
+                className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors mr-0.5 cursor-pointer shrink-0"
+                title="Buka Menu Sidebar"
+                aria-label="Buka Menu Sidebar"
+              >
+                <Menu className="w-5 h-5 text-foreground" />
+              </button>
+            )}
             <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
-          ) : channel.category === 'DIRECT MESSAGES' || channel.isDirectMessage ? (
-            <span className="text-muted-foreground font-bold text-base shrink-0 select-none">@</span>
-          ) : (
-            <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
-          )}
-          <span className="text-sm font-bold text-foreground truncate max-w-[140px] sm:max-w-[200px]">
-            {channel.name}
-          </span>
-          {activeAppId !== null && currentActiveApp && (
-            <>
-              <span className="text-muted-foreground text-xs select-none">·</span>
-              <div className="flex items-center gap-1.5 min-w-0">
-                {activeAppId === 'watch-together' ? (
-                  <YouTubeBadgeIcon className="w-5 h-3.5 shrink-0" />
-                ) : (
-                  <div className={cn('w-4 h-4 rounded flex items-center justify-center text-white shrink-0', currentActiveApp.iconBg)}>
-                    <currentActiveApp.icon className="w-2.5 h-2.5" />
-                  </div>
-                )}
-                <span className="text-sm font-bold text-foreground truncate max-w-[180px]">
-                  {currentActiveApp.title}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
+            <span className="text-sm font-bold text-foreground truncate max-w-[140px] sm:max-w-[200px]">
+              {channel.name}
+            </span>
+            {activeAppId !== null && currentActiveApp && (
+              <>
+                <span className="text-muted-foreground text-xs select-none">·</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {activeAppId === 'watch-together' ? (
+                    <YouTubeBadgeIcon className="w-5 h-3.5 shrink-0" />
+                  ) : (
+                    <div className={cn('w-4 h-4 rounded flex items-center justify-center text-white shrink-0', currentActiveApp.iconBg)}>
+                      <currentActiveApp.icon className="w-2.5 h-2.5" />
+                    </div>
+                  )}
+                  <span className="text-sm font-bold text-foreground truncate max-w-[180px]">
+                    {currentActiveApp.title}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center -space-x-1.5 overflow-hidden">
-            {participants.slice(0, 3).map((p) => (
-              <div key={p.socketId} title={p.userName} className="ring-2 ring-background rounded-full overflow-hidden">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center -space-x-1.5 overflow-hidden">
+              {participants.slice(0, 3).map((p) => (
+                <div key={p.socketId} title={p.userName} className="ring-2 ring-background rounded-full overflow-hidden">
+                  <CommunityAvatar
+                    name={p.userName}
+                    imageUrl={p.userAvatar}
+                    size={24}
+                    showStatus={false}
+                  />
+                </div>
+              ))}
+              <div title={`${currentUserName} (Anda)`} className="ring-2 ring-background rounded-full overflow-hidden">
                 <CommunityAvatar
-                  name={p.userName}
-                  imageUrl={p.userAvatar}
+                  name={currentUserName}
+                  imageUrl={currentUser?.imageUrl}
+                  email={currentUser?.email}
                   size={24}
                   showStatus={false}
                 />
               </div>
-            ))}
-            <div title={`${currentUserName} (Anda)`} className="ring-2 ring-background rounded-full overflow-hidden">
-              <CommunityAvatar
-                name={currentUserName}
-                imageUrl={currentUser?.imageUrl}
-                email={currentUser?.email}
-                size={24}
-                showStatus={false}
-              />
             </div>
-          </div>
 
-          <TooltipProvider delayDuration={150}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onToggleChat) {
-                      onToggleChat();
-                    } else if (onToggleActivity) {
-                      onToggleActivity();
-                    } else {
-                      toast.info('Obrolan teks suara');
-                    }
-                  }}
-                  className={cn(
-                    'p-1.5 rounded-lg transition-colors cursor-pointer',
-                    isChatOpen
-                      ? 'bg-white/20 text-white'
-                      : 'text-[#949ba4] hover:text-white hover:bg-white/10',
-                  )}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs font-semibold">
-                {isChatOpen ? 'Sembunyikan Obrolan' : 'Buka Obrolan Suara'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onToggleChat) {
+                        onToggleChat();
+                      } else if (onToggleActivity) {
+                        onToggleActivity();
+                      } else {
+                        toast.info('Obrolan teks suara');
+                      }
+                    }}
+                    className={cn(
+                      'p-1.5 rounded-lg transition-colors cursor-pointer',
+                      isChatOpen
+                        ? 'bg-white/20 text-white'
+                        : 'text-[#949ba4] hover:text-white hover:bg-white/10',
+                    )}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-semibold">
+                  {isChatOpen ? 'Sembunyikan Obrolan' : 'Buka Obrolan Suara'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Call Stage Content */}
       {activeAppId !== null && currentActiveApp ? (

@@ -93,20 +93,21 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         }
         voiceDest = dmCh || null;
       } else {
-        // In Server: if already in / already have a voice call active, attach activity there.
-        // If the current channel is a text channel (NOT voice), keep the activity
-        // inline in that text channel — do NOT jump to a voice channel.
+        // In Server:
+        // If launching or joining inside a text channel (e.g. #general), keep the activity
+        // embedded directly in that text channel in Discord-style split view.
+        // Never jump away to a voice channel!
         if (targetChannelId) {
           voiceDest = channels.find((c) => c.id === targetChannelId) || null;
         }
-        if (!voiceDest && activeCallChannelId) {
-          voiceDest = channels.find((c) => c.id === activeCallChannelId) || null;
-        }
-        if (!voiceDest && targetChannel) {
-          voiceDest = targetChannel;
-        }
-        if (!voiceDest && activeChannel) {
-          voiceDest = activeChannel;
+        if (!voiceDest) {
+          if (activeChannel && activeChannel.type !== 'voice') {
+            voiceDest = activeChannel;
+          } else if (activeCallChannelId) {
+            voiceDest = channels.find((c) => c.id === activeCallChannelId) || null;
+          } else {
+            voiceDest = targetChannel || activeChannel || null;
+          }
         }
       }
 
@@ -124,25 +125,11 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         if (voiceDest.hubId && voiceDest.hubId !== activeHubId) {
           setActiveHubId(voiceDest.hubId);
         }
+        setActiveChannelId(voiceDest.id);
         setActiveCallChannelId(voiceDest.id);
         setIsActivityOpen(true);
+        setIsCallPiP(false);
 
-        // When joining from a chat invite in a text channel, stay on that
-        // text channel and show the activity minimised (PiP). Only switch
-        // to the full call stage when launching directly (e.g. from the
-        // voice channel toolbar or the activity picker).
-        const stayInTextChannel =
-          fromChatInvite &&
-          activeChannel &&
-          activeChannel.type !== 'voice' &&
-          activeChannel.id !== voiceDest.id;
-
-        if (stayInTextChannel) {
-          setIsCallPiP(true);
-        } else {
-          setActiveChannelId(voiceDest.id);
-          setIsCallPiP(false);
-        }
         socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
           channelId: voiceDest.id,
           action: 'START_ACTIVITY',

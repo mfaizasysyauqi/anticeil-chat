@@ -95,6 +95,7 @@ export interface ChatMainViewProps {
   currentUser: any;
   isPlusOrAbove: boolean;
   socket: any;
+  isActivityOpen?: boolean;
   selectedActivityAppId: string | null;
   setSelectedActivityAppId: (appId: string | null) => void;
   setIsActivityOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -233,6 +234,7 @@ export function ChatMainView({
   currentUser,
   isPlusOrAbove,
   socket,
+  isActivityOpen,
   selectedActivityAppId,
   setSelectedActivityAppId,
   setIsActivityOpen,
@@ -312,10 +314,18 @@ export function ChatMainView({
   const [activitySplitHeight, setActivitySplitHeight] = React.useState(70); // 70% activity, 30% chat
   const splitContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Reset split chat state when channel changes
+  // Auto-enable split chat view when an activity is active in a text channel (Discord-style)
   React.useEffect(() => {
-    setIsActivityChatSplitOpen(false);
-  }, [activeChannel?.id]);
+    if (activeChannel?.type !== 'voice') {
+      if (activeCallChannelId === activeChannel?.id || isActivityOpen || selectedActivityAppId) {
+        setIsActivityChatSplitOpen(true);
+      } else {
+        setIsActivityChatSplitOpen(false);
+      }
+    } else {
+      setIsActivityChatSplitOpen(false);
+    }
+  }, [activeChannel?.id, activeChannel?.type, activeCallChannelId, isActivityOpen, selectedActivityAppId]);
 
   const handleSplitPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -550,11 +560,8 @@ export function ChatMainView({
 
   return (
     <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
-      {/* Channel Top Header Bar */}
-      {!(
-        (activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') &&
-        !isCallPiP
-      ) && (
+      {/* Channel Top Header Bar: Always visible in text channels (even during embedded activities) */}
+      {!(activeChannel?.type === 'voice' && !isCallPiP) && (
         <ChannelTopHeaderBar
           activeChannel={activeChannel}
           channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}

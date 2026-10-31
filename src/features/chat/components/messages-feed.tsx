@@ -322,10 +322,7 @@ export function MessagesFeed({
                                 (!itemAct.channelId || !activeCallChannelId || itemAct.channelId === activeCallChannelId)
                               );
 
-                              const isAlreadyPlaying = isActivityCurrentlyActive && (
-                                (currentUser?.id && (itemAct.startedById === currentUser.id || msg.senderId === currentUser.id)) ||
-                                (currentUserName && itemAct.startedBy === currentUserName)
-                              );
+                              const isAlreadyPlaying = isActivityCurrentlyActive;
 
                               return (
                                 <div

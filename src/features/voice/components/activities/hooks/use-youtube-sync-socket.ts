@@ -78,12 +78,27 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
           setIsPlaying(true);
           setActiveVideoId(videoId);
           setIsExpandedVideo(false);
-          // If player already exists, trigger play after load
+          // If player already exists, trigger play after load with guaranteed autoplay fallback
           if (playerRef.current) {
             setTimeout(() => {
               try {
-                playerRef.current?.playVideo?.();
-              } catch (e) {}
+                const res = playerRef.current?.playVideo?.();
+                if (res && typeof res.catch === 'function') {
+                  res.catch(() => {
+                    try {
+                      playerRef.current?.mute?.();
+                      playerRef.current?.playVideo?.();
+                      setNeedsUserGesture(true);
+                    } catch (err) {}
+                  });
+                }
+              } catch (e) {
+                try {
+                  playerRef.current?.mute?.();
+                  playerRef.current?.playVideo?.();
+                  setNeedsUserGesture(true);
+                } catch (err) {}
+              }
             }, 800);
           }
         }
@@ -126,10 +141,20 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
           try {
             const res = playerRef.current.playVideo?.();
             if (res && typeof res.catch === 'function') {
-              res.catch(() => setNeedsUserGesture(true));
+              res.catch(() => {
+                try {
+                  playerRef.current?.mute?.();
+                  playerRef.current?.playVideo?.();
+                  setNeedsUserGesture(true);
+                } catch (err) {}
+              });
             }
           } catch (e) {
-            setNeedsUserGesture(true);
+            try {
+              playerRef.current?.mute?.();
+              playerRef.current?.playVideo?.();
+              setNeedsUserGesture(true);
+            } catch (err) {}
           }
         }
       } else if (data.action === 'YOUTUBE_PAUSE') {
@@ -222,7 +247,24 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
               } catch (e) {}
             }
             if (syncPlaying) {
-              playerRef.current.playVideo?.();
+              try {
+                const res = playerRef.current.playVideo?.();
+                if (res && typeof res.catch === 'function') {
+                  res.catch(() => {
+                    try {
+                      playerRef.current?.mute?.();
+                      playerRef.current?.playVideo?.();
+                      setNeedsUserGesture(true);
+                    } catch (err) {}
+                  });
+                }
+              } catch (e) {
+                try {
+                  playerRef.current?.mute?.();
+                  playerRef.current?.playVideo?.();
+                  setNeedsUserGesture(true);
+                } catch (err) {}
+              }
               setIsPlaying(true);
             } else if (syncPlaying === false) {
               playerRef.current.pauseVideo?.();
