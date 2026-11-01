@@ -93,6 +93,7 @@ export interface ColonyChannelsSidebarProps {
   onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
   onUpdateColonyIcon?: (file: File) => Promise<void> | void;
+  onMoveChannelCategory?: (channelId: string, categoryId?: string, categoryName?: string) => Promise<void> | void;
   setIsCallPiP: (pip: boolean) => void;
   calendarEvents?: any[];
   onOpenServerEvents?: () => void;
@@ -125,6 +126,7 @@ export function ColonyChannelsSidebar({
   categories = [],
   onOpenEditChannel,
   onUpdateColonyIcon,
+  onMoveChannelCategory,
   setIsCallPiP,
   calendarEvents = [],
   onOpenServerEvents,
@@ -135,6 +137,20 @@ export function ColonyChannelsSidebar({
   const [editingCategory, setEditingCategory] = React.useState<ColonyCategory | null>(null);
   const [editCategoryName, setEditCategoryName] = React.useState('');
   const [hideMutedChannels, setHideMutedChannels] = React.useState(false);
+  const [draggingChannelId, setDraggingChannelId] = React.useState<string | null>(null);
+  const [dragOverCategoryId, setDragOverCategoryId] = React.useState<string | null>(null);
+
+  const handleMoveChannel = async (channelId: string, targetCatId?: string, targetCatName?: string) => {
+    const channel = colonyChannels.find((c) => c.id === channelId);
+    if (!channel) return;
+    const currentCatId = channel.categoryId || '';
+    const targetId = targetCatId || '';
+    if (currentCatId === targetId) return;
+
+    if (onMoveChannelCategory) {
+      await onMoveChannelCategory(channelId, targetCatId || undefined, targetCatName || undefined);
+    }
+  };
 
   const colonyChannels = channels
     .filter((c) => (c.colonyId || 'anticeil') === (activeColony?.id || 'anticeil') && !c.isDirectMessage)
@@ -488,6 +504,33 @@ export function ColonyChannelsSidebar({
     );
   };
 
+  const renderDraggableChannel = (ch: ColonyChannel) => {
+    const isDraggingThis = draggingChannelId === ch.id;
+
+    return (
+      <div
+        key={ch.id}
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation();
+          e.dataTransfer.setData('text/plain', ch.id);
+          e.dataTransfer.effectAllowed = 'move';
+          setDraggingChannelId(ch.id);
+        }}
+        onDragEnd={() => {
+          setDraggingChannelId(null);
+          setDragOverCategoryId(null);
+        }}
+        className={cn(
+          'transition-all duration-150 cursor-grab active:cursor-grabbing select-none',
+          isDraggingThis && 'opacity-30 scale-[0.99]',
+        )}
+      >
+        {renderChannelItem(ch)}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Server Header: Title + dropdown with channel/server actions */}
@@ -673,8 +716,35 @@ export function ColonyChannelsSidebar({
           ) : (
             <>
                             {/* UNCATEGORIZED CHANNELS (WHEN CHANNELS HAVE NO CATEGORY OR CATEGORY WAS DELETED) */}
-              {uncategorizedChannels.length > 0 && (
-                <div className="space-y-1 mb-2">
+              {(uncategorizedChannels.length > 0 || draggingChannelId) && (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverCategoryId !== '__uncategorized__') {
+                      setDragOverCategoryId('__uncategorized__');
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                    if (dragOverCategoryId === '__uncategorized__') {
+                      setDragOverCategoryId(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOverCategoryId(null);
+                    const channelId = e.dataTransfer.getData('text/plain');
+                    if (channelId) {
+                      handleMoveChannel(channelId, '', '');
+                    }
+                  }}
+                  className={cn(
+                    'space-y-1 mb-2 p-1 -m-1 rounded-lg transition-all duration-150',
+                    dragOverCategoryId === '__uncategorized__' && 'ring-2 ring-primary/80 bg-primary/10 shadow-xs'
+                  )}
+                >
                   <div
                     onClick={() => setCollapsedCategories((prev: any) => ({ ...prev, uncategorized: !prev?.uncategorized }))}
                     className="px-2 mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground/80 hover:text-foreground tracking-wider uppercase cursor-pointer select-none group/cat"
@@ -710,9 +780,15 @@ export function ColonyChannelsSidebar({
                     </Tooltip>
                   </div>
 
+                  {uncategorizedChannels.length === 0 && draggingChannelId && (
+                    <div className="border border-dashed border-primary/50 bg-primary/5 rounded-md py-2 px-3 text-center text-[11px] text-primary font-medium animate-pulse">
+                      {t('Lepas di sini untuk pindahkan ke Tanpa Kategori')}
+                    </div>
+                  )}
+
                   {!collapsedCategories?.uncategorized && (
                     <div className="space-y-0.5">
-                      {uncategorizedChannels.map(renderChannelItem)}
+                      {uncategorizedChannels.map(renderDraggableChannel)}
                     </div>
                   )}
                 </div>
@@ -722,9 +798,38 @@ export function ColonyChannelsSidebar({
               {colonyCategories.map((cat) => {
                 const catChannels = getCategoryChannels(cat);
                 const isCollapsed = Boolean(collapsedCategories?.[cat.id]);
+                const isDragOverThis = dragOverCategoryId === cat.id;
 
                 return (
-                  <div key={cat.id} className="space-y-1 mb-2">
+                  <div
+                    key={cat.id}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dragOverCategoryId !== cat.id) {
+                        setDragOverCategoryId(cat.id);
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                      if (dragOverCategoryId === cat.id) {
+                        setDragOverCategoryId(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragOverCategoryId(null);
+                      const channelId = e.dataTransfer.getData('text/plain');
+                      if (channelId) {
+                        handleMoveChannel(channelId, cat.id, cat.name);
+                      }
+                    }}
+                    className={cn(
+                      'space-y-1 mb-2 p-1 -m-1 rounded-lg transition-all duration-150',
+                      isDragOverThis && 'ring-2 ring-primary/80 bg-primary/10 shadow-xs'
+                    )}
+                  >
                     <ContextMenu>
                       <ContextMenuTrigger asChild>
                         <div
@@ -870,7 +975,7 @@ export function ColonyChannelsSidebar({
                             {t('Belum ada channel')}
                           </div>
                         ) : (
-                          catChannels.map(renderChannelItem)
+                          catChannels.map(renderDraggableChannel)
                         )}
                       </div>
                     )}

@@ -47,6 +47,7 @@ export interface ChannelsSidebarProps {
   onOpenCreateColony?: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
   onUpdateColonyIcon?: (file: File) => Promise<void> | void;
+  onMoveChannelCategory?: (channelId: string, categoryId?: string, categoryName?: string) => Promise<void> | void;
   onOpenEditColony?: () => void;
   onOpenDeleteColony?: () => void;
   setIsCallPiP: (pip: boolean) => void;

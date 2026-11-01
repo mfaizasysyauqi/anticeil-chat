@@ -128,6 +128,31 @@ export function useChannelModals({
     }
   };
 
+  // Move Channel Category (via Drag & Drop)
+  const handleMoveChannelCategory = async (channelId: string, categoryId?: string, categoryName?: string) => {
+    try {
+      setChannels((prev) =>
+        prev.map((c) =>
+          c.id === channelId
+            ? { ...c, categoryId: categoryId || undefined, categoryName: categoryName || undefined }
+            : c,
+        ),
+      );
+      await colonyApi.updateChannel(channelId, {
+        categoryId: categoryId || undefined,
+        categoryName: categoryName || undefined,
+      });
+      toast.success(
+        categoryName
+          ? t('Channel dipindahkan ke ' + categoryName)
+          : t('Channel dipindahkan ke Tanpa Kategori'),
+      );
+    } catch (err) {
+      console.error('Failed to move channel category', err);
+      toast.error(t('Gagal memindahkan channel'));
+    }
+  };
+
   // Edit Channel Submit
   const handleEditChannelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,6 +289,7 @@ export function useChannelModals({
     channelForSettings,
     setChannelForSettings,
     handleUpdateChannelSettings,
+    handleMoveChannelCategory,
 
     // Webhooks
     isWebhookDialogOpen,
