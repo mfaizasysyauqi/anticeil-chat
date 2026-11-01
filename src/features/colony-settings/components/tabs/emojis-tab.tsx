@@ -27,14 +27,14 @@ export function EmojisTab({
     <div>
       <h2 className="text-xl font-bold mb-1">{t('Emoji Kustom')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
-        {t('Tambahkan emoji kustom yang dapat digunakan oleh semua anggota di server ini.')}
+        {t('Tambahkan emoji kustom yang dapat digunakan oleh semua anggota di colony ini.')}
       </p>
 
       <div className="space-y-6">
         {/* Grid of emojis */}
         <div className="rounded-lg border bg-card/40 p-4">
           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 block">
-            {t('Daftar Emoji Server')} ({serverEmojis.length})
+            {t('Daftar Emoji Colony')} ({serverEmojis.length})
           </label>
           {serverEmojis.length === 0 ? (
             <p className="text-xs text-muted-foreground italic py-3">{t('Belum ada emoji kustom.')}</p>
@@ -127,7 +127,7 @@ export function EmojisTab({
             }}
           >
             <Plus className="w-4 h-4 mr-1.5" />
-            {t('Tambah ke Server')}
+            {t('Tambah ke Colony')}
           </Button>
         </div>
       </div>

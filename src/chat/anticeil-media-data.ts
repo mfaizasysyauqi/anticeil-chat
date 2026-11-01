@@ -110,7 +110,7 @@ export const ANTICEIL_GIF_ITEMS: AnticeilGifItem[] = [
 export const EXTENDED_ANTICEIL_APPS: AnticeilAppCatalogItem[] = [
   { id: 'watch-together', title: 'Watch Together', developer: 'YouTube', group: 'Promoted', icon: '▶️', iconBg: 'bg-red-600', bannerGradient: 'bg-white', description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.' },
   { id: 'whiteboard', title: 'Jamspace Whiteboard', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '🎨', iconBg: 'bg-blue-600', bannerGradient: 'from-blue-600 to-indigo-700', description: 'Papan tulis kolaboratif realtime untuk sketching arsitektur sistem dan wireframing.' },
-  { id: 'chess', title: 'Anticeil Chess', developer: 'Anticeil Native', group: 'Promoted', icon: '👑', iconBg: 'bg-amber-600', bannerGradient: 'from-amber-600 to-stone-800', description: 'Bermain catur interaktif realtime bersama bot AI cerdas atau teman server.' },
+  { id: 'chess', title: 'Anticeil Chess', developer: 'Anticeil Native', group: 'Promoted', icon: '👑', iconBg: 'bg-amber-600', bannerGradient: 'from-amber-600 to-stone-800', description: 'Bermain catur interaktif realtime bersama bot AI cerdas atau teman colony.' },
   { id: 'screenshare', title: 'Share Screen', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '🖥️', iconBg: 'bg-purple-600', bannerGradient: 'from-purple-600 to-indigo-800', description: 'Bagikan layar atau jendela aplikasi dengan audio jernih dan latensi rendah.' },
 ];
 

@@ -236,7 +236,7 @@ export function TwoPaneSettingsDialog({
                                   >
                                     {/* Active indicator tick */}
                                     {isSubActive && (
-                                      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-px h-3 bg-foreground rounded-full" />
+                                      <span className="absolute left-[7px] top-1/2 -translate-y-1/2 w-[2px] h-3.5 bg-foreground rounded-full shadow-xs" />
                                     )}
                                     {sub.label}
                                   </button>

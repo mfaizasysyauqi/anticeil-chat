@@ -125,7 +125,7 @@ export function ScreenShareView({
 
             <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-500 pt-1">
               <ShieldCheck className="size-3.5 text-emerald-500" />
-              <span>Transmisi WebRTC terenkripsi end-to-end tanpa rekaman server</span>
+              <span>Transmisi WebRTC terenkripsi end-to-end tanpa rekaman colony</span>
             </div>
           </div>
         </div>

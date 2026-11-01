@@ -186,7 +186,7 @@ export function AssignmentsView({
               size="xs"
               className="h-7 w-24 sm:w-32 md:w-36 text-xs bg-muted/40 border-sidebar-border"
             >
-              <SelectValue placeholder="Semua Server" />
+              <SelectValue placeholder="Semua Colony" />
             </SelectTrigger>
             <SelectContent align="end">
               <SelectItem value="all">Semua Server</SelectItem>

@@ -151,26 +151,24 @@ export function CreateChannelDialog({
               </div>
             </div>
 
-            {/* 1.5 CATEGORY SELECTION (IF CUSTOM CATEGORIES EXIST) */}
-            {categories && categories.length > 0 && (
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                  {t('KATEGORI')}
-                </label>
-                <select
-                  value={targetCategoryId || ''}
-                  onChange={(e) => setTargetCategoryId?.(e.target.value)}
-                  className="w-full bg-muted/40 border border-border text-foreground rounded-lg h-9 px-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
-                >
-                  <option value="">{t('Tanpa Kategori (Default)')}</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* 1.5 CATEGORY SELECTION */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                {t('KATEGORI')}
+              </label>
+              <select
+                value={targetCategoryId || ''}
+                onChange={(e) => setTargetCategoryId?.(e.target.value)}
+                className="w-full bg-muted/40 border border-border text-foreground rounded-lg h-9 px-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+              >
+                <option value="">{t('Tanpa Kategori (Uncategorized)')}</option>
+                {(categories || []).map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* 2. CHANNEL NAME */}
             <div>

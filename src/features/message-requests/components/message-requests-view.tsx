@@ -149,8 +149,8 @@ export function MessageRequestsView({
                     <div className="text-xs text-muted-foreground/75 mt-0.5 flex items-center gap-1.5">
                       <span>
                         {item.mutualServers > 0
-                          ? `${item.mutualServers} ${t('Server Bersama')}`
-                          : t('Tidak Ada Server Bersama')}
+                          ? `${item.mutualServers} ${t('Colony Bersama')}`
+                          : t('Tidak Ada Colony Bersama')}
                       </span>
                       {item.initialMessage && (
                         <>

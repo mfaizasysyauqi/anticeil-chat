@@ -42,9 +42,9 @@ export function MembersTab({
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-1">{t('Anggota Server')}</h2>
+      <h2 className="text-xl font-bold mb-1">{t('Anggota Colony')}</h2>
       <p className="text-sm text-muted-foreground mb-4">
-        {t('Kelola hak akses peran, keluarkan, atau blokir anggota server.')}
+        {t('Kelola hak akses peran, keluarkan, atau blokir anggota colony.')}
       </p>
 
       {/* Search & Filter */}
@@ -122,7 +122,7 @@ export function MembersTab({
                         onClick={async () => {
                           onUpdateMembers?.((prev) => prev.filter((item) => item.id !== m.id));
                           await colonyApi.kickMember(activeColony.id, m.id);
-                          toast.success(t(`${m.name} dikeluarkan dari server`));
+                          toast.success(t(`${m.name} dikeluarkan dari colony`));
                         }}
                         className="text-red-500 cursor-pointer"
                       >

@@ -182,14 +182,23 @@ export function useChannelModals({
   };
 
   const handleDeleteCategory = (categoryId: string) => {
+    const deletedCat = categories.find((c) => c.id === categoryId);
     categoriesApi.deleteCategory(categoryId, activeColonyId);
     setCategories((prev) => prev.filter((c) => c.id !== categoryId));
     setChannels((prev) =>
-      prev.map((c) =>
-        c.categoryId === categoryId
-          ? { ...c, categoryId: undefined, categoryName: undefined }
-          : c
-      )
+      prev.map((c) => {
+        const matchesId = c.categoryId === categoryId;
+        const matchesName = deletedCat && c.categoryName && c.categoryName.toUpperCase() === deletedCat.name.toUpperCase();
+        const matchesDefaultText = categoryId === `cat_text_${activeColonyId}` && (!c.categoryId || c.categoryId === categoryId) && c.type === 'text';
+        const matchesDefaultVoice = categoryId === `cat_voice_${activeColonyId}` && (!c.categoryId || c.categoryId === categoryId) && c.type === 'voice';
+        const matchesDefaultForum = categoryId === `cat_forum_${activeColonyId}` && (!c.categoryId || c.categoryId === categoryId) && c.type === 'forum';
+        const matchesDefaultKanban = categoryId === `cat_kanban_${activeColonyId}` && (!c.categoryId || c.categoryId === categoryId) && c.type === 'kanban';
+
+        if (matchesId || matchesName || matchesDefaultText || matchesDefaultVoice || matchesDefaultForum || matchesDefaultKanban) {
+          return { ...c, categoryId: undefined, categoryName: undefined };
+        }
+        return c;
+      })
     );
     toast.success(t('Kategori berhasil dihapus'));
   };

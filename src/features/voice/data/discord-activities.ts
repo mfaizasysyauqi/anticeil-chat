@@ -91,7 +91,7 @@ export const DISCORD_APPS: DiscordAppDefinition[] = [
     iconColor: 'text-white',
     icon: Crown,
     tagline: 'Main catur bersama lawan Bot atau teman...',
-    description: 'Bermain catur interaktif di voice channel. Tantang teman satu server atau asah strategi melawan Bot AI cerdas.',
+    description: 'Bermain catur interaktif di voice channel. Tantang teman satu colony atau asah strategi melawan Bot AI cerdas.',
     isRecent: true,
     isPromoted: true,
     badge: 'OFFICIAL',

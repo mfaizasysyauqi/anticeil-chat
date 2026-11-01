@@ -1301,7 +1301,7 @@ export function ColonyPage() {
         setActiveChannelId('');
         setHomeView('colonies');
       }
-      toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Server'));
+      toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Colony'));
       return next;
     });
   };
@@ -1318,8 +1318,8 @@ export function ColonyPage() {
         }
         if (id !== 'anticeil' && !currentUser) {
           setAuthFeatureInfo({
-            title: t('Akses Server'),
-            desc: t('Masuk ke Anticeil untuk mengakses saluran dan mengobrol di server ini.'),
+            title: t('Akses Colony'),
+            desc: t('Masuk ke Anticeil untuk mengakses saluran dan mengobrol di colony ini.'),
           });
           setIsAuthRequiredOpen(true);
           return;
@@ -1337,8 +1337,8 @@ export function ColonyPage() {
       onOpenCreateServer={() =>
         requireAuth(
           () => setIsCreateHubOpen(true),
-          t('Buat Server Komunitas'),
-          t('Masuk ke Anticeil untuk membuat server komunitas Anda sendiri.'),
+          t('Buat Colony Komunitas'),
+          t('Masuk ke Anticeil untuk membuat colony komunitas Anda sendiri.'),
         )
       }
       platformName={platform?.name}
@@ -1429,7 +1429,7 @@ export function ColonyPage() {
         requireAuth(
           () => setIsInviteOpen(true),
           t('Undang Teman'),
-          t('Masuk untuk membagikan tautan undangan server.'),
+          t('Masuk untuk membagikan tautan undangan colony.'),
         )
       }
       onOpenServerSettings={(section) => {
@@ -1453,8 +1453,8 @@ export function ColonyPage() {
       onOpenCreateColony={() =>
         requireAuth(
           () => setIsCreateHubOpen(true),
-          t('Buat Server'),
-          t('Masuk ke Anticeil untuk membuat server komunitas.'),
+          t('Buat Colony'),
+          t('Masuk ke Anticeil untuk membuat colony komunitas.'),
         )
       }
       onOpenEditChannel={(ch) => handleOpenEditChannel(ch)}
@@ -1477,7 +1477,7 @@ export function ColonyPage() {
             try {
               await colonyApi.updateColony(activeColony.id, { iconUrl: res });
             } catch {}
-            toast.success(t('Foto server berhasil diperbarui! 🖼️'));
+            toast.success(t('Foto colony berhasil diperbarui! 🖼️'));
           }
         };
         reader.readAsDataURL(file);

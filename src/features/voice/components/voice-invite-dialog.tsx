@@ -81,7 +81,7 @@ export function VoiceInviteDialog({
                 Undang Teman ke Panggilan
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
-                <span>{activeColony?.name || 'Server'} • #{channel.name}</span>
+                <span>{activeColony?.name || 'Colony'} • #{channel.name}</span>
                 {currentActiveApp && (
                   <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 shrink-0">
                     🎮 {currentActiveApp.title}

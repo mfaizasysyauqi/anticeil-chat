@@ -96,7 +96,7 @@ export function WebhookDialog({
                 <Hash className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-foreground">{t('Belum Ada Saluran di Server Ini')}</h4>
+                <h4 className="text-sm font-semibold text-foreground">{t('Belum Ada Saluran di Colony Ini')}</h4>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                   {t('Webhook memerlukan channel target untuk menerima pesan. Buat saluran pertama Anda terlebih dahulu.')}
                 </p>
@@ -117,7 +117,7 @@ export function WebhookDialog({
 
               <div className="pt-2 text-left border-t border-border/40">
                 <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                  {t('ID Server Saat Ini (Hub ID)')}
+                  {t('ID Colony Saat Ini (Hub ID)')}
                 </label>
                 <div className="flex items-center gap-1.5">
                   <Input
@@ -247,7 +247,7 @@ export function WebhookDialog({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground">
-                    {t('ID Server (Hub ID)')}
+                    {t('ID Colony (Hub ID)')}
                   </label>
                   <div className="flex items-center gap-1.5">
                     <Input

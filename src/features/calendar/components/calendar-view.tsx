@@ -725,7 +725,7 @@ export function CalendarView({
                     }}
                   >
                     <SelectTrigger className="w-full h-9 text-xs">
-                      <SelectValue placeholder="Pilih Server..." />
+                      <SelectValue placeholder="Pilih Colony..." />
                     </SelectTrigger>
                     <SelectContent>
                       {colonies.map((h) => (

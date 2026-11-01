@@ -39,7 +39,7 @@ export function InvitesTab({
           {isCreatingInvite ? t('Batal') : t('Buat Link Baru')}
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground mb-6">{t('Kelola semua tautan undangan ke server ini.')}</p>
+      <p className="text-sm text-muted-foreground mb-6">{t('Kelola semua tautan undangan ke colony ini.')}</p>
 
       {/* Active URL Card */}
       <div className="rounded-lg border bg-card/40 p-4 mb-6">

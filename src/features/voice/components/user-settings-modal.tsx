@@ -487,7 +487,7 @@ export function UserSettingsModal({
                 </div>
 
                 {/* 1. Account Info Section (Screenshot 1) */}
-                <div className="space-y-3">
+                <div id="account-info" className="space-y-3 scroll-mt-4">
                   <h3 className="text-sm font-bold text-foreground">
                     {t('Account Info')}
                   </h3>
@@ -658,7 +658,7 @@ export function UserSettingsModal({
                 </div>
 
                 {/* 2. Password & Security Section (Screenshot 1) */}
-                <div className="space-y-3">
+                <div id="account-security" className="space-y-3 scroll-mt-4">
                   <h3 className="text-sm font-bold text-foreground">
                     {t('Password & Security')}
                   </h3>
@@ -1210,10 +1210,10 @@ export function UserSettingsModal({
               <div className="p-4 flex items-center justify-between gap-4">
                 <div>
                   <div className="text-xs font-semibold text-foreground">
-                    {t('Izinkan Pesan Langsung dari Anggota Server')}
+                    {t('Izinkan Pesan Langsung dari Anggota Colony')}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {t('Anggota server tempat Anda bergabung dapat mengirimi Anda DM.')}
+                    {t('Anggota colony tempat Anda bergabung dapat mengirimi Anda DM.')}
                   </div>
                 </div>
                 <Switch
@@ -1236,7 +1236,7 @@ export function UserSettingsModal({
                   {[
                     { key: 'everyone', label: t('Semua Orang (Everyone)') },
                     { key: 'friendsOfFriends', label: t('Teman dari Teman') },
-                    { key: 'serverMembers', label: t('Anggota Server Bersama') },
+                    { key: 'serverMembers', label: t('Anggota Colony Bersama') },
                   ].map((item) => (
                     <div key={item.key} className="flex items-center justify-between py-1">
                       <span className="text-xs text-foreground font-medium">{item.label}</span>
@@ -1343,9 +1343,9 @@ export function UserSettingsModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { title: 'Upload File 500MB', desc: 'Bebas kirim video beresolusi tinggi dan dokumen zip besar.' },
-                { title: 'Custom Emoji Di Mana Saja', desc: 'Gunakan emoji dari server mana pun di seluruh chat & DM.' },
+                { title: 'Custom Emoji Di Mana Saja', desc: 'Gunakan emoji dari colony mana pun di seluruh chat & DM.' },
                 { title: 'HD 4K Video Streaming', desc: 'Screen share jernih untuk gaming, coding, dan nonton bareng.' },
-                { title: '2 Gratis Server Boosts', desc: 'Dukung server favorit Anda untuk membuka level perks.' },
+                { title: '2 Gratis Colony Boosts', desc: 'Dukung colony favorit Anda untuk membuka level perks.' },
               ].map((perk, i) => (
                 <div key={i} className="p-4 rounded-xl border border-border bg-card shadow-xs">
                   <div className="text-xs font-bold text-foreground">{perk.title}</div>
@@ -1372,7 +1372,7 @@ export function UserSettingsModal({
                     {t('Boost Status: 2 Aktif')}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {t('Anda memiliki 2 server boost yang siap digunakan pada komunitas favorit.')}
+                    {t('Anda memiliki 2 colony boost yang siap digunakan pada komunitas favorit.')}
                   </div>
                 </div>
               </div>

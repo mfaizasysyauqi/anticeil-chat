@@ -220,7 +220,7 @@ export function ActivityDestinationDialog({
                 )}
               >
                 <Server className="w-4 h-4" />
-                <span>Ke Server</span>
+                <span>Ke Colony</span>
               </button>
               <button
                 type="button"
@@ -250,7 +250,7 @@ export function ActivityDestinationDialog({
                   {/* Step 1: Choose Server */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
-                      <span>1. Pilih Server</span>
+                      <span>1. Pilih Colony</span>
                       <span className="text-[10px] font-mono text-muted-foreground/70">
                         {availableServers.length} Server
                       </span>

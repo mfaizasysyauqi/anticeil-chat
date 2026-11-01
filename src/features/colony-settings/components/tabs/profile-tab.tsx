@@ -46,7 +46,7 @@ export function ProfileTab({
     <div>
       <h2 className="text-xl font-bold mb-1">{t('Profil Colony')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
-        {t('Atur bagaimana server Anda tampil di link undangan dan daftar server.')}
+        {t('Atur bagaimana colony Anda tampil di link undangan dan daftar colony.')}
       </p>
 
       {/* Hidden File Input for Server Settings Icon Upload */}
@@ -65,7 +65,7 @@ export function ProfileTab({
             const res = event.target?.result as string;
             if (res) {
               setServerSettingsEditIconUrl(res);
-              toast.success(t('Foto server berhasil dimuat! Klik "Simpan Perubahan" untuk menerapkan.'));
+              toast.success(t('Foto colony berhasil dimuat! Klik "Simpan Perubahan" untuk menerapkan.'));
             }
           };
           reader.readAsDataURL(file);
@@ -82,7 +82,7 @@ export function ProfileTab({
           <div
             onClick={() => serverIconFileInputRef.current?.click()}
             className="relative group/avatar w-16 h-16 rounded-2xl bg-card border-4 border-card flex items-center justify-center text-xl font-bold text-primary shadow-sm overflow-hidden cursor-pointer shrink-0 transition-transform active:scale-95"
-            title={t('Klik untuk mengunggah foto server')}
+            title={t('Klik untuk mengunggah foto colony')}
           >
             {serverSettingsEditIconUrl ? (
               <img src={serverSettingsEditIconUrl} alt="Server icon" className="w-full h-full object-cover" />
@@ -123,7 +123,7 @@ export function ProfileTab({
           <Input
             value={serverSettingsEditName}
             onChange={(e) => setServerSettingsEditName(e.target.value)}
-            placeholder="Nama Server"
+            placeholder="Nama Colony"
             className="mt-1.5"
           />
         </div>
@@ -179,7 +179,7 @@ export function ProfileTab({
               color: serverSettingsEditColor,
               iconUrl: serverSettingsEditIconUrl || undefined,
             });
-            toast.success(t('Profil server berhasil diperbarui! ✅'));
+            toast.success(t('Profil colony berhasil diperbarui! ✅'));
             onClose();
           }}
         >

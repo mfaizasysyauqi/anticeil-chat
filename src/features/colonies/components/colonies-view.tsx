@@ -165,7 +165,7 @@ export function ColoniesView({
       setInviteCodeInput('');
       handleSelectColony(joined.id);
     } catch {
-      toast.error(t('Kode undangan tidak valid atau server tidak ditemukan'));
+      toast.error(t('Kode undangan tidak valid atau colony tidak ditemukan'));
     } finally {
       setIsJoiningByCode(false);
     }
@@ -199,7 +199,7 @@ export function ColoniesView({
       handleSelectColony(joinedHub.id);
     } catch (e) {
       console.warn('Backend acceptColonyInvitation call:', e);
-      toast.error(t('Gagal menerima undangan server'));
+      toast.error(t('Gagal menerima undangan colony'));
     }
   };
 
@@ -209,9 +209,9 @@ export function ColoniesView({
     saveStoredColonyInvitations(updated);
     try {
       await colonyApi.rejectServerInvitation(invite.id);
-      toast.info(`Undangan server ${(invite.colonyName || invite.serverName || "Colony")} telah ditolak.`);
+      toast.info(`Undangan colony ${(invite.colonyName || invite.serverName || "Colony")} telah ditolak.`);
     } catch {
-      toast.info(`Undangan server ${(invite.colonyName || invite.serverName || "Colony")} telah dihapus.`);
+      toast.info(`Undangan colony ${(invite.colonyName || invite.serverName || "Colony")} telah dihapus.`);
     }
   };
 
@@ -396,7 +396,7 @@ export function ColoniesView({
                         }}
                         className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all"
                       >
-                        <span>Buka Server</span>
+                        <span>Buka Colony</span>
                         <ArrowRight className="w-3 h-3" />
                       </Button>
                     </div>
@@ -410,7 +410,7 @@ export function ColoniesView({
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t('Undangan Server Tertunda')} ({filteredPendingInvites.length})
+                {t('Undangan Colony Tertunda')} ({filteredPendingInvites.length})
               </h2>
             </div>
 
@@ -419,7 +419,7 @@ export function ColoniesView({
                 <Inbox className="w-12 h-12 stroke-1 mb-3 text-muted-foreground/60" />
                 <h3 className="text-sm font-bold text-foreground">{t('Tidak Ada Undangan Tertunda')}</h3>
                 <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
-                  {t('Saat seseorang mengajak Anda untuk bergabung ke server komunitas mereka, undangannya akan muncul di sini.')}
+                  {t('Saat seseorang mengajak Anda untuk bergabung ke colony komunitas mereka, undangannya akan muncul di sini.')}
                 </p>
               </div>
             ) : (
@@ -478,7 +478,7 @@ export function ColoniesView({
                             </button>
                           </TooltipTrigger>
                           <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-                            {t('Gabung Server')}
+                            {t('Gabung Colony')}
                           </TooltipContent>
                         </Tooltip>
 
@@ -516,7 +516,7 @@ export function ColoniesView({
                     {t('Punya Tautan atau Kode Undangan?')}
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    {t('Masukkan kode atau tautan server untuk langsung bergabung.')}
+                    {t('Masukkan kode atau tautan colony untuk langsung bergabung.')}
                   </p>
                 </div>
               </div>
@@ -543,21 +543,21 @@ export function ColoniesView({
 
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t('Jelajahi Server Komunitas')} ({filteredExplore.length})
+                {t('Jelajahi Colony Komunitas')} ({filteredExplore.length})
               </h2>
             </div>
 
             {isLoadingPublic ? (
               <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl w-full">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60 mb-2" />
-                <p className="text-xs font-medium">{t('Memuat server komunitas...')}</p>
+                <p className="text-xs font-medium">{t('Memuat colony komunitas...')}</p>
               </div>
             ) : filteredExplore.length === 0 ? (
               <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl w-full">
                 <Compass className="w-10 h-10 stroke-1 mb-2 opacity-50" />
-                <h3 className="text-xs font-bold text-foreground">{t('Tidak Ada Server Publik Lain')}</h3>
+                <h3 className="text-xs font-bold text-foreground">{t('Tidak Ada Colony Publik Lain')}</h3>
                 <p className="text-[11px] text-muted-foreground/80 mt-1 max-w-sm">
-                  {t('Semua server komunitas saat ini sudah Anda ikuti, atau belum ada server publik lain yang terdaftar.')}
+                  {t('Semua colony komunitas saat ini sudah Anda ikuti, atau belum ada colony publik lain yang terdaftar.')}
                 </p>
                 <Button
                   size="sm"
@@ -602,7 +602,7 @@ export function ColoniesView({
                         className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all"
                       >
                         <Plus className="w-3 h-3 stroke-[2.5]" />
-                        <span>{t('Gabung Server')}</span>
+                        <span>{t('Gabung Colony')}</span>
                       </Button>
                     </div>
                   </div>

@@ -84,14 +84,14 @@ export function useColonyModals({
         const [defaultCh, defaultVoice] = await Promise.all([
           colonyApi.createChannel({
             name: 'general',
-            description: `Saluran obrolan umum untuk server ${createdHub.name}`,
+            description: `Saluran obrolan umum untuk colony ${createdHub.name}`,
             category: 'CHANNELS',
             colonyId: createdHub.id,
             type: 'text',
           }),
           colonyApi.createChannel({
             name: 'General',
-            description: `Saluran suara & video untuk server ${createdHub.name}`,
+            description: `Saluran suara & video untuk colony ${createdHub.name}`,
             category: 'CHANNELS',
             colonyId: createdHub.id,
             type: 'voice',
@@ -106,7 +106,7 @@ export function useColonyModals({
       setNewHubName('');
       setNewHubDesc('');
       setNewHubIconUrl('');
-      toast.success(t('Server baru berhasil dibuat!'));
+      toast.success(t('Colony baru berhasil dibuat!'));
     } catch (err) {
       console.warn('API createColony fallback', err);
       const newId = `hub_${Date.now()}`;
@@ -122,7 +122,7 @@ export function useColonyModals({
       const defaultText: ColonyChannel = {
         id: `ch_${Date.now()}_gen`,
         name: 'general',
-        description: `Saluran obrolan umum untuk server ${newHub.name}`,
+        description: `Saluran obrolan umum untuk colony ${newHub.name}`,
         category: 'CHANNELS',
         colonyId: newId,
         type: 'text',
@@ -130,7 +130,7 @@ export function useColonyModals({
       const defaultVoice: ColonyChannel = {
         id: `ch_${Date.now()}_voice`,
         name: 'General',
-        description: `Saluran suara & video untuk server ${newHub.name}`,
+        description: `Saluran suara & video untuk colony ${newHub.name}`,
         category: 'CHANNELS',
         colonyId: newId,
         type: 'voice',
@@ -147,7 +147,7 @@ export function useColonyModals({
       setNewHubName('');
       setNewHubDesc('');
       setNewHubIconUrl('');
-      toast.success(t('Server baru berhasil dibuat!'));
+      toast.success(t('Colony baru berhasil dibuat!'));
     }
   };
 

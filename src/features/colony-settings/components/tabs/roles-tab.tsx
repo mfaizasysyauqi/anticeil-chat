@@ -37,7 +37,7 @@ export function RolesTab({
         </Button>
       </div>
       <p className="text-sm text-muted-foreground mb-6">
-        {t('Kelola peran dan hak akses anggota di server ini.')}
+        {t('Kelola peran dan hak akses anggota di colony ini.')}
       </p>
 
       {/* Create Role Form */}

@@ -65,7 +65,7 @@ export function ChatMobileDrawers({
           )}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>{t('Anggota Server')}</SheetTitle>
+            <SheetTitle>{t('Anggota Colony')}</SheetTitle>
           </SheetHeader>
           {renderMembersSidebarContent()}
         </SheetContent>

@@ -23,7 +23,7 @@ export function IntegrationsTab({
     <div>
       <h2 className="text-xl font-bold mb-1">{t('Integrasi & Automasi')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
-        {t('Kelola bot, webhook, dan alur automasi Activepieces yang terhubung ke server ini.')}
+        {t('Kelola bot, webhook, dan alur automasi Activepieces yang terhubung ke colony ini.')}
       </p>
 
       <div className="space-y-4">

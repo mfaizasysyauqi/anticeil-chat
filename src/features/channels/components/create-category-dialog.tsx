@@ -42,7 +42,7 @@ export function CreateCategoryDialog({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-muted-foreground pt-1">
-            {t('Kategori membantu mengelompokkan channel teks dan suara agar server lebih terorganisir.')}
+            {t('Kategori membantu mengelompokkan channel teks dan suara agar colony lebih terorganisir.')}
           </DialogDescription>
         </DialogHeader>
 

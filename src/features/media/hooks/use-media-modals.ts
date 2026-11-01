@@ -76,14 +76,14 @@ export function useMediaModals({ activeColony }: UseMediaModalsOptions) {
       });
       if (created) {
         setServerDbEmojis((prev) => [...prev, created]);
-        toast.success(`Emoji ${code} berhasil disimpan ke database server! ✨`);
+        toast.success(`Emoji ${code} berhasil disimpan ke database colony! ✨`);
         setQuickEmojiName('');
         setQuickEmojiUrl('');
         setQuickEmojiCode('');
         setIsQuickAddEmojiOpen(false);
       }
     } catch {
-      toast.error('Gagal menambahkan emoji server');
+      toast.error('Gagal menambahkan emoji colony');
     } finally {
       setIsSubmittingServerMedia(false);
     }
@@ -99,13 +99,13 @@ export function useMediaModals({ activeColony }: UseMediaModalsOptions) {
       });
       if (created) {
         setServerDbStickers((prev) => [...prev, created]);
-        toast.success(`Stiker ${quickStickerName} berhasil disimpan ke database server! 🏷️`);
+        toast.success(`Stiker ${quickStickerName} berhasil disimpan ke database colony! 🏷️`);
         setQuickStickerName('');
         setQuickStickerUrl('');
         setIsQuickAddStickerOpen(false);
       }
     } catch {
-      toast.error('Gagal menambahkan stiker server');
+      toast.error('Gagal menambahkan stiker colony');
     } finally {
       setIsSubmittingServerMedia(false);
     }

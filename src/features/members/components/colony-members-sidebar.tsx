@@ -23,12 +23,12 @@ export function ColonyMembersSidebar({
     () => [
       {
         key: 'owner',
-        title: t('Pemilik Server'),
+        title: t('Pemilik Colony'),
         filter: (m: ColonyMember) => m.role === 'owner',
       },
       {
         key: 'admin',
-        title: t('Admin Server'),
+        title: t('Admin Colony'),
         filter: (m: ColonyMember) => m.role === 'admin',
       },
       {

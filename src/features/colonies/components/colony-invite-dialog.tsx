@@ -212,11 +212,11 @@ export function ColonyInviteDialog({
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <UserPlus className="w-5 h-5 text-primary" />
               <span>
-                {t('Undang Teman ke Colony')} {currentServer?.name || 'Server'}
+                {t('Undang Teman ke Colony')} {currentServer?.name || 'Colony'}
               </span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              {t('Pilih pengguna di bawah atau cari username untuk mengirimkan undangan server tertunda.')}
+              {t('Pilih pengguna di bawah atau cari username untuk mengirimkan undangan colony tertunda.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -364,7 +364,7 @@ export function ColonyInviteDialog({
             <label className="text-xs font-semibold text-foreground flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Share2 className="w-3.5 h-3.5 text-primary" />
-                {t('Tautan Undangan Server')}
+                {t('Tautan Undangan Colony')}
               </span>
               <span className="text-[10px] text-muted-foreground font-normal">
                 {t('Tidak pernah kedaluwarsa')}

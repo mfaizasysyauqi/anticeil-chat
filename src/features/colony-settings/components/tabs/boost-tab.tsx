@@ -68,7 +68,7 @@ export function BoostTab({ activeColony, onUpdateColony, t }: BoostTabProps) {
                   boostsCount: res.boostsCount,
                   boostTier: res.boostTier,
                 });
-                toast.success(t(`Server berhasil di-boost! Sekarang di Tingkat ${res.boostTier} ⚡🎉`));
+                toast.success(t(`Colony berhasil di-boost! Sekarang di Tingkat ${res.boostTier} ⚡🎉`));
               } catch {
                 toast.error(t('Gagal melakukan boost colony.'));
               } finally {
@@ -106,19 +106,19 @@ export function BoostTab({ activeColony, onUpdateColony, t }: BoostTabProps) {
             tier: 1,
             boostsRequired: 2,
             title: t('Tingkat 1 — Dasar Komunitas'),
-            perks: [t('+50 Slot Emoji Kustom Server'), t('Kualitas Audio Suara 128 Kbps'), t('Banner Colony Kustom')],
+            perks: [t('+50 Slot Emoji Kustom Colony'), t('Kualitas Audio Suara 128 Kbps'), t('Banner Colony Kustom')],
           },
           {
             tier: 2,
             boostsRequired: 7,
             title: t('Tingkat 2 — Performa Tinggi'),
-            perks: [t('+100 Slot Emoji Kustom Server'), t('Batas Upload File 50 MB'), t('Saluran Automasi Bot Khusus')],
+            perks: [t('+100 Slot Emoji Kustom Colony'), t('Batas Upload File 50 MB'), t('Saluran Automasi Bot Khusus')],
           },
           {
             tier: 3,
             boostsRequired: 14,
             title: t('Tingkat 3 — Eksklusif & Vanity'),
-            perks: [t('+250 Slot Emoji Kustom Server'), t('Batas Upload File 100 MB'), t('Link Undangan Vanity Kustom')],
+            perks: [t('+250 Slot Emoji Kustom Colony'), t('Batas Upload File 100 MB'), t('Link Undangan Vanity Kustom')],
           },
         ].map((tInfo) => {
           const isUnlocked = (activeColony?.boostTier || 0) >= tInfo.tier;

@@ -45,7 +45,7 @@ export function AuthRequiredDialog({
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground max-w-[340px] leading-relaxed">
               {featureDescription ||
-                t('Masuk dengan akun Google Anda untuk bergabung ke server, mengirim pesan, dan terhubung dengan komunitas Anticeil.')}
+                t('Masuk dengan akun Google Anda untuk bergabung ke colony, mengirim pesan, dan terhubung dengan komunitas Anticeil.')}
             </DialogDescription>
           </DialogHeader>
 

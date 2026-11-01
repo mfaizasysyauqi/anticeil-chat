@@ -49,7 +49,7 @@ export function AuditLogTab({
         </Button>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        {t('Riwayat tindakan administratif dan perubahan di server ini.')}
+        {t('Riwayat tindakan administratif dan perubahan di colony ini.')}
       </p>
 
       {/* Filter tabs */}

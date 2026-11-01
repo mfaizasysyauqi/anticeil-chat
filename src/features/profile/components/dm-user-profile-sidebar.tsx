@@ -300,13 +300,13 @@ export function DmUserProfileSidebar({
           {/* Card: Server Bersama (Mutual Servers) */}
           <div className="bg-card/40 border border-border/50 rounded-xl p-3 shadow-2xs space-y-2">
             <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              <span>{t('Server Bersama')}</span>
+              <span>{t('Colony Bersama')}</span>
               <span>{mutualHubs.length}</span>
             </div>
 
             {mutualHubs.length === 0 ? (
               <div className="py-2 text-center text-xs text-muted-foreground/60">
-                {t('Belum ada server bersama')}
+                {t('Belum ada colony bersama')}
               </div>
             ) : (
               <div className="space-y-1">

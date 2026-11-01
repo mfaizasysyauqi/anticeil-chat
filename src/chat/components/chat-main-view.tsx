@@ -478,8 +478,8 @@ export function ChatMainView({
         onOpenCreateServer={() =>
           requireAuth(
             () => setIsCreateHubOpen(true),
-            t('Buat Server Komunitas'),
-            t('Masuk ke Anticeil untuk membuat server komunitas Anda sendiri.'),
+            t('Buat Colony Komunitas'),
+            t('Masuk ke Anticeil untuk membuat colony komunitas Anda sendiri.'),
           )
         }
         onOpenSidebar={() => setIsMobileChannelsOpen(true)}
