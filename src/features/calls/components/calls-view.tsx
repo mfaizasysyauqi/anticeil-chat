@@ -20,6 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
+import { ColonyIcon } from '@/features/colonies/components/colony-icon';
 import type { CallLogItem, CallsTab } from '../types';
 import type { FriendMember } from '@/features/friends';
 import type { Colony } from '@/chat/chat-types';
@@ -141,7 +142,26 @@ export function CallsView({
                   className="w-36 p-3 rounded-xl border border-border bg-card flex flex-col items-center text-center gap-2 shrink-0 hover:border-primary/40 transition-all shadow-xs group"
                 >
                   <div className="relative">
-                    <CommunityAvatar name={f.name} imageUrl={f.imageUrl || f.avatar} size={44} />
+                    <div className="size-11 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                      {f.id === 'anticeil' || f.name === 'Anticeil Official' ? (
+                        <img
+                          src="/logo.png"
+                          alt={f.name}
+                          className="size-7 object-contain pointer-events-none drop-shadow-xs"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/logo.svg';
+                          }}
+                        />
+                      ) : (
+                        <CommunityAvatar
+                          name={f.name}
+                          imageUrl={f.imageUrl || f.avatar}
+                          size={44}
+                          className="rounded-[14px]"
+                          variant="squircle"
+                        />
+                      )}
+                    </div>
                     <span
                       className={cn(
                         'absolute bottom-0 right-0 size-3 rounded-full border-2 border-card',
@@ -265,12 +285,29 @@ export function CallsView({
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="relative shrink-0">
-                        <CommunityAvatar
-                          name={avatarName}
-                          imageUrl={avatarUrl}
-                          size={42}
-                          className="rounded-xl shadow-2xs border border-border/60 bg-muted/20"
-                        />
+                        {isServerCall ? (
+                          <div className="size-10 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs font-bold text-sm text-foreground">
+                            <ColonyIcon
+                              hub={
+                                matchedHub || {
+                                  id: call.colonyId || 'colony',
+                                  name: serverName,
+                                  iconUrl: serverIcon || undefined,
+                                }
+                              }
+                            />
+                          </div>
+                        ) : (
+                          <div className="size-10 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                            <CommunityAvatar
+                              name={avatarName}
+                              imageUrl={avatarUrl}
+                              size={40}
+                              className="rounded-[14px]"
+                              variant="squircle"
+                            />
+                          </div>
+                        )}
                         <span
                           className={cn(
                             'absolute -bottom-1 -right-1 size-5 rounded-full flex items-center justify-center border-2 border-card',
@@ -307,8 +344,18 @@ export function CallsView({
 
                           {/* Clear Badge identifying Server vs Friend */}
                           {isServerCall ? (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25 flex items-center gap-1.5 shrink-0">
-                              <CommunityAvatar name={serverName} imageUrl={serverIcon} size={13} className="shrink-0" />
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sidebar-accent text-foreground border border-sidebar-border flex items-center gap-1.5 shrink-0">
+                              <div className="size-3.5 rounded-[4px] bg-sidebar-accent border border-sidebar-border/40 flex items-center justify-center shrink-0 overflow-hidden text-[8px] font-bold">
+                                <ColonyIcon
+                                  hub={
+                                    matchedHub || {
+                                      id: call.colonyId || 'colony',
+                                      name: serverName,
+                                      iconUrl: serverIcon || undefined,
+                                    }
+                                  }
+                                />
+                              </div>
                               <span className="truncate max-w-[120px]">{serverName}</span>
                             </span>
                           ) : (

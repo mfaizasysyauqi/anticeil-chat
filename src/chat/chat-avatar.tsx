@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { getColonyInitials } from '@/features/colonies/components/colony-icon';
 import {
   Tooltip,
   TooltipContent,
@@ -16,6 +17,7 @@ export interface ChatAvatarProps {
   className?: string;
   showStatus?: boolean;
   tooltipText?: string;
+  variant?: 'circle' | 'squircle';
 }
 
 // Generate consistent modern gradient background for names
@@ -55,15 +57,28 @@ export function ChatAvatar({
   className,
   showStatus = false,
   tooltipText,
+  variant,
 }: ChatAvatarProps) {
   const [imageError, setImageError] = useState(false);
   const initials = getInitials(name);
   const gradient = getInitialsGradient(name);
 
+  const isSquircle =
+    variant === 'squircle' ||
+    Boolean(
+      className?.includes('rounded-[') ||
+      className?.includes('rounded-xl') ||
+      className?.includes('rounded-2xl') ||
+      className?.includes('rounded-lg')
+    );
+
+  const roundedClass = isSquircle ? 'rounded-[14px]' : 'rounded-full';
+
   const statusIndicator = showStatus && status && (
     <span
       className={cn(
-        'absolute bottom-0 right-0 rounded-full ring-2 ring-background z-10 shrink-0 pointer-events-none',
+        'absolute rounded-full ring-2 ring-background z-10 shrink-0 pointer-events-none',
+        isSquircle ? '-bottom-0.5 -right-0.5' : 'bottom-0 right-0',
         size >= 36 ? 'w-3 h-3' : 'w-2.5 h-2.5',
         status === 'online' && 'bg-emerald-500',
         status === 'idle' && 'bg-amber-500',
@@ -75,13 +90,17 @@ export function ChatAvatar({
   const avatarCircle = (
     <div
       className={cn(
-        'relative inline-flex shrink-0 aspect-square rounded-full select-none items-center justify-center',
+        'relative inline-flex shrink-0 aspect-square select-none items-center justify-center',
+        roundedClass,
         className,
       )}
       style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
     >
       <div
-        className="w-full h-full aspect-square rounded-full overflow-hidden flex items-center justify-center bg-card"
+        className={cn(
+          'w-full h-full aspect-square overflow-hidden flex items-center justify-center bg-sidebar-accent',
+          roundedClass,
+        )}
         style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
       >
         {imageUrl && !imageError ? (
@@ -90,8 +109,18 @@ export function ChatAvatar({
             alt={name}
             onError={() => setImageError(true)}
             style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
-            className="w-full h-full object-cover rounded-full aspect-square bg-card"
+            className={cn('w-full h-full object-cover aspect-square', roundedClass)}
           />
+        ) : isSquircle ? (
+          <div
+            className={cn(
+              'w-full h-full flex items-center justify-center font-semibold text-foreground bg-sidebar-accent border border-sidebar-border select-none leading-none',
+              roundedClass,
+            )}
+            style={{ fontSize: `${Math.max(11, Math.floor(size * 0.38))}px` }}
+          >
+            {getColonyInitials(name)}
+          </div>
         ) : (
           <div
             className={cn(
