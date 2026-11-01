@@ -664,12 +664,13 @@ export function ColonyPolyGame({
         </div>
 
         {/* ── The 40-Tile Monopoly Board ── */}
-        <div className="relative w-full max-w-[720px] aspect-square bg-[#0c1424] border-2 border-emerald-500/40 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-2 flex flex-col justify-between overflow-hidden">
-          {/* Subtle felt texture background */}
-          <div className="absolute inset-0 bg-radial from-emerald-950/20 via-transparent to-black/60 pointer-events-none" />
+        <div className="relative w-full max-w-[760px] aspect-square bg-[#0a1628] border-2 border-emerald-500/50 rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.9),0_0_30px_rgba(16,185,129,0.08)] p-2.5 flex flex-col justify-between overflow-hidden">
+          {/* Felt texture overlay */}
+          <div className="absolute inset-0 pointer-events-none opacity-30"
+            style={{ backgroundImage: 'radial-gradient(ellipse at center, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
 
           {/* Top Row (Tiles 20 -> 30, Left to Right) */}
-          <div className="grid grid-cols-11 gap-1 h-[14%] relative z-10">
+          <div className="grid grid-cols-11 gap-px h-[17%] relative z-10">
             {BOARD_TILES.slice(20, 31).map((tile) => (
               <TileCell
                 key={tile.index}
@@ -682,9 +683,9 @@ export function ColonyPolyGame({
           </div>
 
           {/* Middle Row with Center Hub and Left/Right Rows */}
-          <div className="flex-1 flex justify-between my-1 min-h-0 relative z-10">
+          <div className="flex-1 flex justify-between my-px min-h-0 relative z-10">
             {/* Left Column (Tiles 19 -> 11, top to bottom) */}
-            <div className="flex flex-col justify-between w-[14%] gap-1">
+            <div className="flex flex-col justify-between w-[17%] gap-px">
               {[19, 18, 17, 16, 15, 14, 13, 12, 11].map((idx) => (
                 <TileCell
                   key={idx}
@@ -697,10 +698,10 @@ export function ColonyPolyGame({
             </div>
 
             {/* Center Felt Area: Game Logo, 3D Dice, Turn Banner & Deed Cards */}
-            <div className="flex-1 mx-2 rounded-xl bg-gradient-to-b from-[#0b1322]/90 to-[#070b14]/95 border border-white/10 p-3 sm:p-5 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-inner">
-              {/* Center Colony Monogram Badge */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none select-none">
-                <Coins className="w-56 h-56 text-emerald-400" />
+            <div className="flex-1 mx-1 rounded-xl bg-gradient-to-b from-[#0c1828]/95 to-[#060c18]/98 border border-emerald-900/30 p-2 sm:p-4 flex flex-col items-center justify-center text-center relative overflow-hidden">
+              {/* Colony watermark */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none select-none">
+                <Coins className="w-48 h-48 text-emerald-400" />
               </div>
 
               {/* Title Deed Card Inspection / Buy Modal */}
@@ -721,47 +722,47 @@ export function ColonyPolyGame({
                   activePlayerPollen={activePlayer.pollen}
                 />
               ) : (
-                <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-sm">
+                <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-[220px]">
                   {/* Turn Announcement Banner */}
-                  <div className="flex flex-col items-center gap-1.5 mb-2.5">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                      Giliran Bermain
+                  <div className="flex flex-col items-center gap-1 mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      GILIRAN SAAT INI
                     </span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-2xl">{activePlayer?.tokenEmoji}</span>
-                      <span className="text-base sm:text-xl font-black text-white tracking-wide">
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xl">{activePlayer?.tokenEmoji}</span>
+                      <span className="text-sm sm:text-base font-black text-white tracking-wide leading-tight">
                         {activePlayer?.name}
                       </span>
                     </div>
-                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
-                      <Coins className="w-3.5 h-3.5 text-amber-400" />
+                    <div className="text-[10px] font-bold text-amber-300 flex items-center gap-1 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
+                      <Coins className="w-3 h-3 text-amber-400" />
                       <span>Saldo: {activePlayer?.pollen} Pollen 🌼</span>
                     </div>
                   </div>
 
                   {/* 3D Dice Display */}
-                  <div className="flex items-center gap-3.5 my-3">
+                  <div className="flex items-center gap-3 my-2">
                     <DiceCube value={dice[0]} isRolling={isRolling} />
                     <DiceCube value={dice[1]} isRolling={isRolling} />
                   </div>
 
                   {/* Action Controls */}
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-1">
                     {!hasRolled ? (
                       <Button
                         size="sm"
                         onClick={handleRollDice}
                         disabled={isRolling || !isMyTurn}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-2 shadow-lg px-6 h-10 rounded-xl cursor-pointer transition-all hover:scale-105 active:scale-95"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 shadow-lg px-4 h-9 rounded-xl cursor-pointer transition-all hover:scale-105 active:scale-95"
                       >
-                        <Dices className="w-4 h-4 animate-spin-slow" />
-                        <span>{isRolling ? 'Mengocok Dadu...' : 'Lempar Dadu!'}</span>
+                        <Dices className="w-3.5 h-3.5" />
+                        <span>{isRolling ? 'Mengocok...' : 'Lempar Dadu!'}</span>
                       </Button>
                     ) : (
                       <Button
                         size="sm"
                         onClick={handleEndTurn}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs px-6 h-10 rounded-xl cursor-pointer shadow-lg transition-all hover:scale-105 active:scale-95"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs px-4 h-9 rounded-xl cursor-pointer shadow-lg transition-all hover:scale-105 active:scale-95"
                       >
                         <span>Akhiri Giliran ➔</span>
                       </Button>
@@ -772,7 +773,7 @@ export function ColonyPolyGame({
             </div>
 
             {/* Right Column (Tiles 31 -> 39, top to bottom) */}
-            <div className="flex flex-col justify-between w-[14%] gap-1">
+            <div className="flex flex-col justify-between w-[17%] gap-px">
               {[31, 32, 33, 34, 35, 36, 37, 38, 39].map((idx) => (
                 <TileCell
                   key={idx}
@@ -786,7 +787,7 @@ export function ColonyPolyGame({
           </div>
 
           {/* Bottom Row (Tiles 10 -> 0, Left to Right) */}
-          <div className="grid grid-cols-11 gap-1 h-[14%] relative z-10">
+          <div className="grid grid-cols-11 gap-px h-[17%] relative z-10">
             {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map((idx) => (
               <TileCell
                 key={idx}
@@ -1120,69 +1121,98 @@ function TileCell({
     return null;
   };
 
+  // Owner color for ring
+  const ownerColors: Record<string, string> = {
+    'bg-emerald-500': 'rgba(16,185,129,0.5)',
+    'bg-amber-500': 'rgba(245,158,11,0.5)',
+    'bg-cyan-500': 'rgba(6,182,212,0.5)',
+    'bg-pink-500': 'rgba(236,72,153,0.5)',
+    'bg-purple-500': 'rgba(139,92,246,0.5)',
+    'bg-orange-500': 'rgba(249,115,22,0.5)',
+  };
+  const ownerPlayer = tile.ownerId ? players.find(p => p.id === tile.ownerId) : null;
+  const ownerGlow = ownerPlayer ? (ownerColors[ownerPlayer.bgColor] || 'rgba(16,185,129,0.4)') : null;
+
   return (
     <div
       onClick={onInspect}
       className={cn(
-        'relative rounded-md border flex overflow-hidden transition-all text-[9px] select-none leading-none cursor-pointer',
-        side === 'bottom' && 'flex-col justify-between',
-        side === 'top' && 'flex-col justify-between',
-        side === 'left' && 'flex-row justify-between',
-        side === 'right' && 'flex-row justify-between',
+        'relative rounded-sm border flex overflow-hidden transition-all select-none leading-none cursor-pointer group',
+        side === 'bottom' && 'flex-col',
+        side === 'top' && 'flex-col',
+        side === 'left' && 'flex-row',
+        side === 'right' && 'flex-row',
         isCorner
-          ? 'bg-[#152033] border-white/20 font-bold'
-          : 'bg-[#0f172a] border-white/10 hover:border-emerald-400/80 hover:bg-[#1a2642]',
-        tile.ownerId && 'ring-1 ring-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+          ? 'bg-[#1a2d46] border-emerald-700/60 font-bold'
+          : tile.ownerId
+            ? 'bg-[#0e1f35] border-white/20 hover:border-white/40'
+            : 'bg-[#0c1828] border-white/8 hover:border-emerald-400/60 hover:bg-[#112038]',
       )}
+      style={ownerGlow ? { boxShadow: `inset 0 0 0 1.5px ${ownerGlow}` } : undefined}
     >
       {/* Color Banner - Inward-facing orientation matching classic Monopoly */}
       {tile.groupColor && (
         <div
           className={cn(
             'shrink-0',
-            // Bottom row: color bar at top (inward)
-            side === 'bottom' && 'w-full h-2.5 order-first',
-            // Top row: color bar at bottom (inward)
-            side === 'top' && 'w-full h-2.5 order-last',
-            // Left col: color bar at right (inward)
-            side === 'left' && 'h-full w-2.5 order-last',
-            // Right col: color bar at left (inward)
-            side === 'right' && 'h-full w-2.5 order-first'
+            side === 'bottom' && 'w-full h-3 order-first',
+            side === 'top' && 'w-full h-3 order-last',
+            side === 'left' && 'h-full w-3 order-last',
+            side === 'right' && 'h-full w-3 order-first'
           )}
-          style={{ backgroundColor: tile.groupColor }}
+          style={{
+            backgroundColor: tile.groupColor,
+            boxShadow: tile.ownerId ? `0 0 6px ${tile.groupColor}88` : undefined,
+          }}
         />
       )}
 
       {/* Tile Center Info */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center p-0.5 overflow-hidden">
-        {renderTileIcon()}
-        <span className="font-semibold text-white/90 truncate w-full text-[8px] sm:text-[9px] mt-0.5">
+      <div className={cn(
+        'flex-1 flex flex-col items-center justify-center text-center overflow-hidden',
+        isCorner ? 'p-0.5' : 'p-px',
+      )}>
+        <span className="shrink-0">{renderTileIcon()}</span>
+        <span className={cn(
+          'font-semibold text-white/85 group-hover:text-white leading-[1.1] text-center w-full',
+          isCorner ? 'text-[8px] font-black' : 'text-[7px]',
+          // For side tiles, rotate the text to fit better
+          (side === 'left' || side === 'right') ? 'writing-mode-vertical' : '',
+        )}
+          style={side === 'left' || side === 'right'
+            ? { writingMode: 'vertical-rl', textOrientation: 'mixed', transform: side === 'left' ? 'rotate(180deg)' : 'none' }
+            : {}
+          }
+        >
           {tile.name}
         </span>
         {tile.cost && !tile.ownerId && (
-          <span className="text-[7.5px] font-bold text-amber-300 mt-0.5">
+          <span className="text-[6.5px] font-bold text-amber-300 shrink-0 mt-px">
             {tile.cost}🌼
+          </span>
+        )}
+        {tile.ownerId && ownerPlayer && (
+          <span className="text-[6px] font-bold shrink-0 mt-px" style={{ color: ownerPlayer.color }}>
+            {ownerPlayer.tokenEmoji}
           </span>
         )}
       </div>
 
-      {/* Outpost indicator stars on color bar */}
-      {tile.outposts && tile.outposts > 0 ? (
-        <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5 z-10 bg-black/70 px-1 py-0.2 rounded-full">
-          <span className="text-[7px] text-emerald-400 font-bold">★{tile.outposts}</span>
+      {/* Outpost stars */}
+      {(tile.outposts ?? 0) > 0 && (
+        <div className="absolute top-0.5 right-0.5 z-10 bg-black/80 px-0.5 rounded-sm">
+          <span className="text-[6px] text-emerald-400 font-black">★{tile.outposts}</span>
         </div>
-      ) : null}
+      )}
 
       {/* Player Tokens currently on this tile */}
       {players.length > 0 && (
-        <div className="absolute inset-0 flex items-center justify-center gap-0.5 z-20 pointer-events-none bg-black/40">
+        <div className="absolute inset-0 flex items-center justify-center gap-px z-20 pointer-events-none bg-black/50">
           {players.map((p) => (
             <div
               key={p.id}
-              className={cn(
-                'size-4 rounded-full border border-white flex items-center justify-center text-[10px] shadow-lg animate-in zoom-in-75',
-                p.bgColor
-              )}
+              className="size-4 rounded-full border border-white/80 flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: p.color + 'dd', fontSize: 9 }}
               title={p.name}
             >
               {p.tokenEmoji}
