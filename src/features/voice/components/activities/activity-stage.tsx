@@ -5,7 +5,6 @@ import { DiscordAppDefinition } from '../../data/discord-activities';
 import { YouTubeWatchTogether } from './youtube-watch-together';
 import { WhiteboardCanvas } from './whiteboard-canvas';
 import { ChessGame } from './chess-game';
-import { ColonyPolyGame } from './colony-poly-game';
 import { ScreenShareView } from './screen-share-view';
 
 export interface ActivityStageProps {
@@ -61,16 +60,6 @@ export function ActivityStage({
 
       {activeAppId === 'chess' && (
         <ChessGame
-          channel={channel}
-          socket={socket}
-          currentUserName={currentUserName}
-          currentUser={currentUser}
-          participants={participants}
-        />
-      )}
-
-      {activeAppId === 'colony-poly' && (
-        <ColonyPolyGame
           channel={channel}
           socket={socket}
           currentUserName={currentUserName}

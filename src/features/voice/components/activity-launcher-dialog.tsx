@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Play, Palette, Crown, Dices, ScreenShare, Check, Sparkles, X } from 'lucide-react';
+import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -147,22 +147,6 @@ export function ActivityLauncherDialog({
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs font-semibold">Anticeil Chess</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Colony Poly */}
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onLaunchApp('colony-poly')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-emerald-500 shrink-0"
-                          title="Colony Poly"
-                        >
-                          <Dices className="w-5 h-5 stroke-[2.2]" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Colony Poly</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
 
