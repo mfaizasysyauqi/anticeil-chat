@@ -14,6 +14,16 @@ import {
   Coins,
   History,
   Info,
+  Train,
+  Zap,
+  Droplets,
+  HelpCircle,
+  Gift,
+  AlertTriangle,
+  Flame,
+  CheckCircle2,
+  XCircle,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +45,7 @@ export interface BoardTile {
   index: number;
   name: string;
   type: TileType;
-  group?: string; // color group: brown, light-blue, pink, orange, red, yellow, green, dark-blue
+  group?: string; // brown, light-blue, pink, orange, red, yellow, green, dark-blue
   groupColor?: string;
   cost?: number;
   rent?: number;
@@ -46,6 +56,7 @@ export interface BoardTile {
 export interface PolyPlayer {
   id: string;
   name: string;
+  tokenEmoji: string;
   color: string;
   bgColor: string;
   pollen: number;
@@ -59,9 +70,9 @@ export interface PolyPlayer {
 export const BOARD_TILES: Omit<BoardTile, 'ownerId' | 'outposts'>[] = [
   // Bottom row (0 -> 10, Right to Left)
   { index: 0, name: 'START / GO', type: 'corner' },
-  { index: 1, name: 'Alpha Outpost', type: 'property', group: 'brown', groupColor: '#78350f', cost: 60, rent: 6 },
+  { index: 1, name: 'Alpha Outpost', type: 'property', group: 'brown', groupColor: '#a16207', cost: 60, rent: 6 },
   { index: 2, name: 'Colony Chest', type: 'chance' },
-  { index: 3, name: 'Beta Outpost', type: 'property', group: 'brown', groupColor: '#78350f', cost: 60, rent: 8 },
+  { index: 3, name: 'Beta Outpost', type: 'property', group: 'brown', groupColor: '#a16207', cost: 60, rent: 8 },
   { index: 4, name: 'Pollen Tax', type: 'tax', cost: 100 },
   { index: 5, name: 'Hyperloop North', type: 'railroad', cost: 200, rent: 25 },
   { index: 6, name: 'Gamma Hub', type: 'property', group: 'light-blue', groupColor: '#0284c7', cost: 100, rent: 10 },
@@ -71,7 +82,7 @@ export const BOARD_TILES: Omit<BoardTile, 'ownerId' | 'outposts'>[] = [
   // Left col (10 -> 20, Bottom to Top)
   { index: 10, name: 'Penjara / Visiting', type: 'corner' },
   { index: 11, name: 'Zeta Core', type: 'property', group: 'pink', groupColor: '#db2777', cost: 140, rent: 14 },
-  { index: 12, name: 'Electric Grid', type: 'utility', cost: 150, rent: 15 },
+  { index: 12, name: 'Power Grid', type: 'utility', cost: 150, rent: 15 },
   { index: 13, name: 'Eta Tower', type: 'property', group: 'pink', groupColor: '#db2777', cost: 140, rent: 14 },
   { index: 14, name: 'Theta Plaza', type: 'property', group: 'pink', groupColor: '#db2777', cost: 160, rent: 16 },
   { index: 15, name: 'Hyperloop East', type: 'railroad', cost: 200, rent: 25 },
@@ -86,10 +97,10 @@ export const BOARD_TILES: Omit<BoardTile, 'ownerId' | 'outposts'>[] = [
   { index: 23, name: 'Nu Boulevard', type: 'property', group: 'red', groupColor: '#dc2626', cost: 220, rent: 22 },
   { index: 24, name: 'Xi Avenue', type: 'property', group: 'red', groupColor: '#dc2626', cost: 240, rent: 24 },
   { index: 25, name: 'Hyperloop South', type: 'railroad', cost: 200, rent: 25 },
-  { index: 26, name: 'Omicron Park', type: 'property', group: 'yellow', groupColor: '#ca8a04', cost: 260, rent: 26 },
-  { index: 27, name: 'Pi Garden', type: 'property', group: 'yellow', groupColor: '#ca8a04', cost: 260, rent: 26 },
+  { index: 26, name: 'Omicron Park', type: 'property', group: 'yellow', groupColor: '#eab308', cost: 260, rent: 26 },
+  { index: 27, name: 'Pi Garden', type: 'property', group: 'yellow', groupColor: '#eab308', cost: 260, rent: 26 },
   { index: 28, name: 'Water Fusion', type: 'utility', cost: 150, rent: 15 },
-  { index: 29, name: 'Rho Estate', type: 'property', group: 'yellow', groupColor: '#ca8a04', cost: 280, rent: 28 },
+  { index: 29, name: 'Rho Estate', type: 'property', group: 'yellow', groupColor: '#eab308', cost: 280, rent: 28 },
   // Right col (30 -> 39, Top to Bottom)
   { index: 30, name: 'Masuk Penjara!', type: 'corner' },
   { index: 31, name: 'Sigma Silicon', type: 'property', group: 'green', groupColor: '#16a34a', cost: 300, rent: 30 },
@@ -98,9 +109,9 @@ export const BOARD_TILES: Omit<BoardTile, 'ownerId' | 'outposts'>[] = [
   { index: 34, name: 'Upsilon Heights', type: 'property', group: 'green', groupColor: '#16a34a', cost: 320, rent: 32 },
   { index: 35, name: 'Hyperloop West', type: 'railroad', cost: 200, rent: 25 },
   { index: 36, name: 'Chance Card', type: 'chance' },
-  { index: 37, name: 'Anticeil Central', type: 'property', group: 'dark-blue', groupColor: '#1d4ed8', cost: 350, rent: 40 },
+  { index: 37, name: 'Anticeil Central', type: 'property', group: 'dark-blue', groupColor: '#2563eb', cost: 350, rent: 40 },
   { index: 38, name: 'Nectar Tax', type: 'tax', cost: 75 },
-  { index: 39, name: 'Colony Prime', type: 'property', group: 'dark-blue', groupColor: '#1d4ed8', cost: 400, rent: 50 },
+  { index: 39, name: 'Colony Prime', type: 'property', group: 'dark-blue', groupColor: '#2563eb', cost: 400, rent: 50 },
 ];
 
 export function ColonyPolyGame({
@@ -115,9 +126,9 @@ export function ColonyPolyGame({
 
   // Game state
   const [players, setPlayers] = useState<PolyPlayer[]>([
-    { id: myId, name: myName, color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
-    { id: 'bot-1', name: 'Worker Bee 🐝', color: '#f59e0b', bgColor: 'bg-amber-500', pollen: 1500, position: 0, inJail: false, isBot: true },
-    { id: 'bot-2', name: 'Hive Guard 🛡️', color: '#06b6d4', bgColor: 'bg-cyan-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+    { id: myId, name: myName, tokenEmoji: '🚀', color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
+    { id: 'bot-1', name: 'Worker Bee 🐝', tokenEmoji: '🐝', color: '#f59e0b', bgColor: 'bg-amber-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+    { id: 'bot-2', name: 'Hive Guard 🛡️', tokenEmoji: '🛡️', color: '#06b6d4', bgColor: 'bg-cyan-500', pollen: 1500, position: 0, inJail: false, isBot: true },
   ]);
 
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
@@ -125,7 +136,7 @@ export function ColonyPolyGame({
     BOARD_TILES.map((t) => ({ ...t, ownerId: null, outposts: 0 }))
   );
 
-  const [dice, setDice] = useState<[number, number]>([1, 1]);
+  const [dice, setDice] = useState<[number, number]>([3, 4]);
   const [isRolling, setIsRolling] = useState(false);
   const [hasRolled, setHasRolled] = useState(false);
   const [logs, setLogs] = useState<string[]>([
@@ -134,6 +145,7 @@ export function ColonyPolyGame({
 
   const [gameMode, setGameMode] = useState<'solo' | 'multiplayer'>('solo');
   const [pendingProperty, setPendingProperty] = useState<BoardTile | null>(null);
+  const [inspectedTile, setInspectedTile] = useState<BoardTile | null>(null);
 
   const isHost = players[0]?.id === myId;
   const activePlayer = players[activePlayerIndex];
@@ -149,7 +161,6 @@ export function ColonyPolyGame({
   useEffect(() => {
     if (!socket) return;
 
-    // 1. Query remote state if joining multiplayer
     if (gameMode === 'multiplayer') {
       socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
         channelId: channel.id,
@@ -172,19 +183,18 @@ export function ColonyPolyGame({
         setPendingProperty(null);
       } else if (data.action === 'COLONY_POLY_RESET') {
         setPlayers([
-          { id: myId, name: myName, color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
-          { id: 'bot-1', name: 'Worker Bee 🐝', color: '#f59e0b', bgColor: 'bg-amber-500', pollen: 1500, position: 0, inJail: false, isBot: true },
-          { id: 'bot-2', name: 'Hive Guard 🛡️', color: '#06b6d4', bgColor: 'bg-cyan-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+          { id: myId, name: myName, tokenEmoji: '🚀', color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
+          { id: 'bot-1', name: 'Worker Bee 🐝', tokenEmoji: '🐝', color: '#f59e0b', bgColor: 'bg-amber-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+          { id: 'bot-2', name: 'Hive Guard 🛡️', tokenEmoji: '🛡️', color: '#06b6d4', bgColor: 'bg-cyan-500', pollen: 1500, position: 0, inJail: false, isBot: true },
         ]);
         setTiles(BOARD_TILES.map((t) => ({ ...t, ownerId: null, outposts: 0 })));
         setActivePlayerIndex(0);
-        setDice([1, 1]);
+        setDice([3, 4]);
         setHasRolled(false);
         setPendingProperty(null);
         setLogs(['Game Colony Poly direset oleh anggota room.']);
         toast.info('Papan Colony Poly telah direset.');
       } else if (data.action === 'COLONY_POLY_QUERY_STATE') {
-        // Reply with current state if we are the host or have progress
         if (isHost && (tiles.some((t) => t.ownerId) || activePlayerIndex > 0)) {
           socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
             channelId: channel.id,
@@ -293,25 +303,26 @@ export function ColonyPolyGame({
       toast.success(`${currentP.name} +200 Pollen!`);
     }
 
-    // Landed on GO TO JAIL
+    // Landed on GO TO JAIL (tile 30)
     let inJail = currentP.inJail;
     if (newPos === 30) {
       newPos = 10;
       inJail = true;
-      addLog(`🚨 ${currentP.name} melanggar aturan dan dikirim ke PENJARA!`);
-      toast.error(`${currentP.name} masuk penjara!`);
+      addLog(`🚨 ${currentP.name} masuk karantina penjara!`);
+      toast.error(`${currentP.name} dikirim ke Penjara!`);
     }
 
     const landedTile = tiles[newPos];
     let updatedTiles = [...tiles];
     let updatedPlayers = [...players];
 
-    addLog(`🎲 ${currentP.name} melempar ${steps} (${dice[0]}+${dice[1]}) dan mendarat di ${landedTile.name}.`);
+    addLog(`🎲 ${currentP.name} melempar ${steps} dan mendarat di ${landedTile.name}.`);
 
     // Handle taxes
     if (landedTile.type === 'tax' && landedTile.cost) {
       newPollen = Math.max(0, newPollen - landedTile.cost);
       addLog(`💸 ${currentP.name} membayar pajak ${landedTile.cost} Pollen.`);
+      toast.info(`${currentP.name} membayar pajak ${landedTile.cost} Pollen.`);
     }
 
     // Handle rent to other player
@@ -328,7 +339,7 @@ export function ColonyPolyGame({
       if (owner) {
         owner.pollen += payAmount;
         addLog(`💰 ${currentP.name} membayar sewa ${payAmount} Pollen kepada ${owner.name}!`);
-        toast.info(`${currentP.name} membayar sewa ${payAmount} Pollen`);
+        toast.info(`${currentP.name} membayar sewa ${payAmount} Pollen.`);
       }
     }
 
@@ -346,14 +357,21 @@ export function ColonyPolyGame({
       (landedTile.type === 'property' || landedTile.type === 'railroad' || landedTile.type === 'utility') &&
       !landedTile.ownerId
     ) {
-      setPendingProperty(landedTile);
+      const liveTile = { ...landedTile, position: newPos };
+      setPendingProperty(liveTile);
 
-      // If it's a Bot's turn, auto buy if affordable
-      if (currentP.isBot && newPollen >= (landedTile.cost || 0)) {
-        setTimeout(() => {
-          handleBuyProperty(landedTile, updatedPlayers, updatedTiles);
-        }, 800);
+      // If Bot, automatically buy if affordable
+      if (currentP.isBot) {
+        if (newPollen >= (landedTile.cost || 0)) {
+          setTimeout(() => {
+            handleBuyProperty(liveTile, updatedPlayers, updatedTiles);
+          }, 800);
+        } else {
+          setPendingProperty(null);
+        }
       }
+    } else {
+      setPendingProperty(null);
     }
   };
 
@@ -384,7 +402,7 @@ export function ColonyPolyGame({
     setTiles(updatedTiles);
     setPendingProperty(null);
 
-    confetti({ particleCount: 35, spread: 50, origin: { y: 0.8 } });
+    confetti({ particleCount: 45, spread: 60, origin: { y: 0.75 } });
     addLog(`🏰 ${currentP.name} membeli ${propToBuy.name} seharga ${propToBuy.cost} Pollen!`);
     toast.success(`${currentP.name} resmi memiliki ${propToBuy.name}!`);
 
@@ -413,6 +431,7 @@ export function ColonyPolyGame({
     setTiles(updatedTiles);
     toast.success(`Membangun Outpost di ${tile.name}!`);
     addLog(`🏗️ ${activePlayer.name} membangun Outpost level ${(tile.outposts || 0) + 1} di ${tile.name}!`);
+    broadcastState(updatedPlayers, updatedTiles, activePlayerIndex, dice);
   };
 
   // End Turn
@@ -426,7 +445,6 @@ export function ColonyPolyGame({
     addLog(`👉 Giliran berikutnya: ${nextP.name}`);
     broadcastState(players, tiles, nextIndex, dice);
 
-    // If next player is Bot in solo mode or room host in multiplayer, auto roll
     if (nextP.isBot && (gameMode === 'solo' || isHost)) {
       setTimeout(() => {
         handleBotTurn(nextIndex);
@@ -444,7 +462,6 @@ export function ColonyPolyGame({
       setDice([d1, d2]);
       processMovement(d1 + d2, d1 === d2);
 
-      // Auto end turn after 2 seconds
       setTimeout(() => {
         setHasRolled(false);
         setPendingProperty(null);
@@ -468,9 +485,9 @@ export function ColonyPolyGame({
     }
 
     const availableColors = [
-      { color: '#f59e0b', bgColor: 'bg-amber-500' },
-      { color: '#06b6d4', bgColor: 'bg-cyan-500' },
-      { color: '#ec4899', bgColor: 'bg-pink-500' },
+      { color: '#f59e0b', bgColor: 'bg-amber-500', tokenEmoji: '🏎️' },
+      { color: '#06b6d4', bgColor: 'bg-cyan-500', tokenEmoji: '⚡' },
+      { color: '#ec4899', bgColor: 'bg-pink-500', tokenEmoji: '👑' },
     ];
 
     const remoteParticipants = participants.filter(
@@ -478,12 +495,12 @@ export function ColonyPolyGame({
     );
 
     if (remoteParticipants.length === 0) {
-      toast.info('Hanya ada Anda di voice call. Anda dapat bermain dengan Bot Colony!');
+      toast.info('Hanya ada Anda di voice call. Anda dapat bermain bersama Bot Colony!');
       return;
     }
 
     const newPlayers: PolyPlayer[] = [
-      { id: myId, name: myName, color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
+      { id: myId, name: myName, tokenEmoji: '🚀', color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
     ];
 
     remoteParticipants.slice(0, 3).forEach((rp, idx) => {
@@ -493,6 +510,7 @@ export function ColonyPolyGame({
       newPlayers.push({
         id: pId,
         name: pName,
+        tokenEmoji: theme.tokenEmoji,
         color: theme.color,
         bgColor: theme.bgColor,
         pollen: 1500,
@@ -506,6 +524,7 @@ export function ColonyPolyGame({
       newPlayers.push({
         id: 'bot-1',
         name: 'Worker Bee 🐝',
+        tokenEmoji: '🐝',
         color: '#ec4899',
         bgColor: 'bg-pink-500',
         pollen: 1500,
@@ -519,7 +538,7 @@ export function ColonyPolyGame({
     setGameMode('multiplayer');
     toast.success(`${newPlayers.length} pemain siap bermain di voice room!`);
     addLog(`👥 Formasi pemain diperbarui: ${newPlayers.map((p) => p.name).join(', ')}`);
-    broadcastState(newPlayers, tiles, 0, [1, 1], 'Formasi pemain diperbarui');
+    broadcastState(newPlayers, tiles, 0, [3, 4], 'Formasi pemain diperbarui');
   };
 
   const handleAddBot = () => {
@@ -528,14 +547,15 @@ export function ColonyPolyGame({
       return;
     }
     const botTemplates = [
-      { name: 'Queen Ant 👑', color: '#ec4899', bgColor: 'bg-pink-500' },
-      { name: 'Scout Bee ⚡', color: '#8b5cf6', bgColor: 'bg-purple-500' },
-      { name: 'Honey Badger 🦡', color: '#f97316', bgColor: 'bg-orange-500' },
+      { name: 'Queen Ant 👑', tokenEmoji: '👑', color: '#ec4899', bgColor: 'bg-pink-500' },
+      { name: 'Scout Bee ⚡', tokenEmoji: '⚡', color: '#8b5cf6', bgColor: 'bg-purple-500' },
+      { name: 'Honey Badger 🦡', tokenEmoji: '🦡', color: '#f97316', bgColor: 'bg-orange-500' },
     ];
     const available = botTemplates.find((bt) => !players.some((p) => p.name.includes(bt.name))) || botTemplates[0];
     const newBot: PolyPlayer = {
       id: `bot-${Date.now()}`,
       name: available.name,
+      tokenEmoji: available.tokenEmoji,
       color: available.color,
       bgColor: available.bgColor,
       pollen: 1500,
@@ -553,15 +573,16 @@ export function ColonyPolyGame({
   // Reset Game
   const handleResetGame = () => {
     setPlayers([
-      { id: myId, name: myName, color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
-      { id: 'bot-1', name: 'Worker Bee 🐝', color: '#f59e0b', bgColor: 'bg-amber-500', pollen: 1500, position: 0, inJail: false, isBot: true },
-      { id: 'bot-2', name: 'Hive Guard 🛡️', color: '#06b6d4', bgColor: 'bg-cyan-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+      { id: myId, name: myName, tokenEmoji: '🚀', color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
+      { id: 'bot-1', name: 'Worker Bee 🐝', tokenEmoji: '🐝', color: '#f59e0b', bgColor: 'bg-amber-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+      { id: 'bot-2', name: 'Hive Guard 🛡️', tokenEmoji: '🛡️', color: '#06b6d4', bgColor: 'bg-cyan-500', pollen: 1500, position: 0, inJail: false, isBot: true },
     ]);
     setTiles(BOARD_TILES.map((t) => ({ ...t, ownerId: null, outposts: 0 })));
     setActivePlayerIndex(0);
-    setDice([1, 1]);
+    setDice([3, 4]);
     setHasRolled(false);
     setPendingProperty(null);
+    setInspectedTile(null);
     setLogs(['Game Colony Poly direset! Siap bermain dari awal.']);
     toast.success('Game Colony Poly telah direset!');
 
@@ -575,17 +596,17 @@ export function ColonyPolyGame({
   };
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row h-full min-h-0 bg-background text-foreground overflow-hidden select-none">
+    <div className="flex-1 flex flex-col md:flex-row h-full min-h-0 bg-[#070b12] text-foreground overflow-hidden select-none">
       {/* ── Left / Main: The Colony Poly Board ── */}
       <div className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 overflow-y-auto">
-        {/* Top Game Bar */}
-        <div className="w-full max-w-[680px] flex items-center justify-between gap-2 mb-2 px-1">
+        {/* Top Game Controls Bar */}
+        <div className="w-full max-w-[720px] flex items-center justify-between gap-2 mb-2.5 px-1 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <span className="text-sm font-black tracking-wider text-emerald-400 flex items-center gap-1.5 drop-shadow-xs">
               <Coins className="w-4 h-4 text-amber-400" />
               <span>COLONY POLY</span>
             </span>
-            <Badge variant="outline" className="text-[10px] font-bold border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+            <Badge variant="outline" className="text-[10px] font-bold border-emerald-500/40 text-emerald-300 bg-emerald-500/15">
               {gameMode === 'solo' ? 'Vs Bot Colony' : 'Voice Multiplayer'}
             </Badge>
           </div>
@@ -601,7 +622,7 @@ export function ColonyPolyGame({
                   handleSyncVoiceParticipants();
                 }
               }}
-              className="h-7 text-[11px] px-2.5 font-semibold border-border hover:bg-muted"
+              className="h-7 text-[11px] px-2.5 font-semibold bg-[#111827] border-white/10 hover:bg-muted text-foreground"
             >
               {gameMode === 'solo' ? <Users className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Bot className="w-3.5 h-3.5 mr-1 text-amber-400" />}
               {gameMode === 'solo' ? 'Mode Suara' : 'Mode Bot'}
@@ -611,7 +632,7 @@ export function ColonyPolyGame({
                 variant="outline"
                 size="sm"
                 onClick={handleAddBot}
-                className="h-7 text-[11px] px-2 border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+                className="h-7 text-[11px] px-2 bg-[#111827] border-white/10 hover:bg-muted text-muted-foreground hover:text-foreground"
                 title="Tambah Bot Pemain"
               >
                 <Bot className="w-3 h-3 mr-1" />
@@ -623,7 +644,7 @@ export function ColonyPolyGame({
                 variant="outline"
                 size="sm"
                 onClick={handleSyncVoiceParticipants}
-                className="h-7 text-[11px] px-2 border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+                className="h-7 text-[11px] px-2 bg-[#111827] border-white/10 hover:bg-muted text-muted-foreground hover:text-foreground"
                 title="Sinkronkan Teman di Voice Call"
               >
                 <UserPlus className="w-3 h-3 mr-1" />
@@ -642,120 +663,109 @@ export function ColonyPolyGame({
           </div>
         </div>
 
-        {/* ── The 40-Tile Board Grid ── */}
-        <div className="relative w-full max-w-[680px] aspect-square bg-card border-2 border-border/80 rounded-2xl shadow-2xl p-1.5 flex flex-col justify-between overflow-hidden">
-          {/* Top Row (Tiles 20 -> 30) */}
-          <div className="grid grid-cols-11 gap-1 h-[14%]">
+        {/* ── The 40-Tile Monopoly Board ── */}
+        <div className="relative w-full max-w-[720px] aspect-square bg-[#0c1424] border-2 border-emerald-500/40 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-2 flex flex-col justify-between overflow-hidden">
+          {/* Subtle felt texture background */}
+          <div className="absolute inset-0 bg-radial from-emerald-950/20 via-transparent to-black/60 pointer-events-none" />
+
+          {/* Top Row (Tiles 20 -> 30, Left to Right) */}
+          <div className="grid grid-cols-11 gap-1 h-[14%] relative z-10">
             {BOARD_TILES.slice(20, 31).map((tile) => (
               <TileCell
                 key={tile.index}
                 tile={{ ...tile, ...tiles[tile.index] }}
+                side="top"
                 players={players.filter((p) => p.position === tile.index)}
+                onInspect={() => setInspectedTile({ ...tile, ...tiles[tile.index] })}
               />
             ))}
           </div>
 
-          {/* Middle Middle Area with Center Board Hub & Left/Right Rows */}
-          <div className="flex-1 flex justify-between my-1 min-h-0">
+          {/* Middle Row with Center Hub and Left/Right Rows */}
+          <div className="flex-1 flex justify-between my-1 min-h-0 relative z-10">
             {/* Left Column (Tiles 19 -> 11, top to bottom) */}
             <div className="flex flex-col justify-between w-[14%] gap-1">
               {[19, 18, 17, 16, 15, 14, 13, 12, 11].map((idx) => (
                 <TileCell
                   key={idx}
                   tile={{ ...BOARD_TILES[idx], ...tiles[idx] }}
+                  side="left"
                   players={players.filter((p) => p.position === idx)}
+                  onInspect={() => setInspectedTile({ ...BOARD_TILES[idx], ...tiles[idx] })}
                 />
               ))}
             </div>
 
-            {/* Center Area: Rolling Controls, Active Player Banner & Property Actions */}
-            <div className="flex-1 mx-2 rounded-xl bg-muted/20 border border-border/40 p-3 sm:p-5 flex flex-col items-center justify-center text-center relative overflow-hidden">
-              {/* Colony Logo Watermark */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                <Coins className="w-48 h-48 text-emerald-500" />
+            {/* Center Felt Area: Game Logo, 3D Dice, Turn Banner & Deed Cards */}
+            <div className="flex-1 mx-2 rounded-xl bg-gradient-to-b from-[#0b1322]/90 to-[#070b14]/95 border border-white/10 p-3 sm:p-5 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-inner">
+              {/* Center Colony Monogram Badge */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none select-none">
+                <Coins className="w-56 h-56 text-emerald-400" />
               </div>
 
-              {/* Turn Announcement */}
-              <div className="relative z-10 flex flex-col items-center gap-1 mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Giliran Saat Ini
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className={cn('size-3 rounded-full animate-pulse', activePlayer?.bgColor)} />
-                  <span className="text-base sm:text-lg font-black text-foreground">
-                    {activePlayer?.name}
-                  </span>
-                </div>
-                <div className="text-xs font-semibold text-amber-400 flex items-center gap-1">
-                  <span>Saldo: {activePlayer?.pollen}</span>
-                  <span className="text-[10px]">Pollen 🌼</span>
-                </div>
-              </div>
-
-              {/* Dice Display */}
-              <div className="relative z-10 flex items-center gap-3 my-2">
-                <div className={cn(
-                  'size-12 rounded-xl bg-card border-2 border-border shadow-md flex items-center justify-center text-xl font-black text-foreground transition-transform',
-                  isRolling && 'animate-bounce'
-                )}>
-                  {dice[0]}
-                </div>
-                <div className={cn(
-                  'size-12 rounded-xl bg-card border-2 border-border shadow-md flex items-center justify-center text-xl font-black text-foreground transition-transform',
-                  isRolling && 'animate-bounce'
-                )}>
-                  {dice[1]}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="relative z-10 flex items-center gap-2 mt-2">
-                {!hasRolled ? (
-                  <Button
-                    size="sm"
-                    onClick={handleRollDice}
-                    disabled={isRolling || !isMyTurn}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 shadow-md px-4 h-9 cursor-pointer"
-                  >
-                    <Dices className="w-4 h-4" />
-                    <span>{isRolling ? 'Mengocok Dadu...' : 'Lempar Dadu'}</span>
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={handleEndTurn}
-                    className="bg-sidebar-accent hover:bg-sidebar-accent/80 text-foreground border border-sidebar-border font-bold text-xs px-4 h-9 cursor-pointer"
-                  >
-                    <span>Akhiri Giliran ➔</span>
-                  </Button>
-                )}
-              </div>
-
-              {/* Pending Property Buy Modal Card */}
-              {pendingProperty && !hasRolled && (
-                <div className="relative z-20 mt-3 p-3 rounded-xl bg-card border border-emerald-500/40 shadow-xl max-w-xs animate-in zoom-in-95">
-                  <div className="text-xs font-bold text-foreground">
-                    Beli {pendingProperty.name}?
+              {/* Title Deed Card Inspection / Buy Modal */}
+              {pendingProperty || inspectedTile ? (
+                <DeedCardModal
+                  tile={(pendingProperty || inspectedTile)!}
+                  isPendingBuy={Boolean(pendingProperty)}
+                  canAfford={Boolean(pendingProperty && activePlayer.pollen >= (pendingProperty.cost || 0))}
+                  onBuy={() => handleBuyProperty(pendingProperty!)}
+                  onPass={() => {
+                    setPendingProperty(null);
+                    setInspectedTile(null);
+                  }}
+                  onBuildOutpost={() => {
+                    if (inspectedTile) handleBuildOutpost(inspectedTile.index);
+                  }}
+                  isOwner={inspectedTile?.ownerId === activePlayer.id}
+                  activePlayerPollen={activePlayer.pollen}
+                />
+              ) : (
+                <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-sm">
+                  {/* Turn Announcement Banner */}
+                  <div className="flex flex-col items-center gap-1.5 mb-2.5">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                      Giliran Bermain
+                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-2xl">{activePlayer?.tokenEmoji}</span>
+                      <span className="text-base sm:text-xl font-black text-white tracking-wide">
+                        {activePlayer?.name}
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
+                      <Coins className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Saldo: {activePlayer?.pollen} Pollen 🌼</span>
+                    </div>
                   </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    Harga: <strong className="text-amber-400">{pendingProperty.cost} Pollen</strong> | Sewa dasar: {pendingProperty.rent} Pollen
+
+                  {/* 3D Dice Display */}
+                  <div className="flex items-center gap-3.5 my-3">
+                    <DiceCube value={dice[0]} isRolling={isRolling} />
+                    <DiceCube value={dice[1]} isRolling={isRolling} />
                   </div>
-                  <div className="flex items-center justify-center gap-2 mt-2.5">
-                    <Button
-                      size="sm"
-                      onClick={() => handleBuyProperty(pendingProperty)}
-                      className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3"
-                    >
-                      Beli
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setPendingProperty(null)}
-                      className="h-7 text-xs text-muted-foreground hover:text-foreground px-2"
-                    >
-                      Lewati
-                    </Button>
+
+                  {/* Action Controls */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {!hasRolled ? (
+                      <Button
+                        size="sm"
+                        onClick={handleRollDice}
+                        disabled={isRolling || !isMyTurn}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-2 shadow-lg px-6 h-10 rounded-xl cursor-pointer transition-all hover:scale-105 active:scale-95"
+                      >
+                        <Dices className="w-4 h-4 animate-spin-slow" />
+                        <span>{isRolling ? 'Mengocok Dadu...' : 'Lempar Dadu!'}</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={handleEndTurn}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs px-6 h-10 rounded-xl cursor-pointer shadow-lg transition-all hover:scale-105 active:scale-95"
+                      >
+                        <span>Akhiri Giliran ➔</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
@@ -767,65 +777,74 @@ export function ColonyPolyGame({
                 <TileCell
                   key={idx}
                   tile={{ ...BOARD_TILES[idx], ...tiles[idx] }}
+                  side="right"
                   players={players.filter((p) => p.position === idx)}
+                  onInspect={() => setInspectedTile({ ...BOARD_TILES[idx], ...tiles[idx] })}
                 />
               ))}
             </div>
           </div>
 
           {/* Bottom Row (Tiles 10 -> 0, Left to Right) */}
-          <div className="grid grid-cols-11 gap-1 h-[14%]">
+          <div className="grid grid-cols-11 gap-1 h-[14%] relative z-10">
             {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map((idx) => (
               <TileCell
                 key={idx}
                 tile={{ ...BOARD_TILES[idx], ...tiles[idx] }}
+                side="bottom"
                 players={players.filter((p) => p.position === idx)}
+                onInspect={() => setInspectedTile({ ...BOARD_TILES[idx], ...tiles[idx] })}
               />
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Right Panel: Players Ledger, Owned Properties & Event Log ── */}
-      <div className="w-full md:w-72 lg:w-80 bg-sidebar border-t md:border-t-0 md:border-l border-sidebar-border flex flex-col shrink-0 select-none">
+      {/* ── Right Panel: Leaderboard, Owned Districts & Event Log ── */}
+      <div className="w-full md:w-80 lg:w-84 bg-[#0a0f1d] border-t md:border-t-0 md:border-l border-white/10 flex flex-col shrink-0 select-none">
         {/* Players Standings */}
-        <div className="p-3 border-b border-sidebar-border">
-          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <Trophy className="w-3.5 h-3.5 text-amber-400" />
-            <span>Peringkat Colony</span>
+        <div className="p-3.5 border-b border-white/10">
+          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-amber-400">
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Peringkat Colony</span>
+            </span>
+            <span className="text-[10px] text-muted-foreground">Kekayaan</span>
           </div>
 
           <div className="space-y-1.5">
             {players.map((p, idx) => {
-              const ownedCount = tiles.filter((t) => t.ownerId === p.id).length;
+              const ownedTiles = tiles.filter((t) => t.ownerId === p.id);
               const isActive = idx === activePlayerIndex;
 
               return (
                 <div
                   key={p.id}
                   className={cn(
-                    'p-2 rounded-lg border transition-all flex items-center justify-between',
+                    'p-2.5 rounded-xl border transition-all flex items-center justify-between',
                     isActive
-                      ? 'bg-sidebar-accent border-emerald-500/40 shadow-xs'
-                      : 'bg-card/40 border-border/50'
+                      ? 'bg-emerald-500/10 border-emerald-500/50 shadow-sm'
+                      : 'bg-[#111827]/60 border-white/5'
                   )}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={cn('size-3 rounded-full shrink-0', p.bgColor)} />
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-lg shrink-0">{p.tokenEmoji}</span>
                     <div className="truncate">
-                      <div className="text-xs font-bold text-foreground truncate flex items-center gap-1">
+                      <div className="text-xs font-bold text-foreground truncate flex items-center gap-1.5">
                         <span>{p.name}</span>
-                        {p.isBot && <span className="text-[9px] text-muted-foreground font-normal">(Bot)</span>}
+                        {p.isBot && <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5">Bot</Badge>}
+                        {p.inJail && <Badge variant="destructive" className="text-[8px] px-1 py-0 h-3.5">Penjara</Badge>}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        {ownedCount} Distrik
+                        {ownedTiles.length} Distrik ({ownedTiles.reduce((acc, t) => acc + (t.outposts || 0), 0)} Outposts)
                       </div>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-xs font-black text-amber-400">
-                      {p.pollen} <span className="text-[9px] font-normal">🌼</span>
+                    <div className="text-xs font-black text-amber-400 flex items-center justify-end gap-1">
+                      <span>{p.pollen}</span>
+                      <span className="text-[10px]">🌼</span>
                     </div>
                   </div>
                 </div>
@@ -835,9 +854,9 @@ export function ColonyPolyGame({
         </div>
 
         {/* Owned Properties List / Upgrades */}
-        <div className="p-3 border-b border-sidebar-border flex-1 min-h-0 flex flex-col">
+        <div className="p-3.5 border-b border-white/10 flex-1 min-h-0 flex flex-col">
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-foreground">
               <Building2 className="w-3.5 h-3.5 text-primary" />
               <span>Distrik Milik Anda</span>
             </span>
@@ -848,57 +867,64 @@ export function ColonyPolyGame({
 
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 [scrollbar-width:thin]">
             {tiles.filter((t) => t.ownerId === myId).length === 0 ? (
-              <div className="text-center py-6 text-xs text-muted-foreground">
-                Belum ada distrik yang dibeli. Mendaratlah di petak kosong untuk membeli properti!
+              <div className="text-center py-8 text-xs text-muted-foreground px-4">
+                Belum ada distrik yang dibeli. Mendaratlah di petak distrik untuk membeli properti!
               </div>
             ) : (
               tiles
                 .filter((t) => t.ownerId === myId)
-                .map((tile) => (
-                  <div
-                    key={tile.index}
-                    className="p-2 rounded-lg border border-border/60 bg-card/60 flex items-center justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div
-                        className="w-2.5 h-6 rounded-xs shrink-0"
-                        style={{ backgroundColor: tile.groupColor || '#10b981' }}
-                      />
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-foreground truncate">
-                          {tile.name}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          Sewa: {tile.rent! * (1 + (tile.outposts || 0))} Pollen
+                .map((tile) => {
+                  const upgradeCost = Math.floor((tile.cost || 100) * 0.5);
+                  const canUpgrade = activePlayer.id === myId && activePlayer.pollen >= upgradeCost && (tile.outposts || 0) < 4;
+
+                  return (
+                    <div
+                      key={tile.index}
+                      className="p-2 rounded-xl border border-white/10 bg-[#111827]/80 flex items-center justify-between gap-2 hover:border-emerald-500/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className="w-2.5 h-7 rounded-sm shrink-0"
+                          style={{ backgroundColor: tile.groupColor || '#10b981' }}
+                        />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-foreground truncate">
+                            {tile.name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                            <span>Sewa: {(tile.rent || 10) * (1 + (tile.outposts || 0))} 🌼</span>
+                            <span>•</span>
+                            <span className="text-emerald-400 font-semibold">{tile.outposts || 0}/4 Outpost</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleBuildOutpost(tile.index)}
-                      disabled={(tile.outposts || 0) >= 4}
-                      className="h-6 text-[10px] px-2 font-semibold border-border"
-                      title="Bangun Outpost (+Sewa)"
-                    >
-                      {(tile.outposts || 0) >= 4 ? 'Maks (4)' : `+Outpost (${tile.outposts || 0})`}
-                    </Button>
-                  </div>
-                ))
+                      <Button
+                        size="sm"
+                        disabled={!canUpgrade}
+                        onClick={() => handleBuildOutpost(tile.index)}
+                        className="h-6 text-[10px] px-2 font-bold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0"
+                        title={`Bangun Outpost (+${upgradeCost} Pollen)`}
+                      >
+                        +Outpost ({upgradeCost}🌼)
+                      </Button>
+                    </div>
+                  );
+                })
             )}
           </div>
         </div>
 
-        {/* Live Activity Log */}
-        <div className="p-3 h-36 flex flex-col bg-muted/10">
-          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
-            <History className="w-3 h-3" />
+        {/* Live Game Event Log */}
+        <div className="h-44 p-3 flex flex-col bg-black/40">
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <History className="w-3 h-3 text-muted-foreground" />
             <span>Riwayat Aktivitas</span>
           </div>
-          <div className="flex-1 overflow-y-auto space-y-1 text-[11px] text-muted-foreground pr-1 [scrollbar-width:thin]">
+
+          <div className="flex-1 overflow-y-auto space-y-1 text-xs text-muted-foreground pr-1 [scrollbar-width:thin]">
             {logs.map((log, i) => (
-              <div key={i} className="leading-tight">
+              <div key={i} className="text-[11px] leading-relaxed py-0.5 border-b border-white/5 last:border-none">
                 {log}
               </div>
             ))}
@@ -910,68 +936,256 @@ export function ColonyPolyGame({
   );
 }
 
-// Sub-component for individual Board Tile Cells
-function TileCell({
-  tile,
-  players,
-}: {
-  tile: BoardTile;
-  players: PolyPlayer[];
-}) {
-  const isCorner = tile.type === 'corner';
+// ── 3D Realistic Dice with Pips Dots ──
+function DiceCube({ value, isRolling }: { value: number; isRolling: boolean }) {
+  // Coordinates for the 3x3 dot grid on dice faces
+  const pipMap: Record<number, number[]> = {
+    1: [4], // Center
+    2: [0, 8], // Top-Left, Bottom-Right
+    3: [0, 4, 8], // Top-Left, Center, Bottom-Right
+    4: [0, 2, 6, 8], // Four Corners
+    5: [0, 2, 4, 6, 8], // Four Corners + Center
+    6: [0, 2, 3, 5, 6, 8], // Two columns of 3
+  };
+
+  const activePips = pipMap[value] || [4];
 
   return (
     <div
       className={cn(
-        'relative rounded-md border flex flex-col justify-between overflow-hidden transition-all text-[9px] p-0.5 select-none leading-none',
-        isCorner
-          ? 'bg-sidebar-accent/80 border-border/80 font-bold'
-          : 'bg-card border-border/50 hover:border-emerald-500/40',
-        tile.ownerId && 'ring-1 ring-emerald-500/50'
+        'size-14 rounded-2xl bg-gradient-to-br from-white to-zinc-200 border-2 border-zinc-300 shadow-[0_8px_16px_rgba(0,0,0,0.4)] p-2 grid grid-cols-3 grid-rows-3 gap-0.5 items-center justify-items-center transition-all',
+        isRolling && 'animate-bounce rotate-12 scale-105'
       )}
     >
-      {/* Property Color Header Bar */}
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((idx) => {
+        const isPip = activePips.includes(idx);
+        return (
+          <div
+            key={idx}
+            className={cn(
+              'size-2.5 rounded-full transition-opacity',
+              isPip
+                ? value === 1
+                  ? 'bg-red-600 shadow-inner'
+                  : 'bg-zinc-900 shadow-inner'
+                : 'opacity-0'
+            )}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Interactive Title Deed Card Modal ──
+function DeedCardModal({
+  tile,
+  isPendingBuy,
+  canAfford,
+  onBuy,
+  onPass,
+  onBuildOutpost,
+  isOwner,
+  activePlayerPollen,
+}: {
+  tile: BoardTile;
+  isPendingBuy: boolean;
+  canAfford: boolean;
+  onBuy: () => void;
+  onPass: () => void;
+  onBuildOutpost: () => void;
+  isOwner: boolean;
+  activePlayerPollen: number;
+}) {
+  const baseRent = tile.rent || 10;
+  const upgradeCost = Math.floor((tile.cost || 100) * 0.5);
+
+  return (
+    <div className="relative z-20 w-full max-w-[280px] bg-[#0e1726] border-2 border-white/20 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95">
+      {/* Deed Header Banner */}
+      <div
+        className="p-3 text-center border-b border-black/20 text-white relative"
+        style={{ backgroundColor: tile.groupColor || '#0284c7' }}
+      >
+        <button
+          onClick={onPass}
+          className="absolute right-2 top-2 text-white/80 hover:text-white p-0.5 rounded-md hover:bg-black/20 transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        <span className="text-[9px] font-black tracking-widest uppercase opacity-90 block">
+          SERTIFIKAT DISTRIK
+        </span>
+        <h4 className="text-sm font-black tracking-wide mt-0.5 truncate uppercase">
+          {tile.name}
+        </h4>
+      </div>
+
+      {/* Deed Content & Rent Table */}
+      <div className="p-3.5 space-y-2 text-xs">
+        <div className="flex items-center justify-between py-1 border-b border-white/10">
+          <span className="text-muted-foreground">Harga Pembelian</span>
+          <span className="font-black text-amber-400">{tile.cost} Pollen 🌼</span>
+        </div>
+
+        <div className="space-y-1 text-[11px] text-muted-foreground pt-1">
+          <div className="flex justify-between">
+            <span>Sewa Dasar:</span>
+            <span className="text-foreground font-semibold">{baseRent} 🌼</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Dengan 1 Outpost:</span>
+            <span className="text-foreground font-semibold">{baseRent * 2} 🌼</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Dengan 2 Outpost:</span>
+            <span className="text-foreground font-semibold">{baseRent * 3} 🌼</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Dengan 3 Outpost:</span>
+            <span className="text-foreground font-semibold">{baseRent * 4} 🌼</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Dengan Colony Citadel:</span>
+            <span className="text-emerald-400 font-bold">{baseRent * 5} 🌼</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        {isPendingBuy ? (
+          <div className="pt-2 flex flex-col gap-1.5">
+            <Button
+              onClick={onBuy}
+              disabled={!canAfford}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-9 text-xs shadow-md cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-1.5" />
+              {canAfford ? `Beli Distrik (${tile.cost} 🌼)` : 'Pollen Tidak Cukup'}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={onPass}
+              className="w-full text-muted-foreground hover:text-white h-7 text-xs cursor-pointer"
+            >
+              Lewati (Jangan Beli)
+            </Button>
+          </div>
+        ) : isOwner ? (
+          <div className="pt-2">
+            <Button
+              onClick={onBuildOutpost}
+              disabled={(tile.outposts || 0) >= 4 || activePlayerPollen < upgradeCost}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-8 text-xs cursor-pointer"
+            >
+              <Building2 className="w-3.5 h-3.5 mr-1.5" />
+              Upgrade Outpost (+{upgradeCost} 🌼)
+            </Button>
+          </div>
+        ) : (
+          <div className="pt-1 text-center text-[10px] text-muted-foreground">
+            {tile.ownerId ? 'Distrik ini telah dimiliki oleh pemain lain.' : 'Distrik ini masih belum bertuan.'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Position-Aware Individual Board Tile Cell ──
+function TileCell({
+  tile,
+  side,
+  players,
+  onInspect,
+}: {
+  tile: BoardTile;
+  side: 'top' | 'bottom' | 'left' | 'right';
+  players: PolyPlayer[];
+  onInspect: () => void;
+}) {
+  const isCorner = tile.type === 'corner';
+
+  // Tile icon mapper
+  const renderTileIcon = () => {
+    if (tile.index === 0) return <span className="text-xs">🏁</span>;
+    if (tile.index === 10) return <span className="text-xs">⛓️</span>;
+    if (tile.index === 20) return <span className="text-xs">🌴</span>;
+    if (tile.index === 30) return <span className="text-xs">🚨</span>;
+    if (tile.type === 'railroad') return <Train className="w-3.5 h-3.5 text-sky-400" />;
+    if (tile.name.includes('Grid')) return <Zap className="w-3.5 h-3.5 text-amber-400" />;
+    if (tile.name.includes('Water')) return <Droplets className="w-3.5 h-3.5 text-cyan-400" />;
+    if (tile.name.includes('Chest')) return <Gift className="w-3.5 h-3.5 text-pink-400" />;
+    if (tile.name.includes('Chance')) return <HelpCircle className="w-3.5 h-3.5 text-amber-300" />;
+    if (tile.type === 'tax') return <span className="text-xs">💸</span>;
+    return null;
+  };
+
+  return (
+    <div
+      onClick={onInspect}
+      className={cn(
+        'relative rounded-md border flex overflow-hidden transition-all text-[9px] select-none leading-none cursor-pointer',
+        side === 'bottom' && 'flex-col justify-between',
+        side === 'top' && 'flex-col justify-between',
+        side === 'left' && 'flex-row justify-between',
+        side === 'right' && 'flex-row justify-between',
+        isCorner
+          ? 'bg-[#152033] border-white/20 font-bold'
+          : 'bg-[#0f172a] border-white/10 hover:border-emerald-400/80 hover:bg-[#1a2642]',
+        tile.ownerId && 'ring-1 ring-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+      )}
+    >
+      {/* Color Banner - Inward-facing orientation matching classic Monopoly */}
       {tile.groupColor && (
         <div
-          className="h-1.5 w-full rounded-xs shrink-0"
+          className={cn(
+            'shrink-0',
+            // Bottom row: color bar at top (inward)
+            side === 'bottom' && 'w-full h-2.5 order-first',
+            // Top row: color bar at bottom (inward)
+            side === 'top' && 'w-full h-2.5 order-last',
+            // Left col: color bar at right (inward)
+            side === 'left' && 'h-full w-2.5 order-last',
+            // Right col: color bar at left (inward)
+            side === 'right' && 'h-full w-2.5 order-first'
+          )}
           style={{ backgroundColor: tile.groupColor }}
         />
       )}
 
-      {/* Tile Title */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-0.5">
-        <span className="font-semibold text-foreground/90 truncate w-full">
+      {/* Tile Center Info */}
+      <div className="flex-1 flex flex-col items-center justify-center text-center p-0.5 overflow-hidden">
+        {renderTileIcon()}
+        <span className="font-semibold text-white/90 truncate w-full text-[8px] sm:text-[9px] mt-0.5">
           {tile.name}
         </span>
         {tile.cost && !tile.ownerId && (
-          <span className="text-[8px] font-bold text-amber-400 mt-0.5">
+          <span className="text-[7.5px] font-bold text-amber-300 mt-0.5">
             {tile.cost}🌼
           </span>
         )}
       </div>
 
-      {/* Outpost indicator badges */}
+      {/* Outpost indicator stars on color bar */}
       {tile.outposts && tile.outposts > 0 ? (
-        <div className="flex items-center justify-center gap-0.5 pb-0.5">
-          {Array.from({ length: tile.outposts }).map((_, i) => (
-            <div key={i} className="size-1 rounded-full bg-emerald-400" />
-          ))}
+        <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5 z-10 bg-black/70 px-1 py-0.2 rounded-full">
+          <span className="text-[7px] text-emerald-400 font-bold">★{tile.outposts}</span>
         </div>
       ) : null}
 
-      {/* Players Tokens currently on this tile */}
+      {/* Player Tokens currently on this tile */}
       {players.length > 0 && (
-        <div className="absolute inset-x-0 bottom-0.5 flex items-center justify-center gap-1 z-10">
+        <div className="absolute inset-0 flex items-center justify-center gap-0.5 z-20 pointer-events-none bg-black/40">
           {players.map((p) => (
             <div
               key={p.id}
               className={cn(
-                'size-3.5 rounded-full border border-black text-[8px] font-black text-white flex items-center justify-center shadow-md animate-in zoom-in-50',
+                'size-4 rounded-full border border-white flex items-center justify-center text-[10px] shadow-lg animate-in zoom-in-75',
                 p.bgColor
               )}
               title={p.name}
             >
-              {p.name.charAt(0)}
+              {p.tokenEmoji}
             </div>
           ))}
         </div>
@@ -979,4 +1193,3 @@ function TileCell({
     </div>
   );
 }
-
