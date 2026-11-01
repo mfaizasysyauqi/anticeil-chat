@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Play, Palette, Crown, ScreenShare } from 'lucide-react';
+import { Search, Play, Palette, Crown, Dices, ScreenShare } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -118,6 +118,21 @@ export function ChatAppsPopover({
                   </div>
                 </button>
 
+                {/* Colony Poly */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onLaunchActivity('colony-poly');
+                    onOpenChange(false);
+                  }}
+                  className="w-12 h-12 rounded-xl bg-card border border-border hover:border-emerald-500/50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer shrink-0 group"
+                  title="Colony Poly"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-xs">
+                    <Dices className="w-4 h-4 stroke-[2.2]" />
+                  </div>
+                </button>
+
                 {/* Screen Share */}
                 <button
                   type="button"
@@ -156,6 +171,7 @@ export function ChatAppsPopover({
                     {app.id === 'watch-together' && <Play className="w-5 h-5 fill-white" />}
                     {app.id === 'whiteboard' && <Palette className="w-5 h-5" />}
                     {app.id === 'chess' && <Crown className="w-5 h-5" />}
+                    {app.id === 'colony-poly' && <Dices className="w-5 h-5 text-white stroke-[2.2]" />}
                     {app.id === 'screenshare' && <ScreenShare className="w-5 h-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
