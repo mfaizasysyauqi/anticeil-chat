@@ -218,8 +218,18 @@ export function UserSettingsModal({
       key: 'USER_SETTINGS',
       title: t('User Settings'),
       items: [
-        { id: 'account', label: t('Account'), icon: <User className="w-4 h-4" /> },
-        { id: 'profiles', label: t('Profiles'), icon: <Sparkles className="w-4 h-4" /> },
+        {
+          id: 'account',
+          label: t('Account'),
+          icon: <User className="w-4 h-4" />,
+          subItems: [
+            { id: 'account-profile', label: t('User Profile') },
+            { id: 'account-info', label: t('Account Info') },
+            { id: 'account-security', label: t('Password & Security') },
+            { id: 'account-status', label: t('Account Status') },
+            { id: 'account-family', label: t('Family Center') },
+          ],
+        },
         {
           id: 'privacy',
           label: t('Data & Privacy'),
@@ -313,7 +323,7 @@ export function UserSettingsModal({
               </div>
               <button
                 type="button"
-                onClick={() => setActiveSection('profiles')}
+                onClick={() => { setActiveSection('account'); setTimeout(() => { document.getElementById('account-profile')?.scrollIntoView({ behavior: 'smooth' }); }, 80); }}
                 className="text-[10px] text-muted-foreground hover:text-foreground font-semibold px-1 py-0.5 rounded hover:bg-muted/50 cursor-pointer shrink-0"
                 title={t('Edit Profiles')}
               >
@@ -448,39 +458,98 @@ export function UserSettingsModal({
                   {t('Account')}
                 </h2>
 
-                {/* Profile Header Card */}
-                <div className="rounded-xl overflow-hidden border border-border bg-card shadow-xs">
-                  <div className="h-24 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-600 relative">
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection('profiles')}
-                      className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/50 hover:bg-black/70 text-white font-semibold text-xs backdrop-blur-md transition-all cursor-pointer"
-                    >
-                      {t('Edit User Profile')}
-                    </button>
+                {/* Profile Header & Customization Card (Merged with Profiles) */}
+                <div id="account-profile" className="space-y-3 scroll-mt-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-foreground">
+                      {t('User Profile')}
+                    </h3>
                   </div>
-                  <div className="px-5 pb-5 pt-0 relative">
-                    <div className="flex items-end justify-between -mt-10 mb-3">
-                      <div className="relative">
-                        <CommunityAvatar
-                          name={currentUserName}
-                          email={currentUser?.email}
-                          imageUrl={currentUser?.imageUrl}
-                          size={76}
-                          showStatus={false}
-                          className="shrink-0 ring-[6px] ring-card rounded-full shadow-lg bg-card"
-                        />
-                        <div className="absolute bottom-1 right-1 size-5 rounded-full bg-emerald-500 border-2 border-card" />
+
+                  <div className="rounded-xl overflow-hidden border border-border bg-card shadow-xs">
+                    <div className="h-24 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-600 relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const el = document.getElementById('profile-edit-form');
+                          el?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="absolute top-3 right-3 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all cursor-pointer"
+                      >
+                        {t('Edit User Profile')}
+                      </button>
+                    </div>
+                    <div className="px-5 pb-5 pt-0 relative">
+                      <div className="flex items-end justify-between -mt-10 mb-3">
+                        <div className="relative">
+                          <CommunityAvatar
+                            name={currentUserName}
+                            email={currentUser?.email}
+                            imageUrl={currentUser?.imageUrl}
+                            size={76}
+                            showStatus={false}
+                            className="shrink-0 ring-[6px] ring-card rounded-full shadow-lg bg-card"
+                          />
+                          <div className="absolute bottom-1 right-1 size-5 rounded-full bg-emerald-500 border-2 border-card" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-base font-bold text-foreground">{currentUserName}</div>
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                          {currentUser?.username
+                            ? `@${currentUser.username}`
+                            : currentUser?.email
+                            ? `@${currentUser.email.split('@')[0]}`
+                            : ''}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-base font-bold text-foreground">{currentUserName}</div>
-                      <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                        {currentUser?.username
-                          ? `@${currentUser.username}`
-                          : currentUser?.email
-                          ? `@${currentUser.email.split('@')[0]}`
-                          : ''}
+
+                    {/* Integrated Profile Customization Form */}
+                    <div id="profile-edit-form" className="border-t border-border/70 p-5 bg-card/60 space-y-4">
+                      <div>
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                          {t('Display Name')}
+                        </label>
+                        <form onSubmit={handleDisplayNameSubmit} className="flex gap-2">
+                          <Input
+                            value={editDisplayNameInput}
+                            onChange={(e) => setEditDisplayNameInput(e.target.value)}
+                            placeholder={t('Nama Lengkap')}
+                            className="text-xs h-9 bg-input border-border text-foreground"
+                          />
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={isSavingDisplayName || !editDisplayNameInput.trim() || editDisplayNameInput.trim() === currentUserName}
+                            className="h-9 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                          >
+                            {isSavingDisplayName ? t('Menyimpan...') : t('Simpan')}
+                          </Button>
+                        </form>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                          {t('About Me')}
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder={t('Tulis bio singkat tentang Anda di sini...')}
+                          className="w-full text-xs p-2.5 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          defaultValue="Anticeil user building real-time community colonies."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                          {t('Pronouns')}
+                        </label>
+                        <Input
+                          placeholder="he/him, they/them, dll."
+                          defaultValue="he/him"
+                          className="text-xs h-9 bg-input border-border text-foreground max-w-xs"
+                        />
                       </div>
                     </div>
                   </div>
@@ -545,7 +614,7 @@ export function UserSettingsModal({
                               !editUsernameInput.trim() ||
                               editUsernameInput.trim() === currentUser?.username
                             }
-                            className="h-8 text-xs font-bold"
+                            className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
                           >
                             {isSavingUsername ? t('Menyimpan...') : t('Simpan')}
                           </Button>
@@ -647,7 +716,7 @@ export function UserSettingsModal({
                               toast.success(t('Nomor telepon berhasil diperbarui!'));
                               setIsEditingPhone(false);
                             }}
-                            className="h-8 text-xs font-bold"
+                            className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
                           >
                             {t('Simpan Nomor')}
                           </Button>
@@ -704,7 +773,7 @@ export function UserSettingsModal({
                               toast.success(t('Password berhasil diperbarui!'));
                               setIsEditingPassword(false);
                             }}
-                            className="h-8 text-xs font-bold"
+                            className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
                           >
                             {t('Simpan Password Baru')}
                           </Button>
@@ -761,7 +830,7 @@ export function UserSettingsModal({
                 </div>
 
                 {/* 3. Account Status Section (Screenshot 2) */}
-                <div className="space-y-3">
+                <div id="account-status" className="space-y-3 scroll-mt-4">
                   <h3 className="text-sm font-bold text-foreground">
                     {t('Account Status')}
                   </h3>
@@ -843,7 +912,7 @@ export function UserSettingsModal({
                 </div>
 
                 {/* 4. Family Center Section (Screenshot 2) */}
-                <div className="space-y-3">
+                <div id="account-family" className="space-y-3 scroll-mt-4">
                   <h3 className="text-sm font-bold text-foreground">
                     {t('Family Center')}
                   </h3>
@@ -921,63 +990,7 @@ export function UserSettingsModal({
           </>
         )}
 
-        {/* ========================================================================= */}
-        {/* SECTION: PROFILES (User & Server Profiles)                                */}
-        {/* ========================================================================= */}
-        {activeSection === 'profiles' && (
-          <div className="space-y-5">
-            <h2 className="text-lg font-bold text-foreground pb-1">
-              {t('User Profile')}
-            </h2>
 
-            <div className="p-4 rounded-xl border border-border bg-card space-y-4">
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  {t('Display Name')}
-                </label>
-                <form onSubmit={handleDisplayNameSubmit} className="flex gap-2">
-                  <Input
-                    value={editDisplayNameInput}
-                    onChange={(e) => setEditDisplayNameInput(e.target.value)}
-                    placeholder={t('Nama Lengkap')}
-                    className="text-xs h-9 bg-input border-border text-foreground"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={isSavingDisplayName || !editDisplayNameInput.trim() || editDisplayNameInput.trim() === currentUserName}
-                    className="h-9 text-xs font-bold"
-                  >
-                    {isSavingDisplayName ? t('Menyimpan...') : t('Simpan')}
-                  </Button>
-                </form>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  {t('About Me')}
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder={t('Tulis bio singkat tentang Anda di sini...')}
-                  className="w-full text-xs p-2.5 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-                  defaultValue="Senior developer & full-stack architect building real-time super apps."
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  {t('Pronouns')}
-                </label>
-                <Input
-                  placeholder="he/him, they/them, dll."
-                  defaultValue="he/him"
-                  className="text-xs h-9 bg-input border-border text-foreground max-w-xs"
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ========================================================================= */}
         {/* SECTION: DATA & PRIVACY                                                   */}

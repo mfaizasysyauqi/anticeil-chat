@@ -719,7 +719,7 @@ export function ChannelSettingsDialog({
                   size="sm"
                   onClick={handleSave}
                   disabled={isSubmitting}
-                  className="bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs shadow-md"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
                 >
                   {isSubmitting ? t('Menyimpan...') : t('Simpan Perubahan')}
                 </Button>

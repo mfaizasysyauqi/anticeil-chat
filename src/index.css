@@ -23,8 +23,8 @@ body,
   --card-foreground: #f2f3f5;
   --muted: #111214;
   --muted-foreground: #949ba4;
-  --secondary: #f59e0b;
-  --secondary-foreground: #000000;
+  --secondary: #24272c;
+  --secondary-foreground: #ffffff;
   --accent: #1e1f22;
   --accent-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.06);
@@ -38,7 +38,7 @@ body,
   --primary-300: 173 80% 55%;
 
   --brand-teal: #0d9488;
-  --brand-gold: #f59e0b;
+  --brand-gold: #10b981;
 
   --success: 160 84% 39%;
   --destructive: 350 89% 60%;
