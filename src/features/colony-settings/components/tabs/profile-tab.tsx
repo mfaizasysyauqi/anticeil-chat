@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getColonyInitials } from '@/features/colonies/components/colony-icon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -81,13 +82,13 @@ export function ProfileTab({
         <div className="px-4 pb-4 -mt-8">
           <div
             onClick={() => serverIconFileInputRef.current?.click()}
-            className="relative group/avatar w-16 h-16 rounded-2xl bg-card border-4 border-card flex items-center justify-center text-xl font-bold text-primary shadow-sm overflow-hidden cursor-pointer shrink-0 transition-transform active:scale-95"
+            className="relative group/avatar w-16 h-16 rounded-[18px] bg-sidebar-accent border-4 border-card flex items-center justify-center text-xl font-bold text-foreground shadow-sm overflow-hidden cursor-pointer shrink-0 transition-transform active:scale-95"
             title={t('Klik untuk mengunggah foto colony')}
           >
             {serverSettingsEditIconUrl ? (
               <img src={serverSettingsEditIconUrl} alt="Server icon" className="w-full h-full object-cover" />
             ) : (
-              activeColony?.initials || activeColony?.name?.slice(0, 2) || 'SV'
+              getColonyInitials(serverSettingsEditName || activeColony?.name)
             )}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-semibold transition-opacity">
               <Camera className="w-4 h-4 mb-0.5" />

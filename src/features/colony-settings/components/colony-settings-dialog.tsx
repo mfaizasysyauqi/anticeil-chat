@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { colonyApi } from '@/chat/chat-api';
+import { ColonyIcon } from '@/features/colonies/components/colony-icon';
 import type {
   Colony,
   ColonyMember,
@@ -200,22 +201,9 @@ export function ColonySettingsDialog({
         initialMobileView={initialSection && initialSection !== 'profile' ? 'detail' : 'menu'}
         sidebarHeader={
           <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/50 border border-sidebar-border">
-            {activeColony?.iconUrl ? (
-              <img
-                src={activeColony.iconUrl}
-                alt={activeColony.name}
-                className="w-8 h-8 rounded-lg object-cover shrink-0"
-              />
-            ) : (
-              <div
-                className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0',
-                  activeColony?.color || 'bg-indigo-600',
-                )}
-              >
-                {activeColony?.name ? activeColony.name.charAt(0).toUpperCase() : 'C'}
-              </div>
-            )}
+            <div className="size-8 rounded-[10px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs font-semibold text-xs text-foreground">
+              {activeColony && <ColonyIcon hub={activeColony} />}
+            </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-foreground truncate">
                 {activeColony?.name || t('Colony')}
