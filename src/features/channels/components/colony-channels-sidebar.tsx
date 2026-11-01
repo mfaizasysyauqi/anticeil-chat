@@ -1,3 +1,4 @@
+import { getColonyInitials } from '@/features/colonies/components/colony-icon';
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -563,6 +564,10 @@ export function ColonyChannelsSidebar({
                       alt={activeColony.name}
                       className="w-5 h-5 rounded-[6px] object-cover shrink-0 border border-white/10"
                     />
+                  ) : activeColony ? (
+                    <div className="w-5 h-5 rounded-[6px] bg-sidebar-accent border border-sidebar-border/60 flex items-center justify-center shrink-0 text-[10px] font-semibold text-foreground">
+                      {getColonyInitials(activeColony.name)}
+                    </div>
                   ) : null}
                   <span className="text-sm font-semibold truncate tracking-tight text-foreground group-hover:text-primary transition-colors">
                     {activeColony?.name || t('Colony')}

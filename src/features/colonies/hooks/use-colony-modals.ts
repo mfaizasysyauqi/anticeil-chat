@@ -1,3 +1,4 @@
+import { getColonyInitials } from '../components/colony-icon';
 import { useState } from 'react';
 import type { Colony, ColonyChannel, ColonyMember } from '@/chat/chat-types';
 import { colonyApi } from '@/chat/chat-api';
@@ -113,8 +114,8 @@ export function useColonyModals({
       const newHub: Colony = {
         id: newId,
         name: newHubName.trim(),
-        iconType: undefined as any,
-        initials: newHubName.trim().slice(0, 2).toUpperCase() || 'SV',
+        iconType: newHubIconUrl ? undefined : 'initials',
+        initials: getColonyInitials(newHubName.trim()),
         description: newHubDesc.trim() || '',
         iconUrl: newHubIconUrl || undefined,
       };

@@ -1,3 +1,4 @@
+import { getColonyInitials } from '../components/colony-icon';
 import { api } from '@/lib/api';
 import type { ServerInvitation, ColonyInvitation } from '@/lib/colony';
 import {
@@ -51,9 +52,9 @@ export const coloniesApi = {
     const newColony: Colony = {
       id: newId,
       name: payload.name,
-      iconType: payload.iconUrl ? (undefined as any) : ('code' as any),
+      iconType: payload.iconUrl ? undefined : 'initials',
       iconUrl: payload.iconUrl,
-      initials: payload.name.slice(0, 2).toUpperCase() || 'SV',
+      initials: getColonyInitials(payload.name),
       description: payload.description || '',
       inviteCode: Math.random().toString(36).slice(2, 8).toUpperCase(),
       membersCount: 1,
@@ -488,7 +489,7 @@ export const coloniesApi = {
     const newColony: Colony = {
       id: cleanId,
       name: `Server Komunitas`,
-      iconType: 'code' as any,
+      iconType: 'initials',
       initials: 'SK',
       description: 'Bergabung melalui link undangan',
       inviteCode,
