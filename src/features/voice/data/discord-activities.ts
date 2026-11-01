@@ -19,6 +19,7 @@ import {
   Tv,
   Palette,
   Crown,
+  Dices,
   ScreenShare,
 } from 'lucide-react';
 
@@ -96,6 +97,24 @@ export const DISCORD_APPS: DiscordAppDefinition[] = [
     isPromoted: true,
     badge: 'OFFICIAL',
     accentColor: '#f59e0b',
+  },
+  {
+    id: 'colony-poly',
+    title: 'Colony Poly',
+    bannerTitle: 'COLONY POLY',
+    developer: 'Anticeil Games',
+    category: 'game',
+    bannerGradient: 'from-emerald-700 via-teal-800 to-zinc-950',
+    bannerImage: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=600&q=80',
+    iconBg: 'bg-emerald-600',
+    iconColor: 'text-white',
+    icon: Dices,
+    tagline: 'Main monopoli bersama teman di Colony...',
+    description: 'Game monopoli interaktif di voice channel. Beli distrik, bangun outposts, kumpulkan Pollen, dan jadilah raja properti di Colony!',
+    isRecent: true,
+    isPromoted: true,
+    badge: 'BARU',
+    accentColor: '#10b981',
   },
   {
     id: 'screenshare',
