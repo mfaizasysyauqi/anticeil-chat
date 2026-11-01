@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ export interface SettingsNavItem {
   badge?: React.ReactNode;
   isDanger?: boolean;
   onClick?: () => void;
+  /** Sub-items shown as indented scroll-spy nav (Discord "Data & Privacy" style) */
+  subItems?: { id: string; label: string }[];
 }
 
 export interface SettingsNavGroup {
@@ -33,6 +35,8 @@ export interface TwoPaneSettingsDialogProps {
   contentClassName?: string;
   className?: string;
   initialMobileView?: 'menu' | 'detail';
+  /** Ref to the scrollable content div so scroll-spy can attach */
+  contentScrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function TwoPaneSettingsDialog({
@@ -48,15 +52,24 @@ export function TwoPaneSettingsDialog({
   contentClassName,
   className,
   initialMobileView = 'menu',
+  contentScrollRef: externalScrollRef,
 }: TwoPaneSettingsDialogProps) {
   const { t } = useTranslation();
   const [mobileView, setMobileView] = useState<'menu' | 'detail'>(initialMobileView);
+  const [activeSubId, setActiveSubId] = useState<string>('');
+  const internalScrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = externalScrollRef ?? internalScrollRef;
 
   useEffect(() => {
     if (open) {
       setMobileView(initialMobileView);
     }
   }, [open, initialMobileView]);
+
+  // Reset sub-item when section changes
+  useEffect(() => {
+    setActiveSubId('');
+  }, [activeSection]);
 
   const activeItem = useMemo(() => {
     for (const group of groups) {
@@ -65,6 +78,67 @@ export function TwoPaneSettingsDialog({
     }
     return null;
   }, [groups, activeSection]);
+
+  // Scroll-spy: watch content pane scroll and highlight matching sub-item
+  useEffect(() => {
+    const subItems = activeItem?.subItems;
+    if (!subItems || subItems.length === 0) {
+      setActiveSubId('');
+      return;
+    }
+
+    const container = scrollRef.current;
+    if (!container) return;
+
+    let ticking = false;
+
+    const updateSpy = () => {
+      const containerTop = container.getBoundingClientRect().top;
+      const threshold = containerTop + 80;
+
+      let current = subItems[0].id;
+      for (const sub of subItems) {
+        const el = container.querySelector(`#${CSS.escape(sub.id)}`);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= threshold) {
+            current = sub.id;
+          }
+        }
+      }
+      setActiveSubId(current);
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(updateSpy);
+        ticking = true;
+      }
+    };
+
+    // Run once on mount / section switch
+    updateSpy();
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, [activeSection, activeItem?.subItems, scrollRef]);
+
+  const scrollToSubItem = useCallback(
+    (subId: string) => {
+      const container = scrollRef.current;
+      if (!container) return;
+      const el = container.querySelector(`#${CSS.escape(subId)}`);
+      if (el) {
+        const containerTop = container.getBoundingClientRect().top;
+        const elTop = el.getBoundingClientRect().top;
+        const offset = elTop - containerTop + container.scrollTop - 70;
+        container.scrollTo({ top: offset, behavior: 'smooth' });
+      }
+      setActiveSubId(subId);
+    },
+    [scrollRef],
+  );
 
   const handleSelectSection = (item: SettingsNavItem) => {
     if (item.onClick) {
@@ -122,23 +196,56 @@ export function TwoPaneSettingsDialog({
                   {group.items.map((item) => {
                     const isActive = activeSection === item.id;
                     return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleSelectSection(item)}
-                        className={cn(
-                          'w-full flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left',
-                          isActive
-                            ? 'bg-sidebar-accent text-foreground font-bold shadow-2xs'
-                            : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground',
-                          item.isDanger && 'text-destructive hover:bg-destructive/10 hover:text-destructive',
+                      <div key={item.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSection(item)}
+                          className={cn(
+                            'w-full flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left',
+                            isActive
+                              ? 'bg-sidebar-accent text-foreground font-bold shadow-2xs'
+                              : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground',
+                            item.isDanger && 'text-destructive hover:bg-destructive/10 hover:text-destructive',
+                          )}
+                        >
+                          {item.icon && <span className="shrink-0">{item.icon}</span>}
+                          <span className="truncate flex-1">{item.label}</span>
+                          {item.badge && <span className="ml-auto mr-1">{item.badge}</span>}
+                          <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground/50 md:hidden shrink-0" />
+                        </button>
+
+                        {/* Discord-style sub-items with scroll-spy */}
+                        {isActive && item.subItems && item.subItems.length > 0 && (
+                          <div className="ml-3 mt-0.5 mb-1 relative">
+                            {/* Vertical line */}
+                            <div className="absolute left-2 top-0 bottom-0 w-px bg-sidebar-border" />
+                            <div className="space-y-0.5">
+                              {item.subItems.map((sub) => {
+                                const isSubActive = activeSubId === sub.id || (!activeSubId && item.subItems![0].id === sub.id);
+                                return (
+                                  <button
+                                    key={sub.id}
+                                    type="button"
+                                    onClick={() => scrollToSubItem(sub.id)}
+                                    className={cn(
+                                      'w-full text-left pl-5 pr-2 py-1 text-[11px] rounded-md transition-colors cursor-pointer relative',
+                                      isSubActive
+                                        ? 'text-foreground font-bold'
+                                        : 'text-muted-foreground/70 hover:text-foreground font-medium',
+                                    )}
+                                  >
+                                    {/* Active indicator tick */}
+                                    {isSubActive && (
+                                      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-px h-3 bg-foreground rounded-full" />
+                                    )}
+                                    {sub.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
-                      >
-                        {item.icon && <span className="shrink-0">{item.icon}</span>}
-                        <span className="truncate flex-1">{item.label}</span>
-                        {item.badge && <span className="ml-auto mr-1">{item.badge}</span>}
-                        <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground/50 md:hidden shrink-0" />
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -206,6 +313,7 @@ export function TwoPaneSettingsDialog({
 
           {/* Scrollable Content Container */}
           <div
+            ref={scrollRef as React.RefObject<HTMLDivElement>}
             className={cn(
               'flex-1 overflow-y-auto px-4 py-5 sm:px-6 md:px-8 md:py-7 [scrollbar-width:thin] w-full min-w-0',
               contentClassName,
@@ -218,4 +326,3 @@ export function TwoPaneSettingsDialog({
     </Dialog>
   );
 }
-

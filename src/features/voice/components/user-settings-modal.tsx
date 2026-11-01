@@ -220,7 +220,16 @@ export function UserSettingsModal({
       items: [
         { id: 'account', label: t('Account'), icon: <User className="w-4 h-4" /> },
         { id: 'profiles', label: t('Profiles'), icon: <Sparkles className="w-4 h-4" /> },
-        { id: 'privacy', label: t('Data & Privacy'), icon: <Shield className="w-4 h-4" /> },
+        {
+          id: 'privacy',
+          label: t('Data & Privacy'),
+          icon: <Shield className="w-4 h-4" />,
+          subItems: [
+            { id: 'privacy-how-we-use', label: t('How Anticeil Uses My Data') },
+            { id: 'privacy-profile', label: t('Profile Privacy') },
+            { id: 'privacy-e2e', label: t('Voice End-to-end Encryption') },
+          ],
+        },
         { id: 'permissions', label: t('Messaging Permissions'), icon: <ShieldAlert className="w-4 h-4" /> },
         { id: 'notifications', label: t('Notifications'), icon: <Bell className="w-4 h-4" /> },
       ],
@@ -239,7 +248,7 @@ export function UserSettingsModal({
             </span>
           ),
         },
-        { id: 'boost', label: t('Server Boost'), icon: <Gem className="w-4 h-4 text-pink-400" /> },
+        { id: 'boost', label: t('Colony Boost'), icon: <Gem className="w-4 h-4 text-pink-400" /> },
         { id: 'subscriptions', label: t('Subscriptions'), icon: <CreditCard className="w-4 h-4" /> },
         { id: 'gifts', label: t('Gift Inventory'), icon: <Gift className="w-4 h-4" /> },
         { id: 'billing', label: t('Billing'), icon: <Receipt className="w-4 h-4" /> },
@@ -974,53 +983,215 @@ export function UserSettingsModal({
         {/* SECTION: DATA & PRIVACY                                                   */}
         {/* ========================================================================= */}
         {activeSection === 'privacy' && (
-          <div className="space-y-5">
-            <h2 className="text-lg font-bold text-foreground pb-1">
-              {t('Data & Privacy')}
-            </h2>
+          <div className="space-y-10">
+            {/* ── 1. HOW ANTICEIL USES MY DATA ── */}
+            <div id="privacy-how-we-use" className="space-y-5 scroll-mt-4">
+              <h2 className="text-lg font-bold text-foreground pb-1">
+                {t('Data & Privacy')}
+              </h2>
 
-            <div className="rounded-xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
-              <div className="p-4 space-y-2">
-                <div className="text-xs font-semibold text-foreground">
-                  {t('Safe Direct Messaging')}
-                </div>
-                <div className="text-[11px] text-muted-foreground leading-relaxed">
-                  {t('Otomatis memindai pesan langsung untuk mendeteksi konten eksplisit atau mencurigakan.')}
-                </div>
-                <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {[
-                    { id: 'safe', label: t('Scan Semua Pesan'), desc: t('Direkomendasikan') },
-                    { id: 'friends', label: t('Kecuali Teman'), desc: t('Scan non-teman') },
-                    { id: 'none', label: t('Jangan Scan'), desc: t('Matikan filter') },
-                  ].map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setSafeDirectMessaging(opt.id as any)}
-                      className={cn(
-                        'p-2.5 rounded-lg border text-left transition-all cursor-pointer',
-                        safeDirectMessaging === opt.id
-                          ? 'border-primary bg-primary/10 text-primary font-bold'
-                          : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50',
-                      )}
-                    >
-                      <div className="text-xs">{opt.label}</div>
-                      <div className="text-[10px] opacity-75">{opt.desc}</div>
-                    </button>
-                  ))}
-                </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground mb-1">
+                  {t('How Anticeil Uses My Data')}
+                </h3>
+                <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
+                  {t('Anticeil perlu menyimpan dan memproses sebagian data untuk memberikan layanan dasar, seperti pesan, colony yang kamu ikuti, dan pesan langsung (DM).')}
+                </p>
               </div>
 
-              <div className="p-4 flex items-center justify-between gap-4">
-                <div>
+              <div className="rounded-xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
+                <div className="p-4 space-y-1.5">
                   <div className="text-xs font-semibold text-foreground">
-                    {t('Gunakan data untuk mempersonalisasi Anticeil')}
+                    {t('Gunakan data untuk membuat Anticeil bekerja')}
                   </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {t('Membantu kami meningkatkan fitur dan rekomendasi server.')}
+                  <div className="text-[11px] text-muted-foreground leading-relaxed">
+                    {t('Anticeil perlu menyimpan dan memproses data ini agar dapat memberikan layanan dasar.')}
                   </div>
                 </div>
-                <Switch defaultChecked />
+
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Gunakan data untuk meningkatkan Anticeil')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {t('Izinkan Anticeil menggunakan dan memproses informasi Anda untuk memahami dan meningkatkan layanan.')}
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Gunakan data untuk mempersonalisasi Anticeil')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {t('Izinkan Anticeil menggunakan informasi seperti siapa yang Anda ajak bicara untuk mempersonalisasi pengalaman.')}
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="p-4 flex items-center justify-between gap-4">
+                  {/* Safe DM scan */}
+                  <div className="flex-1">
+                    <div className="text-xs font-semibold text-foreground mb-2">
+                      {t('Safe Direct Messaging')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground leading-relaxed mb-3">
+                      {t('Otomatis memindai pesan langsung untuk mendeteksi konten eksplisit atau mencurigakan.')}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: 'safe', label: t('Scan Semua Pesan'), desc: t('Direkomendasikan') },
+                        { id: 'friends', label: t('Kecuali Teman'), desc: t('Scan non-teman') },
+                        { id: 'none', label: t('Jangan Scan'), desc: t('Matikan filter') },
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setSafeDirectMessaging(opt.id as any)}
+                          className={cn(
+                            'p-2.5 rounded-lg border text-left transition-all cursor-pointer',
+                            safeDirectMessaging === opt.id
+                              ? 'border-primary bg-primary/10 text-primary font-bold'
+                              : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50',
+                          )}
+                        >
+                          <div className="text-xs">{opt.label}</div>
+                          <div className="text-[10px] opacity-75">{opt.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Request data */}
+                <div className="p-4">
+                  <div className="text-xs font-semibold text-foreground mb-1">
+                    {t('Minta data saya')}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mb-3">
+                    {t('Jika Anda membutuhkan salinan data pribadi dari seluruh riwayat akun Anda, Anda bisa mendapatkannya di sini.')}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 text-xs font-semibold cursor-pointer"
+                    onClick={() => toast.success(t('Permintaan data dikirim! Anda akan menerima email konfirmasi.'))}
+                  >
+                    {t('Minta Data')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border/50" />
+
+            {/* ── 2. PROFILE PRIVACY ── */}
+            <div id="privacy-profile" className="space-y-4 scroll-mt-4">
+              <div>
+                <h3 className="text-base font-bold text-foreground mb-1">
+                  {t('Profile Privacy')}
+                </h3>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  {t('Kontrol siapa yang dapat melihat profil Anda — termasuk bio dan akun yang terhubung.')}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
+                <div className="p-4 space-y-3">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Bagikan profil penuh saya dengan')}
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      {
+                        id: 'all',
+                        label: t('Teman & Semua Colony'),
+                        desc: t('Profil lengkap Anda terlihat oleh teman dan colony mana pun yang Anda ikuti.'),
+                      },
+                      {
+                        id: 'small',
+                        label: t('Teman & Colony Kecil Saja'),
+                        desc: t('Profil lengkap terlihat oleh teman dan colony dengan 200 anggota atau lebih sedikit.'),
+                      },
+                      {
+                        id: 'friends',
+                        label: t('Teman Saja'),
+                        desc: t('Profil lengkap hanya terlihat oleh teman. Orang lain melihat versi terbatas.'),
+                      },
+                    ].map((opt) => (
+                      <label
+                        key={opt.id}
+                        className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors"
+                      >
+                        <input
+                          type="radio"
+                          name="profile-visibility"
+                          defaultChecked={opt.id === 'all'}
+                          className="mt-0.5 accent-primary shrink-0"
+                        />
+                        <div>
+                          <div className="text-xs font-semibold text-foreground">{opt.label}</div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{opt.desc}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Bagikan saat saya memperbarui profil')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {t('Izinkan teman menerima notifikasi push saat Anda memperbarui profil.')}
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border/50" />
+
+            {/* ── 3. VOICE END-TO-END ENCRYPTION ── */}
+            <div id="privacy-e2e" className="space-y-4 scroll-mt-4">
+              <div>
+                <h3 className="text-base font-bold text-foreground mb-1">
+                  {t('Voice End-to-end Encryption')}
+                </h3>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  {t('Enkripsi end-to-end memastikan hanya peserta yang dapat mendengar audio dalam panggilan voice.')}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Aktifkan kode verifikasi persisten')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
+                      {t('Memberi perangkat saat ini kode verifikasi persisten. Jika aktif, teman hanya perlu memverifikasi perangkat Anda sekali, bukan setiap kali Anda bergabung ke panggilan voice.')}
+                    </div>
+                  </div>
+                  <Switch />
+                </div>
+
+                <div className="p-4 space-y-2">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Tentang Voice E2EE')}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground leading-relaxed">
+                    {t('Saat diaktifkan, semua peserta panggilan dapat memverifikasi kode keamanan bersama. Ini memastikan tidak ada yang dapat menyadap percakapan, bahkan Anticeil sekalipun.')}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1191,7 +1362,7 @@ export function UserSettingsModal({
         {activeSection === 'boost' && (
           <div className="space-y-5">
             <h2 className="text-lg font-bold text-foreground pb-1">
-              {t('Server Boost')}
+              {t('Colony Boost')}
             </h2>
             <div className="p-5 rounded-xl border border-border bg-card space-y-3 shadow-xs">
               <div className="flex items-center gap-3">
