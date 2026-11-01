@@ -71,7 +71,7 @@ export type ColonyAttachment = {
     flowJson?: string;
   };
   giftData?: {
-    tier: 'nitro' | 'nitro_basic';
+    tier: 'nectar' | 'pollen' | 'nitro' | 'nitro_basic';
     price: string;
     claimed?: boolean;
   };

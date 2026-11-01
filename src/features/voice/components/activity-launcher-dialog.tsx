@@ -252,7 +252,7 @@ export function ActivityLauncherDialog({
         </DialogContent>
       </Dialog>
 
-      {/* ── Discord Nitro / Anticeil Plus Paywall Modal ──────────────────── */}
+      {/* ── Anticeil Nectar Paywall Modal ──────────────────── */}
       <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
         <DialogContent className="sm:max-w-[480px] p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl">
           <div className="relative h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-6 flex flex-col justify-end">
@@ -260,7 +260,7 @@ export function ActivityLauncherDialog({
               <Sparkles className="w-5 h-5 text-amber-300 animate-spin-slow" />
             </div>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-black/40 text-white backdrop-blur-md w-fit mb-1 border border-white/20">
-              <Crown className="w-3.5 h-3.5 text-amber-300" /> ANTICEIL PLUS
+              <Crown className="w-3.5 h-3.5 text-amber-300" /> ANTICEIL NECTAR
             </span>
             <h3 className="text-xl font-extrabold text-white tracking-tight">
               Batas Peserta Tercapai (Free Plan)
@@ -269,7 +269,7 @@ export function ActivityLauncherDialog({
 
           <div className="p-5 space-y-3.5">
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Paket <strong className="text-foreground">Free</strong> mendukung panggilan video & suara 1-on-1 gratis selamanya (maksimal 2 orang). Untuk menghubungkan <strong className="text-foreground">3 orang atau lebih</strong> dalam group call bersama tim Anda, silakan tingkatkan ke paket <strong className="text-primary font-semibold">Anticeil Plus</strong>.
+              Paket <strong className="text-foreground">Free</strong> mendukung panggilan video & suara 1-on-1 gratis selamanya (maksimal 2 orang). Untuk menghubungkan <strong className="text-foreground">3 orang atau lebih</strong> dalam group call bersama tim Anda, silakan tingkatkan ke paket <strong className="text-primary font-semibold">Anticeil Nectar</strong>.
             </DialogDescription>
 
             <div className="space-y-2 rounded-xl bg-muted/40 p-3.5 border border-border text-xs">
@@ -312,7 +312,7 @@ export function ActivityLauncherDialog({
                 }}
                 className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 text-white font-bold gap-1.5 shadow-md shadow-purple-500/20"
               >
-                <Sparkles className="w-4 h-4" /> Upgrade ke Plus Sekarang
+                <Sparkles className="w-4 h-4" /> Upgrade ke Nectar Sekarang
               </Button>
             </div>
           </div>

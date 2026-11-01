@@ -310,10 +310,10 @@ export function useMessageActions({
   };
 
   // Fullstack Discord Nitro Gift sender (interactive gift card in chat)
-  const handleSendGift = async (tier: 'nitro' | 'nitro_basic') => {
+  const handleSendGift = async (tier: 'nectar' | 'pollen' | 'nitro' | 'nitro_basic') => {
     if (!activeChannel) return;
     setIsGiftModalOpen(false);
-    const isNitro = tier === 'nitro';
+    const isNectar = tier === 'nectar' || tier === 'nitro';
     const currentUserId = currentUser?.id || 'anon-user';
     const currentUserName =
       `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
@@ -332,17 +332,17 @@ export function useMessageActions({
       senderEmail: currentUser?.email || 'user@anticeil.com',
       senderAvatar: currentUser?.imageUrl ?? null,
       senderRole: myRole,
-      content: `🎁 Hadiah ${isNitro ? 'Discord Nitro' : 'Discord Nitro Basic'} untuk kamu!`,
+      content: `🎁 Hadiah Anticeil ${isNectar ? 'Nectar 🍯' : 'Pollen 🌼'} untuk kamu!`,
       attachments: [
         {
           type: 'gift',
-          url: isNitro
-            ? 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png'
+          url: isNectar
+            ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/sparkles.svg'
             : '',
-          name: isNitro ? 'Discord Nitro (1 Bulan)' : 'Discord Nitro Basic (1 Bulan)',
+          name: isNectar ? 'Anticeil Nectar (1 Bulan)' : 'Anticeil Pollen (1 Bulan)',
           giftData: {
             tier,
-            price: isNitro ? 'IDR 142,714' : 'IDR 42,714',
+            price: isNectar ? 'IDR 142,714' : 'IDR 42,714',
             claimed: false,
           },
         },
@@ -357,7 +357,7 @@ export function useMessageActions({
         return { ...prev, [activeChannel.id]: [...list, saved] };
       });
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
-      toast.success(t(`Berhasil mengirimkan Hadiah ${isNitro ? 'Nitro' : 'Nitro Basic'}! 🎉`));
+      toast.success(t(`Berhasil mengirimkan Hadiah ${isNectar ? 'Nectar' : 'Pollen'}! 🎉`));
     } catch (err) {
       console.error('Failed to send gift', err);
     }

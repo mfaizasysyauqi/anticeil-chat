@@ -10,7 +10,7 @@ import {
 export interface SendGiftDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSendGift: (type: 'nitro' | 'nitro_basic') => void;
+  onSendGift: (type: 'nectar' | 'pollen' | 'nitro' | 'nitro_basic') => void;
 }
 
 export function SendGiftDialog({
@@ -27,7 +27,7 @@ export function SendGiftDialog({
 
         <DialogBody className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2">
-            {/* 1. NITRO CARD (POPULAR) */}
+            {/* 1. NECTAR CARD (POPULAR) */}
             <div className="relative rounded-2xl bg-card border border-primary/40 hover:border-primary p-4 flex flex-col justify-between transition-all group shadow-md">
               {/* POPULAR badge */}
               <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 text-[9px] font-black uppercase tracking-wider text-white shadow-md">
@@ -38,7 +38,7 @@ export function SendGiftDialog({
                 {/* Header */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-xl font-black italic tracking-wide text-foreground">NITRO</h3>
+                    <h3 className="text-xl font-black italic tracking-wide text-amber-400">NECTAR 🍯</h3>
                     <div className="mt-0.5">
                       <span className="text-lg font-extrabold text-foreground">IDR 142,714</span>
                       <span className="text-xs text-muted-foreground">/month</span>
@@ -95,19 +95,19 @@ export function SendGiftDialog({
 
               <button
                 type="button"
-                onClick={() => onSendGift('nitro')}
+                onClick={() => onSendGift('nectar')}
                 className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-95 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
               >
-                Send Nitro Gift
+                Kirim Hadiah Nectar
               </button>
             </div>
 
-            {/* 2. NITRO BASIC CARD */}
+            {/* 2. POLLEN CARD */}
             <div className="relative rounded-2xl bg-card border border-border hover:border-border/80 p-4 flex flex-col justify-between transition-all group shadow-md">
               <div>
                 {/* Header */}
                 <div>
-                  <h3 className="text-xl font-black italic tracking-wide text-foreground">NITRO BASIC</h3>
+                  <h3 className="text-xl font-black italic tracking-wide text-yellow-300">POLLEN 🌼</h3>
                   <div className="mt-0.5">
                     <span className="text-lg font-extrabold text-foreground">IDR 42,714</span>
                     <span className="text-xs text-muted-foreground">/month</span>
@@ -133,17 +133,17 @@ export function SendGiftDialog({
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🛡️</span>
-                    <span>Special Nitro badge on your profile</span>
+                    <span>Special Pollen badge di profil Anda</span>
                   </div>
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => onSendGift('nitro_basic')}
+                onClick={() => onSendGift('pollen')}
                 className="mt-4 w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/30 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
               >
-                Send Nitro Basic Gift
+                Kirim Hadiah Pollen
               </button>
             </div>
           </div>

@@ -482,7 +482,7 @@ export function MessagesFeed({
                                         A WILD GIFT APPEARS!
                                       </span>
                                       <h4 className="text-xs font-black text-white italic tracking-wide">
-                                        {att.name || 'Discord Nitro Gift'}
+                                        {att.name || 'Anticeil Nectar Gift'}
                                       </h4>
                                       <p className="text-[10px] text-[#949ba4] truncate">
                                         {att.giftData?.price || 'IDR 142,714'} • Hadiah Komunitas
@@ -505,7 +505,7 @@ export function MessagesFeed({
                                       onClick={async () => {
                                         setClaimedGifts((prev) => ({ ...prev, [msg.id]: true }));
                                         confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 } });
-                                        toast.success('🎉 Hadiah Nitro berhasil diklaim ke akun Anda!');
+                                        toast.success('🎉 Hadiah Nectar / Pollen berhasil diklaim ke akun Anda!');
                                         await colonyApi.claimGift(msg.id, currentUser?.firstName || currentUser?.name || 'User');
                                       }}
                                       className={cn(

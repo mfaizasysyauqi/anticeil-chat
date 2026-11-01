@@ -264,7 +264,7 @@ export function UserSettingsModal({
       items: [
         {
           id: 'nitro',
-          label: 'Nitro',
+          label: 'Nectar & Pollen',
           icon: <Zap className="w-4 h-4 text-amber-400" />,
           badge: (
             <span className="text-[9px] font-black uppercase tracking-wider bg-linear-to-r from-amber-500 to-rose-500 text-white px-1.5 py-0.5 rounded-full shadow-xs">
@@ -1359,10 +1359,10 @@ export function UserSettingsModal({
             <div className="rounded-2xl p-6 bg-linear-to-br from-indigo-900 via-purple-900 to-pink-900 border border-purple-500/30 text-white relative overflow-hidden shadow-2xl">
               <div className="relative z-10 max-w-md space-y-3">
                 <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-wider">
-                  ANTICEIL NITRO
+                  ANTICEIL NECTAR & POLLEN
                 </span>
                 <h3 className="text-2xl font-black tracking-tight">
-                  Unleash the full Anticeil Experience
+                  Unleash the full Colony Experience with Nectar & Pollen
                 </h3>
                 <p className="text-xs text-white/80 leading-relaxed">
                   Streaming 4K 60FPS, unggah file hingga 500MB, custom emoji di mana saja, 2 Gratis Server Boost, dan badge profil eksklusif.
@@ -1370,10 +1370,10 @@ export function UserSettingsModal({
                 <div className="pt-2 flex items-center gap-3">
                   <Button
                     size="sm"
-                    onClick={() => toast.success('Selamat! Akun Anda telah diaktifkan ke Nitro Preview!')}
+                    onClick={() => toast.success('Selamat! Akun Anda telah diaktifkan ke Nectar Preview!')}
                     className="bg-white hover:bg-white/90 text-purple-950 font-bold text-xs shadow-lg cursor-pointer"
                   >
-                    Mulai Nitro (Diskon 50%)
+                    Mulai Nectar (Diskon 50%)
                   </Button>
                 </div>
               </div>
