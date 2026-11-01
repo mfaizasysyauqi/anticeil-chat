@@ -56,7 +56,7 @@ export function TwoPaneSettingsDialog({
 }: TwoPaneSettingsDialogProps) {
   const { t } = useTranslation();
   const [mobileView, setMobileView] = useState<'menu' | 'detail'>(initialMobileView);
-  const [activeSubId, setActiveSubId] = useState<string>('');
+  const [activeSubIds, setActiveSubIds] = useState<string[]>([]);
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef ?? internalScrollRef;
 
@@ -68,7 +68,7 @@ export function TwoPaneSettingsDialog({
 
   // Reset sub-item when section changes
   useEffect(() => {
-    setActiveSubId('');
+    setActiveSubIds([]);
   }, [activeSection]);
 
   const activeItem = useMemo(() => {
@@ -79,11 +79,11 @@ export function TwoPaneSettingsDialog({
     return null;
   }, [groups, activeSection]);
 
-  // Scroll-spy: watch content pane scroll and highlight matching sub-item
+  // Dynamic Multi-Heading Scroll Spy (matching Anticeil docs TOC)
   useEffect(() => {
     const subItems = activeItem?.subItems;
     if (!subItems || subItems.length === 0) {
-      setActiveSubId('');
+      setActiveSubIds([]);
       return;
     }
 
@@ -93,20 +93,40 @@ export function TwoPaneSettingsDialog({
     let ticking = false;
 
     const updateSpy = () => {
-      const containerTop = container.getBoundingClientRect().top;
-      const threshold = containerTop + 80;
+      const containerRect = container.getBoundingClientRect();
+      const containerTop = containerRect.top;
+      const containerBottom = containerRect.bottom;
 
-      let current = subItems[0].id;
+      // 1. Find all subItem sections physically visible in the content viewport
+      const visibleIds: string[] = [];
       for (const sub of subItems) {
         const el = container.querySelector(`#${CSS.escape(sub.id)}`);
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= threshold) {
-            current = sub.id;
+          // Element is visible if its top is above bottom threshold and bottom is below top threshold
+          const isVisible = rect.top < containerBottom - 40 && rect.bottom > containerTop + 30;
+          if (isVisible) {
+            visibleIds.push(sub.id);
           }
         }
       }
-      setActiveSubId(current);
+
+      // 2. If nothing is in view (e.g. scrolled between or above), fallback to current top section
+      if (visibleIds.length === 0) {
+        let currentTop = subItems[0].id;
+        for (const sub of subItems) {
+          const el = container.querySelector(`#${CSS.escape(sub.id)}`);
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= containerTop + 100) {
+              currentTop = sub.id;
+            }
+          }
+        }
+        visibleIds.push(currentTop);
+      }
+
+      setActiveSubIds(visibleIds);
       ticking = false;
     };
 
@@ -121,7 +141,11 @@ export function TwoPaneSettingsDialog({
     updateSpy();
 
     container.addEventListener('scroll', onScroll, { passive: true });
-    return () => container.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
   }, [activeSection, activeItem?.subItems, scrollRef]);
 
   const scrollToSubItem = useCallback(
@@ -132,10 +156,10 @@ export function TwoPaneSettingsDialog({
       if (el) {
         const containerTop = container.getBoundingClientRect().top;
         const elTop = el.getBoundingClientRect().top;
-        const offset = elTop - containerTop + container.scrollTop - 70;
+        const offset = elTop - containerTop + container.scrollTop - 20;
         container.scrollTo({ top: offset, behavior: 'smooth' });
       }
-      setActiveSubId(subId);
+      setActiveSubIds([subId]);
     },
     [scrollRef],
   );
@@ -154,7 +178,7 @@ export function TwoPaneSettingsDialog({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'p-0 w-full h-full md:w-[calc(100vw-2.5rem)] md:h-[calc(100dvh-3.5rem)] max-w-[1020px] max-h-[760px] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-none md:rounded-[20px] shadow-2xl gap-0',
+          'p-0 w-full h-[100dvh] md:w-[calc(100vw-80px)] md:h-[calc(100dvh-40px)] max-w-[1100px] max-h-[calc(100dvh-40px)] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-none md:rounded-[12px] shadow-2xl gap-0',
           className,
         )}
       >
@@ -214,14 +238,24 @@ export function TwoPaneSettingsDialog({
                           <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground/50 md:hidden shrink-0" />
                         </button>
 
-                        {/* Discord-style sub-items with scroll-spy */}
+                        {/* Discord / Anticeil docs style multi-heading sub-items with scroll-spy */}
                         {isActive && item.subItems && item.subItems.length > 0 && (
                           <div className="ml-3 mt-0.5 mb-1 relative">
-                            {/* Vertical line */}
+                            {/* Inactive base vertical guide rail */}
                             <div className="absolute left-2 top-0 bottom-0 w-px bg-sidebar-border" />
                             <div className="space-y-0.5">
-                              {item.subItems.map((sub) => {
-                                const isSubActive = activeSubId === sub.id || (!activeSubId && item.subItems![0].id === sub.id);
+                              {item.subItems.map((sub, idx) => {
+                                const isSubActive =
+                                  activeSubIds.includes(sub.id) ||
+                                  (activeSubIds.length === 0 && idx === 0);
+                                const isPrevActive =
+                                  idx > 0 &&
+                                  (activeSubIds.includes(item.subItems![idx - 1].id) ||
+                                    (activeSubIds.length === 0 && idx === 1));
+                                const isNextActive =
+                                  idx < item.subItems!.length - 1 &&
+                                  activeSubIds.includes(item.subItems![idx + 1].id);
+
                                 return (
                                   <button
                                     key={sub.id}
@@ -231,12 +265,18 @@ export function TwoPaneSettingsDialog({
                                       'w-full text-left pl-5 pr-2 py-1 text-[11px] rounded-md transition-colors cursor-pointer relative',
                                       isSubActive
                                         ? 'text-foreground font-bold'
-                                        : 'text-muted-foreground/70 hover:text-foreground font-medium',
+                                        : 'text-muted-foreground/60 hover:text-foreground font-medium',
                                     )}
                                   >
-                                    {/* Active indicator tick */}
+                                    {/* Connected active indicator rail */}
                                     {isSubActive && (
-                                      <span className="absolute left-[7px] top-1/2 -translate-y-1/2 w-[2px] h-3.5 bg-foreground rounded-full shadow-xs" />
+                                      <span
+                                        className={cn(
+                                          'absolute left-[7.5px] w-[2px] bg-foreground shadow-xs z-10 transition-all duration-150',
+                                          isPrevActive ? '-top-0.5' : 'top-1 rounded-t-full',
+                                          isNextActive ? '-bottom-0.5' : 'bottom-1 rounded-b-full',
+                                        )}
+                                      />
                                     )}
                                     {sub.label}
                                   </button>
