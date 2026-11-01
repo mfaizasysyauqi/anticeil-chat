@@ -387,6 +387,7 @@ export function ChatDialogsPortal({
 
       {/* Channel Settings Dialog */}
       <ChannelSettingsDialog
+        categories={channelModals.categories}
         channel={channelModals.channelForSettings}
         isOpen={!!channelModals.channelForSettings}
         onClose={() => channelModals.setChannelForSettings(null)}

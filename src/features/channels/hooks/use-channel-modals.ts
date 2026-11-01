@@ -114,6 +114,8 @@ export function useChannelModals({
         type: updates.type,
         slowmode: updates.slowmode,
         contentVisibility: updates.contentVisibility,
+        categoryId: updates.categoryId,
+        categoryName: updates.categoryName,
       });
       setChannels((prev) =>
         prev.map((c) => (c.id === channelId ? { ...c, ...updated, ...updates } : c)),

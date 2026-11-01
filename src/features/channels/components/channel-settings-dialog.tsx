@@ -34,6 +34,7 @@ import {
   type ColonyChannelType,
   resolveChannelType,
 } from '@/chat/chat-types';
+import type { ColonyCategory } from '../api/categories-api';
 import { toast } from 'sonner';
 
 interface ChannelSettingsDialogProps {
@@ -43,6 +44,7 @@ interface ChannelSettingsDialogProps {
   onUpdateChannel: (channelId: string, updates: Partial<ColonyChannel>) => Promise<void>;
   onDeleteChannel: (channel: ColonyChannel) => void;
   onOpenWebhooks?: (channelId: string) => void;
+  categories?: ColonyCategory[];
 }
 
 type SettingsTab = 'overview' | 'permissions' | 'invites' | 'integrations';
@@ -71,6 +73,7 @@ export function ChannelSettingsDialog({
   onUpdateChannel,
   onDeleteChannel,
   onOpenWebhooks,
+  categories = [],
 }: ChannelSettingsDialogProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>('overview');
@@ -78,6 +81,7 @@ export function ChannelSettingsDialog({
   // Form State
   const [name, setName] = useState('');
   const [channelType, setChannelType] = useState<ColonyChannelType>('text');
+  const [categoryId, setCategoryId] = useState('');
   const [topic, setTopic] = useState('');
   const [slowmode, setSlowmode] = useState(0);
   const [contentVisibility, setContentVisibility] = useState<'default' | 'spoiler' | 'nsfw'>('default');
@@ -89,6 +93,7 @@ export function ChannelSettingsDialog({
     if (channel) {
       setName(channel.name || '');
       setChannelType(resolveChannelType(channel));
+      setCategoryId(channel.categoryId || '');
       setTopic(channel.description || '');
       setSlowmode(channel.slowmode || 0);
       setContentVisibility(channel.contentVisibility || 'default');
@@ -113,6 +118,7 @@ export function ChannelSettingsDialog({
   const hasChanges =
     name !== (channel.name || '') ||
     channelType !== currentType ||
+    categoryId !== (channel.categoryId || '') ||
     topic !== (channel.description || '') ||
     slowmode !== (channel.slowmode || 0) ||
     contentVisibility !== (channel.contentVisibility || 'default');
@@ -120,6 +126,7 @@ export function ChannelSettingsDialog({
   const handleReset = () => {
     setName(channel.name || '');
     setChannelType(resolveChannelType(channel));
+    setCategoryId(channel.categoryId || '');
     setTopic(channel.description || '');
     setSlowmode(channel.slowmode || 0);
     setContentVisibility(channel.contentVisibility || 'default');
@@ -132,12 +139,15 @@ export function ChannelSettingsDialog({
     }
     setIsSubmitting(true);
     try {
+      const selectedCat = categories.find((c) => c.id === categoryId);
       await onUpdateChannel(channel.id, {
         name: channelType === 'voice' ? name.trim() : name.trim().toLowerCase().replace(/\s+/g, '-'),
         description: topic.trim(),
         type: channelType,
         slowmode,
         contentVisibility,
+        categoryId: categoryId || undefined,
+        categoryName: selectedCat ? selectedCat.name : undefined,
       });
       toast.success(t('Pengaturan channel berhasil disimpan!'));
     } catch {
@@ -369,6 +379,26 @@ export function ChannelSettingsDialog({
                       );
                     })}
                   </div>
+                </div>
+
+                
+                {/* 1.6 Category Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    {t('Kategori')}
+                  </label>
+                  <select
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    className="w-full bg-muted/40 border border-border text-foreground rounded-lg h-9 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                  >
+                    <option value="">{t('Tanpa Kategori (Uncategorized)')}</option>
+                    {(categories || []).map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* 2. Channel Topic */}
