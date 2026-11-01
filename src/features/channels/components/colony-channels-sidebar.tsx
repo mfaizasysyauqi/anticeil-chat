@@ -141,7 +141,22 @@ export function ColonyChannelsSidebar({
   const [draggingChannelId, setDraggingChannelId] = React.useState<string | null>(null);
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState<string | null>(null);
 
+  React.useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      setDraggingChannelId(null);
+      setDragOverCategoryId(null);
+    };
+    window.addEventListener('dragend', handleGlobalDragEnd);
+    window.addEventListener('mouseup', handleGlobalDragEnd);
+    return () => {
+      window.removeEventListener('dragend', handleGlobalDragEnd);
+      window.removeEventListener('mouseup', handleGlobalDragEnd);
+    };
+  }, []);
+
   const handleMoveChannel = async (channelId: string, targetCatId?: string, targetCatName?: string) => {
+    setDraggingChannelId(null);
+    setDragOverCategoryId(null);
     const channel = colonyChannels.find((c) => c.id === channelId);
     if (!channel) return;
     const currentCatId = channel.categoryId || '';
@@ -721,7 +736,7 @@ export function ColonyChannelsSidebar({
           ) : (
             <>
                             {/* UNCATEGORIZED CHANNELS (WHEN CHANNELS HAVE NO CATEGORY OR CATEGORY WAS DELETED) */}
-              {(uncategorizedChannels.length > 0 || draggingChannelId) && (
+              {uncategorizedChannels.length > 0 ? (
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -740,6 +755,7 @@ export function ColonyChannelsSidebar({
                     e.preventDefault();
                     e.stopPropagation();
                     setDragOverCategoryId(null);
+                    setDraggingChannelId(null);
                     const channelId = e.dataTransfer.getData('text/plain');
                     if (channelId) {
                       handleMoveChannel(channelId, '', '');
@@ -785,19 +801,45 @@ export function ColonyChannelsSidebar({
                     </Tooltip>
                   </div>
 
-                  {uncategorizedChannels.length === 0 && draggingChannelId && (
-                    <div className="border border-dashed border-primary/50 bg-primary/5 rounded-md py-2 px-3 text-center text-[11px] text-primary font-medium animate-pulse">
-                      {t('Lepas di sini untuk pindahkan ke Tanpa Kategori')}
-                    </div>
-                  )}
-
                   {!collapsedCategories?.uncategorized && (
                     <div className="space-y-0.5">
                       {uncategorizedChannels.map(renderDraggableChannel)}
                     </div>
                   )}
                 </div>
-              )}
+              ) : draggingChannelId ? (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverCategoryId !== '__uncategorized__') {
+                      setDragOverCategoryId('__uncategorized__');
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                    if (dragOverCategoryId === '__uncategorized__') {
+                      setDragOverCategoryId(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOverCategoryId(null);
+                    setDraggingChannelId(null);
+                    const channelId = e.dataTransfer.getData('text/plain');
+                    if (channelId) {
+                      handleMoveChannel(channelId, '', '');
+                    }
+                  }}
+                  className={cn(
+                    'border border-dashed border-primary/50 bg-primary/5 rounded-md py-2 px-3 text-center text-[11px] text-primary font-medium mb-2 transition-all animate-pulse',
+                    dragOverCategoryId === '__uncategorized__' && 'ring-2 ring-primary/80 bg-primary/15'
+                  )}
+                >
+                  {t('Lepas di sini untuk pindahkan ke Tanpa Kategori')}
+                </div>
+              ) : null}
 
               {/* ALL ACTIVE CATEGORIES (DEFAULTS + CUSTOMS, FULLY DELETABLE & EDITABLE) */}
               {colonyCategories.map((cat) => {
@@ -837,6 +879,7 @@ export function ColonyChannelsSidebar({
                       e.preventDefault();
                       e.stopPropagation();
                       setDragOverCategoryId(null);
+                      setDraggingChannelId(null);
                       const channelId = e.dataTransfer.getData('text/plain');
                       if (channelId) {
                         handleMoveChannel(channelId, cat.id, cat.name);
