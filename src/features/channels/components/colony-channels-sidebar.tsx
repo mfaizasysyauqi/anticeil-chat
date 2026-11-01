@@ -800,6 +800,18 @@ export function ColonyChannelsSidebar({
                 const isCollapsed = Boolean(collapsedCategories?.[cat.id]);
                 const isDragOverThis = dragOverCategoryId === cat.id;
 
+                // Hide default forum and kanban categories when empty
+                if (
+                  (cat.id.startsWith('cat_forum_') ||
+                    cat.id.startsWith('cat_kanban_') ||
+                    cat.name === 'FORUM CHANNELS' ||
+                    cat.name === 'KANBAN BOARDS') &&
+                  catChannels.length === 0 &&
+                  !draggingChannelId
+                ) {
+                  return null;
+                }
+
                 return (
                   <div
                     key={cat.id}

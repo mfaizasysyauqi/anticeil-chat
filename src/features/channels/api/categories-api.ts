@@ -36,8 +36,6 @@ export function getDefaultCategories(colonyId: string): ColonyCategory[] {
   return [
     { id: `cat_text_${colonyId}`, colonyId, name: 'TEXT CHANNELS', isDefault: true },
     { id: `cat_voice_${colonyId}`, colonyId, name: 'VOICE CHANNELS', isDefault: true },
-    { id: `cat_forum_${colonyId}`, colonyId, name: 'FORUM CHANNELS', isDefault: true },
-    { id: `cat_kanban_${colonyId}`, colonyId, name: 'KANBAN BOARDS', isDefault: true },
   ];
 }
 
@@ -48,7 +46,14 @@ export function loadStoredColonyCategories(colonyId?: string): ColonyCategory[] 
 
     const raw = localStorage.getItem(STORAGE_KEY_CATEGORIES);
     const customList: ColonyCategory[] = raw ? JSON.parse(raw) : [];
-    const safeCustom = Array.isArray(customList) ? customList.filter((c) => !deletedIds.has(c.id)) : [];
+    const safeCustom = Array.isArray(customList)
+      ? customList.filter(
+          (c) =>
+            !deletedIds.has(c.id) &&
+            !c.id.startsWith('cat_forum_') &&
+            !c.id.startsWith('cat_kanban_')
+        )
+      : [];
 
     if (!colonyId) {
       return safeCustom;
