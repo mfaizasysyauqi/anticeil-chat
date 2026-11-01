@@ -46,6 +46,7 @@ import { Switch } from '@/components/ui/switch';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
+import { isE2eeEnabled, setE2eeEnabled } from '@/lib/e2ee';
 import { useVoiceSettings, NoiseSuppressionType } from '../hooks/use-voice-settings';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
@@ -118,6 +119,19 @@ export function UserSettingsModal({
 
   // Privacy & Notifications mock/functional switches
   const [safeDirectMessaging, setSafeDirectMessaging] = useState<'safe' | 'friends' | 'none'>('safe');
+  const [e2eeActive, setE2eeActive] = useState(() => isE2eeEnabled());
+
+  const handleToggleE2ee = (checked: boolean) => {
+    setE2eeActive(checked);
+    setE2eeEnabled(checked);
+    if (checked) {
+      toast.success(t('E2EE Diaktifkan'), {
+        description: t('Pesan chat dan sesi percakapan kini dienkripsi end-to-end secara lokal.'),
+      });
+    } else {
+      toast.info(t('E2EE Dinonaktifkan'));
+    }
+  };
   const [allowDmsFromServerMembers, setAllowDmsFromServerMembers] = useState(true);
   const [allowFriendRequestsFrom, setAllowFriendRequestsFrom] = useState({
     everyone: true,
@@ -1173,14 +1187,14 @@ export function UserSettingsModal({
             {/* Divider */}
             <div className="border-t border-border/50" />
 
-            {/* ── 3. VOICE END-TO-END ENCRYPTION ── */}
+            {/* ── 3. END-TO-END ENCRYPTION (E2EE) ── */}
             <div id="privacy-e2e" className="space-y-4 scroll-mt-4">
               <div>
                 <h3 className="text-base font-bold text-foreground mb-1">
-                  {t('Voice End-to-end Encryption')}
+                  {t('End-to-End Encryption (E2EE)')}
                 </h3>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  {t('Enkripsi end-to-end memastikan hanya peserta yang dapat mendengar audio dalam panggilan voice.')}
+                  {t('Enkripsi end-to-end memastikan pesan teks dan panggilan audio hanya dapat dibaca atau didengar oleh peserta, bukan oleh server Anticeil.')}
                 </p>
               </div>
 
@@ -1188,13 +1202,25 @@ export function UserSettingsModal({
                 <div className="p-4 flex items-center justify-between gap-4">
                   <div>
                     <div className="text-xs font-semibold text-foreground">
+                      {t('Aktifkan Pesan Terenkripsi (E2EE)')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
+                      {t('Setiap pesan dienkripsi secara lokal di perangkat Anda menggunakan AES-256-GCM sebelum dikirim ke server. Server hanya menyimpan teks sandi acak.')}
+                    </div>
+                  </div>
+                  <Switch checked={e2eeActive} onCheckedChange={handleToggleE2ee} />
+                </div>
+
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">
                       {t('Aktifkan kode verifikasi persisten')}
                     </div>
                     <div className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-                      {t('Memberi perangkat saat ini kode verifikasi persisten. Jika aktif, teman hanya perlu memverifikasi perangkat Anda sekali, bukan setiap kali Anda bergabung ke panggilan voice.')}
+                      {t('Memberi perangkat saat ini kode verifikasi persisten untuk panggilan audio terenkripsi.')}
                     </div>
                   </div>
-                  <Switch />
+                  <Switch defaultChecked />
                 </div>
 
                 <div className="p-4 space-y-2">

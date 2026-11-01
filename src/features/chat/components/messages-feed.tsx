@@ -21,7 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
-import { renderFormattedMessage } from '../utils/format-message';
+import { renderFormattedMessage, DecryptedMessageText } from '../utils/format-message';
 import { colonyApi } from '@/chat/chat-api';
 import type { ColonyChannel, ColonyMessage, ColonyRole } from '@/chat/chat-types';
 import dayjs from 'dayjs';
@@ -180,7 +180,11 @@ export function MessagesFeed({
                       />
                       <span className="font-semibold text-foreground/90 shrink-0 group-hover/reply:underline">@{msg.replyTo.senderName}</span>
                       <span className="truncate max-w-[320px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-muted-foreground/80 group-hover/reply:text-foreground/90 transition-colors">
-                        {msg.replyTo.content || '[Lampiran]'}
+                        {msg.replyTo.content ? (
+                          <DecryptedMessageText content={msg.replyTo.content} channelId={msg.channelId} />
+                        ) : (
+                          '[Lampiran]'
+                        )}
                       </span>
                     </div>
                   )}
@@ -284,7 +288,7 @@ export function MessagesFeed({
 
                       {msg.content ? (
                         <div className="text-xs leading-relaxed text-foreground/90 break-words">
-                          {renderFormattedMessage(msg.content)}
+                          <DecryptedMessageText content={msg.content} channelId={msg.channelId} />
                         </div>
                       ) : null}
 

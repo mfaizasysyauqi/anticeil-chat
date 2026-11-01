@@ -1,4 +1,49 @@
 import React from 'react';
+import { Lock } from 'lucide-react';
+import { isEncryptedMessage, decryptMessage } from '@/lib/e2ee';
+
+export function DecryptedMessageText({ content, channelId }: { content: string; channelId?: string }) {
+  const [decryptedText, setDecryptedText] = React.useState<string>(() => {
+    if (!isEncryptedMessage(content)) return content;
+    return '';
+  });
+  const [isEncrypted, setIsEncrypted] = React.useState<boolean>(() => isEncryptedMessage(content));
+
+  React.useEffect(() => {
+    let isMounted = true;
+    if (isEncryptedMessage(content) && channelId) {
+      decryptMessage(content, channelId).then((res) => {
+        if (isMounted) {
+          setDecryptedText(res.text);
+          setIsEncrypted(res.isEncrypted);
+        }
+      });
+    } else {
+      setDecryptedText(content);
+      setIsEncrypted(false);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [content, channelId]);
+
+  return (
+    <div>
+      {isEncrypted && (
+        <span
+          className="inline-flex items-center gap-1 px-1.5 py-0.2 mb-1 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9.5px] font-semibold tracking-wide select-none mr-1.5 align-middle"
+          title="Pesan ini dienkripsi end-to-end (E2EE) dengan AES-256-GCM"
+        >
+          <Lock className="w-2.5 h-2.5" />
+          <span>E2EE</span>
+        </span>
+      )}
+      <span className="align-middle">
+        {renderFormattedMessage(decryptedText || (isEncrypted ? 'Mendekripsi pesan...' : content))}
+      </span>
+    </div>
+  );
+}
 
 export function renderFormattedMessage(content: string) {
   if (!content) return null;

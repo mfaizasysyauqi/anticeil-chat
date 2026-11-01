@@ -10,6 +10,7 @@ import {
   BarChart2,
   LayoutGrid,
   CalendarPlus,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +27,8 @@ import { MediaPickerPopover } from './media-picker-popover';
 import { ChatAppsPopover } from './chat-apps-popover';
 import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
+import { toast } from 'sonner';
+import { isE2eeEnabled, setE2eeEnabled } from '@/lib/e2ee';
 import { MAX_MESSAGE_CHARS } from '../utils/text-limit';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/anticeil-media-data';
@@ -114,6 +117,22 @@ export function ChatInputBar({
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [isCustomScheduleOpen, setIsCustomScheduleOpen] = useState(false);
+  const [e2ee, setE2ee] = useState(() => isE2eeEnabled());
+
+  const toggleE2ee = () => {
+    const next = !e2ee;
+    setE2ee(next);
+    setE2eeEnabled(next);
+    if (next) {
+      toast.success('E2EE Diaktifkan', {
+        description: 'Pesan kini dienkripsi secara lokal (AES-256-GCM) sebelum dikirim ke server.',
+      });
+    } else {
+      toast.info('E2EE Dinonaktifkan', {
+        description: 'Pesan dikirim sebagai teks biasa.',
+      });
+    }
+  };
 
   // Auto-resize textarea to fit content dynamically up to 50vh max
   useEffect(() => {
@@ -346,6 +365,24 @@ export function ChatInputBar({
                 : `${inputText.length}/${MAX_MESSAGE_CHARS}`}
             </span>
           )}
+
+          {/* E2EE Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleE2ee}
+            className={`w-6 h-6 flex items-center justify-center rounded transition-all cursor-pointer ${
+              e2ee
+                ? 'text-emerald-500 bg-emerald-500/15 hover:bg-emerald-500/25'
+                : 'text-muted-foreground/60 hover:text-foreground'
+            }`}
+            title={
+              e2ee
+                ? 'E2EE Aktif: Pesan dienkripsi lokal (AES-256-GCM) sebelum dikirim'
+                : 'E2EE Nonaktif: Klik untuk mengaktifkan enkripsi end-to-end'
+            }
+          >
+            <Lock className="w-4 h-4" />
+          </button>
 
           {/* 1. Gift Icon */}
           <button

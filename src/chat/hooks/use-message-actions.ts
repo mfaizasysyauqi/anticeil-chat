@@ -6,6 +6,7 @@ import {
   recordTextMessage,
   validateTextMessage,
 } from '@/features/chat-input';
+import { isE2eeEnabled, encryptMessage } from '@/lib/e2ee';
 import { colonyApi } from '../chat-api';
 import type {
   ColonyChannel,
@@ -111,6 +112,11 @@ export function useMessageActions({
       myRole = 'admin';
     }
 
+    const contentToSend =
+      trimmedContent && isE2eeEnabled()
+        ? await encryptMessage(trimmedContent, activeChannel.id)
+        : trimmedContent;
+
     const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
@@ -118,7 +124,7 @@ export function useMessageActions({
       senderEmail: currentUser?.email || 'user@anticeil.com',
       senderAvatar: currentUser?.imageUrl ?? null,
       senderRole: myRole,
-      content: trimmedContent,
+      content: contentToSend,
       attachments: stagedAttachment ? [stagedAttachment] : undefined,
       replyTo: replyingToMessage ? {
         id: replyingToMessage.id,
