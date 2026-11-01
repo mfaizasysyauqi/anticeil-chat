@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Bot,
   Users,
+  UserPlus,
   Trophy,
   Building2,
   Sparkles,
@@ -107,6 +108,7 @@ export function ColonyPolyGame({
   socket,
   currentUserName,
   currentUser,
+  participants,
 }: ColonyPolyGameProps) {
   const myName = currentUserName || currentUser?.firstName || 'Pemain 1';
   const myId = currentUser?.id || 'player-1';
@@ -133,8 +135,9 @@ export function ColonyPolyGame({
   const [gameMode, setGameMode] = useState<'solo' | 'multiplayer'>('solo');
   const [pendingProperty, setPendingProperty] = useState<BoardTile | null>(null);
 
+  const isHost = players[0]?.id === myId;
   const activePlayer = players[activePlayerIndex];
-  const isMyTurn = activePlayer?.id === myId || (activePlayer?.isBot && gameMode === 'solo');
+  const isMyTurn = activePlayer?.id === myId || (activePlayer?.isBot && (gameMode === 'solo' || isHost));
 
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -142,17 +145,63 @@ export function ColonyPolyGame({
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  // Socket.IO sync for multiplayer in voice channel
+  // Unified Socket.IO sync for voice activities
   useEffect(() => {
-    if (!socket || gameMode !== 'multiplayer') return;
+    if (!socket) return;
 
-    const handleRemoteState = (data: {
-      players: PolyPlayer[];
-      tiles: BoardTile[];
-      activePlayerIndex: number;
-      dice: [number, number];
-      log?: string;
-    }) => {
+    // 1. Query remote state if joining multiplayer
+    if (gameMode === 'multiplayer') {
+      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channel.id,
+        action: 'COLONY_POLY_QUERY_STATE',
+        payload: {},
+      });
+    }
+
+    const handleRemoteActivity = (data: { action: string; payload?: any; fromSocketId?: string }) => {
+      if (!data) return;
+
+      if (data.action === 'COLONY_POLY_SYNC_STATE' && data.payload) {
+        const p = data.payload;
+        if (p.players) setPlayers(p.players);
+        if (p.tiles) setTiles(p.tiles);
+        if (p.activePlayerIndex !== undefined) setActivePlayerIndex(p.activePlayerIndex);
+        if (p.dice) setDice(p.dice);
+        if (p.log) setLogs((prev) => [...prev, p.log!]);
+        setHasRolled(false);
+        setPendingProperty(null);
+      } else if (data.action === 'COLONY_POLY_RESET') {
+        setPlayers([
+          { id: myId, name: myName, color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
+          { id: 'bot-1', name: 'Worker Bee 🐝', color: '#f59e0b', bgColor: 'bg-amber-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+          { id: 'bot-2', name: 'Hive Guard 🛡️', color: '#06b6d4', bgColor: 'bg-cyan-500', pollen: 1500, position: 0, inJail: false, isBot: true },
+        ]);
+        setTiles(BOARD_TILES.map((t) => ({ ...t, ownerId: null, outposts: 0 })));
+        setActivePlayerIndex(0);
+        setDice([1, 1]);
+        setHasRolled(false);
+        setPendingProperty(null);
+        setLogs(['Game Colony Poly direset oleh anggota room.']);
+        toast.info('Papan Colony Poly telah direset.');
+      } else if (data.action === 'COLONY_POLY_QUERY_STATE') {
+        // Reply with current state if we are the host or have progress
+        if (isHost && (tiles.some((t) => t.ownerId) || activePlayerIndex > 0)) {
+          socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+            channelId: channel.id,
+            action: 'COLONY_POLY_SYNC_STATE',
+            payload: {
+              players,
+              tiles,
+              activePlayerIndex,
+              dice,
+              log: 'Sinkronisasi status papan dari room host.',
+            },
+          });
+        }
+      }
+    };
+
+    const handleLegacySync = (data: any) => {
       if (data?.players) setPlayers(data.players);
       if (data?.tiles) setTiles(data.tiles);
       if (data?.activePlayerIndex !== undefined) setActivePlayerIndex(data.activePlayerIndex);
@@ -162,11 +211,14 @@ export function ColonyPolyGame({
       setPendingProperty(null);
     };
 
-    socket.on('COLONY_POLY_SYNC', handleRemoteState);
+    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleRemoteActivity);
+    socket.on('COLONY_POLY_SYNC', handleLegacySync);
+
     return () => {
-      socket.off('COLONY_POLY_SYNC', handleRemoteState);
+      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleRemoteActivity);
+      socket.off('COLONY_POLY_SYNC', handleLegacySync);
     };
-  }, [socket, gameMode]);
+  }, [socket, gameMode, channel.id, isHost, players, tiles, activePlayerIndex, dice, myId, myName]);
 
   const broadcastState = (
     updatedPlayers: PolyPlayer[],
@@ -176,13 +228,23 @@ export function ColonyPolyGame({
     logMsg?: string
   ) => {
     if (socket && gameMode === 'multiplayer') {
-      socket.emit('COLONY_POLY_STATE', {
-        channelId: channel.id,
+      const payload = {
         players: updatedPlayers,
         tiles: updatedTiles,
         activePlayerIndex: nextActiveIndex,
         dice: nextDice,
         log: logMsg,
+      };
+
+      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channel.id,
+        action: 'COLONY_POLY_SYNC_STATE',
+        payload,
+      });
+
+      socket.emit('COLONY_POLY_STATE', {
+        channelId: channel.id,
+        ...payload,
       });
     }
   };
@@ -364,8 +426,8 @@ export function ColonyPolyGame({
     addLog(`👉 Giliran berikutnya: ${nextP.name}`);
     broadcastState(players, tiles, nextIndex, dice);
 
-    // If next player is Bot in solo mode, auto roll
-    if (nextP.isBot && gameMode === 'solo') {
+    // If next player is Bot in solo mode or room host in multiplayer, auto roll
+    if (nextP.isBot && (gameMode === 'solo' || isHost)) {
       setTimeout(() => {
         handleBotTurn(nextIndex);
       }, 1000);
@@ -389,12 +451,103 @@ export function ColonyPolyGame({
         const next = (botIdx + 1) % players.length;
         setActivePlayerIndex(next);
         addLog(`👉 Giliran berikutnya: ${players[next].name}`);
+        broadcastState(players, tiles, next, [d1, d2]);
 
-        if (players[next].isBot) {
+        if (players[next].isBot && (gameMode === 'solo' || isHost)) {
           setTimeout(() => handleBotTurn(next), 1000);
         }
       }, 2000);
     }, 600);
+  };
+
+  // Sync participants from voice channel into player seats
+  const handleSyncVoiceParticipants = () => {
+    if (!participants || participants.length === 0) {
+      toast.info('Belum ada anggota lain di panggilan ini.');
+      return;
+    }
+
+    const availableColors = [
+      { color: '#f59e0b', bgColor: 'bg-amber-500' },
+      { color: '#06b6d4', bgColor: 'bg-cyan-500' },
+      { color: '#ec4899', bgColor: 'bg-pink-500' },
+    ];
+
+    const remoteParticipants = participants.filter(
+      (pt) => pt.id !== myId && pt.userId !== myId && (pt.user?.id || pt.id) !== myId
+    );
+
+    if (remoteParticipants.length === 0) {
+      toast.info('Hanya ada Anda di voice call. Anda dapat bermain dengan Bot Colony!');
+      return;
+    }
+
+    const newPlayers: PolyPlayer[] = [
+      { id: myId, name: myName, color: '#10b981', bgColor: 'bg-emerald-500', pollen: 1500, position: 0, inJail: false },
+    ];
+
+    remoteParticipants.slice(0, 3).forEach((rp, idx) => {
+      const pName = rp.name || rp.userName || rp.user?.firstName || `Pemain ${idx + 2}`;
+      const pId = rp.userId || rp.id || `peer-${idx}`;
+      const theme = availableColors[idx % availableColors.length];
+      newPlayers.push({
+        id: pId,
+        name: pName,
+        color: theme.color,
+        bgColor: theme.bgColor,
+        pollen: 1500,
+        position: 0,
+        inJail: false,
+        isBot: false,
+      });
+    });
+
+    if (newPlayers.length === 2) {
+      newPlayers.push({
+        id: 'bot-1',
+        name: 'Worker Bee 🐝',
+        color: '#ec4899',
+        bgColor: 'bg-pink-500',
+        pollen: 1500,
+        position: 0,
+        inJail: false,
+        isBot: true,
+      });
+    }
+
+    setPlayers(newPlayers);
+    setGameMode('multiplayer');
+    toast.success(`${newPlayers.length} pemain siap bermain di voice room!`);
+    addLog(`👥 Formasi pemain diperbarui: ${newPlayers.map((p) => p.name).join(', ')}`);
+    broadcastState(newPlayers, tiles, 0, [1, 1], 'Formasi pemain diperbarui');
+  };
+
+  const handleAddBot = () => {
+    if (players.length >= 4) {
+      toast.error('Maksimal 4 pemain di papan Colony Poly!');
+      return;
+    }
+    const botTemplates = [
+      { name: 'Queen Ant 👑', color: '#ec4899', bgColor: 'bg-pink-500' },
+      { name: 'Scout Bee ⚡', color: '#8b5cf6', bgColor: 'bg-purple-500' },
+      { name: 'Honey Badger 🦡', color: '#f97316', bgColor: 'bg-orange-500' },
+    ];
+    const available = botTemplates.find((bt) => !players.some((p) => p.name.includes(bt.name))) || botTemplates[0];
+    const newBot: PolyPlayer = {
+      id: `bot-${Date.now()}`,
+      name: available.name,
+      color: available.color,
+      bgColor: available.bgColor,
+      pollen: 1500,
+      position: 0,
+      inJail: false,
+      isBot: true,
+    };
+    const updated = [...players, newBot];
+    setPlayers(updated);
+    toast.success(`Bot ${available.name} bergabung ke permainan!`);
+    addLog(`🤖 ${available.name} bergabung ke Colony Poly!`);
+    broadcastState(updated, tiles, activePlayerIndex, dice);
   };
 
   // Reset Game
@@ -411,6 +564,14 @@ export function ColonyPolyGame({
     setPendingProperty(null);
     setLogs(['Game Colony Poly direset! Siap bermain dari awal.']);
     toast.success('Game Colony Poly telah direset!');
+
+    if (socket && gameMode === 'multiplayer') {
+      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channel.id,
+        action: 'COLONY_POLY_RESET',
+        payload: {},
+      });
+    }
   };
 
   return (
@@ -429,16 +590,46 @@ export function ColonyPolyGame({
             </Badge>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setGameMode(gameMode === 'solo' ? 'multiplayer' : 'solo')}
+              onClick={() => {
+                const nextMode = gameMode === 'solo' ? 'multiplayer' : 'solo';
+                setGameMode(nextMode);
+                if (nextMode === 'multiplayer' && participants && participants.length > 1) {
+                  handleSyncVoiceParticipants();
+                }
+              }}
               className="h-7 text-[11px] px-2.5 font-semibold border-border hover:bg-muted"
             >
-              {gameMode === 'solo' ? <Users className="w-3.5 h-3.5 mr-1" /> : <Bot className="w-3.5 h-3.5 mr-1" />}
+              {gameMode === 'solo' ? <Users className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Bot className="w-3.5 h-3.5 mr-1 text-amber-400" />}
               {gameMode === 'solo' ? 'Mode Suara' : 'Mode Bot'}
             </Button>
+            {players.length < 4 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddBot}
+                className="h-7 text-[11px] px-2 border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+                title="Tambah Bot Pemain"
+              >
+                <Bot className="w-3 h-3 mr-1" />
+                <span>+ Bot</span>
+              </Button>
+            )}
+            {gameMode === 'multiplayer' && participants && participants.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncVoiceParticipants}
+                className="h-7 text-[11px] px-2 border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+                title="Sinkronkan Teman di Voice Call"
+              >
+                <UserPlus className="w-3 h-3 mr-1" />
+                <span>Sync Voice</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
