@@ -74,10 +74,16 @@ export function loadStoredDmChannels(): ColonyChannel[] {
     for (const c of parsed) {
       const name = (c?.name || '').toLowerCase().trim();
       const id = String(c?.id || '');
+      const dmUserId = String(c?.dmUserId || '');
       if (
         !id.startsWith('dm-') ||
         id === 'dm-anticeil' ||
         id === 'dm-u1' ||
+        dmUserId === 'u1' ||
+        dmUserId === 'anticeil' ||
+        name === 'anticeil official' ||
+        name === 'anticeil' ||
+        name === 'direct message' ||
         c?.category !== 'DIRECT MESSAGES' ||
         (c?.colonyId && c.colonyId !== 'anticeil') ||
         c?.type === 'voice' ||
@@ -92,13 +98,14 @@ export function loadStoredDmChannels(): ColonyChannel[] {
         continue;
       }
 
-      // Deduplicate by partner identifier or name
-      const dedupKey = c.dmUserId ? `user-${c.dmUserId}` : `name-${name}`;
-      if (seenKeys.has(dedupKey) || seenKeys.has(`name-${name}`)) {
+      // Deduplicate strictly by name or user id to prevent duplicate DM items
+      const dedupKey = dmUserId ? `user-${dmUserId}` : `name-${name}`;
+      if (seenKeys.has(dedupKey) || seenKeys.has(`name-${name}`) || (dmUserId && seenKeys.has(`user-${dmUserId}`))) {
         continue;
       }
       seenKeys.add(dedupKey);
       seenKeys.add(`name-${name}`);
+      if (dmUserId) seenKeys.add(`user-${dmUserId}`);
       validDms.push(c);
     }
 
@@ -122,10 +129,16 @@ export function saveStoredDmChannels(channels: ColonyChannel[]): void {
     for (const c of channels) {
       const name = (c?.name || '').toLowerCase().trim();
       const id = String(c?.id || '');
+      const dmUserId = String(c?.dmUserId || '');
       if (
         !id.startsWith('dm-') ||
         id === 'dm-anticeil' ||
         id === 'dm-u1' ||
+        dmUserId === 'u1' ||
+        dmUserId === 'anticeil' ||
+        name === 'anticeil official' ||
+        name === 'anticeil' ||
+        name === 'direct message' ||
         c?.category !== 'DIRECT MESSAGES' ||
         (c?.colonyId && c.colonyId !== 'anticeil') ||
         c?.type === 'voice' ||
@@ -139,12 +152,13 @@ export function saveStoredDmChannels(channels: ColonyChannel[]): void {
       ) {
         continue;
       }
-      const dedupKey = c.dmUserId ? `user-${c.dmUserId}` : `name-${name}`;
-      if (seenKeys.has(dedupKey) || seenKeys.has(`name-${name}`)) {
+      const dedupKey = dmUserId ? `user-${dmUserId}` : `name-${name}`;
+      if (seenKeys.has(dedupKey) || seenKeys.has(`name-${name}`) || (dmUserId && seenKeys.has(`user-${dmUserId}`))) {
         continue;
       }
       seenKeys.add(dedupKey);
       seenKeys.add(`name-${name}`);
+      if (dmUserId) seenKeys.add(`user-${dmUserId}`);
       dmsOnly.push(c);
     }
     localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(dmsOnly));

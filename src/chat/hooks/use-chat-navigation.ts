@@ -70,8 +70,11 @@ export function useChatNavigation({
         const otherUserId =
           parts.find((p) => p !== currentUser?.id) || parts[0];
         const otherMember = members.find((m) => m.id === otherUserId);
+        if (!otherMember || otherUserId === 'u1' || otherUserId === 'anticeil') {
+          return null;
+        }
         const dmName =
-          otherMember?.name || otherMember?.username || 'Direct Message';
+          otherMember.name || otherMember.username || 'Pengguna';
         return {
           id: activeChannelId,
           name: dmName,

@@ -327,10 +327,16 @@ export function HomeChannelsSidebar({
           const validDms = dmChannels.filter((dm) => {
             const name = (dm.name || '').toLowerCase().trim();
             const id = String(dm.id || '');
+            const dmUserId = String(dm.dmUserId || '');
             if (
               !id.startsWith('dm-') ||
               id === 'dm-anticeil' ||
               id === 'dm-u1' ||
+              dmUserId === 'u1' ||
+              dmUserId === 'anticeil' ||
+              name === 'anticeil official' ||
+              name === 'anticeil' ||
+              name === 'direct message' ||
               dm.type === 'voice' ||
               name.includes('general voice') ||
               name === 'pengguna' ||
@@ -338,9 +344,11 @@ export function HomeChannelsSidebar({
             ) {
               return false;
             }
-            const dedupKey = (dm.dmUserId || name).toLowerCase();
-            if (seen.has(dedupKey)) return false;
-            seen.add(dedupKey);
+            const nameKey = `name-${name}`;
+            const userKey = dmUserId ? `user-${dmUserId}` : null;
+            if (seen.has(nameKey) || (userKey && seen.has(userKey))) return false;
+            seen.add(nameKey);
+            if (userKey) seen.add(userKey);
             return true;
           });
 

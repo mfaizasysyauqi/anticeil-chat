@@ -46,62 +46,21 @@ export function useFriendsManager({
   const allFriends = useMemo(() => {
     const friendMap = new Map<string, FriendMember>();
 
-    // 2. Friends from active DM channels in sidebar
-    (dmChannels || [])
-      .filter((dm) => {
-        const name = (dm.name || '').toLowerCase().trim();
-        return (
-          typeof dm.id === 'string' &&
-          dm.id.startsWith('dm-') &&
-          dm.type !== 'voice' &&
-          name &&
-          name !== 'pengguna' &&
-          name !== 'pengguna anticeil' &&
-          name !== 'general voice' &&
-          name !== 'general' &&
-          name !== 'forum-diskusi'
-        );
-      })
-      .forEach((dm) => {
-        const member = members
-          .concat(displayMembers)
-          .find(
-            (m) =>
-              m.id === dm.dmUserId ||
-              (m.id && dm.id.includes(m.id)) ||
-              (m.name && m.name.toLowerCase() === dm.name.toLowerCase()),
-          );
-        const name = member?.name || dm.name;
-        const isSelf =
-          (currentUser?.id && (dm.dmUserId === currentUser.id || member?.id === currentUser.id)) ||
-          (currentUser?.name && name.toLowerCase() === currentUser.name.toLowerCase()) ||
-          (currentUser?.email && member?.email?.toLowerCase() === currentUser.email.toLowerCase());
-        const isGeneric = name.toLowerCase() === 'pengguna' || name.toLowerCase() === 'pengguna anticeil';
-        if (isSelf || isGeneric) return;
-
-        const key = member?.id || dm.dmUserId || dm.name;
-        if (friendMap.has(key)) {
-          const existing = friendMap.get(key)!;
-          friendMap.set(key, {
-            ...existing,
-            avatar: member?.avatar || existing.avatar,
-            username: member?.username || existing.username,
-          });
-        } else {
-          friendMap.set(key, {
-            id: member?.id || dm.dmUserId || dm.id,
-            name,
-            username: member?.username || null,
-            avatar: member?.avatar || null,
-            email: member?.email || '',
-            status: (member?.status || 'online') as any,
-          });
-        }
-      });
-
-    // 3. Persisted friends from database
+    // Persisted friends from database (accepted friend relationships)
     persistedFriends
       .filter((f) => {
+        const name = (f?.name || '').toLowerCase().trim();
+        const username = (f?.username || '').toLowerCase().trim();
+        const id = String(f?.id || '');
+
+        // Exclude system accounts / unverified mock seeds unless the user is that account
+        const isOfficialAccount =
+          (id === 'u1' || id === 'anticeil' || username === 'anticeilofficial' || name === 'anticeil official') &&
+          currentUser?.username?.toLowerCase() !== 'anticeilofficial' &&
+          currentUser?.id !== 'u1';
+
+        if (isOfficialAccount) return false;
+
         const isSelf =
           (currentUser?.id && f.id === currentUser.id) ||
           (currentUser?.email && f.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
@@ -124,6 +83,7 @@ export function useFriendsManager({
           f.name.toLowerCase() === 'pengguna' ||
           f.name.toLowerCase() === 'pengguna anticeil' ||
           f.name.toLowerCase() === 'user' ||
+          f.name.toLowerCase() === 'direct message' ||
           f.name.toLowerCase() === 'teman';
         if (isGeneric && !match) {
           const other = displayMembers.concat(members).find((m) => m.id !== currentUser?.id);
@@ -131,7 +91,7 @@ export function useFriendsManager({
         }
 
         const name = isGeneric && match?.name ? match.name : f.name || match?.name || '';
-        const finalGeneric = !name || name.toLowerCase() === 'pengguna' || name.toLowerCase() === 'pengguna anticeil';
+        const finalGeneric = !name || name.toLowerCase() === 'pengguna' || name.toLowerCase() === 'pengguna anticeil' || name.toLowerCase() === 'direct message';
         if (finalGeneric) return;
 
         const friendItem: FriendMember = {
@@ -148,7 +108,7 @@ export function useFriendsManager({
       });
 
     return Array.from(friendMap.values());
-  }, [persistedFriends, currentUser, members, displayMembers, dmChannels]);
+  }, [persistedFriends, currentUser, members, displayMembers]);
 
   const onlineFriends = useMemo(() => {
     return allFriends.filter((f) => f.status !== 'offline');

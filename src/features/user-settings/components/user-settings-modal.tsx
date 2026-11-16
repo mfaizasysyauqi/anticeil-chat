@@ -308,10 +308,19 @@ export function UserSettingsModal({
           {/* User Profile Card Header in Sidebar (Discord 1:1 Parity) */}
           {currentUser && (
             <div
-              onClick={() => {
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
                 onOpenEditProfile?.();
               }}
-              className="flex items-center gap-3 px-1 py-1.5 rounded-lg hover:bg-sidebar-accent/50 cursor-pointer transition-colors group"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onOpenEditProfile?.();
+                }
+              }}
+              className="flex items-center gap-3 px-1 py-1.5 rounded-lg hover:bg-sidebar-accent/50 cursor-pointer transition-colors group select-none"
             >
               <CommunityAvatar
                 name={currentUserName}

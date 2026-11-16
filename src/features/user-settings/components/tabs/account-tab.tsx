@@ -141,7 +141,10 @@ export function AccountTab({
                     <div className="h-24 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-600 relative">
                       <button
                         type="button"
-                        onClick={onOpenEditProfile}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenEditProfile?.();
+                        }}
                         className="absolute top-3 right-3 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all cursor-pointer"
                       >
                         {t('Edit User Profile')}
