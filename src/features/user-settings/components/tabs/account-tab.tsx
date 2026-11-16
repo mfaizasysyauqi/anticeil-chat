@@ -11,6 +11,8 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { AccountStandingView } from './account/account-standing-view';
+import { AccountSecuritySection } from './account/account-security-section';
 
 export interface AccountTabProps {
   currentUser: any;
@@ -44,7 +46,6 @@ export function AccountTab({
   // Edit modals/dialogs state
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
-  const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPhone, setIsEditingPhone] = useState(false);
 
@@ -116,82 +117,13 @@ export function AccountTab({
 
   return (
           <>
-            {/* SUBVIEW: ACCOUNT STANDING (SCREENSHOT 3) */}
+            {/* SUBVIEW: ACCOUNT STANDING */}
             {accountSubView === 'standing' ? (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                <button
-                  type="button"
-                  onClick={() => setAccountSubView('main')}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold transition-colors cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>{t('Account / Account Standing')}</span>
-                </button>
-
-                <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
-                  <div className="relative">
-                    <CommunityAvatar
-                      name={currentUserName}
-                      email={currentUser?.email}
-                      imageUrl={currentUser?.imageUrl}
-                      size={84}
-                      showStatus={false}
-                      className="ring-4 ring-card rounded-full shadow-xl bg-card"
-                    />
-                    <div className="absolute -bottom-1 -right-1 size-7 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center shadow-md">
-                      <Check className="w-4 h-4 text-white stroke-[3]" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">
-                      {t('Your account is')}{' '}
-                      <span className="text-emerald-500">{t('all good')}</span>
-                    </h3>
-                    <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1.5 leading-relaxed">
-                      {t(
-                        "Thank you for upholding Anticeil's Terms of Service and Community Guidelines. If you have a violation, it will appear here.",
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Status Stepper / Progress meter (matching Discord) */}
-                  <div className="w-full max-w-lg pt-6 px-4">
-                    <div className="relative flex items-center justify-between">
-                      <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-muted rounded-full z-0" />
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 w-0" />
-
-                      {[
-                        { label: t('All good'), active: true, color: 'bg-emerald-500 ring-emerald-500/30' },
-                        { label: t('Limited'), active: false, color: 'bg-muted ring-muted/30' },
-                        { label: t('Very limited'), active: false, color: 'bg-muted ring-muted/30' },
-                        { label: t('At risk'), active: false, color: 'bg-muted ring-muted/30' },
-                        { label: t('Suspended'), active: false, color: 'bg-muted ring-muted/30' },
-                      ].map((step, idx) => (
-                        <div key={idx} className="relative z-10 flex flex-col items-center group">
-                          <div
-                            className={cn(
-                              'size-5 rounded-full border-2 border-background flex items-center justify-center transition-all',
-                              step.color,
-                              step.active && 'ring-4',
-                            )}
-                          >
-                            {step.active && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
-                          </div>
-                          <span
-                            className={cn(
-                              'text-[11px] mt-2 font-semibold select-none',
-                              step.active ? 'text-foreground font-bold' : 'text-muted-foreground/60',
-                            )}
-                          >
-                            {step.label}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <AccountStandingView
+                currentUserName={currentUserName}
+                currentUser={currentUser}
+                onBack={() => setAccountSubView('main')}
+              />
             ) : (
               /* MAIN ACCOUNT VIEW (SCREENSHOT 1 & 2) */
               <div className="space-y-6">
@@ -467,108 +399,8 @@ export function AccountTab({
                   </div>
                 </div>
 
-                {/* 2. Password & Security Section (Screenshot 1) */}
-                <div id="account-security" className="space-y-3 scroll-mt-4">
-                  <h3 className="text-sm font-bold text-foreground">
-                    {t('Password & Security')}
-                  </h3>
-
-                  <div className="rounded-xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
-                    {/* Password row */}
-                    <div className="p-4 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="text-xs font-semibold text-foreground">
-                          {t('Password')}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5 font-mono">
-                          ••••••••••••••••
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setIsEditingPassword(!isEditingPassword)}
-                        className="h-8 text-xs font-semibold px-3.5 cursor-pointer"
-                      >
-                        {isEditingPassword ? t('Batal') : t('Edit')}
-                      </Button>
-                    </div>
-
-                    {isEditingPassword && (
-                      <div className="p-4 bg-muted/20 space-y-3">
-                        <Input
-                          type="password"
-                          placeholder={t('Password Saat Ini')}
-                          className="text-xs h-9 bg-input border-border text-foreground"
-                        />
-                        <Input
-                          type="password"
-                          placeholder={t('Password Baru')}
-                          className="text-xs h-9 bg-input border-border text-foreground"
-                        />
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              toast.success(t('Password berhasil diperbarui!'));
-                              setIsEditingPassword(false);
-                            }}
-                            className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
-                          >
-                            {t('Simpan Password Baru')}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Multi-Factor Authentication */}
-                    <div
-                      onClick={() => toast.info(t('Fitur 2FA Authenticator sedang disiapkan!'))}
-                      className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Key className="w-4 h-4 text-primary" />
-                        <div>
-                          <div className="text-xs font-semibold text-foreground">
-                            {t('Multi-Factor Authentication')}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {t('Amankan akun Anda dengan aplikasi autentikator tambahan.')}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground group-hover:text-foreground">
-                        <span>{t('Set up')}</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
-                    </div>
-
-                    {/* Logged-in Devices */}
-                    <div
-                      onClick={() => {
-                        toast.info(t('4 Perangkat aktif: Windows Desktop App, Chrome Browser, Android App, Web session.'));
-                      }}
-                      className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Laptop className="w-4 h-4 text-emerald-500" />
-                        <div>
-                          <div className="text-xs font-semibold text-foreground">
-                            {t('Logged-in Devices')}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {t('Kelola perangkat yang sedang masuk ke akun Anda.')}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground group-hover:text-foreground">
-                        <span>4 devices</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* 2. Password & Security Section */}
+                <AccountSecuritySection />
 
                 {/* 3. Account Status Section (Screenshot 2) */}
                 <div id="account-status" className="space-y-3 scroll-mt-4">
