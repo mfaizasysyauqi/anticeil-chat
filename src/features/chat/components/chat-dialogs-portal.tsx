@@ -374,7 +374,12 @@ export function ChatDialogsPortal({
         onGoogleSignIn={handleGoogleSignIn}
         onLogout={handleLogout}
         initialSection={userSettingsInitialSection}
-        onOpenEditProfile={() => setIsEditProfileOpen(true)}
+        onOpenEditProfile={() => {
+          setIsUserSettingsOpen(false);
+          setTimeout(() => {
+            setIsEditProfileOpen(true);
+          }, 60);
+        }}
       />
 
       {/* Standalone Discord-style Edit Profile Customization Modal */}
@@ -383,9 +388,11 @@ export function ChatDialogsPortal({
         onOpenChange={setIsEditProfileOpen}
         currentUser={currentUser}
         currentUserName={currentUserName}
-        onOpenUserSettings={(section) => {
+        onOpenUserSettings={() => {
           setIsEditProfileOpen(false);
-          setIsUserSettingsOpen(true);
+          setTimeout(() => {
+            setIsUserSettingsOpen(true);
+          }, 60);
         }}
       />
 

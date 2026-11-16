@@ -33,7 +33,6 @@ import { useTranslation } from '@/core/i18n';
 import type { SettingsSection, UserSettingsModalProps } from '../types';
 import {
   AccountTab,
-  ProfilesTab,
   PrivacyTab,
   PermissionsTab,
   NotificationsTab,
@@ -87,11 +86,6 @@ export function UserSettingsModal({
               { id: 'account-status', label: t('Account Status') },
               { id: 'account-family', label: t('Family Center') },
             ],
-          },
-          {
-            id: 'profiles',
-            label: t('Profiles'),
-            icon: <UserCheck className="w-4 h-4" />,
           },
           {
             id: 'privacy',
@@ -315,11 +309,7 @@ export function UserSettingsModal({
           {currentUser && (
             <div
               onClick={() => {
-                if (onOpenEditProfile) {
-                  onOpenEditProfile();
-                } else {
-                  setActiveSection('profiles');
-                }
+                onOpenEditProfile?.();
               }}
               className="flex items-center gap-3 px-1 py-1.5 rounded-lg hover:bg-sidebar-accent/50 cursor-pointer transition-colors group"
             >
@@ -380,7 +370,7 @@ export function UserSettingsModal({
         )
       }
     >
-      <div className={cn('space-y-6 pb-10 w-full', activeSection === 'profiles' ? 'max-w-5xl' : 'max-w-4xl')}>
+      <div className="space-y-6 pb-10 w-full max-w-4xl">
         {activeSection === 'account' && (
           <AccountTab
             currentUser={currentUser}
@@ -392,15 +382,6 @@ export function UserSettingsModal({
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
             onOpenEditProfile={onOpenEditProfile}
             open={open}
-          />
-        )}
-
-        {activeSection === 'profiles' && (
-          <ProfilesTab
-            currentUser={currentUser}
-            currentUserName={currentUserName}
-            onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
-            onOpenEditProfile={onOpenEditProfile}
           />
         )}
 

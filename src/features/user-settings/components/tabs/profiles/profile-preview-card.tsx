@@ -148,7 +148,7 @@ export function ProfilePreviewCard({
               </span>
               <span
                 className="size-5 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-xs"
-                title="Nitro Subscriber"
+                title="Nectar Subscriber"
               >
                 💎
               </span>
@@ -193,17 +193,17 @@ export function ProfilePreviewCard({
               <span>{t('Tingkatkan Tampilan Profil Anda')}</span>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              {t('Buka lencana profil khusus, tema kustom, banner animasi, dan avatar dinamis dengan Nitro.')}
+              {t('Buka lencana profil khusus, tema kustom, banner animasi, dan avatar dinamis dengan Nectar.')}
             </p>
             <Button
               size="sm"
               onClick={() => {
                 onNavigateSection?.('nitro');
-                toast.success(t('Navigasi ke Nitro Showcase!'));
+                toast.success(t('Navigasi ke Nectar Showcase!'));
               }}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] h-7 font-bold cursor-pointer mt-1"
             >
-              {t('Dapatkan Nitro')}
+              {t('Dapatkan Nectar')}
             </Button>
           </div>
 

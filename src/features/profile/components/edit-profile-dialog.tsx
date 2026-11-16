@@ -77,7 +77,7 @@ export function EditProfileDialog({
     }
   };
 
-  const handleNitroCta = () => {
+  const handleNectarCta = () => {
     onOpenChange(false);
     if (onOpenUserSettings) {
       onOpenUserSettings('nitro');
@@ -90,7 +90,7 @@ export function EditProfileDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="p-0 w-[90vw] sm:w-[90vw] max-w-[90vw] sm:max-w-[90vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] overflow-hidden bg-card border border-border flex flex-col rounded-2xl shadow-2xl relative gap-0 select-none z-[60]"
+        className="p-0 w-[94vw] max-w-[1150px] h-[85vh] max-h-[740px] overflow-hidden bg-card border border-border flex flex-col rounded-2xl shadow-2xl relative gap-0 select-none z-[60]"
         overlayClassName="z-[60]"
       >
         <DialogTitle className="sr-only">{t('Edit Profiles')}</DialogTitle>
@@ -172,7 +172,7 @@ export function EditProfileDialog({
                   </div>
                 </div>
                 <div
-                  onClick={() => toast.info(t('Jelajahi dekorasi avatar unik di Nitro Shop!'))}
+                  onClick={() => toast.info(t('Jelajahi dekorasi avatar unik di Nectar Shop!'))}
                   className="p-3 rounded-xl border border-border/70 bg-card hover:border-border flex items-center justify-center cursor-pointer group transition-colors"
                 >
                   <div className="size-12 rounded-full border border-dashed border-muted-foreground/40 flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:border-primary transition-colors">
@@ -230,18 +230,18 @@ export function EditProfileDialog({
               </div>
             </div>
 
-            {/* 5. Nitro Promo Box */}
+            {/* 5. Nectar Promo Box */}
             <div className="p-3.5 rounded-xl border border-primary/40 bg-gradient-to-r from-primary/15 to-purple-500/15 space-y-2.5">
               <div className="text-xs font-semibold text-foreground leading-snug">
-                {t('Level up your look, only with Nitro')}
+                {t('Level up your look, only with Nectar')}
               </div>
               <Button
                 size="sm"
-                onClick={handleNitroCta}
+                onClick={handleNectarCta}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 font-semibold cursor-pointer shadow-sm"
               >
                 <Eye className="w-3.5 h-3.5 mr-1.5" />
-                {t('Preview Nitro')}
+                {t('Preview Nectar')}
               </Button>
             </div>
 
@@ -299,7 +299,7 @@ export function EditProfileDialog({
               setProfileBioText={setProfileBioText}
               isEditingBioText={isEditingBioText}
               setIsEditingBioText={setIsEditingBioText}
-              onNavigateSection={handleNitroCta}
+              onNavigateSection={handleNectarCta}
             />
           </div>
 
