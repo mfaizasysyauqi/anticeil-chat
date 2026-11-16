@@ -87,6 +87,7 @@ export type SettingsSection =
   | 'voice'
   | 'camera'
   | 'appearance'
+  | 'accessibility'
   | 'keybinds';
 
 export interface UserSettingsModalProps {
@@ -423,6 +424,98 @@ export function UserSettingsModal({
     }
   }, [open, initialSection]);
 
+  // ==========================================
+  // APPEARANCE STATES (Discord Parity)
+  // ==========================================
+  const [sameAsDeviceTheme, setSameAsDeviceTheme] = useState(false);
+  const [selectedDefaultTheme, setSelectedDefaultTheme] = useState<string>('navy');
+  const [selectedColorTheme, setSelectedColorTheme] = useState<string>('custom');
+  const [syncThemeDevices, setSyncThemeDevices] = useState(true);
+  const [applyThemeToProfiles, setApplyThemeToProfiles] = useState(false);
+  const [selectedAppIcon, setSelectedAppIcon] = useState('blurple');
+
+  // Messages appearance states
+  const [showMediaFromLinks, setShowMediaFromLinks] = useState(true);
+  const [showMediaUploaded, setShowMediaUploaded] = useState(true);
+  const [showEmbedsPreviews, setShowEmbedsPreviews] = useState(true);
+  const [showEmojiReactions, setShowEmojiReactions] = useState(true);
+  const [spoilerDisplay, setSpoilerDisplay] = useState<'click' | 'mod' | 'always'>('click');
+  const [openThreadsSplitView, setOpenThreadsSplitView] = useState(true);
+  const [showUserAvatars, setShowUserAvatars] = useState(true);
+  const [showFavoritesServer, setShowFavoritesServer] = useState(false);
+
+  // Chat Box states
+  const [previewMarkdownAsType, setPreviewMarkdownAsType] = useState(true);
+  const [convertEmoticonsToEmoji, setConvertEmoticonsToEmoji] = useState(true);
+  const [showStickersAutocomplete, setShowStickersAutocomplete] = useState(false);
+  const [showGamesAutocomplete, setShowGamesAutocomplete] = useState(true);
+  const [showSendMessageButton, setShowSendMessageButton] = useState(false);
+
+  // Search scope state
+  const [dmSearchScope, setDmSearchScope] = useState<'single' | 'all'>('single');
+
+  // Streamer Mode states
+  const [streamerModeEnabled, setStreamerModeEnabled] = useState(false);
+  const [autoStreamerModeObs, setAutoStreamerModeObs] = useState(true);
+  const [streamerHidePersonalInfo, setStreamerHidePersonalInfo] = useState(true);
+  const [streamerHideInviteLinks, setStreamerHideInviteLinks] = useState(true);
+  const [streamerDisableSounds, setStreamerDisableSounds] = useState(true);
+  const [streamerDisableNotifications, setStreamerDisableNotifications] = useState(true);
+  const [streamerHideWindowCapture, setStreamerHideWindowCapture] = useState(false);
+
+  // ==========================================
+  // ACCESSIBILITY STATES (Discord Parity)
+  // ==========================================
+  // Text Readability
+  const [chatFontSize, setChatFontSize] = useState<number>(16);
+  const [alwaysUnderlineLinks, setAlwaysUnderlineLinks] = useState(false);
+  const [displayNameStyles, setDisplayNameStyles] = useState(true);
+
+  // Visual Density
+  const [uiDensity, setUiDensity] = useState<'compact' | 'default' | 'spacious'>('default');
+  const [chatMessageDisplay, setChatMessageDisplay] = useState<'default' | 'compact'>('default');
+  const [spaceMessageGroups, setSpaceMessageGroups] = useState<number>(16);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+
+  // Color & Contrast
+  const [saturationLevel, setSaturationLevel] = useState<number>(100);
+  const [applySaturationCustomColors, setApplySaturationCustomColors] = useState(false);
+  const [enableHighContrast, setEnableHighContrast] = useState(false);
+  const [syncContrastSettings, setSyncContrastSettings] = useState(true);
+  const [roleColorsDisplay, setRoleColorsDisplay] = useState<'names' | 'dot' | 'none'>('names');
+  const [officialMessagesStyle, setOfficialMessagesStyle] = useState<'default' | 'contrast' | 'plain'>('default');
+  const [showOnOffIndicators, setShowOnOffIndicators] = useState(false);
+
+  // Reduced Motion
+  const [enableReducedMotion, setEnableReducedMotion] = useState(false);
+  const [syncReducedMotionComputer, setSyncReducedMotionComputer] = useState(true);
+  const [notificationDuration, setNotificationDuration] = useState<number>(3);
+  const [playGifsFocused, setPlayGifsFocused] = useState(true);
+  const [playAnimatedEmoji, setPlayAnimatedEmoji] = useState(true);
+  const [stickerAnimationMode, setStickerAnimationMode] = useState<'always' | 'interaction' | 'never'>('always');
+
+  // Audio & Screen Reader
+  const [ttsRate, setTtsRate] = useState<number>(1.0);
+  const [showImageDescriptions, setShowImageDescriptions] = useState(false);
+  const [useLegacyChatInput, setUseLegacyChatInput] = useState(false);
+
+  const previewTtsSpeech = () => {
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const text = 'This is a preview of the text to speech rate in Anticeil.';
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = ttsRate;
+        window.speechSynthesis.speak(utterance);
+        toast.success(t('Memutar preview Text-to-Speech'));
+      } else {
+        playPreviewSound('message');
+      }
+    } catch {
+      toast.info(t('Preview Text-to-Speech'));
+    }
+  };
+
   // Account name & username state
   const suggestedUsername = useMemo(() => {
     if (currentUser?.username) return currentUser.username;
@@ -594,7 +687,31 @@ export function UserSettingsModal({
             { id: 'voice-advanced', label: t('Advanced') },
           ],
         },
-        { id: 'appearance', label: t('Appearance'), icon: <Palette className="w-4 h-4" /> },
+        {
+          id: 'appearance',
+          label: t('Appearance'),
+          icon: <Palette className="w-4 h-4" />,
+          subItems: [
+            { id: 'appearance-theme', label: t('Theme') },
+            { id: 'appearance-app-icon', label: t('App Icon') },
+            { id: 'appearance-messages', label: t('Messages') },
+            { id: 'appearance-chat-box', label: t('Chat Box') },
+            { id: 'appearance-search', label: t('Search') },
+            { id: 'appearance-streamer-mode', label: t('Streamer Mode') },
+          ],
+        },
+        {
+          id: 'accessibility',
+          label: t('Accessibility'),
+          icon: <SlidersHorizontal className="w-4 h-4" />,
+          subItems: [
+            { id: 'accessibility-text-readability', label: t('Text Readability') },
+            { id: 'accessibility-visual-density', label: t('Visual Density') },
+            { id: 'accessibility-color-contrast', label: t('Color & Contrast') },
+            { id: 'accessibility-reduced-motion', label: t('Reduced Motion') },
+            { id: 'accessibility-audio-screen-reader', label: t('Audio & Screen Reader') },
+          ],
+        },
         { id: 'keybinds', label: t('Keybinds'), icon: <Sliders className="w-4 h-4" /> },
       ],
     },
@@ -4659,48 +4776,1325 @@ export function UserSettingsModal({
         )}
 
         {/* ========================================================================= */}
-        {/* SECTION: APPEARANCE                                                       */}
+        {/* SECTION: APPEARANCE (DISCORD PARITY)                                      */}
         {/* ========================================================================= */}
         {activeSection === 'appearance' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-bold text-foreground pb-1">
-              {t('Appearance')}
-            </h2>
-
-            <div className="p-5 rounded-xl border border-border bg-card space-y-4 shadow-xs">
+          <div className="space-y-8 divide-y divide-border/50 pb-8">
+            {/* SUB-SECTION 1: THEME */}
+            <div id="appearance-theme" className="scroll-mt-6 space-y-6">
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                  {t('Tema')}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('Pilih tema tampilan favorit Anda.')}
-                </p>
+                <h2 className="text-xl font-bold text-foreground">{t('Theme')}</h2>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Same as Device Theme */}
+              <div className="flex items-center justify-between gap-4 py-1">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('Same as Device Theme')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t("Match your device's light or dark mode.")}
+                  </div>
+                </div>
+                <Switch
+                  checked={sameAsDeviceTheme}
+                  onCheckedChange={(val) => {
+                    setSameAsDeviceTheme(val);
+                    if (val) {
+                      setTheme('system');
+                      setSelectedDefaultTheme('system');
+                      toast.success(t('Tema disinkronkan dengan tema perangkat'));
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Default Themes */}
+              <div className="space-y-3 pt-1">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('Default Themes')}
+                </div>
+                <div className="flex items-center gap-3">
+                  {[
+                    { id: 'light', label: 'Light', bg: 'bg-white border-zinc-300', themeVal: 'light' },
+                    { id: 'dark', label: 'Dark', bg: 'bg-[#313338] border-zinc-700', themeVal: 'dark' },
+                    { id: 'midnight', label: 'Midnight', bg: 'bg-[#111214] border-zinc-800', themeVal: 'dark' },
+                    { id: 'navy', label: 'Darker', bg: 'bg-[#1e1f22] border-zinc-800', themeVal: 'dark' },
+                    { id: 'system', label: 'Sync', bg: 'bg-[#232428] border-zinc-700', icon: '🔄', themeVal: 'system' },
+                  ].map((item) => {
+                    const isSelected = selectedDefaultTheme === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDefaultTheme(item.id);
+                          setTheme(item.themeVal);
+                          toast.success(t(`Tema diubah ke ${item.label}`));
+                        }}
+                        className={cn(
+                          'relative size-12 rounded-xl border-2 transition-all flex items-center justify-center cursor-pointer shadow-xs',
+                          item.bg,
+                          isSelected
+                            ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 scale-105'
+                            : 'border-border/60 hover:scale-105',
+                        )}
+                        title={item.label}
+                      >
+                        {item.icon ? (
+                          <span className="text-sm font-bold text-muted-foreground">{item.icon}</span>
+                        ) : null}
+                        {isSelected && (
+                          <span className="absolute -top-1.5 -right-1.5 size-4 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Promo Card: Make your Discord look *juuusst* right */}
+              <div className="relative overflow-hidden rounded-2xl border border-purple-500/30 bg-linear-to-r from-purple-950/40 via-card to-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-center gap-3.5">
+                  <div className="size-12 rounded-xl bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-xl shadow-md shrink-0">
+                    🎨
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      {t('Make your Anticeil look *juuusst* right')}
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 max-w-sm">
+                      {t('Create your own custom theme to make Anticeil uniquely yours. Only with Nectar.')}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    setActiveSection('nitro');
+                    toast.info(t('Tema kustom tersedia dengan Nectar & Pollen!'));
+                  }}
+                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-4 h-8 rounded-md shrink-0 cursor-pointer shadow-xs"
+                >
+                  {t('Try It out')}
+                </Button>
+              </div>
+
+              {/* Color Themes */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <span>{t('Color Themes')}</span>
+                      <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Unlock more themes with')}{' '}
+                      <span className="text-primary font-semibold">Nectar</span>.
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toast.info(t('Preview tema warna aktif selama 15 detik'))}
+                      className="h-8 text-xs font-semibold px-3 border-border/80 text-foreground cursor-pointer"
+                    >
+                      {t('Preview Theme')}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        setActiveSection('nitro');
+                      }}
+                      className="h-8 text-xs font-bold px-3 bg-linear-to-r from-amber-500 via-rose-500 to-purple-600 hover:opacity-95 text-white shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-white" />
+                      <span>{t('Unlock with Nectar')}</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Swatches Grid */}
+                <div className="grid grid-cols-6 sm:grid-cols-9 gap-2.5 p-3 rounded-2xl border border-border/70 bg-[#1e1f22]">
+                  {/* Swatch 1: Custom Palette */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedColorTheme('custom');
+                      toast.info(t('Custom color theme selected'));
+                    }}
+                    className={cn(
+                      'aspect-square rounded-xl border flex items-center justify-center text-sm cursor-pointer transition-all',
+                      selectedColorTheme === 'custom'
+                        ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 bg-muted/40'
+                        : 'border-border/60 hover:bg-muted/20',
+                    )}
+                    title="Custom Palette"
+                  >
+                    🎨
+                  </button>
+
+                  {/* 16 Preset Swatches */}
+                  {[
+                    { id: 'mint', grad: 'from-emerald-300 to-teal-400', name: 'Mint Breeze' },
+                    { id: 'peach', grad: 'from-amber-200 to-orange-300', name: 'Peach Sunrise' },
+                    { id: 'lavender', grad: 'from-indigo-200 to-purple-300', name: 'Lavender Mist' },
+                    { id: 'sky', grad: 'from-sky-200 to-indigo-300', name: 'Soft Horizon' },
+                    { id: 'cream', grad: 'from-amber-100 to-stone-200', name: 'Cream Linen' },
+                    { id: 'rose', grad: 'from-pink-200 to-rose-300', name: 'Rose Blossom' },
+                    { id: 'sunset', grad: 'from-rose-500 via-purple-600 to-amber-500', name: 'Sunset Glow' },
+                    { id: 'violet', grad: 'from-purple-600 to-indigo-600', name: 'Violet Nebula' },
+                    { id: 'pine', grad: 'from-emerald-900 to-teal-950', name: 'Deep Pine' },
+                    { id: 'velvet', grad: 'from-red-950 to-rose-900', name: 'Velvet Wine' },
+                    { id: 'midnight', grad: 'from-blue-950 to-slate-900', name: 'Midnight Ocean' },
+                    { id: 'void', grad: 'from-purple-950 to-slate-950', name: 'Cosmic Void' },
+                    { id: 'cyber', grad: 'from-teal-800 to-purple-900', name: 'Neon Cyber' },
+                    { id: 'gold', grad: 'from-amber-700 to-yellow-900', name: 'Golden Hour' },
+                    { id: 'aurora', grad: 'from-teal-600 to-emerald-900', name: 'Aurora Borealis' },
+                    { id: 'magma', grad: 'from-orange-950 to-red-950', name: 'Dark Magma' },
+                  ].map((sw) => {
+                    const isSelected = selectedColorTheme === sw.id;
+                    return (
+                      <button
+                        key={sw.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedColorTheme(sw.id);
+                          toast.success(t(`Tema warna diubah ke ${sw.name}`));
+                        }}
+                        className={cn(
+                          'aspect-square rounded-xl border transition-all cursor-pointer bg-linear-to-br',
+                          sw.grad,
+                          isSelected
+                            ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 scale-105'
+                            : 'border-white/10 hover:scale-105',
+                        )}
+                        title={sw.name}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Theme Sync Options */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Sync theme across my devices')}
+                  </div>
+                  <Switch checked={syncThemeDevices} onCheckedChange={setSyncThemeDevices} />
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t("Apply theme to other users' profiles")}
+                  </div>
+                  <Switch checked={applyThemeToProfiles} onCheckedChange={setApplyThemeToProfiles} />
+                </div>
+              </div>
+
+              {/* Related Settings card */}
+              <div className="space-y-2 pt-1">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('Related Settings')}
+                </div>
+                <div
+                  onClick={() => {
+                    setActiveSection('accessibility');
+                    setTimeout(() => {
+                      document.getElementById('accessibility-color-contrast')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 80);
+                  }}
+                  className="flex items-center justify-between p-3.5 rounded-xl border border-border/70 bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <SlidersHorizontal className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                        {t('Accessibility')}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {t('Change saturation of colors, enable high-contrast mode, and more')}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 2: APP ICON */}
+            <div id="appearance-app-icon" className="scroll-mt-6 space-y-6 pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">{t('App Icon')}</h2>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Change the Anticeil in-app icon, only with Nectar.')}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toast.info(t('Icon preview mode active'))}
+                    className="h-8 text-xs font-semibold px-3 border-border/80 text-foreground cursor-pointer"
+                  >
+                    {t('Preview Icon')}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setActiveSection('nitro')}
+                    className="h-8 text-xs font-bold px-3 bg-linear-to-r from-amber-500 via-rose-500 to-purple-600 hover:opacity-95 text-white shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-white" />
+                    <span>{t('Unlock with Nectar')}</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Grid of 23 App Icons */}
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
                 {[
-                  { id: 'dark', label: t('Dark'), icon: <Moon className="w-5 h-5 text-indigo-400" /> },
-                  { id: 'light', label: t('Light'), icon: <Sun className="w-5 h-5 text-amber-500" /> },
-                  { id: 'system', label: t('System'), icon: <Laptop className="w-5 h-5 text-muted-foreground" /> },
-                ].map((th) => {
-                  const isSelected = theme === th.id;
+                  { id: 'blurple', label: 'Default Blurple', bg: 'bg-[#5865F2]', icon: '💬', active: true },
+                  { id: 'dark', label: 'Dark Charcoal', bg: 'bg-[#1e1f22]', icon: '⚡' },
+                  { id: 'crt', label: 'CRT Glitch', bg: 'bg-zinc-900 border-green-500/40', icon: '📺' },
+                  { id: 'slate', label: 'Monochrome', bg: 'bg-zinc-800', icon: '🌑' },
+                  { id: 'white', label: 'Clean White', bg: 'bg-zinc-100 text-zinc-900', icon: '✨' },
+                  { id: 'pastel', label: 'Pastel Rainbow', bg: 'bg-linear-to-br from-pink-300 via-purple-300 to-indigo-300', icon: '🌸' },
+                  { id: 'pirate', label: 'Pirate Skull', bg: 'bg-linear-to-br from-amber-700 to-stone-900', icon: '🏴‍☠️' },
+                  { id: 'camo', label: 'Army Camo', bg: 'bg-linear-to-br from-emerald-800 to-stone-800', icon: '🪖' },
+                  { id: 'vaporwave', label: '80s Synthwave', bg: 'bg-linear-to-br from-purple-700 via-pink-600 to-amber-500', icon: '🌇' },
+                  { id: 'galaxy', label: 'Cosmic Nebula', bg: 'bg-linear-to-br from-indigo-950 via-purple-900 to-pink-900', icon: '🌌' },
+                  { id: 'plushie', label: 'Cute Plushie', bg: 'bg-linear-to-br from-purple-400 to-indigo-400', icon: '🧸' },
+                  { id: 'sakura', label: 'Sakura Blossom', bg: 'bg-linear-to-br from-pink-400 via-rose-300 to-pink-500', icon: '🌺' },
+                  { id: 'chrome', label: 'Holo Chrome', bg: 'bg-linear-to-br from-slate-300 via-zinc-400 to-slate-200 text-black', icon: '💿' },
+                  { id: 'cyber', label: 'Neon Cyber', bg: 'bg-linear-to-br from-emerald-500 via-teal-600 to-black', icon: '🎮' },
+                  { id: 'matrix', label: 'Matrix Rain', bg: 'bg-black border-green-500', icon: '📟' },
+                  { id: 'spiral', label: 'Hypnotic Spiral', bg: 'bg-linear-to-br from-stone-900 to-zinc-700', icon: '🌀' },
+                  { id: 'magma', label: 'Magma Flame', bg: 'bg-linear-to-br from-red-600 via-orange-600 to-yellow-500', icon: '🔥' },
+                  { id: 'demon', label: 'Crimson Demon', bg: 'bg-linear-to-br from-red-950 to-rose-900', icon: '😈' },
+                  { id: 'classic', label: 'Classic 2015', bg: 'bg-[#7289da]', icon: '🕹️' },
+                  { id: 'mecha', label: 'Robot Mecha', bg: 'bg-linear-to-br from-sky-600 to-indigo-900', icon: '🤖' },
+                  { id: 'sunset', label: 'Sunset Neon', bg: 'bg-linear-to-br from-amber-500 via-rose-600 to-purple-800', icon: '🌅' },
+                  { id: 'pride', label: 'Rainbow Pride', bg: 'bg-linear-to-br from-red-500 via-green-500 to-violet-600', icon: '🌈' },
+                  { id: 'trans', label: 'Trans Pastel', bg: 'bg-linear-to-br from-sky-300 via-pink-300 to-white', icon: '🏳️‍⚧️' },
+                  { id: 'prestige', label: 'Gold Prestige', bg: 'bg-linear-to-br from-amber-400 via-yellow-500 to-amber-700', icon: '👑' },
+                ].map((ic) => {
+                  const isSelected = selectedAppIcon === ic.id;
                   return (
                     <button
-                      key={th.id}
+                      key={ic.id}
                       type="button"
-                      onClick={() => setTheme(th.id)}
+                      onClick={() => {
+                        setSelectedAppIcon(ic.id);
+                        toast.success(t(`App Icon diubah ke ${ic.label}`));
+                      }}
                       className={cn(
-                        'flex flex-col items-center gap-2 p-4 rounded-xl border transition-all cursor-pointer',
+                        'relative aspect-square rounded-2xl border-2 flex items-center justify-center text-xl transition-all cursor-pointer shadow-xs',
+                        ic.bg,
                         isSelected
-                          ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/20 font-bold'
-                          : 'border-border bg-card hover:bg-muted/40 text-muted-foreground',
+                          ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 scale-105'
+                          : 'border-border/60 hover:scale-105',
                       )}
+                      title={ic.label}
                     >
-                      {th.icon}
-                      <span className="text-xs">{th.label}</span>
+                      <span>{ic.icon}</span>
+                      {isSelected && (
+                        <span className="absolute -top-1 -right-1 size-4 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                          ✓
+                        </span>
+                      )}
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* SUB-SECTION 3: MESSAGES */}
+            <div id="appearance-messages" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Messages')}</h2>
+              </div>
+
+              {/* Media display options */}
+              <div className="space-y-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('Show images, videos, and lolcats...')}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                    <div className="text-xs font-semibold text-foreground">{t('When posted as links to chat')}</div>
+                    <Switch checked={showMediaFromLinks} onCheckedChange={setShowMediaFromLinks} />
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                    <div className="text-xs font-semibold text-foreground">{t('When uploaded directly to Discord')}</div>
+                    <Switch checked={showMediaUploaded} onCheckedChange={setShowMediaUploaded} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Link previews & emoji reactions */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">{t('Show embeds and link previews')}</div>
+                  <Switch checked={showEmbedsPreviews} onCheckedChange={setShowEmbedsPreviews} />
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">{t('Show emoji reactions')}</div>
+                  <Switch checked={showEmojiReactions} onCheckedChange={setShowEmojiReactions} />
+                </div>
+              </div>
+
+              {/* Show spoiler content select */}
+              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
+                <div>
+                  <div className="text-xs font-semibold text-foreground">{t('Show spoiler content')}</div>
+                  <div className="text-[11px] text-muted-foreground">{t('Pilih kapan konten spoiler disembunyikan')}</div>
+                </div>
+                <div className="relative">
+                  <select
+                    value={spoilerDisplay}
+                    onChange={(e) => setSpoilerDisplay(e.target.value as any)}
+                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
+                  >
+                    <option value="click" className="bg-[#2b2d31]">On click</option>
+                    <option value="mod" className="bg-[#2b2d31]">On servers I moderate</option>
+                    <option value="always" className="bg-[#2b2d31]">Always</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Split view & user avatars */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">{t('Open threads in split view')}</div>
+                  <Switch checked={openThreadsSplitView} onCheckedChange={setOpenThreadsSplitView} />
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">{t('Show user avatars')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('To hide avatars, go to Accessibility and select Compact under Chat Message Display.')}
+                    </div>
+                  </div>
+                  <Switch checked={showUserAvatars} onCheckedChange={setShowUserAvatars} />
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <span>{t('Show Favorites server')}</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-[#5865F2] text-white px-1.5 py-0.5 rounded-full shadow-xs">
+                        BETA
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Your Favorites stay saved, even if you toggle this off. Learn more.')}
+                    </div>
+                  </div>
+                  <Switch checked={showFavoritesServer} onCheckedChange={setShowFavoritesServer} />
+                </div>
+              </div>
+
+              {/* Related Settings card */}
+              <div className="space-y-2 pt-1">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('Related Settings')}
+                </div>
+                <div
+                  onClick={() => {
+                    setActiveSection('accessibility');
+                    setTimeout(() => {
+                      document.getElementById('accessibility-visual-density')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 80);
+                  }}
+                  className="flex items-center justify-between p-3.5 rounded-xl border border-border/70 bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <SlidersHorizontal className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                        {t('Accessibility')}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {t('Adjust the visual density of chat messages and UI')}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 4: CHAT BOX */}
+            <div id="appearance-chat-box" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Chat Box')}</h2>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Preview emoji, mentions, and markdown syntax as you type')}
+                  </div>
+                  <Switch checked={previewMarkdownAsType} onCheckedChange={setPreviewMarkdownAsType} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Automatically convert emoticons in your messages to emoji')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('For example, when you type :) Discord will convert it to 🙂')}
+                    </div>
+                  </div>
+                  <Switch checked={convertEmoticonsToEmoji} onCheckedChange={setConvertEmoticonsToEmoji} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Show stickers in autocomplete results')}
+                  </div>
+                  <Switch checked={showStickersAutocomplete} onCheckedChange={setShowStickersAutocomplete} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Show games in autocomplete results')}
+                  </div>
+                  <Switch checked={showGamesAutocomplete} onCheckedChange={setShowGamesAutocomplete} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Show send message button')}
+                  </div>
+                  <Switch checked={showSendMessageButton} onCheckedChange={setShowSendMessageButton} />
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 5: SEARCH */}
+            <div id="appearance-search" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Search')}</h2>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('By default, searching in DMs...')}
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { id: 'single', title: 'Searches only in the selected DM' },
+                    { id: 'all', title: 'Searches across all my DMs' },
+                  ].map((sc) => {
+                    const isSelected = dmSearchScope === sc.id;
+                    return (
+                      <div
+                        key={sc.id}
+                        onClick={() => setDmSearchScope(sc.id as any)}
+                        className={cn(
+                          'flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
+                          isSelected
+                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                            : 'bg-card border-border/70 hover:bg-muted/30',
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'size-4 rounded-full border-2 flex items-center justify-center transition-all',
+                            isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                          )}
+                        >
+                          {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">{sc.title}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 6: STREAMER MODE */}
+            <div id="appearance-streamer-mode" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Streamer Mode')}</h2>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-bold text-foreground">{t('Enable Streamer Mode')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t("Streamer Mode hides your personal info so others watching your stream can't see it.")}
+                    </div>
+                  </div>
+                  <Switch checked={streamerModeEnabled} onCheckedChange={setStreamerModeEnabled} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Automatically enable Streamer Mode if OBS or XSplit are running')}
+                  </div>
+                  <Switch checked={autoStreamerModeObs} onCheckedChange={setAutoStreamerModeObs} />
+                </div>
+              </div>
+
+              {/* If Streamer Mode is enabled... */}
+              <div className="space-y-3 pt-2">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('If Streamer Mode is enabled...')}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Hide my personal information, such as email, connected accounts, and notes')}
+                    </div>
+                    <Switch checked={streamerHidePersonalInfo} onCheckedChange={setStreamerHidePersonalInfo} />
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Hide invite links to my Discord servers')}
+                    </div>
+                    <Switch checked={streamerHideInviteLinks} onCheckedChange={setStreamerHideInviteLinks} />
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Disable all sound effects')}
+                    </div>
+                    <Switch checked={streamerDisableSounds} onCheckedChange={setStreamerDisableSounds} />
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                    <div className="text-xs font-semibold text-foreground">
+                      {t('Disable notifications')}
+                    </div>
+                    <Switch checked={streamerDisableNotifications} onCheckedChange={setStreamerDisableNotifications} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Hide window from screen capture */}
+              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
+                <div>
+                  <div className="text-xs font-bold text-foreground">
+                    {t('Hide Discord Window from Screen Capture')}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Hides most Discord windows from most screen capture software.')}
+                  </div>
+                </div>
+                <Switch checked={streamerHideWindowCapture} onCheckedChange={setStreamerHideWindowCapture} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SECTION: ACCESSIBILITY (DISCORD PARITY)                                    */}
+        {/* ========================================================================= */}
+        {activeSection === 'accessibility' && (
+          <div className="space-y-8 divide-y divide-border/50 pb-8">
+            {/* Top Interactive Live Chat Message Preview Box (Matching all 8 screenshots) */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('Preview')}
+              </div>
+              <div
+                className={cn(
+                  'rounded-2xl border border-border/80 bg-[#1e1f22] p-4 relative shadow-sm transition-all',
+                  enableHighContrast && 'border-2 border-white',
+                )}
+                style={{
+                  filter: `saturate(${saturationLevel}%)`,
+                }}
+              >
+                <div
+                  className="flex items-start justify-between gap-4"
+                  style={{ fontSize: `${chatFontSize}px` }}
+                >
+                  <div className="flex-1 space-y-3">
+                    {/* Message 1 */}
+                    <div
+                      className={cn(
+                        'flex items-start gap-3',
+                        chatMessageDisplay === 'compact' && 'items-baseline gap-2',
+                      )}
+                      style={{ marginBottom: `${spaceMessageGroups}px` }}
+                    >
+                      {chatMessageDisplay !== 'compact' && showUserAvatars && (
+                        <div className="size-9 rounded-full bg-zinc-700 overflow-hidden shrink-0 ring-2 ring-white/10">
+                          <img
+                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                            alt="avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              'font-bold text-xs',
+                              roleColorsDisplay === 'names' ? 'text-indigo-400' : 'text-foreground',
+                            )}
+                          >
+                            {roleColorsDisplay === 'dot' && <span className="inline-block size-2 rounded-full bg-indigo-400 mr-1.5" />}
+                            zmsta
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">13.33</span>
+                        </div>
+                        <div className="text-foreground mt-0.5 leading-snug">
+                          what happened to all the beans
+                        </div>
+                        {/* Reactions */}
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className="px-2 py-0.5 rounded-lg bg-[#2b2d31] border border-indigo-500/40 text-[11px] font-bold text-white flex items-center gap-1">
+                            <span>🪕</span>
+                            <span>3</span>
+                          </span>
+                          <span className="px-2 py-0.5 rounded-lg bg-[#2b2d31] border border-border/60 text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                            <span>📦</span>
+                            <span>1</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message 2 */}
+                    <div
+                      className={cn(
+                        'flex items-start gap-3',
+                        chatMessageDisplay === 'compact' && 'items-baseline gap-2',
+                      )}
+                    >
+                      {chatMessageDisplay !== 'compact' && showUserAvatars && (
+                        <div className="size-9 rounded-full bg-zinc-700 overflow-hidden shrink-0 ring-2 ring-white/10">
+                          <img
+                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                            alt="avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              'font-bold text-xs',
+                              roleColorsDisplay === 'names' ? 'text-indigo-400' : 'text-foreground',
+                            )}
+                          >
+                            {roleColorsDisplay === 'dot' && <span className="inline-block size-2 rounded-full bg-indigo-400 mr-1.5" />}
+                            zmsta
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">13.33</span>
+                        </div>
+                        <div className="text-foreground mt-0.5 leading-snug">
+                          here's a link{' '}
+                          <a
+                            href="#"
+                            onClick={(e) => e.preventDefault()}
+                            className={cn(
+                              'text-[#5865F2] font-semibold',
+                              alwaysUnderlineLinks && 'underline',
+                            )}
+                          >
+                            https://discord.com/accessibility
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right side live status & example button */}
+                  <div className="flex flex-col items-end gap-3 shrink-0">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="size-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white shadow-xs" title="Online">
+                        🟢
+                      </div>
+                      <div className="size-5 rounded-full bg-amber-400 flex items-center justify-center text-[10px] font-bold text-black shadow-xs" title="Idle">
+                        🌙
+                      </div>
+                      <div className="size-5 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-bold text-white shadow-xs" title="DND">
+                        ⛔
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-3 py-1.5 h-8 rounded-md shadow-xs"
+                    >
+                      Example Button
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 1: TEXT READABILITY */}
+            <div id="accessibility-text-readability" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Text Readability')}</h2>
+              </div>
+
+              {/* Text size in chat slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">{t('Text size in chat')}</span>
+                  <span className="text-[11px] text-emerald-400 font-mono font-bold">{chatFontSize}px</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">{t('Adjust the size of the chat font.')}</div>
+                <div className="pt-2">
+                  <input
+                    type="range"
+                    min="12"
+                    max="24"
+                    step="1"
+                    value={chatFontSize}
+                    onChange={(e) => setChatFontSize(Number(e.target.value))}
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
+                    <span>12px</span>
+                    <span>14px</span>
+                    <span>15px</span>
+                    <span className="text-emerald-400 font-bold">16px</span>
+                    <span>18px</span>
+                    <span>20px</span>
+                    <span>24px</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Always underline links */}
+              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('Always underline links')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Make links stand out more.')}
+                  </div>
+                </div>
+                <Switch checked={alwaysUnderlineLinks} onCheckedChange={setAlwaysUnderlineLinks} />
+              </div>
+
+              {/* Display Name Styles */}
+              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('Display Name Styles')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Enable display name styles — including font, effect, and color — across Discord.')}
+                  </div>
+                </div>
+                <Switch checked={displayNameStyles} onCheckedChange={setDisplayNameStyles} />
+              </div>
+            </div>
+
+            {/* SUB-SECTION 2: VISUAL DENSITY */}
+            <div id="accessibility-visual-density" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Visual Density')}</h2>
+              </div>
+
+              {/* UI Density */}
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('UI Density')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Adjust the space between server, channel, and member lists.')}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { id: 'compact', title: 'Compact' },
+                    { id: 'default', title: 'Default' },
+                    { id: 'spacious', title: 'Spacious' },
+                  ].map((d) => {
+                    const isSelected = uiDensity === d.id;
+                    return (
+                      <div
+                        key={d.id}
+                        onClick={() => setUiDensity(d.id as any)}
+                        className={cn(
+                          'flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer',
+                          isSelected
+                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                            : 'bg-card border-border/70 hover:bg-muted/30',
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'size-4 rounded-full border-2 flex items-center justify-center transition-all',
+                            isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                          )}
+                        >
+                          {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">{d.title}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Chat Message Display */}
+              <div className="space-y-3 pt-2">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('Chat Message Display')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Change the appearance of chat messages.')}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { id: 'default', title: 'Default', desc: 'Beautiful, spacious, and shows user avatars' },
+                    { id: 'compact', title: 'Compact', desc: 'Fits more messages on screen at once, hides avatars' },
+                  ].map((m) => {
+                    const isSelected = chatMessageDisplay === m.id;
+                    return (
+                      <div
+                        key={m.id}
+                        onClick={() => setChatMessageDisplay(m.id as any)}
+                        className={cn(
+                          'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
+                          isSelected
+                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                            : 'bg-card border-border/70 hover:bg-muted/30',
+                        )}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          <div
+                            className={cn(
+                              'size-4 rounded-full border-2 flex items-center justify-center transition-all',
+                              isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                            )}
+                          >
+                            {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-foreground">{m.title}</div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{m.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Space Between Message Groups */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">{t('Space Between Message Groups')}</span>
+                  <span className="text-[11px] text-emerald-400 font-mono font-bold">{spaceMessageGroups}px</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">{t('Adjust the spacing between message groups.')}</div>
+                <div className="pt-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="24"
+                    step="4"
+                    value={spaceMessageGroups}
+                    onChange={(e) => setSpaceMessageGroups(Number(e.target.value))}
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
+                    <span>0px</span>
+                    <span>4px</span>
+                    <span>8px</span>
+                    <span className="text-emerald-400 font-bold">16px</span>
+                    <span>24px</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Zoom Level */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">{t('Zoom level')}</span>
+                  <span className="text-[11px] text-emerald-400 font-mono font-bold">{zoomLevel}%</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {t('Adjust the size of the interface. You can also change this with ctrl +/-.')}
+                </div>
+                <div className="pt-2">
+                  <input
+                    type="range"
+                    min="50"
+                    max="200"
+                    step="5"
+                    value={zoomLevel}
+                    onChange={(e) => setZoomLevel(Number(e.target.value))}
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
+                    <span>50</span>
+                    <span>67</span>
+                    <span>75</span>
+                    <span>80</span>
+                    <span>90</span>
+                    <span className="text-emerald-400 font-bold">100</span>
+                    <span>110</span>
+                    <span>125</span>
+                    <span>150</span>
+                    <span>175</span>
+                    <span>200</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 3: COLOR & CONTRAST */}
+            <div id="accessibility-color-contrast" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Color & Contrast')}</h2>
+              </div>
+
+              {/* Saturation */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">{t('Saturation')}</span>
+                  <span className="text-[11px] text-emerald-400 font-mono font-bold">{saturationLevel}%</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground leading-relaxed">
+                  {t(
+                    'Reduce the saturation of colors within the app, for those with color sensitivities. This does not affect the saturation of images, videos, role colors or other user content.',
+                  )}
+                </div>
+                <div className="pt-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="10"
+                    value={saturationLevel}
+                    onChange={(e) => setSaturationLevel(Number(e.target.value))}
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
+                    <span>0%</span>
+                    <span>20%</span>
+                    <span>40%</span>
+                    <span>60%</span>
+                    <span>80%</span>
+                    <span className="text-emerald-400 font-bold">100%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Switches */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-bold text-foreground">{t('Apply saturation setting to custom colors')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Apply the above setting to custom color choices, like role colors.')}
+                    </div>
+                  </div>
+                  <Switch checked={applySaturationCustomColors} onCheckedChange={setApplySaturationCustomColors} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-bold text-foreground">{t('Enable High Contrast Mode')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Enhance visibility with bold colors and sharp contrast.')}
+                    </div>
+                  </div>
+                  <Switch checked={enableHighContrast} onCheckedChange={setEnableHighContrast} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-bold text-foreground">{t('Sync contrast settings')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t("This allows Discord to use your computer's contrast theme. Learn more about contrast settings.")}
+                    </div>
+                  </div>
+                  <Switch checked={syncContrastSettings} onCheckedChange={setSyncContrastSettings} />
+                </div>
+              </div>
+
+              {/* Role Colors Dropdown */}
+              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('Role Colors')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Choose how you would like role colors to be displayed.')}
+                  </div>
+                </div>
+                <div className="relative">
+                  <select
+                    value={roleColorsDisplay}
+                    onChange={(e) => setRoleColorsDisplay(e.target.value as any)}
+                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
+                  >
+                    <option value="names" className="bg-[#2b2d31]">In names</option>
+                    <option value="dot" className="bg-[#2b2d31]">As dot next to names</option>
+                    <option value="none" className="bg-[#2b2d31]">None</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Official Messages Dropdown */}
+              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('Official Messages')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('Choose how official developer messages look on verified servers that support it.')}
+                  </div>
+                </div>
+                <div className="relative">
+                  <select
+                    value={officialMessagesStyle}
+                    onChange={(e) => setOfficialMessagesStyle(e.target.value as any)}
+                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
+                  >
+                    <option value="default" className="bg-[#2b2d31]">Default</option>
+                    <option value="contrast" className="bg-[#2b2d31]">High Contrast</option>
+                    <option value="plain" className="bg-[#2b2d31]">Plain</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Show on/off indicators */}
+              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
+                <div>
+                  <div className="text-xs font-bold text-foreground">{t('Show on/off indicators')}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('On forms, menus and settings, on/off toggles will have icons.')}
+                  </div>
+                </div>
+                <Switch checked={showOnOffIndicators} onCheckedChange={setShowOnOffIndicators} />
+              </div>
+
+              {/* Related Settings card */}
+              <div className="space-y-2 pt-1">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('Related Settings')}
+                </div>
+                <div
+                  onClick={() => {
+                    setActiveSection('appearance');
+                    setTimeout(() => {
+                      document.getElementById('appearance-theme')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 80);
+                  }}
+                  className="flex items-center justify-between p-3.5 rounded-xl border border-border/70 bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <Palette className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                        {t('Appearance')}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {t('Change your app theme')}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 4: REDUCED MOTION */}
+            <div id="accessibility-reduced-motion" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Reduced Motion')}</h2>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-bold text-foreground">{t('Enable Reduced Motion')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Reduce the amount and intensity of animations, hover effects, and other moving effects. Learn more.')}
+                    </div>
+                  </div>
+                  <Switch checked={enableReducedMotion} onCheckedChange={setEnableReducedMotion} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Sync with computer setting')}
+                  </div>
+                  <Switch checked={syncReducedMotionComputer} onCheckedChange={setSyncReducedMotionComputer} />
+                </div>
+              </div>
+
+              {/* Minimum notification duration slider */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">{t('Minimum notification duration')}</span>
+                  <span className="text-[11px] text-emerald-400 font-mono font-bold">{notificationDuration}s</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {t('Keep pop up notifications on screen for at least this long. Notifications that already stay longer are unaffected.')}
+                </div>
+                <div className="pt-2">
+                  <input
+                    type="range"
+                    min="3"
+                    max="20"
+                    step="1"
+                    value={notificationDuration}
+                    onChange={(e) => setNotificationDuration(Number(e.target.value))}
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
+                    <span className="text-emerald-400 font-bold">3s</span>
+                    <span>5s</span>
+                    <span>10s</span>
+                    <span>15s</span>
+                    <span>20s</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* GIF & Animated Emoji switches */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Play GIFs when Discord is focused')}
+                  </div>
+                  <Switch checked={playGifsFocused} onCheckedChange={setPlayGifsFocused} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Play animated emoji')}
+                  </div>
+                  <Switch checked={playAnimatedEmoji} onCheckedChange={setPlayAnimatedEmoji} />
+                </div>
+              </div>
+
+              {/* Play sticker animations radio group */}
+              <div className="space-y-3 pt-2">
+                <div className="text-xs font-bold text-foreground">{t('Play sticker animations')}</div>
+                <div className="space-y-2">
+                  {[
+                    { id: 'always', title: 'Always animate' },
+                    {
+                      id: 'interaction',
+                      title: 'Animate on interaction',
+                      desc: 'On the desktop client, stickers will animate on hover or focus. On mobile clients, stickers will animate on long-press.',
+                    },
+                    { id: 'never', title: 'Never animate' },
+                  ].map((st) => {
+                    const isSelected = stickerAnimationMode === st.id;
+                    return (
+                      <div
+                        key={st.id}
+                        onClick={() => setStickerAnimationMode(st.id as any)}
+                        className={cn(
+                          'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
+                          isSelected
+                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                            : 'bg-card border-border/70 hover:bg-muted/30',
+                        )}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          <div
+                            className={cn(
+                              'size-4 rounded-full border-2 flex items-center justify-center transition-all',
+                              isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                            )}
+                          >
+                            {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-foreground">{st.title}</div>
+                          {st.desc && <div className="text-[11px] text-muted-foreground mt-0.5">{st.desc}</div>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 5: AUDIO & SCREEN READER */}
+            <div id="accessibility-audio-screen-reader" className="scroll-mt-6 space-y-6 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Audio & Screen Reader')}</h2>
+              </div>
+
+              {/* Text-to-Speech rate slider */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">{t('Text-to-Speech rate')}</span>
+                  <span className="text-[11px] text-emerald-400 font-mono font-bold">x{ttsRate.toFixed(1)}</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {t('Control the speed at which text is read aloud when using Speak Message or other text to speech features.')}
+                </div>
+                <div className="pt-2">
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.1"
+                    value={ttsRate}
+                    onChange={(e) => setTtsRate(Number(e.target.value))}
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
+                    <span>Slower</span>
+                    <span className="text-emerald-400 font-bold">x1.0</span>
+                    <span>Faster</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={previewTtsSpeech}
+                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-4 h-8 rounded-md flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <span>{t('Preview')}</span>
+                </Button>
+              </div>
+
+              {/* Image descriptions & legacy chat input */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">{t('Show image descriptions')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Image descriptions are used to describe images for screen readers.')}
+                    </div>
+                  </div>
+                  <Switch checked={showImageDescriptions} onCheckedChange={setShowImageDescriptions} />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">{t('Use the legacy chat input')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Disables most chat features but may work better with screen readers.')}
+                    </div>
+                  </div>
+                  <Switch checked={useLegacyChatInput} onCheckedChange={setUseLegacyChatInput} />
+                </div>
               </div>
             </div>
           </div>
