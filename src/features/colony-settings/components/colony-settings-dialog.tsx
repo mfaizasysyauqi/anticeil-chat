@@ -166,25 +166,43 @@ export function ColonySettingsDialog({
   const colonyGroups: SettingsNavGroup[] = [
     {
       key: 'COLONY_SETTINGS',
-      title: activeColony?.name || t('Colony'),
+      title: activeColony?.name || t('Server Settings'),
       items: [
-        { id: 'profile', label: t('Profil Colony'), icon: <Globe className="h-4 w-4 shrink-0" /> },
-        { id: 'colony-tag', label: t('Tag Colony'), icon: <Tag className="h-4 w-4 shrink-0" /> },
+        { id: 'profile', label: t('Server Profile'), icon: <Globe className="h-4 w-4 shrink-0" /> },
+        { id: 'colony-tag', label: t('Server Tag'), icon: <Tag className="h-4 w-4 shrink-0" /> },
         { id: 'engagement', label: t('Engagement'), icon: <BarChart3 className="h-4 w-4 shrink-0" /> },
-        { id: 'boost', label: t('Colony Boost'), icon: <Zap className="h-4 w-4 shrink-0" /> },
-        { id: 'emoji', label: t('Emoji Kustom'), icon: <Smile className="h-4 w-4 shrink-0" /> },
+        { id: 'boost', label: t('Boost Perks'), icon: <Zap className="h-4 w-4 shrink-0" /> },
       ],
     },
     {
-      key: 'COLONY_MANAGEMENT',
-      title: t('Manajemen'),
+      key: 'EXPRESSION',
+      title: t('Expression'),
       items: [
-        { id: 'members', label: t('Anggota'), icon: <Users className="h-4 w-4 shrink-0" /> },
-        { id: 'roles', label: t('Peran'), icon: <KeyRound className="h-4 w-4 shrink-0" /> },
-        { id: 'invites', label: t('Undangan'), icon: <UserPlus className="h-4 w-4 shrink-0" /> },
-        { id: 'integrations', label: t('Integrasi'), icon: <Webhook className="h-4 w-4 shrink-0" /> },
-        { id: 'audit-log', label: t('Log Audit'), icon: <ScrollText className="h-4 w-4 shrink-0" /> },
-        { id: 'bans', label: t('Pemblokiran'), icon: <Ban className="h-4 w-4 shrink-0" /> },
+        { id: 'emoji', label: t('Emoji'), icon: <Smile className="h-4 w-4 shrink-0" /> },
+      ],
+    },
+    {
+      key: 'PEOPLE',
+      title: t('People'),
+      items: [
+        { id: 'members', label: t('Members'), icon: <Users className="h-4 w-4 shrink-0" /> },
+        { id: 'roles', label: t('Roles'), icon: <KeyRound className="h-4 w-4 shrink-0" /> },
+        { id: 'invites', label: t('Invites'), icon: <UserPlus className="h-4 w-4 shrink-0" /> },
+      ],
+    },
+    {
+      key: 'APPS',
+      title: t('Apps'),
+      items: [
+        { id: 'integrations', label: t('Integrations'), icon: <Webhook className="h-4 w-4 shrink-0" /> },
+      ],
+    },
+    {
+      key: 'MODERATION',
+      title: t('Moderation'),
+      items: [
+        { id: 'audit-log', label: t('Audit Log'), icon: <ScrollText className="h-4 w-4 shrink-0" /> },
+        { id: 'bans', label: t('Bans'), icon: <Ban className="h-4 w-4 shrink-0" /> },
       ],
     },
   ];
@@ -228,7 +246,7 @@ export function ColonySettingsDialog({
           </button>
         }
       >
-        <div className="max-w-2xl w-full">
+        <div className={cn("w-full", serverSettingsSection === 'profile' ? "max-w-5xl" : "max-w-2xl")}>
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
