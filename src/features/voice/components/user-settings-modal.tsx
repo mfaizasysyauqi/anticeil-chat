@@ -64,6 +64,8 @@ import {
   Pin,
   Headphones,
   MessageSquare,
+  Code2,
+  MoreHorizontal,
 } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { Button } from '@/components/ui/button';
@@ -98,7 +100,9 @@ export type SettingsSection =
   | 'keybinds'
   | 'registered_games'
   | 'activity_privacy'
-  | 'overlay';
+  | 'overlay'
+  | 'connected_apps'
+  | 'developer';
 
 export interface UserSettingsModalProps {
   open: boolean;
@@ -799,6 +803,124 @@ export function UserSettingsModal({
     toast.success(t('Tata letak widget overlay dikembalikan ke default!'));
   };
 
+  // ==========================================
+  // CONNECTED APPS & DEVELOPER STATES (Discord Parity)
+  // ==========================================
+  interface ConnectedPlatformItem {
+    id: string;
+    name: string;
+    icon: string;
+    bg: string;
+    text: string;
+  }
+
+  const availablePlatforms: ConnectedPlatformItem[] = useMemo(
+    () => [
+      { id: 'riot', name: 'Riot Games', icon: '⚡', bg: 'bg-[#d93f2f]', text: 'text-white' },
+      { id: 'battlenet', name: 'Battle.net', icon: '🌀', bg: 'bg-[#0074e0]', text: 'text-white' },
+      { id: 'bluesky', name: 'Bluesky', icon: '🦋', bg: 'bg-[#1185fe]', text: 'text-white' },
+      { id: 'bungie', name: 'Bungie.net', icon: '💠', bg: 'bg-[#18181b]', text: 'text-[#06b6d4]' },
+      { id: 'paypal', name: 'PayPal', icon: '🅿️', bg: 'bg-[#003087]', text: 'text-white' },
+      { id: 'reddit', name: 'Reddit', icon: '🤖', bg: 'bg-[#ff4500]', text: 'text-white' },
+      { id: 'steam', name: 'Steam', icon: '⚙️', bg: 'bg-[#171a21]', text: 'text-white' },
+      { id: 'x', name: 'X', icon: '✖️', bg: 'bg-black', text: 'text-white' },
+      { id: 'ebay', name: 'eBay', icon: '🛍️', bg: 'bg-[#e53238]', text: 'text-white' },
+      { id: 'crunchyroll', name: 'Crunchyroll', icon: '🍥', bg: 'bg-[#f47521]', text: 'text-white' },
+      {
+        id: 'playstation',
+        name: 'PlayStation Network',
+        icon: '🎮',
+        bg: 'bg-[#003791]',
+        text: 'text-white',
+      },
+      { id: 'xbox', name: 'Xbox', icon: '❎', bg: 'bg-[#107c10]', text: 'text-white' },
+      { id: 'epic', name: 'Epic Games', icon: '🛡️', bg: 'bg-[#2b2b2b]', text: 'text-white' },
+      { id: 'facebook', name: 'Facebook', icon: '📘', bg: 'bg-[#1877f2]', text: 'text-white' },
+      { id: 'github', name: 'GitHub', icon: '🐙', bg: 'bg-[#24292e]', text: 'text-white' },
+      { id: 'roblox', name: 'Roblox', icon: '🟥', bg: 'bg-[#e2231a]', text: 'text-white' },
+      { id: 'twitch', name: 'Twitch', icon: '👾', bg: 'bg-[#9146ff]', text: 'text-white' },
+      { id: 'youtube', name: 'YouTube', icon: '▶️', bg: 'bg-[#ff0000]', text: 'text-white' },
+      { id: 'spotify', name: 'Spotify', icon: '🟢', bg: 'bg-[#1ed760]', text: 'text-black' },
+    ],
+    [],
+  );
+
+  interface UserConnection {
+    id: string;
+    platformId: string;
+    accountName: string;
+    platformName: string;
+    icon: string;
+    displayOnProfile: boolean;
+    displayStatus: boolean;
+  }
+
+  const [userConnections, setUserConnections] = useState<UserConnection[]>([
+    {
+      id: 'conn-spotify',
+      platformId: 'spotify',
+      accountName: 'ESTEFANO',
+      platformName: 'Spotify',
+      icon: '🟢',
+      displayOnProfile: true,
+      displayStatus: true,
+    },
+  ]);
+
+  interface AuthorizedApp {
+    id: string;
+    name: string;
+    authorizedDate: string;
+    icon: string;
+    permissionsCount: number;
+    permissionsList: string[];
+    aboutInfo: string;
+    policiesUrl: string;
+  }
+
+  const [authorizedApps, setAuthorizedApps] = useState<AuthorizedApp[]>([
+    {
+      id: 'app-nve',
+      name: 'Neverness to Everness',
+      authorizedDate: '11/1/2026',
+      icon: '🌸',
+      permissionsCount: 14,
+      permissionsList: [
+        'Access your username, avatar, and banner',
+        'Know what servers you are in',
+        'Access your email address',
+        'Read your connections',
+        'Join servers for you',
+        'Update your presence and activity',
+      ],
+      aboutInfo: 'Official game client integration for Neverness to Everness by Hotta Studio.',
+      policiesUrl: 'https://nte.perfectworld.com/privacy',
+    },
+    {
+      id: 'app-watch-together',
+      name: 'Watch Together',
+      authorizedDate: '10/31/2026',
+      icon: '▶️',
+      permissionsCount: 6,
+      permissionsList: [
+        'Access your username and avatar',
+        'Access your voice channel state',
+        'Synchronize playback across participants',
+      ],
+      aboutInfo: 'Activity for watching YouTube videos with friends in voice channels.',
+      policiesUrl: 'https://youtube.com/t/terms',
+    },
+  ]);
+
+  const [authorizedAppSearch, setAuthorizedAppSearch] = useState('');
+  const [expandedAppAbout, setExpandedAppAbout] = useState<Record<string, boolean>>({});
+  const [expandedAppPerms, setExpandedAppPerms] = useState<Record<string, boolean>>({});
+
+  // Developer Mode States
+  const [developerMode, setDeveloperMode] = useState<boolean>(true);
+  const [applicationTestMode, setApplicationTestMode] = useState<boolean>(false);
+  const [applicationTestId, setApplicationTestId] = useState<string>('');
+
   // Account name & username state
   const suggestedUsername = useMemo(() => {
     if (currentUser?.username) return currentUser.username;
@@ -1047,6 +1169,25 @@ export function UserSettingsModal({
             { id: 'overlay-voice-widget', label: t('Voice Widget') },
             { id: 'overlay-notifications', label: t('Notifications') },
           ],
+        },
+        {
+          id: 'connected_apps',
+          label: t('Connected Apps'),
+          icon: <Link2 className="w-4 h-4" />,
+          subItems: [
+            { id: 'connected-connections', label: t('Connections') },
+            { id: 'connected-authorized-apps', label: t('Authorized Apps') },
+          ],
+        },
+      ],
+    },
+    {
+      key: 'DEVELOPER_SETTINGS',
+      items: [
+        {
+          id: 'developer',
+          label: t('Developer'),
+          icon: <Code2 className="w-4 h-4" />,
         },
       ],
     },
@@ -8267,6 +8408,419 @@ export function UserSettingsModal({
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* CONNECTED APPS (Screenshots 1 & 2 - Discord Parity)       */}
+        {/* ========================================================= */}
+        {activeSection === 'connected_apps' && (
+          <div className="space-y-8 divide-y divide-border/50 pb-8">
+            {/* SUB-SECTION 1: CONNECTIONS (Screenshot 1) */}
+            <div id="connected-connections" className="scroll-mt-6 space-y-5">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Connections')}</h2>
+                <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+                  {t(
+                    "These are accounts from other platforms. Connecting them here can unlock new features on Discord, like the ability to share what you're currently listening to, get paid safely and securely, and more.",
+                  )}
+                </p>
+              </div>
+
+              {/* Add a new connection */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('Add a new connection')}
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {availablePlatforms.map((p) => {
+                    const isConnected = userConnections.some((c) => c.platformId === p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          if (isConnected) {
+                            toast.info(t(`Akun ${p.name} sudah terhubung!`));
+                            return;
+                          }
+                          setUserConnections((prev) => [
+                            ...prev,
+                            {
+                              id: `conn-${p.id}`,
+                              platformId: p.id,
+                              accountName: currentUserName || 'User',
+                              platformName: p.name,
+                              icon: p.icon,
+                              displayOnProfile: true,
+                              displayStatus: true,
+                            },
+                          ]);
+                          toast.success(t(`Akun ${p.name} berhasil dihubungkan!`));
+                        }}
+                        className={cn(
+                          'size-10 rounded-xl border border-border/70 flex items-center justify-center text-lg transition-all cursor-pointer shadow-sm relative group',
+                          isConnected
+                            ? 'bg-[#5865F2]/20 border-[#5865F2] ring-1 ring-[#5865F2]'
+                            : 'bg-[#1e1f22] hover:bg-[#2b2d31] hover:border-border hover:scale-105',
+                        )}
+                        title={isConnected ? `${p.name} (Terhubung)` : `Hubungkan ${p.name}`}
+                      >
+                        <span>{p.icon}</span>
+                        {isConnected && (
+                          <div className="absolute -top-1 -right-1 size-3.5 bg-[#5865F2] rounded-full text-white flex items-center justify-center text-[9px] font-bold">
+                            ✓
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Active Connections List */}
+              <div className="space-y-3 pt-2">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {userConnections.length} {t('connection')}
+                </div>
+
+                <div className="space-y-3">
+                  {userConnections.map((conn) => (
+                    <div
+                      key={conn.id}
+                      className="rounded-2xl border border-border/80 bg-[#1e1f22] p-4 space-y-4"
+                    >
+                      {/* Top Header Row with Icon, Names, and X button */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="size-9 rounded-full bg-[#1ed760] text-black flex items-center justify-center text-lg font-bold shadow-sm">
+                            {conn.icon}
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-foreground">
+                              {conn.accountName}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{conn.platformName}</div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserConnections((prev) => prev.filter((c) => c.id !== conn.id));
+                            toast.success(t(`Koneksi ${conn.platformName} diputuskan`));
+                          }}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+                          title={t('Disconnect')}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Switches inside connection card */}
+                      <div className="space-y-3 pt-2 border-t border-border/40">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-foreground">
+                            {t('Display on profile')}
+                          </span>
+                          <Switch
+                            checked={conn.displayOnProfile}
+                            onCheckedChange={(checked) => {
+                              setUserConnections((prev) =>
+                                prev.map((c) =>
+                                  c.id === conn.id ? { ...c, displayOnProfile: checked } : c,
+                                ),
+                              );
+                              toast.success(
+                                checked
+                                  ? t(`Tampilkan ${conn.platformName} di profil`)
+                                  : t(`Sembunyikan ${conn.platformName} dari profil`),
+                              );
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-foreground">
+                            {t(`Display ${conn.platformName} as your status`)}
+                          </span>
+                          <Switch
+                            checked={conn.displayStatus}
+                            onCheckedChange={(checked) => {
+                              setUserConnections((prev) =>
+                                prev.map((c) =>
+                                  c.id === conn.id ? { ...c, displayStatus: checked } : c,
+                                ),
+                              );
+                              toast.success(
+                                checked
+                                  ? t(`Status aktivitas ${conn.platformName} aktif`)
+                                  : t(`Status aktivitas ${conn.platformName} nonaktif`),
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SUB-SECTION 2: AUTHORIZED APPS (Screenshot 2) */}
+            <div id="connected-authorized-apps" className="scroll-mt-6 space-y-4 pt-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{t('Authorized Apps')}</h2>
+                <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+                  {t(
+                    "These include third-party services you've given permission to access your Discord account. You can review what each app can do and revoke access anytime.",
+                  )}
+                </p>
+              </div>
+
+              {/* Search Installed Apps */}
+              <div className="relative pt-1">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none mt-0.5" />
+                <Input
+                  type="text"
+                  placeholder={t('Search installed apps')}
+                  value={authorizedAppSearch}
+                  onChange={(e) => setAuthorizedAppSearch(e.target.value)}
+                  className="pl-9 h-9 text-xs bg-[#1e1f22] border-border/80 text-foreground"
+                />
+              </div>
+
+              {/* Authorized App Cards */}
+              <div className="space-y-3">
+                {authorizedApps
+                  .filter((a) => a.name.toLowerCase().includes(authorizedAppSearch.toLowerCase()))
+                  .map((app) => {
+                    const isAboutOpen = expandedAppAbout[app.id] ?? false;
+                    const isPermsOpen = expandedAppPerms[app.id] ?? false;
+
+                    return (
+                      <div
+                        key={app.id}
+                        className="rounded-2xl border border-border/80 bg-[#1e1f22] overflow-hidden transition-all"
+                      >
+                        {/* App Header Row */}
+                        <div className="p-4 flex items-center justify-between border-b border-border/40">
+                          <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-xl bg-[#2b2d31] border border-border/60 flex items-center justify-center text-xl shadow-inner">
+                              {app.icon}
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-foreground">{app.name}</div>
+                              <div className="text-[11px] text-muted-foreground mt-0.5">
+                                {t('Authorized on')} {app.authorizedDate}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* About and Policies Accordion Row */}
+                        <div className="border-b border-border/40">
+                          <div
+                            onClick={() =>
+                              setExpandedAppAbout((prev) => ({
+                                ...prev,
+                                [app.id]: !isAboutOpen,
+                              }))
+                            }
+                            className="p-3.5 flex items-center justify-between hover:bg-muted/20 cursor-pointer transition-colors"
+                          >
+                            <span className="text-xs font-semibold text-foreground">
+                              {t('About and Policies')}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                'w-4 h-4 text-muted-foreground transition-transform duration-200',
+                                isAboutOpen && 'rotate-180',
+                              )}
+                            />
+                          </div>
+
+                          {isAboutOpen && (
+                            <div className="px-4 pb-3.5 space-y-2 text-xs text-muted-foreground animate-in fade-in duration-150">
+                              <p>{app.aboutInfo}</p>
+                              <div>
+                                <a
+                                  href={app.policiesUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[#5865F2] hover:underline font-medium inline-flex items-center gap-1"
+                                >
+                                  {t('Terms & Privacy Policy')}
+                                  <ExternalLink className="w-3 h-3 inline" />
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Permissions Accordion Row */}
+                        <div className="border-b border-border/40">
+                          <div
+                            onClick={() =>
+                              setExpandedAppPerms((prev) => ({
+                                ...prev,
+                                [app.id]: !isPermsOpen,
+                              }))
+                            }
+                            className="p-3.5 flex items-center justify-between hover:bg-muted/20 cursor-pointer transition-colors"
+                          >
+                            <div>
+                              <span className="text-xs font-semibold text-foreground">
+                                {t('Permissions')}
+                              </span>
+                              <div className="text-[11px] text-muted-foreground mt-0.5">
+                                {app.permissionsCount} {t('Permissions enabled')}
+                              </div>
+                            </div>
+                            <ChevronDown
+                              className={cn(
+                                'w-4 h-4 text-muted-foreground transition-transform duration-200',
+                                isPermsOpen && 'rotate-180',
+                              )}
+                            />
+                          </div>
+
+                          {isPermsOpen && (
+                            <div className="px-4 pb-3.5 space-y-1.5 animate-in fade-in duration-150">
+                              {app.permissionsList.map((perm, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-2 text-xs text-foreground/80"
+                                >
+                                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  <span>{perm}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Deauthorize Button Footer */}
+                        <div className="p-3.5 flex justify-end bg-black/10">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setAuthorizedApps((prev) => prev.filter((a) => a.id !== app.id));
+                              toast.success(t(`Akses untuk ${app.name} telah dicabut`));
+                            }}
+                            className="text-destructive bg-destructive/10 hover:bg-destructive/20 border border-destructive/20 text-xs font-semibold px-4 h-8 rounded-lg cursor-pointer"
+                          >
+                            {t('Deauthorize')}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* DEVELOPER (Screenshot 3 - Discord Parity)                 */}
+        {/* ========================================================= */}
+        {activeSection === 'developer' && (
+          <div className="space-y-6 max-w-2xl pb-8">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">{t('Developer')}</h2>
+            </div>
+
+            {/* Developer Mode */}
+            <div className="flex items-center justify-between gap-4 py-3 border-b border-border/40">
+              <div className="space-y-0.5 pr-4">
+                <div className="text-xs font-semibold text-foreground">{t('Developer Mode')}</div>
+                <div className="text-[11px] text-muted-foreground leading-relaxed">
+                  {t('Developer Mode exposes context menu items helpful for people writing apps using the')}{' '}
+                  <a
+                    href="https://discord.com/developers/docs"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#5865F2] hover:underline font-medium inline-flex items-center gap-0.5"
+                  >
+                    Discord API
+                    <ExternalLink className="w-3 h-3 ml-0.5 inline" />
+                  </a>
+                  .
+                </div>
+              </div>
+              <Switch
+                checked={developerMode}
+                onCheckedChange={(checked) => {
+                  setDeveloperMode(checked);
+                  toast.success(
+                    checked ? t('Developer Mode diaktifkan') : t('Developer Mode dinonaktifkan'),
+                  );
+                }}
+              />
+            </div>
+
+            {/* Application Test Mode */}
+            <div className="space-y-3 py-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5 pr-4">
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('Application Test Mode')}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground leading-relaxed">
+                    {t('Enter your Discord application ID to enable test mode for that application.')}
+                  </div>
+                </div>
+                <Switch
+                  checked={applicationTestMode}
+                  onCheckedChange={(checked) => {
+                    setApplicationTestMode(checked);
+                    toast.success(
+                      checked
+                        ? t('Application Test Mode aktif')
+                        : t('Application Test Mode nonaktif'),
+                    );
+                  }}
+                />
+              </div>
+
+              {applicationTestMode && (
+                <div className="p-4 rounded-xl border border-border/80 bg-[#1e1f22] space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                  <label className="text-xs font-semibold text-foreground">
+                    {t('Application ID')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      placeholder="e.g. 123456789012345678"
+                      value={applicationTestId}
+                      onChange={(e) => setApplicationTestId(e.target.value)}
+                      className="h-9 text-xs bg-[#2b2d31] border-border/80 text-foreground font-mono"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (!applicationTestId.trim()) {
+                          toast.error(t('Masukkan Application ID terlebih dahulu'));
+                          return;
+                        }
+                        toast.success(
+                          t(`Test mode diaktifkan untuk App ID: ${applicationTestId.trim()}`),
+                        );
+                      }}
+                      className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-4 h-9 font-semibold shrink-0 cursor-pointer"
+                    >
+                      {t('Activate')}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
