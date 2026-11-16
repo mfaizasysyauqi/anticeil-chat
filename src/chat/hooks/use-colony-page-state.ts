@@ -24,6 +24,7 @@ import { useColonyData } from './use-colony-data';
 import { useChatNavigation } from './use-chat-navigation';
 import { useChatMembers } from './use-chat-members';
 import { useChatInitLoader } from './use-chat-init-loader';
+import { useChatViewModes } from './use-chat-view-modes';
 import { useSocket } from '@/providers/socket-provider';
 import { useVoiceCallState } from '@/features/voice';
 import { toast } from 'sonner';
@@ -103,21 +104,6 @@ export function useColonyPageState(): ChatPageContentProps {
   const [replyingToMessage, setReplyingToMessage] = useState<ColonyMessage | null>(null);
   const [messagesMap, setMessagesMap] = useState<Record<string, ColonyMessage[]>>({});
 
-  const [unreadCounts, setUnreadCounts] = useState<Record<string, number | string>>(() => ({
-    anticeil: 3,
-    hub_general: 47,
-    hub_gaming: 167,
-    hub_dev: 353,
-    hub_anime: 651,
-    hub_crypto: 87,
-    hub_music: 743,
-    hub_study: 512,
-  }));
-
-  const [homeView, setHomeView] = useState<
-    'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'
-  >('friends');
-
   // ── 4. URL Sync Hook ───────────────────────────────────────────────
   useUrlSync({
     activeColonyId,
@@ -182,23 +168,7 @@ export function useColonyPageState(): ChatPageContentProps {
     t,
   });
 
-  const [collapsedCategories, setCollapsedCategories] = useState<{ text: boolean; voice: boolean; forum: boolean }>({ text: false, voice: false, forum: false });
-  const [isMuted, setIsMuted] = useState(false);
-  const [isDeafened, setIsDeafened] = useState(false);
   const { sidebarWidth, isResizingSidebar, handleSidebarResizeStart, handleSidebarResizeReset } = useResizableSidebar();
-  const [isMobileChannelsOpen, setIsMobileChannelsOpen] = useState(false);
-  const [isMobileMembersOpen, setIsMobileMembersOpen] = useState(false);
-
-  useEffect(() => {
-    const handleToggleMobileChannels = () => {
-      setIsMobileChannelsOpen((prev) => !prev);
-    };
-    window.addEventListener('anticeil_toggle_mobile_channels', handleToggleMobileChannels);
-    return () => {
-      window.removeEventListener('anticeil_toggle_mobile_channels', handleToggleMobileChannels);
-    };
-  }, []);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ── 6. WebSocket Hook ──────────────────────────────────────────────
@@ -234,24 +204,6 @@ export function useColonyPageState(): ChatPageContentProps {
     setChannelThreads: () => {},
     setThreadsMap: () => {},
   });
-
-  const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
-    try {
-      const saved = localStorage.getItem('anticeil_rail_mode');
-      return saved === 'servers' ? 'servers' : 'friends';
-    } catch {
-      return 'friends';
-    }
-  });
-
-  const isFriendsView = isHome && !activeChannel && homeView === 'friends';
-  const isMessageRequestsView = isHome && !activeChannel && homeView === 'message-requests';
-  const isNotificationsView = isHome && !activeChannel && homeView === 'notifications';
-  const isCalendarView = isHome && !activeChannel && homeView === 'calendar';
-  const isAssignmentsView = isHome && !activeChannel && homeView === 'assignments';
-  const isCallsView = isHome && !activeChannel && homeView === 'calls';
-  const isAppsView = isHome && !activeChannel && homeView === 'apps';
-  const isColoniesView = isHome && !activeChannel && (homeView === 'colonies' || homeView === 'servers');
 
   const currentMessages = activeChannel ? messagesMap[activeChannel.id] || [] : [];
   const filteredMessages = useMemo(() => {
@@ -302,12 +254,41 @@ export function useColonyPageState(): ChatPageContentProps {
     setDmSearchQuery,
   } = chatSubsystems;
 
-  useEffect(() => {
-    setUnreadCounts((prev) => {
-      if (prev.anticeil === unreadNotifCount) return prev;
-      return { ...prev, anticeil: unreadNotifCount };
-    });
-  }, [unreadNotifCount]);
+  // View Modes & UI Layout State Hook
+  const {
+    unreadCounts,
+    setUnreadCounts,
+    homeView,
+    setHomeView,
+    railMode,
+    setRailMode,
+    handleToggleRailMode,
+    collapsedCategories,
+    setCollapsedCategories,
+    isMuted,
+    setIsMuted,
+    isDeafened,
+    setIsDeafened,
+    isMobileChannelsOpen,
+    setIsMobileChannelsOpen,
+    isMobileMembersOpen,
+    setIsMobileMembersOpen,
+    isFriendsView,
+    isMessageRequestsView,
+    isNotificationsView,
+    isCalendarView,
+    isAssignmentsView,
+    isCallsView,
+    isAppsView,
+    isColoniesView,
+  } = useChatViewModes({
+    isHome,
+    activeChannel,
+    unreadNotifCount,
+    setActiveColonyId,
+    setActiveChannelId,
+    t,
+  });
 
   // Message Actions Hook
   const messageActions = useMessageActions({
@@ -447,26 +428,6 @@ export function useColonyPageState(): ChatPageContentProps {
 
   const handleAcceptMessageRequest = async (item: MessageRequestItem) => {
     await handleAcceptMessageRequestRaw(item);
-  };
-
-  const handleToggleRailMode = () => {
-    setRailMode((prev) => {
-      const next = prev === 'servers' ? 'friends' : 'servers';
-      try {
-        localStorage.setItem('anticeil_rail_mode', next);
-      } catch {}
-      if (next === 'friends') {
-        setActiveColonyId('anticeil');
-        setActiveChannelId('');
-        setHomeView('friends');
-      } else {
-        setActiveColonyId('anticeil');
-        setActiveChannelId('');
-        setHomeView('colonies');
-      }
-      toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Colony'));
-      return next;
-    });
   };
 
   return buildChatPageProps({
