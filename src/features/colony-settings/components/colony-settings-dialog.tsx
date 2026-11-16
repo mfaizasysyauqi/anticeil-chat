@@ -254,7 +254,7 @@ export function ColonySettingsDialog({
           </button>
         }
       >
-        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost') ? "max-w-5xl" : "max-w-2xl")}>
+        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles') ? "max-w-5xl" : "max-w-2xl")}>
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
