@@ -49,6 +49,9 @@ import {
   MonitorPlay,
   Tv,
   Flame,
+  Play,
+  Star,
+  ShieldCheck,
 } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { Button } from '@/components/ui/button';
@@ -226,6 +229,14 @@ export function UserSettingsModal({
       toast.info(t('Efek suara preview'));
     }
   };
+
+  // Colony Boost State (Discord Parity)
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [boostedColonies, setBoostedColonies] = useState<{ [id: string]: number }>({
+    c1: 0,
+    c2: 2,
+    c3: 6,
+  });
 
   // Voice & Video settings
   const {
@@ -2806,24 +2817,386 @@ export function UserSettingsModal({
         )}
 
         {/* ========================================================================= */}
-        {/* SECTION: SERVER BOOST                                                     */}
+        {/* SECTION: SERVER BOOST (COLONY BOOST)                                      */}
         {/* ========================================================================= */}
         {activeSection === 'boost' && (
-          <div className="space-y-5">
-            <h2 className="text-lg font-bold text-foreground pb-1">
-              {t('Colony Boost')}
-            </h2>
-            <div className="p-5 rounded-xl border border-border bg-card space-y-3 shadow-xs">
-              <div className="flex items-center gap-3">
-                <Gem className="w-5 h-5 text-pink-500" />
-                <div>
-                  <div className="text-xs font-bold text-foreground">
-                    {t('Boost Status: 2 Aktif')}
+          <div className="space-y-8 pb-12">
+            {/* ── 1. HEADER WITH EXPLANATION & VIDEO CARD ── */}
+            <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
+              <div className="space-y-3 max-w-md">
+                <div className="flex items-center gap-2.5">
+                  <div className="size-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500 shadow-xs">
+                    <Gem className="w-6 h-6 fill-pink-500/20" />
                   </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {t('Anda memiliki 2 colony boost yang siap digunakan pada komunitas favorit.')}
+                  <h2 className="text-2xl font-black tracking-tight text-foreground">
+                    {t('Colony Boosts')}
+                  </h2>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t(
+                    'Boosting a colony unlocks perks for everyone in that colony. You can manage your Boosts here (add, subtract, cancel — just beware the 7 day cooldown).'
+                  )}{' '}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toast.info(t('Colony Boost memberikan peningkatan kapasitas file, kualitas stream, dan ratusan slot emoji.'))
+                    }
+                    className="text-primary hover:underline font-medium inline cursor-pointer"
+                  >
+                    {t('Learn more')}
+                  </button>
+                </p>
+              </div>
+
+              {/* Video Mockup Thumbnail Card */}
+              <div
+                onClick={() =>
+                  toast.success(t('Memutar panduan interaktif: Cara kerja Colony Boost.'))
+                }
+                className="w-full lg:w-72 h-36 rounded-2xl bg-linear-to-br from-indigo-950 via-purple-950 to-pink-950 border border-purple-500/30 p-3.5 flex flex-col justify-between text-white relative overflow-hidden shadow-xl cursor-pointer group hover:border-purple-500/60 transition-all shrink-0"
+              >
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-white/90">
+                    {t('How do Boosts work?')}
+                  </span>
+                  <Gem className="w-4 h-4 text-pink-400" />
+                </div>
+                {/* Centered Play Button */}
+                <div className="relative z-10 size-11 rounded-full bg-white/20 group-hover:bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center mx-auto text-white shadow-lg transition-transform group-hover:scale-110">
+                  <Play className="w-5 h-5 fill-current ml-0.5" />
+                </div>
+                <div className="relative z-10 text-[10px] text-white/70 font-mono text-center">
+                  2:14 • Tutorial Video
+                </div>
+              </div>
+            </div>
+
+            {/* ── 2. PROMO BANNER: GET 2 BOOSTS WITH NECTAR ── */}
+            <div className="rounded-2xl p-4 bg-linear-to-r from-purple-900/30 via-indigo-900/30 to-pink-900/30 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <div className="size-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shrink-0">
+                  <Zap className="w-5 h-5 fill-current text-pink-400" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-foreground">
+                    {t('Get 2 Boosts with Nectar!')}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {t('Nectar users get 2 Boosts included with their membership.')}{' '}
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('nitro')}
+                      className="text-primary hover:underline font-medium inline cursor-pointer"
+                    >
+                      {t('Learn more')}
+                    </button>
                   </div>
                 </div>
+              </div>
+
+              <Button
+                size="sm"
+                onClick={() => setActiveSection('nitro')}
+                className="bg-white hover:bg-white/90 text-purple-950 font-black text-xs h-8 px-4 rounded-xl shadow-md cursor-pointer shrink-0"
+              >
+                <Zap className="w-3.5 h-3.5 fill-current text-purple-600 mr-1.5" />
+                <span>{t('Get Nectar')}</span>
+              </Button>
+            </div>
+
+            {/* ── 3. THESE COLONIES COULD USE A BOOST ── */}
+            <div className="space-y-3">
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {t('These colonies could use a Boost')}
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  {
+                    id: 'c1',
+                    name: "zmsta's colony",
+                    initials: 'ZC',
+                    color: 'bg-indigo-600',
+                    defaultLevel: 0,
+                  },
+                  {
+                    id: 'c2',
+                    name: 'awd community',
+                    initials: 'AWD',
+                    color: 'bg-emerald-600',
+                    defaultLevel: 0,
+                  },
+                  {
+                    id: 'c3',
+                    name: '[FULLZ] Global Hub',
+                    initials: 'FLZ',
+                    color: 'bg-purple-600',
+                    defaultLevel: 1,
+                  },
+                ].map((col) => {
+                  const currentBoosts = boostedColonies[col.id] ?? 0;
+                  const level = currentBoosts >= 14 ? 3 : currentBoosts >= 7 ? 2 : currentBoosts >= 2 ? 1 : 0;
+
+                  return (
+                    <div
+                      key={col.id}
+                      className="rounded-xl border border-border bg-card p-3.5 flex items-center justify-between gap-4 shadow-xs hover:border-border/80 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={cn(
+                            'size-10 rounded-2xl flex items-center justify-center font-bold text-xs text-white shadow-xs shrink-0',
+                            col.color
+                          )}
+                        >
+                          {col.initials}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-foreground truncate">
+                            {col.name}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                            <Gem className="w-3 h-3 text-pink-500" />
+                            <span>
+                              {currentBoosts === 0
+                                ? t('No Boosts')
+                                : `${currentBoosts} Boosts • Level ${level}`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setBoostedColonies((prev) => ({
+                            ...prev,
+                            [col.id]: (prev[col.id] ?? 0) + 1,
+                          }));
+                          toast.success(t(`Berhasil memberikan Boost ke ${col.name}! 🎉`));
+                        }}
+                        className="h-8 text-xs font-bold hover:bg-pink-500/10 hover:text-pink-500 hover:border-pink-500/30 border border-transparent transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
+                      >
+                        <Gem className="w-3.5 h-3.5 text-pink-500" />
+                        <span>{t('Boost this colony')}</span>
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── 4. LEVEL PERKS PREVIEW TABLE ── */}
+            <div className="space-y-4">
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {t('Level Perks Overview')}
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-md">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 border-b border-border text-xs font-bold text-foreground bg-muted/30">
+                  <div className="col-span-4 p-4 font-bold">Perks</div>
+                  <div className="col-span-2 sm:col-span-2 p-3 text-center border-l border-border/60">
+                    <div>Level 1</div>
+                    <div className="text-[10px] text-muted-foreground font-medium">2 Boosts</div>
+                  </div>
+                  <div className="col-span-3 sm:col-span-3 p-3 text-center border-l border-border/60">
+                    <div>Level 2</div>
+                    <div className="text-[10px] text-muted-foreground font-medium">7 Boosts</div>
+                  </div>
+                  <div className="col-span-3 sm:col-span-3 p-3 text-center border-l border-border/60">
+                    <div>Level 3</div>
+                    <div className="text-[10px] text-muted-foreground font-medium">14 Boosts</div>
+                  </div>
+                </div>
+
+                {/* Table Rows */}
+                <div className="divide-y divide-border/60 text-xs">
+                  {[
+                    { perk: 'Emoji Slots', l1: '100', l2: '150', l3: '250' },
+                    { perk: 'Sticker Slots', l1: '15', l2: '30', l3: '60' },
+                    { perk: 'Soundboard Slots', l1: '24', l2: '36', l3: '48' },
+                    { perk: 'Stream Quality', l1: '720p & 60fps', l2: '1440p & 60fps', l3: '1440p & 60fps' },
+                    { perk: 'Audio Quality', l1: '128kbps', l2: '256kbps', l3: '384kbps' },
+                    { perk: 'Upload Size Limit', l1: '10MB', l2: '50MB', l3: '100MB' },
+                    { perk: 'Video Stage Seats', l1: '50', l2: '150', l3: '300' },
+                    { perk: 'Animated Colony Icon', l1: true, l2: true, l3: true },
+                    { perk: 'Colony Invite Background', l1: true, l2: true, l3: true },
+                    { perk: 'Colony Banner', l1: false, l2: 'Static', l3: 'Animated' },
+                    { perk: 'Custom Role Icons', l1: false, l2: true, l3: true },
+                    { perk: 'Custom Invite Link', l1: false, l2: false, l3: true },
+                  ].map((row, idx) => (
+                    <div
+                      key={idx}
+                      className={cn(
+                        'grid grid-cols-12 items-center transition-colors',
+                        idx % 2 === 0 ? 'bg-card' : 'bg-muted/15'
+                      )}
+                    >
+                      <div className="col-span-4 p-3 font-semibold text-foreground">
+                        {row.perk}
+                      </div>
+
+                      {/* Level 1 */}
+                      <div className="col-span-2 sm:col-span-2 p-3 text-center border-l border-border/60">
+                        {typeof row.l1 === 'boolean' ? (
+                          row.l1 ? (
+                            <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                          ) : (
+                            <X className="w-4 h-4 text-muted-foreground/35 mx-auto" />
+                          )
+                        ) : (
+                          <span className="font-bold text-foreground text-[11px]">{row.l1}</span>
+                        )}
+                      </div>
+
+                      {/* Level 2 */}
+                      <div className="col-span-3 sm:col-span-3 p-3 text-center border-l border-border/60">
+                        {typeof row.l2 === 'boolean' ? (
+                          row.l2 ? (
+                            <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                          ) : (
+                            <X className="w-4 h-4 text-muted-foreground/35 mx-auto" />
+                          )
+                        ) : (
+                          <span className="font-bold text-foreground text-[11px]">{row.l2}</span>
+                        )}
+                      </div>
+
+                      {/* Level 3 */}
+                      <div className="col-span-3 sm:col-span-3 p-3 text-center border-l border-border/60">
+                        {typeof row.l3 === 'boolean' ? (
+                          row.l3 ? (
+                            <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                          ) : (
+                            <X className="w-4 h-4 text-muted-foreground/35 mx-auto" />
+                          )
+                        ) : (
+                          <span className="font-bold text-pink-500 text-[11px]">{row.l3}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── 5. GIVE YOUR COMMUNITY A BOOST & BE RECOGNIZED ── */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xl font-bold text-foreground text-center">
+                {t('Give your community a Boost & be recognized')}
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
+                  <div className="size-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto shadow-xs">
+                    <Gem className="w-6 h-6 text-pink-500" />
+                  </div>
+                  <div className="text-xs font-bold text-foreground">
+                    {t('Display your support with a Member List icon')}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
+                  <div className="size-12 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500 mx-auto shadow-xs">
+                    <Star className="w-6 h-6 fill-pink-500/40 text-pink-500 animate-pulse" />
+                  </div>
+                  <div className="text-xs font-bold text-foreground">
+                    {t('Unlock a profile badge that evolves over time')}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
+                  <div className="size-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 mx-auto shadow-xs">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div className="text-xs font-bold text-foreground">
+                    {t('Get an exclusive Booster role')}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
+                  <div className="size-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mx-auto shadow-xs">
+                    <Heart className="w-6 h-6 fill-rose-500/40" />
+                  </div>
+                  <div className="text-xs font-bold text-foreground">
+                    {t('Show support for your community')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── 6. BOOSTING FAQ ── */}
+            <div className="space-y-4 pt-4">
+              <h3 className="text-xl font-bold text-foreground">
+                {t('Boosting FAQ')}
+              </h3>
+
+              <div className="rounded-2xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
+                {[
+                  {
+                    q: 'What is a Colony Boost?',
+                    a: 'Colony Boosting is a way to support your favorite community and unlock premium perks for all members, such as better audio, 1080p/4K streams, custom vanity URLs, and hundreds of extra emoji slots.',
+                  },
+                  {
+                    q: 'How do I Boost a colony?',
+                    a: "Click 'Boost this colony' next to any colony in your list above, or click the colony dropdown menu in the sidebar and choose Colony Boost.",
+                  },
+                  {
+                    q: 'Can I Boost a Colony multiple times?',
+                    a: 'Yes! You can apply multiple Boosts to the same colony to help it reach higher perk levels faster.',
+                  },
+                  {
+                    q: 'Can I continue Boosting a colony after it reaches Level 3?',
+                    a: 'Yes, you can continue boosting a Level 3 colony to provide a buffer against expired boosts and ensure the colony never loses its Level 3 status.',
+                  },
+                  {
+                    q: "What are 'additional perks' and how are they different from Levels?",
+                    a: 'Additional perks allow colonies to unlock specialized benefits such as extra soundboard slots or custom themes even before hitting the next full milestone level.',
+                  },
+                  {
+                    q: 'How much do the new additional perks cost?',
+                    a: 'Additional perks are unlocked using available Boost slots or through community contributor points.',
+                  },
+                  {
+                    q: 'Are additional perks replacing the current server level system?',
+                    a: 'No, the 3-tier Level system remains the core progression milestone for all colonies.',
+                  },
+                  {
+                    q: 'Do additional perks use separate Boosts from my server level?',
+                    a: "No, all Boosts contribute towards your colony's total level pool.",
+                  },
+                  {
+                    q: 'Are additional perks a one-time purchase, or do they require ongoing Boosts?',
+                    a: 'Perks remain active as long as the colony maintains the required number of active subscriber boosts.',
+                  },
+                ].map((faq, i) => {
+                  const isOpen = openFaqIndex === i;
+                  return (
+                    <div key={i}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenFaqIndex(isOpen ? null : i)}
+                        className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors cursor-pointer"
+                      >
+                        <span className="text-xs font-bold text-foreground">{faq.q}</span>
+                        <ChevronDown
+                          className={cn(
+                            'w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0 ml-2',
+                            isOpen && 'rotate-180'
+                          )}
+                        />
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-1 text-xs text-muted-foreground leading-relaxed bg-muted/10 border-t border-border/40">
+                          {faq.a}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
