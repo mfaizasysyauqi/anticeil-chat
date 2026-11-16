@@ -288,6 +288,8 @@ export function ColonySettingsDialog({
                   setServerStats={setServerStats}
                   channels={channels}
                   members={members}
+                  onUpdateColony={onUpdateColony}
+                  onClose={onClose}
                   t={t}
                 />
               )}

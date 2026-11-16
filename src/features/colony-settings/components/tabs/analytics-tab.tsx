@@ -1,10 +1,27 @@
-import React from 'react';
-import { RefreshCw, MessageSquare, Hash, Users, Bot, Activity } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import React, { useState, useMemo } from 'react';
+import {
+  Hash,
+  Volume2,
+  Copy,
+  Check,
+  Activity,
+  MessageSquare,
+  Users,
+  Bot,
+  RefreshCw,
+  ChevronDown,
+} from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { colonyApi } from '@/chat/chat-api';
-import type { Colony, ColonyStats, ColonyChannel, ColonyMember } from '@/chat/chat-types';
+import type {
+  Colony,
+  ColonyStats,
+  ColonyChannel,
+  ColonyMember,
+} from '@/chat/chat-types';
 
 interface AnalyticsTabProps {
   activeColony: Colony;
@@ -12,6 +29,8 @@ interface AnalyticsTabProps {
   setServerStats: React.Dispatch<React.SetStateAction<ColonyStats | null>>;
   channels: ColonyChannel[];
   members: ColonyMember[];
+  onUpdateColony?: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
+  onClose?: () => void;
   t: (key: string) => string;
 }
 
@@ -21,118 +40,567 @@ export function AnalyticsTab({
   setServerStats,
   channels,
   members,
+  onUpdateColony,
+  onClose,
   t,
 }: AnalyticsTabProps) {
+  // Current Colony channels (filtered by active colony if applicable)
+  const colonyChannels = useMemo(() => {
+    const list = channels.filter(
+      (c) => (c.colonyId || 'anticeil') === activeColony?.id,
+    );
+    return list.length > 0 ? list : channels;
+  }, [channels, activeColony?.id]);
+
+  const textChannels = useMemo(() => {
+    return colonyChannels.filter(
+      (c) => !c.type || c.type === 'text' || c.type === 'forum',
+    );
+  }, [colonyChannels]);
+
+  const voiceChannels = useMemo(() => {
+    return colonyChannels.filter((c) => c.type === 'voice');
+  }, [colonyChannels]);
+
+  // Load initial settings from activeColony
+  const initialSettings = activeColony.engagementSettings || {};
+
+  // 1. System Messages State
+  const [sendWelcomeMessage, setSendWelcomeMessage] = useState(
+    initialSettings.sendWelcomeMessage !== false,
+  );
+  const [replyWelcomeSticker, setReplyWelcomeSticker] = useState(
+    initialSettings.replyWelcomeSticker !== false,
+  );
+  const [sendBoostMessage, setSendBoostMessage] = useState(
+    initialSettings.sendBoostMessage !== false,
+  );
+  const [sendSetupTips, setSendSetupTips] = useState(
+    initialSettings.sendSetupTips !== false,
+  );
+  const [systemChannelId, setSystemChannelId] = useState(
+    initialSettings.systemChannelId ||
+      textChannels[0]?.id ||
+      colonyChannels[0]?.id ||
+      '',
+  );
+
+  // 2. Activity Feed Settings State
+  const [activityFeedEnabled, setActivityFeedEnabled] = useState(
+    initialSettings.activityFeedEnabled !== false,
+  );
+
+  // 3. Default Notification Settings State ('all' | 'mentions')
+  const [defaultNotifications, setDefaultNotifications] = useState<'all' | 'mentions'>(
+    initialSettings.defaultNotifications || 'all',
+  );
+
+  // 4. Inactive Channel & Timeout State
+  const [afkChannelId, setAfkChannelId] = useState<string>(
+    initialSettings.afkChannelId || 'none',
+  );
+  const [afkTimeout, setAfkTimeout] = useState<number>(
+    initialSettings.afkTimeout || 300,
+  ); // 300s = 5m
+
+  // 5. Server Widget State
+  const [widgetEnabled, setWidgetEnabled] = useState(
+    Boolean(initialSettings.widgetEnabled),
+  );
+  const [hasCopiedWidget, setHasCopiedWidget] = useState(false);
+  const [hasCopiedId, setHasCopiedId] = useState(false);
+  const [hasCopiedApi, setHasCopiedApi] = useState(false);
+
+  // Widget URLs
+  const widgetIframeSnippet = `<iframe src="https://dev-chat.anticeil.com/widget?id=${activeColony.id}&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>`;
+  const widgetApiUrl = `https://dev-chat.anticeil.com/api/guilds/${activeColony.id}/widget.json`;
+
+  const handleSave = async () => {
+    if (onUpdateColony) {
+      await onUpdateColony(activeColony.id, {
+        engagementSettings: {
+          sendWelcomeMessage,
+          replyWelcomeSticker,
+          sendBoostMessage,
+          sendSetupTips,
+          systemChannelId,
+          activityFeedEnabled,
+          defaultNotifications,
+          afkChannelId: afkChannelId === 'none' ? null : afkChannelId,
+          afkTimeout,
+          widgetEnabled,
+        },
+      });
+      toast.success(t('Pengaturan Engagement berhasil disimpan! 🚀'));
+      onClose?.();
+    }
+  };
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="text-xl font-bold">{t('Engagement & Analitik')}</h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={async () => {
-            const stats = await colonyApi.getHubStats(activeColony.id);
-            setServerStats(stats);
-            toast.success(t('Data analitik diperbarui! 📊'));
-          }}
-        >
-          <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> {t('Segarkan')}
-        </Button>
-      </div>
-      <p className="text-sm text-muted-foreground mb-6">
-        {t('Analisis aktivitas saluran, keaktifan anggota, dan volume pesan otomatis di server ini.')}
-      </p>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="p-4 bg-card/60">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{t('Total Pesan')}</span>
-            <MessageSquare className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold mt-2">{serverStats?.totalMessages || 0}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">{t('Pesan di seluruh saluran')}</p>
-        </Card>
-
-        <Card className="p-4 bg-card/60">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{t('Saluran Aktif')}</span>
-            <Hash className="w-4 h-4 text-emerald-500" />
-          </div>
-          <p className="text-2xl font-bold mt-2">
-            {serverStats?.totalChannels || channels.filter((c) => (c.colonyId || 'anticeil') === activeColony?.id).length}
-          </p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">{t('Saluran teks & DM')}</p>
-        </Card>
-
-        <Card className="p-4 bg-card/60">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{t('Anggota Server')}</span>
-            <Users className="w-4 h-4 text-purple-500" />
-          </div>
-          <p className="text-2xl font-bold mt-2">{members.length}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            {members.filter((m) => m.status === 'online').length} {t('sedang online')}
-          </p>
-        </Card>
-
-        <Card className="p-4 bg-card/60">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{t('Pesan Bot')}</span>
-            <Bot className="w-4 h-4 text-blue-500" />
-          </div>
-          <p className="text-2xl font-bold mt-2">{serverStats?.botMessages || 0}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">{t('Dipicu otomatis oleh webhook')}</p>
-        </Card>
+    <div className="w-full max-w-2xl space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-xl font-bold text-foreground">
+          {t('Engagement')}
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          {t('Manage settings that help keep your server active.')}
+        </p>
       </div>
 
-      {/* Health Status */}
-      <div className="rounded-lg border bg-emerald-500/10 border-emerald-500/20 p-3.5 mb-6 flex items-center gap-3">
-        <Activity className="w-5 h-5 text-emerald-500 shrink-0" />
+      {/* SECTION 1: SYSTEM MESSAGES */}
+      <div className="space-y-4">
         <div>
-          <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-            {t('Status Komunitas: Sangat Sehat & Aktif 🚀')}
-          </p>
+          <h3 className="text-sm font-bold text-foreground">
+            {t('System Messages')}
+          </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t('Interaksi real-time berjalan normal dengan webhook automasi aktif.')}
+            {t('Configure system event messages sent to your server.')}
           </p>
+        </div>
+
+        <div className="space-y-3.5">
+          {/* Switch 1 */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-foreground font-medium">
+              {t('Send a random welcome message when someone joins this server.')}
+            </span>
+            <Switch
+              checked={sendWelcomeMessage}
+              onCheckedChange={setSendWelcomeMessage}
+            />
+          </div>
+
+          {/* Switch 2 */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-foreground font-medium">
+              {t('Prompt members to reply to welcome messages with a sticker.')}
+            </span>
+            <Switch
+              checked={replyWelcomeSticker}
+              onCheckedChange={setReplyWelcomeSticker}
+            />
+          </div>
+
+          {/* Switch 3 */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-foreground font-medium">
+              {t('Send a message when someone boosts this server.')}
+            </span>
+            <Switch
+              checked={sendBoostMessage}
+              onCheckedChange={setSendBoostMessage}
+            />
+          </div>
+
+          {/* Switch 4 */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-foreground font-medium">
+              {t('Send helpful tips for server setup.')}
+            </span>
+            <Switch
+              checked={sendSetupTips}
+              onCheckedChange={setSendSetupTips}
+            />
+          </div>
+        </div>
+
+        {/* System Messages Channel Dropdown */}
+        <div className="pt-2 space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            {t('System Messages Channel')}
+          </label>
+          <p className="text-xs text-muted-foreground mb-1.5">
+            {t('This is the channel we send system event messages to.')}
+          </p>
+          <div className="relative">
+            <select
+              value={systemChannelId}
+              onChange={(e) => setSystemChannelId(e.target.value)}
+              className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-[#5865F2] cursor-pointer"
+            >
+              {textChannels.map((ch) => (
+                <option key={ch.id} value={ch.id}>
+                  # {ch.name} {ch.description ? `— ${ch.description}` : ''}
+                </option>
+              ))}
+              {textChannels.length === 0 && (
+                <option value=""># general</option>
+              )}
+            </select>
+            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
+          </div>
         </div>
       </div>
 
-      {/* Channel Activity */}
-      <div className="rounded-lg border bg-card/40 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          {t('Peringkat Aktivitas Saluran')}
-        </p>
-        {serverStats?.channelActivity && serverStats.channelActivity.length > 0 ? (
-          <div className="space-y-2.5">
-            {serverStats.channelActivity.map((ch, idx) => (
-              <div key={ch.channelId || idx} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                    {ch.channelName}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {ch.messageCount} {t('pesan')}
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-primary h-full rounded-full transition-all"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        Math.max(10, (ch.messageCount / (serverStats.totalMessages || 1)) * 100),
-                      )}%`,
-                    }}
-                  />
-                </div>
+      <div className="border-b border-border/50 my-6" />
+
+      {/* SECTION 2: ACTIVITY FEED SETTINGS */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">
+            {t('Activity Feed Settings')}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t(
+              'Shows a feed of activity from games and connected apps in this server.',
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-xs text-foreground font-medium">
+            {t('Display Activity Feed in this server')}
+          </span>
+          <Switch
+            checked={activityFeedEnabled}
+            onCheckedChange={setActivityFeedEnabled}
+          />
+        </div>
+      </div>
+
+      <div className="border-b border-border/50 my-6" />
+
+      {/* SECTION 3: DEFAULT NOTIFICATION SETTINGS */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">
+            {t('Default Notification Settings')}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+            {t(
+              'This will determine whether members who have not explicitly set their notification settings receive a notification for every message sent in this server or not.',
+            )}
+          </p>
+        </div>
+
+        <div className="space-y-3 pt-1">
+          {/* Option 1: All Messages */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <div
+              onClick={() => setDefaultNotifications('all')}
+              className="size-4 rounded-full border border-muted-foreground flex items-center justify-center group-hover:border-foreground"
+            >
+              {defaultNotifications === 'all' && (
+                <div className="size-2 rounded-full bg-[#5865F2]" />
+              )}
+            </div>
+            <span
+              onClick={() => setDefaultNotifications('all')}
+              className="text-xs font-semibold text-foreground"
+            >
+              {t('All Messages')}
+            </span>
+          </label>
+
+          {/* Option 2: Only @mentions */}
+          <div className="space-y-1">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div
+                onClick={() => setDefaultNotifications('mentions')}
+                className="size-4 rounded-full border border-muted-foreground flex items-center justify-center group-hover:border-foreground"
+              >
+                {defaultNotifications === 'mentions' && (
+                  <div className="size-2 rounded-full bg-[#5865F2]" />
+                )}
               </div>
-            ))}
+              <span
+                onClick={() => setDefaultNotifications('mentions')}
+                className="text-xs font-semibold text-foreground"
+              >
+                {t('Only @mentions')}
+              </span>
+            </label>
+            <p className="text-[11px] text-muted-foreground pl-7">
+              {t(
+                'We highly recommend setting this to only @mentions for a Community Server.',
+              )}
+            </p>
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">{t('Belum ada data aktivitas saluran.')}</p>
+        </div>
+      </div>
+
+      <div className="border-b border-border/50 my-6" />
+
+      {/* SECTION 4: INACTIVE CHANNEL & INACTIVE TIMEOUT */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Inactive Channel */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {t('Inactive Channel')}
+            </label>
+            <div className="relative">
+              <select
+                value={afkChannelId}
+                onChange={(e) => setAfkChannelId(e.target.value)}
+                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-[#5865F2] cursor-pointer"
+              >
+                <option value="none">{t('No Inactive Channel')}</option>
+                {voiceChannels.map((vc) => (
+                  <option key={vc.id} value={vc.id}>
+                    🔊 {vc.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Inactive Timeout */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {t('Inactive Timeout')}
+            </label>
+            <div className="relative">
+              <select
+                value={afkTimeout}
+                onChange={(e) => setAfkTimeout(Number(e.target.value))}
+                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-[#5865F2] cursor-pointer"
+              >
+                <option value={60}>{t('1 minute')}</option>
+                <option value={300}>{t('5 minutes')}</option>
+                <option value={900}>{t('15 minutes')}</option>
+                <option value={1800}>{t('30 minutes')}</option>
+                <option value={3600}>{t('1 hour')}</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed pt-1">
+          {t(
+            'Automatically move members to this channel and mute them when they have been idle for longer than the inactive timeout. This does not affect browsers.',
+          )}
+        </p>
+      </div>
+
+      <div className="border-b border-border/50 my-6" />
+
+      {/* SECTION 5: SERVER WIDGET */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">
+            {t('Server Widget')}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t(
+              'Embed an HTML widget on your website to display your online members, voice channels, and invite link.',
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-xs text-foreground font-medium">
+            {t('Enable Server Widget')}
+          </span>
+          <Switch
+            checked={widgetEnabled}
+            onCheckedChange={setWidgetEnabled}
+          />
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {t(
+            'By enabling the widget, your server profile will be visible to others outside of your server members. You can control Profile privacy in Server Settings > Profile.',
+          )}
+        </p>
+
+        {/* Expanded Widget Details when Enabled */}
+        {widgetEnabled && (
+          <div className="mt-4 p-4 rounded-xl bg-[#1e1f22] border border-border/80 space-y-4">
+            {/* Server ID */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('Server ID')}
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={activeColony.id}
+                  className="w-full text-xs bg-[#111214] border border-border/60 rounded-lg px-3 py-2 text-foreground font-mono"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(activeColony.id);
+                    setHasCopiedId(true);
+                    toast.success(t('Server ID disalin ke clipboard!'));
+                    setTimeout(() => setHasCopiedId(false), 2000);
+                  }}
+                  className="h-9 px-3 shrink-0"
+                >
+                  {hasCopiedId ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500 mr-1" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  {hasCopiedId ? t('Disalin') : t('Salin')}
+                </Button>
+              </div>
+            </div>
+
+            {/* JSON API */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('JSON API')}
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={widgetApiUrl}
+                  className="w-full text-xs bg-[#111214] border border-border/60 rounded-lg px-3 py-2 text-foreground font-mono truncate"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(widgetApiUrl);
+                    setHasCopiedApi(true);
+                    toast.success(t('Widget API URL disalin!'));
+                    setTimeout(() => setHasCopiedApi(false), 2000);
+                  }}
+                  className="h-9 px-3 shrink-0"
+                >
+                  {hasCopiedApi ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500 mr-1" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  {hasCopiedApi ? t('Disalin') : t('Salin')}
+                </Button>
+              </div>
+            </div>
+
+            {/* Premade HTML Snippet */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('Premade Widget Code')}
+              </label>
+              <div className="relative">
+                <textarea
+                  readOnly
+                  value={widgetIframeSnippet}
+                  rows={3}
+                  className="w-full text-xs bg-[#111214] border border-border/60 rounded-lg p-2.5 text-muted-foreground font-mono resize-none focus:outline-none"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(widgetIframeSnippet);
+                    setHasCopiedWidget(true);
+                    toast.success(t('Kode embed widget berhasil disalin!'));
+                    setTimeout(() => setHasCopiedWidget(false), 2000);
+                  }}
+                  className="absolute right-2.5 bottom-2.5 h-7 text-xs px-2.5 bg-[#1e1f22]"
+                >
+                  {hasCopiedWidget ? (
+                    <Check className="w-3 h-3 text-emerald-500 mr-1" />
+                  ) : (
+                    <Copy className="w-3 h-3 mr-1" />
+                  )}
+                  {hasCopiedWidget ? t('Disalin') : t('Salin Iframe')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="border-b border-border/50 my-6" />
+
+      {/* SECTION 6: ANALYTICS OVERVIEW CARDS */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-foreground">
+            {t('Overview & Community Health')}
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              const stats = await colonyApi.getHubStats(activeColony.id);
+              setServerStats(stats);
+              toast.success(t('Data analitik diperbarui! 📊'));
+            }}
+            className="text-xs h-7 text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" /> {t('Segarkan')}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <Card className="p-3 bg-[#1e1f22] border-border/70">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-muted-foreground">
+                {t('Pesan')}
+              </span>
+              <MessageSquare className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <p className="text-lg font-bold text-foreground mt-1">
+              {serverStats?.totalMessages || 0}
+            </p>
+          </Card>
+
+          <Card className="p-3 bg-[#1e1f22] border-border/70">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-muted-foreground">
+                {t('Saluran')}
+              </span>
+              <Hash className="w-3.5 h-3.5 text-emerald-500" />
+            </div>
+            <p className="text-lg font-bold text-foreground mt-1">
+              {serverStats?.totalChannels || colonyChannels.length}
+            </p>
+          </Card>
+
+          <Card className="p-3 bg-[#1e1f22] border-border/70">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-muted-foreground">
+                {t('Anggota')}
+              </span>
+              <Users className="w-3.5 h-3.5 text-purple-500" />
+            </div>
+            <p className="text-lg font-bold text-foreground mt-1">
+              {members.length}
+            </p>
+          </Card>
+
+          <Card className="p-3 bg-[#1e1f22] border-border/70">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-muted-foreground">
+                {t('Bot Webhook')}
+              </span>
+              <Bot className="w-3.5 h-3.5 text-blue-500" />
+            </div>
+            <p className="text-lg font-bold text-foreground mt-1">
+              {serverStats?.botMessages || 0}
+            </p>
+          </Card>
+        </div>
+      </div>
+
+      {/* Action Footer Buttons */}
+      <div className="pt-4 flex items-center gap-3">
+        <Button
+          className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
+          onClick={handleSave}
+        >
+          {t('Simpan Perubahan')}
+        </Button>
+        {onClose && (
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="text-xs h-9 px-4 rounded-lg cursor-pointer"
+          >
+            {t('Batal')}
+          </Button>
         )}
       </div>
     </div>

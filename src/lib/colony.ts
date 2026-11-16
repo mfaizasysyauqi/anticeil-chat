@@ -29,6 +29,18 @@ export type Colony = {
     color: string;
     badgeId?: string;
   };
+  engagementSettings?: {
+    sendWelcomeMessage?: boolean;
+    replyWelcomeSticker?: boolean;
+    sendBoostMessage?: boolean;
+    sendSetupTips?: boolean;
+    systemChannelId?: string;
+    activityFeedEnabled?: boolean;
+    defaultNotifications?: 'all' | 'mentions';
+    afkChannelId?: string | null;
+    afkTimeout?: number;
+    widgetEnabled?: boolean;
+  };
 };
 
 export const DEFAULT_COLONIES: Colony[] = [
