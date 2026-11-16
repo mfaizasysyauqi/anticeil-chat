@@ -14,6 +14,11 @@ export { AppDirectoryTab } from './app-directory-tab';
 export { SafetySetupTab } from './safety-setup-tab';
 export { AuditLogTab } from './audit-log-tab';
 export { BansTab } from './bans-tab';
+export { CommunityOverviewTab } from './community-overview-tab';
+export { OnboardingTab } from './onboarding-tab';
+export { ServerInsightsTab } from './server-insights-tab';
+export { ServerTemplateTab } from './server-template-tab';
+export { DeleteColonyTab } from './delete-colony-tab';
 
 // Backward compatibility alias
 export { ColonyTagsTab as ServerTagsTab } from './colony-tags-tab';

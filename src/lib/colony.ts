@@ -64,6 +64,34 @@ export type ColonySafetySettings = {
   };
 };
 
+export type ColonyCommunitySettings = {
+  enabled?: boolean;
+  rulesChannelId?: string;
+  communityUpdatesChannelId?: string;
+  safetyNotificationsChannelId?: string;
+  primaryLanguage?: string;
+  description?: string;
+};
+
+export type ColonyOnboarding = {
+  enabled?: boolean;
+  welcomeMessage?: string;
+  defaultChannelIds?: string[];
+  tasks?: Array<{ id: string; title: string; channelId: string; completed?: boolean }>;
+  questions?: Array<{
+    id: string;
+    title: string;
+    options: Array<{ id: string; label: string; roleId?: string; channelId?: string }>;
+  }>;
+};
+
+export type ColonyTemplateSettings = {
+  name?: string;
+  description?: string;
+  code?: string;
+  lastSyncedAt?: string;
+};
+
 export type Colony = {
   id: ColonyId;
   name: string;
@@ -112,6 +140,9 @@ export type Colony = {
   };
   installedApps?: ColonyApp[];
   safetySettings?: ColonySafetySettings;
+  communitySettings?: ColonyCommunitySettings;
+  onboarding?: ColonyOnboarding;
+  templateSettings?: ColonyTemplateSettings;
 };
 
 export const DEFAULT_COLONIES: Colony[] = [

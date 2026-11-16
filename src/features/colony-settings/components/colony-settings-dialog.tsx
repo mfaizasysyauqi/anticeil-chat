@@ -19,6 +19,9 @@ import {
   ShieldAlert,
   Compass,
   ExternalLink,
+  LineChart,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import {
@@ -64,6 +67,11 @@ import {
   SafetySetupTab,
   AuditLogTab,
   BansTab,
+  CommunityOverviewTab,
+  OnboardingTab,
+  ServerInsightsTab,
+  ServerTemplateTab,
+  DeleteColonyTab,
 } from './tabs';
 
 export type ColonySettingsSection =
@@ -83,6 +91,11 @@ export type ColonySettingsSection =
   | 'safety-setup'
   | 'audit-log'
   | 'bans'
+  | 'community-overview'
+  | 'onboarding'
+  | 'server-insights'
+  | 'server-template'
+  | 'delete-server'
   | 'delete';
 
 interface ColonySettingsDialogProps {
@@ -231,6 +244,28 @@ export function ColonySettingsDialog({
         { id: 'bans', label: t('Bans'), icon: <Ban className="h-4 w-4 shrink-0" /> },
       ],
     },
+    {
+      key: 'COMMUNITY',
+      title: t('Community Overview'),
+      items: [
+        { id: 'community-overview', label: t('Community Overview'), icon: <Globe className="h-4 w-4 shrink-0" /> },
+        { id: 'onboarding', label: t('Onboarding'), icon: <Sparkles className="h-4 w-4 shrink-0" /> },
+        { id: 'server-insights', label: t('Server Insights'), icon: <LineChart className="h-4 w-4 shrink-0" /> },
+      ],
+    },
+    {
+      key: 'TEMPLATES_AND_DELETE',
+      title: '',
+      items: [
+        { id: 'server-template', label: t('Server Template'), icon: <Layers className="h-4 w-4 shrink-0" /> },
+        {
+          id: 'delete-server',
+          label: t('Delete Server'),
+          icon: <Trash2 className="h-4 w-4 shrink-0" />,
+          isDanger: true,
+        },
+      ],
+    },
   ];
 
   return (
@@ -272,7 +307,7 @@ export function ColonySettingsDialog({
           </button>
         }
       >
-        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles' || serverSettingsSection === 'access' || serverSettingsSection === 'integrations' || serverSettingsSection === 'app-directory' || serverSettingsSection === 'safety-setup' || serverSettingsSection === 'audit-log' || serverSettingsSection === 'bans') ? "max-w-5xl" : "max-w-2xl")}>
+        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles' || serverSettingsSection === 'access' || serverSettingsSection === 'integrations' || serverSettingsSection === 'app-directory' || serverSettingsSection === 'safety-setup' || serverSettingsSection === 'audit-log' || serverSettingsSection === 'bans' || serverSettingsSection === 'community-overview' || serverSettingsSection === 'onboarding' || serverSettingsSection === 'server-insights' || serverSettingsSection === 'server-template') ? "max-w-5xl" : "max-w-2xl")}>
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
@@ -458,6 +493,58 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   serverBans={serverBans}
                   setServerBans={setServerBans}
+                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  t={t}
+                />
+              )}
+
+              {/* 12. COMMUNITY OVERVIEW */}
+              {serverSettingsSection === 'community-overview' && (
+                <CommunityOverviewTab
+                  activeColony={activeColony}
+                  channels={channels}
+                  onUpdateColony={onUpdateColony}
+                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  onClose={onClose}
+                  t={t}
+                />
+              )}
+
+              {/* 13. ONBOARDING */}
+              {serverSettingsSection === 'onboarding' && (
+                <OnboardingTab
+                  activeColony={activeColony}
+                  channels={channels}
+                  onUpdateColony={onUpdateColony}
+                  t={t}
+                />
+              )}
+
+              {/* 14. SERVER INSIGHTS */}
+              {serverSettingsSection === 'server-insights' && (
+                <ServerInsightsTab
+                  activeColony={activeColony}
+                  channels={channels}
+                  t={t}
+                />
+              )}
+
+              {/* 15. SERVER TEMPLATE */}
+              {serverSettingsSection === 'server-template' && (
+                <ServerTemplateTab
+                  activeColony={activeColony}
+                  channels={channels}
+                  onUpdateColony={onUpdateColony}
+                  t={t}
+                />
+              )}
+
+              {/* 16. DELETE SERVER */}
+              {(serverSettingsSection === 'delete-server' || serverSettingsSection === 'delete') && (
+                <DeleteColonyTab
+                  activeColony={activeColony}
+                  onDeleteHub={onDeleteHub}
+                  onClose={onClose}
                   onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
                   t={t}
                 />
