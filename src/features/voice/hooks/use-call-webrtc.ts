@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { useCallMediaToggles } from './use-call-media-toggles';
+import { useCallActivitySync } from './use-call-activity-sync';
 import { DISCORD_APPS, DiscordAppDefinition } from '../data/discord-activities';
 import type { CallParticipant } from '../types';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
@@ -516,85 +517,17 @@ export function useCallWebRTC({
   });
 
   // Activity Socket Sync Events
-  useEffect(() => {
-    if (!socket) return;
-    const handleActivityEvent = (data: {
-      fromSocketId?: string;
-      channelId?: string;
-      fromUserId?: string;
-      action: string;
-      payload?: any;
-    }) => {
-      if (!data) return;
-      if (data.channelId && data.channelId !== channel.id) return;
-      if (data.action === 'ACTIVITY_LAUNCH' || data.action === 'START_ACTIVITY') {
-        const { appId, appName, isSync } = data.payload || {};
-        if (appId) {
-          const isDifferentApp = appId !== activeAppIdRef.current;
-          setActiveAppId(appId);
-          onToggleActivity?.(true);
-          onActivityChange?.(appId);
-
-          const isLocal =
-            (data.fromSocketId && data.fromSocketId === socket.id) ||
-            (data.fromUserId && data.fromUserId === currentUser?.id);
-
-          if (!isLocal && !isSync && isDifferentApp) {
-            toast.info(`${appName || appId} aktif di panggung panggilan! 🚀`, {
-              id: `activity-active-${channel.id}`,
-            });
-          }
-        }
-      } else if (data.action === 'ACTIVITY_STOP') {
-        const wasActive = !!activeAppIdRef.current;
-        setActiveAppId(null);
-        onToggleActivity?.(false);
-        onActivityChange?.(null);
-        if (wasActive) {
-          toast.info('Aktivitas dihentikan', {
-            id: `activity-stop-${channel.id}`,
-          });
-        }
-      } else if (data.action === 'ACTIVITY_QUERY' || data.action === 'QUERY_ACTIVE_ACTIVITY') {
-        if (activeAppIdRef.current) {
-          socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-            channelId: channel.id,
-            action: 'ACTIVITY_LAUNCH',
-            payload: {
-              appId: activeAppIdRef.current,
-              appName: currentActiveAppRef.current?.title || activeAppIdRef.current,
-              isSync: true,
-            },
-          });
-        }
-      }
-    };
-
-    socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
-
-    socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-      channelId: channel.id,
-      action: 'ACTIVITY_QUERY',
-    });
-
-    return () => {
-      socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleActivityEvent);
-    };
-  }, [socket, channel.id, onToggleActivity, onActivityChange, currentUser?.id]);
-
-  useEffect(() => {
-    if (activeAppIdRef.current && socket && participants.length > 0) {
-      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-        channelId: channel.id,
-        action: 'ACTIVITY_LAUNCH',
-        payload: {
-          appId: activeAppIdRef.current,
-          appName: currentActiveAppRef.current?.title || activeAppIdRef.current,
-          isSync: true,
-        },
-      });
-    }
-  }, [participants.length, socket, channel.id]);
+  useCallActivitySync({
+    socket,
+    channelId: channel.id,
+    activeAppIdRef,
+    currentActiveAppRef,
+    setActiveAppId,
+    onToggleActivity,
+    onActivityChange,
+    currentUserId: currentUser?.id,
+    participantsCount: participants.length,
+  });
 
   const totalInCall = participants.length + 1;
 
