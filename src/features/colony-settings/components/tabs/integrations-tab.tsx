@@ -27,6 +27,12 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { colonyApi } from '@/chat/chat-api';
 import type { Colony, ColonyChannel, ColonyApp } from '@/chat/chat-types';
+import {
+  CreateWebhookDialog,
+  FollowedChannelsDialog,
+  TwitchIntegrationModal,
+  YoutubeIntegrationModal,
+} from './integrations/integrations-modals';
 
 interface IntegrationsTabProps {
   activeColony: Colony;
@@ -59,8 +65,6 @@ export function IntegrationsTab({
   // Webhooks State
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
   const [isCreateWebhookOpen, setIsCreateWebhookOpen] = useState(false);
-  const [webhookName, setWebhookName] = useState('Captain Hook');
-  const [selectedChannelId, setSelectedChannelId] = useState(channels[0]?.id || 'general');
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
@@ -69,29 +73,28 @@ export function IntegrationsTab({
 
   // Twitch & YouTube Integration Modals
   const [isTwitchModalOpen, setIsTwitchModalOpen] = useState(false);
-  const [twitchAccount, setTwitchAccount] = useState('');
   const [isTwitchConnected, setIsTwitchConnected] = useState(false);
+  const [twitchAccount, setTwitchAccount] = useState('');
 
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
-  const [youtubeChannel, setYoutubeChannel] = useState('');
   const [isYoutubeConnected, setIsYoutubeConnected] = useState(false);
+  const [youtubeChannel, setYoutubeChannel] = useState('');
 
   const installedApps: ColonyApp[] = activeColony.installedApps || [];
 
-  const handleCreateWebhook = () => {
+  const handleCreateWebhook = (name: string, channelId: string) => {
     const newId = `wh_${Date.now()}`;
     const generatedUrl = `${window.location.origin}/api/v1/community/webhook?hubId=${activeColony.id}&id=${newId}`;
     const newWebhook: WebhookItem = {
       id: newId,
-      name: webhookName.trim() || 'Captain Hook',
-      channelId: selectedChannelId,
+      name: name.trim() || 'Captain Hook',
+      channelId,
       url: generatedUrl,
       avatarText: '🪝',
       createdAt: new Date().toISOString(),
     };
 
     setWebhooks((prev) => [newWebhook, ...prev]);
-    setIsCreateWebhookOpen(false);
     toast.success(t(`Webhook "${newWebhook.name}" berhasil dibuat! 🪝`));
   };
 
@@ -441,220 +444,53 @@ export function IntegrationsTab({
         )}
       </div>
 
-      {/* ── MODAL: Create Webhook ── */}
-      <Dialog open={isCreateWebhookOpen} onOpenChange={setIsCreateWebhookOpen}>
-        <DialogContent className="sm:max-w-[440px] bg-[#1e1f22] border-border/80 text-foreground">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <Webhook className="w-4 h-4 text-primary" />
-              <span>{t('Create New Webhook')}</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {t('Send automated messages from external APIs and services into your channel.')}
-            </DialogDescription>
-          </DialogHeader>
+      <CreateWebhookDialog
+        isOpen={isCreateWebhookOpen}
+        onOpenChange={setIsCreateWebhookOpen}
+        channels={channels}
+        onCreateWebhook={handleCreateWebhook}
+        t={t}
+      />
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
-                {t('Webhook Name')}
-              </label>
-              <Input
-                value={webhookName}
-                onChange={(e) => setWebhookName(e.target.value)}
-                placeholder="Captain Hook"
-                className="text-xs bg-[#111214] border-border/70 h-9"
-              />
-            </div>
+      <FollowedChannelsDialog
+        isOpen={isFollowedChannelsOpen}
+        onOpenChange={setIsFollowedChannelsOpen}
+        t={t}
+      />
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
-                {t('Channel')}
-              </label>
-              <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-                <SelectTrigger className="text-xs bg-[#111214] border-border/70 h-9">
-                  <SelectValue placeholder={t('Pilih Channel')} />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1e1f22] border-border/80">
-                  {channels.map((c) => (
-                    <SelectItem key={c.id} value={c.id} className="text-xs">
-                      #{c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <TwitchIntegrationModal
+        isOpen={isTwitchModalOpen}
+        onOpenChange={setIsTwitchModalOpen}
+        isConnected={isTwitchConnected}
+        onConnect={(acc) => {
+          setTwitchAccount(acc);
+          setIsTwitchConnected(true);
+          toast.success(t(`Akun Twitch @${acc} berhasil terhubung! 🎮`));
+        }}
+        onDisconnect={() => {
+          setTwitchAccount('');
+          setIsTwitchConnected(false);
+          toast.info(t('Integrasi Twitch diputuskan.'));
+        }}
+        t={t}
+      />
 
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCreateWebhookOpen(false)}
-              className="text-xs"
-            >
-              {t('Batal')}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleCreateWebhook}
-              className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
-            >
-              {t('Simpan Webhook')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── MODAL: Channels Followed Learn More ── */}
-      <Dialog open={isFollowedChannelsOpen} onOpenChange={setIsFollowedChannelsOpen}>
-        <DialogContent className="sm:max-w-[440px] bg-[#1e1f22] border-border/80 text-foreground">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <Radio className="w-4 h-4 text-primary" />
-              <span>{t('Channels Followed')}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-2 text-xs text-muted-foreground leading-relaxed">
-            <p>
-              {t('Following an Announcement channel from another server lets you automatically receive updates and news directly in your own channels.')}
-            </p>
-            <p>
-              {t('To follow a channel, navigate to any Announcement channel across Anticeil servers and click the "Follow" button.')}
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setIsFollowedChannelsOpen(false)}
-              className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
-            >
-              {t('Mengerti')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── MODAL: Connect Twitch ── */}
-      <Dialog open={isTwitchModalOpen} onOpenChange={setIsTwitchModalOpen}>
-        <DialogContent className="sm:max-w-[420px] bg-[#1e1f22] border-border/80 text-foreground">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-[#9146FF]">
-              <span>Twitch Creator Integration</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {t('Hubungkan akun Twitch Anda untuk menyinkronkan subscriber ke peran otomatis dan menggunakan emotikon channel.')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <label className="text-xs font-semibold text-muted-foreground">
-              Twitch Username / Channel URL
-            </label>
-            <Input
-              value={twitchAccount}
-              onChange={(e) => setTwitchAccount(e.target.value)}
-              placeholder="e.g. shroud"
-              className="text-xs bg-[#111214] border-border/70 h-9"
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            {isTwitchConnected ? (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  setIsTwitchConnected(false);
-                  setTwitchAccount('');
-                  setIsTwitchModalOpen(false);
-                  toast.info(t('Integrasi Twitch diputuskan.'));
-                }}
-                className="text-xs"
-              >
-                {t('Disconnect')}
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                if (!twitchAccount.trim()) {
-                  toast.error(t('Masukkan username Twitch terlebih dahulu.'));
-                  return;
-                }
-                setIsTwitchConnected(true);
-                setIsTwitchModalOpen(false);
-                toast.success(t(`Akun Twitch @${twitchAccount} berhasil terhubung! 🎮`));
-              }}
-              className="text-xs bg-[#9146FF] hover:bg-[#772CE8] text-white"
-            >
-              {t('Hubungkan Twitch')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── MODAL: Connect YouTube ── */}
-      <Dialog open={isYoutubeModalOpen} onOpenChange={setIsYoutubeModalOpen}>
-        <DialogContent className="sm:max-w-[420px] bg-[#1e1f22] border-border/80 text-foreground">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-red-500">
-              <span>YouTube Creator Integration</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {t('Hubungkan channel YouTube Anda untuk memberikan peran khusus kepada member channel dan subscriber.')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <label className="text-xs font-semibold text-muted-foreground">
-              YouTube Channel Handle or URL
-            </label>
-            <Input
-              value={youtubeChannel}
-              onChange={(e) => setYoutubeChannel(e.target.value)}
-              placeholder="e.g. @MrBeast"
-              className="text-xs bg-[#111214] border-border/70 h-9"
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            {isYoutubeConnected ? (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  setIsYoutubeConnected(false);
-                  setYoutubeChannel('');
-                  setIsYoutubeModalOpen(false);
-                  toast.info(t('Integrasi YouTube diputuskan.'));
-                }}
-                className="text-xs"
-              >
-                {t('Disconnect')}
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                if (!youtubeChannel.trim()) {
-                  toast.error(t('Masukkan handle YouTube terlebih dahulu.'));
-                  return;
-                }
-                setIsYoutubeConnected(true);
-                setIsYoutubeModalOpen(false);
-                toast.success(t(`Channel YouTube ${youtubeChannel} berhasil terhubung! 📺`));
-              }}
-              className="text-xs bg-red-600 hover:bg-red-700 text-white"
-            >
-              {t('Hubungkan YouTube')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <YoutubeIntegrationModal
+        isOpen={isYoutubeModalOpen}
+        onOpenChange={setIsYoutubeModalOpen}
+        isConnected={isYoutubeConnected}
+        onConnect={(ch) => {
+          setYoutubeChannel(ch);
+          setIsYoutubeConnected(true);
+          toast.success(t(`Channel YouTube ${ch} berhasil terhubung! 📺`));
+        }}
+        onDisconnect={() => {
+          setYoutubeChannel('');
+          setIsYoutubeConnected(false);
+          toast.info(t('Integrasi YouTube diputuskan.'));
+        }}
+        t={t}
+      />
     </div>
   );
 }
