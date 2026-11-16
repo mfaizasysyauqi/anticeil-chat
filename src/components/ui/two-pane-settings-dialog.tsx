@@ -66,10 +66,13 @@ export function TwoPaneSettingsDialog({
     }
   }, [open, initialMobileView]);
 
-  // Reset sub-item when section changes
+  // Reset scroll to top and clear sub-items when section changes
   useEffect(() => {
     setActiveSubIds([]);
-  }, [activeSection]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [activeSection, scrollRef]);
 
   const activeItem = useMemo(() => {
     for (const group of groups) {
@@ -170,6 +173,9 @@ export function TwoPaneSettingsDialog({
     } else {
       onSectionChange(item.id);
       setMobileView('detail');
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+      }
     }
   };
 

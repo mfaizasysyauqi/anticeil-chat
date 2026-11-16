@@ -190,11 +190,6 @@ export function ColonyRail({
         </div>
       )}
 
-      {/* Separator bar */}
-      <div className="w-full flex items-center justify-center h-0 relative shrink-0 z-20">
-        <div className="w-8 h-[2px] bg-border rounded-full" />
-      </div>
-
       {/* Scrollable lower rail: Switcher, Add (+), then list */}
       <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
         {/* Switcher Button: Servers vs Friends (matches standard server icon aesthetic) */}
