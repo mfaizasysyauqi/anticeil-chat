@@ -91,6 +91,8 @@ export function EditProfileDialog({
       <DialogContent
         showCloseButton={false}
         onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
         className="p-0 w-[94vw] max-w-[1150px] h-[85vh] max-h-[740px] overflow-hidden bg-card border border-border flex flex-col rounded-2xl shadow-2xl relative gap-0 select-none z-[70]"
         overlayClassName="z-[70]"
       >
