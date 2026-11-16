@@ -16,6 +16,7 @@ import {
   Trash2,
   X,
   ShieldCheck,
+  ShieldAlert,
   Compass,
   ExternalLink,
 } from 'lucide-react';
@@ -60,6 +61,7 @@ import {
   AccessTab,
   IntegrationsTab,
   AppDirectoryTab,
+  SafetySetupTab,
   AuditLogTab,
   BansTab,
 } from './tabs';
@@ -78,6 +80,7 @@ export type ColonySettingsSection =
   | 'access'
   | 'integrations'
   | 'app-directory'
+  | 'safety-setup'
   | 'audit-log'
   | 'bans'
   | 'delete';
@@ -223,6 +226,7 @@ export function ColonySettingsDialog({
       key: 'MODERATION',
       title: t('Moderation'),
       items: [
+        { id: 'safety-setup', label: t('Safety Setup'), icon: <ShieldAlert className="h-4 w-4 shrink-0" /> },
         { id: 'audit-log', label: t('Audit Log'), icon: <ScrollText className="h-4 w-4 shrink-0" /> },
         { id: 'bans', label: t('Bans'), icon: <Ban className="h-4 w-4 shrink-0" /> },
       ],
@@ -268,7 +272,7 @@ export function ColonySettingsDialog({
           </button>
         }
       >
-        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles' || serverSettingsSection === 'access' || serverSettingsSection === 'integrations' || serverSettingsSection === 'app-directory') ? "max-w-5xl" : "max-w-2xl")}>
+        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles' || serverSettingsSection === 'access' || serverSettingsSection === 'integrations' || serverSettingsSection === 'app-directory' || serverSettingsSection === 'safety-setup' || serverSettingsSection === 'audit-log' || serverSettingsSection === 'bans') ? "max-w-5xl" : "max-w-2xl")}>
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
@@ -427,10 +431,21 @@ export function ColonySettingsDialog({
                 />
               )}
 
+              {/* 9c. SAFETY SETUP */}
+              {serverSettingsSection === 'safety-setup' && (
+                <SafetySetupTab
+                  activeColony={activeColony}
+                  onUpdateColony={onUpdateColony}
+                  onClose={onClose}
+                  t={t}
+                />
+              )}
+
               {/* 10. LOG AUDIT */}
               {serverSettingsSection === 'audit-log' && (
                 <AuditLogTab
                   activeColony={activeColony}
+                  members={members}
                   serverAuditLogs={serverAuditLogs}
                   setServerAuditLogs={setServerAuditLogs}
                   t={t}
@@ -443,6 +458,7 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   serverBans={serverBans}
                   setServerBans={setServerBans}
+                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
                   t={t}
                 />
               )}

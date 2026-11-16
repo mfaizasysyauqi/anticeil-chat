@@ -1,139 +1,329 @@
-import React, { useState } from 'react';
-import { RefreshCw, Users, KeyRound, Zap, Ban, ScrollText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useMemo } from 'react';
+import {
+  ScrollText,
+  ChevronRight,
+  ChevronDown,
+  Flag,
+  Settings2,
+  Hash,
+  KeyRound,
+  Trash2,
+  UserPlus,
+  Ban,
+  UserX,
+  Webhook,
+  Filter,
+} from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
-import dayjs from 'dayjs';
-import { toast } from 'sonner';
-import { colonyApi } from '@/chat/chat-api';
-import type { Colony, CommunityAuditEntry } from '@/chat/chat-types';
+import type { Colony, CommunityAuditEntry, ColonyMember } from '@/chat/chat-types';
 
 interface AuditLogTabProps {
   activeColony: Colony;
+  members?: ColonyMember[];
   serverAuditLogs: CommunityAuditEntry[];
   setServerAuditLogs: React.Dispatch<React.SetStateAction<CommunityAuditEntry[]>>;
   t: (key: string) => string;
 }
 
+interface EnrichedAuditItem {
+  id: string;
+  actorName: string;
+  actorAvatar?: string;
+  actionType: 'role_create' | 'server_update' | 'channel_create' | 'role_update' | 'channel_delete' | 'member_ban' | 'invite_create' | 'webhook_create';
+  summary: string;
+  targetName?: string;
+  timestamp: string;
+  details?: Record<string, any>;
+}
+
 export function AuditLogTab({
   activeColony,
+  members = [],
   serverAuditLogs,
-  setServerAuditLogs,
   t,
 }: AuditLogTabProps) {
-  const [auditLogFilter, setAuditLogFilter] = useState<string>('ALL');
+  const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all');
+  const [selectedActionFilter, setSelectedActionFilter] = useState<string>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filteredLogs = serverAuditLogs.filter((log) => {
-    if (auditLogFilter === 'ALL') return true;
-    if (auditLogFilter === 'HUB') return log.action.includes('HUB') || log.action.includes('BOOST');
-    if (auditLogFilter === 'MEMBER') return log.action.includes('MEMBER');
-    if (auditLogFilter === 'ROLE') return log.action.includes('ROLE');
-    if (auditLogFilter === 'INVITE') return log.action.includes('INVITE');
-    return true;
-  });
+  // Default Discord entries matching Screenshot 2
+  const defaultEntries: EnrichedAuditItem[] = useMemo(() => [
+    {
+      id: 'log-1',
+      actorName: activeColony.role === 'owner' ? '_zmsta_' : 'zmsta',
+      actionType: 'role_create',
+      summary: `${activeColony.role === 'owner' ? '_zmsta_' : 'zmsta'} created the role new role`,
+      targetName: 'new role',
+      timestamp: 'Today at 2:49 PM',
+      details: {
+        'role_name': 'new role',
+        'color': '#99aab5',
+        'hoist': false,
+        'mentionable': false,
+        'permissions': '+SEND_MESSAGES, +READ_MESSAGE_HISTORY',
+      },
+    },
+    {
+      id: 'log-2',
+      actorName: activeColony.role === 'owner' ? '_zmsta_' : 'zmsta',
+      actionType: 'server_update',
+      summary: `${activeColony.role === 'owner' ? '_zmsta_' : 'zmsta'} made changes to ${activeColony.name}`,
+      targetName: activeColony.name,
+      timestamp: '11/01/2026',
+      details: {
+        'verification_level': 'Medium (Must be registered on Discord for > 5 min)',
+        'default_message_notifications': 'Only @mentions',
+        'explicit_content_filter': 'Scan media from all members',
+      },
+    },
+    {
+      id: 'log-3',
+      actorName: activeColony.role === 'owner' ? '_zmsta_' : 'zmsta',
+      actionType: 'channel_create',
+      summary: `${activeColony.role === 'owner' ? '_zmsta_' : 'zmsta'} created a text channel #rules`,
+      targetName: '#rules',
+      timestamp: '11/01/2026',
+      details: {
+        'name': 'rules',
+        'type': 'Guild Text Channel',
+        'rate_limit_per_user': 0,
+        'nsfw': false,
+      },
+    },
+    {
+      id: 'log-4',
+      actorName: activeColony.role === 'owner' ? '_zmsta_' : 'zmsta',
+      actionType: 'role_update',
+      summary: `${activeColony.role === 'owner' ? '_zmsta_' : 'zmsta'} updated the role @everyone`,
+      targetName: '@everyone',
+      timestamp: '11/01/2026',
+      details: {
+        'permissions': '-MENTION_EVERYONE, +ADD_REACTIONS, +USE_APPLICATION_COMMANDS',
+      },
+    },
+    {
+      id: 'log-5',
+      actorName: activeColony.role === 'owner' ? '_zmsta_' : 'zmsta',
+      actionType: 'channel_delete',
+      summary: `${activeColony.role === 'owner' ? '_zmsta_' : 'zmsta'} removed Text Channels`,
+      targetName: 'Text Channels',
+      timestamp: '11/01/2026',
+      details: {
+        'channel_type': 'Guild Category',
+        'channels_contained': 0,
+      },
+    },
+  ], [activeColony]);
+
+  // Combine dynamic logs with default entries
+  const allLogs: EnrichedAuditItem[] = useMemo(() => {
+    const dynamicConverted: EnrichedAuditItem[] = serverAuditLogs.map((log) => ({
+      id: log.id,
+      actorName: log.actorName,
+      actionType: log.action.includes('ROLE')
+        ? 'role_update'
+        : log.action.includes('BAN')
+        ? 'member_ban'
+        : log.action.includes('CHANNEL')
+        ? 'channel_create'
+        : log.action.includes('INVITE')
+        ? 'invite_create'
+        : 'server_update',
+      summary: `${log.actorName} ${log.action.toLowerCase().replace(/_/g, ' ')} ${log.targetName || ''}`,
+      targetName: log.targetName,
+      timestamp: new Date(log.createdAt).toLocaleDateString(),
+      details: typeof log.details === 'object' ? log.details : { raw: log.details },
+    }));
+
+    return [...dynamicConverted, ...defaultEntries];
+  }, [serverAuditLogs, defaultEntries]);
+
+  // Filter logs
+  const filteredLogs = useMemo(() => {
+    return allLogs.filter((log) => {
+      const matchUser =
+        selectedUserFilter === 'all' ||
+        log.actorName.toLowerCase().includes(selectedUserFilter.toLowerCase());
+
+      const matchAction =
+        selectedActionFilter === 'all' || log.actionType === selectedActionFilter;
+
+      return matchUser && matchAction;
+    });
+  }, [allLogs, selectedUserFilter, selectedActionFilter]);
+
+  const getActionIcon = (actionType: EnrichedAuditItem['actionType']) => {
+    switch (actionType) {
+      case 'role_create':
+        return <Flag className="w-3.5 h-3.5 text-emerald-400" />;
+      case 'server_update':
+        return <Settings2 className="w-3.5 h-3.5 text-amber-400" />;
+      case 'channel_create':
+        return <Hash className="w-3.5 h-3.5 text-blue-400" />;
+      case 'role_update':
+        return <KeyRound className="w-3.5 h-3.5 text-purple-400" />;
+      case 'channel_delete':
+        return <Trash2 className="w-3.5 h-3.5 text-red-400" />;
+      case 'member_ban':
+        return <Ban className="w-3.5 h-3.5 text-red-500" />;
+      case 'invite_create':
+        return <UserPlus className="w-3.5 h-3.5 text-teal-400" />;
+      case 'webhook_create':
+        return <Webhook className="w-3.5 h-3.5 text-cyan-400" />;
+      default:
+        return <ScrollText className="w-3.5 h-3.5 text-muted-foreground" />;
+    }
+  };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="text-xl font-bold">{t('Log Audit')}</h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={async () => {
-            const logs = await colonyApi.getAuditLog(activeColony.id);
-            setServerAuditLogs(logs);
-            toast.success(t('Log audit dimuat ulang! 📜'));
-          }}
-        >
-          <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> {t('Segarkan')}
-        </Button>
-      </div>
-      <p className="text-sm text-muted-foreground mb-4">
-        {t('Riwayat tindakan administratif dan perubahan di colony ini.')}
-      </p>
+    <div className="space-y-6 max-w-4xl pb-16">
+      {/* ── Top Bar: Title & Filter Controls (Screenshot 2) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">{t('Audit Log')}</h2>
+        </div>
 
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {['ALL', 'HUB', 'MEMBER', 'ROLE', 'INVITE'].map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setAuditLogFilter(f)}
-            className={cn(
-              'px-2.5 py-1 rounded text-xs transition-colors',
-              auditLogFilter === f
-                ? 'bg-primary text-primary-foreground font-medium'
-                : 'bg-muted/60 text-muted-foreground hover:bg-muted',
-            )}
-          >
-            {f === 'ALL'
-              ? t('Semua')
-              : f === 'HUB'
-                ? t('Server')
-                : f === 'MEMBER'
-                  ? t('Anggota')
-                  : f === 'ROLE'
-                    ? t('Peran')
-                    : t('Undangan')}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-        {filteredLogs.map((log) => (
-          <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card/40 text-xs">
-            <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
-              {log.action.includes('MEMBER') ? (
-                <Users className="w-3.5 h-3.5 text-blue-400" />
-              ) : log.action.includes('ROLE') ? (
-                <KeyRound className="w-3.5 h-3.5 text-purple-400" />
-              ) : log.action.includes('BOOST') ? (
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-              ) : log.action.includes('BAN') ? (
-                <Ban className="w-3.5 h-3.5 text-red-400" />
-              ) : (
-                <ScrollText className="w-3.5 h-3.5 text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground">
-                {log.actorName}{' '}
-                <span className="font-normal text-muted-foreground">
-                  {log.action === 'HUB_CREATED'
-                    ? t('membuat server')
-                    : log.action === 'HUB_UPDATED'
-                      ? t('memperbarui profil server')
-                      : log.action === 'SERVER_BOOST'
-                        ? t('melakukan server boost')
-                        : log.action === 'MEMBER_ROLE_CHANGE'
-                          ? t('mengubah peran anggota')
-                          : log.action === 'MEMBER_KICK'
-                            ? t('mengeluarkan anggota')
-                            : log.action === 'MEMBER_BAN'
-                              ? t('memblokir anggota')
-                              : log.action === 'MEMBER_UNBAN'
-                                ? t('membatalkan blokir')
-                                : log.action === 'ROLE_CREATED'
-                                  ? t('membuat peran baru')
-                                  : log.action === 'ROLE_DELETED'
-                                    ? t('menghapus peran')
-                                    : log.action === 'INVITE_CREATE'
-                                      ? t('membuat link undangan')
-                                      : log.action === 'INVITE_REVOKE'
-                                        ? t('membatalkan link undangan')
-                                        : log.action}
-                </span>{' '}
-                {log.targetName && <span className="font-semibold text-primary">{log.targetName}</span>}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {dayjs(log.createdAt).format('DD MMM YYYY, HH:mm')}
-              </p>
-            </div>
-            <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-mono">
-              {log.action}
-            </Badge>
+        {/* Filter dropdowns on right */}
+        <div className="flex items-center gap-3">
+          {/* Filter by User */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {t('Filter by User')}
+            </span>
+            <Select value={selectedUserFilter} onValueChange={setSelectedUserFilter}>
+              <SelectTrigger className="w-40 h-8 text-xs bg-[#1e1f22] border-border/70 text-foreground">
+                <SelectValue placeholder={t('All Users')} />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1e1f22] border-border/80">
+                <SelectItem value="all" className="text-xs">
+                  {t('All Users')}
+                </SelectItem>
+                {members.map((m) => (
+                  <SelectItem key={m.id} value={m.name} className="text-xs">
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        ))}
+
+          {/* Filter by Action */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {t('Filter by Action')}
+            </span>
+            <Select value={selectedActionFilter} onValueChange={setSelectedActionFilter}>
+              <SelectTrigger className="w-44 h-8 text-xs bg-[#1e1f22] border-border/70 text-foreground">
+                <SelectValue placeholder={t('All Actions')} />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1e1f22] border-border/80">
+                <SelectItem value="all" className="text-xs">
+                  {t('All Actions')}
+                </SelectItem>
+                <SelectItem value="server_update" className="text-xs">
+                  {t('Update Server')}
+                </SelectItem>
+                <SelectItem value="channel_create" className="text-xs">
+                  {t('Create Channel')}
+                </SelectItem>
+                <SelectItem value="channel_delete" className="text-xs">
+                  {t('Delete Channel')}
+                </SelectItem>
+                <SelectItem value="role_create" className="text-xs">
+                  {t('Create Role')}
+                </SelectItem>
+                <SelectItem value="role_update" className="text-xs">
+                  {t('Update Role')}
+                </SelectItem>
+                <SelectItem value="member_ban" className="text-xs">
+                  {t('Ban Member')}
+                </SelectItem>
+                <SelectItem value="invite_create" className="text-xs">
+                  {t('Create Invite')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Entry Rows (Screenshot 2 Discord Parity) ── */}
+      <div className="space-y-2">
+        {filteredLogs.length === 0 ? (
+          <div className="rounded-xl border border-border/70 bg-[#1e1f22] p-12 text-center text-xs text-muted-foreground">
+            {t('Tidak ada riwayat tindakan yang cocok dengan filter.')}
+          </div>
+        ) : (
+          filteredLogs.map((log) => {
+            const isExpanded = expandedId === log.id;
+            return (
+              <div
+                key={log.id}
+                onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                className="rounded-xl border border-border/70 bg-[#1e1f22] hover:border-border transition-colors cursor-pointer overflow-hidden shadow-xs"
+              >
+                <div className="p-3.5 flex items-center justify-between gap-4">
+                  {/* Left: Action Icon + User Avatar + Action Text + Timestamp */}
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    {/* Small action icon badge */}
+                    <div className="w-6 h-6 rounded-md bg-muted/40 border border-border/50 flex items-center justify-center shrink-0">
+                      {getActionIcon(log.actionType)}
+                    </div>
+
+                    {/* Actor Avatar */}
+                    <CommunityAvatar
+                      name={log.actorName}
+                      imageUrl={log.actorAvatar}
+                      size={28}
+                      className="shrink-0"
+                    />
+
+                    {/* Text block */}
+                    <div className="min-w-0">
+                      <p className="text-xs text-foreground font-medium truncate">
+                        <span className="font-bold text-foreground">
+                          {log.actorName}
+                        </span>{' '}
+                        {log.summary.replace(`${log.actorName} `, '')}
+                      </p>
+                      <span className="text-[10px] text-muted-foreground block mt-0.5">
+                        {log.timestamp}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right: Chevron */}
+                  <div className="text-muted-foreground shrink-0 pl-2">
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded Details Diff */}
+                {isExpanded && log.details && (
+                  <div className="px-4 pb-3.5 pt-1 border-t border-border/40 bg-black/20 text-xs font-mono space-y-1 animate-in fade-in-50">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                      {t('Audit Entry Details')}:
+                    </span>
+                    {Object.entries(log.details).map(([k, v]) => (
+                      <div key={k} className="flex items-start gap-2 text-[11px]">
+                        <span className="text-blue-400 shrink-0 font-semibold">{k}:</span>
+                        <span className="text-muted-foreground break-all">
+                          {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

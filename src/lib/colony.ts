@@ -37,6 +37,33 @@ export type ColonyApp = {
   installedAt?: string;
 };
 
+export type ColonySafetySettings = {
+  raidProtection?: {
+    captchaOnJoin?: boolean;
+    raidAlerts?: boolean;
+    autoPauseInvites?: boolean;
+  };
+  dmSpamProtection?: {
+    filterExplicitMedia?: boolean;
+    blockKnownSpam?: boolean;
+    rateLimitNewMembers?: boolean;
+    warnUnverifiedLinks?: boolean;
+    filterInvites?: boolean;
+  };
+  autoMod?: {
+    blockFlaggedWords?: boolean;
+    blockSevereProfanity?: boolean;
+    blockSpamRepeated?: boolean;
+    blockEveryoneMentions?: boolean;
+    customBlocklist?: string[];
+  };
+  permissions?: {
+    restrictEveryoneMention?: boolean;
+    disableUploadsUnverified?: boolean;
+    require2faModeration?: boolean;
+  };
+};
+
 export type Colony = {
   id: ColonyId;
   name: string;
@@ -84,6 +111,7 @@ export type Colony = {
     rules?: string[];
   };
   installedApps?: ColonyApp[];
+  safetySettings?: ColonySafetySettings;
 };
 
 export const DEFAULT_COLONIES: Colony[] = [
