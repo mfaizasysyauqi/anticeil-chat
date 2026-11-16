@@ -225,6 +225,7 @@ export function ColonyPage() {
     requireAuth,
     handleLogout,
     handleGoogleSignIn,
+    handleDevMockLogin,
   } = useAuthSession({
     t,
     onResetAppState: () => {
@@ -1884,6 +1885,7 @@ export function ColonyPage() {
           isAuthRequiredOpen={isAuthRequiredOpen}
           setIsAuthRequiredOpen={setIsAuthRequiredOpen}
           authFeatureInfo={authFeatureInfo}
+          onDevMockLogin={handleDevMockLogin}
           t={t}
         />
 

@@ -3,6 +3,9 @@ FROM oven/bun:alpine AS builder
 
 WORKDIR /app
 
+ARG VITE_ENABLE_DEV_LOGIN=false
+ENV VITE_ENABLE_DEV_LOGIN=$VITE_ENABLE_DEV_LOGIN
+
 COPY package.json bun.lock* ./
 RUN bun install
 

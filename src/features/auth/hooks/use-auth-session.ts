@@ -3,6 +3,47 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { parseJwt } from '@/lib/utils';
 
+export const isDevLoginEnabled =
+  import.meta.env.VITE_ENABLE_DEV_LOGIN === 'true' ||
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' &&
+    (window.location.hostname.startsWith('dev.') ||
+      window.location.hostname.includes('localhost') ||
+      window.location.hostname.includes('127.0.0.1')));
+
+export const MOCK_DEV_USERS = [
+  {
+    id: 'usr_dev_agent_1',
+    email: 'agent-1@anticeil.dev',
+    firstName: 'AI Agent',
+    lastName: 'Alpha',
+    name: 'AI Agent Alpha 🤖',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=agent1',
+    imageUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=agent1',
+    role: 'TESTER',
+  },
+  {
+    id: 'usr_dev_agent_2',
+    email: 'agent-2@anticeil.dev',
+    firstName: 'AI Agent',
+    lastName: 'Beta',
+    name: 'AI Agent Beta ⚡',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=agent2',
+    imageUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=agent2',
+    role: 'TESTER',
+  },
+  {
+    id: 'usr_dev_admin',
+    email: 'admin@anticeil.dev',
+    firstName: 'Dev',
+    lastName: 'Admin',
+    name: 'Dev Admin 🛡️',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin',
+    imageUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin',
+    role: 'ADMIN',
+  },
+];
+
 interface UseAuthSessionOptions {
   t: (text: string, params?: Record<string, any>) => string;
   onResetAppState?: () => void;
@@ -82,6 +123,19 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     }, 200);
   };
 
+  const handleDevMockLogin = (userIndex = 0) => {
+    if (!isDevLoginEnabled) return;
+    const selected = MOCK_DEV_USERS[userIndex] || MOCK_DEV_USERS[0];
+    const mockToken = `dev_jwt_${selected.id}_${Date.now()}`;
+    localStorage.setItem('token', mockToken);
+    localStorage.setItem('ap_token', mockToken);
+    localStorage.setItem('anticeil_current_user', JSON.stringify(selected));
+    setCurrentUser(selected);
+    setIsAuthRequiredOpen(false);
+    window.dispatchEvent(new Event('storage'));
+    toast.success(`[DEV MODE] Masuk sebagai ${selected.name}`);
+  };
+
   const handleGoogleSignIn = async () => {
     try {
       toast.loading(t('Menghubungkan ke Google OAuth...'), { id: 'google-oauth' });
@@ -110,6 +164,22 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Auto login query param support for automated testing: ?dev_login=1 or ?dev_login=agent_1
+    if (isDevLoginEnabled) {
+      const devParam = params.get('dev_login');
+      if (devParam) {
+        let idx = 0;
+        if (devParam === '2' || devParam === 'agent_2' || devParam === 'beta') idx = 1;
+        if (devParam === 'admin' || devParam === '3') idx = 2;
+        handleDevMockLogin(idx);
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('dev_login');
+        window.history.replaceState({}, document.title, cleanUrl.toString());
+        return;
+      }
+    }
+
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
       localStorage.setItem('token', tokenFromUrl);
@@ -224,6 +294,9 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     requireAuth,
     handleLogout,
     handleGoogleSignIn,
+    handleDevMockLogin,
+    isDevLoginEnabled,
+    mockDevUsers: MOCK_DEV_USERS,
   };
 }
 

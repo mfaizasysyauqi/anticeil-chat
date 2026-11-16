@@ -7,13 +7,16 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/core/i18n';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Bot, Shield } from 'lucide-react';
+import { isDevLoginEnabled, MOCK_DEV_USERS } from '../hooks/use-auth-session';
 
 interface AuthRequiredDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onGoogleSignIn: () => void;
+  onDevMockLogin?: (userIndex: number) => void;
   featureTitle?: string;
   featureDescription?: string;
 }
@@ -22,6 +25,7 @@ export function AuthRequiredDialog({
   isOpen,
   onClose,
   onGoogleSignIn,
+  onDevMockLogin,
   featureTitle,
   featureDescription,
 }: AuthRequiredDialogProps) {
@@ -88,6 +92,39 @@ export function AuthRequiredDialog({
             >
               {t('Nanti Saja')}
             </Button>
+
+            {/* Dev / AI Testing Bypass Options (Only shown in Dev / Staging) */}
+            {isDevLoginEnabled && (
+              <div className="w-full pt-2 mt-2 border-t border-amber-500/20 text-left space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                    <Bot className="w-3 h-3" />
+                    <span>AI Testing / Dev Bypass</span>
+                  </span>
+                  <Badge variant="outline" className="text-[9px] border-amber-500/40 text-amber-500 py-0 h-4">
+                    DEV ONLY
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+                  {MOCK_DEV_USERS.map((usr, idx) => (
+                    <Button
+                      key={usr.id}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        onClose();
+                        onDevMockLogin?.(idx);
+                      }}
+                      className="h-8 px-1.5 text-[10px] font-semibold flex items-center justify-center gap-1 border-white/10 hover:border-amber-500/50 hover:bg-amber-500/10 cursor-pointer"
+                      title={`Masuk sebagai ${usr.name}`}
+                    >
+                      <span className="truncate">{usr.firstName} {usr.lastName}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 pt-3 border-t border-border/50 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/75">
