@@ -65,14 +65,14 @@ export function LanguageTab({
 
 
   return (
-          <div className="space-y-6 max-w-2xl">
-            {/* Header */}
-            <div>
-              <h2 className="text-xl font-bold text-foreground">{t('Select a Language')}</h2>
-              <div className="text-xs text-muted-foreground mt-1">
-                {t('Choose the language you want Discord to display.')}
-              </div>
-            </div>
+    <div className="space-y-6 w-full pb-8">
+      {/* Header */}
+      <div>
+        <h2 className="text-xl font-bold text-foreground">{t('Select a Language')}</h2>
+        <div className="text-xs text-muted-foreground mt-1">
+          {t('Pilih bahasa yang Anda inginkan untuk tampilan Anticeil.')}
+        </div>
+      </div>
 
             {/* Language Selector Dropdown / Popover (Matching Screenshot) */}
             <div className="relative">

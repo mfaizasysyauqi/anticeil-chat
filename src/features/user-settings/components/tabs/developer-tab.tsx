@@ -20,10 +20,10 @@ export function DeveloperTab(_props: DeveloperTabProps) {
 
 
   return (
-          <div className="space-y-6 max-w-2xl pb-8">
-            <div>
-              <h2 className="text-xl font-bold text-foreground">{t('Developer')}</h2>
-            </div>
+    <div className="space-y-6 w-full pb-8">
+      <div>
+        <h2 className="text-xl font-bold text-foreground">{t('Developer')}</h2>
+      </div>
 
             {/* Developer Mode */}
             <div className="flex items-center justify-between gap-4 py-3 border-b border-border/40">
