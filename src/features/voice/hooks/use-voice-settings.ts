@@ -21,7 +21,7 @@ export interface VoiceSettingsState {
 
 const STORAGE_KEY_VOICE_SETTINGS = 'anticeil_voice_settings_v1';
 
-const DEFAULT_VOICE_SETTINGS: VoiceSettingsState = {
+export const DEFAULT_VOICE_SETTINGS: VoiceSettingsState = {
   inputDeviceId: 'default',
   outputDeviceId: 'default',
   inputVolume: 100,
@@ -171,9 +171,16 @@ export function useVoiceSettings() {
     };
   }, [stopMicTest]);
 
+  const resetSettings = useCallback(() => {
+    stopMicTest();
+    setSettingsState(DEFAULT_VOICE_SETTINGS);
+    saveVoiceSettings(DEFAULT_VOICE_SETTINGS);
+  }, [stopMicTest]);
+
   return {
     settings,
     updateSetting,
+    resetSettings,
     audioInputDevices,
     audioOutputDevices,
     videoInputDevices,
