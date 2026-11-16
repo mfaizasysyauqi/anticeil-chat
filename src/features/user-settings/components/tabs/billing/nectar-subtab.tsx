@@ -36,8 +36,8 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       toast.success(
         plan === 'nectar_boost'
-          ? t('Selamat! Anda sekarang berlangganan Nectar VIP Boost! 🎉')
-          : t('Selamat! Anda sekarang berlangganan Nectar Basic! 🎉')
+          ? t('Selamat! Anda sekarang berlangganan Nectar VIP! 🎉')
+          : t('Selamat! Anda sekarang berlangganan Pollen! 🎉')
       );
     } catch {
       toast.error(t('Gagal mengaktifkan langganan'));
@@ -110,16 +110,16 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
 
       {/* ── 2. TWO TIER CARDS ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-        {/* TIER 1: NECTAR BASIC */}
+        {/* TIER 1: POLLEN (BASIC) */}
         <div className="rounded-2xl p-6 bg-linear-to-b from-[#0066FE] to-[#004ECC] text-white relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[380px]">
           <div className="absolute top-4 right-4 size-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl shadow-lg select-none">
-            🛵
+            🌼
           </div>
 
           <div className="space-y-4 relative z-10">
             <div>
               <div className="text-xl font-black uppercase tracking-wider flex items-center gap-2">
-                <span>NECTAR</span>
+                <span>POLLEN</span>
                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white/25 border border-white/30">
                   BASIC
                 </span>
@@ -143,7 +143,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
                 t('50MB file sharing limit (5x bigger)'),
                 t('Custom emojis & stickers anywhere'),
                 t('Unlimited Super Reactions'),
-                t('Special Nectar badge on your profile'),
+                t('Special Pollen badge on your profile'),
               ].map((benefit, i) => (
                 <div key={i} className="flex items-center gap-2 text-white/95">
                   <Check className="w-4 h-4 text-emerald-300 shrink-0" />
@@ -159,24 +159,24 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               disabled={subscribing !== null}
               className="w-full bg-white hover:bg-white/90 text-blue-900 font-extrabold text-xs h-10 rounded-xl shadow-lg cursor-pointer"
             >
-              {subscribing === 'nectar_basic' ? t('Mengaktifkan...') : t('Get Nectar Basic')}
+              {subscribing === 'nectar_basic' ? t('Mengaktifkan...') : t('Get Pollen')}
             </Button>
             <Button
               variant="ghost"
               onClick={() =>
-                toast.info(t('Pilih penerima untuk Gift Nectar Basic.'))
+                toast.info(t('Pilih penerima untuk Gift Pollen.'))
               }
               className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-8 rounded-xl cursor-pointer"
             >
-              {t('Gift Nectar Basic')}
+              {t('Gift Pollen')}
             </Button>
           </div>
         </div>
 
-        {/* TIER 2: NECTAR (PREMIUM) */}
+        {/* TIER 2: NECTAR (POPULAR) */}
         <div className="rounded-2xl p-6 bg-linear-to-b from-[#5865F2] via-[#7B3FE4] to-[#B028A7] text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[380px] border border-white/20">
           <div className="absolute top-4 right-4 size-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/30 flex items-center justify-center text-3xl shadow-xl select-none">
-            🚀
+            🍯
           </div>
 
           <div className="space-y-4 relative z-10">

@@ -43,7 +43,7 @@ export const subscriptionsApi = {
 
     const newSub: UserSubscription = {
       planId,
-      planName: planId === 'nectar_boost' ? 'Nectar Boost Tier' : 'Nectar Basic Tier',
+      planName: planId === 'nectar_boost' ? 'Nectar Tier' : 'Pollen Tier',
       status: 'active',
       renewsAt: renewDate.toISOString(),
       boostSlots: planId === 'nectar_boost' ? 2 : 0,
@@ -51,7 +51,7 @@ export const subscriptionsApi = {
         'Custom Emojis di semua colony',
         'Upload file hingga 500MB',
         'Streaming HD 1080p 60fps',
-        planId === 'nectar_boost' ? '2x Colony Boost gratis tiap bulan' : 'Akses lencana Nectar eksklusif',
+        planId === 'nectar_boost' ? '2x Colony Boost gratis tiap bulan' : 'Akses lencana Pollen eksklusif',
       ],
     };
 
