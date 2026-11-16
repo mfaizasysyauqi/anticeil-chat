@@ -7,6 +7,22 @@ export type ColonyCustomEmoji = {
   url?: string;
 };
 
+export type ColonySticker = {
+  id: string;
+  name: string;
+  url: string;
+  description?: string;
+  relatedEmoji?: string;
+};
+
+export type ColonySound = {
+  id: string;
+  name: string;
+  emoji?: string;
+  url?: string;
+  volume?: number;
+};
+
 export type Colony = {
   id: ColonyId;
   name: string;
@@ -45,6 +61,8 @@ export type Colony = {
   serverBannerUrl?: string;
   inviteBackgroundUrl?: string;
   customInviteVanity?: string;
+  stickers?: ColonySticker[];
+  sounds?: ColonySound[];
 };
 
 export const DEFAULT_COLONIES: Colony[] = [

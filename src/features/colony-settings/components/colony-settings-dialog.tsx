@@ -5,6 +5,8 @@ import {
   BarChart3,
   Zap,
   Smile,
+  Sticker,
+  Volume2,
   Users,
   KeyRound,
   UserPlus,
@@ -47,6 +49,8 @@ import {
   AnalyticsTab,
   BoostTab,
   EmojisTab,
+  StickersTab,
+  SoundboardTab,
   MembersTab,
   RolesTab,
   InvitesTab,
@@ -61,6 +65,8 @@ export type ColonySettingsSection =
   | 'engagement'
   | 'boost'
   | 'emoji'
+  | 'stickers'
+  | 'soundboard'
   | 'members'
   | 'roles'
   | 'invites'
@@ -179,6 +185,8 @@ export function ColonySettingsDialog({
       title: t('Expression'),
       items: [
         { id: 'emoji', label: t('Emoji'), icon: <Smile className="h-4 w-4 shrink-0" /> },
+        { id: 'stickers', label: t('Stickers'), icon: <Sticker className="h-4 w-4 shrink-0" /> },
+        { id: 'soundboard', label: t('Soundboard'), icon: <Volume2 className="h-4 w-4 shrink-0" /> },
       ],
     },
     {
@@ -310,6 +318,25 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   serverEmojis={serverEmojis}
                   setServerEmojis={setServerEmojis}
+                  onUpdateColony={onUpdateColony}
+                  t={t}
+                />
+              )}
+
+              {/* 6. STICKERS */}
+              {serverSettingsSection === 'stickers' && (
+                <StickersTab
+                  activeColony={activeColony}
+                  onUpdateColony={onUpdateColony}
+                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  t={t}
+                />
+              )}
+
+              {/* 7. SOUNDBOARD */}
+              {serverSettingsSection === 'soundboard' && (
+                <SoundboardTab
+                  activeColony={activeColony}
                   onUpdateColony={onUpdateColony}
                   t={t}
                 />

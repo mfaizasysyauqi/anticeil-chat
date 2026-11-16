@@ -15,6 +15,8 @@ export type ColonyRole =
 export type {
   ColonyId,
   ColonyCustomEmoji,
+  ColonySticker,
+  ColonySound,
   Colony,
 } from '@/lib/colony';
 

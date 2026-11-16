@@ -3,6 +3,8 @@ export { ColonyTagsTab } from './colony-tags-tab';
 export { AnalyticsTab } from './analytics-tab';
 export { BoostTab } from './boost-tab';
 export { EmojisTab } from './emojis-tab';
+export { StickersTab } from './stickers-tab';
+export { SoundboardTab } from './soundboard-tab';
 export { MembersTab } from './members-tab';
 export { RolesTab } from './roles-tab';
 export { InvitesTab } from './invites-tab';
