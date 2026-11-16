@@ -34,7 +34,7 @@ export function ChatMobileDrawers({
           side="left"
           hideCloseButton
           className={cn(
-            'p-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border',
+            'p-0 gap-0 flex flex-col h-full bg-sidebar border-r border-sidebar-border',
             LAYOUT_SIZES.DRAWER_WIDTH,
           )}
         >
@@ -60,7 +60,7 @@ export function ChatMobileDrawers({
           side="right"
           hideCloseButton
           className={cn(
-            'p-0 bg-sidebar border-l border-sidebar-border',
+            'p-0 gap-0 bg-sidebar border-l border-sidebar-border',
             LAYOUT_SIZES.MEMBERS_DRAWER_WIDTH,
           )}
         >
