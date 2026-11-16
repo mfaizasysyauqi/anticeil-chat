@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-interface ServerWidgetSectionProps {
+interface ColonyWidgetSectionProps {
   widgetEnabled: boolean;
   setWidgetEnabled: (enabled: boolean) => void;
   activeColonyId: string;
@@ -13,14 +13,16 @@ interface ServerWidgetSectionProps {
   t: (key: string) => string;
 }
 
-export function ServerWidgetSection({
+export type ServerWidgetSectionProps = ColonyWidgetSectionProps;
+
+export function ColonyWidgetSection({
   widgetEnabled,
   setWidgetEnabled,
   activeColonyId,
   widgetApiUrl,
   widgetIframeSnippet,
   t,
-}: ServerWidgetSectionProps) {
+}: ColonyWidgetSectionProps) {
   const [hasCopiedId, setHasCopiedId] = useState(false);
   const [hasCopiedApi, setHasCopiedApi] = useState(false);
   const [hasCopiedWidget, setHasCopiedWidget] = useState(false);
@@ -160,3 +162,5 @@ export function ServerWidgetSection({
     </div>
   );
 }
+
+export const ServerWidgetSection = ColonyWidgetSection;

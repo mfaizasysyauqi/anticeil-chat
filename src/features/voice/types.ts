@@ -10,4 +10,4 @@ export interface CallParticipant {
   stream?: MediaStream;
 }
 
-export type { DiscordAppDefinition } from './data/discord-activities';
+export type { DiscordAppDefinition } from './data/voice-activities';

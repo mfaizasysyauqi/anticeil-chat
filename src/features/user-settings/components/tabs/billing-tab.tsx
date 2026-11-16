@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  NitroSubtab,
+  NectarSubtab,
   ColonyBoostSubtab,
   SubscriptionsSubtab,
   GiftInventorySubtab,
@@ -20,7 +20,7 @@ export function BillingTab({
 }: BillingTabProps) {
   switch (activeSection) {
     case 'nitro':
-      return <NitroSubtab theme={theme} />;
+      return <NectarSubtab theme={theme} />;
     case 'boost':
       return <ColonyBoostSubtab onNavigateSection={onNavigateSection} />;
     case 'subscriptions':
@@ -35,7 +35,8 @@ export function BillingTab({
 }
 
 export {
-  NitroSubtab,
+  NectarSubtab,
+  NectarSubtab as NitroSubtab,
   ColonyBoostSubtab,
   SubscriptionsSubtab,
   GiftInventorySubtab,

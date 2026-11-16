@@ -3,7 +3,7 @@ import { Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { useCallMediaToggles } from './use-call-media-toggles';
 import { useCallActivitySync } from './use-call-activity-sync';
-import { DISCORD_APPS, DiscordAppDefinition } from '../data/discord-activities';
+import { DISCORD_APPS, DiscordAppDefinition } from '../data/voice-activities';
 import type { CallParticipant } from '../types';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 

@@ -1,5 +1,5 @@
 export * from './types';
-export * from './data/discord-activities';
+export * from './data/voice-activities';
 export * from './components/video-views';
 export * from './components/call-participant-grid';
 export * from './components/call-controls-bar';

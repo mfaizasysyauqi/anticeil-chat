@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { ColonyChannel, Colony } from '@/chat/chat-types';
-import { DiscordAppDefinition } from '../data/discord-activities';
+import { DiscordAppDefinition } from '../data/voice-activities';
 import { toast } from 'sonner';
 
 export interface VoiceInviteDialogProps {

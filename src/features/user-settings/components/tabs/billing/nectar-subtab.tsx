@@ -19,11 +19,13 @@ import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { subscriptionsApi } from '@/features/billing/api/subscriptions-api';
 
-export interface NitroSubtabProps {
+export interface NectarSubtabProps {
   theme?: any;
 }
 
-export function NitroSubtab({ theme }: NitroSubtabProps) {
+export type NitroSubtabProps = NectarSubtabProps;
+
+export function NectarSubtab({ theme }: NectarSubtabProps) {
   const { t } = useTranslation();
   const [subscribing, setSubscribing] = useState<string | null>(null);
 
@@ -342,3 +344,5 @@ export function NitroSubtab({ theme }: NitroSubtabProps) {
     </div>
   );
 }
+
+export const NitroSubtab = NectarSubtab;

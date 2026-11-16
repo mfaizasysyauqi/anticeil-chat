@@ -29,7 +29,7 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';
-import { DiscordAppDefinition } from '../data/discord-activities';
+import { DiscordAppDefinition } from '../data/voice-activities';
 
 export interface CallControlsBarProps {
   isTextChannel?: boolean;

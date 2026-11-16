@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { ServerWidgetSection } from './analytics/server-widget-section';
+import { ColonyWidgetSection } from './analytics/colony-widget-section';
 import { colonyApi } from '@/chat/chat-api';
 import type {
   Colony,
@@ -376,8 +376,8 @@ export function AnalyticsTab({
 
       <div className="border-b border-border/50 my-6" />
 
-      {/* SECTION 5: SERVER WIDGET */}
-      <ServerWidgetSection
+      {/* SECTION 5: COLONY WIDGET */}
+      <ColonyWidgetSection
         widgetEnabled={widgetEnabled}
         setWidgetEnabled={setWidgetEnabled}
         activeColonyId={activeColony.id}

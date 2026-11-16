@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { ActivityServerListSection } from './activity-server-list-section';
+import { ActivityColonyListSection } from './activity-colony-list-section';
 
 export interface ActivityServerItem {
   id: string;
@@ -304,7 +304,7 @@ export function ActivityPrivacySubtab({
       </div>
 
       {/* SUB-SECTION 2: WHERE I SHARE ACTIVITY */}
-      <ActivityServerListSection
+      <ActivityColonyListSection
         shareServerScope={shareServerScope}
         setShareServerScope={setShareServerScope}
         activityServerSearch={activityServerSearch}

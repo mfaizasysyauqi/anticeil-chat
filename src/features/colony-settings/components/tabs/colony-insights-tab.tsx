@@ -14,17 +14,19 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
 
-interface ServerInsightsTabProps {
+interface ColonyInsightsTabProps {
   activeColony: Colony;
   channels?: ColonyChannel[];
   t: (key: string) => string;
 }
 
-export function ServerInsightsTab({
+export type ServerInsightsTabProps = ColonyInsightsTabProps;
+
+export function ColonyInsightsTab({
   activeColony,
   channels = [],
   t,
-}: ServerInsightsTabProps) {
+}: ColonyInsightsTabProps) {
   const [showDashboardModal, setShowDashboardModal] = useState(false);
 
   return (
@@ -153,3 +155,5 @@ export function ServerInsightsTab({
     </div>
   );
 }
+
+export const ServerInsightsTab = ColonyInsightsTab;

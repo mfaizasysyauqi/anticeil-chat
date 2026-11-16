@@ -16,19 +16,21 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
 
-interface ServerTemplateTabProps {
+interface ColonyTemplateTabProps {
   activeColony: Colony;
   channels?: ColonyChannel[];
   onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   t: (key: string) => string;
 }
 
-export function ServerTemplateTab({
+export type ServerTemplateTabProps = ColonyTemplateTabProps;
+
+export function ColonyTemplateTab({
   activeColony,
   channels = [],
   onUpdateColony,
   t,
-}: ServerTemplateTabProps) {
+}: ColonyTemplateTabProps) {
   const [templateName, setTemplateName] = useState(
     activeColony.templateSettings?.name || `${activeColony.name} Template`
   );
@@ -214,3 +216,5 @@ export function ServerTemplateTab({
     </div>
   );
 }
+
+export const ServerTemplateTab = ColonyTemplateTab;

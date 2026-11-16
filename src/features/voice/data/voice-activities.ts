@@ -22,7 +22,7 @@ import {
   ScreenShare,
 } from 'lucide-react';
 
-export interface DiscordAppDefinition {
+export interface VoiceAppDefinition {
   id: string;
   title: string;
   bannerTitle?: string;
@@ -42,7 +42,9 @@ export interface DiscordAppDefinition {
   accentColor: string;
 }
 
-export const DISCORD_APPS: DiscordAppDefinition[] = [
+export type DiscordAppDefinition = VoiceAppDefinition;
+
+export const VOICE_APPS: VoiceAppDefinition[] = [
   {
     id: 'watch-together',
     title: 'Watch Together',
@@ -116,3 +118,5 @@ export const DISCORD_APPS: DiscordAppDefinition[] = [
     accentColor: '#8b5cf6',
   },
 ];
+
+export const DISCORD_APPS = VOICE_APPS;

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { DISCORD_APPS, DiscordAppDefinition } from '../data/discord-activities';
+import { DISCORD_APPS, DiscordAppDefinition } from '../data/voice-activities';
 
 export interface ActivityLauncherDialogProps {
   open: boolean;

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ColonyChannel } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
-import { DiscordAppDefinition } from '../data/discord-activities';
+import { DiscordAppDefinition } from '../data/voice-activities';
 import type { CallParticipant } from '../types';
 import { LocalVideoView, RemoteVideoView, ScreenVideoView } from './video-views';
 

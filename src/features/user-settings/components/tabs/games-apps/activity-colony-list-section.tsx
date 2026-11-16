@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { ActivityServerItem } from './activity-privacy-subtab';
 
-interface ActivityServerListSectionProps {
+interface ActivityColonyListSectionProps {
   shareServerScope: 'all' | 'small' | 'none';
   setShareServerScope: (scope: 'all' | 'small' | 'none') => void;
   activityServerSearch: string;
@@ -25,7 +25,9 @@ interface ActivityServerListSectionProps {
   t: (key: string) => string;
 }
 
-export function ActivityServerListSection({
+export type ActivityServerListSectionProps = ActivityColonyListSectionProps;
+
+export function ActivityColonyListSection({
   shareServerScope,
   setShareServerScope,
   activityServerSearch,
@@ -298,3 +300,5 @@ export function ActivityServerListSection({
     </div>
   );
 }
+
+export const ActivityServerListSection = ActivityColonyListSection;

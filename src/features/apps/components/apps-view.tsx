@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
-import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/discord-activities';
+import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/voice-activities';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
 

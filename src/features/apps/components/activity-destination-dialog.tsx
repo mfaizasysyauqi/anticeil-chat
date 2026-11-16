@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import type { DiscordAppDefinition } from '@/features/voice/data/discord-activities';
+import type { DiscordAppDefinition } from '@/features/voice/data/voice-activities';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 
 export interface ActivityDestinationDialogProps {

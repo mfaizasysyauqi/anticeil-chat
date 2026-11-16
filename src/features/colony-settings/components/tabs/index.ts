@@ -16,8 +16,8 @@ export { AuditLogTab } from './audit-log-tab';
 export { BansTab } from './bans-tab';
 export { CommunityOverviewTab } from './community-overview-tab';
 export { OnboardingTab } from './onboarding-tab';
-export { ServerInsightsTab } from './server-insights-tab';
-export { ServerTemplateTab } from './server-template-tab';
+export { ColonyInsightsTab, ServerInsightsTab } from './colony-insights-tab';
+export { ColonyTemplateTab, ServerTemplateTab } from './colony-template-tab';
 export { DeleteColonyTab } from './delete-colony-tab';
 
 // Backward compatibility alias

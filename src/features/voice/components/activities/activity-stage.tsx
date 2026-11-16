@@ -1,7 +1,7 @@
 import React from 'react';
 import { Socket } from 'socket.io-client';
 import { ColonyChannel } from '@/chat/chat-types';
-import { DiscordAppDefinition } from '../../data/discord-activities';
+import { DiscordAppDefinition } from '../../data/voice-activities';
 import { YouTubeWatchTogether } from './youtube-watch-together';
 import { WhiteboardCanvas } from './whiteboard-canvas';
 import { ChessGame } from './chess-game';
