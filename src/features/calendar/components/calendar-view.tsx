@@ -38,6 +38,8 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
+import { CalendarMonthGrid } from './calendar-month-grid';
+import { CalendarScheduleDialog } from './calendar-schedule-dialog';
 
 export interface CalendarViewProps {
   events: CalendarEvent[];
@@ -64,18 +66,7 @@ export function CalendarView({
   const [filterType, setFilterType] = useState<CalendarFilterType>('all');
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
 
-  // New Event Form State
-  const [newTitle, setNewTitle] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [newType, setNewType] = useState<'meeting' | 'task' | 'activity'>('meeting');
-  const [newDate, setNewDate] = useState(dayjs().format('YYYY-MM-DD'));
-  const [newTime, setNewTime] = useState('14:00');
-  const [selectedColonyId, setSelectedColonyId] = useState(colonies[0]?.id || 'anticeil');
-  const [selectedChannelId, setSelectedChannelId] = useState('');
 
-  const voiceChannels = channels.filter(
-    (c) => (c.colonyId || 'anticeil') === selectedColonyId && c.type === 'voice'
-  );
 
   const filteredEvents = initialEvents.filter((ev) => {
     if (filterType === 'all') return true;
@@ -135,31 +126,7 @@ export function CalendarView({
     setSelectedDate(now);
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
 
-    const hub = colonies.find((h) => h.id === selectedColonyId);
-    const channel = channels.find((c) => c.id === selectedChannelId);
-
-    const startDateTime = `${newDate}T${newTime}:00`;
-
-    onCreateEvent?.({
-      title: newTitle.trim(),
-      description: newDescription.trim(),
-      type: newType,
-      startTime: startDateTime,
-      colonyId: selectedColonyId,
-      hubName: hub?.name || 'Komunitas Anticeil',
-      channelId: selectedChannelId || undefined,
-      channelName: channel?.name || 'General Voice',
-      status: 'scheduled',
-    });
-
-    setNewTitle('');
-    setNewDescription('');
-    setIsScheduleOpen(false);
-  };
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
@@ -346,106 +313,12 @@ export function CalendarView({
         {viewMode === 'month' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-[500px]">
             {/* Calendar Month Grid (Left 2 cols) */}
-            <div className="lg:col-span-2 flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs">
-              {/* Day Headers (Mon - Sun) */}
-              <div className="grid grid-cols-7 mb-2 text-center text-xs font-semibold text-muted-foreground">
-                <span>Sen</span>
-                <span>Sel</span>
-                <span>Rab</span>
-                <span>Kam</span>
-                <span>Jum</span>
-                <span className="text-amber-500/80">Sab</span>
-                <span className="text-red-500/80">Min</span>
-              </div>
-
-              {/* Day Cells */}
-              <div className="grid grid-cols-7 gap-1 sm:gap-1.5 flex-1">
-                {days.map((item, idx) => {
-                  const isSelected = item.dateStr === selectedDateStr;
-                  const isToday = item.dateStr === dayjs().format('YYYY-MM-DD');
-                  const dayEvents = filteredEvents.filter((e) =>
-                    e.startTime.startsWith(item.dateStr)
-                  );
-
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => setSelectedDate(dayjs(item.dateStr))}
-                      className={cn(
-                        'min-h-[64px] sm:min-h-[82px] p-1.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between group',
-                        isSelected
-                          ? 'border-primary bg-primary/10 shadow-2xs'
-                          : item.isCurrentMonth
-                          ? 'border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-border'
-                          : 'border-transparent bg-transparent opacity-40 hover:opacity-75',
-                        isToday && !isSelected && 'border-primary/40'
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={cn(
-                            'text-xs font-bold size-5 flex items-center justify-center rounded-full',
-                            isToday
-                              ? 'bg-primary text-primary-foreground font-extrabold'
-                              : isSelected
-                              ? 'text-primary font-bold'
-                              : 'text-foreground'
-                          )}
-                        >
-                          {item.dayNumber}
-                        </span>
-                        {dayEvents.length > 0 && (
-                          <span className="text-[10px] font-mono font-semibold px-1 rounded bg-primary/20 text-primary">
-                            {dayEvents.length}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Small Event Pills on desktop */}
-                      <div className="space-y-1 mt-1 hidden sm:block">
-                        {dayEvents.slice(0, 2).map((ev) => (
-                          <div
-                            key={ev.id}
-                            className={cn(
-                              'text-[10px] truncate px-1.5 py-0.5 rounded font-medium',
-                              ev.type === 'meeting'
-                                ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                                : ev.type === 'task'
-                                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                                : 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
-                            )}
-                          >
-                            {dayjs(ev.startTime).format('HH:mm')} {ev.title}
-                          </div>
-                        ))}
-                        {dayEvents.length > 2 && (
-                          <div className="text-[9px] text-muted-foreground font-medium pl-1">
-                            +{dayEvents.length - 2} lainnya
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Dots on mobile */}
-                      <div className="flex sm:hidden gap-1 mt-1">
-                        {dayEvents.slice(0, 3).map((ev, dotIdx) => (
-                          <div
-                            key={dotIdx}
-                            className={cn(
-                              'size-1.5 rounded-full',
-                              ev.type === 'meeting'
-                                ? 'bg-blue-400'
-                                : ev.type === 'task'
-                                ? 'bg-amber-400'
-                                : 'bg-purple-400'
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <CalendarMonthGrid
+              days={days}
+              selectedDateStr={selectedDateStr}
+              filteredEvents={filteredEvents}
+              onSelectDate={setSelectedDate}
+            />
 
             {/* Selected Day Agenda (Right Col) */}
             <div className="flex flex-col bg-card border border-border rounded-xl p-4 shadow-xs">
@@ -659,145 +532,13 @@ export function CalendarView({
       </div>
 
       {/* ── Dialog Jadwalkan Meeting Baru ─────────────────────────── */}
-      <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border text-foreground rounded-2xl shadow-2xl">
-          <form onSubmit={handleCreateSubmit} className="flex flex-col">
-            <div className="p-5 pb-3 border-b border-border">
-              <DialogTitle className="text-base font-bold text-foreground">
-                Jadwalkan Meeting Baru
-              </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Rencanakan panggilan suara atau pertemuan komunitas dengan rekan tim
-              </p>
-            </div>
-
-            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]">
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Judul Acara / Meeting *
-                </label>
-                <Input
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Contoh: Sprint Planning Minggu 4"
-                  className="h-9 text-xs"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                    Tanggal
-                  </label>
-                  <Input
-                    type="date"
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    className="h-9 text-xs"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                    Waktu (WIB)
-                  </label>
-                  <Input
-                    type="time"
-                    value={newTime}
-                    onChange={(e) => setNewTime(e.target.value)}
-                    className="h-9 text-xs"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                    Pilih Server / Komunitas
-                  </label>
-                  <Select
-                    value={selectedColonyId}
-                    onValueChange={(val) => {
-                      setSelectedColonyId(val);
-                      setSelectedChannelId('');
-                    }}
-                  >
-                    <SelectTrigger className="w-full h-9 text-xs">
-                      <SelectValue placeholder="Pilih Colony..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colonies.map((h) => (
-                        <SelectItem key={h.id} value={h.id}>
-                          {h.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                    Saluran Suara (Voice)
-                  </label>
-                  <Select
-                    value={selectedChannelId}
-                    onValueChange={(val) => setSelectedChannelId(val)}
-                  >
-                    <SelectTrigger className="w-full h-9 text-xs">
-                      <SelectValue placeholder="Pilih Saluran..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {voiceChannels.length === 0 ? (
-                        <SelectItem value="_empty" disabled>
-                          Tidak ada saluran suara
-                        </SelectItem>
-                      ) : (
-                        voiceChannels.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            🔊 {c.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Deskripsi / Agenda Pembahasan
-                </label>
-                <textarea
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Tuliskan topik agenda meeting yang akan dibahas..."
-                  className="w-full rounded-md border border-input bg-background p-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[80px]"
-                />
-              </div>
-            </div>
-
-            <div className="p-4 bg-muted/40 border-t border-border flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsScheduleOpen(false)}
-                className="h-8 text-xs cursor-pointer"
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                className="h-8 text-xs font-semibold cursor-pointer"
-              >
-                Simpan Jadwal
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CalendarScheduleDialog
+        isOpen={isScheduleOpen}
+        onOpenChange={setIsScheduleOpen}
+        colonies={colonies}
+        channels={channels}
+        onCreateEvent={onCreateEvent}
+      />
     </div>
   );
 }
