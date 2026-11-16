@@ -246,7 +246,7 @@ export function ColonySettingsDialog({
           </button>
         }
       >
-        <div className={cn("w-full", serverSettingsSection === 'profile' ? "max-w-5xl" : "max-w-2xl")}>
+        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag') ? "max-w-5xl" : "max-w-2xl")}>
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
@@ -274,6 +274,8 @@ export function ColonySettingsDialog({
                   serverTags={serverTags}
                   setServerTags={setServerTags}
                   onUpdateColony={onUpdateColony}
+                  onNavigateSection={(section) => setColonySettingsSection(section as ColonySettingsSection)}
+                  onClose={onClose}
                   t={t}
                 />
               )}

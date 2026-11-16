@@ -23,6 +23,12 @@ export type Colony = {
   emojis?: ColonyCustomEmoji[];
   boostsCount?: number;
   boostTier?: number;
+  serverTag?: {
+    name: string;
+    badge: string;
+    color: string;
+    badgeId?: string;
+  };
 };
 
 export const DEFAULT_COLONIES: Colony[] = [
