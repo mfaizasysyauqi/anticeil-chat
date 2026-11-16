@@ -1,0 +1,636 @@
+import { useAuthSession } from '@/features/auth';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
+import { useTranslation } from '@/core/i18n';
+import { useTheme } from '@/core/theme';
+import { type MessageRequestItem } from '@/features/message-requests';
+import { type KanbanCard } from '@/features/kanban';
+import {
+  useResizableSidebar,
+  useChannelPinsNotifications,
+} from '@/features/channels';
+import { renderFormattedMessage, useColonySocket } from '@/features/chat';
+import { processFileInput } from '@/features/chat-input';
+import { useChatModalsState } from './use-chat-modals-state';
+import { useChatSubsystems } from './use-chat-subsystems';
+import { useActivityLauncher } from './use-activity-launcher';
+import { useMessageActions } from './use-message-actions';
+import { useThreadManager } from './use-thread-manager';
+import { useUrlSync } from './use-url-sync';
+import { useColonyData } from './use-colony-data';
+import { useChatNavigation } from './use-chat-navigation';
+import { useChatMembers } from './use-chat-members';
+import { useChatInitLoader } from './use-chat-init-loader';
+import { useSocket } from '@/providers/socket-provider';
+import { useVoiceCallState } from '@/features/voice';
+import { toast } from 'sonner';
+import { DEFAULT_COLONIES } from '../chat-defaults';
+import type { ColonyAttachment, ColonyMessage } from '../chat-types';
+import type { ChatPageContentProps } from '../components/chat-page-content';
+import { buildChatPageProps } from './use-colony-props-builder';
+
+const userMutations: any = {
+  useUpdateUser: () => ({ mutateAsync: async () => {}, mutate: () => {} }),
+  useUpdateName: (opts?: any) => ({ mutateAsync: async (d: any) => opts?.onSuccess?.(d), mutate: (d: any) => opts?.onSuccess?.(d) }),
+  useUpdateUsername: (opts?: any) => ({ mutateAsync: async (d: any) => opts?.onSuccess?.(d), mutate: (d: any) => opts?.onSuccess?.(d) }),
+};
+const userHooks: any = { useCurrentUser: () => ({ data: null }), invalidateCurrentUser: async () => {} };
+const queryClient: any = { invalidateQueries: async () => {} };
+
+export function useColonyPageState(): ChatPageContentProps {
+  const { t } = useTranslation();
+  const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+
+  const [isAddFriendDialogOpen, setIsAddFriendDialogOpen] = useState(false);
+  const openCreateColonyRef = useRef<() => void>(() => {});
+
+  // ── 1. Colony & Channel Data Hook ──────────────────────────────────
+  const {
+    colonies,
+    setColonies,
+    activeColonyId,
+    setActiveColonyId,
+    channels,
+    setChannels,
+    activeChannelId,
+    setActiveChannelId,
+    members,
+    setMembers,
+    activeColony,
+  } = useColonyData({
+    onOpenCreateColony: () => openCreateColonyRef.current?.(),
+    onOpenAddFriend: () => setIsAddFriendDialogOpen(true),
+  });
+
+  // ── 2. Auth & Session Hook ─────────────────────────────────────────
+  const authSession = useAuthSession({
+    t,
+    onResetAppState: () => {
+      setColonies(DEFAULT_COLONIES);
+      setChannels([]);
+      setMembers([]);
+      setMessagesMap({});
+      setActiveColonyId('anticeil');
+      setActiveChannelId('');
+    },
+  });
+  const { currentUser, requireAuth } = authSession;
+
+  const platform: any = { name: 'Anticeil', plan: { plan: 'plus' } };
+  const isPlusOrAbove = true;
+  const socket = useSocket();
+
+  // ── 3. Voice & Call State Hook ─────────────────────────────────────
+  const voiceCallState = useVoiceCallState({ socket });
+  const {
+    activeCallChannelId,
+    setActiveCallChannelId,
+    isCallPiP,
+    setIsCallPiP,
+    isActivityOpen,
+    setIsActivityOpen,
+    activeCallCounts,
+    selectedActivityAppId,
+    setSelectedActivityAppId,
+    appsSearchQuery,
+    setAppsSearchQuery,
+  } = voiceCallState;
+
+  const [replyingToMessage, setReplyingToMessage] = useState<ColonyMessage | null>(null);
+  const [messagesMap, setMessagesMap] = useState<Record<string, ColonyMessage[]>>({});
+
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number | string>>(() => ({
+    anticeil: 3,
+    hub_general: 47,
+    hub_gaming: 167,
+    hub_dev: 353,
+    hub_anime: 651,
+    hub_crypto: 87,
+    hub_music: 743,
+    hub_study: 512,
+  }));
+
+  const [homeView, setHomeView] = useState<
+    'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'
+  >('friends');
+
+  // ── 4. URL Sync Hook ───────────────────────────────────────────────
+  useUrlSync({
+    activeColonyId,
+    activeChannelId,
+    selectedActivityAppId,
+    channelsCount: channels.length,
+    isActivityOpen,
+  });
+
+  const [inputText, setInputText] = useState('');
+  const [stagedAttachment, setStagedAttachment] = useState<ColonyAttachment | null>(null);
+  const [showMemberList, setShowMemberList] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
+
+  // Modals & Media Hook
+  const modalsState = useChatModalsState({
+    colonies,
+    setColonies,
+    channels,
+    setChannels,
+    activeColony,
+    setActiveColonyId,
+    setActiveChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+    setSelectedActivityAppId,
+    setIsActivityOpen,
+    setMembers,
+    activeColonyId,
+    activeChannelId,
+    t,
+  });
+  const { colonyModals, channelModals, mediaModals, isGiftModalOpen, setIsGiftModalOpen, claimedGifts, setClaimedGifts } = modalsState;
+  const { setIsCreateHubOpen, setColonyToEdit, setColonyToDelete, setIsInviteOpen, setIsServerSettingsOpen, setColonySettingsSection } = colonyModals;
+  const { setIsCreateChannelOpen, setNewChannelCategory, setNewChannelType, handleOpenEditChannel } = channelModals;
+  const { isMediaPickerOpen, setIsMediaPickerOpen, activeMediaTab, setActiveMediaTab, mediaSearchQuery, setMediaSearchQuery, selectedGifCategory, setSelectedGifCategory, serverDbEmojis, serverDbStickers, setIsQuickAddEmojiOpen, setIsQuickAddStickerOpen } = mediaModals;
+
+  openCreateColonyRef.current = () => setIsCreateHubOpen(true);
+
+  // ── 5. Navigation Resolution Hook ──────────────────────────────────
+  const {
+    colonyChannels,
+    dmChannels,
+    isHome,
+    activeChannel,
+  } = useChatNavigation({
+    channels,
+    activeColonyId,
+    activeChannelId,
+    currentUser,
+    members,
+    activeCallChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+  });
+
+  // Thread Manager Hook
+  const threadManager = useThreadManager({
+    activeChannel,
+    currentUser,
+    t,
+  });
+
+  const [collapsedCategories, setCollapsedCategories] = useState<{ text: boolean; voice: boolean; forum: boolean }>({ text: false, voice: false, forum: false });
+  const [isMuted, setIsMuted] = useState(false);
+  const [isDeafened, setIsDeafened] = useState(false);
+  const { sidebarWidth, isResizingSidebar, handleSidebarResizeStart, handleSidebarResizeReset } = useResizableSidebar();
+  const [isMobileChannelsOpen, setIsMobileChannelsOpen] = useState(false);
+  const [isMobileMembersOpen, setIsMobileMembersOpen] = useState(false);
+
+  useEffect(() => {
+    const handleToggleMobileChannels = () => {
+      setIsMobileChannelsOpen((prev) => !prev);
+    };
+    window.addEventListener('anticeil_toggle_mobile_channels', handleToggleMobileChannels);
+    return () => {
+      window.removeEventListener('anticeil_toggle_mobile_channels', handleToggleMobileChannels);
+    };
+  }, []);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ── 6. WebSocket Hook ──────────────────────────────────────────────
+  useColonySocket({
+    socket,
+    activeChannelId,
+    setActiveChannelId,
+    setMessagesMap,
+    setChannels,
+  });
+
+  // ── 7. Initial Data Loader Hook ────────────────────────────────────
+  useChatInitLoader({
+    currentUser,
+    activeColonyId,
+    activeChannelId,
+    colonyChannels,
+    members,
+    activeCallCounts,
+    setChannels,
+    setMembers,
+    setColonies,
+    setActiveColonyId,
+    setActiveChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+    setSelectedActivityAppId,
+    setIsActivityOpen,
+    setMessagesMap,
+    handleJoinColony: colonyModals.handleJoinColony,
+    setPinnedMessages: () => {},
+    setChannelNotification: () => {},
+    setChannelThreads: () => {},
+    setThreadsMap: () => {},
+  });
+
+  const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_rail_mode');
+      return saved === 'servers' ? 'servers' : 'friends';
+    } catch {
+      return 'friends';
+    }
+  });
+
+  const isFriendsView = isHome && !activeChannel && homeView === 'friends';
+  const isMessageRequestsView = isHome && !activeChannel && homeView === 'message-requests';
+  const isNotificationsView = isHome && !activeChannel && homeView === 'notifications';
+  const isCalendarView = isHome && !activeChannel && homeView === 'calendar';
+  const isAssignmentsView = isHome && !activeChannel && homeView === 'assignments';
+  const isCallsView = isHome && !activeChannel && homeView === 'calls';
+  const isAppsView = isHome && !activeChannel && homeView === 'apps';
+  const isColoniesView = isHome && !activeChannel && (homeView === 'colonies' || homeView === 'servers');
+
+  const currentMessages = activeChannel ? messagesMap[activeChannel.id] || [] : [];
+  const filteredMessages = useMemo(() => {
+    if (!searchQuery.trim()) return currentMessages;
+    const q = searchQuery.toLowerCase();
+    return currentMessages.filter(
+      (m) =>
+        (m.content && m.content.toLowerCase().includes(q)) ||
+        (m.senderName && m.senderName.toLowerCase().includes(q)),
+    );
+  }, [currentMessages, searchQuery]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [currentMessages.length]);
+
+  // ── 8. Feature Subsystems & Members Sync Hook ─────────────────────
+  const chatSubsystems = useChatSubsystems({ currentUser, members, dmChannels, t });
+  const {
+    calendarEvents,
+    createCalendarEvent,
+    isColonyEventsModalOpen,
+    setIsColonyEventsModalOpen,
+    assignments,
+    handleToggleComplete,
+    callLogs,
+    handleCreateCallLog,
+    messageRequests,
+    handleAcceptMessageRequestRaw,
+    handleIgnoreMessageRequest,
+    handleReportSpamMessageRequest,
+    notifications,
+    handleMarkNotificationRead,
+    handleMarkAllNotificationsRead,
+    unreadNotifCount,
+    friends,
+    isUserSettingsOpen,
+    setIsUserSettingsOpen,
+    userSettingsInitialSection,
+    handleOpenUserSettings,
+    isDmSearchOpen,
+    setIsDmSearchOpen,
+    dmSearchQuery,
+    setDmSearchQuery,
+  } = chatSubsystems;
+
+  useEffect(() => {
+    setUnreadCounts((prev) => {
+      if (prev.anticeil === unreadNotifCount) return prev;
+      return { ...prev, anticeil: unreadNotifCount };
+    });
+  }, [unreadNotifCount]);
+
+  // Message Actions Hook
+  const messageActions = useMessageActions({
+    currentUser,
+    activeChannel,
+    activeColony,
+    members,
+    replyingToMessage,
+    setReplyingToMessage,
+    inputText,
+    setInputText,
+    stagedAttachment,
+    setStagedAttachment,
+    messagesMap,
+    setMessagesMap,
+    setPinnedMessages: () => {},
+    setIsMediaPickerOpen,
+    setIsGiftModalOpen,
+    setIsPinnedPopoverOpen: () => {},
+    setAuthFeatureInfo: authSession.setAuthFeatureInfo,
+    setIsAuthRequiredOpen: authSession.setIsAuthRequiredOpen,
+    createCalendarEvent,
+    t,
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processFileInput(e, setStagedAttachment);
+  };
+
+  const handleJumpToNotification = (item: any) => {
+    handleMarkNotificationRead(item.id);
+    if (item.colonyId && item.colonyId !== activeColonyId) {
+      setActiveColonyId(item.colonyId);
+    }
+    setActiveChannelId(item.channelId);
+  };
+
+  // Activity Launcher Hook
+  const { handleLaunchActivity } = useActivityLauncher({
+    channels,
+    setChannels,
+    dmChannels,
+    activeChannel,
+    activeCallChannelId,
+    activeColonyId,
+    activeColony,
+    currentUser,
+    members,
+    socket,
+    t,
+    setSelectedActivityAppId,
+    setIsTemplatePopoverOpen,
+    setActiveColonyId,
+    setActiveChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+    setIsActivityOpen,
+    setMessagesMap,
+  });
+
+  const updateNameMutation = userMutations.useUpdateName({
+    onSuccess: (data: any) => {
+      userHooks.invalidateCurrentUser(queryClient);
+      const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email;
+      toast.success(t(`Nama tampilan berhasil diperbarui menjadi ${fullName}! 🎉`));
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.id === currentUser?.id || m.email === currentUser?.email
+            ? { ...m, name: fullName }
+            : m,
+        ),
+      );
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.message || t('Gagal mengubah nama tampilan.');
+      toast.error(msg);
+    },
+  });
+
+  const updateUsernameMutation = userMutations.useUpdateUsername({
+    onSuccess: (data: any) => {
+      userHooks.invalidateCurrentUser(queryClient);
+      toast.success(t(`Username berhasil diperbarui menjadi @${data.username}! 🎉`));
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.message || t('Gagal mengubah username.');
+      toast.error(msg);
+    },
+  });
+
+  const {
+    currentUserName,
+    displayMembers,
+    handleStartDM,
+    allKnownMembers,
+    isDmMode,
+    activeDmUserId,
+    activeDmMember,
+  } = useChatMembers({
+    members,
+    currentUser,
+    activeColony,
+    activeChannel,
+    isHome,
+    friendsList: friends.allFriends,
+    setChannels,
+    setActiveColonyId,
+    setActiveChannelId,
+    setHomeView,
+    setIsMobileChannelsOpen,
+    setIsMobileMembersOpen,
+  });
+
+  const {
+    isPinnedPopoverOpen,
+    setIsPinnedPopoverOpen,
+    pinnedMessages,
+    isNotificationDropdownOpen,
+    setIsNotificationDropdownOpen,
+    channelNotification,
+    handleUpdateNotification,
+  } = useChannelPinsNotifications({
+    activeChannel,
+  });
+
+  const handleKanbanCardsUpdate = useCallback(
+    (newCards: KanbanCard[]) => {
+      if (!activeChannel) return;
+      try {
+        localStorage.setItem(`anticeil_kanban_${activeChannel.id}`, JSON.stringify(newCards));
+      } catch (err) {
+        console.error('Failed to persist kanban cards:', err);
+      }
+    },
+    [activeChannel],
+  );
+
+  const handleAcceptMessageRequest = async (item: MessageRequestItem) => {
+    await handleAcceptMessageRequestRaw(item);
+  };
+
+  const handleToggleRailMode = () => {
+    setRailMode((prev) => {
+      const next = prev === 'servers' ? 'friends' : 'servers';
+      try {
+        localStorage.setItem('anticeil_rail_mode', next);
+      } catch {}
+      if (next === 'friends') {
+        setActiveColonyId('anticeil');
+        setActiveChannelId('');
+        setHomeView('friends');
+      } else {
+        setActiveColonyId('anticeil');
+        setActiveChannelId('');
+        setHomeView('colonies');
+      }
+      toast.info(next === 'friends' ? t('Beralih ke Mode Teman') : t('Beralih ke Mode Colony'));
+      return next;
+    });
+  };
+
+  return buildChatPageProps({
+    sidebarWidth,
+    isResizingSidebar,
+    handleSidebarResizeStart,
+    handleSidebarResizeReset,
+    isMobileChannelsOpen,
+    setIsMobileChannelsOpen,
+    isMobileMembersOpen,
+    setIsMobileMembersOpen,
+    colonies,
+    activeColonyId,
+    unreadCounts,
+    currentUser,
+    channels,
+    platform,
+    railMode,
+    friends,
+    activeChannelId,
+    setUnreadCounts,
+    setActiveColonyId,
+    setActiveChannelId,
+    setAuthFeatureInfo: authSession.setAuthFeatureInfo,
+    setIsAuthRequiredOpen: authSession.setIsAuthRequiredOpen,
+    requireAuth,
+    setIsCreateHubOpen,
+    handleToggleRailMode,
+    handleStartDM,
+    isAddFriendDialogOpen,
+    setIsAddFriendDialogOpen,
+    t,
+    isHome,
+    activeColony,
+    activeCallChannelId,
+    setActiveCallChannelId,
+    isFriendsView,
+    homeView,
+    setHomeView,
+    messageRequests,
+    unreadNotifCount,
+    dmChannels,
+    allKnownMembers,
+    collapsedCategories,
+    setCollapsedCategories,
+    ...threadManager,
+    activeCallCounts,
+    calendarEvents,
+    colonyModals,
+    channelModals,
+    mediaModals,
+    isColonyEventsModalOpen,
+    setIsColonyEventsModalOpen,
+    isDmSearchOpen,
+    setIsDmSearchOpen,
+    dmSearchQuery,
+    setDmSearchQuery,
+    setIsInviteOpen,
+    setColonySettingsSection,
+    setIsServerSettingsOpen,
+    setNewChannelCategory,
+    setNewChannelType,
+    setIsCreateChannelOpen,
+    handleOpenEditChannel,
+    setColonies,
+    setColonyToEdit,
+    setColonyToDelete,
+    isCallPiP,
+    setIsCallPiP,
+    selectedActivityAppId,
+    setSelectedActivityAppId,
+    currentUserName,
+    isMuted,
+    setIsMuted,
+    isDeafened,
+    setIsDeafened,
+    handleOpenUserSettings,
+    handleLogout: authSession.handleLogout,
+    handleGoogleSignIn: authSession.handleGoogleSignIn,
+    members,
+    isDmMode,
+    activeDmUserId,
+    activeDmMember,
+    displayMembers,
+    handleCreateCallLog,
+    setShowMemberList,
+    isMessageRequestsView,
+    handleAcceptMessageRequest,
+    handleIgnoreMessageRequest,
+    handleReportSpamMessageRequest,
+    isNotificationsView,
+    notifications,
+    handleMarkAllNotificationsRead,
+    handleMarkNotificationRead,
+    handleJumpToNotification,
+    isCalendarView,
+    colonyChannels,
+    createCalendarEvent,
+    isAssignmentsView,
+    assignments,
+    handleToggleComplete,
+    isCallsView,
+    callLogs,
+    isAppsView,
+    handleLaunchActivity,
+    isColoniesView,
+    activeChannel,
+    isThreadsPopoverOpen: threadManager.isThreadsPopoverOpen,
+    setIsThreadsPopoverOpen: threadManager.setIsThreadsPopoverOpen,
+    channelNotification,
+    handleUpdateNotification,
+    isPinnedPopoverOpen,
+    setIsPinnedPopoverOpen,
+    pinnedMessages,
+    showMemberList,
+    searchQuery,
+    setSearchQuery,
+    isPlusOrAbove,
+    socket,
+    isActivityOpen,
+    setIsActivityOpen,
+    navigate,
+    handleKanbanCardsUpdate,
+    replyingToMessage,
+    setReplyingToMessage,
+    filteredMessages,
+    claimedGifts,
+    setClaimedGifts,
+    messagesEndRef,
+    stagedAttachment,
+    setStagedAttachment,
+    inputText,
+    setInputText,
+    handleFileChange,
+    isGiftModalOpen,
+    setIsGiftModalOpen,
+    isMediaPickerOpen,
+    setIsMediaPickerOpen,
+    activeMediaTab,
+    setActiveMediaTab,
+    mediaSearchQuery,
+    setMediaSearchQuery,
+    selectedGifCategory,
+    setSelectedGifCategory,
+    serverDbEmojis,
+    serverDbStickers,
+    setIsQuickAddEmojiOpen,
+    setIsQuickAddStickerOpen,
+    isTemplatePopoverOpen,
+    setIsTemplatePopoverOpen,
+    appsSearchQuery,
+    setAppsSearchQuery,
+    setMembers,
+    isUserSettingsOpen,
+    setIsUserSettingsOpen,
+    userSettingsInitialSection,
+    updateNameMutation,
+    updateUsernameMutation,
+    theme,
+    setTheme,
+    renderFormattedMessage,
+    isAuthRequiredOpen: authSession.isAuthRequiredOpen,
+    authFeatureInfo: authSession.authFeatureInfo,
+    handleDevMockLogin: authSession.handleDevMockLogin,
+    ...messageActions,
+  });
+}
