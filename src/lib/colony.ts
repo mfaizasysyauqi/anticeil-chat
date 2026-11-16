@@ -41,6 +41,10 @@ export type Colony = {
     afkTimeout?: number;
     widgetEnabled?: boolean;
   };
+  showBoostProgressBar?: boolean;
+  serverBannerUrl?: string;
+  inviteBackgroundUrl?: string;
+  customInviteVanity?: string;
 };
 
 export const DEFAULT_COLONIES: Colony[] = [
