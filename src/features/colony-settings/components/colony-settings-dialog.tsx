@@ -15,6 +15,7 @@ import {
   Ban,
   Trash2,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import {
@@ -54,6 +55,7 @@ import {
   MembersTab,
   RolesTab,
   InvitesTab,
+  AccessTab,
   IntegrationsTab,
   AuditLogTab,
   BansTab,
@@ -70,6 +72,7 @@ export type ColonySettingsSection =
   | 'members'
   | 'roles'
   | 'invites'
+  | 'access'
   | 'integrations'
   | 'audit-log'
   | 'bans'
@@ -196,6 +199,7 @@ export function ColonySettingsDialog({
         { id: 'members', label: t('Members'), icon: <Users className="h-4 w-4 shrink-0" /> },
         { id: 'roles', label: t('Roles'), icon: <KeyRound className="h-4 w-4 shrink-0" /> },
         { id: 'invites', label: t('Invites'), icon: <UserPlus className="h-4 w-4 shrink-0" /> },
+        { id: 'access', label: t('Access'), icon: <ShieldCheck className="h-4 w-4 shrink-0" /> },
       ],
     },
     {
@@ -254,7 +258,7 @@ export function ColonySettingsDialog({
           </button>
         }
       >
-        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles') ? "max-w-5xl" : "max-w-2xl")}>
+        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles' || serverSettingsSection === 'access') ? "max-w-5xl" : "max-w-2xl")}>
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
@@ -375,6 +379,16 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   serverInvites={serverInvites}
                   setServerInvites={setServerInvites}
+                  t={t}
+                />
+              )}
+
+              {/* 8b. AKSES (ACCESS) */}
+              {serverSettingsSection === 'access' && (
+                <AccessTab
+                  activeColony={activeColony}
+                  onUpdateColony={onUpdateColony}
+                  onClose={onClose}
                   t={t}
                 />
               )}

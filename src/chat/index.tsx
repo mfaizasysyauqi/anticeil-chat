@@ -633,8 +633,8 @@ export function ColonyPage() {
 
   // Edit Profile dialog state
   const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
-  const [userSettingsInitialSection, setUserSettingsInitialSection] = useState<'account' | 'voice' | 'camera' | 'appearance'>('account');
-  const handleOpenUserSettings = (section: 'account' | 'voice' | 'camera' | 'appearance' = 'account') => {
+  const [userSettingsInitialSection, setUserSettingsInitialSection] = useState<string>('account');
+  const handleOpenUserSettings = (section: string = 'account') => {
     setUserSettingsInitialSection(section);
     setIsUserSettingsOpen(true);
   };

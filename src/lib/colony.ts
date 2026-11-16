@@ -63,6 +63,12 @@ export type Colony = {
   customInviteVanity?: string;
   stickers?: ColonySticker[];
   sounds?: ColonySound[];
+  accessSettings?: {
+    joinMethod?: 'invite_only' | 'apply' | 'discoverable';
+    ageRestricted?: boolean;
+    rulesEnabled?: boolean;
+    rules?: string[];
+  };
 };
 
 export const DEFAULT_COLONIES: Colony[] = [

@@ -1238,37 +1238,31 @@ export function UserSettingsModal({
       }}
       sidebarHeader={
         <div className="space-y-3 mb-2">
-          {/* User Profile Card Header in Sidebar */}
+          {/* User Profile Card Header in Sidebar (Discord 1:1 Parity) */}
           {currentUser && (
-            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/80 border border-sidebar-border">
+            <div
+              onClick={() => {
+                setActiveSection('profiles');
+                setAccountSubView('main');
+              }}
+              className="flex items-center gap-3 px-1 py-1.5 rounded-lg hover:bg-sidebar-accent/50 cursor-pointer transition-colors group"
+            >
               <CommunityAvatar
                 name={currentUserName}
                 email={currentUser?.email}
                 imageUrl={currentUser?.imageUrl}
-                size={36}
+                size={40}
                 showStatus={false}
-                className="shrink-0 ring-1 ring-border"
+                className="shrink-0 rounded-full ring-1 ring-border/50"
               />
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-xs font-bold text-foreground truncate">{currentUserName}</span>
-                <span className="text-[10px] text-muted-foreground font-mono truncate">
-                  {currentUser?.username
-                    ? `@${currentUser.username}`
-                    : currentUser?.email
-                    ? `@${currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '')}`
-                    : ''}
+                <span className="text-sm font-bold text-foreground truncate leading-tight">
+                  {currentUserName}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveSection('profiles');
-                    setAccountSubView('main');
-                  }}
-                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground font-semibold hover:underline cursor-pointer text-left w-fit mt-0.5"
-                >
-                  <span>{t('Edit Profiles')}</span>
-                  <Pencil className="w-2.5 h-2.5" />
-                </button>
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors mt-0.5">
+                  <span className="group-hover:underline">{t('Edit Profiles')}</span>
+                  <Pencil className="w-2.5 h-2.5 shrink-0 opacity-70 group-hover:opacity-100" />
+                </div>
               </div>
             </div>
           )}

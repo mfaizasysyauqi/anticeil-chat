@@ -58,7 +58,7 @@ export interface ChatDialogsPortalProps {
   // User Settings
   isUserSettingsOpen: boolean;
   setIsUserSettingsOpen: (open: boolean) => void;
-  userSettingsInitialSection?: 'account' | 'voice' | 'camera' | 'appearance';
+  userSettingsInitialSection?: string;
   currentUserName: string;
   updateNameMutation: any;
   updateUsernameMutation: any;

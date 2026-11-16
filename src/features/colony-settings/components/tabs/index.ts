@@ -8,6 +8,7 @@ export { SoundboardTab } from './soundboard-tab';
 export { MembersTab } from './members-tab';
 export { RolesTab } from './roles-tab';
 export { InvitesTab } from './invites-tab';
+export { AccessTab } from './access-tab';
 export { IntegrationsTab } from './integrations-tab';
 export { AuditLogTab } from './audit-log-tab';
 export { BansTab } from './bans-tab';

@@ -93,8 +93,32 @@ export function RolesTab({
 
   const clearAllPermissions = () => {
     setPermissions({});
-    toast.info(t('Semua izin peran telah dinonaktifkan.'));
   };
+
+  // Linked role requirements state
+  const [requirements, setRequirements] = useState<
+    Array<{ id: string; platform: string; condition: string }>
+  >([]);
+  const [isAddingRequirement, setIsAddingRequirement] = useState(false);
+
+  // Members assigned to this role state
+  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([]);
+  const [memberSearchInRole, setMemberSearchInRole] = useState('');
+  const [isAddingMembersModalOpen, setIsAddingMembersModalOpen] = useState(false);
+
+  const roleMembers = useMemo(() => {
+    return members.filter((m) => {
+      const isDirectlyAssigned = assignedMemberIds.includes(m.id);
+      const isRoleMatching =
+        activeRole &&
+        m.role?.toLowerCase() === activeRole.name?.toLowerCase();
+      const matchesSearch =
+        !memberSearchInRole ||
+        m.name.toLowerCase().includes(memberSearchInRole.toLowerCase()) ||
+        (m.email && m.email.toLowerCase().includes(memberSearchInRole.toLowerCase()));
+      return (isDirectlyAssigned || isRoleMatching) && matchesSearch;
+    });
+  }, [members, assignedMemberIds, activeRole, memberSearchInRole]);
 
   const handleSelectRole = (r: CommunityCustomRole) => {
     setActiveRoleId(r.id);
@@ -445,7 +469,7 @@ export function RolesTab({
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <span>{t('Manage Members')} (0)</span>
+            <span>{t('Manage Members')} ({roleMembers.length})</span>
             {roleEditorTab === 'members' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5865F2]" />
             )}
@@ -882,40 +906,281 @@ export function RolesTab({
           </div>
         )}
 
-        {/* TAB 3: LINKS */}
+        {/* TAB 3: LINKS (Discord 1:1 Parity) */}
         {roleEditorTab === 'links' && (
-          <div className="py-8 text-center text-xs text-muted-foreground space-y-2">
-            <p className="font-semibold text-foreground">
-              {t('Role Connections & Links')}
-            </p>
-            <p className="text-[11px] max-w-sm mx-auto">
-              {t(
-                'Require members to connect specific third-party accounts (like Steam, Spotify, or GitHub) to obtain this role automatically.',
-              )}
-            </p>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-bold text-foreground">
+                {t('Create Linked Role')}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                {t(
+                  'Linking a connection or app requires members to connect their accounts before being added to the role.',
+                )}{' '}
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toast.info(t('Linked roles require verified third-party connections.'));
+                  }}
+                  className="text-blue-400 hover:underline font-semibold"
+                >
+                  {t('Learn more about Linked Roles.')}
+                </a>
+              </p>
+            </div>
+
+            {/* Add requirement button */}
+            <div>
+              <Button
+                onClick={() => setIsAddingRequirement(true)}
+                className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-10 rounded-lg cursor-pointer"
+              >
+                {t('Add requirement')}
+              </Button>
+            </div>
+
+            {/* Requirements list */}
+            {requirements.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <span className="text-xs font-bold text-muted-foreground uppercase">
+                  {t('Active Requirements')} ({requirements.length})
+                </span>
+                <div className="rounded-xl border border-border/80 bg-[#1e1f22] divide-y divide-border/60 overflow-hidden">
+                  {requirements.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex items-center justify-between p-3"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sm">🔗</span>
+                        <div>
+                          <span className="text-xs font-bold text-foreground block">
+                            {req.platform}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {req.condition}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRequirements((prev) =>
+                            prev.filter((r) => r.id !== req.id),
+                          )
+                        }
+                        className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add requirement modal */}
+            {isAddingRequirement && (
+              <div className="p-4 rounded-xl border border-border/80 bg-[#1e1f22] space-y-3">
+                <span className="text-xs font-bold text-foreground block">
+                  {t('Pilih Platform Koneksi')}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { name: 'Steam', cond: 'Steam account verified (> 1 game)' },
+                    { name: 'Spotify', cond: 'Spotify connected' },
+                    { name: 'GitHub', cond: 'GitHub account (> 5 followers)' },
+                    { name: 'YouTube', cond: 'YouTube channel verified' },
+                    { name: 'Reddit', cond: 'Reddit account karma > 50' },
+                    { name: 'X / Twitter', cond: 'X account followers > 10' },
+                  ].map((p) => (
+                    <button
+                      key={p.name}
+                      type="button"
+                      onClick={() => {
+                        setRequirements((prev) => [
+                          ...prev,
+                          {
+                            id: `req_${Date.now()}`,
+                            platform: p.name,
+                            condition: p.cond,
+                          },
+                        ]);
+                        setIsAddingRequirement(false);
+                        toast.success(
+                          t(`Persyaratan ${p.name} berhasil ditambahkan!`),
+                        );
+                      }}
+                      className="p-2.5 rounded-lg border border-border/60 bg-[#2b2d31]/70 hover:bg-[#35373c] text-xs font-semibold text-left transition-colors cursor-pointer"
+                    >
+                      <span className="text-foreground block">{p.name}</span>
+                      <span className="text-[10px] text-muted-foreground truncate block">
+                        {p.cond}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-1 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsAddingRequirement(false)}
+                    className="text-xs h-8"
+                  >
+                    {t('Batal')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* TAB 4: MANAGE MEMBERS */}
+        {/* TAB 4: MANAGE MEMBERS (Discord 1:1 Parity) */}
         {roleEditorTab === 'members' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground uppercase">
-                {t('Members with this role')}
-              </span>
+            {/* Search & Add Members Bar */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={memberSearchInRole}
+                  onChange={(e) => setMemberSearchInRole(e.target.value)}
+                  placeholder={t('Search Members')}
+                  className="w-full text-xs h-9 pl-9 pr-3 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground focus:outline-none focus:border-[#5865F2]"
+                />
+              </div>
+
               <Button
                 size="sm"
-                onClick={() => toast.info(t('Pilih anggota dari tab Anggota untuk menambahkan peran.'))}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs h-8 px-3 rounded-lg"
+                onClick={() => setIsAddingMembersModalOpen(true)}
+                className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-9 px-4 rounded-lg cursor-pointer shrink-0"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" />
                 {t('Add Members')}
               </Button>
             </div>
 
-            <div className="rounded-xl border border-border/80 bg-[#1e1f22] p-4 text-center text-xs text-muted-foreground">
-              {t('Belum ada anggota yang ditetapkan secara langsung ke peran ini.')}
-            </div>
+            {/* Member List or Empty State */}
+            {roleMembers.length === 0 ? (
+              <div className="py-16 text-center space-y-2">
+                <div className="size-12 rounded-full bg-[#2b2d31] flex items-center justify-center text-muted-foreground mx-auto text-xl">
+                  👥
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('No members were found.')}{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingMembersModalOpen(true)}
+                    className="text-blue-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    {t('Add members to this role.')}
+                  </button>
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border/80 bg-[#1e1f22] divide-y divide-border/60 overflow-hidden">
+                {roleMembers.map((m) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between p-3 hover:bg-white/[0.02] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CommunityAvatar
+                        name={m.name}
+                        imageUrl={m.avatar}
+                        size={32}
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-foreground block">
+                          {m.name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          @{m.name.toLowerCase().replace(/\s+/g, '_')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssignedMemberIds((prev) =>
+                          prev.filter((id) => id !== m.id),
+                        );
+                        toast.success(
+                          t(
+                            `Peran dicabut dari ${m.name}.`,
+                          ),
+                        );
+                      }}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      title={t('Hapus dari Peran')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Members Selection Modal */}
+            {isAddingMembersModalOpen && (
+              <div className="p-4 rounded-xl border border-border/80 bg-[#1e1f22] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground">
+                    {t('Pilih Anggota untuk Peran Ini')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingMembersModalOpen(false)}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="max-h-52 overflow-y-auto space-y-1 pr-1">
+                  {members.map((m) => {
+                    const isAlreadyAssigned = roleMembers.some(
+                      (rm) => rm.id === m.id,
+                    );
+                    return (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          if (isAlreadyAssigned) {
+                            setAssignedMemberIds((prev) =>
+                              prev.filter((id) => id !== m.id),
+                            );
+                          } else {
+                            setAssignedMemberIds((prev) => [...prev, m.id]);
+                            toast.success(t(`${m.name} ditambahkan ke peran!`));
+                          }
+                        }}
+                        className={cn(
+                          'flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors',
+                          isAlreadyAssigned
+                            ? 'bg-[#5865F2]/20 text-[#5865F2]'
+                            : 'hover:bg-[#2b2d31] text-foreground',
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <CommunityAvatar
+                            name={m.name}
+                            imageUrl={m.avatar}
+                            size={26}
+                          />
+                          <span className="font-semibold">{m.name}</span>
+                        </div>
+                        {isAlreadyAssigned && (
+                          <Check className="w-4 h-4 text-[#5865F2]" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

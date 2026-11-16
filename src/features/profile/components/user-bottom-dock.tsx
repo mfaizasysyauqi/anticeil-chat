@@ -23,7 +23,7 @@ interface UserBottomDockProps {
   setIsMuted: (muted: boolean) => void;
   isDeafened: boolean;
   setIsDeafened: (deafened: boolean) => void;
-  onOpenSettings?: (section?: 'account' | 'voice' | 'camera' | 'appearance') => void;
+  onOpenSettings?: (section?: string) => void;
   onLogout?: () => void;
   onGoogleSignIn?: () => void;
   activeCallChannelId?: string | null;
