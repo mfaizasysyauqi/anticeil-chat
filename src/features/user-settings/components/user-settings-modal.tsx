@@ -316,7 +316,6 @@ export function UserSettingsModal({
             <div
               onClick={() => {
                 if (onOpenEditProfile) {
-                  onOpenChange(false);
                   onOpenEditProfile();
                 } else {
                   setActiveSection('profiles');
@@ -391,6 +390,7 @@ export function UserSettingsModal({
             onSaveUsername={onSaveUsername}
             isSavingUsername={isSavingUsername}
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
+            onOpenEditProfile={onOpenEditProfile}
             open={open}
           />
         )}
@@ -400,10 +400,7 @@ export function UserSettingsModal({
             currentUser={currentUser}
             currentUserName={currentUserName}
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
-            onOpenEditProfile={() => {
-              onOpenChange(false);
-              onOpenEditProfile?.();
-            }}
+            onOpenEditProfile={onOpenEditProfile}
           />
         )}
 

@@ -22,6 +22,7 @@ export interface AccountTabProps {
   onSaveUsername: (username: string) => Promise<void> | void;
   isSavingUsername?: boolean;
   onNavigateSection?: (section: string) => void;
+  onOpenEditProfile?: () => void;
   open?: boolean;
 }
 
@@ -33,6 +34,7 @@ export function AccountTab({
   onSaveUsername,
   isSavingUsername = false,
   onNavigateSection,
+  onOpenEditProfile,
   open = true,
 }: AccountTabProps) {
   const { t } = useTranslation();
@@ -143,10 +145,7 @@ export function AccountTab({
                     <div className="h-24 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-600 relative">
                       <button
                         type="button"
-                        onClick={() => {
-                          const el = document.getElementById('profile-edit-form');
-                          el?.scrollIntoView({ behavior: 'smooth' });
-                        }}
+                        onClick={onOpenEditProfile}
                         className="absolute top-3 right-3 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all cursor-pointer"
                       >
                         {t('Edit User Profile')}

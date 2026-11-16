@@ -48,9 +48,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--popover-foreground', '#18181b');
       root.style.setProperty('--sidebar-background', '#ffffff');
       root.style.setProperty('--sidebar-foreground', '#18181b');
-      root.style.setProperty('--sidebar-border', '#e4e4e7');
+      root.style.setProperty('--sidebar-border', '#cbd5e1');
       root.style.setProperty('--sidebar-accent', '#f4f4f5');
-      root.style.setProperty('--border', '#e4e4e7');
+      root.style.setProperty('--border', '#cbd5e1');
       root.style.setProperty('--muted', '#f4f4f5');
       root.style.setProperty('--muted-foreground', '#475569');
       root.style.setProperty('--accent', '#f4f4f5');
@@ -77,9 +77,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--popover-foreground', '#dbdee1');
       root.style.setProperty('--sidebar-background', '#2b2d31');
       root.style.setProperty('--sidebar-foreground', '#dbdee1');
-      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.14)');
       root.style.setProperty('--sidebar-accent', '#35373c');
-      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.16)');
       root.style.setProperty('--muted', '#383a40');
       root.style.setProperty('--muted-foreground', '#949ba4');
       root.style.setProperty('--accent', '#35373c');
@@ -106,9 +106,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--popover-foreground', '#f4f4f5');
       root.style.setProperty('--sidebar-background', '#000000');
       root.style.setProperty('--sidebar-foreground', '#f4f4f5');
-      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.06)');
+      root.style.setProperty('--sidebar-border', 'rgba(255, 255, 255, 0.15)');
       root.style.setProperty('--sidebar-accent', '#121215');
-      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.06)');
+      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.18)');
       root.style.setProperty('--muted', '#121215');
       root.style.setProperty('--muted-foreground', '#a1a1aa');
       root.style.setProperty('--accent', '#18181b');

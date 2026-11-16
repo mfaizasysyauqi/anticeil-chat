@@ -286,6 +286,7 @@ export function CallsView({
                                 matchedHub || {
                                   id: call.colonyId || 'colony',
                                   name: serverName,
+                                  initials: serverName.slice(0, 2).toUpperCase(),
                                   iconUrl: serverIcon || undefined,
                                 }
                               }
@@ -345,6 +346,7 @@ export function CallsView({
                                     matchedHub || {
                                       id: call.colonyId || 'colony',
                                       name: serverName,
+                                      initials: serverName.slice(0, 2).toUpperCase(),
                                       iconUrl: serverIcon || undefined,
                                     }
                                   }
