@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { playPreviewSound } from '../../utils/sound-preview';
+import { AccessibilityPreview } from './accessibility/accessibility-preview';
+import { AccessibilityReducedMotion } from './accessibility/accessibility-reduced-motion';
 
 export interface AccessibilityTabProps {
   theme?: any;
@@ -77,142 +79,17 @@ export function AccessibilityTab({
 
   return (
           <div className="space-y-8 divide-y divide-border/50 pb-8">
-            {/* Top Interactive Live Chat Message Preview Box (Matching all 8 screenshots) */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Preview')}
-              </div>
-              <div
-                className={cn(
-                  'rounded-2xl border border-border/80 bg-[#1e1f22] p-4 relative shadow-sm transition-all',
-                  enableHighContrast && 'border-2 border-white',
-                )}
-                style={{
-                  filter: `saturate(${saturationLevel}%)`,
-                }}
-              >
-                <div
-                  className="flex items-start justify-between gap-4"
-                  style={{ fontSize: `${chatFontSize}px` }}
-                >
-                  <div className="flex-1 space-y-3">
-                    {/* Message 1 */}
-                    <div
-                      className={cn(
-                        'flex items-start gap-3',
-                        chatMessageDisplay === 'compact' && 'items-baseline gap-2',
-                      )}
-                      style={{ marginBottom: `${spaceMessageGroups}px` }}
-                    >
-                      {chatMessageDisplay !== 'compact' && showUserAvatars && (
-                        <div className="size-9 rounded-full bg-zinc-700 overflow-hidden shrink-0 ring-2 ring-white/10">
-                          <img
-                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                            alt="avatar"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              'font-bold text-xs',
-                              roleColorsDisplay === 'names' ? 'text-indigo-400' : 'text-foreground',
-                            )}
-                          >
-                            {roleColorsDisplay === 'dot' && <span className="inline-block size-2 rounded-full bg-indigo-400 mr-1.5" />}
-                            zmsta
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">13.33</span>
-                        </div>
-                        <div className="text-foreground mt-0.5 leading-snug">
-                          what happened to all the beans
-                        </div>
-                        {/* Reactions */}
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <span className="px-2 py-0.5 rounded-lg bg-[#2b2d31] border border-indigo-500/40 text-[11px] font-bold text-white flex items-center gap-1">
-                            <span>🪕</span>
-                            <span>3</span>
-                          </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-[#2b2d31] border border-border/60 text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                            <span>📦</span>
-                            <span>1</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Message 2 */}
-                    <div
-                      className={cn(
-                        'flex items-start gap-3',
-                        chatMessageDisplay === 'compact' && 'items-baseline gap-2',
-                      )}
-                    >
-                      {chatMessageDisplay !== 'compact' && showUserAvatars && (
-                        <div className="size-9 rounded-full bg-zinc-700 overflow-hidden shrink-0 ring-2 ring-white/10">
-                          <img
-                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                            alt="avatar"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              'font-bold text-xs',
-                              roleColorsDisplay === 'names' ? 'text-indigo-400' : 'text-foreground',
-                            )}
-                          >
-                            {roleColorsDisplay === 'dot' && <span className="inline-block size-2 rounded-full bg-indigo-400 mr-1.5" />}
-                            zmsta
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">13.33</span>
-                        </div>
-                        <div className="text-foreground mt-0.5 leading-snug">
-                          here's a link{' '}
-                          <a
-                            href="#"
-                            onClick={(e) => e.preventDefault()}
-                            className={cn(
-                              'text-[#5865F2] font-semibold',
-                              alwaysUnderlineLinks && 'underline',
-                            )}
-                          >
-                            https://discord.com/accessibility
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right side live status & example button */}
-                  <div className="flex flex-col items-end gap-3 shrink-0">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="size-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white shadow-xs" title="Online">
-                        🟢
-                      </div>
-                      <div className="size-5 rounded-full bg-amber-400 flex items-center justify-center text-[10px] font-bold text-black shadow-xs" title="Idle">
-                        🌙
-                      </div>
-                      <div className="size-5 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-bold text-white shadow-xs" title="DND">
-                        ⛔
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-3 py-1.5 h-8 rounded-md shadow-xs"
-                    >
-                      Example Button
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Top Interactive Live Chat Message Preview Box */}
+            <AccessibilityPreview
+              enableHighContrast={enableHighContrast}
+              saturationLevel={saturationLevel}
+              chatFontSize={chatFontSize}
+              chatMessageDisplay={chatMessageDisplay}
+              spaceMessageGroups={spaceMessageGroups}
+              showUserAvatars={showUserAvatars}
+              roleColorsDisplay={roleColorsDisplay}
+              alwaysUnderlineLinks={alwaysUnderlineLinks}
+            />
 
             {/* SUB-SECTION 1: TEXT READABILITY */}
             <div id="accessibility-text-readability" className="scroll-mt-6 space-y-6 pt-6">
@@ -586,121 +463,20 @@ export function AccessibilityTab({
             </div>
 
             {/* SUB-SECTION 4: REDUCED MOTION */}
-            <div id="accessibility-reduced-motion" className="scroll-mt-6 space-y-6 pt-6">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">{t('Reduced Motion')}</h2>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div>
-                    <div className="text-xs font-bold text-foreground">{t('Enable Reduced Motion')}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {t('Reduce the amount and intensity of animations, hover effects, and other moving effects. Learn more.')}
-                    </div>
-                  </div>
-                  <Switch checked={enableReducedMotion} onCheckedChange={setEnableReducedMotion} />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Sync with computer setting')}
-                  </div>
-                  <Switch checked={syncReducedMotionComputer} onCheckedChange={setSyncReducedMotionComputer} />
-                </div>
-              </div>
-
-              {/* Minimum notification duration slider */}
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-foreground">{t('Minimum notification duration')}</span>
-                  <span className="text-[11px] text-emerald-400 font-mono font-bold">{notificationDuration}s</span>
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  {t('Keep pop up notifications on screen for at least this long. Notifications that already stay longer are unaffected.')}
-                </div>
-                <div className="pt-2">
-                  <input
-                    type="range"
-                    min="3"
-                    max="20"
-                    step="1"
-                    value={notificationDuration}
-                    onChange={(e) => setNotificationDuration(Number(e.target.value))}
-                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
-                    <span className="text-emerald-400 font-bold">3s</span>
-                    <span>5s</span>
-                    <span>10s</span>
-                    <span>15s</span>
-                    <span>20s</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* GIF & Animated Emoji switches */}
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Play GIFs when Discord is focused')}
-                  </div>
-                  <Switch checked={playGifsFocused} onCheckedChange={setPlayGifsFocused} />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Play animated emoji')}
-                  </div>
-                  <Switch checked={playAnimatedEmoji} onCheckedChange={setPlayAnimatedEmoji} />
-                </div>
-              </div>
-
-              {/* Play sticker animations radio group */}
-              <div className="space-y-3 pt-2">
-                <div className="text-xs font-bold text-foreground">{t('Play sticker animations')}</div>
-                <div className="space-y-2">
-                  {[
-                    { id: 'always', title: 'Always animate' },
-                    {
-                      id: 'interaction',
-                      title: 'Animate on interaction',
-                      desc: 'On the desktop client, stickers will animate on hover or focus. On mobile clients, stickers will animate on long-press.',
-                    },
-                    { id: 'never', title: 'Never animate' },
-                  ].map((st) => {
-                    const isSelected = stickerAnimationMode === st.id;
-                    return (
-                      <div
-                        key={st.id}
-                        onClick={() => setStickerAnimationMode(st.id as any)}
-                        className={cn(
-                          'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
-                          isSelected
-                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
-                            : 'bg-card border-border/70 hover:bg-muted/30',
-                        )}
-                      >
-                        <div className="mt-0.5 shrink-0">
-                          <div
-                            className={cn(
-                              'size-4 rounded-full border-2 flex items-center justify-center transition-all',
-                              isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
-                            )}
-                          >
-                            {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-foreground">{st.title}</div>
-                          {st.desc && <div className="text-[11px] text-muted-foreground mt-0.5">{st.desc}</div>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <AccessibilityReducedMotion
+              enableReducedMotion={enableReducedMotion}
+              setEnableReducedMotion={setEnableReducedMotion}
+              syncReducedMotionComputer={syncReducedMotionComputer}
+              setSyncReducedMotionComputer={setSyncReducedMotionComputer}
+              notificationDuration={notificationDuration}
+              setNotificationDuration={setNotificationDuration}
+              playGifsFocused={playGifsFocused}
+              setPlayGifsFocused={setPlayGifsFocused}
+              playAnimatedEmoji={playAnimatedEmoji}
+              setPlayAnimatedEmoji={setPlayAnimatedEmoji}
+              stickerAnimationMode={stickerAnimationMode}
+              setStickerAnimationMode={setStickerAnimationMode}
+            />
 
             {/* SUB-SECTION 5: AUDIO & SCREEN READER */}
             <div id="accessibility-audio-screen-reader" className="scroll-mt-6 space-y-6 pt-6">
