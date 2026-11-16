@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Zap,
   Gift,
@@ -13,9 +13,11 @@ import {
   MonitorPlay,
   Video,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { subscriptionsApi } from '@/features/billing/api/subscriptions-api';
 
 export interface NitroSubtabProps {
   theme?: any;
@@ -23,6 +25,24 @@ export interface NitroSubtabProps {
 
 export function NitroSubtab({ theme }: NitroSubtabProps) {
   const { t } = useTranslation();
+  const [subscribing, setSubscribing] = useState<string | null>(null);
+
+  const handleSubscribe = async (plan: 'nectar_basic' | 'nectar_boost') => {
+    setSubscribing(plan);
+    try {
+      await subscriptionsApi.subscribe(plan);
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      toast.success(
+        plan === 'nectar_boost'
+          ? t('Selamat! Anda sekarang berlangganan Nectar VIP Boost! 🎉')
+          : t('Selamat! Anda sekarang berlangganan Nectar Basic! 🎉')
+      );
+    } catch {
+      toast.error(t('Gagal mengaktifkan langganan'));
+    } finally {
+      setSubscribing(null);
+    }
+  };
 
   return (
     <div className="space-y-10 pb-16 relative">
@@ -133,14 +153,11 @@ export function NitroSubtab({ theme }: NitroSubtabProps) {
 
           <div className="pt-6 relative z-10 flex flex-col gap-2">
             <Button
-              onClick={() =>
-                toast.success(
-                  t('Mengalihkan ke checkout Nectar Basic (IDR 29.000/bln)...'),
-                )
-              }
+              onClick={() => handleSubscribe('nectar_basic')}
+              disabled={subscribing !== null}
               className="w-full bg-white hover:bg-white/90 text-blue-900 font-extrabold text-xs h-10 rounded-xl shadow-lg cursor-pointer"
             >
-              {t('Get Nectar Basic')}
+              {subscribing === 'nectar_basic' ? t('Mengaktifkan...') : t('Get Nectar Basic')}
             </Button>
             <Button
               variant="ghost"
@@ -206,14 +223,11 @@ export function NitroSubtab({ theme }: NitroSubtabProps) {
 
           <div className="pt-6 relative z-10 flex flex-col gap-2">
             <Button
-              onClick={() =>
-                toast.success(
-                  t('Mengalihkan ke checkout Nectar (IDR 85.000/bln)...'),
-                )
-              }
+              onClick={() => handleSubscribe('nectar_boost')}
+              disabled={subscribing !== null}
               className="w-full bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs h-10 rounded-xl shadow-xl cursor-pointer"
             >
-              {t('Get Nectar')}
+              {subscribing === 'nectar_boost' ? t('Mengaktifkan...') : t('Get Nectar')}
             </Button>
             <Button
               variant="ghost"

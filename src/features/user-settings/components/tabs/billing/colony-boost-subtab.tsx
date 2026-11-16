@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Gem,
   Zap,
@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { coloniesApi } from '@/features/colonies/api/colonies-api';
+import type { Colony } from '@/chat/chat-types';
 
 export interface ColonyBoostSubtabProps {
   onNavigateSection?: (section: string) => void;
@@ -24,13 +26,21 @@ export function ColonyBoostSubtab({
 }: ColonyBoostSubtabProps) {
   const { t } = useTranslation();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [coloniesList, setColoniesList] = useState<Colony[]>([]);
   const [boostedColonies, setBoostedColonies] = useState<{
     [id: string]: number;
-  }>({
-    c1: 0,
-    c2: 2,
-    c3: 6,
-  });
+  }>({});
+
+  useEffect(() => {
+    coloniesApi.getColonies().then((cols) => {
+      setColoniesList(cols);
+      const initial: Record<string, number> = {};
+      cols.forEach((c) => {
+        initial[c.id] = c.boostsCount || 0;
+      });
+      setBoostedColonies(initial);
+    });
+  }, []);
 
   return (
     <div className="space-y-8 pb-12">
@@ -276,80 +286,73 @@ export function ColonyBoostSubtab({
         </h3>
 
         <div className="rounded-2xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
-          {[
-            {
-              id: 'c1',
-              name: 'Anticeil Official',
-              icon: '🛡️',
-              boosts: boostedColonies.c1 || 0,
-              level: 3,
-              totalBoosts: 18,
-            },
-            {
-              id: 'c2',
-              name: 'Developer Colony ID',
-              icon: '⚡',
-              boosts: boostedColonies.c2 || 0,
-              level: 2,
-              totalBoosts: 9,
-            },
-            {
-              id: 'c3',
-              name: 'Gaming Community Hub',
-              icon: '🎮',
-              boosts: boostedColonies.c3 || 0,
-              level: 1,
-              totalBoosts: 4,
-            },
-          ].map((colony) => (
-            <div
-              key={colony.id}
-              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/20 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="size-11 rounded-2xl bg-muted/80 border border-border flex items-center justify-center text-xl select-none shadow-2xs">
-                  {colony.icon}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-foreground">
-                      {colony.name}
-                    </span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20">
-                      Level {colony.level}
-                    </span>
+          {(coloniesList.length > 0
+            ? coloniesList
+            : [
+                {
+                  id: 'c1',
+                  name: 'Anticeil Official',
+                  boostsCount: 0,
+                  boostTier: 1,
+                } as Colony,
+              ]
+          ).map((colony) => {
+            const userBoostCount = boostedColonies[colony.id] || 0;
+            return (
+              <div
+                key={colony.id}
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/20 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-2xl bg-muted/80 border border-border flex items-center justify-center text-sm font-bold text-foreground select-none shadow-2xs">
+                    {colony.initials || '🛡️'}
                   </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {colony.totalBoosts} {t('boosts total')} •{' '}
-                    <span className="text-foreground font-medium">
-                      {colony.boosts} {t('dari Anda')}
-                    </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-foreground">
+                        {colony.name}
+                      </span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20">
+                        Level {colony.boostTier || 1}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {(colony.boostsCount || 0) + userBoostCount} {t('boosts total')} •{' '}
+                      <span className="text-foreground font-medium">
+                        {userBoostCount} {t('dari Anda')}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-center">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setBoostedColonies((prev) => ({
-                      ...prev,
-                      [colony.id]: (prev[colony.id] || 0) + 1,
-                    }));
-                    toast.success(
-                      t(
-                        `Colony "${colony.name}" berhasil di-Boost! Terima kasih atas dukungan Anda. 💎`,
-                      ),
-                    );
-                  }}
-                  className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs h-8 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Gem className="w-3.5 h-3.5 fill-current" />
-                  <span>{t('Boost Colony')}</span>
-                </Button>
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await coloniesApi.boostHub(colony.id);
+                        setBoostedColonies((prev) => ({
+                          ...prev,
+                          [colony.id]: (prev[colony.id] || 0) + 1,
+                        }));
+                        toast.success(
+                          t(
+                            `Colony "${colony.name}" berhasil di-Boost! Terima kasih atas dukungan Anda. 💎`,
+                          ),
+                        );
+                      } catch {
+                        toast.error(t('Gagal melakukan boost'));
+                      }
+                    }}
+                    className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs h-8 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Gem className="w-3.5 h-3.5 fill-current" />
+                    <span>{t('Boost Colony')}</span>
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

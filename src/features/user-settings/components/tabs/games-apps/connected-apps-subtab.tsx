@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Check,
   Search,
@@ -17,17 +17,13 @@ import {
   availablePlatforms,
   type UserConnection,
 } from '../../../data/platforms';
+import {
+  gamesAppsApi,
+  type AuthorizedAppDetail,
+  type UserConnectionItem,
+} from '@/features/user-settings/api/games-apps-api';
 
-export interface AuthorizedAppDetail {
-  id: string;
-  name: string;
-  authorizedDate: string;
-  icon: string;
-  permissionsCount: number;
-  permissionsList: string[];
-  aboutInfo: string;
-  policiesUrl: string;
-}
+export type { AuthorizedAppDetail };
 
 export interface ConnectedAppsSubtabProps {
   currentUserName?: string;
@@ -38,53 +34,13 @@ export function ConnectedAppsSubtab({
 }: ConnectedAppsSubtabProps) {
   const { t } = useTranslation();
 
-  const [userConnections, setUserConnections] = useState<UserConnection[]>([
-    {
-      id: 'conn-spotify',
-      platformId: 'spotify',
-      accountName: 'ESTEFANO',
-      platformName: 'Spotify',
-      icon: '🟢',
-      displayOnProfile: true,
-      displayStatus: true,
-    },
-  ]);
+  const [userConnections, setUserConnections] = useState<UserConnectionItem[]>([]);
+  const [authorizedApps, setAuthorizedApps] = useState<AuthorizedAppDetail[]>([]);
 
-  const [authorizedApps, setAuthorizedApps] = useState<AuthorizedAppDetail[]>([
-    {
-      id: 'app-nve',
-      name: 'Neverness to Everness',
-      authorizedDate: '11/1/2026',
-      icon: '🌸',
-      permissionsCount: 14,
-      permissionsList: [
-        'Access your username, avatar, and banner',
-        'Know what servers you are in',
-        'Access your email address',
-        'Read your connections',
-        'Join servers for you',
-        'Update your presence and activity',
-      ],
-      aboutInfo:
-        'Official game client integration for Neverness to Everness by Hotta Studio.',
-      policiesUrl: 'https://nte.perfectworld.com/privacy',
-    },
-    {
-      id: 'app-watch-together',
-      name: 'Watch Together',
-      authorizedDate: '10/31/2026',
-      icon: '▶️',
-      permissionsCount: 6,
-      permissionsList: [
-        'Access your username and avatar',
-        'Access your voice channel state',
-        'Synchronize playback across participants',
-      ],
-      aboutInfo:
-        'Activity for watching YouTube videos with friends in voice channels.',
-      policiesUrl: 'https://youtube.com/t/terms',
-    },
-  ]);
+  useEffect(() => {
+    gamesAppsApi.getUserConnections().then(setUserConnections);
+    gamesAppsApi.getAuthorizedApps().then(setAuthorizedApps);
+  }, []);
 
   const [authorizedAppSearch, setAuthorizedAppSearch] = useState('');
   const [expandedAppAbout, setExpandedAppAbout] = useState<
@@ -195,7 +151,8 @@ export function ConnectedAppsSubtab({
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      await gamesAppsApi.removeConnection(conn.id);
                       setUserConnections((prev) =>
                         prev.filter((c) => c.id !== conn.id),
                       );
@@ -218,7 +175,8 @@ export function ConnectedAppsSubtab({
                     </span>
                     <Switch
                       checked={conn.displayOnProfile}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={async (checked) => {
+                        await gamesAppsApi.toggleConnectionField(conn.id, 'displayOnProfile', checked);
                         setUserConnections((prev) =>
                           prev.map((c) =>
                             c.id === conn.id
@@ -241,7 +199,8 @@ export function ConnectedAppsSubtab({
                     </span>
                     <Switch
                       checked={conn.displayStatus}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={async (checked) => {
+                        await gamesAppsApi.toggleConnectionField(conn.id, 'displayStatus', checked);
                         setUserConnections((prev) =>
                           prev.map((c) =>
                             c.id === conn.id
@@ -418,7 +377,8 @@ export function ConnectedAppsSubtab({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
+                      onClick={async () => {
+                        await gamesAppsApi.deauthorizeApp(app.id);
                         setAuthorizedApps((prev) =>
                           prev.filter((a) => a.id !== app.id),
                         );

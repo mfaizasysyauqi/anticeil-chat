@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronDown,
   Pencil,
@@ -9,6 +9,7 @@ import {
   Plus,
   Gamepad2,
   ExternalLink,
+  Check,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { ProfilePreviewCard } from '@/features/user-settings/components/tabs/profiles/profile-preview-card';
+import { profileApi } from '../api/profile-api';
 
 export interface EditProfileDialogProps {
   open: boolean;
@@ -45,6 +47,35 @@ export function EditProfileDialog({
   const [profilePronouns, setProfilePronouns] = useState('');
   const [isEditingPronouns, setIsEditingPronouns] = useState(false);
   const [profileWidgetsDismissed, setProfileWidgetsDismissed] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      profileApi.getProfile().then((data) => {
+        if (data.bannerColor) setProfileBannerColor(data.bannerColor);
+        if (data.statusThought) setProfileStatusThought(data.statusThought);
+        if (data.bio) setProfileBioText(data.bio);
+        if (data.pronouns) setProfilePronouns(data.pronouns);
+      });
+    }
+  }, [open]);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      await profileApi.updateProfile({
+        bannerColor: profileBannerColor,
+        statusThought: profileStatusThought,
+        bio: profileBioText,
+        pronouns: profilePronouns,
+      });
+      toast.success(t('Profil berhasil diperbarui dan disimpan! 🎉'));
+    } catch {
+      toast.error(t('Gagal menyimpan profil'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleNitroCta = () => {
     onOpenChange(false);
@@ -234,6 +265,19 @@ export function EditProfileDialog({
                 <div className="size-5 rounded-full border-2 border-white bg-pink-500 shadow-sm" />
                 <div className="size-5 rounded-full border-2 border-white bg-cyan-500 shadow-sm" />
               </div>
+            </div>
+
+            {/* 8. Save Changes Action */}
+            <div className="pt-2 border-t border-border/60">
+              <Button
+                size="sm"
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-9 rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>{isSaving ? t('Menyimpan...') : t('Simpan Perubahan')}</span>
+              </Button>
             </div>
           </div>
 

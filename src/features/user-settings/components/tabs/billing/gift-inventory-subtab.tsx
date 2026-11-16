@@ -1,34 +1,42 @@
-import React, { useState } from 'react';
-import { Gift } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Gift, CheckCircle, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { giftsApi, type GiftItem } from '@/features/billing/api/gifts-api';
 
 export function GiftInventorySubtab() {
   const { t } = useTranslation();
   const [redeemCodeInput, setRedeemCodeInput] = useState('');
+  const [gifts, setGifts] = useState<GiftItem[]>([]);
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
-  const handleRedeemCode = () => {
+  useEffect(() => {
+    giftsApi.getGifts().then(setGifts);
+  }, []);
+
+  const handleRedeemCode = async () => {
     if (!redeemCodeInput.trim()) {
       toast.error(t('Masukkan kode hadiah terlebih dahulu'));
       return;
     }
-    const code = redeemCodeInput.trim().toUpperCase();
-    if (
-      code.startsWith('WUMP') ||
-      code.startsWith('NECTAR') ||
-      code.length >= 8
-    ) {
-      toast.success(
-        t(
-          'Kode hadiah berhasil diklaim! 1 Bulan Nectar telah ditambahkan ke akun Anda. 🎉',
-        ),
-      );
-      setRedeemCodeInput('');
-    } else {
-      toast.error(t('Kode hadiah tidak valid atau telah kedaluwarsa'));
+    setIsRedeeming(true);
+    try {
+      const res = await giftsApi.redeemCode(redeemCodeInput);
+      if (res.success) {
+        toast.success(t(res.message));
+        setRedeemCodeInput('');
+        const updated = await giftsApi.getGifts();
+        setGifts(updated);
+      } else {
+        toast.error(t(res.message));
+      }
+    } catch {
+      toast.error(t('Gagal mengklaim kode hadiah'));
+    } finally {
+      setIsRedeeming(false);
     }
   };
 
@@ -60,9 +68,10 @@ export function GiftInventorySubtab() {
           />
           <Button
             onClick={handleRedeemCode}
+            disabled={isRedeeming}
             className="h-10 px-6 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer shrink-0"
           >
-            {t('Redeem')}
+            {isRedeeming ? t('Mengklaim...') : t('Redeem')}
           </Button>
         </div>
       </div>
@@ -176,16 +185,49 @@ export function GiftInventorySubtab() {
           {t('Gifts I Purchased')}
         </h3>
 
-        <div className="rounded-2xl border border-border bg-card p-10 text-center space-y-1.5 shadow-xs">
-          <div className="text-xs font-bold text-foreground">
-            {t('There are no gifts.')}
+        {gifts.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-10 text-center space-y-1.5 shadow-xs">
+            <div className="text-xs font-bold text-foreground">
+              {t('There are no gifts.')}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {t(
+                'Feeling generous? Give someone the gift of Nectar and make their day!',
+              )}
+            </div>
           </div>
-          <div className="text-[11px] text-muted-foreground">
-            {t(
-              'Feeling generous? Give someone the gift of Nectar and make their day!',
-            )}
+        ) : (
+          <div className="space-y-2.5">
+            {gifts.map((g) => (
+              <div
+                key={g.id}
+                className="rounded-2xl border border-border bg-card p-4 flex items-center justify-between gap-4 shadow-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-400">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-foreground flex items-center gap-2">
+                      <span>{g.title}</span>
+                      {g.redeemed && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          {t('Diklaim')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                      {g.code}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-[10px] text-muted-foreground text-right shrink-0">
+                  {new Date(g.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

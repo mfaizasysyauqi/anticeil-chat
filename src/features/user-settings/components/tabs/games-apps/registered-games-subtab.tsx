@@ -1,19 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ExternalLink, Trash2, Users, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import {
+  gamesAppsApi,
+  type RegisteredGame,
+} from '@/features/user-settings/api/games-apps-api';
 
-export interface RegisteredGame {
-  id: string;
-  name: string;
-  verified: boolean;
-  lastPlayed: string;
-  enabled: boolean;
-  icon?: string;
-}
+export type { RegisteredGame };
 
 export interface RegisteredGamesSubtabProps {
   onNavigateSection?: (section: string) => void;
@@ -24,20 +21,15 @@ export function RegisteredGamesSubtab({
 }: RegisteredGamesSubtabProps) {
   const { t } = useTranslation();
 
-  const [registeredGames, setRegisteredGames] = useState<RegisteredGame[]>([
-    {
-      id: 'terraria',
-      name: 'Terraria',
-      verified: true,
-      lastPlayed: '2 days ago',
-      enabled: true,
-      icon: '🌳',
-    },
-  ]);
+  const [registeredGames, setRegisteredGames] = useState<RegisteredGame[]>([]);
   const [isAddingGameDropdownOpen, setIsAddingGameDropdownOpen] =
     useState(false);
   const [selectedGameToAdd, setSelectedGameToAdd] = useState('');
   const [customGameInput, setCustomGameInput] = useState('');
+
+  useEffect(() => {
+    gamesAppsApi.getRegisteredGames().then(setRegisteredGames);
+  }, []);
 
   const detectableGamesPreset = useMemo(
     () => [
@@ -106,7 +98,7 @@ export function RegisteredGamesSubtab({
                 <Button
                   size="sm"
                   className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs h-9 px-4 cursor-pointer"
-                  onClick={() => {
+                  onClick={async () => {
                     const name =
                       selectedGameToAdd === '__custom__'
                         ? customGameInput.trim()
@@ -127,17 +119,12 @@ export function RegisteredGamesSubtab({
                     const preset = detectableGamesPreset.find(
                       (p) => p.name === name,
                     );
-                    setRegisteredGames((prev) => [
-                      ...prev,
-                      {
-                        id: name.toLowerCase().replace(/\s+/g, '-'),
-                        name,
-                        verified: preset ? preset.verified : false,
-                        lastPlayed: t('Just now'),
-                        enabled: true,
-                        icon: preset?.icon || '🎮',
-                      },
-                    ]);
+                    const newGame = await gamesAppsApi.addGame(
+                      name,
+                      preset?.icon || '🎮',
+                      preset ? preset.verified : false,
+                    );
+                    setRegisteredGames((prev) => [newGame, ...prev]);
                     setSelectedGameToAdd('');
                     setCustomGameInput('');
                     setIsAddingGameDropdownOpen(false);
@@ -219,7 +206,8 @@ export function RegisteredGamesSubtab({
               <div className="flex items-center gap-3">
                 <Switch
                   checked={game.enabled}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={async (checked) => {
+                    await gamesAppsApi.toggleGameOverlay(game.id, checked);
                     setRegisteredGames((prev) =>
                       prev.map((g) =>
                         g.id === game.id ? { ...g, enabled: checked } : g,
@@ -234,7 +222,8 @@ export function RegisteredGamesSubtab({
                 />
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
+                    await gamesAppsApi.removeGame(game.id);
                     setRegisteredGames((prev) =>
                       prev.filter((g) => g.id !== game.id),
                     );
