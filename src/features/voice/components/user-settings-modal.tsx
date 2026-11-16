@@ -43,6 +43,12 @@ import {
   Globe,
   Link2,
   ChevronDown,
+  Heart,
+  Smile,
+  Upload,
+  MonitorPlay,
+  Tv,
+  Flame,
 } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { Button } from '@/components/ui/button';
@@ -2338,43 +2344,463 @@ export function UserSettingsModal({
         {/* ========================================================================= */}
         {/* SECTION: NITRO (BILLING PERKS)                                            */}
         {/* ========================================================================= */}
+        {/* ========================================================================= */}
+        {/* SECTION: NITRO (NECTAR & POLLEN)                                          */}
+        {/* ========================================================================= */}
         {activeSection === 'nitro' && (
-          <div className="space-y-5">
-            <div className="rounded-2xl p-6 bg-linear-to-br from-indigo-900 via-purple-900 to-pink-900 border border-purple-500/30 text-white relative overflow-hidden shadow-2xl">
-              <div className="relative z-10 max-w-md space-y-3">
-                <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-wider">
-                  ANTICEIL NECTAR & POLLEN
-                </span>
-                <h3 className="text-2xl font-black tracking-tight">
-                  Unleash the full Colony Experience with Nectar & Pollen
-                </h3>
-                <p className="text-xs text-white/80 leading-relaxed">
-                  Streaming 4K 60FPS, unggah file hingga 500MB, custom emoji di mana saja, 2 Gratis Server Boost, dan badge profil eksklusif.
+          <div className="space-y-10 pb-16 relative">
+            {/* ── 1. HERO BANNER ── */}
+            <div className="rounded-3xl p-6 sm:p-10 bg-linear-to-r from-[#4A32B3] via-[#5865F2] to-[#7946E0] text-white relative overflow-hidden shadow-2xl">
+              {/* Starry sparkle accents */}
+              <Sparkles className="w-5 h-5 text-amber-300 absolute top-5 left-8 animate-pulse pointer-events-none" />
+              <Sparkles className="w-4 h-4 text-purple-200 absolute top-14 left-1/3 opacity-70 pointer-events-none" />
+              <Sparkles className="w-6 h-6 text-pink-300 absolute bottom-6 right-12 animate-pulse pointer-events-none" />
+              <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Heart bookmark top-right */}
+              <button
+                type="button"
+                onClick={() => toast.success(t('Disimpan ke daftar favorit!'))}
+                className="absolute top-5 right-5 p-2 rounded-xl bg-black/20 hover:bg-black/35 backdrop-blur-md transition-colors cursor-pointer text-white/90 hover:text-white"
+                title={t('Simpan')}
+              >
+                <Heart className="w-4 h-4" />
+              </button>
+
+              <div className="relative z-10 max-w-xl mx-auto text-center space-y-3">
+                <h2 className="text-2xl sm:text-4xl font-black tracking-tight uppercase text-white drop-shadow-sm">
+                  {t('Unlock a World of Perks with Nectar')}
+                </h2>
+                <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-medium">
+                  {t('Plans start at only IDR 29,000.00/month. Cancel anytime')}
                 </p>
-                <div className="pt-2 flex items-center gap-3">
+
+                <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
                   <Button
-                    size="sm"
-                    onClick={() => toast.success('Selamat! Akun Anda telah diaktifkan ke Nectar Preview!')}
-                    className="bg-white hover:bg-white/90 text-purple-950 font-bold text-xs shadow-lg cursor-pointer"
+                    size="default"
+                    onClick={() =>
+                      toast.success(t('Membuka langganan Nectar... Akun Anda memenuhi syarat promo perdana!'))
+                    }
+                    className="bg-white hover:bg-white/90 text-purple-950 font-black text-xs sm:text-sm h-10 px-6 rounded-xl shadow-xl cursor-pointer flex items-center gap-2"
                   >
-                    Mulai Nectar (Diskon 50%)
+                    <Zap className="w-4 h-4 fill-current text-purple-600" />
+                    <span>{t('Subscribe')}</span>
+                  </Button>
+
+                  <Button
+                    size="default"
+                    variant="outline"
+                    onClick={() =>
+                      toast.info(t('Pilih kontak atau colony untuk mengirimkan Gift Nectar.'))
+                    }
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-xs sm:text-sm h-10 px-6 rounded-xl backdrop-blur-sm cursor-pointer flex items-center gap-2"
+                  >
+                    <Gift className="w-4 h-4 text-pink-300" />
+                    <span>{t('Gift Nectar')}</span>
                   </Button>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                { title: 'Upload File 500MB', desc: 'Bebas kirim video beresolusi tinggi dan dokumen zip besar.' },
-                { title: 'Custom Emoji Di Mana Saja', desc: 'Gunakan emoji dari colony mana pun di seluruh chat & DM.' },
-                { title: 'HD 4K Video Streaming', desc: 'Screen share jernih untuk gaming, coding, dan nonton bareng.' },
-                { title: '2 Gratis Colony Boosts', desc: 'Dukung colony favorit Anda untuk membuka level perks.' },
-              ].map((perk, i) => (
-                <div key={i} className="p-4 rounded-xl border border-border bg-card shadow-xs">
-                  <div className="text-xs font-bold text-foreground">{perk.title}</div>
-                  <div className="text-[11px] text-muted-foreground mt-1">{perk.desc}</div>
+            {/* ── 2. TWO TIER CARDS ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              {/* TIER 1: NECTAR BASIC */}
+              <div className="rounded-2xl p-6 bg-linear-to-b from-[#0066FE] to-[#004ECC] text-white relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[380px]">
+                {/* Mascot Graphic on Scooter */}
+                <div className="absolute top-4 right-4 size-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl shadow-lg select-none">
+                  🛵
                 </div>
-              ))}
+
+                <div>
+                  <div className="text-2xl font-black tracking-tight">NECTAR</div>
+                  <div className="text-[11px] font-black tracking-widest text-sky-200 uppercase mt-0.5">
+                    BASIC
+                  </div>
+                  <div className="text-sm font-bold text-white/95 mt-2">
+                    IDR 29,000.00 / month
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    {[
+                      { icon: <Upload className="w-4 h-4 text-sky-200" />, label: '50MB uploads' },
+                      { icon: <Smile className="w-4 h-4 text-sky-200" />, label: 'Custom emoji anywhere' },
+                      { icon: <Flame className="w-4 h-4 text-sky-200" />, label: 'Unlimited Super Reactions' },
+                      { icon: <Sparkles className="w-4 h-4 text-sky-200" />, label: 'Special Nectar badge on your profile' },
+                    ].map((feat, idx) => (
+                      <div key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-white/95">
+                        <span className="shrink-0">{feat.icon}</span>
+                        <span>{feat.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => toast.success(t('Pilihan Nectar Basic dipilih: IDR 29,000/bln'))}
+                  className="w-full mt-6 bg-white/15 hover:bg-white/25 text-white border-white/40 font-bold text-xs h-10 rounded-xl cursor-pointer"
+                >
+                  {t('Subscribe')}
+                </Button>
+              </div>
+
+              {/* TIER 2: NECTAR FULL */}
+              <div className="rounded-2xl p-6 bg-linear-to-b from-[#8F2DF5] via-[#A838E6] to-[#DB2B88] text-white relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[380px]">
+                {/* Flying Mascot Graphic */}
+                <div className="absolute top-4 right-4 size-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl shadow-lg select-none">
+                  🚀
+                </div>
+
+                <div>
+                  <div className="text-2xl font-black tracking-tight">NECTAR</div>
+                  <div className="text-sm font-bold text-white/95 mt-2">
+                    IDR 83,169.00 / month
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    {[
+                      { icon: <Upload className="w-4 h-4 text-pink-200" />, label: '1GB uploads' },
+                      { icon: <Smile className="w-4 h-4 text-pink-200" />, label: 'Custom emoji anywhere' },
+                      { icon: <Flame className="w-4 h-4 text-pink-200" />, label: 'Unlimited Super Reactions' },
+                      { icon: <Tv className="w-4 h-4 text-pink-200" />, label: 'HD video streaming' },
+                      { icon: <Gem className="w-4 h-4 text-pink-200" />, label: '2 Colony Boosts' },
+                      { icon: <User className="w-4 h-4 text-pink-200" />, label: 'Custom profiles and more!' },
+                    ].map((feat, idx) => (
+                      <div key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-white/95">
+                        <span className="shrink-0">{feat.icon}</span>
+                        <span>{feat.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => toast.success(t('Pilihan Nectar Full dipilih: IDR 83,169/bln'))}
+                  className="w-full mt-6 bg-white hover:bg-white/90 text-purple-950 font-black text-xs h-10 rounded-xl shadow-lg cursor-pointer"
+                >
+                  {t('Subscribe')}
+                </Button>
+              </div>
+            </div>
+
+            {/* ── 3. FAVORITE NECTAR PERKS (BENTO GRID) ── */}
+            <div className="space-y-6 pt-2">
+              <h3 className="text-xl sm:text-2xl font-black text-foreground text-center">
+                {t('Favorite Nectar Perks')}
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Perk 1: More Emoji Power */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-muted/40 border border-border/60 p-3 flex flex-col justify-between overflow-hidden relative">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      COLONY EMOJIS
+                    </div>
+                    <div className="grid grid-cols-6 gap-2 text-2xl select-none text-center">
+                      <span className="hover:scale-125 transition-transform cursor-pointer">🚀</span>
+                      <span className="hover:scale-125 transition-transform cursor-pointer">🔥</span>
+                      <span className="hover:scale-125 transition-transform cursor-pointer">✨</span>
+                      <span className="hover:scale-125 transition-transform cursor-pointer">🎉</span>
+                      <span className="hover:scale-125 transition-transform cursor-pointer">😎</span>
+                      <span className="hover:scale-125 transition-transform cursor-pointer">🍕</span>
+                    </div>
+                    <div className="text-[10px] text-primary font-semibold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Use in any colony, server or DM</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">More Emoji Power</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Hype, roast, and meme with custom emoji anywhere.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Perk 2: HD Video */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-linear-to-br from-indigo-950 via-purple-950 to-slate-900 border border-border/60 p-3 flex flex-col justify-between text-white overflow-hidden relative">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black uppercase">
+                        LIVE 4K 60FPS
+                      </span>
+                      <MonitorPlay className="w-4 h-4 text-purple-300" />
+                    </div>
+                    <div className="text-center font-mono font-bold text-sm tracking-wider text-purple-200">
+                      ULTRA HD STREAMING
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-white/70 font-mono">
+                      <span>Source 3840×2160</span>
+                      <span>Audio 384kbps</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">HD Video</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Better video resolutions for all your streams. Stream apps and games in sweet, sweet HD.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Perk 3: 1GB Uploads */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-muted/40 border border-border/60 p-3 flex flex-col justify-center gap-2">
+                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-card border border-border shadow-xs">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-foreground truncate">
+                          game_footage_master_render.mp4
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">982 MB of 1.0 GB</div>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-primary">98%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">1GB Uploads</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Upload what you want with increased 1GB upload size.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Perk 4: Custom App Icons */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-muted/40 border border-border/60 p-3 flex items-center justify-center gap-3">
+                    {[
+                      { bg: 'from-amber-500 to-rose-500', icon: '⚡' },
+                      { bg: 'from-indigo-600 to-purple-600', icon: '🌌' },
+                      { bg: 'from-emerald-500 to-teal-600', icon: '🌿' },
+                      { bg: 'from-fuchsia-600 to-pink-500', icon: '🌸' },
+                    ].map((theme, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          'size-12 rounded-2xl bg-linear-to-br flex items-center justify-center text-xl shadow-md border border-white/20 select-none hover:scale-110 transition-transform cursor-pointer',
+                          theme.bg
+                        )}
+                      >
+                        {theme.icon}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Custom App Icons</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Choose a mobile and in-app desktop icon that fits your vibe.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Perk 5: Use Custom Sounds */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-muted/40 border border-border/60 p-3 flex items-center justify-center gap-2">
+                    {['🎺 Airhorn', '🦆 Quack', '👏 Applause', '⚡ Laser'].map((snd, i) => (
+                      <div
+                        key={i}
+                        onClick={() => toast.success(`Sound effect diputar: ${snd}`)}
+                        className="px-2.5 py-1.5 rounded-lg bg-card border border-border text-[11px] font-bold text-foreground shadow-2xs hover:border-primary cursor-pointer select-none"
+                      >
+                        {snd}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Use Custom Sounds</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Use custom sounds and personalized entrance sounds across voice channels.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Perk 6: Video Backgrounds */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-linear-to-tr from-sky-900 via-indigo-900 to-violet-900 border border-border/60 p-3 flex flex-col justify-between text-white relative overflow-hidden">
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-sky-200">
+                      <Video className="w-3.5 h-3.5" />
+                      <span>VIRTUAL BACKGROUND</span>
+                    </div>
+                    <div className="text-center font-bold text-xs tracking-wider">
+                      Cozy Anime Loft & Neon City
+                    </div>
+                    <div className="text-[10px] text-white/70 text-right">HD Camera Preview</div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Video Backgrounds</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Make video calls unique with your own backgrounds.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Perk 7: Unlimited Super Reactions */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-muted/40 border border-border/60 p-3 flex items-center justify-center gap-3">
+                    <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 font-bold text-xs shadow-xs">
+                      <Flame className="w-4 h-4 fill-current animate-bounce" />
+                      <span>x18 SUPER REACTION</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-500 font-bold text-xs shadow-xs">
+                      <span>💖 x35</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Unlimited Super Reactions</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      We made Super Reactions unlimited so you can unleash the chaos in your chats.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Perk 8: Special Sticker Access */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs flex flex-col justify-between">
+                  <div className="h-32 rounded-xl bg-muted/40 border border-border/60 p-3 flex items-center justify-center gap-4 text-3xl select-none">
+                    <span className="hover:rotate-12 transition-transform cursor-pointer">🎨</span>
+                    <span className="hover:scale-125 transition-transform cursor-pointer">👾</span>
+                    <span className="hover:-rotate-12 transition-transform cursor-pointer">🐱</span>
+                    <span className="hover:scale-125 transition-transform cursor-pointer">🌟</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Special Sticker Access</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Use custom stickers anywhere.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── 4. SUBSCRIBER BADGE SPOTLIGHT CARD ── */}
+            <div className="rounded-2xl border border-border bg-card p-6 text-center space-y-3 shadow-xs">
+              <div className="size-16 rounded-2xl bg-linear-to-br from-purple-500/20 via-pink-500/20 to-amber-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 mx-auto shadow-md">
+                <Zap className="w-8 h-8 fill-current animate-pulse text-purple-500" />
+              </div>
+              <h4 className="text-base font-bold text-foreground">Subscriber Badge</h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Get this cool badge for being a Nectar subscriber.
+              </p>
+            </div>
+
+            {/* ── 5. COMPARISON TABLE ── */}
+            <div className="space-y-6 pt-4">
+              <h3 className="text-xl sm:text-2xl font-black text-foreground text-center">
+                {t('Pick the plan that works best for you')}
+              </h3>
+
+              <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-md">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 border-b border-border text-xs font-bold text-foreground bg-muted/30">
+                  <div className="col-span-6 sm:col-span-6 p-4 flex items-end">
+                    <span>Pricing and Features</span>
+                  </div>
+                  <div className="col-span-3 sm:col-span-3 p-4 text-center border-l border-border/60 flex flex-col justify-end">
+                    <div className="text-sm font-black">NECTAR</div>
+                    <div className="text-[10px] text-muted-foreground uppercase font-bold">BASIC</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">IDR 29,000.00/mo</div>
+                  </div>
+                  <div className="col-span-3 sm:col-span-3 p-4 text-center border-l-2 border-pink-500 bg-pink-500/5 flex flex-col justify-end relative">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-linear-to-r from-pink-500 to-purple-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm">
+                      MOST POPULAR
+                    </span>
+                    <div className="text-sm font-black text-pink-500">NECTAR</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">IDR 83,169.00/mo</div>
+                  </div>
+                </div>
+
+                {/* Table Rows */}
+                <div className="divide-y divide-border/60 text-xs">
+                  {[
+                    { feature: 'Custom emoji anywhere and animated', basic: true, nectar: true },
+                    { feature: 'Custom stickers anywhere', basic: true, nectar: true },
+                    { feature: 'Custom App Icons', basic: true, nectar: true },
+                    { feature: 'Super Reactions', basic: true, nectar: true },
+                    { feature: 'Larger File Uploads', basic: '50 MB', nectar: '1 GB' },
+                    { feature: 'HD streaming', basic: false, nectar: 'Up to 4K and 60fps' },
+                    { feature: '2 Boosts + 30% off extra Boosts', basic: false, nectar: true },
+                    { feature: 'Animated avatar, banner, and profile theme', basic: false, nectar: true },
+                    { feature: 'Display Name Styles', basic: false, nectar: true },
+                    { feature: 'Custom per-server profiles', basic: false, nectar: true },
+                    { feature: 'Shop member pricing, and exclusive items', basic: false, nectar: true },
+                    { feature: 'Colors for your Anticeil theme', basic: false, nectar: true },
+                    { feature: 'Nectar badge on your profile', basic: true, nectar: true },
+                    { feature: 'Custom video backgrounds', basic: true, nectar: true },
+                    { feature: 'Custom sounds anywhere', basic: false, nectar: true },
+                    { feature: 'Custom entrance sounds', basic: false, nectar: true },
+                    { feature: 'Join up to 200 servers', basic: false, nectar: true },
+                    { feature: 'Longer messages up to 4000 characters', basic: false, nectar: true },
+                    { feature: '3 Nectar friend passes', basic: false, nectar: true },
+                    { feature: 'Keep Quest avatar decorations rewards longer', basic: false, nectar: true },
+                  ].map((row, idx) => (
+                    <div
+                      key={idx}
+                      className={cn(
+                        'grid grid-cols-12 items-center transition-colors',
+                        idx % 2 === 0 ? 'bg-card' : 'bg-muted/15'
+                      )}
+                    >
+                      <div className="col-span-6 sm:col-span-6 p-3.5 font-medium text-foreground">
+                        {row.feature}
+                      </div>
+
+                      {/* Basic Col */}
+                      <div className="col-span-3 sm:col-span-3 p-3.5 text-center border-l border-border/60">
+                        {typeof row.basic === 'boolean' ? (
+                          row.basic ? (
+                            <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                          ) : (
+                            <X className="w-4 h-4 text-muted-foreground/35 mx-auto" />
+                          )
+                        ) : (
+                          <span className="font-bold text-foreground text-[11px]">{row.basic}</span>
+                        )}
+                      </div>
+
+                      {/* Nectar Col */}
+                      <div className="col-span-3 sm:col-span-3 p-3.5 text-center border-l-2 border-pink-500 bg-pink-500/5">
+                        {typeof row.nectar === 'boolean' ? (
+                          row.nectar ? (
+                            <Check className="w-4 h-4 text-pink-500 mx-auto" />
+                          ) : (
+                            <X className="w-4 h-4 text-muted-foreground/35 mx-auto" />
+                          )
+                        ) : (
+                          <span className="font-black text-pink-500 text-[11px]">{row.nectar}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── 6. FLOATING STICKY CTA BAR ── */}
+            <div className="sticky bottom-4 z-20 flex justify-center mt-8">
+              <div className="p-1.5 rounded-2xl bg-card/90 backdrop-blur-md border border-border shadow-2xl flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    toast.success(t('Membuka langganan Nectar... Akun Anda memenuhi syarat promo perdana!'))
+                  }
+                  className="bg-white hover:bg-white/90 text-purple-950 font-black text-xs h-9 px-4 rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5 fill-current text-purple-600" />
+                  <span>{t('Subscribe')}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    toast.info(t('Pilih teman dari daftar kontak untuk mengirimkan Gift Nectar.'))
+                  }
+                  className="border-border hover:bg-muted font-bold text-xs h-9 px-4 rounded-xl cursor-pointer flex items-center gap-1.5 text-foreground"
+                >
+                  <Gift className="w-3.5 h-3.5 text-pink-500" />
+                  <span>{t('Gift Nectar')}</span>
+                </Button>
+              </div>
             </div>
           </div>
         )}
