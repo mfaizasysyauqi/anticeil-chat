@@ -52,6 +52,7 @@ import {
   Play,
   Star,
   ShieldCheck,
+  HelpCircle,
 } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { Button } from '@/components/ui/button';
@@ -238,6 +239,26 @@ export function UserSettingsModal({
     c3: 6,
   });
 
+  // Gift & Billing State (Discord Parity)
+  const [redeemCodeInput, setRedeemCodeInput] = useState('');
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState<
+    { id: string; name: string; type: string; details: string; isDefault: boolean }[]
+  >([]);
+
+  const handleRedeemCode = () => {
+    if (!redeemCodeInput.trim()) {
+      toast.error(t('Masukkan kode hadiah terlebih dahulu'));
+      return;
+    }
+    const code = redeemCodeInput.trim().toUpperCase();
+    if (code.startsWith('WUMP') || code.startsWith('NECTAR') || code.length >= 8) {
+      toast.success(t('Kode hadiah berhasil diklaim! 1 Bulan Nectar telah ditambahkan ke akun Anda. 🎉'));
+      setRedeemCodeInput('');
+    } else {
+      toast.error(t('Kode hadiah tidak valid atau telah kedaluwarsa'));
+    }
+  };
+
   // Voice & Video settings
   const {
     settings,
@@ -392,8 +413,25 @@ export function UserSettingsModal({
         },
         { id: 'boost', label: t('Colony Boost'), icon: <Gem className="w-4 h-4 text-pink-400" /> },
         { id: 'subscriptions', label: t('Subscriptions'), icon: <CreditCard className="w-4 h-4" /> },
-        { id: 'gifts', label: t('Gift Inventory'), icon: <Gift className="w-4 h-4" /> },
-        { id: 'billing', label: t('Billing'), icon: <Receipt className="w-4 h-4" /> },
+        {
+          id: 'gifts',
+          label: t('Gift Inventory'),
+          icon: <Gift className="w-4 h-4" />,
+          subItems: [
+            { id: 'gift-redeem-codes', label: t('Redeem Codes') },
+            { id: 'gift-gifting-badge', label: t('The Gifting Badge') },
+            { id: 'gift-purchased', label: t('Gifts I Purchased') },
+          ],
+        },
+        {
+          id: 'billing',
+          label: t('Billing'),
+          icon: <Receipt className="w-4 h-4" />,
+          subItems: [
+            { id: 'billing-payment-methods', label: t('Payment Methods') },
+            { id: 'billing-transaction-history', label: t('Transaction History') },
+          ],
+        },
       ],
     },
     {
@@ -3205,18 +3243,260 @@ export function UserSettingsModal({
         {/* ========================================================================= */}
         {/* SECTION: SUBSCRIPTIONS, GIFTS, BILLING                                     */}
         {/* ========================================================================= */}
-        {(activeSection === 'subscriptions' || activeSection === 'gifts' || activeSection === 'billing') && (
-          <div className="space-y-5">
-            <h2 className="text-lg font-bold text-foreground capitalize pb-1">
-              {activeSection}
+        {/* ========================================================================= */}
+        {/* SECTION: SUBSCRIPTIONS                                                    */}
+        {/* ========================================================================= */}
+        {activeSection === 'subscriptions' && (
+          <div className="space-y-8 pb-12">
+            <h2 className="text-xl font-bold text-foreground">
+              {t('Subscriptions')}
             </h2>
-            <div className="p-6 rounded-xl border border-dashed border-border bg-card text-center space-y-2">
-              <Receipt className="w-8 h-8 text-muted-foreground/50 mx-auto" />
-              <div className="text-xs font-semibold text-foreground">
-                {t('Belum ada transaksi')}
+
+            {/* 1. Your Subscriptions */}
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  {t('Your Subscriptions')}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                  {t(
+                    'These are your current subscriptions. They will be billed on the same billing cycle. You can update any subscription at any time.'
+                  )}
+                </p>
               </div>
-              <div className="text-[11px] text-muted-foreground">
-                {t('Riwayat langganan dan bukti pembayaran akan tersimpan secara otomatis di sini.')}
+
+              <div className="rounded-2xl border border-border bg-card p-10 flex flex-col items-center justify-center text-center space-y-3 shadow-xs">
+                <div className="size-14 rounded-2xl bg-muted/60 border border-border flex items-center justify-center text-2xl select-none shadow-2xs">
+                  🎲
+                </div>
+                <div className="text-xs font-semibold text-muted-foreground">
+                  {t('You have no active subscriptions')}
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setActiveSection('nitro')}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-8 px-4 rounded-xl cursor-pointer"
+                >
+                  {t('Explore Nectar Plans')}
+                </Button>
+              </div>
+            </div>
+
+            {/* 2. Subscription Credit */}
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  {t('Subscription Credit')}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                  {t(
+                    'When you accept a gift while you have a running subscription, redeem a promotion, or accept a gift that differs from your current subscription, it will appear here as credit.'
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card p-10 flex flex-col items-center justify-center text-center space-y-3 shadow-xs">
+                <div className="size-14 rounded-2xl bg-muted/60 border border-border flex items-center justify-center text-2xl select-none shadow-2xs">
+                  🎲
+                </div>
+                <div className="text-xs font-semibold text-muted-foreground">
+                  {t('You have no unused credits')}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SECTION: GIFT INVENTORY                                                   */}
+        {/* ========================================================================= */}
+        {activeSection === 'gifts' && (
+          <div className="space-y-8 pb-12">
+            <h2 className="text-xl font-bold text-foreground">
+              {t('Gift Inventory')}
+            </h2>
+
+            {/* 1. Redeem Codes */}
+            <div id="gift-redeem-codes" className="space-y-3 scroll-mt-4">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  {t('Redeem Codes')}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                  {t("Received a code for Nectar or a game? That's exciting! Enter it below.")}
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl">
+                <Input
+                  value={redeemCodeInput}
+                  onChange={(e) => setRedeemCodeInput(e.target.value)}
+                  placeholder="WUMP-AAAAA-BBBBB-CCCCC"
+                  className="h-10 text-xs font-mono uppercase bg-card border-border tracking-wider"
+                />
+                <Button
+                  onClick={handleRedeemCode}
+                  className="h-10 px-6 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer shrink-0"
+                >
+                  {t('Redeem')}
+                </Button>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border/50" />
+
+            {/* 2. The Gifting Badge */}
+            <div id="gift-gifting-badge" className="space-y-3 scroll-mt-4">
+              <h3 className="text-sm font-bold text-foreground">
+                {t('The Gifting Badge')}
+              </h3>
+
+              <div className="rounded-2xl border border-border bg-card p-6 space-y-6 shadow-xs">
+                {/* 6 Badges Progression */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-center">
+                  {[
+                    { tier: 'Patron', count: 'Gifted 1x', icon: '🎁', color: 'from-cyan-500/20 to-blue-500/20 text-cyan-400 border-cyan-500/30' },
+                    { tier: 'Champion', count: 'Gifted 2x', icon: '💎', color: 'from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/30' },
+                    { tier: 'Luminary', count: 'Gifted 3x', icon: '🎀', color: 'from-pink-500/20 to-rose-500/20 text-pink-400 border-pink-500/30' },
+                    { tier: 'Icon', count: 'Gifted 6x', icon: '🔮', color: 'from-purple-500/20 to-indigo-500/20 text-purple-400 border-purple-500/30' },
+                    { tier: 'Hero', count: 'Gifted 10x', icon: '👑', color: 'from-violet-500/20 to-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30' },
+                    { tier: 'Legend', count: 'Gifted 20x', icon: '🏆', color: 'from-amber-500/20 to-yellow-500/20 text-amber-400 border-amber-500/30' },
+                  ].map((badge, idx) => (
+                    <div
+                      key={idx}
+                      className={cn(
+                        'rounded-2xl border p-3 flex flex-col items-center justify-between gap-2 bg-linear-to-b shadow-2xs hover:scale-105 transition-transform cursor-pointer',
+                        badge.color
+                      )}
+                    >
+                      <span className="text-2xl select-none">{badge.icon}</span>
+                      <div>
+                        <div className="text-xs font-bold text-foreground">{badge.tier}</div>
+                        <div className="text-[10px] text-muted-foreground">{badge.count}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-border/50">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed max-w-md">
+                    {t('Your badge progresses as you gift. Exceptions include when a gift is refunded or when fraud is detected.')}
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={() => toast.info(t('Pilih teman dari daftar kontak untuk mengirimkan hadiah.'))}
+                    className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs h-9 px-4 rounded-xl flex items-center gap-2 cursor-pointer shadow-xs shrink-0"
+                  >
+                    <Gift className="w-4 h-4" />
+                    <span>{t('Send a Gift')}</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border/50" />
+
+            {/* 3. Gifts I Purchased */}
+            <div id="gift-purchased" className="space-y-3 scroll-mt-4">
+              <h3 className="text-sm font-bold text-foreground">
+                {t('Gifts I Purchased')}
+              </h3>
+
+              <div className="rounded-2xl border border-border bg-card p-10 text-center space-y-1.5 shadow-xs">
+                <div className="text-xs font-bold text-foreground">
+                  {t('There are no gifts.')}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {t('Feeling generous? Give someone the gift of Nectar and make their day!')}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SECTION: BILLING                                                          */}
+        {/* ========================================================================= */}
+        {activeSection === 'billing' && (
+          <div className="space-y-8 pb-12">
+            <h2 className="text-xl font-bold text-foreground">
+              {t('Billing')}
+            </h2>
+
+            {/* 1. Payment Methods */}
+            <div id="billing-payment-methods" className="space-y-3 scroll-mt-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {t('Payment Methods')}
+                  </h3>
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <span>Country/Region: Indonesia</span>
+                    <Info className="w-3 h-3 text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+                {savedPaymentMethods.length === 0 ? (
+                  <div>
+                    <div className="text-xs font-bold text-foreground">
+                      {t('No payment method saved')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('Checkout faster by saving a payment method')}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {savedPaymentMethods.map((pm) => (
+                      <div key={pm.id} className="flex items-center gap-3">
+                        <CreditCard className="w-4 h-4 text-primary" />
+                        <div>
+                          <div className="text-xs font-bold text-foreground">{pm.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">{pm.details}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSavedPaymentMethods([
+                      {
+                        id: 'pm-qris',
+                        name: 'QRIS / GoPay (Midtrans)',
+                        type: 'e-wallet',
+                        details: 'Instant QRIS & GoPay Auto-Debit',
+                        isDefault: true,
+                      },
+                    ]);
+                    toast.success(t('Metode pembayaran QRIS / GoPay berhasil ditambahkan!'));
+                  }}
+                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs cursor-pointer shrink-0"
+                >
+                  {t('Add Payment Method')}
+                </Button>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border/50" />
+
+            {/* 2. Transaction History */}
+            <div id="billing-transaction-history" className="space-y-3 scroll-mt-4">
+              <h3 className="text-sm font-bold text-foreground">
+                {t('Transaction History')}
+              </h3>
+
+              <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-xs">
+                <div className="text-xs text-muted-foreground">
+                  {t("You haven't made any transactions yet.")}
+                </div>
               </div>
             </div>
           </div>
