@@ -31,7 +31,7 @@ interface SafetySetupTabProps {
   activeColony: Colony;
   onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   onClose?: () => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, any>) => string;
 }
 
 export function SafetySetupTab({
@@ -138,9 +138,9 @@ export function SafetySetupTab({
       </div>
 
       {/* Main Container Card (Screenshot 1 Discord Parity) */}
-      <div className="rounded-xl border border-border/70 bg-[#1e1f22] divide-y divide-border/60 overflow-hidden shadow-xl">
+      <div className="rounded-xl border border-border/70 bg-card divide-y divide-border/60 overflow-hidden shadow-xl">
         {/* 1. Raid Protection and CAPTCHA */}
-        <div className="p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
+        <div className="p-4 flex items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
               <ShieldAlert className="w-5 h-5" />
@@ -150,7 +150,7 @@ export function SafetySetupTab({
                 {t('Raid Protection and CAPTCHA')}
               </h3>
               <p className="text-xs text-muted-foreground">
-                {t(`${raidCount} of 3 enabled`)}
+                {t('{{count}} of {{total}} enabled', { count: raidCount, total: 3 })}
               </p>
             </div>
           </div>
@@ -159,14 +159,14 @@ export function SafetySetupTab({
             size="sm"
             variant="outline"
             onClick={() => setActiveModal('raid')}
-            className="h-8 px-4 text-xs font-semibold bg-[#2b2d31] hover:bg-[#35373c] text-white border-border/70 rounded-lg cursor-pointer shrink-0"
+            className="h-8 px-4 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border/70 rounded-lg cursor-pointer shrink-0"
           >
             {t('Edit')}
           </Button>
         </div>
 
         {/* 2. DM and Spam Protection */}
-        <div className="p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
+        <div className="p-4 flex items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
               <MessageSquare className="w-5 h-5" />
@@ -176,7 +176,7 @@ export function SafetySetupTab({
                 {t('DM and Spam Protection')}
               </h3>
               <p className="text-xs text-muted-foreground">
-                {t(`${dmCount} of 5 enabled`)}
+                {t('{{count}} of {{total}} enabled', { count: dmCount, total: 5 })}
               </p>
             </div>
           </div>
@@ -185,14 +185,14 @@ export function SafetySetupTab({
             size="sm"
             variant="outline"
             onClick={() => setActiveModal('dm')}
-            className="h-8 px-4 text-xs font-semibold bg-[#2b2d31] hover:bg-[#35373c] text-white border-border/70 rounded-lg cursor-pointer shrink-0"
+            className="h-8 px-4 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border/70 rounded-lg cursor-pointer shrink-0"
           >
             {t('Edit')}
           </Button>
         </div>
 
         {/* 3. AutoMod */}
-        <div className="p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
+        <div className="p-4 flex items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0">
               <Bot className="w-5 h-5" />
@@ -202,7 +202,7 @@ export function SafetySetupTab({
                 {t('AutoMod')}
               </h3>
               <p className="text-xs text-muted-foreground">
-                {t(`${autoModCount} of 5 enabled`)}
+                {t('{{count}} of {{total}} enabled', { count: autoModCount, total: 5 })}
               </p>
             </div>
           </div>
@@ -211,14 +211,14 @@ export function SafetySetupTab({
             size="sm"
             variant="outline"
             onClick={() => setActiveModal('automod')}
-            className="h-8 px-4 text-xs font-semibold bg-[#2b2d31] hover:bg-[#35373c] text-white border-border/70 rounded-lg cursor-pointer shrink-0"
+            className="h-8 px-4 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border/70 rounded-lg cursor-pointer shrink-0"
           >
             {t('Edit')}
           </Button>
         </div>
 
         {/* 4. Permissions */}
-        <div className="p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
+        <div className="p-4 flex items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
               <ShieldCheck className="w-5 h-5" />
@@ -228,7 +228,7 @@ export function SafetySetupTab({
                 {t('Permissions')}
               </h3>
               <p className="text-xs text-muted-foreground">
-                {t(`${permissionsCount} of 3 enabled`)}
+                {t('{{count}} of {{total}} enabled', { count: permissionsCount, total: 3 })}
               </p>
             </div>
           </div>
@@ -237,7 +237,7 @@ export function SafetySetupTab({
             size="sm"
             variant="outline"
             onClick={() => setActiveModal('permissions')}
-            className="h-8 px-4 text-xs font-semibold bg-[#2b2d31] hover:bg-[#35373c] text-white border-border/70 rounded-lg cursor-pointer shrink-0"
+            className="h-8 px-4 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border/70 rounded-lg cursor-pointer shrink-0"
           >
             {t('Edit')}
           </Button>

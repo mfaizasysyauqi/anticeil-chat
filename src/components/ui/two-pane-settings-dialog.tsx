@@ -178,7 +178,7 @@ export function TwoPaneSettingsDialog({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'p-0 w-[80vw] sm:w-[80vw] max-w-[80vw] sm:max-w-[80vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0',
+          'p-0 w-[90vw] sm:w-[90vw] max-w-[90vw] sm:max-w-[90vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0',
           className,
         )}
       >

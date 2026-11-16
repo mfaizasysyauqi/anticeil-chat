@@ -28,7 +28,7 @@ interface CommunityOverviewTabProps {
   onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   onNavigateSection?: (section: string) => void;
   onClose?: () => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, any>) => string;
 }
 
 export function CommunityOverviewTab({
@@ -119,7 +119,7 @@ export function CommunityOverviewTab({
 
       {/* Banner Card (Screenshot 1) */}
       {!isBannerDismissed && (
-        <div className="relative p-5 rounded-2xl bg-[#1e1f22] border border-border/80 shadow-lg space-y-4">
+        <div className="relative p-5 rounded-2xl bg-card border border-border/80 shadow-lg space-y-4">
           <button
             type="button"
             onClick={() => setIsBannerDismissed(true)}
@@ -143,7 +143,7 @@ export function CommunityOverviewTab({
             <Button
               size="sm"
               onClick={() => onNavigateSection?.('onboarding')}
-              className="text-xs font-semibold bg-[#5865F2] hover:bg-[#4752C4] text-white h-8 px-3.5 rounded-lg cursor-pointer"
+              className="text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground h-8 px-3.5 rounded-lg cursor-pointer"
             >
               {t('Set up Onboarding')}
             </Button>
@@ -154,7 +154,7 @@ export function CommunityOverviewTab({
                 onNavigateSection?.('access');
                 toast.info(t('Buka tab Access untuk mengaktifkan status Discoverable.'));
               }}
-              className="text-xs font-semibold bg-[#2b2d31] hover:bg-[#35373c] text-white border-border/70 h-8 px-3.5 rounded-lg cursor-pointer"
+              className="text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border h-8 px-3.5 rounded-lg cursor-pointer"
             >
               {t('Apply for Discovery')}
             </Button>
@@ -162,7 +162,7 @@ export function CommunityOverviewTab({
               size="sm"
               variant="outline"
               onClick={() => onNavigateSection?.('server-insights')}
-              className="text-xs font-semibold bg-[#2b2d31] hover:bg-[#35373c] text-white border-border/70 h-8 px-3.5 rounded-lg cursor-pointer"
+              className="text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border h-8 px-3.5 rounded-lg cursor-pointer"
             >
               {t('Check Server Insights')}
             </Button>
@@ -186,10 +186,10 @@ export function CommunityOverviewTab({
 
           <div className="w-full sm:w-56 shrink-0">
             <Select value={rulesChannelId} onValueChange={setRulesChannelId}>
-              <SelectTrigger className="h-9 text-xs bg-[#1e1f22] border-border/80 text-foreground">
+              <SelectTrigger className="h-9 text-xs bg-muted border-border text-foreground">
                 <SelectValue placeholder={t('Pilih Channel Rules')} />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1f22] border-border/80">
+              <SelectContent className="bg-popover border-border">
                 {channels.map((c) => (
                   <SelectItem key={c.id} value={c.id} className="text-xs">
                     #{c.name}
@@ -225,10 +225,10 @@ export function CommunityOverviewTab({
               value={communityUpdatesChannelId}
               onValueChange={setCommunityUpdatesChannelId}
             >
-              <SelectTrigger className="h-9 text-xs bg-[#1e1f22] border-border/80 text-foreground">
+              <SelectTrigger className="h-9 text-xs bg-muted border-border text-foreground">
                 <SelectValue placeholder={t('None')} />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1f22] border-border/80">
+              <SelectContent className="bg-popover border-border">
                 <SelectItem value="none" className="text-xs">
                   {t('None')}
                 </SelectItem>
@@ -264,10 +264,10 @@ export function CommunityOverviewTab({
               value={safetyNotificationsChannelId}
               onValueChange={setSafetyNotificationsChannelId}
             >
-              <SelectTrigger className="h-9 text-xs bg-[#1e1f22] border-border/80 text-foreground">
+              <SelectTrigger className="h-9 text-xs bg-muted border-border text-foreground">
                 <SelectValue placeholder={t('Select...')} />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1f22] border-border/80">
+              <SelectContent className="bg-popover border-border">
                 <SelectItem value="none" className="text-xs">
                   {t('Select...')}
                 </SelectItem>
@@ -298,10 +298,10 @@ export function CommunityOverviewTab({
 
           <div className="w-full sm:w-56 shrink-0">
             <Select value={primaryLanguage} onValueChange={setPrimaryLanguage}>
-              <SelectTrigger className="h-9 text-xs bg-[#1e1f22] border-border/80 text-foreground">
+              <SelectTrigger className="h-9 text-xs bg-muted border-border text-foreground">
                 <SelectValue placeholder="English" />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1f22] border-border/80">
+              <SelectContent className="bg-popover border-border">
                 <SelectItem value="English" className="text-xs">
                   English
                 </SelectItem>
@@ -342,7 +342,7 @@ export function CommunityOverviewTab({
           onChange={(e) => setServerDescription(e.target.value)}
           placeholder={t('Tell the world a bit about this server.')}
           rows={3}
-          className="w-full p-2.5 text-xs bg-[#1e1f22] border border-border/80 text-foreground resize-none rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
+          className="w-full p-2.5 text-xs bg-muted border border-border text-foreground resize-none rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
         />
       </div>
 
@@ -364,7 +364,7 @@ export function CommunityOverviewTab({
         <Button
           type="button"
           onClick={handleDisableCommunity}
-          className="bg-red-500/90 hover:bg-red-600 text-white text-xs font-semibold h-9 px-4 rounded-lg cursor-pointer shrink-0"
+          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-semibold h-9 px-4 rounded-lg cursor-pointer shrink-0"
         >
           {t('Disable Community')}
         </Button>
@@ -372,7 +372,7 @@ export function CommunityOverviewTab({
 
       {/* Floating Save Changes Bar when dirty */}
       {isDirty && (
-        <div className="sticky bottom-4 z-20 flex items-center justify-between p-3.5 rounded-xl bg-[#111214] border border-border shadow-2xl animate-in slide-in-from-bottom-3">
+        <div className="sticky bottom-4 z-20 flex items-center justify-between p-3.5 rounded-xl bg-card border border-border shadow-2xl animate-in slide-in-from-bottom-3">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
             <span>{t('Careful — you have unsaved changes!')}</span>

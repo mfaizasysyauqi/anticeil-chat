@@ -193,10 +193,10 @@ export function AuditLogTab({
               {t('Filter by User')}
             </span>
             <Select value={selectedUserFilter} onValueChange={setSelectedUserFilter}>
-              <SelectTrigger className="w-40 h-8 text-xs bg-[#1e1f22] border-border/70 text-foreground">
+              <SelectTrigger className="w-40 h-8 text-xs bg-secondary border-border/70 text-foreground">
                 <SelectValue placeholder={t('All Users')} />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1f22] border-border/80">
+              <SelectContent className="bg-popover border-border">
                 <SelectItem value="all" className="text-xs">
                   {t('All Users')}
                 </SelectItem>
@@ -215,10 +215,10 @@ export function AuditLogTab({
               {t('Filter by Action')}
             </span>
             <Select value={selectedActionFilter} onValueChange={setSelectedActionFilter}>
-              <SelectTrigger className="w-44 h-8 text-xs bg-[#1e1f22] border-border/70 text-foreground">
+              <SelectTrigger className="w-44 h-8 text-xs bg-secondary border-border/70 text-foreground">
                 <SelectValue placeholder={t('All Actions')} />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1f22] border-border/80">
+              <SelectContent className="bg-popover border-border">
                 <SelectItem value="all" className="text-xs">
                   {t('All Actions')}
                 </SelectItem>
@@ -252,7 +252,7 @@ export function AuditLogTab({
       {/* ── Entry Rows (Screenshot 2 Discord Parity) ── */}
       <div className="space-y-2">
         {filteredLogs.length === 0 ? (
-          <div className="rounded-xl border border-border/70 bg-[#1e1f22] p-12 text-center text-xs text-muted-foreground">
+          <div className="rounded-xl border border-border/70 bg-card p-12 text-center text-xs text-muted-foreground">
             {t('Tidak ada riwayat tindakan yang cocok dengan filter.')}
           </div>
         ) : (
@@ -262,7 +262,7 @@ export function AuditLogTab({
               <div
                 key={log.id}
                 onClick={() => setExpandedId(isExpanded ? null : log.id)}
-                className="rounded-xl border border-border/70 bg-[#1e1f22] hover:border-border transition-colors cursor-pointer overflow-hidden shadow-xs"
+                className="rounded-xl border border-border/70 bg-card hover:border-border transition-colors cursor-pointer overflow-hidden shadow-xs"
               >
                 <div className="p-3.5 flex items-center justify-between gap-4">
                   {/* Left: Action Icon + User Avatar + Action Text + Timestamp */}

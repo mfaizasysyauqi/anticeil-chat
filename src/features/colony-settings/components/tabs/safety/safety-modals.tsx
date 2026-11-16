@@ -110,7 +110,7 @@ export function SafetyModals({
     <>
       {/* ── MODAL 1: Raid Protection & CAPTCHA ── */}
       <Dialog open={activeModal === 'raid'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-[#1e1f22] border-border/80 text-foreground">
+        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-amber-400">
               <ShieldAlert className="w-4 h-4" />
@@ -176,7 +176,7 @@ export function SafetyModals({
               size="sm"
               onClick={() => onSaveSettings('Raid Protection')}
               disabled={isSaving}
-              className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
+              className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSaving ? t('Menyimpan...') : t('Simpan')}
             </Button>
@@ -186,7 +186,7 @@ export function SafetyModals({
 
       {/* ── MODAL 2: DM and Spam Protection ── */}
       <Dialog open={activeModal === 'dm'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-[#1e1f22] border-border/80 text-foreground">
+        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-emerald-400">
               <MessageSquare className="w-4 h-4" />
@@ -282,7 +282,7 @@ export function SafetyModals({
               size="sm"
               onClick={() => onSaveSettings('DM and Spam Protection')}
               disabled={isSaving}
-              className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
+              className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSaving ? t('Menyimpan...') : t('Simpan')}
             </Button>
@@ -292,7 +292,7 @@ export function SafetyModals({
 
       {/* ── MODAL 3: AutoMod ── */}
       <Dialog open={activeModal === 'automod'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-[#1e1f22] border-border/80 text-foreground">
+        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-indigo-400">
               <Bot className="w-4 h-4" />
@@ -380,13 +380,13 @@ export function SafetyModals({
                     }
                   }}
                   placeholder={t('Tambahkan kata yang ingin diblokir...')}
-                  className="text-xs bg-[#111214] border-border/70 h-8"
+                  className="text-xs bg-muted border-border/70 h-8"
                 />
                 <Button
                   type="button"
                   size="sm"
                   onClick={onAddKeyword}
-                  className="h-8 px-3 text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
+                  className="h-8 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </Button>
@@ -420,7 +420,7 @@ export function SafetyModals({
               size="sm"
               onClick={() => onSaveSettings('AutoMod')}
               disabled={isSaving}
-              className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
+              className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSaving ? t('Menyimpan...') : t('Simpan')}
             </Button>
@@ -430,7 +430,7 @@ export function SafetyModals({
 
       {/* ── MODAL 4: Permissions ── */}
       <Dialog open={activeModal === 'permissions'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-[#1e1f22] border-border/80 text-foreground">
+        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-rose-400">
               <ShieldCheck className="w-4 h-4" />
@@ -496,7 +496,7 @@ export function SafetyModals({
               size="sm"
               onClick={() => onSaveSettings('Permissions')}
               disabled={isSaving}
-              className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
+              className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSaving ? t('Menyimpan...') : t('Simpan')}
             </Button>

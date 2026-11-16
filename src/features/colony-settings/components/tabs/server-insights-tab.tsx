@@ -67,14 +67,14 @@ export function ServerInsightsTab({
             setShowDashboardModal((prev) => !prev);
             toast.success(t('Membuka dasbor Server Insights interaktif... 📊'));
           }}
-          className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-9 px-6 rounded-lg cursor-pointer shadow-md"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold h-9 px-6 rounded-lg cursor-pointer shadow-md"
         >
           {t('Go to Server Insights')}
         </Button>
       </div>
 
       {/* ── Live Colony Analytics Preview ── */}
-      <div className="p-6 rounded-2xl bg-[#1e1f22] border border-border/70 shadow-xl space-y-6">
+      <div className="p-6 rounded-2xl bg-card border border-border/70 shadow-xl space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <LineChart className="w-4 h-4 text-primary" />
@@ -89,7 +89,7 @@ export function ServerInsightsTab({
 
         {/* 4 Metric Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-[#111214] border border-border/60 space-y-1">
+          <div className="p-3 rounded-xl bg-muted border border-border/60 space-y-1">
             <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
               {t('Communicators')}
             </span>
@@ -101,7 +101,7 @@ export function ServerInsightsTab({
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#111214] border border-border/60 space-y-1">
+          <div className="p-3 rounded-xl bg-muted border border-border/60 space-y-1">
             <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
               {t('New Member Retention')}
             </span>
@@ -111,7 +111,7 @@ export function ServerInsightsTab({
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#111214] border border-border/60 space-y-1">
+          <div className="p-3 rounded-xl bg-muted border border-border/60 space-y-1">
             <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
               {t('Welcome Completion')}
             </span>
@@ -121,7 +121,7 @@ export function ServerInsightsTab({
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#111214] border border-border/60 space-y-1">
+          <div className="p-3 rounded-xl bg-muted border border-border/60 space-y-1">
             <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
               {t('Announcement Views')}
             </span>
@@ -137,12 +137,12 @@ export function ServerInsightsTab({
           <span className="text-xs font-semibold text-muted-foreground">
             {t('Tren Aktivitas Percakapan Harian')}
           </span>
-          <div className="h-32 w-full rounded-xl bg-[#111214] border border-border/60 p-3 flex items-end justify-between gap-1">
+          <div className="h-32 w-full rounded-xl bg-muted border border-border/60 p-3 flex items-end justify-between gap-1">
             {[40, 65, 30, 85, 95, 70, 110, 80, 120, 140, 95, 130, 160, 180].map((h, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
                 <div
                   style={{ height: `${(h / 180) * 100}%` }}
-                  className="w-full bg-[#5865F2] hover:bg-primary transition-all rounded-t-sm"
+                  className="w-full bg-primary hover:bg-primary/90 transition-all rounded-t-sm"
                   title={`Hari ke-${i + 1}: ${h} pesan`}
                 />
               </div>

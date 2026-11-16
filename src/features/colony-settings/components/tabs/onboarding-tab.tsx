@@ -165,14 +165,14 @@ export function OnboardingTab({
         <Button
           size="sm"
           onClick={() => setIsBuilderOpen(true)}
-          className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-xs h-9 px-6 rounded-lg cursor-pointer shadow-md"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 px-6 rounded-lg cursor-pointer shadow-md"
         >
           {t('Check it out')}
         </Button>
       </div>
 
       {/* ── Testimonial Quote Card (Screenshot 3) ── */}
-      <div className="relative p-6 rounded-2xl bg-[#1e1f22] border border-border/70 shadow-sm max-w-2xl mx-auto space-y-4">
+      <div className="relative p-6 rounded-2xl bg-card border border-border/70 shadow-sm max-w-2xl mx-auto space-y-4">
         <span className="text-4xl text-muted-foreground/30 font-serif leading-none block">
           “
         </span>
@@ -191,7 +191,7 @@ export function OnboardingTab({
                   prev === 0 ? TESTIMONIALS.length - 1 : prev - 1
                 )
               }
-              className="p-1 rounded-md bg-[#2b2d31] hover:bg-[#35373c] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="p-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -202,7 +202,7 @@ export function OnboardingTab({
                   prev === TESTIMONIALS.length - 1 ? 0 : prev + 1
                 )
               }
-              className="p-1 rounded-md bg-[#2b2d31] hover:bg-[#35373c] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="p-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -215,7 +215,7 @@ export function OnboardingTab({
         {/* Feature 1: Questions & Roles */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Visual Mockup Card */}
-          <div className="p-5 rounded-2xl bg-[#1e1f22] border border-border/70 shadow-lg space-y-3">
+          <div className="p-5 rounded-2xl bg-card border border-border/70 shadow-lg space-y-3">
             <span className="text-xs font-bold text-foreground block">
               {t('What do you want to do in this server?')}
             </span>
@@ -274,7 +274,7 @@ export function OnboardingTab({
           </div>
 
           {/* Visual Mockup Card */}
-          <div className="p-5 rounded-2xl bg-[#1e1f22] border border-border/70 shadow-lg space-y-3.5 order-1 md:order-2">
+          <div className="p-5 rounded-2xl bg-card border border-border/70 shadow-lg space-y-3.5 order-1 md:order-2">
             <div className="flex items-start gap-3">
               <CommunityAvatar
                 name={activeColony.name}
@@ -285,14 +285,14 @@ export function OnboardingTab({
                 <span className="text-xs font-bold text-foreground block">
                   {activeColony.name} Admin 👑
                 </span>
-                <p className="text-xs text-foreground/90 leading-relaxed bg-[#111214] p-3 rounded-xl border border-border/60">
+                <p className="text-xs text-foreground/90 leading-relaxed bg-muted p-3 rounded-xl border border-border/60">
                   {welcomeMessage}
                 </p>
               </div>
             </div>
 
             <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-[#111214]">
+              <div className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted">
                 <div className="flex items-center gap-2">
                   <Hash className="w-3.5 h-3.5 text-muted-foreground" />
                   <span className="text-xs text-foreground font-medium">
@@ -303,7 +303,7 @@ export function OnboardingTab({
                   ✓
                 </div>
               </div>
-              <div className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-[#111214]">
+              <div className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted">
                 <div className="flex items-center gap-2">
                   <Hash className="w-3.5 h-3.5 text-muted-foreground" />
                   <span className="text-xs text-foreground font-medium">
@@ -321,14 +321,14 @@ export function OnboardingTab({
         {/* Feature 3: Choose starting channels */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Visual Mockup Card */}
-          <div className="p-5 rounded-2xl bg-[#1e1f22] border border-border/70 shadow-lg space-y-2">
+          <div className="p-5 rounded-2xl bg-card border border-border/70 shadow-lg space-y-2">
             {channels.slice(0, 4).map((c) => {
               const isChecked = startingChannels.includes(c.id);
               return (
                 <div
                   key={c.id}
                   onClick={() => toggleStartingChannel(c.id)}
-                  className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-[#111214] hover:bg-[#18191c] transition-colors cursor-pointer"
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted hover:bg-muted/80 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <Hash className="w-3.5 h-3.5 text-muted-foreground" />
@@ -340,7 +340,7 @@ export function OnboardingTab({
                     className={cn(
                       'w-4 h-4 rounded-md border flex items-center justify-center transition-colors',
                       isChecked
-                        ? 'bg-[#5865F2] border-[#5865F2] text-white'
+                        ? 'bg-primary border-primary text-primary-foreground'
                         : 'border-muted-foreground/40'
                     )}
                   >
@@ -367,7 +367,7 @@ export function OnboardingTab({
 
       {/* ── MODAL: Onboarding Setup Builder ── */}
       <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
-        <DialogContent className="sm:max-w-[520px] bg-[#1e1f22] border-border/80 text-foreground">
+        <DialogContent className="sm:max-w-[520px] bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <Sparkles className="w-4 h-4 text-primary" />
@@ -387,7 +387,7 @@ export function OnboardingTab({
                 value={welcomeMessage}
                 onChange={(e) => setWelcomeMessage(e.target.value)}
                 rows={3}
-                className="w-full p-2.5 text-xs bg-[#111214] border border-border/70 text-foreground resize-none rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full p-2.5 text-xs bg-muted border border-border text-foreground resize-none rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
 
@@ -402,14 +402,14 @@ export function OnboardingTab({
                     <div
                       key={c.id}
                       onClick={() => toggleStartingChannel(c.id)}
-                      className="flex items-center justify-between p-2 rounded-lg border border-border/60 bg-[#111214] cursor-pointer"
+                      className="flex items-center justify-between p-2 rounded-lg border border-border bg-muted cursor-pointer"
                     >
                       <span className="text-xs text-foreground">#{c.name}</span>
                       <div
                         className={cn(
                           'w-4 h-4 rounded-md border flex items-center justify-center',
                           isChecked
-                            ? 'bg-[#5865F2] border-[#5865F2] text-white'
+                            ? 'bg-primary border-primary text-primary-foreground'
                             : 'border-muted-foreground/40'
                         )}
                       >
@@ -437,7 +437,7 @@ export function OnboardingTab({
               size="sm"
               onClick={handleSaveOnboarding}
               disabled={isSaving}
-              className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
+              className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSaving ? t('Menyimpan...') : t('Aktifkan Onboarding')}
             </Button>

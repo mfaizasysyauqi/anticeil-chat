@@ -76,7 +76,7 @@ export function BansTab({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('Search Bans by User Id or Username')}
-            className="h-9 pl-9 text-xs bg-[#1e1f22] border-border/70 text-foreground placeholder:text-muted-foreground rounded-lg focus-visible:ring-1 focus-visible:ring-primary"
+            className="h-9 pl-9 text-xs bg-muted border-border/70 text-foreground placeholder:text-muted-foreground rounded-lg focus-visible:ring-1 focus-visible:ring-primary"
           />
         </div>
         <Button
@@ -85,14 +85,14 @@ export function BansTab({
             setIsSearching(true);
             setTimeout(() => setIsSearching(false), 300);
           }}
-          className="h-9 px-5 text-xs font-semibold bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg cursor-pointer shrink-0"
+          className="h-9 px-5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg cursor-pointer shrink-0"
         >
           {t('Search')}
         </Button>
       </div>
 
       {/* ── Main Container (Empty state or List) ── */}
-      <div className="rounded-xl border border-border/70 bg-[#1e1f22] overflow-hidden shadow-xl min-h-[380px] flex flex-col justify-center">
+      <div className="rounded-xl border border-border/70 bg-card overflow-hidden shadow-xl min-h-[380px] flex flex-col justify-center">
         {filteredBans.length === 0 ? (
           /* Empty State matching Screenshot 3 */
           <div className="p-12 md:p-16 flex flex-col items-center justify-center text-center space-y-4">
