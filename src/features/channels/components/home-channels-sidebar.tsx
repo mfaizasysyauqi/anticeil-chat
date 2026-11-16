@@ -12,6 +12,7 @@ import {
   Plus,
   MessageSquare,
   Radio,
+  X,
 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ export interface HomeChannelsSidebarProps {
   members: ColonyMember[];
   activeCallCounts?: Record<string, number>;
   onItemClick?: () => void;
+  onCloseDM?: (id: string) => void;
   onOpenDmSearch: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
@@ -61,6 +63,7 @@ export function HomeChannelsSidebar({
   members,
   activeCallCounts = {},
   onItemClick,
+  onCloseDM,
   onOpenDmSearch,
   t,
 }: HomeChannelsSidebarProps) {
@@ -319,41 +322,49 @@ export function HomeChannelsSidebar({
         </div>
 
         {/* Direct Messages List */}
-        {dmChannels.filter(
-          (dm) =>
-            typeof dm.id === 'string' &&
-            dm.id.startsWith('dm-') &&
-            dm.type !== 'voice' &&
-            !dm.name.toLowerCase().includes('general voice') &&
-            dm.name.toLowerCase() !== 'pengguna' &&
-            dm.name.toLowerCase() !== 'pengguna anticeil',
-        ).length === 0 ? (
-          <div className="px-2.5 py-3 text-[11px] text-muted-foreground/60 leading-relaxed text-center">
-            <p>{t('Belum ada pesan langsung.')}</p>
-            <button
-              onClick={() => {
-                setActiveChannelId('');
-                setFriendsTab('all');
-              }}
-              className="mt-1.5 text-primary hover:underline font-semibold cursor-pointer block mx-auto text-[11px]"
-            >
-              {t('Buka Halaman Teman →')}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-0.5">
-            {dmChannels
-              .filter(
-                (dm) =>
-                  typeof dm.id === 'string' &&
-                  dm.id.startsWith('dm-') &&
-                  dm.type !== 'voice' &&
-                  !dm.name.toLowerCase().includes('general voice') &&
-                  dm.name.toLowerCase() !== 'pengguna' &&
-                  dm.name.toLowerCase() !== 'pengguna anticeil',
-              )
-              .map((dm) => {
-              const isActiveDm = activeChannelId === dm.id;
+        {(() => {
+          const seen = new Set<string>();
+          const validDms = dmChannels.filter((dm) => {
+            const name = (dm.name || '').toLowerCase().trim();
+            const id = String(dm.id || '');
+            if (
+              !id.startsWith('dm-') ||
+              id === 'dm-anticeil' ||
+              id === 'dm-u1' ||
+              dm.type === 'voice' ||
+              name.includes('general voice') ||
+              name === 'pengguna' ||
+              name === 'pengguna anticeil'
+            ) {
+              return false;
+            }
+            const dedupKey = (dm.dmUserId || name).toLowerCase();
+            if (seen.has(dedupKey)) return false;
+            seen.add(dedupKey);
+            return true;
+          });
+
+          if (validDms.length === 0) {
+            return (
+              <div className="px-2.5 py-3 text-[11px] text-muted-foreground/60 leading-relaxed text-center">
+                <p>{t('Belum ada pesan langsung.')}</p>
+                <button
+                  onClick={() => {
+                    setActiveChannelId('');
+                    setFriendsTab('all');
+                  }}
+                  className="mt-1.5 text-primary hover:underline font-semibold cursor-pointer block mx-auto text-[11px]"
+                >
+                  {t('Buka Halaman Teman →')}
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-0.5">
+              {validDms.map((dm) => {
+                const isActiveDm = activeChannelId === dm.id;
               const member = members.find((m) => {
                 const isSelf =
                   (currentUser?.id && m.id === currentUser.id) ||
@@ -372,14 +383,14 @@ export function HomeChannelsSidebar({
                 return false;
               });
               return (
-                <button
+                <div
                   key={dm.id}
                   onClick={() => {
                     setActiveChannelId(dm.id);
                     onItemClick?.();
                   }}
                   className={cn(
-                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group',
+                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer',
                     isActiveDm
                       ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
                       : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -408,11 +419,25 @@ export function HomeChannelsSidebar({
                       {activeCallCounts[dm.id]}
                     </span>
                   ) : null}
-                </button>
+                  {onCloseDM && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCloseDM(dm.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-sidebar hover:text-foreground text-muted-foreground/60 transition-opacity shrink-0"
+                      title={t('Tutup Percakapan')}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
-        )}
+        );
+      })()}
       </div>
     </>
   );

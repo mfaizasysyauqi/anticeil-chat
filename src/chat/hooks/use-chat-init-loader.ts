@@ -113,54 +113,11 @@ export function useChatInitLoader({
         if (mounted) {
           if (Array.isArray(channelsRes)) {
             const storedDms = loadStoredDmChannels();
-            const friendDms: ColonyChannel[] = [];
-            const effectiveUser =
-              authenticationSession.getUser() || currentUser;
-            const myId = effectiveUser?.id;
-
-            if (Array.isArray(friendsRes) && myId) {
-              friendsRes.forEach((f) => {
-                if (!f.id || f.id === myId) return;
-                const dmName = f.name || f.username || 'Direct Message';
-                if (
-                  dmName.toLowerCase() === 'pengguna' ||
-                  dmName.toLowerCase() === 'pengguna anticeil'
-                )
-                  return;
-                const dmId = getDmChannelId(myId, f.id);
-                friendDms.push({
-                  id: dmId,
-                  name: dmName,
-                  description: `Percakapan langsung dengan ${dmName}`,
-                  category: 'DIRECT MESSAGES',
-                  colonyId: 'anticeil',
-                  isDirectMessage: true,
-                  dmUserId: f.id,
-                  type: 'text',
-                });
-              });
-            }
-
-            const dmMap = new Map<string, ColonyChannel>();
-            storedDms
-              .filter(
-                (dm) =>
-                  typeof dm.id === 'string' &&
-                  dm.id.startsWith('dm-') &&
-                  dm.type !== 'voice',
-              )
-              .forEach((dm) => dmMap.set(dm.id, dm));
-            friendDms.forEach((dm) => {
-              if (!dmMap.has(dm.id)) dmMap.set(dm.id, dm);
-            });
-            const allDms = Array.from(dmMap.values());
-            saveStoredDmChannels(allDms);
-
             const serverChannels = channelsRes.filter(
               (c) =>
                 c.category !== 'DIRECT MESSAGES' && !c.id.startsWith('dm-'),
             );
-            const mergedAllChannels = [...allDms, ...serverChannels];
+            const mergedAllChannels = [...storedDms, ...serverChannels];
             setChannels(mergedAllChannels);
 
             const targetChannelParam = new URLSearchParams(

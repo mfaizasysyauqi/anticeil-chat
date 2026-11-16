@@ -28,6 +28,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     setIsCreateHubOpen,
     handleToggleRailMode,
     handleStartDM,
+    handleCloseDM,
     isAddFriendDialogOpen,
     setIsAddFriendDialogOpen,
     t,
@@ -284,6 +285,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       setColonyToDelete,
       setIsCallPiP,
       selectedActivityAppId,
+      onCloseDM: handleCloseDM,
       t,
     },
     userDockProps: {

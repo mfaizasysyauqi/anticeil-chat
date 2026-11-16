@@ -36,6 +36,7 @@ export interface ChannelsSidebarProps {
   setActiveThread: (thread: any) => void;
   activeCallCounts?: Record<string, number>;
   onItemClick?: () => void;
+  onCloseDM?: (id: string) => void;
   onOpenDmSearch: () => void;
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;

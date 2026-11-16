@@ -46,31 +46,6 @@ export function useFriendsManager({
   const allFriends = useMemo(() => {
     const friendMap = new Map<string, FriendMember>();
 
-    // 1. Other real workspace members (not current user)
-    displayMembers
-      .concat(members)
-      .filter(
-        (m) =>
-          m.id !== currentUser?.id &&
-          (!currentUser?.email || m.email?.toLowerCase() !== currentUser?.email?.toLowerCase()) &&
-          (!currentUser?.name || m.name?.toLowerCase() !== currentUser?.name?.toLowerCase()),
-      )
-      .forEach((m) => {
-        const isGeneric = !m.name || m.name.toLowerCase() === 'pengguna' || m.name.toLowerCase() === 'pengguna anticeil';
-        if (isGeneric) return;
-        const key = m.id || m.email || m.name;
-        if (!friendMap.has(key)) {
-          friendMap.set(key, {
-            id: m.id,
-            name: m.name,
-            username: m.username || m.email?.split('@')[0] || null,
-            avatar: m.avatar || null,
-            email: m.email || '',
-            status: (m.status || 'online') as any,
-          });
-        }
-      });
-
     // 2. Friends from active DM channels in sidebar
     (dmChannels || [])
       .filter((dm) => {

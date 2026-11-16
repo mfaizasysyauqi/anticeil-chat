@@ -154,6 +154,7 @@ export interface ChannelsSidebarWrapperProps {
   setIsCallPiP: (pip: boolean) => void;
   selectedActivityAppId: string | null;
   onItemClick?: () => void;
+  onCloseDM?: (id: string) => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -202,6 +203,7 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
   setIsCallPiP,
   selectedActivityAppId,
   onItemClick,
+  onCloseDM,
   t,
 }) => {
   return (
@@ -238,6 +240,7 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
       onUpdateCategory={channelModals.handleUpdateCategory}
       onMoveChannelCategory={channelModals.handleMoveChannelCategory}
       onItemClick={onItemClick}
+      onCloseDM={onCloseDM}
       onOpenDmSearch={() =>
         requireAuth(
           () => {

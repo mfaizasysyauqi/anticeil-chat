@@ -65,24 +65,41 @@ export function loadStoredDmChannels(): ColonyChannel[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // Strict filter: ONLY real DM channels (ID starts with 'dm-', text type only, not a server channel, not named after server channels, no generic placeholders)
-    const validDms = parsed.filter((c: any) => {
+
+    const seenKeys = new Set<string>();
+    const validDms: ColonyChannel[] = [];
+
+    for (const c of parsed) {
       const name = (c?.name || '').toLowerCase().trim();
       const id = String(c?.id || '');
-      return (
-        id.startsWith('dm-') &&
-        c?.category === 'DIRECT MESSAGES' &&
-        (!c?.colonyId || c.colonyId === 'anticeil') &&
-        c?.type !== 'voice' &&
-        c?.type !== 'forum' &&
-        c?.type !== 'kanban' &&
-        name !== 'general voice' &&
-        name !== 'general' &&
-        name !== 'forum-diskusi' &&
-        name !== 'pengguna' &&
-        name !== 'pengguna anticeil'
-      );
-    });
+      if (
+        !id.startsWith('dm-') ||
+        id === 'dm-anticeil' ||
+        id === 'dm-u1' ||
+        c?.category !== 'DIRECT MESSAGES' ||
+        (c?.colonyId && c.colonyId !== 'anticeil') ||
+        c?.type === 'voice' ||
+        c?.type === 'forum' ||
+        c?.type === 'kanban' ||
+        name === 'general voice' ||
+        name === 'general' ||
+        name === 'forum-diskusi' ||
+        name === 'pengguna' ||
+        name === 'pengguna anticeil'
+      ) {
+        continue;
+      }
+
+      // Deduplicate by partner identifier or name
+      const dedupKey = c.dmUserId ? `user-${c.dmUserId}` : `name-${name}`;
+      if (seenKeys.has(dedupKey) || seenKeys.has(`name-${name}`)) {
+        continue;
+      }
+      seenKeys.add(dedupKey);
+      seenKeys.add(`name-${name}`);
+      validDms.push(c);
+    }
+
     localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(validDms));
     return validDms;
   } catch {
@@ -93,23 +110,36 @@ export function loadStoredDmChannels(): ColonyChannel[] {
 export function saveStoredDmChannels(channels: ColonyChannel[]): void {
   try {
     if (typeof window === 'undefined') return;
-    const dmsOnly = channels.filter((c: any) => {
+    const seenKeys = new Set<string>();
+    const dmsOnly: ColonyChannel[] = [];
+    for (const c of channels) {
       const name = (c?.name || '').toLowerCase().trim();
       const id = String(c?.id || '');
-      return (
-        id.startsWith('dm-') &&
-        c?.category === 'DIRECT MESSAGES' &&
-        (!c?.colonyId || c.colonyId === 'anticeil') &&
-        c?.type !== 'voice' &&
-        c?.type !== 'forum' &&
-        c?.type !== 'kanban' &&
-        name !== 'general voice' &&
-        name !== 'general' &&
-        name !== 'forum-diskusi' &&
-        name !== 'pengguna' &&
-        name !== 'pengguna anticeil'
-      );
-    });
+      if (
+        !id.startsWith('dm-') ||
+        id === 'dm-anticeil' ||
+        id === 'dm-u1' ||
+        c?.category !== 'DIRECT MESSAGES' ||
+        (c?.colonyId && c.colonyId !== 'anticeil') ||
+        c?.type === 'voice' ||
+        c?.type === 'forum' ||
+        c?.type === 'kanban' ||
+        name === 'general voice' ||
+        name === 'general' ||
+        name === 'forum-diskusi' ||
+        name === 'pengguna' ||
+        name === 'pengguna anticeil'
+      ) {
+        continue;
+      }
+      const dedupKey = c.dmUserId ? `user-${c.dmUserId}` : `name-${name}`;
+      if (seenKeys.has(dedupKey) || seenKeys.has(`name-${name}`)) {
+        continue;
+      }
+      seenKeys.add(dedupKey);
+      seenKeys.add(`name-${name}`);
+      dmsOnly.push(c);
+    }
     localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(dmsOnly));
   } catch (err) {
     console.error('Failed to save DM channels to storage', err);

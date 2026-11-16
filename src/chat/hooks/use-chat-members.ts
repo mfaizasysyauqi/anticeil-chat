@@ -125,59 +125,20 @@ export function useChatMembers({
     setIsMobileMembersOpen(false);
   };
 
-  // Auto-sync DM channels for friends so they appear in Direct Messages sidebar by default
-  useEffect(() => {
-    if (!currentUser?.id) return;
-    if (friendsList.length === 0) return;
-
+  // Close / remove DM channel from sidebar
+  const handleCloseDM = (dmId: string) => {
     setChannels((prev) => {
-      let changed = false;
-      const currentList = prev.filter((c) => {
-        if (c.category !== 'DIRECT MESSAGES') return true;
-        const name = (c.name || '').toLowerCase().trim();
-        return (
-          name !== 'pengguna' &&
-          name !== 'pengguna anticeil' &&
-          name !== 'general voice'
-        );
-      });
-      if (currentList.length !== prev.length) {
-        changed = true;
-      }
-      friendsList.forEach((friend) => {
-        if (!friend.id || friend.id === currentUser.id) return;
-        const dmName = friend.name || friend.username || 'Direct Message';
-        if (
-          dmName.toLowerCase() === 'pengguna' ||
-          dmName.toLowerCase() === 'pengguna anticeil'
-        )
-          return;
-        const dmId = getDmChannelId(currentUser.id, friend.id);
-        const exists = currentList.some((c) => c.id === dmId);
-        if (!exists) {
-          const newDm: ColonyChannel = {
-            id: dmId,
-            name: dmName,
-            description: `Percakapan langsung dengan ${dmName}`,
-            category: 'DIRECT MESSAGES',
-            colonyId: 'anticeil',
-            isDirectMessage: true,
-            dmUserId: friend.id,
-            type: 'text',
-          };
-          currentList.unshift(newDm);
-          changed = true;
-        }
-      });
-      if (changed) {
-        saveStoredDmChannels(
-          currentList.filter((c) => c.category === 'DIRECT MESSAGES'),
-        );
-        return currentList;
-      }
-      return prev;
+      const updated = prev.filter((c) => c.id !== dmId);
+      saveStoredDmChannels(
+        updated.filter((c) => c.category === 'DIRECT MESSAGES'),
+      );
+      return updated;
     });
-  }, [currentUser?.id, friendsList, setChannels]);
+    if (activeChannel?.id === dmId) {
+      setActiveChannelId('');
+      setHomeView('friends');
+    }
+  };
 
   // Comprehensive directory of all known members (friends + server members + current user)
   const allKnownMembers = useMemo(() => {
@@ -226,6 +187,7 @@ export function useChatMembers({
     currentUserName,
     displayMembers,
     handleStartDM,
+    handleCloseDM,
     allKnownMembers,
     isDmMode,
     activeDmUserId,
