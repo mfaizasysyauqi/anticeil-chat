@@ -1,54 +1,36 @@
 import { useAuthSession } from '@/features/auth';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import {
-  Search,
-  Plus,
-  Send,
-  Settings,
-  Check,
-  Webhook,
-  Pin,
-  Activity,
-  Video,
-  Gift,
-} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 import { useTranslation } from '@/core/i18n';
 import { useTheme } from '@/core/theme';
-import { useResponsive, LAYOUT_SIZES } from '@/core';
+import { useResponsive } from '@/core';
 import {
   ColonyRail,
-  ColoniesView,
   useColonyModals,
 } from '@/features/colonies';
 import { UserBottomDock, DmUserProfileSidebar } from '@/features/profile';
-import { FriendsView, AddFriendDialog, type FriendRequest, useFriendsManager, friendsApi } from '@/features/friends';
-import { MessageRequestsView, type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
-import { NotificationsView, type NotificationItem, useNotifications } from '@/features/notifications';
-import { CalendarView, type CalendarEvent, useCalendarEvents } from '@/features/calendar';
+import { FriendsView, AddFriendDialog, useFriendsManager } from '@/features/friends';
+import { type MessageRequestItem, useMessageRequests } from '@/features/message-requests';
+import { type NotificationItem, useNotifications } from '@/features/notifications';
+import { useCalendarEvents } from '@/features/calendar';
 import { ColonyEventsModal } from '@/features/events';
-import { AssignmentsView, type AssignmentItem, useAssignments } from '@/features/assignments';
-import { CallsView, type CallLogItem, useCallLogs } from '@/features/calls';
-import { AppsView } from '@/features/apps';
-import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
+import { useAssignments } from '@/features/assignments';
+import { useCallLogs } from '@/features/calls';
+import { type KanbanCard } from '@/features/kanban';
 import {
-  ChannelTopHeaderBar,
-  ForumChannelView,
   ChannelsSidebar,
   useResizableSidebar,
   useChannelModals,
   useChannelPinsNotifications,
 } from '@/features/channels';
 import { ColonyMembersSidebar } from '@/features/members';
-import type { ColonySettingsSection } from '@/features/colony-settings';
 import {
-  ChatInputBar,
   processFileInput,
 } from '@/features/chat-input';
-import { MessagesFeed, renderFormattedMessage, useColonySocket, ChatDialogsPortal } from '@/features/chat';
+import { renderFormattedMessage, useColonySocket, ChatDialogsPortal } from '@/features/chat';
 import { useMediaModals } from '@/features/media';
 import { ChatDesktopSidebar } from './components/chat-desktop-sidebar';
 import { ChatMobileDrawers } from './components/chat-mobile-drawers';
@@ -58,23 +40,11 @@ import { useMessageActions } from './hooks/use-message-actions';
 import { useThreadManager } from './hooks/use-thread-manager';
 import { useUrlSync } from './hooks/use-url-sync';
 import { useColonyData } from './hooks/use-colony-data';
+import { useChatNavigation } from './hooks/use-chat-navigation';
+import { useChatMembers } from './hooks/use-chat-members';
+import { useChatInitLoader, authenticationSession } from './hooks/use-chat-init-loader';
 
 const LockedFeatureGuard: any = ({ children }: any) => <>{children}</>;
-const authenticationSession: any = {
-  getToken: () => localStorage.getItem('token') || localStorage.getItem('ap_token'),
-  getProjectId: () => localStorage.getItem('projectId') || 'default',
-  getUser: () => {
-    try {
-      const raw =
-        localStorage.getItem('user') ||
-        localStorage.getItem('currentUser') ||
-        localStorage.getItem('anticeil_current_user');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  },
-};
 const userMutations: any = {
   useUpdateUser: () => ({ mutateAsync: async () => {}, mutate: () => {} }),
   useUpdateName: (opts?: any) => ({
@@ -95,108 +65,28 @@ const queryClient: any = {
 };
 
 import { useSocket } from '@/providers/socket-provider';
-import { CallStage, DISCORD_APPS, useVoiceCallState } from '@/features/voice';
-import {
-  DISCORD_EMOJI_SERVERS,
-  DISCORD_EMOJIS,
-  DISCORD_STICKERS,
-  DISCORD_GIF_CATEGORIES,
-  DISCORD_GIF_ITEMS,
-  EXTENDED_DISCORD_APPS,
-  STANDARD_UNICODE_EMOJIS,
-  DiscordEmoji,
-  DiscordSticker,
-  DiscordGifItem,
-} from './anticeil-media-data';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { useVoiceCallState } from '@/features/voice';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
-
-import { chatApi, colonyApi } from './chat-api';
-import {
-  DEFAULT_CHANNELS,
-  DEFAULT_COLONIES,
-  loadStoredColonies,
-  saveStoredColonies,
-  getDmChannelId,
-  loadStoredDmChannels,
-  saveStoredDmChannels,
-} from './chat-defaults';
-import {
+import { colonyApi } from './chat-api';
+import { DEFAULT_COLONIES, saveStoredColonies } from './chat-defaults';
+import type {
   ColonyAttachment,
-  ColonyChannel,
-  ColonyChannelType,
   Colony,
-  ColonyId,
-  ColonyMember,
   ColonyMessage,
-  ColonyRole,
-  CommunityAuditEntry,
-  CommunityInvite,
-  ColonyBan,
-  CommunityCustomRole,
-  ColonyStats,
-  CommunityCustomEmoji,
-  ColonyChannelNotification,
-  ColonyChannelNotificationLevel,
-  ColonyThread,
 } from './chat-types';
 
-
-// Rich message parser (supports **bold**, `code`, @mentions, and links)
 export function ColonyPage() {
   const { t } = useTranslation();
-  const { theme, setTheme, toggleTheme } = useTheme();
-  const { isMobile, isTablet, isDesktop, deviceMode } = useResponsive();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const [isAddFriendDialogOpen, setIsAddFriendDialogOpen] = useState(false);
   const openCreateColonyRef = useRef<() => void>(() => {});
 
-  // ── Feature-First Colony & Channel Data Hook ──────────────────────
+  // ── 1. Colony & Channel Data Hook ──────────────────────────────────
   const {
     colonies,
     setColonies,
@@ -214,10 +104,9 @@ export function ColonyPage() {
     onOpenAddFriend: () => setIsAddFriendDialogOpen(true),
   });
 
-  // ── Feature-First Auth & Session Hook ──────────────────────────────
+  // ── 2. Auth & Session Hook ─────────────────────────────────────────
   const {
     currentUser,
-    setCurrentUser,
     isAuthRequiredOpen,
     setIsAuthRequiredOpen,
     authFeatureInfo,
@@ -240,10 +129,9 @@ export function ColonyPage() {
 
   const platform: any = { name: 'Anticeil', plan: { plan: 'plus' } };
   const isPlusOrAbove = true;
-  const isTeamOrEnterprise = true;
   const socket = useSocket();
 
-  // ── Voice & Call State Hook ───────────────────────────────────────
+  // ── 3. Voice & Call State Hook ─────────────────────────────────────
   const {
     activeCallChannelId,
     setActiveCallChannelId,
@@ -262,11 +150,8 @@ export function ColonyPage() {
   const [replyingToMessage, setReplyingToMessage] = useState<ColonyMessage | null>(null);
   const [messagesMap, setMessagesMap] = useState<Record<string, ColonyMessage[]>>({});
 
-  // Discord-style unread message counter badges for mini rail (servers & friends)
-  // Key 'anticeil' = NOTIFICATION-ONLY count (shown on logo badge)
-  // Per server/friend keys = their individual chat unread counts (summed by switcher buttons)
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number | string>>(() => ({
-    anticeil: 3,       // notifications only (logo badge)
+    anticeil: 3,
     hub_general: 47,
     hub_gaming: 167,
     hub_dev: 353,
@@ -276,32 +161,21 @@ export function ColonyPage() {
     hub_study: 512,
   }));
 
-  // Home View Mode: Friends Hub vs Servers vs Message Requests vs Notifications vs Calendar vs Assignments vs Calls vs Apps
-  const [homeView, setHomeView] = useState<'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'>('friends');
+  const [homeView, setHomeView] = useState<
+    'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'
+  >('friends');
 
-  // Feature-First Hooks (Fullstack connected to PostgreSQL DB)
+  // Feature-First Subsystem Hooks
   const {
     events: calendarEvents,
-    setEvents: setCalendarEvents,
     handleCreateEvent: createCalendarEvent,
   } = useCalendarEvents();
   const [isColonyEventsModalOpen, setIsColonyEventsModalOpen] = useState(false);
 
-  const {
-    assignments,
-    setAssignments,
-    handleToggleComplete,
-  } = useAssignments();
-
-  const {
-    calls: callLogs,
-    setCalls: setCallLogs,
-    handleCreateCallLog,
-  } = useCallLogs();
-
+  const { assignments, setAssignments, handleToggleComplete } = useAssignments();
+  const { calls: callLogs, handleCreateCallLog } = useCallLogs();
   const {
     requests: messageRequests,
-    setRequests: setMessageRequests,
     handleAccept: handleAcceptMessageRequestRaw,
     handleIgnore: handleIgnoreMessageRequest,
     handleSpam: handleReportSpamMessageRequest,
@@ -309,12 +183,10 @@ export function ColonyPage() {
 
   const {
     notifications,
-    setNotifications,
     handleMarkAsRead: handleMarkNotificationRead,
     handleMarkAllAsRead: handleMarkAllNotificationsRead,
   } = useNotifications();
 
-  // Logo Anticeil badge: ONLY count unread notifications
   const unreadNotifCount = useMemo(
     () => notifications.filter((n) => !n.isRead).length,
     [notifications],
@@ -327,7 +199,7 @@ export function ColonyPage() {
     });
   }, [unreadNotifCount]);
 
-  // ── Browser URL & Rail Sync Hook ──────────────────────────────────
+  // ── 4. URL Sync Hook ───────────────────────────────────────────────
   useUrlSync({
     activeColonyId,
     activeChannelId,
@@ -342,7 +214,7 @@ export function ColonyPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
 
-  // Server Modals & Actions (Feature-First Hook)
+  // Colony Modals Hook
   const colonyModals = useColonyModals({
     colonies,
     setColonies,
@@ -359,46 +231,18 @@ export function ColonyPage() {
     t,
   });
   const {
-    isCreateHubOpen,
     setIsCreateHubOpen,
-    newHubName,
-    setNewHubName,
-    newHubDesc,
-    setNewHubDesc,
-    newHubIconUrl,
-    setNewHubIconUrl,
-    joinInviteCode,
-    setJoinInviteCode,
-    isJoiningColony,
-    handleCreateHubSubmit,
-    handleJoinColony,
-    colonyToEdit,
     setColonyToEdit,
-    editHubName,
-    setEditHubName,
-    editHubDesc,
-    setEditHubDesc,
-    handleOpenEditColony,
-    handleEditHubSubmit,
-    colonyToDelete,
     setColonyToDelete,
-    handleDeleteHubConfirm,
-    isInviteOpen,
     setIsInviteOpen,
-    inviteUsername,
-    setInviteUsername,
-    isInvitingUsername,
-    userNotFound,
-    handleInviteByUsername,
-    isServerSettingsOpen,
     setIsServerSettingsOpen,
-    serverSettingsSection,
     setColonySettingsSection,
+    handleJoinColony,
   } = colonyModals;
 
   openCreateColonyRef.current = () => setIsCreateHubOpen(true);
 
-  // Channel Modals & Actions (Feature-First Hook)
+  // Channel Modals Hook
   const channelModals = useChannelModals({
     activeColonyId,
     channels,
@@ -408,44 +252,14 @@ export function ColonyPage() {
     t,
   });
   const {
-    isCreateChannelOpen,
     setIsCreateChannelOpen,
-    newChannelName,
-    setNewChannelName,
-    newChannelDesc,
-    setNewChannelDesc,
-    newChannelCategory,
     setNewChannelCategory,
-    newChannelType,
     setNewChannelType,
-    newChannelIsPrivate,
-    setNewChannelIsPrivate,
-    handleCreateChannelSubmit,
-    channelToEdit,
-    setChannelToEdit,
-    editChannelName,
-    setEditChannelName,
-    editChannelDesc,
-    setEditChannelDesc,
-    editChannelType,
-    setEditChannelType,
     handleOpenEditChannel,
-    handleEditChannelSubmit,
-    channelToDelete,
-    setChannelToDelete,
-    handleOpenDeleteChannel,
-    handleDeleteChannelConfirm,
-    channelForSettings,
-    setChannelForSettings,
-    handleUpdateChannelSettings,
-    isWebhookDialogOpen,
-    setIsWebhookDialogOpen,
   } = channelModals;
 
-  // Media Modals & Quick Add (Feature-First Hook)
-  const mediaModals = useMediaModals({
-    activeColony,
-  });
+  // Media Modals Hook
+  const mediaModals = useMediaModals({ activeColony });
   const {
     isMediaPickerOpen,
     setIsMediaPickerOpen,
@@ -457,98 +271,31 @@ export function ColonyPage() {
     setSelectedGifCategory,
     serverDbEmojis,
     serverDbStickers,
-    isLoadingServerMedia,
-    isQuickAddEmojiOpen,
     setIsQuickAddEmojiOpen,
-    quickEmojiName,
-    setQuickEmojiName,
-    quickEmojiUrl,
-    setQuickEmojiUrl,
-    quickEmojiCode,
-    setQuickEmojiCode,
-    handleQuickAddEmoji,
-    isQuickAddStickerOpen,
     setIsQuickAddStickerOpen,
-    quickStickerName,
-    setQuickStickerName,
-    quickStickerUrl,
-    setQuickStickerUrl,
-    handleQuickAddSticker,
-    isSubmittingServerMedia,
   } = mediaModals;
 
-  // Discord Send a Gift Modal - matching Screenshot 4
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [claimedGifts, setClaimedGifts] = useState<Record<string, boolean>>({});
 
-  // Channels filtered by selected Hub
-  const colonyChannels = useMemo(() => {
-    return channels.filter(
-      (c) => (c.colonyId || 'anticeil') === (activeColonyId || 'anticeil') && c.category === 'CHANNELS',
-    );
-  }, [channels, activeColonyId]);
+  // ── 5. Navigation Resolution Hook ──────────────────────────────────
+  const {
+    colonyChannels,
+    dmChannels,
+    isHome,
+    activeChannel,
+  } = useChatNavigation({
+    channels,
+    activeColonyId,
+    activeChannelId,
+    currentUser,
+    members,
+    activeCallChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+  });
 
-  const textChannels = useMemo(() => {
-    return colonyChannels.filter((c) => c.type === 'text' || !c.type);
-  }, [colonyChannels]);
-
-  const voiceChannels = useMemo(() => {
-    return colonyChannels.filter((c) => c.type === 'voice');
-  }, [colonyChannels]);
-
-  const forumChannels = useMemo(() => {
-    return colonyChannels.filter((c) => c.type === 'forum');
-  }, [colonyChannels]);
-
-  const dmChannels = useMemo(() => {
-    return channels.filter(
-      (c) =>
-        c.category === 'DIRECT MESSAGES' &&
-        typeof c.id === 'string' &&
-        c.id.startsWith('dm-') &&
-        (!c.colonyId || c.colonyId === 'anticeil') &&
-        c.type !== 'voice' &&
-        c.type !== 'forum' &&
-        c.type !== 'kanban',
-    );
-  }, [channels]);
-
-  const isHome = activeColonyId === 'anticeil';
-
-  // Active channel resolution: Home prefers explicit activeChannelId (DM chat) or null (Friends page).
-  // Servers MUST strictly isolate channels to the active server!
-  const activeChannel = useMemo(() => {
-    if (isHome) {
-      if (!activeChannelId) return null;
-      const found = dmChannels.find((c) => c.id === activeChannelId);
-      if (found) return found;
-      if (activeChannelId.startsWith('dm-')) {
-        const parts = activeChannelId.slice(3).split('-').filter(Boolean);
-        const otherUserId = parts.find((p) => p !== currentUser?.id) || parts[0];
-        const otherMember = members.find((m) => m.id === otherUserId);
-        const dmName = otherMember?.name || otherMember?.username || 'Direct Message';
-        return {
-          id: activeChannelId,
-          name: dmName,
-          description: `Percakapan langsung dengan ${dmName}`,
-          category: 'DIRECT MESSAGES',
-          colonyId: 'anticeil',
-          isDirectMessage: true,
-          dmUserId: otherUserId,
-          type: 'text',
-        } as ColonyChannel;
-      }
-      return null;
-    }
-    if (colonyChannels.length === 0) return null;
-    if (activeChannelId) {
-      const current = colonyChannels.find((c) => c.id === activeChannelId);
-      if (current) return current;
-    }
-    return colonyChannels[0] || null;
-  }, [isHome, activeChannelId, dmChannels, colonyChannels, members, currentUser]);
-
-  // ── Feature-First Channel Pins & Notification Settings Hook ──────────
+  // Channel Pins & Notifications Hook
   const {
     isPinnedPopoverOpen,
     setIsPinnedPopoverOpen,
@@ -561,7 +308,7 @@ export function ColonyPage() {
     handleUpdateNotification,
   } = useChannelPinsNotifications({ activeChannel });
 
-  // ── Discord Threads & Forum (Feature-First Hook) ─────────────────────
+  // Thread Manager Hook
   const {
     isThreadsPopoverOpen,
     setIsThreadsPopoverOpen,
@@ -575,12 +322,9 @@ export function ColonyPage() {
     setNewThreadName,
     newThreadInitialMsg,
     setNewThreadInitialMsg,
-    isSubmittingThread,
-    setIsSubmittingThread,
     activeThread,
     setActiveThread,
     threadMessages,
-    setThreadMessages,
     threadInputText,
     setThreadInputText,
     isThreadDrawerOpen,
@@ -596,7 +340,6 @@ export function ColonyPage() {
     forumNewMessage,
     setForumNewMessage,
     isSubmittingForumPost,
-    setIsSubmittingForumPost,
     threadsMap,
     setThreadsMap,
     handleCreateThread,
@@ -608,17 +351,20 @@ export function ColonyPage() {
     currentUser,
     t,
   });
-  const [collapsedCategories, setCollapsedCategories] = useState<{ text: boolean; voice: boolean; forum: boolean }>({
+
+  const [collapsedCategories, setCollapsedCategories] = useState<{
+    text: boolean;
+    voice: boolean;
+    forum: boolean;
+  }>({
     text: false,
     voice: false,
     forum: false,
   });
 
-  // Audio / mic dummy state for Discord user footer
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
 
-  // Discord-style Resizable Sidebar hook
   const {
     sidebarWidth,
     isResizingSidebar,
@@ -626,12 +372,9 @@ export function ColonyPage() {
     handleSidebarResizeReset,
   } = useResizableSidebar();
 
-  // Responsive state for Mobile/Tablet sheets
   const [isMobileChannelsOpen, setIsMobileChannelsOpen] = useState(false);
   const [isMobileMembersOpen, setIsMobileMembersOpen] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
 
-  // Edit Profile dialog state
   const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
   const [userSettingsInitialSection, setUserSettingsInitialSection] = useState<string>('account');
   const handleOpenUserSettings = (section: string = 'account') => {
@@ -639,12 +382,9 @@ export function ColonyPage() {
     setIsUserSettingsOpen(true);
   };
 
-  // DM Search Dialog (Discord-style "Find or start a conversation")
   const [isDmSearchOpen, setIsDmSearchOpen] = useState(false);
   const [dmSearchQuery, setDmSearchQuery] = useState('');
 
-
-  // Listen to burger menu clicks from top app bar on mobile/tablet
   useEffect(() => {
     const handleToggleMobileChannels = () => {
       setIsMobileChannelsOpen((prev) => !prev);
@@ -656,189 +396,8 @@ export function ColonyPage() {
   }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 1. Initial Load from Backend API
-  useEffect(() => {
-    let mounted = true;
-    const loadData = async () => {
-      const token = authenticationSession.getToken();
-      if (!token) {
-        if (mounted) {
-          setChannels([]);
-          setMembers([]);
-          setColonies(DEFAULT_COLONIES);
-          setActiveColonyId('anticeil');
-          setActiveChannelId('');
-        }
-        return;
-      }
-      try {
-        const currentProjectId = authenticationSession.getProjectId();
-        const [channelsRes, membersRes, hubsRes, friendsRes] = await Promise.all([
-          colonyApi.getChannels(),
-          colonyApi.getMembers(currentProjectId || undefined),
-          colonyApi.getColonies(),
-          friendsApi.getFriends().catch(() => []),
-        ]);
-        if (mounted) {
-          if (Array.isArray(channelsRes)) {
-            const storedDms = loadStoredDmChannels();
-            const friendDms: ColonyChannel[] = [];
-            const effectiveUser = authenticationSession.getUser() || currentUser;
-            const myId = effectiveUser?.id;
-
-            if (Array.isArray(friendsRes) && myId) {
-              friendsRes.forEach((f) => {
-                if (!f.id || f.id === myId) return;
-                const dmName = f.name || f.username || 'Direct Message';
-                if (dmName.toLowerCase() === 'pengguna' || dmName.toLowerCase() === 'pengguna anticeil') return;
-                const dmId = getDmChannelId(myId, f.id);
-                friendDms.push({
-                  id: dmId,
-                  name: dmName,
-                  description: `Percakapan langsung dengan ${dmName}`,
-                  category: 'DIRECT MESSAGES',
-                  colonyId: 'anticeil',
-                  isDirectMessage: true,
-                  dmUserId: f.id,
-                  type: 'text',
-                });
-              });
-            }
-
-            const dmMap = new Map<string, ColonyChannel>();
-            storedDms
-              .filter((dm) => typeof dm.id === 'string' && dm.id.startsWith('dm-') && dm.type !== 'voice')
-              .forEach((dm) => dmMap.set(dm.id, dm));
-            friendDms.forEach((dm) => {
-              if (!dmMap.has(dm.id)) dmMap.set(dm.id, dm);
-            });
-            const allDms = Array.from(dmMap.values());
-            saveStoredDmChannels(allDms);
-
-            const serverChannels = channelsRes.filter((c) => c.category !== 'DIRECT MESSAGES' && !c.id.startsWith('dm-'));
-            const mergedAllChannels = [...allDms, ...serverChannels];
-            setChannels(mergedAllChannels);
-
-            const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
-            const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
-            if (targetActivityParam) {
-              const normalizedAct = targetActivityParam === 'youtube' ? 'watch-together' : targetActivityParam;
-              setSelectedActivityAppId(normalizedAct);
-              setIsActivityOpen(true);
-            }
-            if (targetChannelParam) {
-              let matchedChannel = mergedAllChannels.find((c) => c.id === targetChannelParam);
-              if (!matchedChannel && targetActivityParam) {
-                matchedChannel = mergedAllChannels.find((c) => (c.colonyId || 'anticeil') === activeColonyId && c.type === 'voice');
-              }
-              if (matchedChannel) {
-                setActiveChannelId(matchedChannel.id);
-                if (matchedChannel.type === 'voice') {
-                  setActiveCallChannelId(matchedChannel.id);
-                  setIsCallPiP(false);
-                }
-              }
-            } else if (targetActivityParam) {
-              const activeVoice = channelsRes.find(
-                (c) => (c.colonyId || 'anticeil') === activeColonyId && c.type === 'voice',
-              );
-              if (activeVoice) {
-                setActiveChannelId(activeVoice.id);
-                setActiveCallChannelId(activeVoice.id);
-                setIsCallPiP(false);
-              }
-            } else if (channelsRes.length > 0 && activeColonyId !== 'anticeil') {
-              const activeVoice = channelsRes.find(
-                (c) => (c.colonyId || 'anticeil') === activeColonyId && c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0,
-              );
-              if (activeVoice) {
-                setActiveChannelId(activeVoice.id);
-                setActiveCallChannelId(activeVoice.id);
-                setIsCallPiP(false);
-              } else {
-                setActiveChannelId((curr) => curr || channelsRes[0].id);
-              }
-            }
-          }
-          if (Array.isArray(membersRes)) {
-            setMembers(membersRes);
-          }
-          if (Array.isArray(hubsRes) && hubsRes.length > 0) {
-            setColonies((prev) => {
-              const home = prev.find((h) => h.id === 'anticeil') || DEFAULT_COLONIES[0];
-              const merged = [home, ...hubsRes.filter((s) => s.id !== 'anticeil')];
-              saveStoredColonies(merged);
-              return merged;
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('Initial community load fallback', err);
-      }
-    };
-    loadData();
-
-    // Check if user came from an invite link: /messages?invite=xyz
-    const params = new URLSearchParams(window.location.search);
-    const inviteParam = params.get('invite');
-    const activityParam = params.get('activity');
-    if (activityParam) {
-      setSelectedActivityAppId(activityParam);
-      setIsActivityOpen(true);
-    }
-    if (inviteParam) {
-      handleJoinColony(inviteParam);
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // 2. Load Messages, Pins, Notifications & Threads when Active Channel Changes
-  useEffect(() => {
-    if (!activeChannelId) return;
-    let mounted = true;
-    const loadChannelData = async () => {
-      try {
-        const [msgs, pins, notif, ths] = await Promise.all([
-          colonyApi.getMessages(activeChannelId),
-          colonyApi.getPinnedMessages(activeChannelId),
-          colonyApi.getChannelNotification(activeChannelId),
-          colonyApi.getThreads(activeChannelId),
-        ]);
-        if (mounted) {
-          if (msgs) {
-            setMessagesMap((prev) => ({
-              ...prev,
-              [activeChannelId]: msgs,
-            }));
-          }
-          if (pins) {
-            setPinnedMessages(pins);
-          }
-          if (notif) {
-            setChannelNotification(notif);
-          }
-          if (ths) {
-            setChannelThreads(ths);
-            setThreadsMap((prev) => ({ ...prev, [activeChannelId]: ths }));
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load channel data', activeChannelId, err);
-      }
-    };
-    loadChannelData();
-    return () => {
-      mounted = false;
-    };
-  }, [activeChannelId]);
-
-
-  // 3. WebSocket Realtime Listeners (Feature-First Hook)
+  // ── 6. WebSocket Hook ──────────────────────────────────────────────
   useColonySocket({
     socket,
     activeChannelId,
@@ -848,130 +407,32 @@ export function ColonyPage() {
     setActiveCallCounts,
   });
 
-  // Canonicalize DM channel ID when opened with legacy single-user id (e.g. ?channel=dm-userId)
-  useEffect(() => {
-    if (!currentUser?.id || !activeChannelId?.startsWith('dm-')) return;
-    const parts = activeChannelId.slice(3).split('-').filter(Boolean);
-    if (parts.length === 1 && parts[0] && parts[0] !== currentUser.id) {
-      const otherUserId = parts[0];
-      const canonicalId = getDmChannelId(currentUser.id, otherUserId);
-      const otherMember = members.find((m) => m.id === otherUserId);
-      const dmName = otherMember?.name || otherMember?.username || 'Direct Message';
+  // ── 7. Initial Data Loader Hook ────────────────────────────────────
+  useChatInitLoader({
+    currentUser,
+    activeColonyId,
+    activeChannelId,
+    colonyChannels,
+    members,
+    activeCallCounts,
+    setChannels,
+    setMembers,
+    setColonies,
+    setActiveColonyId,
+    setActiveChannelId,
+    setActiveCallChannelId,
+    setIsCallPiP,
+    setSelectedActivityAppId,
+    setIsActivityOpen,
+    setMessagesMap,
+    setPinnedMessages,
+    setChannelNotification,
+    setChannelThreads,
+    setThreadsMap,
+    handleJoinColony,
+  });
 
-      setChannels((prev) => {
-        const exists = prev.some((c) => c.id === canonicalId);
-        if (exists) return prev;
-        const newDm: ColonyChannel = {
-          id: canonicalId,
-          name: dmName,
-          description: `Percakapan langsung dengan ${dmName}`,
-          category: 'DIRECT MESSAGES',
-          colonyId: 'anticeil',
-          isDirectMessage: true,
-          dmUserId: otherUserId,
-          type: 'text',
-        };
-        const updated = [newDm, ...prev];
-        saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
-        return updated;
-      });
-
-      setActiveChannelId(canonicalId);
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.set('channel', canonicalId);
-        window.history.replaceState(null, '', url.pathname + url.search);
-      } catch {}
-    }
-  }, [currentUser?.id, activeChannelId, members]);
-
-  // Load threads for all forum channels in the active hub so sidebar shows child threads
-  useEffect(() => {
-    if (!colonyChannels.length) return;
-    const forumChannels = colonyChannels.filter((c) => c.type === 'forum');
-    if (!forumChannels.length) return;
-
-    forumChannels.forEach(async (fc) => {
-      try {
-        const ths = await colonyApi.getThreads(fc.id);
-        if (ths) {
-          setThreadsMap((prev) => ({ ...prev, [fc.id]: ths }));
-        }
-      } catch {}
-    });
-  }, [colonyChannels]);
-
-  // Auto-fetch and sync channels when switching to a colony
-  useEffect(() => {
-    if (!activeColonyId || activeColonyId === 'anticeil') return;
-    let mounted = true;
-    const loadColonyChannels = async () => {
-      try {
-        const res = await colonyApi.getChannels(activeColonyId);
-        if (mounted && Array.isArray(res)) {
-          setChannels((prev) => {
-            const others = prev.filter((c) => (c.colonyId || 'anticeil') !== activeColonyId);
-            return [...others, ...res];
-          });
-          const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
-          const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
-          if (targetActivityParam) {
-            const normalizedAct = targetActivityParam === 'youtube' ? 'watch-together' : targetActivityParam;
-            setSelectedActivityAppId(normalizedAct);
-            setIsActivityOpen(true);
-          }
-          let matchedTarget = res.find((c) => c.id === targetChannelParam);
-          if (!matchedTarget && targetActivityParam) {
-            matchedTarget = res.find((c) => c.type === 'voice');
-          }
-          if (matchedTarget) {
-            setActiveChannelId(matchedTarget.id);
-            if (matchedTarget.type === 'voice') {
-              setActiveCallChannelId(matchedTarget.id);
-              setIsCallPiP(false);
-            }
-          } else {
-            setActiveChannelId((curr) => {
-              const exists = res.some((c) => c.id === curr);
-              if (exists) return curr;
-              if (targetActivityParam) {
-                const voiceCh = res.find((c) => c.type === 'voice');
-                if (voiceCh) {
-                  setActiveCallChannelId(voiceCh.id);
-                  setIsCallPiP(false);
-                  return voiceCh.id;
-                }
-              }
-              const activeVoice = res.find((c) => c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0);
-              if (activeVoice) {
-                setActiveCallChannelId(activeVoice.id);
-                setIsCallPiP(false);
-                return activeVoice.id;
-              }
-              return res[0]?.id || '';
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load channels for colony', activeColonyId, err);
-      }
-    };
-    loadColonyChannels();
-    return () => {
-      mounted = false;
-    };
-  }, [activeColonyId]);
-
-  // Automatically connect to voice call when switching to or opening a voice channel
-  useEffect(() => {
-    if (activeChannel?.type === 'voice') {
-      if (activeCallChannelId !== activeChannel.id) {
-        setActiveCallChannelId(activeChannel.id);
-        setIsCallPiP(false);
-      }
-    }
-  }, [activeChannel?.id, activeChannel?.type]);
-
+  // View Mode Helpers
   const isFriendsView = isHome && !activeChannel && homeView === 'friends';
   const isMessageRequestsView = isHome && !activeChannel && homeView === 'message-requests';
   const isNotificationsView = isHome && !activeChannel && homeView === 'notifications';
@@ -981,7 +442,6 @@ export function ColonyPage() {
   const isAppsView = isHome && !activeChannel && homeView === 'apps';
   const isColoniesView = isHome && !activeChannel && (homeView === 'colonies' || homeView === 'servers');
 
-  // Active messages & filter
   const currentMessages = activeChannel ? messagesMap[activeChannel.id] || [] : [];
   const filteredMessages = searchQuery.trim()
     ? currentMessages.filter(
@@ -991,19 +451,10 @@ export function ColonyPage() {
       )
     : currentMessages;
 
-  // Auto scroll
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Mark channel read when opened
-  useEffect(() => {
-    if (activeChannelId && currentUser?.id) {
-      colonyApi.markChannelRead(activeChannelId, currentUser.id);
-    }
-  }, [activeChannelId, currentUser?.id]);
-
-  // Auto scroll - initial scroll to unread divider
   useEffect(() => {
     if (!activeChannelId) return;
     setReplyingToMessage(null);
@@ -1023,12 +474,10 @@ export function ColonyPage() {
   }, [activeChannelId]);
 
   useEffect(() => {
-    // Only auto scroll to bottom when new messages arrive
     scrollToBottom();
   }, [currentMessages.length]);
 
-
-
+  // Message Actions Hook
   const {
     handleSendMessage,
     handleScheduleMessage,
@@ -1064,7 +513,7 @@ export function ColonyPage() {
     t,
   });
 
-  // Launch Activity in Voice Stage or Text Channel (Direct Message & Server)
+  // Activity Launcher Hook
   const { handleLaunchActivity } = useActivityLauncher({
     channels,
     setChannels,
@@ -1117,41 +566,38 @@ export function ColonyPage() {
     },
   });
 
+  // ── 8. Members & DM Sync Hook ──────────────────────────────────────
+  const friends = useFriendsManager({
+    displayMembers: members,
+    currentUser,
+    members,
+    dmChannels,
+    t,
+  });
 
-  // Start DM
-  const handleStartDM = (member: any) => {
-    if (!member) return;
-    const dmId = currentUser?.id ? getDmChannelId(currentUser.id, member.id) : `dm-${member.id}`;
-    const dmName = member.name || member.username || member.firstName || 'Direct Message';
-    setChannels((prev) => {
-      const existing = prev.find((c) => c.id === dmId);
-      const updated = existing
-        ? prev.map((c) => (c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c))
-        : [
-            {
-              id: dmId,
-              name: dmName,
-              description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role || 'Member'})`,
-              category: 'DIRECT MESSAGES' as const,
-              colonyId: 'anticeil',
-              isDirectMessage: true,
-              dmUserId: member.id,
-              type: 'text' as const,
-            },
-            ...prev,
-          ];
-      saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
-      return updated;
-    });
-    // DMs live in Home hub, auto-switch
-    setActiveColonyId('anticeil');
-    setActiveChannelId(dmId);
-    setHomeView('friends');
-    setIsMobileChannelsOpen(false);
-    setIsMobileMembersOpen(false);
-  };
+  const {
+    currentUserName,
+    displayMembers,
+    handleStartDM,
+    allKnownMembers,
+    isDmMode,
+    activeDmUserId,
+    activeDmMember,
+  } = useChatMembers({
+    members,
+    currentUser,
+    activeColony,
+    activeChannel,
+    isHome,
+    friendsList: friends.allFriends,
+    setChannels,
+    setActiveColonyId,
+    setActiveChannelId,
+    setHomeView,
+    setIsMobileChannelsOpen,
+    setIsMobileMembersOpen,
+  });
 
-  // Kanban update handler
   const handleKanbanCardsUpdate = useCallback((cards: KanbanCard[]) => {
     if (!activeChannel?.id) return;
     setAssignments((prev) => {
@@ -1160,7 +606,6 @@ export function ColonyPage() {
     });
   }, [activeChannel?.id, setAssignments]);
 
-  // Message Requests Handlers
   const handleAcceptMessageRequest = (item: MessageRequestItem) => {
     handleAcceptMessageRequestRaw(item);
     handleStartDM({
@@ -1179,106 +624,10 @@ export function ColonyPage() {
     setActiveChannelId(item.channelId);
   };
 
-  // File Select with Strict Limit: Max 5MB, Images & Documents only (Videos banned to save storage)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     processFileInput(e, setStagedAttachment);
   };
 
-  const currentUserName =
-    `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
-    currentUser?.email?.split('@')[0] ||
-    'Pengguna Anticeil';
-
-  const displayMembers: ColonyMember[] = useMemo(() => {
-    const isOwner = activeColony?.role === 'owner';
-    const isAdmin = activeColony?.role === 'admin';
-    const list = members.map((m) => {
-      if (m.id === currentUser?.id || m.email === currentUser?.email) {
-        return {
-          ...m,
-          username: m.username || currentUser?.username || null,
-          role: isOwner ? ('owner' as ColonyRole) : isAdmin ? ('admin' as ColonyRole) : (m.role || 'member'),
-          roleLabel: isOwner ? 'Pemilik' : isAdmin ? 'Admin' : undefined,
-        };
-      }
-      return m;
-    });
-
-    if (currentUser && !list.some((m) => m.id === currentUser.id || m.email === currentUser.email)) {
-      const currentRole: ColonyRole = isOwner ? 'owner' : isAdmin ? 'admin' : 'member';
-      const currentLabel = isOwner ? 'Pemilik' : isAdmin ? 'Admin' : undefined;
-      list.unshift({
-        id: currentUser.id,
-        name: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email,
-        email: currentUser.email,
-        username: currentUser.username || null,
-        avatar: currentUser.imageUrl ?? null,
-        role: currentRole,
-        roleLabel: currentLabel,
-        platformRole: currentUser.platformRole,
-        status: 'online',
-        customStatus: undefined,
-      });
-    }
-    return list;
-  }, [members, currentUser, activeColony]);
-
-  // Friends Manager (Feature-First Hook)
-  const friends = useFriendsManager({
-    displayMembers,
-    currentUser,
-    members,
-    dmChannels,
-    t,
-  });
-
-  // Auto-sync DM channels for friends so they appear in Direct Messages sidebar by default
-  useEffect(() => {
-    if (!currentUser?.id) return;
-    const friendsList = friends.allFriends || [];
-    if (friendsList.length === 0) return;
-
-    setChannels((prev) => {
-      let changed = false;
-      // Purge any stale 'pengguna' or 'general voice' channels
-      const currentList = prev.filter((c) => {
-        if (c.category !== 'DIRECT MESSAGES') return true;
-        const name = (c.name || '').toLowerCase().trim();
-        return name !== 'pengguna' && name !== 'pengguna anticeil' && name !== 'general voice';
-      });
-      if (currentList.length !== prev.length) {
-        changed = true;
-      }
-      friendsList.forEach((friend) => {
-        if (!friend.id || friend.id === currentUser.id) return;
-        const dmName = friend.name || friend.username || 'Direct Message';
-        if (dmName.toLowerCase() === 'pengguna' || dmName.toLowerCase() === 'pengguna anticeil') return;
-        const dmId = getDmChannelId(currentUser.id, friend.id);
-        const exists = currentList.some((c) => c.id === dmId);
-        if (!exists) {
-          const newDm: ColonyChannel = {
-            id: dmId,
-            name: dmName,
-            description: `Percakapan langsung dengan ${dmName}`,
-            category: 'DIRECT MESSAGES',
-            colonyId: 'anticeil',
-            isDirectMessage: true,
-            dmUserId: friend.id,
-            type: 'text',
-          };
-          currentList.unshift(newDm);
-          changed = true;
-        }
-      });
-      if (changed) {
-        saveStoredDmChannels(currentList.filter((c) => c.category === 'DIRECT MESSAGES'));
-        return currentList;
-      }
-      return prev;
-    });
-  }, [currentUser?.id, friends.allFriends]);
-
-  // Rail Mode: Switcher between Servers and Friends
   const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
     try {
       return (localStorage.getItem('anticeil_rail_mode') as any) || 'servers';
@@ -1307,7 +656,7 @@ export function ColonyPage() {
     });
   };
 
-  // Component: Server Rail (delegates to reusable ColonyRail feature component)
+  // Component: Server Rail
   const renderDiscordHubRail = () => (
     <ColonyRail
       servers={colonies}
@@ -1361,28 +710,7 @@ export function ColonyPage() {
     />
   );
 
-  // Comprehensive directory of all known members (friends + server members + current user)
-  // Ensures DM avatars in sidebar and chat headers never lose their photo
-  const allKnownMembers = useMemo(() => {
-    const map = new Map<string, ColonyMember>();
-    members.forEach((m) => map.set(m.id, m));
-    displayMembers.forEach((m) => map.set(m.id, m));
-    (friends.allFriends || []).forEach((f) => {
-      const existing = map.get(f.id);
-      map.set(f.id, {
-        id: f.id,
-        name: f.name || existing?.name || 'Member',
-        email: f.email || existing?.email || '',
-        avatar: f.avatar || existing?.avatar || null,
-        username: f.username || existing?.username || null,
-        role: existing?.role || 'member',
-        status: (f.status as any) || existing?.status || 'online',
-      });
-    });
-    return Array.from(map.values());
-  }, [members, displayMembers, friends.allFriends]);
-
-  // Component: Channels Sidebar Content (delegates to ChannelsSidebar feature component)
+  // Component: Channels Sidebar Content
   const renderChannelsSidebarContent = (onItemClick?: () => void) => (
     <ChannelsSidebar
       currentUser={currentUser}
@@ -1493,7 +821,7 @@ export function ColonyPage() {
     />
   );
 
-  // Component: User Footer Profile Dock (delegates to reusable UserBottomDock feature component)
+  // Component: User Footer Profile Dock
   const renderUserBottomDock = () => {
     const activeCallChannel = channels.find((c) => c.id === activeCallChannelId);
     return (
@@ -1523,7 +851,7 @@ export function ColonyPage() {
     );
   };
 
-  // Component: Discord-Style Friends Main Page (delegates to reusable FriendsView feature component)
+  // Component: Friends Main Page
   const renderFriendsMainPage = () => (
     <FriendsView
       {...friends}
@@ -1555,29 +883,6 @@ export function ColonyPage() {
       horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
     />
   );
-
-  // Active DM partner resolution for user profile sidebar
-  const isDmMode = Boolean(
-    isHome ||
-    activeChannel?.category === 'DIRECT MESSAGES' ||
-    activeChannel?.isDirectMessage ||
-    activeChannel?.id?.startsWith('dm-')
-  );
-
-  const activeDmUserId = useMemo(() => {
-    if (!activeChannel) return undefined;
-    if (activeChannel.dmUserId) return activeChannel.dmUserId;
-    if (activeChannel.id?.startsWith('dm-')) {
-      const parts = activeChannel.id.slice(3).split('-').filter(Boolean);
-      return parts.find((p) => p !== currentUser?.id) || parts[0];
-    }
-    return undefined;
-  }, [activeChannel, currentUser?.id]);
-
-  const activeDmMember = useMemo(() => {
-    if (!activeDmUserId) return undefined;
-    return allKnownMembers.find((m) => m.id === activeDmUserId);
-  }, [activeDmUserId, allKnownMembers]);
 
   // Component: Members / DM User Profile Sidebar Content
   const renderMembersSidebarContent = () => {
@@ -1635,276 +940,287 @@ export function ColonyPage() {
       )}
     >
       <TooltipProvider delayDuration={200}>
-      <div className="flex h-full w-full overflow-hidden bg-background">
-        {/* DESKTOP & TABLET COMBINED LEFT COLUMN (Mini Rail + Channels Sidebar + Bottom Dock across both) */}
-        <ChatDesktopSidebar
-          sidebarWidth={sidebarWidth}
-          isResizingSidebar={isResizingSidebar}
-          onResizeStart={handleSidebarResizeStart}
-          onResizeReset={handleSidebarResizeReset}
-          renderDiscordHubRail={renderDiscordHubRail}
-          renderChannelsSidebarContent={renderChannelsSidebarContent}
-          renderUserBottomDock={renderUserBottomDock}
-          t={t}
-        />
+        <div className="flex h-full w-full overflow-hidden bg-background">
+          {/* DESKTOP & TABLET COMBINED LEFT COLUMN */}
+          <ChatDesktopSidebar
+            sidebarWidth={sidebarWidth}
+            isResizingSidebar={isResizingSidebar}
+            onResizeStart={handleSidebarResizeStart}
+            onResizeReset={handleSidebarResizeReset}
+            renderDiscordHubRail={renderDiscordHubRail}
+            renderChannelsSidebarContent={renderChannelsSidebarContent}
+            renderUserBottomDock={renderUserBottomDock}
+            t={t}
+          />
 
-        {/* MOBILE & TABLET DRAWERS */}
-        <ChatMobileDrawers
-          isMobileChannelsOpen={isMobileChannelsOpen}
-          setIsMobileChannelsOpen={setIsMobileChannelsOpen}
-          isMobileMembersOpen={isMobileMembersOpen}
-          setIsMobileMembersOpen={setIsMobileMembersOpen}
-          renderDiscordHubRail={renderDiscordHubRail}
-          renderChannelsSidebarContent={renderChannelsSidebarContent}
-          renderMembersSidebarContent={renderMembersSidebarContent}
-          renderUserBottomDock={renderUserBottomDock}
-          t={t}
-        />
+          {/* MOBILE & TABLET DRAWERS */}
+          <ChatMobileDrawers
+            isMobileChannelsOpen={isMobileChannelsOpen}
+            setIsMobileChannelsOpen={setIsMobileChannelsOpen}
+            isMobileMembersOpen={isMobileMembersOpen}
+            setIsMobileMembersOpen={setIsMobileMembersOpen}
+            renderDiscordHubRail={renderDiscordHubRail}
+            renderChannelsSidebarContent={renderChannelsSidebarContent}
+            renderMembersSidebarContent={renderMembersSidebarContent}
+            renderUserBottomDock={renderUserBottomDock}
+            t={t}
+          />
 
-        {/* MAIN CONTENT AREA: DISCORD-STYLE FRIENDS HUB, NOTIFICATIONS, CHANNEL CHAT, ETC. */}
-        <ChatMainView
-          isFriendsView={isFriendsView}
-          renderFriendsMainPage={renderFriendsMainPage}
-          isMessageRequestsView={isMessageRequestsView}
-          messageRequests={messageRequests}
-          handleAcceptMessageRequest={handleAcceptMessageRequest}
-          handleIgnoreMessageRequest={handleIgnoreMessageRequest}
-          handleReportSpamMessageRequest={handleReportSpamMessageRequest}
-          setIsMobileChannelsOpen={setIsMobileChannelsOpen}
-          isNotificationsView={isNotificationsView}
-          notifications={notifications}
-          handleMarkAllNotificationsRead={handleMarkAllNotificationsRead}
-          handleMarkNotificationRead={handleMarkNotificationRead}
-          handleJumpToNotification={handleJumpToNotification}
-          isCalendarView={isCalendarView}
-          calendarEvents={calendarEvents}
-          colonies={colonies}
-          channels={channels}
-          colonyChannels={colonyChannels}
-          setActiveColonyId={setActiveColonyId}
-          setActiveChannelId={setActiveChannelId}
-          setActiveCallChannelId={setActiveCallChannelId}
-          createCalendarEvent={createCalendarEvent}
-          isAssignmentsView={isAssignmentsView}
-          assignments={assignments}
-          handleToggleComplete={handleToggleComplete}
-          isCallsView={isCallsView}
-          callLogs={callLogs}
-          friends={friends}
-          handleCreateCallLog={handleCreateCallLog}
-          handleStartDirectMessage={handleStartDM}
-          isAppsView={isAppsView}
-          members={members}
-          activeCallChannelId={activeCallChannelId}
-          handleLaunchActivity={handleLaunchActivity}
-          handleStartDM={handleStartDM}
-          isColoniesView={isColoniesView}
-          requireAuth={requireAuth}
-          setIsCreateHubOpen={setIsCreateHubOpen}
-          activeChannel={activeChannel}
-          isHome={isHome}
-          isCallPiP={isCallPiP}
-          isThreadsPopoverOpen={isThreadsPopoverOpen}
-          setIsThreadsPopoverOpen={setIsThreadsPopoverOpen}
-          channelThreads={channelThreads}
-          threadSearchQuery={threadSearchQuery}
-          setThreadSearchQuery={setThreadSearchQuery}
-          setIsCreateThreadModalOpen={setIsCreateThreadModalOpen}
-          setActiveThread={setActiveThread}
-          setIsThreadDrawerOpen={setIsThreadDrawerOpen}
-          isNotificationDropdownOpen={isNotificationDropdownOpen}
-          setIsNotificationDropdownOpen={setIsNotificationDropdownOpen}
-          channelNotification={channelNotification}
-          handleUpdateNotification={handleUpdateNotification}
-          isPinnedPopoverOpen={isPinnedPopoverOpen}
-          setIsPinnedPopoverOpen={setIsPinnedPopoverOpen}
-          pinnedMessages={pinnedMessages}
-          handleJumpToMessage={handleJumpToMessage}
-          handleTogglePin={handleTogglePin}
-          showMemberList={showMemberList}
-          setShowMemberList={setShowMemberList}
-          setIsMobileMembersOpen={setIsMobileMembersOpen}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          activeColony={activeColony}
-          currentUser={currentUser}
-          isPlusOrAbove={isPlusOrAbove}
-          socket={socket}
-          isActivityOpen={isActivityOpen}
-          selectedActivityAppId={selectedActivityAppId}
-          setSelectedActivityAppId={setSelectedActivityAppId}
-          setIsActivityOpen={setIsActivityOpen}
-          setIsCallPiP={setIsCallPiP}
-          navigate={navigate}
-          activeThread={activeThread}
-          threadsMap={threadsMap}
-          threadMessages={threadMessages}
-          forumSearchQuery={forumSearchQuery}
-          setForumSearchQuery={setForumSearchQuery}
-          forumSort={forumSort}
-          setForumSort={setForumSort}
-          isForumComposerOpen={isForumComposerOpen}
-          setIsForumComposerOpen={setIsForumComposerOpen}
-          forumNewTitle={forumNewTitle}
-          setForumNewTitle={setForumNewTitle}
-          forumNewMessage={forumNewMessage}
-          setForumNewMessage={setForumNewMessage}
-          isSubmittingForumPost={isSubmittingForumPost}
-          handleCreateForumPost={handleCreateForumPost}
-          threadInputText={threadInputText}
-          setThreadInputText={setThreadInputText}
-          handleSendThreadMessage={handleSendThreadMessage}
-          displayMembers={displayMembers}
-          handleKanbanCardsUpdate={handleKanbanCardsUpdate}
-          replyingToMessage={replyingToMessage}
-          setReplyingToMessage={setReplyingToMessage}
-          filteredMessages={filteredMessages}
-          claimedGifts={claimedGifts}
-          setClaimedGifts={setClaimedGifts}
-          setIsCreateChannelOpen={setIsCreateChannelOpen}
-          handleToggleReaction={handleToggleReaction}
-          setNewThreadName={setNewThreadName}
-          setNewThreadInitialMsg={setNewThreadInitialMsg}
-          handleDeleteMessage={handleDeleteMessage}
-          messagesEndRef={messagesEndRef}
-          stagedAttachment={stagedAttachment}
-          setStagedAttachment={setStagedAttachment}
-          inputText={inputText}
-          setInputText={setInputText}
-          handleSendMessage={handleSendMessage}
-          handleFileChange={handleFileChange}
-          setIsGiftModalOpen={setIsGiftModalOpen}
-          isMediaPickerOpen={isMediaPickerOpen}
-          setIsMediaPickerOpen={setIsMediaPickerOpen}
-          activeMediaTab={activeMediaTab}
-          setActiveMediaTab={setActiveMediaTab}
-          mediaSearchQuery={mediaSearchQuery}
-          setMediaSearchQuery={setMediaSearchQuery}
-          selectedGifCategory={selectedGifCategory}
-          setSelectedGifCategory={setSelectedGifCategory}
-          serverDbEmojis={serverDbEmojis}
-          serverDbStickers={serverDbStickers}
-          handleSelectEmoji={handleSelectEmoji}
-          handleSendSticker={handleSendSticker}
-          handleSendGif={handleSendGif}
-          setIsQuickAddEmojiOpen={setIsQuickAddEmojiOpen}
-          setIsQuickAddStickerOpen={setIsQuickAddStickerOpen}
-          isTemplatePopoverOpen={isTemplatePopoverOpen}
-          setIsTemplatePopoverOpen={setIsTemplatePopoverOpen}
-          appsSearchQuery={appsSearchQuery}
-          setAppsSearchQuery={setAppsSearchQuery}
-          handleScheduleMessage={handleScheduleMessage}
-          handleCreatePoll={handleCreatePoll}
-          t={t}
-        />
+          {/* MAIN CONTENT AREA */}
+          <ChatMainView
+            isFriendsView={isFriendsView}
+            renderFriendsMainPage={renderFriendsMainPage}
+            isMessageRequestsView={isMessageRequestsView}
+            messageRequests={messageRequests}
+            handleAcceptMessageRequest={handleAcceptMessageRequest}
+            handleIgnoreMessageRequest={handleIgnoreMessageRequest}
+            handleReportSpamMessageRequest={handleReportSpamMessageRequest}
+            setIsMobileChannelsOpen={setIsMobileChannelsOpen}
+            isNotificationsView={isNotificationsView}
+            notifications={notifications}
+            handleMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+            handleMarkNotificationRead={handleMarkNotificationRead}
+            handleJumpToNotification={handleJumpToNotification}
+            isCalendarView={isCalendarView}
+            calendarEvents={calendarEvents}
+            colonies={colonies}
+            channels={channels}
+            colonyChannels={colonyChannels}
+            setActiveColonyId={setActiveColonyId}
+            setActiveChannelId={setActiveChannelId}
+            setActiveCallChannelId={setActiveCallChannelId}
+            createCalendarEvent={createCalendarEvent}
+            isAssignmentsView={isAssignmentsView}
+            assignments={assignments}
+            handleToggleComplete={handleToggleComplete}
+            isCallsView={isCallsView}
+            callLogs={callLogs}
+            friends={friends}
+            handleCreateCallLog={handleCreateCallLog}
+            handleStartDirectMessage={handleStartDM}
+            isAppsView={isAppsView}
+            members={members}
+            activeCallChannelId={activeCallChannelId}
+            handleLaunchActivity={handleLaunchActivity}
+            handleStartDM={handleStartDM}
+            isColoniesView={isColoniesView}
+            requireAuth={requireAuth}
+            setIsCreateHubOpen={setIsCreateHubOpen}
+            activeChannel={activeChannel}
+            isHome={isHome}
+            isCallPiP={isCallPiP}
+            isThreadsPopoverOpen={isThreadsPopoverOpen}
+            setIsThreadsPopoverOpen={setIsThreadsPopoverOpen}
+            channelThreads={channelThreads}
+            threadSearchQuery={threadSearchQuery}
+            setThreadSearchQuery={setThreadSearchQuery}
+            setIsCreateThreadModalOpen={setIsCreateThreadModalOpen}
+            setActiveThread={setActiveThread}
+            setIsThreadDrawerOpen={setIsThreadDrawerOpen}
+            isNotificationDropdownOpen={isNotificationDropdownOpen}
+            setIsNotificationDropdownOpen={setIsNotificationDropdownOpen}
+            channelNotification={channelNotification}
+            handleUpdateNotification={handleUpdateNotification}
+            isPinnedPopoverOpen={isPinnedPopoverOpen}
+            setIsPinnedPopoverOpen={setIsPinnedPopoverOpen}
+            pinnedMessages={pinnedMessages}
+            handleJumpToMessage={handleJumpToMessage}
+            handleTogglePin={handleTogglePin}
+            showMemberList={showMemberList}
+            setShowMemberList={setShowMemberList}
+            setIsMobileMembersOpen={setIsMobileMembersOpen}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            activeColony={activeColony}
+            currentUser={currentUser}
+            isPlusOrAbove={isPlusOrAbove}
+            socket={socket}
+            isActivityOpen={isActivityOpen}
+            selectedActivityAppId={selectedActivityAppId}
+            setSelectedActivityAppId={setSelectedActivityAppId}
+            setIsActivityOpen={setIsActivityOpen}
+            setIsCallPiP={setIsCallPiP}
+            navigate={navigate}
+            activeThread={activeThread}
+            threadsMap={threadsMap}
+            threadMessages={threadMessages}
+            forumSearchQuery={forumSearchQuery}
+            setForumSearchQuery={setForumSearchQuery}
+            forumSort={forumSort}
+            setForumSort={setForumSort}
+            isForumComposerOpen={isForumComposerOpen}
+            setIsForumComposerOpen={setIsForumComposerOpen}
+            forumNewTitle={forumNewTitle}
+            setForumNewTitle={setForumNewTitle}
+            forumNewMessage={forumNewMessage}
+            setForumNewMessage={setForumNewMessage}
+            isSubmittingForumPost={isSubmittingForumPost}
+            handleCreateForumPost={handleCreateForumPost}
+            threadInputText={threadInputText}
+            setThreadInputText={setThreadInputText}
+            handleSendThreadMessage={handleSendThreadMessage}
+            displayMembers={displayMembers}
+            handleKanbanCardsUpdate={handleKanbanCardsUpdate}
+            replyingToMessage={replyingToMessage}
+            setReplyingToMessage={setReplyingToMessage}
+            filteredMessages={filteredMessages}
+            claimedGifts={claimedGifts}
+            setClaimedGifts={setClaimedGifts}
+            setIsCreateChannelOpen={setIsCreateChannelOpen}
+            handleToggleReaction={handleToggleReaction}
+            setNewThreadName={setNewThreadName}
+            setNewThreadInitialMsg={setNewThreadInitialMsg}
+            handleDeleteMessage={handleDeleteMessage}
+            messagesEndRef={messagesEndRef}
+            stagedAttachment={stagedAttachment}
+            setStagedAttachment={setStagedAttachment}
+            inputText={inputText}
+            setInputText={setInputText}
+            handleSendMessage={handleSendMessage}
+            handleFileChange={handleFileChange}
+            setIsGiftModalOpen={setIsGiftModalOpen}
+            isMediaPickerOpen={isMediaPickerOpen}
+            setIsMediaPickerOpen={setIsMediaPickerOpen}
+            activeMediaTab={activeMediaTab}
+            setActiveMediaTab={setActiveMediaTab}
+            mediaSearchQuery={mediaSearchQuery}
+            setMediaSearchQuery={setMediaSearchQuery}
+            selectedGifCategory={selectedGifCategory}
+            setSelectedGifCategory={setSelectedGifCategory}
+            serverDbEmojis={serverDbEmojis}
+            serverDbStickers={serverDbStickers}
+            handleSelectEmoji={handleSelectEmoji}
+            handleSendSticker={handleSendSticker}
+            handleSendGif={handleSendGif}
+            setIsQuickAddEmojiOpen={setIsQuickAddEmojiOpen}
+            setIsQuickAddStickerOpen={setIsQuickAddStickerOpen}
+            isTemplatePopoverOpen={isTemplatePopoverOpen}
+            setIsTemplatePopoverOpen={setIsTemplatePopoverOpen}
+            appsSearchQuery={appsSearchQuery}
+            setAppsSearchQuery={setAppsSearchQuery}
+            handleScheduleMessage={handleScheduleMessage}
+            handleCreatePoll={handleCreatePoll}
+            t={t}
+          />
 
-        {/* DESKTOP MEMBERS / USER PROFILE SIDEBAR */}
-        {showMemberList && !isFriendsView && activeChannel?.type !== 'voice' && activeCallChannelId !== activeChannel?.id && (
-          <div className={cn("hidden lg:flex shrink-0", isDmMode && activeDmUserId ? "w-80" : "w-60")}>
-            {renderMembersSidebarContent()}
-          </div>
-        )}
+          {/* DESKTOP MEMBERS / USER PROFILE SIDEBAR */}
+          {showMemberList &&
+            !isFriendsView &&
+            activeChannel?.type !== 'voice' &&
+            activeCallChannelId !== activeChannel?.id && (
+              <div
+                className={cn(
+                  'hidden lg:flex shrink-0',
+                  isDmMode && activeDmUserId ? 'w-80' : 'w-60',
+                )}
+              >
+                {renderMembersSidebarContent()}
+              </div>
+            )}
 
-        {/* Community Dialogs & Modals Portal */}
-        <ColonyEventsModal
-        isOpen={isColonyEventsModalOpen}
-        onClose={() => setIsColonyEventsModalOpen(false)}
-        activeColony={activeColony}
-        channels={channels}
-        events={calendarEvents}
-        onCreateEvent={createCalendarEvent}
-        currentUser={currentUser}
-        onJoinChannel={(chId) => {
-          setActiveCallChannelId(chId);
-          setActiveChannelId(chId);
-        }}
-      />
-      <ChatDialogsPortal
-          colonyModals={colonyModals}
-          channelModals={channelModals}
-          mediaModals={mediaModals}
-          activeColony={activeColony}
-          activeChannel={activeChannel}
-          currentUser={currentUser}
-          members={members}
-          setMembers={setMembers}
-          channels={channels}
-          colonyChannels={colonyChannels}
-          onUpdateColony={async (colonyId, updates) => {
-            if (!activeColony) return;
-            const updated = { ...activeColony, ...updates };
-            setColonies((prev) => {
-              const next = prev.map((h) => (h.id === colonyId ? updated : h));
-              saveStoredColonies(next);
-              return next;
-            });
-            try {
-              await colonyApi.updateColony(colonyId, updates);
-            } catch {}
-          }}
-          isDmSearchOpen={isDmSearchOpen}
-          setIsDmSearchOpen={setIsDmSearchOpen}
-          dmSearchQuery={dmSearchQuery}
-          setDmSearchQuery={setDmSearchQuery}
-          dmChannels={dmChannels}
-          setActiveColonyId={setActiveColonyId}
-          setActiveChannelId={setActiveChannelId}
-          handleStartDM={handleStartDM}
-          isGiftModalOpen={isGiftModalOpen}
-          setIsGiftModalOpen={setIsGiftModalOpen}
-          handleSendGift={handleSendGift}
-          isUserSettingsOpen={isUserSettingsOpen}
-          setIsUserSettingsOpen={setIsUserSettingsOpen}
-          userSettingsInitialSection={userSettingsInitialSection}
-          currentUserName={currentUserName}
-          updateNameMutation={updateNameMutation}
-          updateUsernameMutation={updateUsernameMutation}
-          theme={theme}
-          setTheme={setTheme}
-          handleGoogleSignIn={handleGoogleSignIn}
-          handleLogout={handleLogout}
-          isCreateThreadModalOpen={isCreateThreadModalOpen}
-          setIsCreateThreadModalOpen={setIsCreateThreadModalOpen}
-          handleCreateThread={handleCreateThread}
-          isThreadDrawerOpen={isThreadDrawerOpen}
-          setIsThreadDrawerOpen={setIsThreadDrawerOpen}
-          activeThread={activeThread}
-          threadMessages={threadMessages}
-          handleSendThreadMessage={handleSendThreadMessage}
-          renderFormattedMessage={renderFormattedMessage}
-          activeCallChannelId={activeCallChannelId}
-          setActiveCallChannelId={setActiveCallChannelId}
-          isCallPiP={isCallPiP}
-          setIsCallPiP={setIsCallPiP}
-          isPlusOrAbove={isPlusOrAbove}
-          socket={socket}
-          selectedActivityAppId={selectedActivityAppId}
-          setSelectedActivityAppId={setSelectedActivityAppId}
-          setIsActivityOpen={setIsActivityOpen}
-          navigate={navigate}
-          isAuthRequiredOpen={isAuthRequiredOpen}
-          setIsAuthRequiredOpen={setIsAuthRequiredOpen}
-          authFeatureInfo={authFeatureInfo}
-          onDevMockLogin={handleDevMockLogin}
-          t={t}
-        />
+          {/* Community Dialogs & Modals Portal */}
+          <ColonyEventsModal
+            isOpen={isColonyEventsModalOpen}
+            onClose={() => setIsColonyEventsModalOpen(false)}
+            activeColony={activeColony}
+            channels={channels}
+            events={calendarEvents}
+            onCreateEvent={createCalendarEvent}
+            currentUser={currentUser}
+            onJoinChannel={(chId) => {
+              setActiveCallChannelId(chId);
+              setActiveChannelId(chId);
+            }}
+          />
+          <ChatDialogsPortal
+            colonyModals={colonyModals}
+            channelModals={channelModals}
+            mediaModals={mediaModals}
+            activeColony={activeColony}
+            activeChannel={activeChannel}
+            currentUser={currentUser}
+            members={members}
+            setMembers={setMembers}
+            channels={channels}
+            colonyChannels={colonyChannels}
+            onUpdateColony={async (colonyId, updates) => {
+              if (!activeColony) return;
+              const updated = { ...activeColony, ...updates };
+              setColonies((prev) => {
+                const next = prev.map((h) =>
+                  h.id === colonyId ? updated : h,
+                );
+                saveStoredColonies(next);
+                return next;
+              });
+              try {
+                await colonyApi.updateColony(colonyId, updates);
+              } catch {}
+            }}
+            isDmSearchOpen={isDmSearchOpen}
+            setIsDmSearchOpen={setIsDmSearchOpen}
+            dmSearchQuery={dmSearchQuery}
+            setDmSearchQuery={setDmSearchQuery}
+            dmChannels={dmChannels}
+            setActiveColonyId={setActiveColonyId}
+            setActiveChannelId={setActiveChannelId}
+            handleStartDM={handleStartDM}
+            isGiftModalOpen={isGiftModalOpen}
+            setIsGiftModalOpen={setIsGiftModalOpen}
+            handleSendGift={handleSendGift}
+            isUserSettingsOpen={isUserSettingsOpen}
+            setIsUserSettingsOpen={setIsUserSettingsOpen}
+            userSettingsInitialSection={userSettingsInitialSection}
+            currentUserName={currentUserName}
+            updateNameMutation={updateNameMutation}
+            updateUsernameMutation={updateUsernameMutation}
+            theme={theme}
+            setTheme={setTheme}
+            handleGoogleSignIn={handleGoogleSignIn}
+            handleLogout={handleLogout}
+            isCreateThreadModalOpen={isCreateThreadModalOpen}
+            setIsCreateThreadModalOpen={setIsCreateThreadModalOpen}
+            handleCreateThread={handleCreateThread}
+            isThreadDrawerOpen={isThreadDrawerOpen}
+            setIsThreadDrawerOpen={setIsThreadDrawerOpen}
+            activeThread={activeThread}
+            threadMessages={threadMessages}
+            handleSendThreadMessage={handleSendThreadMessage}
+            renderFormattedMessage={renderFormattedMessage}
+            activeCallChannelId={activeCallChannelId}
+            setActiveCallChannelId={setActiveCallChannelId}
+            isCallPiP={isCallPiP}
+            setIsCallPiP={setIsCallPiP}
+            isPlusOrAbove={isPlusOrAbove}
+            socket={socket}
+            selectedActivityAppId={selectedActivityAppId}
+            setSelectedActivityAppId={setSelectedActivityAppId}
+            setIsActivityOpen={setIsActivityOpen}
+            navigate={navigate}
+            isAuthRequiredOpen={isAuthRequiredOpen}
+            setIsAuthRequiredOpen={setIsAuthRequiredOpen}
+            authFeatureInfo={authFeatureInfo}
+            onDevMockLogin={handleDevMockLogin}
+            t={t}
+          />
 
-        {/* Add Friend Dialog Modal */}
-        <AddFriendDialog
-          open={isAddFriendDialogOpen}
-          onOpenChange={setIsAddFriendDialogOpen}
-          onAddFriend={friends.onAddFriend}
-          isAddingFriend={friends.isAddingFriend}
-          currentUser={currentUser}
-          allFriends={friends.allFriends}
-          friendRequests={friends.friendRequests}
-          members={members}
-        />
-      </div>
-    </TooltipProvider>
+          {/* Add Friend Dialog Modal */}
+          <AddFriendDialog
+            open={isAddFriendDialogOpen}
+            onOpenChange={setIsAddFriendDialogOpen}
+            onAddFriend={friends.onAddFriend}
+            isAddingFriend={friends.isAddingFriend}
+            currentUser={currentUser}
+            allFriends={friends.allFriends}
+            friendRequests={friends.friendRequests}
+            members={members}
+          />
+        </div>
+      </TooltipProvider>
     </LockedFeatureGuard>
   );
 }
+
 export { ColonyPage as MessagesPage };
 export { ColonyPage as CommunityPage };
 export default ColonyPage;

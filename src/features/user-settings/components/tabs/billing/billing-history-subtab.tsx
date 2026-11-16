@@ -1,0 +1,105 @@
+import React, { useState } from 'react';
+import { CreditCard, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/core/i18n';
+import { toast } from 'sonner';
+
+export function BillingHistorySubtab() {
+  const { t } = useTranslation();
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState<
+    {
+      id: string;
+      name: string;
+      type: string;
+      details: string;
+      isDefault: boolean;
+    }[]
+  >([]);
+
+  return (
+    <div className="space-y-8 pb-12">
+      <h2 className="text-xl font-bold text-foreground">{t('Billing')}</h2>
+
+      {/* 1. Payment Methods */}
+      <div id="billing-payment-methods" className="space-y-3 scroll-mt-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">
+              {t('Payment Methods')}
+            </h3>
+            <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+              <span>Country/Region: Indonesia</span>
+              <Info className="w-3 h-3 text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          {savedPaymentMethods.length === 0 ? (
+            <div>
+              <div className="text-xs font-bold text-foreground">
+                {t('No payment method saved')}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {t('Checkout faster by saving a payment method')}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {savedPaymentMethods.map((pm) => (
+                <div key={pm.id} className="flex items-center gap-3">
+                  <CreditCard className="w-4 h-4 text-primary" />
+                  <div>
+                    <div className="text-xs font-bold text-foreground">
+                      {pm.name}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground font-mono">
+                      {pm.details}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Button
+            size="sm"
+            onClick={() => {
+              setSavedPaymentMethods([
+                {
+                  id: 'pm-qris',
+                  name: 'QRIS / GoPay (Midtrans)',
+                  type: 'e-wallet',
+                  details: 'Instant QRIS & GoPay Auto-Debit',
+                  isDefault: true,
+                },
+              ]);
+              toast.success(
+                t('Metode pembayaran QRIS / GoPay berhasil ditambahkan!'),
+              );
+            }}
+            className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs cursor-pointer shrink-0"
+          >
+            {t('Add Payment Method')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-border/50" />
+
+      {/* 2. Transaction History */}
+      <div id="billing-transaction-history" className="space-y-3 scroll-mt-4">
+        <h3 className="text-sm font-bold text-foreground">
+          {t('Transaction History')}
+        </h3>
+
+        <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-xs">
+          <div className="text-xs text-muted-foreground">
+            {t("You haven't made any transactions yet.")}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
