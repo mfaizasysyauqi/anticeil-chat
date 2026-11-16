@@ -61,6 +61,7 @@ export function UserSettingsModal({
   onGoogleSignIn,
   onLogout,
   initialSection = 'account',
+  onOpenEditProfile,
 }: UserSettingsModalProps) {
   const { t, locale, setLocale } = useTranslation();
   const [activeSection, setActiveSection] = useState<SettingsSection>(
@@ -314,7 +315,12 @@ export function UserSettingsModal({
           {currentUser && (
             <div
               onClick={() => {
-                setActiveSection('profiles');
+                if (onOpenEditProfile) {
+                  onOpenChange(false);
+                  onOpenEditProfile();
+                } else {
+                  setActiveSection('profiles');
+                }
               }}
               className="flex items-center gap-3 px-1 py-1.5 rounded-lg hover:bg-sidebar-accent/50 cursor-pointer transition-colors group"
             >
@@ -394,6 +400,10 @@ export function UserSettingsModal({
             currentUser={currentUser}
             currentUserName={currentUserName}
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
+            onOpenEditProfile={() => {
+              onOpenChange(false);
+              onOpenEditProfile?.();
+            }}
           />
         )}
 

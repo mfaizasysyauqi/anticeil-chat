@@ -41,6 +41,9 @@ export interface ChatModalsCoordinatorProps {
   isUserSettingsOpen: boolean;
   setIsUserSettingsOpen: (open: boolean) => void;
   userSettingsInitialSection: string;
+  isEditProfileOpen: boolean;
+  setIsEditProfileOpen: (open: boolean) => void;
+  handleOpenEditProfile?: () => void;
   currentUserName: string;
   updateNameMutation: any;
   updateUsernameMutation: any;
@@ -116,6 +119,9 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
   isUserSettingsOpen,
   setIsUserSettingsOpen,
   userSettingsInitialSection,
+  isEditProfileOpen,
+  setIsEditProfileOpen,
+  handleOpenEditProfile,
   currentUserName,
   updateNameMutation,
   updateUsernameMutation,
@@ -208,6 +214,9 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
         isUserSettingsOpen={isUserSettingsOpen}
         setIsUserSettingsOpen={setIsUserSettingsOpen}
         userSettingsInitialSection={userSettingsInitialSection}
+        isEditProfileOpen={isEditProfileOpen}
+        setIsEditProfileOpen={setIsEditProfileOpen}
+        handleOpenEditProfile={handleOpenEditProfile}
         currentUserName={currentUserName}
         updateNameMutation={updateNameMutation}
         updateUsernameMutation={updateUsernameMutation}

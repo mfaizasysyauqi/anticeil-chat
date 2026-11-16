@@ -68,6 +68,8 @@ export function useChatSubsystems({
     setUserSettingsInitialSection(section);
     setIsUserSettingsOpen(true);
   };
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const handleOpenEditProfile = () => setIsEditProfileOpen(true);
 
   const [isDmSearchOpen, setIsDmSearchOpen] = useState(false);
   const [dmSearchQuery, setDmSearchQuery] = useState('');
@@ -95,6 +97,9 @@ export function useChatSubsystems({
     setIsUserSettingsOpen,
     userSettingsInitialSection,
     handleOpenUserSettings,
+    isEditProfileOpen,
+    setIsEditProfileOpen,
+    handleOpenEditProfile,
     isDmSearchOpen,
     setIsDmSearchOpen,
     dmSearchQuery,

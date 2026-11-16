@@ -26,6 +26,7 @@ import {
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 import { CallStage, UserSettingsModal } from '@/features/voice';
 import { AuthRequiredDialog } from '@/features/auth';
+import { EditProfileDialog } from '@/features/profile';
 
 export interface ChatDialogsPortalProps {
   colonyModals: ReturnType<typeof useColonyModals>;
@@ -59,6 +60,9 @@ export interface ChatDialogsPortalProps {
   isUserSettingsOpen: boolean;
   setIsUserSettingsOpen: (open: boolean) => void;
   userSettingsInitialSection?: string;
+  isEditProfileOpen: boolean;
+  setIsEditProfileOpen: (open: boolean) => void;
+  handleOpenEditProfile?: () => void;
   currentUserName: string;
   updateNameMutation: any;
   updateUsernameMutation: any;
@@ -127,6 +131,9 @@ export function ChatDialogsPortal({
   isUserSettingsOpen,
   setIsUserSettingsOpen,
   userSettingsInitialSection,
+  isEditProfileOpen,
+  setIsEditProfileOpen,
+  handleOpenEditProfile,
   currentUserName,
   updateNameMutation,
   updateUsernameMutation,
@@ -367,6 +374,19 @@ export function ChatDialogsPortal({
         onGoogleSignIn={handleGoogleSignIn}
         onLogout={handleLogout}
         initialSection={userSettingsInitialSection}
+        onOpenEditProfile={() => setIsEditProfileOpen(true)}
+      />
+
+      {/* Standalone Discord-style Edit Profile Customization Modal */}
+      <EditProfileDialog
+        open={isEditProfileOpen}
+        onOpenChange={setIsEditProfileOpen}
+        currentUser={currentUser}
+        currentUserName={currentUserName}
+        onOpenUserSettings={(section) => {
+          setIsEditProfileOpen(false);
+          setIsUserSettingsOpen(true);
+        }}
       />
 
       {/* Create Thread Modal */}

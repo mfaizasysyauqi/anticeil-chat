@@ -24,6 +24,7 @@ interface UserBottomDockProps {
   isDeafened: boolean;
   setIsDeafened: (deafened: boolean) => void;
   onOpenSettings?: (section?: string) => void;
+  onOpenEditProfile?: () => void;
   onLogout?: () => void;
   onGoogleSignIn?: () => void;
   activeCallChannelId?: string | null;
@@ -44,6 +45,7 @@ export function UserBottomDock({
   isDeafened,
   setIsDeafened,
   onOpenSettings,
+  onOpenEditProfile,
   onLogout,
   onGoogleSignIn,
   activeCallChannelId,
@@ -143,9 +145,9 @@ export function UserBottomDock({
       ) : (
         <div className="w-full h-[64px] px-2 flex items-center justify-between">
           <div
-            onClick={() => onOpenSettings?.('account')}
+            onClick={onOpenEditProfile ? onOpenEditProfile : () => onOpenSettings?.('account')}
             className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-sidebar-accent/60 cursor-pointer transition-colors group/user"
-            title={t('Ubah profil & pengaturan akun')}
+            title={t('Ubah profil pengguna')}
           >
             <CommunityAvatar
               name={currentUserName}

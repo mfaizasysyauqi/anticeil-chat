@@ -36,4 +36,5 @@ export interface UserSettingsModalProps {
   onGoogleSignIn: () => void;
   onLogout: () => void;
   initialSection?: string;
+  onOpenEditProfile?: () => void;
 }

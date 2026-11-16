@@ -323,6 +323,7 @@ export interface UserBottomDockWrapperProps {
   isDeafened: boolean;
   setIsDeafened: (val: boolean) => void;
   handleOpenUserSettings: (section?: string) => void;
+  handleOpenEditProfile?: () => void;
   handleLogout: () => void;
   handleGoogleSignIn: () => void;
   channels: ColonyChannel[];
@@ -342,6 +343,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
   isDeafened,
   setIsDeafened,
   handleOpenUserSettings,
+  handleOpenEditProfile,
   handleLogout,
   handleGoogleSignIn,
   channels,
@@ -362,6 +364,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
       isDeafened={isDeafened}
       setIsDeafened={setIsDeafened}
       onOpenSettings={handleOpenUserSettings}
+      onOpenEditProfile={handleOpenEditProfile}
       onLogout={handleLogout}
       onGoogleSignIn={handleGoogleSignIn}
       activeCallChannelId={activeCallChannelId}
