@@ -53,13 +53,24 @@ export function useFriendsManager({
         const username = (f?.username || '').toLowerCase().trim();
         const id = String(f?.id || '');
 
-        // Exclude system accounts / unverified mock seeds unless the user is that account
+        // Exclude system accounts / unverified mock seeds
         const isOfficialAccount =
-          (id === 'u1' || id === 'anticeil' || username === 'anticeilofficial' || name === 'anticeil official') &&
-          currentUser?.username?.toLowerCase() !== 'anticeilofficial' &&
-          currentUser?.id !== 'u1';
+          id === 'u1' ||
+          id === 'anticeil' ||
+          username.includes('anticeil') ||
+          name.includes('anticeil');
 
         if (isOfficialAccount) return false;
+
+        // Exclude generic placeholder labels
+        const isGeneric =
+          !name ||
+          name === 'pengguna' ||
+          name === 'pengguna anticeil' ||
+          name === 'user' ||
+          name === 'direct message' ||
+          name === 'teman';
+        if (isGeneric) return false;
 
         const isSelf =
           (currentUser?.id && f.id === currentUser.id) ||
@@ -69,7 +80,7 @@ export function useFriendsManager({
         return !isSelf;
       })
       .forEach((f) => {
-        let match = members
+        const match = members
           .concat(displayMembers)
           .find(
             (m) =>
@@ -78,21 +89,9 @@ export function useFriendsManager({
               (f.username && m.username && m.username.toLowerCase() === f.username.toLowerCase()) ||
               (f.name && m.name && m.name.toLowerCase() === f.name.toLowerCase()),
           );
-        const isGeneric =
-          !f.name ||
-          f.name.toLowerCase() === 'pengguna' ||
-          f.name.toLowerCase() === 'pengguna anticeil' ||
-          f.name.toLowerCase() === 'user' ||
-          f.name.toLowerCase() === 'direct message' ||
-          f.name.toLowerCase() === 'teman';
-        if (isGeneric && !match) {
-          const other = displayMembers.concat(members).find((m) => m.id !== currentUser?.id);
-          if (other) match = other;
-        }
 
-        const name = isGeneric && match?.name ? match.name : f.name || match?.name || '';
-        const finalGeneric = !name || name.toLowerCase() === 'pengguna' || name.toLowerCase() === 'pengguna anticeil' || name.toLowerCase() === 'direct message';
-        if (finalGeneric) return;
+        const name = f.name || match?.name || '';
+        if (!name) return;
 
         const friendItem: FriendMember = {
           id: match?.id || f.id,

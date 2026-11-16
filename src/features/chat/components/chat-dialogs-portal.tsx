@@ -375,7 +375,8 @@ export function ChatDialogsPortal({
         onLogout={handleLogout}
         initialSection={userSettingsInitialSection}
         onOpenEditProfile={() => {
-          setIsEditProfileOpen(true);
+          setIsUserSettingsOpen(false);
+          setTimeout(() => setIsEditProfileOpen(true), 300);
         }}
       />
 

@@ -69,7 +69,10 @@ export function useChatSubsystems({
     setIsUserSettingsOpen(true);
   };
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const handleOpenEditProfile = () => setIsEditProfileOpen(true);
+  const handleOpenEditProfile = () => {
+    setIsUserSettingsOpen(false);
+    setTimeout(() => setIsEditProfileOpen(true), 200);
+  };
 
   const [isDmSearchOpen, setIsDmSearchOpen] = useState(false);
   const [dmSearchQuery, setDmSearchQuery] = useState('');
