@@ -1304,7 +1304,7 @@ export function UserSettingsModal({
         )
       }
     >
-      <div className="space-y-6 max-w-3xl pb-10">
+      <div className={cn("space-y-6 pb-10 w-full", activeSection === 'profiles' ? "max-w-5xl" : "max-w-4xl")}>
         {/* ========================================================================= */}
         {/* SECTION: ACCOUNT                                                          */}
         {/* ========================================================================= */}

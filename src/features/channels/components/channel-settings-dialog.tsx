@@ -188,7 +188,7 @@ export function ChannelSettingsDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full h-full max-w-5xl md:h-[88vh] md:max-h-[780px] bg-background border border-border md:rounded-2xl shadow-2xl flex overflow-hidden">
+      <div className="relative w-[80vw] sm:w-[80vw] max-w-[80vw] sm:max-w-[80vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] bg-background border border-border rounded-2xl shadow-2xl flex overflow-hidden">
         {/* ── Left Navigation Sidebar (Discord Style) ──────────────────────── */}
         <div className="w-56 sm:w-60 bg-muted/40 border-r border-border flex flex-col justify-between p-4 shrink-0 select-none">
           <div>
