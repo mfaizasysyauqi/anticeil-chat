@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import type { Colony } from '@/chat/chat-types';
 
 export interface ColonyIconProps {
@@ -36,6 +37,20 @@ export function getColonyInitials(name?: string): string {
 }
 
 export function ColonyIcon({ hub, className }: ColonyIconProps) {
+  // Direct Messages / Anticeil system colony uses the adaptive Anticeil logo
+  if (
+    hub.id === 'anticeil' ||
+    hub.iconType === 'logo' ||
+    hub.iconUrl?.includes('logo.png') ||
+    hub.iconUrl?.includes('logo.svg')
+  ) {
+    return (
+      <AnticeilLogo
+        className={cn('size-6 text-foreground transition-colors duration-150', className)}
+      />
+    );
+  }
+
   if (hub.iconUrl) {
     return (
       <img
@@ -44,20 +59,6 @@ export function ColonyIcon({ hub, className }: ColonyIconProps) {
         className={cn('w-full h-full object-cover rounded-[14px]', className)}
         onError={(e) => {
           (e.currentTarget as HTMLImageElement).style.display = 'none';
-        }}
-      />
-    );
-  }
-
-  // Direct Messages / Anticeil system colony uses the Anticeil logo
-  if (hub.id === 'anticeil' || hub.iconType === 'logo') {
-    return (
-      <img
-        src="/logo.png"
-        alt="Anticeil"
-        className={cn('size-7 object-contain pointer-events-none drop-shadow-xs', className)}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).src = '/logo.svg';
         }}
       />
     );

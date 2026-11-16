@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { getColonyInitials } from '@/features/colonies/components/colony-icon';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import {
   Tooltip,
   TooltipContent,
@@ -103,7 +104,9 @@ export function ChatAvatar({
         )}
         style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
       >
-        {imageUrl && !imageError ? (
+        {imageUrl && (imageUrl.includes('logo.png') || imageUrl.includes('logo.svg') || name?.toLowerCase() === 'anticeil') ? (
+          <AnticeilLogo className="w-3/5 h-3/5 text-foreground transition-colors duration-150" />
+        ) : imageUrl && !imageError ? (
           <img
             src={imageUrl}
             alt={name}

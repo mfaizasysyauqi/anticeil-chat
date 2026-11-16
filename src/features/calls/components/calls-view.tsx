@@ -21,6 +21,7 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ColonyIcon } from '@/features/colonies/components/colony-icon';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import type { CallLogItem, CallsTab } from '../types';
 import type { FriendMember } from '@/features/friends';
 import type { Colony } from '@/chat/chat-types';
@@ -144,14 +145,7 @@ export function CallsView({
                   <div className="relative">
                     <div className="size-11 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
                       {f.id === 'anticeil' || f.name === 'Anticeil Official' ? (
-                        <img
-                          src="/logo.png"
-                          alt={f.name}
-                          className="size-7 object-contain pointer-events-none drop-shadow-xs"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = '/logo.svg';
-                          }}
-                        />
+                        <AnticeilLogo className="size-6 text-foreground" />
                       ) : (
                         <CommunityAvatar
                           name={f.name}

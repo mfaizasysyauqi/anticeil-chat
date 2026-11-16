@@ -184,7 +184,8 @@ export function loadStoredColonies(): Colony[] {
     const raw = localStorage.getItem(STORAGE_KEY_COLONIES);
     if (!raw) return DEFAULT_COLONIES;
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_COLONIES;
+    const list = Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_COLONIES;
+    return list.map((c) => (c.id === 'anticeil' ? { ...c, iconType: 'logo', iconUrl: undefined } : c));
   } catch {
     return DEFAULT_COLONIES;
   }

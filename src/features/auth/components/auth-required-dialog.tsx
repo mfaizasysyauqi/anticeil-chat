@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/core/i18n';
 import { Sparkles, Bot, Shield } from 'lucide-react';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { isDevLoginEnabled, MOCK_DEV_USERS } from '../hooks/use-auth-session';
 
 interface AuthRequiredDialogProps {
@@ -38,7 +39,7 @@ export function AuthRequiredDialog({
         <div className="relative w-full h-28 bg-gradient-to-br from-amber-500/20 via-primary/20 to-purple-500/20 flex flex-col items-center justify-center border-b border-border/60">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent pointer-events-none" />
           <div className="w-14 h-14 rounded-2xl bg-background/90 p-2 shadow-xl border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
-            <img src="/logo.png" alt="Anticeil" className="w-full h-full object-contain" />
+            <AnticeilLogo className="w-full h-full text-foreground" />
           </div>
         </div>
 
