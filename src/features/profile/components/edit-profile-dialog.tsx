@@ -90,7 +90,7 @@ export function EditProfileDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="p-0 w-[94vw] max-w-[1150px] h-[85vh] max-h-[740px] overflow-hidden bg-card border border-border flex flex-col rounded-2xl shadow-2xl gap-0 select-none z-[70]"
+        className="p-0 w-[90vw] max-w-[90vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] overflow-hidden bg-card border border-border flex flex-col rounded-2xl shadow-2xl gap-0 select-none z-[70]"
         overlayClassName="z-[70]"
       >
         <DialogTitle className="sr-only">{t('Edit Profiles')}</DialogTitle>
