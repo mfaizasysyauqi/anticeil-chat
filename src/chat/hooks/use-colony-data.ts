@@ -23,13 +23,17 @@ export function useColonyData(options?: UseColonyDataOptions) {
   });
 
   const [channels, setChannels] = useState<ColonyChannel[]>(() => {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
+    if (!token) return DEFAULT_CHANNELS;
     const storedDms = loadStoredDmChannels();
     return [...storedDms, ...DEFAULT_CHANNELS];
   });
 
-  const [activeChannelId, setActiveChannelId] = useState<string>(
-    () => new URLSearchParams(window.location.search).get('channel') || '',
-  );
+  const [activeChannelId, setActiveChannelId] = useState<string>(() => {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
+    if (!token) return '';
+    return new URLSearchParams(window.location.search).get('channel') || '';
+  });
 
   const [members, setMembers] = useState<ColonyMember[]>([]);
 

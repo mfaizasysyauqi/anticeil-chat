@@ -160,6 +160,11 @@ const STORAGE_KEY_COLONIES = 'anticeil_colony_colonies_v3';
 export function cleanLegacyStorage(): void {
   if (typeof window === 'undefined') return;
   try {
+    const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+    if (!token) {
+      localStorage.removeItem('anticeil_colony_dm_channels_v3');
+      localStorage.removeItem('anticeil_colony_channels_v3');
+    }
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

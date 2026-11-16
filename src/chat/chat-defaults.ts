@@ -61,6 +61,8 @@ const STORAGE_KEY_DM_CHANNELS = 'anticeil_colony_dm_channels_v3';
 export function loadStoredDmChannels(): ColonyChannel[] {
   try {
     if (typeof window === 'undefined') return [];
+    const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+    if (!token) return [];
     const raw = localStorage.getItem(STORAGE_KEY_DM_CHANNELS);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
@@ -110,6 +112,11 @@ export function loadStoredDmChannels(): ColonyChannel[] {
 export function saveStoredDmChannels(channels: ColonyChannel[]): void {
   try {
     if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+    if (!token) {
+      localStorage.removeItem(STORAGE_KEY_DM_CHANNELS);
+      return;
+    }
     const seenKeys = new Set<string>();
     const dmsOnly: ColonyChannel[] = [];
     for (const c of channels) {

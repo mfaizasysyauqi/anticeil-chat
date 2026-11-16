@@ -129,10 +129,6 @@ export function AccountTab({
             ) : (
               /* MAIN ACCOUNT VIEW (SCREENSHOT 1 & 2) */
               <div className="space-y-6">
-                <h2 className="text-lg font-bold text-foreground pb-1">
-                  {t('Account')}
-                </h2>
-
                 {/* Profile Header & Customization Card (Merged with Profiles) */}
                 <div id="account-profile" className="space-y-3 scroll-mt-4">
                   <div className="flex items-center justify-between">

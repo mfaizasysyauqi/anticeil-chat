@@ -308,46 +308,40 @@ export function TwoPaneSettingsDialog({
             mobileView === 'detail' ? 'flex w-full h-full' : 'hidden md:flex',
           )}
         >
-          {/* Mobile Detail Top Navigation Bar */}
-          <div className="flex md:hidden items-center justify-between px-3 py-2.5 border-b border-border bg-background/95 backdrop-blur-xs sticky top-0 z-20 shrink-0">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setMobileView('menu')}
-              className="h-8 px-2 gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground -ml-1 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>{t('Kembali')}</span>
-            </Button>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground truncate max-w-[200px]">
-              {activeItem?.icon && <span className="shrink-0">{activeItem.icon}</span>}
-              <span className="truncate">{activeItem?.label || title}</span>
+          {/* Top App Bar Header (Discord 1:1 Parity) */}
+          <div className="h-14 border-b border-border/60 bg-background/95 backdrop-blur-xs flex items-center justify-between px-6 md:px-10 z-10 shrink-0 select-none">
+            {/* Left: Mobile back button (when in detail view) + Section Title */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileView('menu')}
+                className="md:hidden h-8 px-2 gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground -ml-2 cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>{t('Menu')}</span>
+              </Button>
+              <div className="flex items-center gap-2 min-w-0">
+                {activeItem?.icon && <span className="shrink-0 text-muted-foreground">{activeItem.icon}</span>}
+                <h1 className="text-base font-bold text-foreground truncate tracking-tight">
+                  {activeItem?.label || title}
+                </h1>
+              </div>
             </div>
+
+            {/* Right Suffix: Discord Close (X) Button with ESC Badge */}
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground p-1.5 -mr-1.5 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group"
+              title={t('Tutup (ESC)')}
               aria-label={t('Tutup')}
             >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Desktop/Tablet Signature ESC Close Button */}
-          <div className="hidden md:flex absolute top-4 right-5 z-20">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="flex flex-col items-center gap-0.5 group cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
-              title={t('Tutup (ESC)')}
-            >
-              <div className="size-8 rounded-full border border-border group-hover:border-foreground flex items-center justify-center transition-colors bg-card shadow-2xs">
-                <X className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <span className="text-[9px] font-bold tracking-wider uppercase opacity-75 group-hover:opacity-100">
+              <span className="hidden sm:inline-block text-[10px] font-bold tracking-wider uppercase opacity-60 group-hover:opacity-100 border border-border/80 px-1.5 py-0.5 rounded">
                 ESC
               </span>
+              <X className="w-4 h-4 stroke-[2.2] group-hover:scale-110 transition-transform" />
             </button>
           </div>
 
@@ -355,7 +349,7 @@ export function TwoPaneSettingsDialog({
           <div
             ref={scrollRef as React.RefObject<HTMLDivElement>}
             className={cn(
-              'flex-1 overflow-y-auto px-4 py-5 sm:px-6 md:px-8 md:py-7 [scrollbar-width:thin] w-full min-w-0',
+              'flex-1 overflow-y-auto px-6 py-6 md:px-10 md:py-8 [scrollbar-width:thin] w-full min-w-0',
               contentClassName,
             )}
           >
