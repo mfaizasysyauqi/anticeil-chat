@@ -29,6 +29,7 @@ import {
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
 import type { CalendarEvent } from '@/features/calendar/types';
+import { EventCreateWizard } from './event-create-wizard';
 
 export interface ColonyEventsModalProps {
   isOpen: boolean;
@@ -54,18 +55,7 @@ export function ColonyEventsModal({
   const [viewState, setViewState] = useState<'list' | 'create' | 'share'>('list');
   const [createdShareEvent, setCreatedShareEvent] = useState<CalendarEvent | null>(null);
 
-  // Form State for Creation Wizard (Step 1, 2, 3)
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [locationType, setLocationType] = useState<'voice' | 'external'>('voice');
-  const [selectedChannelId, setSelectedChannelId] = useState<string>('');
-  const [externalLocation, setExternalLocation] = useState<string>('');
 
-  const [topic, setTopic] = useState('');
-  const [startDate, setStartDate] = useState(dayjs().format('YYYY-MM-DD'));
-  const [startTime, setStartTime] = useState(dayjs().add(1, 'hour').minute(0).format('HH:mm'));
-  const [frequency, setFrequency] = useState('none');
-  const [description, setDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filter server specific events
   const serverEvents = events.filter((ev) => {
@@ -77,47 +67,16 @@ export function ColonyEventsModal({
     (c) => (c.colonyId === activeColony?.id || !c.colonyId) && c.type === 'voice'
   );
 
-  const resetForm = () => {
-    setStep(1);
-    setLocationType('voice');
-    setSelectedChannelId(voiceChannels[0]?.id || '');
-    setExternalLocation('');
-    setTopic('');
-    setStartDate(dayjs().format('YYYY-MM-DD'));
-    setStartTime(dayjs().add(1, 'hour').minute(0).format('HH:mm'));
-    setFrequency('none');
-    setDescription('');
-  };
-
   const handleOpenCreate = () => {
-    resetForm();
-    if (voiceChannels.length > 0) {
-      setSelectedChannelId(voiceChannels[0].id);
-    }
     setViewState('create');
   };
 
-  const handleFinishCreate = async () => {
-    if (!topic.trim()) {
-      toast.error('Topik event wajib diisi');
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleFinishCreate = async (eventData: Partial<CalendarEvent>) => {
     try {
-      const selectedCh = channels.find((c) => c.id === selectedChannelId);
-      const startDateTime = dayjs(`${startDate}T${startTime}:00`).toISOString();
-
       const newEvent = await onCreateEvent({
-        title: topic,
-        description,
-        type: locationType === 'voice' ? 'activity' : 'meeting',
+        ...eventData,
         colonyId: activeColony?.id || 'anticeil',
         hubName: activeColony?.name || 'Anticeil',
-        channelId: locationType === 'voice' ? selectedChannelId : undefined,
-        channelName: locationType === 'voice' ? (selectedCh?.name || 'Voice') : externalLocation,
-        startTime: startDateTime,
-        status: 'scheduled',
       });
 
       if (newEvent) {
@@ -126,8 +85,6 @@ export function ColonyEventsModal({
       }
     } catch {
       toast.error('Gagal membuat event');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -285,352 +242,16 @@ export function ColonyEventsModal({
           </div>
         )}
 
-        {/* ── VIEW 2: CREATE EVENT WIZARD (STEPS 1, 2, 3) ── */}
+        {/* ── VIEW 2: CREATE EVENT WIZARD ── */}
         {viewState === 'create' && (
-          <div className="flex flex-col">
-            {/* Step Progress Bar Header */}
-            <div className="px-6 pt-5 pb-3 border-b border-border">
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                <div
-                  className={`h-1 rounded-full transition-all ${
-                    step >= 1 ? 'bg-primary' : 'bg-muted'
-                  }`}
-                />
-                <div
-                  className={`h-1 rounded-full transition-all ${
-                    step >= 2 ? 'bg-primary' : 'bg-muted'
-                  }`}
-                />
-                <div
-                  className={`h-1 rounded-full transition-all ${
-                    step >= 3 ? 'bg-primary' : 'bg-muted'
-                  }`}
-                />
-              </div>
-              <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
-                <span className={step === 1 ? 'text-primary font-bold' : ''}>Location</span>
-                <span className={step === 2 ? 'text-primary font-bold' : ''}>Event Info</span>
-                <span className={step === 3 ? 'text-primary font-bold' : ''}>Review</span>
-              </div>
-            </div>
-
-            {/* Wizard Body */}
-            <div className="px-6 py-4 space-y-4 max-h-[480px] overflow-y-auto [scrollbar-width:thin]">
-              {/* ── STEP 1: LOCATION ── */}
-              {step === 1 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">Where is your event?</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      So no one gets lost on where to go.
-                    </p>
-                  </div>
-
-                  {/* Radio 1: Voice Channel */}
-                  <label
-                    onClick={() => setLocationType('voice')}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                      locationType === 'voice'
-                        ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
-                        : 'border-border bg-card hover:bg-muted/40'
-                    }`}
-                  >
-                    <div
-                      className={`size-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 transition-all ${
-                        locationType === 'voice'
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {locationType === 'voice' && <div className="size-1.5 rounded-full bg-primary-foreground" />}
-                    </div>
-                    <div className="space-y-0.5 min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                        <Volume2 className="w-4 h-4 text-muted-foreground" />
-                        <span>Voice Channel</span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Hang out with voice, video, screenshare, and Go Live.
-                      </p>
-                    </div>
-                  </label>
-
-                  {/* Radio 2: Somewhere Else */}
-                  <label
-                    onClick={() => setLocationType('external')}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                      locationType === 'external'
-                        ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
-                        : 'border-border bg-card hover:bg-muted/40'
-                    }`}
-                  >
-                    <div
-                      className={`size-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 transition-all ${
-                        locationType === 'external'
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {locationType === 'external' && <div className="size-1.5 rounded-full bg-primary-foreground" />}
-                    </div>
-                    <div className="space-y-0.5 min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <span>Somewhere Else</span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Text channel, external link, or in-person location.
-                      </p>
-                    </div>
-                  </label>
-
-                  {/* Sub-inputs based on selection */}
-                  {locationType === 'voice' ? (
-                    <div className="space-y-1.5 pt-1">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Select a channel <span className="text-red-400">*</span>
-                      </label>
-                      <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-                        <SelectTrigger className="w-full bg-card border-border text-xs h-10">
-                          <SelectValue placeholder="Pilih Voice Channel" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border-border text-xs">
-                          {voiceChannels.length === 0 ? (
-                            <SelectItem value="none" disabled>
-                              Tidak ada voice channel
-                            </SelectItem>
-                          ) : (
-                            voiceChannels.map((vc) => (
-                              <SelectItem key={vc.id} value={vc.id}>
-                                <div className="flex items-center gap-2">
-                                  <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />
-                                  <span>{vc.name}</span>
-                                </div>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5 pt-1">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Enter a location <span className="text-red-400">*</span>
-                      </label>
-                      <Input
-                        value={externalLocation}
-                        onChange={(e) => setExternalLocation(e.target.value)}
-                        placeholder="Add a location, link, or something."
-                        className="bg-card border-border text-xs h-10"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ── STEP 2: EVENT INFO ── */}
-              {step === 2 && (
-                <div className="space-y-3.5">
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">What's your event about?</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Fill out the details of your event.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Event Topic <span className="text-red-400">*</span>
-                    </label>
-                    <Input
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      placeholder="Judul acara komunitas..."
-                      className="bg-card border-border text-xs h-9"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Start Date <span className="text-red-400">*</span>
-                      </label>
-                      <Input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-card border-border text-xs h-9"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Start Time <span className="text-red-400">*</span>
-                      </label>
-                      <Input
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="bg-card border-border text-xs h-9"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Event Frequency <span className="text-red-400">*</span>
-                    </label>
-                    <Select value={frequency} onValueChange={setFrequency}>
-                      <SelectTrigger className="w-full bg-card border-border text-xs h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border text-xs">
-                        <SelectItem value="none">Does not repeat</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="biweekly">Every other week</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="annually">Annually</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Description
-                    </label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Jelaskan tentang apa acara ini..."
-                      rows={3}
-                      className="w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* ── STEP 3: REVIEW ── */}
-              {step === 3 && (
-                <div className="space-y-4">
-                  {/* Card Preview */}
-                  <div className="p-4 bg-card border border-border rounded-xl space-y-3 shadow-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-semibold text-primary">
-                          {dayjs(`${startDate}T${startTime}`).isSame(dayjs(), 'day')
-                            ? `Today at ${startTime}`
-                            : `${dayjs(startDate).format('MMM D')} at ${startTime}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <CommunityAvatar
-                          name={currentUser?.name || 'Creator'}
-                          imageUrl={currentUser?.avatar}
-                          size={20}
-                        />
-                        <div className="flex items-center gap-1 text-[11px]">
-                          <Users className="w-3.5 h-3.5" />
-                          <span>0</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground">{topic || 'Untitled Event'}</h4>
-                      {description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-3 leading-relaxed">
-                          {description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="pt-2 border-t border-border/60 flex items-center gap-2 text-xs text-muted-foreground">
-                      {locationType === 'voice' ? (
-                        <>
-                          <Volume2 className="w-3.5 h-3.5 text-primary" />
-                          <span>{channels.find((c) => c.id === selectedChannelId)?.name || 'General Voice'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <MapPin className="w-3.5 h-3.5 text-primary" />
-                          <span>{externalLocation || 'External Location'}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-center py-2 space-y-1">
-                    <h4 className="text-base font-bold text-foreground">Here's a preview of your event.</h4>
-                    <p className="text-xs text-muted-foreground">
-                      This event will auto start when it's time and alert the channel.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="flex items-center justify-between px-6 py-4 bg-muted/30 border-t border-border">
-              {step > 1 ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStep((s) => (s - 1) as any)}
-                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  Back
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewState('list')}
-                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  Cancel
-                </Button>
-              )}
-
-              <div className="flex items-center gap-2">
-                {step < 3 ? (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (step === 1) {
-                        if (locationType === 'voice' && !selectedChannelId) {
-                          toast.error('Pilih channel terlebih dahulu');
-                          return;
-                        }
-                        if (locationType === 'external' && !externalLocation.trim()) {
-                          toast.error('Masukkan detail lokasi terlebih dahulu');
-                          return;
-                        }
-                      }
-                      if (step === 2) {
-                        if (!topic.trim()) {
-                          toast.error('Topik event wajib diisi');
-                          return;
-                        }
-                      }
-                      setStep((s) => (s + 1) as any);
-                    }}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-8 font-semibold rounded-md shadow-xs cursor-pointer"
-                  >
-                    Next
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    disabled={isSubmitting}
-                    onClick={handleFinishCreate}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-8 font-semibold rounded-md shadow-xs cursor-pointer"
-                  >
-                    {isSubmitting ? 'Creating...' : 'Create Event'}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+          <EventCreateWizard
+            activeColony={activeColony}
+            channels={channels}
+            voiceChannels={voiceChannels}
+            onCancel={() => setViewState('list')}
+            onFinish={handleFinishCreate}
+            currentUser={currentUser}
+          />
         )}
 
         {/* ── VIEW 3: SHARE EVENT MODAL (DISCORD STYLE) ── */}
