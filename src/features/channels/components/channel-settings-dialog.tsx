@@ -36,6 +36,7 @@ import {
 } from '@/chat/chat-types';
 import type { ColonyCategory } from '../api/categories-api';
 import { toast } from 'sonner';
+import { ChannelOverviewTab } from './channel-settings/channel-overview-tab';
 
 interface ChannelSettingsDialogProps {
   channel: ColonyChannel | null;
@@ -48,23 +49,6 @@ interface ChannelSettingsDialogProps {
 }
 
 type SettingsTab = 'overview' | 'permissions' | 'invites' | 'integrations';
-
-const SLOWMODE_OPTIONS = [
-  { label: 'Off', value: 0 },
-  { label: '5s', value: 5 },
-  { label: '10s', value: 10 },
-  { label: '15s', value: 15 },
-  { label: '30s', value: 30 },
-  { label: '1m', value: 60 },
-  { label: '2m', value: 120 },
-  { label: '5m', value: 300 },
-  { label: '10m', value: 600 },
-  { label: '15m', value: 900 },
-  { label: '30m', value: 1800 },
-  { label: '1h', value: 3600 },
-  { label: '2h', value: 7200 },
-  { label: '6h', value: 21600 },
-];
 
 export function ChannelSettingsDialog({
   channel,
@@ -155,26 +139,6 @@ export function ChannelSettingsDialog({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const insertMarkdown = (prefix: string, suffix: string = prefix) => {
-    const textarea = document.getElementById('channel-topic-textarea') as HTMLTextAreaElement | null;
-    if (!textarea) {
-      setTopic((prev) => prev + prefix + suffix);
-      return;
-    }
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = topic.substring(start, end);
-    const replacement = prefix + (selectedText || 'text') + suffix;
-    const nextTopic = topic.substring(0, start) + replacement + topic.substring(end);
-    setTopic(nextTopic);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selectedText.length || 4));
-    }, 10);
   };
 
   const channelTypeLabel =
@@ -307,283 +271,22 @@ export function ChannelSettingsDialog({
           {/* Main Content Body */}
           <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 lg:p-10 space-y-7 [scrollbar-width:thin]">
             {activeTab === 'overview' && (
-              <div className="max-w-xl space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Overview')}</h2>
-                </div>
-
-                {/* 1. Channel Name */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t('Channel Name')}
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 text-muted-foreground font-semibold">
-                      {channel.type === 'voice' ? (
-                        <Volume2 className="w-4 h-4" />
-                      ) : channel.type === 'forum' ? (
-                        <MessagesSquare className="w-4 h-4" />
-                      ) : channel.type === 'kanban' ? (
-                        <Columns3 className="w-4 h-4" />
-                      ) : (
-                        <Hash className="w-4 h-4" />
-                      )}
-                    </span>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="new-channel"
-                      className="w-full bg-muted/40 border border-border rounded-lg pl-9 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-medium"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdown('🎉')}
-                      className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
-                      title="Emoji"
-                    >
-                      <Smile className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 1.5 Channel Type Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t('Tipe Channel')}
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { type: 'text' as const, label: 'Text', icon: Hash },
-                      { type: 'voice' as const, label: 'Voice', icon: Volume2 },
-                      { type: 'forum' as const, label: 'Forum', icon: MessagesSquare },
-                      { type: 'kanban' as const, label: 'Kanban', icon: Columns3 },
-                    ].map((item) => {
-                      const isSelected = channelType === item.type;
-                      const Icon = item.icon;
-                      return (
-                        <button
-                          key={item.type}
-                          type="button"
-                          onClick={() => setChannelType(item.type)}
-                          className={cn(
-                            'flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer select-none',
-                            isSelected
-                              ? 'bg-primary/10 border-primary text-primary font-bold ring-1 ring-primary/40'
-                              : 'bg-muted/30 border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-                          )}
-                        >
-                          <Icon className="w-4 h-4 shrink-0" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                
-                {/* 1.6 Category Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t('Kategori')}
-                  </label>
-                  <select
-                    value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full bg-muted/40 border border-border text-foreground rounded-lg h-9 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
-                  >
-                    <option value="">{t('Tanpa Kategori (Uncategorized)')}</option>
-                    {(categories || []).map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 2. Channel Topic */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t('Channel Topic')}
-                  </label>
-                  <div className="border border-border rounded-lg bg-muted/40 overflow-hidden focus-within:border-primary transition-colors">
-                    {/* Markdown formatting toolbar */}
-                    <div className="flex items-center gap-1 p-2 border-b border-border bg-card/60">
-                      <button
-                        type="button"
-                        onClick={() => insertMarkdown('**')}
-                        title="Bold"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        <Bold className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertMarkdown('*')}
-                        title="Italic"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        <Italic className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertMarkdown('__')}
-                        title="Underline"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        <Underline className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertMarkdown('~~')}
-                        title="Strikethrough"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        <Strikethrough className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertMarkdown('||')}
-                        title="Spoiler"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertMarkdown('✨')}
-                        title="Emoji"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted ml-auto"
-                      >
-                        <Smile className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <textarea
-                      id="channel-topic-textarea"
-                      rows={4}
-                      maxLength={1024}
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      placeholder={t('Let everyone know how to use this channel!')}
-                      className="w-full bg-transparent p-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none resize-none leading-relaxed"
-                    />
-                    <div className="px-3 pb-2 flex justify-end">
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        {1024 - topic.length}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Slowmode */}
-                <div className="space-y-2 pt-2 border-t border-border">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t('Slowmode')}
-                  </label>
-                  <Select
-                    value={String(slowmode)}
-                    onValueChange={(val) => setSlowmode(Number(val))}
-                  >
-                    <SelectTrigger className="w-full bg-muted/40 border border-border rounded-lg px-3 py-2 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SLOWMODE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={String(opt.value)}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground leading-normal">
-                    {t('Members will be restricted to sending one message and creating one thread per this interval, unless they have the Bypass Slowmode permission.')}
-                  </p>
-                </div>
-
-                {/* 4. Content Visibility */}
-                <div className="space-y-3 pt-2 border-t border-border">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t('Content Visibility')}
-                  </label>
-                  <div className="space-y-2">
-                    {/* Default */}
-                    <label
-                      onClick={() => setContentVisibility('default')}
-                      className={cn(
-                        'flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer',
-                        contentVisibility === 'default'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-card/40 hover:bg-muted/40'
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="content-visibility"
-                        checked={contentVisibility === 'default'}
-                        onChange={() => setContentVisibility('default')}
-                        className="mt-0.5 text-primary focus:ring-primary"
-                      />
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-bold text-foreground">{t('Default')}</div>
-                        <div className="text-[11px] text-muted-foreground leading-snug">
-                          {t('Channel content is always visible.')}
-                        </div>
-                      </div>
-                    </label>
-
-                    {/* Spoiler */}
-                    <label
-                      onClick={() => setContentVisibility('spoiler')}
-                      className={cn(
-                        'flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer',
-                        contentVisibility === 'spoiler'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-card/40 hover:bg-muted/40'
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="content-visibility"
-                        checked={contentVisibility === 'spoiler'}
-                        onChange={() => setContentVisibility('spoiler')}
-                        className="mt-0.5 text-primary focus:ring-primary"
-                      />
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-bold text-foreground">{t('Spoiler Channel')}</div>
-                        <div className="text-[11px] text-muted-foreground leading-snug">
-                          {t('Mark this channel as containing spoilers, so that plot twists, heavy topics, or other sensitive discussions are hidden until users choose to view.')}
-                        </div>
-                      </div>
-                    </label>
-
-                    {/* Age-Restricted */}
-                    <label
-                      onClick={() => setContentVisibility('nsfw')}
-                      className={cn(
-                        'flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer',
-                        contentVisibility === 'nsfw'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-card/40 hover:bg-muted/40'
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="content-visibility"
-                        checked={contentVisibility === 'nsfw'}
-                        onChange={() => setContentVisibility('nsfw')}
-                        className="mt-0.5 text-primary focus:ring-primary"
-                      />
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-bold text-foreground">{t('Age-Restricted Channel')}</div>
-                        <div className="text-[11px] text-muted-foreground leading-snug">
-                          {t('Users will need to confirm they are of age to view the content in this channel.')}
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
+              <ChannelOverviewTab
+                channel={channel}
+                name={name}
+                setName={setName}
+                channelType={channelType}
+                setChannelType={setChannelType}
+                categoryId={categoryId}
+                setCategoryId={setCategoryId}
+                categories={categories}
+                topic={topic}
+                setTopic={setTopic}
+                slowmode={slowmode}
+                setSlowmode={setSlowmode}
+                contentVisibility={contentVisibility}
+                setContentVisibility={setContentVisibility}
+              />
             )}
 
             {/* Permissions Tab */}
