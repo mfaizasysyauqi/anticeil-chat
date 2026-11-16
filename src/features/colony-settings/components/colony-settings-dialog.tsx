@@ -16,6 +16,8 @@ import {
   Trash2,
   X,
   ShieldCheck,
+  Compass,
+  ExternalLink,
 } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import {
@@ -57,6 +59,7 @@ import {
   InvitesTab,
   AccessTab,
   IntegrationsTab,
+  AppDirectoryTab,
   AuditLogTab,
   BansTab,
 } from './tabs';
@@ -74,6 +77,7 @@ export type ColonySettingsSection =
   | 'invites'
   | 'access'
   | 'integrations'
+  | 'app-directory'
   | 'audit-log'
   | 'bans'
   | 'delete';
@@ -207,6 +211,12 @@ export function ColonySettingsDialog({
       title: t('Apps'),
       items: [
         { id: 'integrations', label: t('Integrations'), icon: <Webhook className="h-4 w-4 shrink-0" /> },
+        {
+          id: 'app-directory',
+          label: t('App Directory'),
+          icon: <Compass className="h-4 w-4 shrink-0" />,
+          badge: <ExternalLink className="h-3.5 w-3.5 shrink-0 ml-auto opacity-70" />,
+        },
       ],
     },
     {
@@ -258,7 +268,7 @@ export function ColonySettingsDialog({
           </button>
         }
       >
-        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles' || serverSettingsSection === 'access') ? "max-w-5xl" : "max-w-2xl")}>
+        <div className={cn("w-full", (serverSettingsSection === 'profile' || serverSettingsSection === 'colony-tag' || serverSettingsSection === 'boost' || serverSettingsSection === 'stickers' || serverSettingsSection === 'members' || serverSettingsSection === 'roles' || serverSettingsSection === 'access' || serverSettingsSection === 'integrations' || serverSettingsSection === 'app-directory') ? "max-w-5xl" : "max-w-2xl")}>
               {/* 1. PROFIL SERVER */}
               {serverSettingsSection === 'profile' && (
                 <ProfileTab
@@ -397,8 +407,22 @@ export function ColonySettingsDialog({
               {serverSettingsSection === 'integrations' && (
                 <IntegrationsTab
                   activeColony={activeColony}
+                  channels={channels}
+                  onUpdateColony={onUpdateColony}
+                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
                   onClose={onClose}
                   onOpenWebhooks={onOpenWebhooks}
+                  t={t}
+                />
+              )}
+
+              {/* 9b. APP DIRECTORY */}
+              {serverSettingsSection === 'app-directory' && (
+                <AppDirectoryTab
+                  activeColony={activeColony}
+                  onUpdateColony={onUpdateColony}
+                  onClose={onClose}
+                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
                   t={t}
                 />
               )}

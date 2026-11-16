@@ -10,6 +10,7 @@ export { RolesTab } from './roles-tab';
 export { InvitesTab } from './invites-tab';
 export { AccessTab } from './access-tab';
 export { IntegrationsTab } from './integrations-tab';
+export { AppDirectoryTab } from './app-directory-tab';
 export { AuditLogTab } from './audit-log-tab';
 export { BansTab } from './bans-tab';
 

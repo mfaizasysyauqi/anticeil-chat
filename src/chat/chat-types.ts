@@ -214,7 +214,8 @@ export type ColonyStats = {
   channelActivity: Array<{ channelId: string; channelName: string; messageCount: number }>;
 };
 
-import type { Colony, ColonyCustomEmoji } from '@/lib/colony';
+import type { Colony, ColonyCustomEmoji, ColonyApp } from '@/lib/colony';
+export type { ColonyApp };
 
 // ── Domain Aliases ────────────────────────────────────────────────────
 

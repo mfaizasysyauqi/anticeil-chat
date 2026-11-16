@@ -23,6 +23,20 @@ export type ColonySound = {
   volume?: number;
 };
 
+export type ColonyApp = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  icon?: string;
+  banner?: string;
+  badge?: string;
+  verified?: boolean;
+  slashCommands?: string[];
+  permissions?: string[];
+  installedAt?: string;
+};
+
 export type Colony = {
   id: ColonyId;
   name: string;
@@ -69,6 +83,7 @@ export type Colony = {
     rulesEnabled?: boolean;
     rules?: string[];
   };
+  installedApps?: ColonyApp[];
 };
 
 export const DEFAULT_COLONIES: Colony[] = [
