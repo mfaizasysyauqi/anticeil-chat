@@ -66,15 +66,21 @@ jobs:
           host: ${{ secrets.ORACLE_HOST }}
           username: ${{ secrets.ORACLE_USER }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
-          envs: GHCR_TOKEN,GHCR_USER,SERVICE_NAME,TAG_NAME
+          envs: GHCR_TOKEN,GHCR_USER,TAG_NAME
           script: |
             cd ${{ secrets.DEPLOY_DIR }}
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             docker pull ghcr.io/${{ github.repository_owner }}/anticeil-chat:$TAG_NAME
-            docker compose up -d --no-build $SERVICE_NAME || docker compose up -d --no-build chat
+            if [ "$TAG_NAME" = "dev" ]; then
+              docker stop anticeil_chat_dev 2>/dev/null || true
+              docker rm anticeil_chat_dev 2>/dev/null || true
+              NET=$(docker inspect anticeil-chat --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' 2>/dev/null || echo "bridge")
+              docker run -d --name anticeil_chat_dev --network "$NET" -p 3006:3005 --restart unless-stopped ghcr.io/${{ github.repository_owner }}/anticeil-chat:dev
+            else
+              docker compose up -d --no-build chat
+            fi
             docker image prune -f
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
-          SERVICE_NAME: ${{ steps.env-config.outputs.COMPOSE_SERVICE }}
           TAG_NAME: ${{ steps.env-config.outputs.DOCKER_TAG }}
