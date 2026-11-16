@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { StreamerModeSection } from './appearance/streamer-mode-section';
+import { ChatBoxAppearanceSection } from './appearance/chat-box-appearance-section';
 
 export interface AppearanceTabProps {
   theme: any;
@@ -519,53 +521,18 @@ export function AppearanceTab({
             </div>
 
             {/* SUB-SECTION 4: CHAT BOX */}
-            <div id="appearance-chat-box" className="scroll-mt-6 space-y-6 pt-6">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">{t('Chat Box')}</h2>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Preview emoji, mentions, and markdown syntax as you type')}
-                  </div>
-                  <Switch checked={previewMarkdownAsType} onCheckedChange={setPreviewMarkdownAsType} />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div>
-                    <div className="text-xs font-semibold text-foreground">
-                      {t('Automatically convert emoticons in your messages to emoji')}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {t('For example, when you type :) Discord will convert it to 🙂')}
-                    </div>
-                  </div>
-                  <Switch checked={convertEmoticonsToEmoji} onCheckedChange={setConvertEmoticonsToEmoji} />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Show stickers in autocomplete results')}
-                  </div>
-                  <Switch checked={showStickersAutocomplete} onCheckedChange={setShowStickersAutocomplete} />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Show games in autocomplete results')}
-                  </div>
-                  <Switch checked={showGamesAutocomplete} onCheckedChange={setShowGamesAutocomplete} />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Show send message button')}
-                  </div>
-                  <Switch checked={showSendMessageButton} onCheckedChange={setShowSendMessageButton} />
-                </div>
-              </div>
-            </div>
+            <ChatBoxAppearanceSection
+              previewMarkdownAsType={previewMarkdownAsType}
+              setPreviewMarkdownAsType={setPreviewMarkdownAsType}
+              convertEmoticonsToEmoji={convertEmoticonsToEmoji}
+              setConvertEmoticonsToEmoji={setConvertEmoticonsToEmoji}
+              showStickersAutocomplete={showStickersAutocomplete}
+              setShowStickersAutocomplete={setShowStickersAutocomplete}
+              showGamesAutocomplete={showGamesAutocomplete}
+              setShowGamesAutocomplete={setShowGamesAutocomplete}
+              showSendMessageButton={showSendMessageButton}
+              setShowSendMessageButton={setShowSendMessageButton}
+            />
 
             {/* SUB-SECTION 5: SEARCH */}
             <div id="appearance-search" className="scroll-mt-6 space-y-6 pt-6">
@@ -611,77 +578,22 @@ export function AppearanceTab({
             </div>
 
             {/* SUB-SECTION 6: STREAMER MODE */}
-            <div id="appearance-streamer-mode" className="scroll-mt-6 space-y-6 pt-6">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">{t('Streamer Mode')}</h2>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div>
-                    <div className="text-xs font-bold text-foreground">{t('Enable Streamer Mode')}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {t("Streamer Mode hides your personal info so others watching your stream can't see it.")}
-                    </div>
-                  </div>
-                  <Switch checked={streamerModeEnabled} onCheckedChange={setStreamerModeEnabled} />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <div className="text-xs font-semibold text-foreground">
-                    {t('Automatically enable Streamer Mode if OBS or XSplit are running')}
-                  </div>
-                  <Switch checked={autoStreamerModeObs} onCheckedChange={setAutoStreamerModeObs} />
-                </div>
-              </div>
-
-              {/* If Streamer Mode is enabled... */}
-              <div className="space-y-3 pt-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  {t('If Streamer Mode is enabled...')}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                    <div className="text-xs font-semibold text-foreground">
-                      {t('Hide my personal information, such as email, connected accounts, and notes')}
-                    </div>
-                    <Switch checked={streamerHidePersonalInfo} onCheckedChange={setStreamerHidePersonalInfo} />
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                    <div className="text-xs font-semibold text-foreground">
-                      {t('Hide invite links to my Discord servers')}
-                    </div>
-                    <Switch checked={streamerHideInviteLinks} onCheckedChange={setStreamerHideInviteLinks} />
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                    <div className="text-xs font-semibold text-foreground">
-                      {t('Disable all sound effects')}
-                    </div>
-                    <Switch checked={streamerDisableSounds} onCheckedChange={setStreamerDisableSounds} />
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                    <div className="text-xs font-semibold text-foreground">
-                      {t('Disable notifications')}
-                    </div>
-                    <Switch checked={streamerDisableNotifications} onCheckedChange={setStreamerDisableNotifications} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Hide window from screen capture */}
-              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
-                <div>
-                  <div className="text-xs font-bold text-foreground">
-                    {t('Hide Discord Window from Screen Capture')}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {t('Hides most Discord windows from most screen capture software.')}
-                  </div>
-                </div>
-                <Switch checked={streamerHideWindowCapture} onCheckedChange={setStreamerHideWindowCapture} />
-              </div>
-            </div>
+            <StreamerModeSection
+              streamerModeEnabled={streamerModeEnabled}
+              setStreamerModeEnabled={setStreamerModeEnabled}
+              autoStreamerModeObs={autoStreamerModeObs}
+              setAutoStreamerModeObs={setAutoStreamerModeObs}
+              streamerHidePersonalInfo={streamerHidePersonalInfo}
+              setStreamerHidePersonalInfo={setStreamerHidePersonalInfo}
+              streamerHideInviteLinks={streamerHideInviteLinks}
+              setStreamerHideInviteLinks={setStreamerHideInviteLinks}
+              streamerDisableSounds={streamerDisableSounds}
+              setStreamerDisableSounds={setStreamerDisableSounds}
+              streamerDisableNotifications={streamerDisableNotifications}
+              setStreamerDisableNotifications={setStreamerDisableNotifications}
+              streamerHideWindowCapture={streamerHideWindowCapture}
+              setStreamerHideWindowCapture={setStreamerHideWindowCapture}
+            />
           </div>
-
   );
 }
