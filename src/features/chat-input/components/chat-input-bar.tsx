@@ -11,8 +11,10 @@ import {
   LayoutGrid,
   CalendarPlus,
   Lock,
+  Mic,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { VoiceNoteRecorder } from './voice-note-recorder';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +75,7 @@ export interface ChatInputBarProps {
   appsSearchQuery: string;
   setAppsSearchQuery: (q: string) => void;
   onLaunchActivity: (id: string) => void;
+  onSendVoiceNote?: (blob: Blob, durationSeconds: number) => void;
   t: (key: string) => string;
 }
 
@@ -85,6 +88,7 @@ export function ChatInputBar({
   inputText,
   setInputText,
   onSendMessage,
+  onSendVoiceNote,
   onFileSelect,
   onOpenGiftModal,
   onOpenCreateThreadModal,
@@ -121,6 +125,7 @@ export function ChatInputBar({
   const [isCustomScheduleOpen, setIsCustomScheduleOpen] = useState(false);
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [isSlashOpen, setIsSlashOpen] = useState(true);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [e2ee, setE2ee] = useState(() => isE2eeEnabled());
   const userPlan = getCurrentUserPlan();
   const maxMessageChars = getCurrentMaxMessageChars();
@@ -223,15 +228,24 @@ export function ChatInputBar({
         />
       )}
 
-      {/* Discord Signature Chat Input Box: Auto-expanding multiline with max-height 50% screen height */}
-      <div className="w-full min-h-[52px] max-h-[50vh] flex items-end gap-2.5 rounded-[12px] bg-muted/70 dark:bg-card border border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-3 py-2 transition-all shadow-xs">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={onFileSelect}
-          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.csv,.json,.xlsx,.pptx,.md,.rtf,.zip,.rar,.7z"
-          className="hidden"
+      {/* Voice Note Recorder Mode or Textarea Input Box */}
+      {isRecordingVoice ? (
+        <VoiceNoteRecorder
+          onSendVoiceNote={(blob, duration) => {
+            setIsRecordingVoice(false);
+            onSendVoiceNote?.(blob, duration);
+          }}
+          onCancel={() => setIsRecordingVoice(false)}
         />
+      ) : (
+        <div className="w-full min-h-[52px] max-h-[50vh] flex items-end gap-2.5 rounded-[12px] bg-muted/70 dark:bg-card border border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-3 py-2 transition-all shadow-xs">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={onFileSelect}
+            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.csv,.json,.xlsx,.pptx,.md,.rtf,.zip,.rar,.7z"
+            className="hidden"
+          />
 
         {/* Discord Plus Action Menu (Upload, Thread, Poll, Apps, Schedule Message) */}
         <DropdownMenu open={isPlusMenuOpen} onOpenChange={setIsPlusMenuOpen}>
@@ -468,6 +482,19 @@ export function ChatInputBar({
             onLaunchActivity={onLaunchActivity}
           />
 
+          {/* Mic / Voice Note Record Button — visible when no text/attachment */}
+          {!inputText.trim() && !stagedAttachment && (
+            <button
+              type="button"
+              onClick={() => setIsRecordingVoice(true)}
+              disabled={!activeChannel}
+              className="w-6 h-6 ml-1 text-muted-foreground hover:text-primary flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40"
+              title="Rekam Pesan Suara (Voice Note)"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Send Button — only visible when there's content */}
           {(inputText.trim() || stagedAttachment) && (
             <button
@@ -482,6 +509,7 @@ export function ChatInputBar({
           )}
         </div>
       </div>
+      )}
 
       {/* Create Poll Dialog */}
       <CreatePollModal

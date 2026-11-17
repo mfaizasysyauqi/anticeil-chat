@@ -72,10 +72,11 @@ export function resolveChannelType(channel?: Partial<ColonyChannel> | null): Col
 }
 
 export type ColonyAttachment = {
-  type: 'image' | 'video' | 'audio' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
+  type: 'image' | 'video' | 'audio' | 'voice-note' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
   url: string;
   name: string;
   size?: string;
+  duration?: number;
   templateData?: {
     name: string;
     description: string;

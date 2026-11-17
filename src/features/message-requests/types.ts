@@ -7,7 +7,8 @@ export interface MessageRequestItem {
   date: string;
   mutualServers: number;
   isSpam?: boolean;
+  isContact?: boolean;
   initialMessage?: string;
 }
 
-export type MessageRequestsTab = 'requests' | 'spam';
+export type MessageRequestsTab = 'requests' | 'non_contacts' | 'spam';

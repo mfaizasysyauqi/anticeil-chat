@@ -9,6 +9,9 @@ import {
   Users,
   UserRound,
   Search,
+  Phone,
+  Video,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -56,6 +59,10 @@ export interface ChannelTopHeaderBarProps {
   showMemberList: boolean;
   setShowMemberList: (show: boolean) => void;
   onOpenMobileMembers: () => void;
+  // Call props
+  onStartVoiceCall?: () => void;
+  onStartVideoCall?: () => void;
+  isCallActive?: boolean;
   // Search props
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -67,6 +74,9 @@ export function ChannelTopHeaderBar({
   channelPaddingClass = 'px-4 lg:px-6',
   isHome = false,
   onOpenMobileChannels,
+  onStartVoiceCall,
+  onStartVideoCall,
+  isCallActive = false,
   isThreadsPopoverOpen,
   setIsThreadsPopoverOpen,
   channelThreads,
@@ -141,8 +151,72 @@ export function ChannelTopHeaderBar({
         )}
       </div>
 
-      {/* Top Bar Actions: Exactly Discord Signature (Threads, Bell, Pin, Member List / User Profile, Search) */}
+      {/* Top Bar Actions: Exactly Discord Signature (Calls, E2EE, Threads, Bell, Pin, Member List / User Profile, Search) */}
       <div className="flex items-center gap-2">
+        {/* DM Voice Call Button */}
+        {isDmMode && onStartVoiceCall && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onStartVoiceCall}
+                className={cn(
+                  'h-8 w-8 transition-colors cursor-pointer',
+                  isCallActive ? 'text-emerald-500 bg-emerald-500/15' : 'text-foreground/70 hover:text-foreground hover:bg-accent/60'
+                )}
+                aria-label={t('Mulai Panggilan Suara')}
+              >
+                <Phone className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
+              {t('Mulai Panggilan Suara')}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* DM Video Call Button */}
+        {isDmMode && onStartVideoCall && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onStartVideoCall}
+                className={cn(
+                  'h-8 w-8 transition-colors cursor-pointer',
+                  isCallActive ? 'text-emerald-500 bg-emerald-500/15' : 'text-foreground/70 hover:text-foreground hover:bg-accent/60'
+                )}
+                aria-label={t('Mulai Panggilan Video')}
+              >
+                <Video className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
+              {t('Mulai Panggilan Video')}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* E2EE Status Badge */}
+        {isDmMode && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 text-[11px] font-semibold cursor-pointer select-none hover:bg-emerald-500/20 transition-colors">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">E2EE</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} className="max-w-xs text-xs">
+              <p className="font-bold text-emerald-400 mb-0.5">Enkripsi End-to-End Aktif</p>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Pesan dan panggilan dalam percakapan ini diamankan dengan enkripsi end-to-end (AES-256-GCM). Hanya Anda dan lawan bicara yang dapat membaca atau mendengar percakapan ini.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {/* 1. Threads Popover (Server channels only) */}
         {!isDmMode && (
           <ThreadsPopover

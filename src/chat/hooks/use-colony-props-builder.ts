@@ -168,6 +168,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     inputText,
     setInputText,
     handleSendMessage,
+    handleSendVoiceNote,
     handleFileChange,
     isGiftModalOpen,
     setIsGiftModalOpen,
@@ -472,6 +473,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       setAppsSearchQuery,
       handleScheduleMessage,
       handleCreatePoll,
+      handleSendVoiceNote,
       t,
     },
     modalProps: {

@@ -98,7 +98,7 @@ export function useMessageActions({
   t,
 }: UseMessageActionsOptions) {
   // Send message
-  const handleSendMessage = async (customContent?: string) => {
+  const handleSendMessage = async (customContent?: string, customAttachment?: any) => {
     if (!currentUser) {
       setAuthFeatureInfo({
         title: t('Kirim Pesan'),
@@ -109,7 +109,7 @@ export function useMessageActions({
     }
     if (!activeChannel) return;
     const trimmedContent = (typeof customContent === 'string' ? customContent : inputText).trim();
-    if (!trimmedContent && !stagedAttachment) return;
+    if (!trimmedContent && !stagedAttachment && !customAttachment) return;
 
     // Check message character length limit
     if (trimmedContent) {
@@ -148,6 +148,7 @@ export function useMessageActions({
         ? await encryptMessage(trimmedContent, activeChannel.id)
         : trimmedContent;
 
+    const chosenAttachment = customAttachment || stagedAttachment;
     const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
@@ -156,7 +157,7 @@ export function useMessageActions({
       senderAvatar: currentUser?.imageUrl ?? null,
       senderRole: myRole,
       content: contentToSend,
-      attachments: stagedAttachment ? [stagedAttachment] : undefined,
+      attachments: chosenAttachment ? [chosenAttachment] : undefined,
       replyTo: replyingToMessage ? {
         id: replyingToMessage.id,
         senderId: replyingToMessage.senderId,
@@ -607,8 +608,26 @@ export function useMessageActions({
     }
   };
 
+  // Voice Note Send
+  const handleSendVoiceNote = async (blob: Blob, durationSeconds: number) => {
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const dataUrl = reader.result as string;
+      const voiceAttachment = {
+        name: `Voice Note (${Math.round(durationSeconds)}s)`,
+        type: 'voice-note' as const,
+        url: dataUrl,
+        duration: durationSeconds,
+        size: `${Math.round(blob.size / 1024)} KB`,
+      };
+      await handleSendMessage('', voiceAttachment);
+    };
+    reader.readAsDataURL(blob);
+  };
+
   return {
     handleSendMessage,
+    handleSendVoiceNote,
     handleScheduleMessage,
     handleCreatePoll,
     handleSendSticker,

@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
 import { renderFormattedMessage, DecryptedMessageText } from '../../utils/format-message';
+import { VoiceNotePlayer } from './voice-note-player';
 import { colonyApi } from '@/chat/chat-api';
 import type { ColonyChannel, ColonyMessage, ColonyRole } from '@/chat/chat-types';
 
@@ -441,13 +442,13 @@ export function MessageItem({
                                 />
                               );
                             }
-                            if (att.type === 'audio') {
+                            if (att.type === 'audio' || att.type === 'voice-note') {
                               return (
-                                <audio
+                                <VoiceNotePlayer
                                   key={attIdx}
-                                  src={att.url}
-                                  controls
-                                  className="max-w-md my-1"
+                                  url={att.url}
+                                  name={att.name}
+                                  duration={att.duration}
                                 />
                               );
                             }

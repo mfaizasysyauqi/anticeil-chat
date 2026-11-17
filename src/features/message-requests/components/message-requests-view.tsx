@@ -28,9 +28,15 @@ export function MessageRequestsView({
   const [activeTab, setActiveTab] = useState<MessageRequestsTab>('requests');
 
   const pendingRequests = requests.filter((r) => !r.isSpam);
+  const nonContactRequests = requests.filter((r) => !r.isSpam && (!r.isContact || r.mutualServers === 0));
   const spamRequests = requests.filter((r) => r.isSpam);
 
-  const currentList = activeTab === 'requests' ? pendingRequests : spamRequests;
+  const currentList =
+    activeTab === 'requests'
+      ? pendingRequests
+      : activeTab === 'non_contacts'
+      ? nonContactRequests
+      : spamRequests;
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-background overflow-hidden select-none">
@@ -77,9 +83,24 @@ export function MessageRequestsView({
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
             )}
           >
-            <span>{t('Permintaan')}</span>
+            <span>{t('Semua')}</span>
             {pendingRequests.length > 0 && (
               <span className="text-[10px] text-muted-foreground/80">({pendingRequests.length})</span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('non_contacts')}
+            className={cn(
+              'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
+              activeTab === 'non_contacts'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            <span>{t('Luar Kontak')}</span>
+            {nonContactRequests.length > 0 && (
+              <span className="text-[10px] text-muted-foreground/80">({nonContactRequests.length})</span>
             )}
           </button>
 
@@ -105,7 +126,9 @@ export function MessageRequestsView({
         {/* Section Header Count */}
         <div className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-4">
           {activeTab === 'requests'
-            ? `${t('Permintaan Tertunda')} — ${pendingRequests.length}`
+            ? `${t('Semua Permintaan Tertunda')} — ${pendingRequests.length}`
+            : activeTab === 'non_contacts'
+            ? `${t('Permintaan dari Luar Kontak')} — ${nonContactRequests.length}`
             : `${t('Spam')} — ${spamRequests.length}`}
         </div>
 
@@ -122,11 +145,15 @@ export function MessageRequestsView({
             <h3 className="text-sm font-semibold text-foreground mb-1">
               {activeTab === 'requests'
                 ? t('Tidak ada permintaan pesan')
+                : activeTab === 'non_contacts'
+                ? t('Tidak ada permintaan dari luar kontak')
                 : t('Tidak ada pesan spam')}
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm">
               {activeTab === 'requests'
                 ? t('Saat orang yang bukan teman Anda mengirim pesan langsung, pesannya akan muncul di sini.')
+                : activeTab === 'non_contacts'
+                ? t('Semua pesan dari pengguna di luar daftar kontak Anda difilter dan dikelompokkan di sini.')
                 : t('Pesan mencurigakan atau yang ditandai sebagai spam akan dikarantina di tab ini.')}
             </p>
           </div>
@@ -148,6 +175,11 @@ export function MessageRequestsView({
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="text-sm font-bold text-foreground truncate">{item.name}</span>
                       <span className="text-xs text-muted-foreground truncate">{item.username}</span>
+                      {(!item.isContact || item.mutualServers === 0) && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          {t('Luar Kontak')}
+                        </span>
+                      )}
                       <span className="text-[11px] text-muted-foreground/60">{item.date}</span>
                     </div>
                     <div className="text-xs text-muted-foreground/75 mt-0.5 flex items-center gap-1.5">
@@ -170,7 +202,7 @@ export function MessageRequestsView({
 
                 {/* Right Action Buttons */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {activeTab === 'requests' ? (
+                  {activeTab !== 'spam' ? (
                     <>
                       <button
                         onClick={() => onIgnore(item)}
