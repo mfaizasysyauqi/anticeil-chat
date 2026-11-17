@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, Users, UserPlus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { useTranslation } from '@/core/i18n';
 import { FriendItem } from './friend-item';
 import type { FriendMember, FriendsTab } from '../types';
@@ -51,24 +52,31 @@ export function FriendsList({
       </div>
 
       {filteredFriends.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Users className="w-16 h-16 text-muted-foreground/40 mb-3 stroke-[1.2]" />
-          <p className="text-xs text-muted-foreground font-medium mb-1">
-            {friendsTab === 'online'
-              ? t('Tidak ada teman yang sedang online saat ini.')
-              : t('Belum ada teman. Tambahkan teman untuk memulai!')}
-          </p>
-          {friendsTab !== 'online' && (
-            <Button
-              size="sm"
-              onClick={onSwitchToAddTab}
-              className="mt-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-2xs cursor-pointer"
-            >
-              <UserPlus className="w-3.5 h-3.5 mr-1.5" />
-              {t('Tambah Teman')}
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={<Users className="w-8 h-8 stroke-[1.8]" />}
+          title={
+            friendsTab === 'online'
+              ? t('Tidak ada teman online')
+              : t('Belum ada teman')
+          }
+          description={
+            friendsTab === 'online'
+              ? t('Saat teman Anda online, mereka akan muncul di sini.')
+              : t('Tambahkan teman untuk mulai mengobrol dan berkolaborasi!')
+          }
+          action={
+            friendsTab !== 'online' ? (
+              <Button
+                size="sm"
+                onClick={onSwitchToAddTab}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-2xs cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                {t('Tambah Teman')}
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-0.5">
           {filteredFriends.map((member) => (

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, ShieldAlert, Check, X, Menu, ShieldCheck } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -134,29 +135,29 @@ export function MessageRequestsView({
 
         {/* Requests List */}
         {currentList.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="size-16 rounded-full bg-accent/40 flex items-center justify-center mb-4 text-muted-foreground">
-              {activeTab === 'requests' ? (
-                <ShieldCheck className="w-8 h-8 text-primary/70" />
+          <EmptyState
+            icon={
+              activeTab === 'requests' ? (
+                <ShieldCheck className="w-8 h-8 text-primary/80 stroke-[1.8]" />
               ) : (
-                <ShieldAlert className="w-8 h-8 text-muted-foreground/70" />
-              )}
-            </div>
-            <h3 className="text-sm font-semibold text-foreground mb-1">
-              {activeTab === 'requests'
+                <ShieldAlert className="w-8 h-8 text-muted-foreground/80 stroke-[1.8]" />
+              )
+            }
+            title={
+              activeTab === 'requests'
                 ? t('Tidak ada permintaan pesan')
                 : activeTab === 'non_contacts'
                 ? t('Tidak ada permintaan dari luar kontak')
-                : t('Tidak ada pesan spam')}
-            </h3>
-            <p className="text-xs text-muted-foreground max-w-sm">
-              {activeTab === 'requests'
+                : t('Tidak ada pesan spam')
+            }
+            description={
+              activeTab === 'requests'
                 ? t('Saat orang yang bukan teman Anda mengirim pesan langsung, pesannya akan muncul di sini.')
                 : activeTab === 'non_contacts'
                 ? t('Semua pesan dari pengguna di luar daftar kontak Anda difilter dan dikelompokkan di sini.')
-                : t('Pesan mencurigakan atau yang ditandai sebagai spam akan dikarantina di tab ini.')}
-            </p>
-          </div>
+                : t('Pesan mencurigakan atau yang ditandai sebagai spam akan dikarantina di tab ini.')
+            }
+          />
         ) : (
           <div className="divide-y divide-border/40 border border-border/40 rounded-lg overflow-hidden bg-card/40">
             {currentList.map((item) => (

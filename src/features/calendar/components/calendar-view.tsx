@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -348,13 +349,12 @@ export function CalendarView({
 
               <div className="flex-1 overflow-y-auto space-y-3 mt-3 pr-1 [scrollbar-width:thin]">
                 {selectedDayEvents.length === 0 ? (
-                  <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-muted-foreground">
-                    <CalendarIcon className="w-8 h-8 stroke-1 mb-2 opacity-50" />
-                    <p className="text-xs font-medium">Tidak ada jadwal pada tanggal ini</p>
-                    <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-                      Klik "Jadwalkan Meeting" untuk menambahkan jadwal baru.
-                    </p>
-                  </div>
+                  <EmptyState
+                    compact
+                    icon={<CalendarIcon className="w-6 h-6 stroke-[1.8] text-primary/80" />}
+                    title="Tidak ada jadwal pada tanggal ini"
+                    description="Klik Jadwalkan Meeting untuk menambahkan jadwal baru."
+                  />
                 ) : (
                   selectedDayEvents.map((ev) => (
                     <div
@@ -448,13 +448,11 @@ export function CalendarView({
 
             <div className="space-y-3">
               {filteredEvents.length === 0 ? (
-                <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl">
-                  <CalendarIcon className="w-10 h-10 stroke-1 mb-2 opacity-50" />
-                  <p className="text-sm font-medium">Belum ada agenda meeting atau tugas</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    Jadwalkan rapat komunitas atau buat tugas di Kanban channel.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={<CalendarIcon className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+                  title="Belum ada agenda meeting atau tugas"
+                  description="Jadwalkan rapat komunitas atau buat tugas di Kanban channel."
+                />
               ) : (
                 filteredEvents.map((ev) => (
                   <div

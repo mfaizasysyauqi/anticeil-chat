@@ -21,6 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
@@ -339,30 +340,32 @@ export function ColoniesView({
             </div>
 
             {filteredMyColonies.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
-                <Globe className="w-12 h-12 stroke-1 mb-3 text-muted-foreground/60" />
-                <h3 className="text-sm font-bold text-foreground">Belum Bergabung dengan Server</h3>
-                <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
-                  Anda belum memiliki atau bergabung dengan server komunitas. Buat server baru atau jelajahi komunitas publik yang tersedia!
-                </p>
-                <div className="flex items-center gap-2 mt-4">
-                  <Button
-                    size="sm"
-                    onClick={handleOpenCreateColony}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-8 text-xs cursor-pointer shadow-2xs"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Buat Server
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setActiveTab('explore')}
-                    className="h-8 text-xs cursor-pointer"
-                  >
-                    <Compass className="w-3.5 h-3.5 mr-1" /> Jelajahi Komunitas
-                  </Button>
-                </div>
-              </div>
+              <EmptyState
+                icon={<Globe className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+                title={t('Belum Bergabung dengan Colony')}
+                description={t(
+                  'Anda belum memiliki atau bergabung dengan colony komunitas. Buat colony baru atau jelajahi komunitas publik yang tersedia!'
+                )}
+                action={
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleOpenCreateColony}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-8 text-xs cursor-pointer shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" /> {t('Buat Colony')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setActiveTab('explore')}
+                      className="h-8 text-xs cursor-pointer"
+                    >
+                      <Compass className="w-3.5 h-3.5 mr-1" /> {t('Jelajahi Komunitas')}
+                    </Button>
+                  </div>
+                }
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredMyColonies.map((srv) => (
@@ -419,13 +422,13 @@ export function ColoniesView({
             </div>
 
             {filteredPendingInvites.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
-                <Inbox className="w-12 h-12 stroke-1 mb-3 text-muted-foreground/60" />
-                <h3 className="text-sm font-bold text-foreground">{t('Tidak Ada Undangan Tertunda')}</h3>
-                <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
-                  {t('Saat seseorang mengajak Anda untuk bergabung ke colony komunitas mereka, undangannya akan muncul di sini.')}
-                </p>
-              </div>
+              <EmptyState
+                icon={<Inbox className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+                title={t('Tidak Ada Undangan Tertunda')}
+                description={t(
+                  'Saat seseorang mengajak Anda untuk bergabung ke colony komunitas mereka, undangannya akan muncul di sini.'
+                )}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredPendingInvites.map((inv) => (

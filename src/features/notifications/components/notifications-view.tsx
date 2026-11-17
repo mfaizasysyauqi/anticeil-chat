@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -161,21 +162,19 @@ export function NotificationsView({
       {/* Main Content Area */}
       <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-6 [scrollbar-width:thin]`}>
         {filteredNotifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="size-16 rounded-full bg-accent/40 flex items-center justify-center mb-4 text-muted-foreground">
-              <BellOff className="w-8 h-8 text-muted-foreground/70" />
-            </div>
-            <h3 className="text-sm font-semibold text-foreground mb-1">
-              {activeTab === 'unread'
+          <EmptyState
+            icon={<BellOff className="w-8 h-8 stroke-[1.8] text-muted-foreground/80" />}
+            title={
+              activeTab === 'unread'
                 ? t('Tidak ada notifikasi belum dibaca')
                 : activeTab === 'mentions'
                   ? t('Belum ada sebutan @mention untuk Anda')
-                  : t('Tidak ada notifikasi baru')}
-            </h3>
-            <p className="text-xs text-muted-foreground max-w-sm">
-              {t('Semua pembaruan obrolan, mention, dan undangan aktivitas akan terkumpul rapi di sini.')}
-            </p>
-          </div>
+                  : t('Tidak ada notifikasi baru')
+            }
+            description={t(
+              'Semua pembaruan obrolan, mention, dan undangan aktivitas akan terkumpul rapi di sini.'
+            )}
+          />
         ) : (
           <div className="space-y-2">
             {filteredNotifications.map((item) => (

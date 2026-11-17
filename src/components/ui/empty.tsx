@@ -94,6 +94,73 @@ function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+  icon?: React.ReactNode;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  compact?: boolean;
+}
+
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  compact = false,
+  className,
+  ...props
+}: EmptyStateProps) {
+  return (
+    <div
+      data-slot="empty-state"
+      className={cn(
+        'flex flex-col items-center justify-center text-center px-4 w-full',
+        compact ? 'py-8 sm:py-12' : 'py-16 sm:py-20',
+        className,
+      )}
+      {...props}
+    >
+      {icon && (
+        <div
+          data-slot="empty-icon-badge"
+          className={cn(
+            'rounded-full bg-accent/40 border border-border/50 flex items-center justify-center text-primary/80 mb-4 shadow-xs shrink-0',
+            compact ? 'size-12 [&_svg]:size-6' : 'size-16 [&_svg]:size-8',
+          )}
+        >
+          {icon}
+        </div>
+      )}
+      <h3
+        data-slot="empty-title"
+        className={cn(
+          'font-semibold text-foreground tracking-tight',
+          compact ? 'text-xs mb-1' : 'text-sm mb-1.5',
+        )}
+      >
+        {title}
+      </h3>
+      {description && (
+        <p
+          data-slot="empty-description"
+          className={cn(
+            'text-muted-foreground leading-relaxed',
+            compact ? 'text-[11px] max-w-xs' : 'text-xs max-w-sm sm:max-w-md',
+          )}
+        >
+          {description}
+        </p>
+      )}
+      {action && (
+        <div data-slot="empty-action" className="mt-4 flex items-center justify-center gap-2">
+          {action}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export {
   Empty,
   EmptyHeader,

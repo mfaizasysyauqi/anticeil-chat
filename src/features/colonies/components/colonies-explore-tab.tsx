@@ -15,6 +15,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { ColonyIcon } from './colony-icon';
 import type { Colony } from '@/chat/chat-types';
@@ -211,22 +212,21 @@ export function ColoniesExploreTab({
           <p className="text-xs font-medium">{t('Memuat direktori colony komunitas...')}</p>
         </div>
       ) : categorizedList.length === 0 ? (
-        <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
-          <Compass className="w-10 h-10 stroke-1 mb-2 text-muted-foreground/40" />
-          <h3 className="text-xs font-bold text-foreground">{t('Tidak Ada Colony di Kategori Ini')}</h3>
-          <p className="text-[11px] text-muted-foreground/80 mt-1 max-w-sm">
-            {t('Belum ada server publik lain yang cocok dengan filter atau pencarian Anda.')}
-          </p>
-          <Button
-            size="sm"
-            variant="teal"
-            onClick={handleOpenCreateColony}
-            className="mt-3.5 h-8 px-4 text-xs font-bold rounded-xl cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            <span>{t('Buat Colony Baru')}</span>
-          </Button>
-        </div>
+        <EmptyState
+          icon={<Compass className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+          title={t('Tidak Ada Colony di Kategori Ini')}
+          description={t('Belum ada colony publik yang cocok dengan filter atau pencarian Anda.')}
+          action={
+            <Button
+              size="sm"
+              onClick={handleOpenCreateColony}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-8 px-4 text-xs cursor-pointer shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              <span>{t('Buat Colony Baru')}</span>
+            </Button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {categorizedList.map((pub) => (

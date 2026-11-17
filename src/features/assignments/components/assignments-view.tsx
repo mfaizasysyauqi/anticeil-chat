@@ -16,6 +16,7 @@ import {
 import dayjs from 'dayjs';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
@@ -205,19 +206,17 @@ export function AssignmentsView({
       <div className={cn('flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
         <div className="w-full space-y-3">
           {filteredList.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl">
-              <Backpack className="w-10 h-10 stroke-1 mb-2 opacity-50" />
-              <p className="text-sm font-semibold text-foreground">
-                {activeTab === 'completed'
+            <EmptyState
+              icon={<Backpack className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+              title={
+                activeTab === 'completed'
                   ? 'Belum ada tugas yang selesai'
                   : activeTab === 'overdue'
                   ? 'Hebat! Tidak ada tugas yang terlewat'
-                  : 'Tidak ada tugas yang perlu dikerjakan'}
-              </p>
-              <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
-                Tugas yang di-assign kepada Anda di channel Kanban server komunitas akan otomatis terkumpul di halaman ini.
-              </p>
-            </div>
+                  : 'Tidak ada tugas yang perlu dikerjakan'
+              }
+              description="Tugas yang di-assign kepada Anda di channel Kanban colony komunitas akan otomatis terkumpul di halaman ini."
+            />
           ) : (
             filteredList.map((item) => {
               const isDone = item.columnId === 'done';

@@ -2,6 +2,7 @@ import React from 'react';
 import { Inbox, UserCheck, UserX, X } from 'lucide-react';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { EmptyState } from '@/components/ui/empty';
 import { useTranslation } from '@/core/i18n';
 import type { FriendRequest } from '../types';
 
@@ -27,18 +28,17 @@ export function PendingRequestsTab({
       </div>
 
       {friendRequests.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Inbox className="w-16 h-16 text-white/20 mb-3 stroke-[1.2]" />
-          <p className="text-xs text-muted-foreground font-medium">
-            {t('Tidak ada permintaan pertemanan yang tertunda.')}
-          </p>
-        </div>
+        <EmptyState
+          icon={<Inbox className="w-8 h-8 stroke-[1.8]" />}
+          title={t('Tidak Ada Permintaan Tertunda')}
+          description={t('Saat seseorang mengirimkan permintaan pertemanan, permintaannya akan muncul di sini.')}
+        />
       ) : (
         <div className="space-y-1">
           {friendRequests.map((req) => (
             <div
               key={req.id}
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-[#111214] border-t border-white/[0.04] transition-colors group"
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/40 border-t border-border/40 transition-colors group"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <CommunityAvatar name={req.name} imageUrl={req.avatar} size={40} />

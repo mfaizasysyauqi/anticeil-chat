@@ -1,5 +1,7 @@
 import React from 'react';
+import { Users } from 'lucide-react';
 import { CommunityAvatar } from '@/chat/chat-avatar';
+import { EmptyState } from '@/components/ui/empty';
 import { useTranslation } from '@/core/i18n';
 import type { FriendMember } from '../types';
 
@@ -22,12 +24,14 @@ export function ActiveNowSidebar({
     >
       <h3 className="text-sm font-bold text-foreground mb-4">{t('Sedang Aktif')}</h3>
       {onlineFriends.length === 0 ? (
-        <div className="py-8 px-2 text-center">
-          <p className="text-sm font-semibold text-foreground mb-1.5">{t('Saat ini sepi...')}</p>
-          <p className="text-xs text-muted-foreground leading-relaxed max-w-[240px] mx-auto">
-            {t('Saat teman Anda online atau berkolaborasi di proyek, status mereka akan muncul di sini!')}
-          </p>
-        </div>
+        <EmptyState
+          compact
+          icon={<Users className="w-6 h-6 stroke-[1.8] text-primary/80" />}
+          title={t('Saat ini sepi...')}
+          description={t(
+            'Saat teman Anda online atau berkolaborasi di proyek, status mereka akan muncul di sini!'
+          )}
+        />
       ) : (
         <div className="space-y-2">
           {onlineFriends.slice(0, 5).map((f) => (

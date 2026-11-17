@@ -20,6 +20,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -258,25 +259,28 @@ export function ColonyInviteDialog({
 
           <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1 [scrollbar-width:thin]">
             {filteredUsers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
-                <Users className="w-8 h-8 opacity-30 mb-2 stroke-1" />
-                <p className="text-xs font-medium">
-                  {searchQuery.trim()
+              <EmptyState
+                compact
+                icon={<Users className="w-6 h-6 stroke-[1.8] text-primary/80" />}
+                title={
+                  searchQuery.trim()
                     ? t('Tidak ada pengguna yang cocok dengan pencarian.')
-                    : t('Belum ada daftar pengguna.')}
-                </p>
-                {searchQuery.trim() && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleSearchSubmit}
-                    className="mt-2 text-xs text-primary hover:underline cursor-pointer"
-                  >
-                    {t('Cari lebih banyak di database...')}
-                  </Button>
-                )}
-              </div>
+                    : t('Belum ada daftar pengguna.')
+                }
+                action={
+                  searchQuery.trim() ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleSearchSubmit}
+                      className="text-xs text-primary hover:underline cursor-pointer"
+                    >
+                      {t('Cari lebih banyak di database...')}
+                    </Button>
+                  ) : undefined
+                }
+              />
             ) : (
               filteredUsers.map((user) => {
                 const isAlreadyMember = members.some((m) => m.id === user.id);

@@ -20,6 +20,7 @@ import {
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
@@ -312,21 +313,21 @@ export function CallsView({
           </div>
 
           {filteredCalls.length === 0 ? (
-            <div className="h-44 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl">
-              <Phone className="w-8 h-8 stroke-1 mb-2 opacity-50" />
-              <p className="text-xs font-semibold text-foreground">
-                {filterDate
+            <EmptyState
+              icon={<Phone className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+              title={
+                filterDate
                   ? 'Tidak ada panggilan pada tanggal ini'
                   : activeTab === 'missed'
                   ? 'Tidak ada panggilan terlewat'
-                  : 'Belum ada riwayat panggilan'}
-              </p>
-              <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-                {filterDate
+                  : 'Belum ada riwayat panggilan'
+              }
+              description={
+                filterDate
                   ? 'Coba ganti atau hapus filter tanggal untuk melihat riwayat lainnya.'
-                  : 'Mulai obrolan suara atau video dengan teman dari menu Speed Dial.'}
-              </p>
-            </div>
+                  : 'Mulai obrolan suara atau video dengan teman dari menu Speed Dial.'
+              }
+            />
           ) : (
             <div className="space-y-5">
               {groupedCalls.map((group) => (

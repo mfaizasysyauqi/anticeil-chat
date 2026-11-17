@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Search, Loader2, Check, UserCheck, AlertCircle, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from '@/core/i18n';
@@ -151,15 +152,12 @@ export function AddFriendTab({
           </div>
 
           {searchResults.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground bg-card/40 rounded-xl border border-border/50">
-              <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center mb-2.5">
-                <AlertCircle className="w-6 h-6 text-muted-foreground/60" />
-              </div>
-              <h4 className="text-xs font-semibold text-foreground mb-1">{t('Pengguna Tidak Ditemukan')}</h4>
-              <p className="text-[11px] max-w-sm leading-relaxed text-muted-foreground/80">
-                {t('Tidak ada pengguna yang cocok dengan nama atau username')} "{inputVal}". {t('Coba periksa kembali ejaannya.')}
-              </p>
-            </div>
+            <EmptyState
+              compact
+              icon={<AlertCircle className="w-6 h-6 stroke-[1.8] text-primary/80" />}
+              title={t('Pengguna Tidak Ditemukan')}
+              description={`${t('Tidak ada pengguna yang cocok dengan nama atau username')} "${inputVal}". ${t('Coba periksa kembali ejaannya.')}`}
+            />
           ) : (
             <div className="space-y-2">
               {searchResults.map((user) => {
