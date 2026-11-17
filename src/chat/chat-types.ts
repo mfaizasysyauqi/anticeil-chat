@@ -23,6 +23,14 @@ export type {
 
 export type ColonyChannelType = 'text' | 'voice' | 'forum' | 'kanban';
 
+export interface ChannelPermissionOverwrite {
+  id: string; // role ID or member ID (e.g. '@everyone', 'role-admin', 'user-123')
+  type: 'role' | 'member';
+  name?: string;
+  allow: string[];
+  deny: string[];
+}
+
 export type ColonyChannel = {
   id: string;
   name: string;
@@ -40,6 +48,7 @@ export type ColonyChannel = {
   categoryName?: string;
   isMuted?: boolean;
   mutedUntil?: string | null;
+  permissionOverwrites?: ChannelPermissionOverwrite[];
 };
 
 export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {

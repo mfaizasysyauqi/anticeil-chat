@@ -32,11 +32,14 @@ import { useTranslation } from '@/core/i18n';
 import {
   type ColonyChannel,
   type ColonyChannelType,
+  type CommunityCustomRole,
+  type ColonyMember,
   resolveChannelType,
 } from '@/chat/chat-types';
 import type { ColonyCategory } from '../api/categories-api';
 import { toast } from 'sonner';
 import { ChannelOverviewTab } from './channel-settings/channel-overview-tab';
+import { ChannelPermissionsTab } from './channel-settings/channel-permissions-tab';
 
 interface ChannelSettingsDialogProps {
   channel: ColonyChannel | null;
@@ -46,6 +49,8 @@ interface ChannelSettingsDialogProps {
   onDeleteChannel: (channel: ColonyChannel) => void;
   onOpenWebhooks?: (channelId: string) => void;
   categories?: ColonyCategory[];
+  roles?: CommunityCustomRole[];
+  members?: ColonyMember[];
 }
 
 type SettingsTab = 'overview' | 'permissions' | 'invites' | 'integrations';
@@ -58,6 +63,8 @@ export function ChannelSettingsDialog({
   onDeleteChannel,
   onOpenWebhooks,
   categories = [],
+  roles = [],
+  members = [],
 }: ChannelSettingsDialogProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>('overview');
@@ -291,41 +298,13 @@ export function ChannelSettingsDialog({
 
             {/* Permissions Tab */}
             {activeTab === 'permissions' && (
-              <div className="max-w-xl space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Permissions')}</h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('Kelola hak akses pengiriman pesan dan visibilitas channel.')}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl border border-border bg-card space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-border">
-                    <div>
-                      <span className="text-xs font-bold text-foreground">@everyone</span>
-                      <p className="text-[11px] text-muted-foreground">Peran default untuk seluruh anggota</p>
-                    </div>
-                    <span className="text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">
-                      Aktif
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span>Melihat Channel</span>
-                      <span className="text-emerald-400 font-bold">✓ Diizinkan</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Kirim Pesan</span>
-                      <span className="text-emerald-400 font-bold">✓ Diizinkan</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Sematkan Tautan & Lampiran</span>
-                      <span className="text-emerald-400 font-bold">✓ Diizinkan</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ChannelPermissionsTab
+                channel={channel}
+                roles={roles}
+                members={members}
+                onUpdateChannel={onUpdateChannel}
+                t={t}
+              />
             )}
 
             {/* Invites Tab */}
@@ -420,9 +399,10 @@ export function ChannelSettingsDialog({
                 </Button>
                 <Button
                   size="sm"
+                  variant="teal"
                   onClick={handleSave}
                   disabled={isSubmitting}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
+                  className="font-bold text-xs shadow-md"
                 >
                   {isSubmitting ? t('Menyimpan...') : t('Simpan Perubahan')}
                 </Button>

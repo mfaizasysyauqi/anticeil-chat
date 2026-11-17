@@ -4,6 +4,7 @@ import {
   ColonyChannel,
   ColonyChannelType,
   ColonyChannelNotification,
+  ChannelPermissionOverwrite,
   resolveChannelType,
 } from '@/chat/chat-types';
 
@@ -112,6 +113,56 @@ export const channelsApi = {
     const stored = loadStoredChannels();
     saveStoredChannels(stored.filter((c) => c.id !== id));
     return { success: true, id };
+  },
+
+  // ── Channel Permission Overwrites ──────────────────────────────────────────
+  async getChannelPermissions(channelId: string): Promise<ChannelPermissionOverwrite[]> {
+    try {
+      const res = await api.get<ChannelPermissionOverwrite[]>(`/v1/colony/channels/${channelId}/permissions`);
+      if (Array.isArray(res)) return res;
+    } catch {}
+    const stored = loadStoredChannels();
+    const ch = stored.find((c) => c.id === channelId);
+    return ch?.permissionOverwrites || [];
+  },
+
+  async updateChannelPermission(
+    channelId: string,
+    overwrite: ChannelPermissionOverwrite,
+  ): Promise<ChannelPermissionOverwrite> {
+    try {
+      const res = await api.put<ChannelPermissionOverwrite>(
+        `/v1/colony/channels/${channelId}/permissions/${overwrite.id}`,
+        overwrite,
+      );
+      if (res && res.id) return res;
+    } catch {}
+
+    const stored = loadStoredChannels();
+    const ch = stored.find((c) => c.id === channelId);
+    if (ch) {
+      const prevOverwrites = ch.permissionOverwrites || [];
+      const updated = [
+        ...prevOverwrites.filter((o) => o.id !== overwrite.id),
+        overwrite,
+      ];
+      ch.permissionOverwrites = updated;
+      saveStoredChannels(stored);
+    }
+    return overwrite;
+  },
+
+  async deleteChannelPermission(channelId: string, targetId: string): Promise<void> {
+    try {
+      await api.delete(`/v1/colony/channels/${channelId}/permissions/${targetId}`);
+    } catch {}
+
+    const stored = loadStoredChannels();
+    const ch = stored.find((c) => c.id === channelId);
+    if (ch && ch.permissionOverwrites) {
+      ch.permissionOverwrites = ch.permissionOverwrites.filter((o) => o.id !== targetId);
+      saveStoredChannels(stored);
+    }
   },
 
   async markChannelRead(channelId: string, userId: string): Promise<void> {
