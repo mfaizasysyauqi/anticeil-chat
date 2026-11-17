@@ -29,7 +29,7 @@ export const LAYOUT_SIZES = {
   // Top App Bar Header
   HEADER_HEIGHT: 'h-12',
   HEADER_HEIGHT_PX: 48,
-  APP_BAR_PADDING: 'px-3 sm:px-4',
+  APP_BAR_PADDING: 'px-3.5 sm:px-4 md:px-5 lg:px-6',
 
   // User Footer Dock
   USER_DOCK_HEIGHT_PX: 52,

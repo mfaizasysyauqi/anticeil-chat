@@ -132,7 +132,7 @@ export function ChannelTopHeaderBar({
         ) : (
           <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
         )}
-        <span className="text-sm font-semibold truncate text-foreground flex items-center gap-1.5">
+        <span className="text-sm font-semibold truncate text-foreground flex items-center gap-1.5 shrink-0 max-w-[180px] sm:max-w-[260px]">
           {activeChannel ? activeChannel.name : t('Belum ada channel')}
           {activeChannel?.isPrivate && (
             <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold flex items-center gap-1">
@@ -143,8 +143,8 @@ export function ChannelTopHeaderBar({
 
         {activeChannel?.description && (
           <>
-            <Separator orientation="vertical" className="h-4 hidden sm:block mx-1" />
-            <span className="text-xs text-muted-foreground truncate hidden sm:block max-w-[400px]">
+            <Separator orientation="vertical" className="h-4 hidden sm:block mx-1 shrink-0" />
+            <span className="text-xs text-muted-foreground truncate hidden sm:block max-w-[180px] md:max-w-[320px] lg:max-w-[420px]">
               {activeChannel.description}
             </span>
           </>

@@ -96,7 +96,7 @@ export function ChannelOverviewTab({
   };
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="w-full max-w-2xl space-y-6">
       <div>
         <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Overview')}</h2>
       </div>

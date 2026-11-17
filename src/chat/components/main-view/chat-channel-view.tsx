@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigateFunction } from 'react-router-dom';
 import { MessageSquare, X, ShieldAlert } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { ChannelTopHeaderBar, ForumChannelView } from '@/features/channels';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
@@ -338,31 +339,33 @@ export function ChatChannelView({
 
       {/* Non-Contact Message Request Banner */}
       {pendingDmRequest && (
-        <div className="mx-4 my-2 p-3 rounded-xl border border-primary/30 bg-primary/10 flex items-center justify-between gap-3 text-xs animate-in fade-in duration-200 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <ShieldAlert className="w-5 h-5 text-primary shrink-0" />
-            <div className="min-w-0">
-              <span className="font-bold text-foreground">Permintaan Pesan dari {pendingDmRequest.name}: </span>
-              <span className="text-muted-foreground truncate">
-                Pengguna ini bukan kontak Anda. Terima pesan untuk memulai percakapan.
-              </span>
+        <div className={cn('shrink-0 py-1.5', isSplit ? 'px-3 sm:px-4' : CHANNEL_HORIZONTAL_PADDING)}>
+          <div className="p-3 rounded-xl border border-primary/30 bg-primary/10 flex items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ShieldAlert className="w-5 h-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <span className="font-bold text-foreground">Permintaan Pesan dari {pendingDmRequest.name}: </span>
+                <span className="text-muted-foreground truncate">
+                  Pengguna ini bukan kontak Anda. Terima pesan untuk memulai percakapan.
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => handleIgnoreMessageRequest?.(pendingDmRequest)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
-            >
-              {t('Abaikan')}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAcceptMessageRequest?.(pendingDmRequest)}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground transition-colors cursor-pointer shadow-2xs"
-            >
-              {t('Terima DM')}
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleIgnoreMessageRequest?.(pendingDmRequest)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+              >
+                {t('Abaikan')}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAcceptMessageRequest?.(pendingDmRequest)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground transition-colors cursor-pointer shadow-2xs"
+              >
+                {t('Terima DM')}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
+import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 
 export interface SettingsNavItem {
   id: string;
@@ -185,7 +186,7 @@ export function TwoPaneSettingsDialog({
         showCloseButton={false}
         onCloseAutoFocus={(e) => e.preventDefault()}
         className={cn(
-          'p-0 w-[90vw] sm:w-[90vw] max-w-[90vw] sm:max-w-[90vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0',
+          LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER,
           className,
         )}
       >
@@ -316,7 +317,7 @@ export function TwoPaneSettingsDialog({
           )}
         >
           {/* Top App Bar Header (Discord 1:1 Parity) */}
-          <div className="h-14 border-b border-border/60 bg-background/95 backdrop-blur-xs flex items-center justify-between px-6 md:px-10 z-10 shrink-0 select-none">
+          <div className="h-14 border-b border-border/60 bg-background/95 backdrop-blur-xs flex items-center justify-between px-4 sm:px-6 md:px-8 z-10 shrink-0 select-none">
             {/* Left: Mobile back button (when in detail view) + Section Title */}
             <div className="flex items-center gap-2.5 min-w-0">
               <Button
@@ -356,7 +357,7 @@ export function TwoPaneSettingsDialog({
           <div
             ref={scrollRef as React.RefObject<HTMLDivElement>}
             className={cn(
-              'flex-1 overflow-y-auto px-6 py-6 md:px-10 md:py-8 [scrollbar-width:thin] w-full min-w-0',
+              'flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-8 [scrollbar-width:thin] w-full min-w-0',
               contentClassName,
             )}
           >

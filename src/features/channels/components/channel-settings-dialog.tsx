@@ -40,6 +40,7 @@ import type { ColonyCategory } from '../api/categories-api';
 import { toast } from 'sonner';
 import { ChannelOverviewTab } from './channel-settings/channel-overview-tab';
 import { ChannelPermissionsTab } from './channel-settings/channel-permissions-tab';
+import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 
 interface ChannelSettingsDialogProps {
   channel: ColonyChannel | null;
@@ -158,8 +159,8 @@ export function ChannelSettingsDialog({
       : t('TEXT CHANNELS');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-[90vw] sm:w-[90vw] max-w-[90vw] sm:max-w-[90vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] bg-background border border-border rounded-2xl shadow-2xl flex overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 p-3 sm:p-4">
+      <div className={cn('relative flex overflow-hidden', LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER)}>
         {/* ── Left Navigation Sidebar (Discord Style) ──────────────────────── */}
         <div className="w-56 sm:w-60 bg-muted/40 border-r border-border flex flex-col justify-between p-4 shrink-0 select-none">
           <div>
@@ -256,27 +257,39 @@ export function ChannelSettingsDialog({
           </div>
         </div>
 
-        {/* ── Right Content Area ────────────────────────────────────────────── */}
+        {/* ── Right Content Area ───────────────────────────────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col h-full bg-background overflow-hidden relative">
-          {/* Top Close Button (Discord ESC Pill) */}
-          <div className="absolute right-5 top-5 z-20">
+          {/* Top Header Bar matching TwoPaneSettingsDialog */}
+          <div className={LAYOUT_DIALOG_SPACING.HEADER_CONTAINER}>
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-base font-bold text-foreground truncate tracking-tight">
+                {activeTab === 'overview'
+                  ? t('Overview')
+                  : activeTab === 'permissions'
+                  ? t('Permissions')
+                  : activeTab === 'invites'
+                  ? t('Invites')
+                  : t('Integrations')}
+              </h1>
+            </div>
+
+            {/* Right Suffix: Discord Close (X) Button with ESC Badge */}
             <button
               type="button"
               onClick={onClose}
-              className="flex flex-col items-center gap-1 group text-muted-foreground hover:text-foreground cursor-pointer select-none"
-              title="Close (ESC)"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground p-1.5 -mr-1.5 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group"
+              title={t('Tutup (ESC)')}
+              aria-label={t('Tutup')}
             >
-              <div className="w-8 h-8 rounded-full border border-border group-hover:border-foreground/80 flex items-center justify-center transition-colors bg-card shadow-xs">
-                <X className="w-4 h-4 transition-transform group-hover:scale-110" />
-              </div>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 group-hover:text-foreground">
+              <span className="hidden sm:inline-block text-[10px] font-bold tracking-wider uppercase opacity-60 group-hover:opacity-100 border border-border/80 px-1.5 py-0.5 rounded">
                 ESC
               </span>
+              <X className="w-4 h-4 stroke-[2.2] group-hover:scale-110 transition-transform" />
             </button>
           </div>
 
           {/* Main Content Body */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 lg:p-10 space-y-7 [scrollbar-width:thin]">
+          <div className={cn(LAYOUT_DIALOG_SPACING.BODY_PADDING, 'space-y-6')}>
             {activeTab === 'overview' && (
               <ChannelOverviewTab
                 channel={channel}

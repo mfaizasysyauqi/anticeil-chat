@@ -226,7 +226,7 @@ export function KanbanChannelView({
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <div className={cn('h-14 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10', horizontalPadding)}>
+      <div className={cn('h-12 border-b border-border flex items-center justify-between shrink-0 bg-background z-10', horizontalPadding)}>
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
@@ -308,7 +308,7 @@ export function KanbanChannelView({
       </div>
 
       {/* ── Kanban Columns Board ──────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden p-4 sm:p-6 [scrollbar-width:thin]">
+      <div className={cn('flex-1 min-h-0 overflow-x-auto overflow-y-hidden py-4 sm:py-6 [scrollbar-width:thin]', horizontalPadding)}>
         {isLoading ? (
           <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-2">
             <Loader2 className="w-8 h-8 animate-spin text-amber-400" />

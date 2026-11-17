@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { useVoiceSettings, NoiseSuppressionType } from '../hooks/use-voice-settings';
+import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 
 export interface VoiceVideoSettingsModalProps {
   open: boolean;
@@ -43,7 +44,7 @@ export function VoiceVideoSettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] sm:w-[90vw] max-w-[90vw] sm:max-w-[90vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] p-0 overflow-hidden bg-background border border-border text-foreground flex flex-col md:flex-row rounded-2xl shadow-2xl">
+      <DialogContent className={cn('overflow-hidden text-foreground flex flex-col md:flex-row', LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER)}>
         {/* Left Navigation Sidebar */}
         <div className="w-full md:w-56 bg-muted/40 border-b md:border-b-0 md:border-r border-border p-4 flex flex-col justify-between shrink-0">
           <div className="space-y-4">
@@ -95,7 +96,7 @@ export function VoiceVideoSettingsModal({
         </div>
 
         {/* Right Settings Content */}
-        <div className="flex-1 p-6 overflow-y-auto max-h-[75vh] [scrollbar-width:thin] space-y-6">
+        <div className={cn('flex-1 overflow-y-auto max-h-[75vh] [scrollbar-width:thin] space-y-6', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL, 'py-5 sm:py-6 md:py-8')}>
           <DialogHeader className="p-0 text-left border-b border-border pb-3">
             <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
               <Mic className="w-5 h-5 text-primary" />
