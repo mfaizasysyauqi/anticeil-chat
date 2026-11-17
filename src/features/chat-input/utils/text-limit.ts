@@ -1,4 +1,23 @@
-export const MAX_MESSAGE_CHARS = 2000;
+export const MAX_MESSAGE_CHARS_DEFAULT = 2000;
+export const MAX_MESSAGE_CHARS_NECTAR = 4000;
+export const MAX_MESSAGE_CHARS = MAX_MESSAGE_CHARS_DEFAULT;
+
+export function getMaxMessageChars(planId?: string): number {
+  return planId === 'nectar_boost' ? MAX_MESSAGE_CHARS_NECTAR : MAX_MESSAGE_CHARS_DEFAULT;
+}
+
+export function getCurrentMaxMessageChars(): number {
+  try {
+    const raw = localStorage.getItem('anticeil_user_subscription');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.status === 'active' && parsed.planId === 'nectar_boost') {
+        return MAX_MESSAGE_CHARS_NECTAR;
+      }
+    }
+  } catch {}
+  return MAX_MESSAGE_CHARS_DEFAULT;
+}
 
 // Rate limit settings:
 // - Maximum 5 messages in 5 seconds window (anti-spam)

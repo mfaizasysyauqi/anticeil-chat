@@ -1,13 +1,31 @@
 import { toast } from 'sonner';
 
-// ─── Per-type file size limits ───
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;   // 5 MB
-const MAX_DOC_SIZE   = 10 * 1024 * 1024;  // 10 MB
-const MAX_AUDIO_SIZE = 10 * 1024 * 1024;  // 10 MB
-const MAX_VIDEO_SIZE = 25 * 1024 * 1024;  // 25 MB
+// ─── Tier-based file size limits ───
+export const FREE_TIER_LIMIT = 25 * 1024 * 1024;    // 25 MB
+export const POLLEN_TIER_LIMIT = 50 * 1024 * 1024;  // 50 MB
+export const NECTAR_TIER_LIMIT = 500 * 1024 * 1024; // 500 MB
 
 // Legacy export for backward compat
-export const MAX_FILE_SIZE_BYTES = MAX_VIDEO_SIZE;
+export const MAX_FILE_SIZE_BYTES = FREE_TIER_LIMIT;
+
+export function getCurrentUserPlan(): 'free' | 'nectar_basic' | 'nectar_boost' {
+  try {
+    const raw = localStorage.getItem('anticeil_user_subscription');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.status === 'active' && parsed.planId) {
+        return parsed.planId;
+      }
+    }
+  } catch {}
+  return 'free';
+}
+
+export function getUploadLimitForPlan(plan: 'free' | 'nectar_basic' | 'nectar_boost' | string): number {
+  if (plan === 'nectar_boost') return NECTAR_TIER_LIMIT;
+  if (plan === 'nectar_basic') return POLLEN_TIER_LIMIT;
+  return FREE_TIER_LIMIT;
+}
 
 // ─── Client-side upload rate limiter (sliding window) ───
 const RATE_LIMIT_WINDOW_MS = 60_000; // 60 seconds
@@ -35,15 +53,6 @@ function categorizeFile(file: File): FileCategory {
   if (file.type.startsWith('video/')) return 'video';
   if (file.type.startsWith('audio/')) return 'audio';
   return 'file';
-}
-
-function getMaxSize(category: FileCategory): number {
-  switch (category) {
-    case 'image': return MAX_IMAGE_SIZE;
-    case 'video': return MAX_VIDEO_SIZE;
-    case 'audio': return MAX_AUDIO_SIZE;
-    case 'file':  return MAX_DOC_SIZE;
-  }
 }
 
 function formatSize(bytes: number): string {
@@ -84,6 +93,7 @@ export interface ProcessedAttachment {
 export function processFileInput(
   e: React.ChangeEvent<HTMLInputElement>,
   onSuccess: (attachment: ProcessedAttachment) => void,
+  options?: { onUpgradeClick?: () => void; userPlan?: 'free' | 'nectar_basic' | 'nectar_boost' },
 ) {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -103,11 +113,42 @@ export function processFileInput(
     return;
   }
 
-  // 3. Per-type size check
+  // 3. Dynamic Tier-based file size check
   const category = categorizeFile(file);
-  const maxSize = getMaxSize(category);
-  if (file.size > maxSize) {
-    toast.error(`Ukuran ${category} maksimal ${formatSize(maxSize)}. File ini ${formatSize(file.size)}.`);
+  const currentPlan = options?.userPlan || getCurrentUserPlan();
+  const maxLimit = getUploadLimitForPlan(currentPlan);
+
+  if (file.size > maxLimit) {
+    if (currentPlan === 'free' && file.size <= NECTAR_TIER_LIMIT) {
+      const suggestedTier = file.size <= POLLEN_TIER_LIMIT ? 'Pollen (50MB)' : 'Nectar VIP (500MB)';
+      toast.error(
+        `File ini (${formatSize(file.size)}) melebihi batas 25MB Free Tier. Tingkatkan ke ${suggestedTier} untuk batas upload lebih besar!`,
+        {
+          duration: 6000,
+          action: options?.onUpgradeClick
+            ? {
+                label: 'Upgrade',
+                onClick: options.onUpgradeClick,
+              }
+            : undefined,
+        },
+      );
+    } else if (currentPlan === 'nectar_basic' && file.size <= NECTAR_TIER_LIMIT) {
+      toast.error(
+        `File ini (${formatSize(file.size)}) melebihi batas 50MB Pollen Tier. Tingkatkan ke Nectar VIP untuk upload hingga 500MB!`,
+        {
+          duration: 6000,
+          action: options?.onUpgradeClick
+            ? {
+                label: 'Upgrade Nectar',
+                onClick: options.onUpgradeClick,
+              }
+            : undefined,
+        },
+      );
+    } else {
+      toast.error(`Ukuran file maksimal ${formatSize(maxLimit)}. File ini berukuran ${formatSize(file.size)}.`);
+    }
     return;
   }
 

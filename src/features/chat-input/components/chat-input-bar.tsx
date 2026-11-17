@@ -29,7 +29,8 @@ import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
 import { isE2eeEnabled, setE2eeEnabled } from '@/lib/e2ee';
-import { MAX_MESSAGE_CHARS } from '../utils/text-limit';
+import { MAX_MESSAGE_CHARS, getCurrentMaxMessageChars } from '../utils/text-limit';
+import { getCurrentUserPlan } from '../utils/attachment';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/anticeil-media-data';
 
@@ -118,6 +119,9 @@ export function ChatInputBar({
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [isCustomScheduleOpen, setIsCustomScheduleOpen] = useState(false);
   const [e2ee, setE2ee] = useState(() => isE2eeEnabled());
+  const userPlan = getCurrentUserPlan();
+  const maxMessageChars = getCurrentMaxMessageChars();
+  const isNectar = userPlan === 'nectar_boost';
 
   const toggleE2ee = () => {
     const next = !e2ee;
@@ -326,7 +330,7 @@ export function ChatInputBar({
           ref={textareaRef}
           rows={1}
           value={inputText}
-          maxLength={MAX_MESSAGE_CHARS}
+          maxLength={maxMessageChars}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -351,18 +355,21 @@ export function ChatInputBar({
           {/* Character counter (shows remaining / total when text is present) */}
           {inputText.length > 0 && (
             <span
-              className={`text-[10px] font-mono px-1 select-none transition-colors ${
-                inputText.length >= MAX_MESSAGE_CHARS
+              className={`text-[10px] font-mono px-1 select-none transition-colors flex items-center gap-1 ${
+                inputText.length >= maxMessageChars
                   ? 'text-destructive font-bold'
-                  : inputText.length >= 1800
+                  : inputText.length >= maxMessageChars - 200
                   ? 'text-amber-500 font-semibold'
                   : 'text-muted-foreground/60'
               }`}
-              title={`${inputText.length} / ${MAX_MESSAGE_CHARS} karakter`}
+              title={`${inputText.length} / ${maxMessageChars} karakter${isNectar ? ' (Nectar VIP 🍯)' : ''}`}
             >
-              {MAX_MESSAGE_CHARS - inputText.length <= 200
-                ? `${MAX_MESSAGE_CHARS - inputText.length}`
-                : `${inputText.length}/${MAX_MESSAGE_CHARS}`}
+              {isNectar && <span className="text-[10px]" title="Nectar VIP Perk: 4,000 karakter">🍯</span>}
+              <span>
+                {maxMessageChars - inputText.length <= 200
+                  ? `${maxMessageChars - inputText.length}`
+                  : `${inputText.length}/${maxMessageChars}`}
+              </span>
             </span>
           )}
 
