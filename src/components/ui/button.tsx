@@ -24,6 +24,14 @@ const buttonVariants = cva(
           'hover:bg-gray-300/30 hover:text-accent-foreground dark:hover:bg-gray-300/10',
         link: 'text-primary underline-offset-4 hover:underline',
         transparent: 'text-primary enabled:hover:bg-transparent',
+        teal:
+          'bg-sidebar-primary text-sidebar-primary-foreground enabled:hover:bg-sidebar-primary/90 shadow-xs focus-visible:ring-sidebar-ring',
+        tealSecondary:
+          'bg-secondary text-secondary-foreground border border-border/70 enabled:hover:bg-muted enabled:hover:text-sidebar-primary enabled:hover:border-sidebar-primary/50 shadow-xs',
+        tealOutline:
+          'border border-sidebar-primary/60 text-sidebar-primary bg-transparent enabled:hover:bg-sidebar-primary/10 enabled:hover:text-sidebar-primary',
+        tealGhost:
+          'text-muted-foreground enabled:hover:bg-sidebar-accent enabled:hover:text-sidebar-primary',
       },
       size: {
         default: 'h-9 px-3 py-2 has-[>svg]:px-2.5',

@@ -1,5 +1,39 @@
 import { api } from '@/lib/api';
 
+export interface FavoriteGameWidget {
+  title: string;
+  accountName: string;
+  region: string;
+  stats?: Array<{ label: string; value: string }>;
+}
+
+export interface WishlistItem {
+  id: string;
+  title: string;
+  category?: string;
+  icon?: string;
+}
+
+export interface ActivityData {
+  title: string;
+  subtitle: string;
+  timeAgo?: string;
+}
+
+export interface UserProfileWidgets {
+  favoriteGame?: FavoriteGameWidget | null;
+  gamesILike?: string[];
+  wishlist?: WishlistItem[];
+  activity?: ActivityData;
+  showActivity?: boolean;
+  showConnections?: boolean;
+  dismissedSuggested?: boolean;
+  nameplate?: string;
+  profileFrame?: string;
+  profileEffect?: string;
+  profileTheme?: string;
+}
+
 export interface UserProfileData {
   bio: string;
   pronouns: string;
@@ -8,13 +42,12 @@ export interface UserProfileData {
   avatarUrl?: string | null;
   statusThought: string;
   theme?: string;
+  nameplate?: string;
+  profileEffect?: string;
+  profileFrame?: string;
   customStatus?: string;
-  widgets?: {
-    favoriteGame?: string;
-    gamesILike?: string[];
-    showActivity?: boolean;
-    showConnections?: boolean;
-  };
+  createdAt?: string;
+  widgets?: UserProfileWidgets;
 }
 
 const PROFILE_STORAGE_KEY = 'anticeil_user_profile';
@@ -24,11 +57,41 @@ const DEFAULT_PROFILE: UserProfileData = {
   pronouns: '',
   bannerColor: '#5c4d44',
   statusThought: 'Shower thought?',
+  theme: 'teal',
+  nameplate: 'none',
+  profileEffect: 'none',
+  profileFrame: 'none',
   widgets: {
-    favoriteGame: 'Neverness to Everness',
+    favoriteGame: {
+      title: 'Neverness to Everness',
+      accountName: 'DartX',
+      region: 'SEA',
+      stats: [
+        { label: 'Hunter Lv.', value: '58' },
+        { label: 'Appraiser Since', value: '2026-04-29' },
+        { label: 'Characters', value: '23' },
+        { label: 'Vehicles', value: '10' },
+        { label: 'Achievements', value: '275' },
+        { label: 'City Tycoon Lv.', value: '45' },
+      ],
+    },
     gamesILike: ['Minecraft', 'Valorant'],
+    wishlist: [
+      { id: 'w1', title: 'Nectar VIP Subscription', category: 'Perks', icon: '🍯' },
+      { id: 'w2', title: 'Neverness to Everness Pass', category: 'Game', icon: '🎮' },
+    ],
+    activity: {
+      title: 'Neverness to Everness',
+      subtitle: 'Exploring SEA Server',
+      timeAgo: '2 jam yang lalu',
+    },
     showActivity: true,
     showConnections: true,
+    dismissedSuggested: false,
+    nameplate: 'none',
+    profileFrame: 'none',
+    profileEffect: 'none',
+    profileTheme: 'teal',
   },
 };
 
