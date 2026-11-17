@@ -74,16 +74,29 @@ export type ColonyCommunitySettings = {
   description?: string;
 };
 
+export type ColonyOnboardingOption = {
+  id: string;
+  label: string;
+  description?: string;
+  roleId?: string;
+  channelId?: string;
+};
+
+export type ColonyOnboardingQuestion = {
+  id: string;
+  title: string;
+  description?: string;
+  options: ColonyOnboardingOption[];
+};
+
 export type ColonyOnboarding = {
   enabled?: boolean;
   welcomeMessage?: string;
   defaultChannelIds?: string[];
   tasks?: Array<{ id: string; title: string; channelId: string; completed?: boolean }>;
-  questions?: Array<{
-    id: string;
-    title: string;
-    options: Array<{ id: string; label: string; roleId?: string; channelId?: string }>;
-  }>;
+  questions?: ColonyOnboardingQuestion[];
+  rules?: string[];
+  requireRulesAgreement?: boolean;
 };
 
 export type ColonyTemplateSettings = {

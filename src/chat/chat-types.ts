@@ -233,6 +233,8 @@ import type {
   ColonySafetySettings,
   ColonyCommunitySettings,
   ColonyOnboarding,
+  ColonyOnboardingQuestion,
+  ColonyOnboardingOption,
   ColonyTemplateSettings,
 } from '@/lib/colony';
 export type {
@@ -240,6 +242,8 @@ export type {
   ColonySafetySettings,
   ColonyCommunitySettings,
   ColonyOnboarding,
+  ColonyOnboardingQuestion,
+  ColonyOnboardingOption,
   ColonyTemplateSettings,
 };
 

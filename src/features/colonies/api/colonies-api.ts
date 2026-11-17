@@ -1,6 +1,6 @@
 import { getColonyInitials } from '../components/colony-icon';
 import { api } from '@/lib/api';
-import type { ServerInvitation, ColonyInvitation } from '@/lib/colony';
+import type { ServerInvitation, ColonyInvitation, ColonyOnboarding, ColonyTemplateSettings } from '@/lib/colony';
 import {
   loadStoredChannels,
   loadStoredColonies,
@@ -106,6 +106,8 @@ export const coloniesApi = {
       emojis?: any[];
       boostsCount?: number;
       boostTier?: number;
+      onboarding?: ColonyOnboarding;
+      templateSettings?: ColonyTemplateSettings;
     },
   ): Promise<Colony> {
     try {
@@ -594,6 +596,43 @@ export const coloniesApi = {
   addServerSound: coloniesInvitesAssetsApi.addServerSound,
   deleteServerSound: coloniesInvitesAssetsApi.deleteServerSound,
   playServerSound: coloniesInvitesAssetsApi.playServerSound,
+
+  // ── Server Onboarding & Welcome Screen ──────────────────────────────
+  async getColonyOnboarding(id: string): Promise<ColonyOnboarding> {
+    try {
+      return await api.get<ColonyOnboarding>(`/v1/colony/colonies/${id}/onboarding`);
+    } catch {
+      const stored = loadStoredColonies();
+      const col = stored.find((c) => c.id === id);
+      return col?.onboarding || { enabled: false };
+    }
+  },
+
+  async updateColonyOnboarding(id: string, onboarding: ColonyOnboarding): Promise<ColonyOnboarding> {
+    try {
+      const res = await api.put<{ success: boolean; onboarding: ColonyOnboarding }>(
+        `/v1/colony/colonies/${id}/onboarding`,
+        onboarding
+      );
+      if (res && res.onboarding) return res.onboarding;
+    } catch {}
+    const stored = loadStoredColonies();
+    const updated = stored.map((c) => (c.id === id ? { ...c, onboarding } : c));
+    saveStoredColonies(updated);
+    this.recordAudit(id, 'ONBOARDING_UPDATED', 'Admin', id, onboarding);
+    return onboarding;
+  },
+
+  async completeColonyOnboarding(
+    id: string,
+    payload?: { answers?: Record<string, string>; agreedRules?: boolean; userId?: string; userName?: string }
+  ): Promise<{ success: boolean }> {
+    try {
+      return await api.post<{ success: boolean }>(`/v1/colony/colonies/${id}/onboarding/complete`, payload || {});
+    } catch {
+      return { success: true };
+    }
+  },
 
   boostHub(id: string) { return this.boostColony(id); },
   createHub(payload: any) { return this.createColony(payload); },

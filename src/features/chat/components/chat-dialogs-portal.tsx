@@ -27,6 +27,7 @@ import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 import { CallStage, UserSettingsModal } from '@/features/voice';
 import { AuthRequiredDialog } from '@/features/auth';
 import { EditProfileDialog } from '@/features/profile';
+import { CommunityWelcomeDialog } from '@/features/onboarding/components/community-welcome-dialog';
 
 export interface ChatDialogsPortalProps {
   colonyModals: ReturnType<typeof useColonyModals>;
@@ -166,6 +167,22 @@ export function ChatDialogsPortal({
   onDevMockLogin,
   t,
 }: CommunityDialogsPortalProps) {
+  const [isOnboardingWelcomeOpen, setIsOnboardingWelcomeOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (
+      activeColony &&
+      activeColony.id !== 'anticeil' &&
+      activeColony.onboarding?.enabled
+    ) {
+      try {
+        const hasCompleted = localStorage.getItem(`anticeil_onboarded_${activeColony.id}`);
+        if (!hasCompleted && activeColony.role !== 'owner') {
+          setIsOnboardingWelcomeOpen(true);
+        }
+      } catch {}
+    }
+  }, [activeColony?.id, activeColony?.onboarding?.enabled, activeColony?.role]);
   return (
     <>
       {/* Send Gift Dialog */}
@@ -465,6 +482,16 @@ export function ChatDialogsPortal({
         featureTitle={authFeatureInfo.title}
         featureDescription={authFeatureInfo.desc}
       />
+
+      {/* Community Server Onboarding & Welcome Screen */}
+      {activeColony && (
+        <CommunityWelcomeDialog
+          isOpen={isOnboardingWelcomeOpen}
+          onClose={() => setIsOnboardingWelcomeOpen(false)}
+          activeColony={activeColony}
+          channels={channels}
+        />
+      )}
     </>
   );
 }
