@@ -80,7 +80,6 @@ export function UserSettingsModal({
             label: t('Account'),
             icon: <User className="w-4 h-4" />,
             subItems: [
-              { id: 'account-profile', label: t('User Profile') },
               { id: 'account-info', label: t('Account Info') },
               { id: 'account-security', label: t('Password & Security') },
               { id: 'account-status', label: t('Account Status') },

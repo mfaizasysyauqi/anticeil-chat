@@ -127,112 +127,70 @@ export function AccountTab({
                 onBack={() => setAccountSubView('main')}
               />
             ) : (
-              /* MAIN ACCOUNT VIEW (SCREENSHOT 1 & 2) */
+              /* MAIN ACCOUNT VIEW */
               <div className="space-y-6">
-                {/* Profile Header & Customization Card (Merged with Profiles) */}
-                <div id="account-profile" className="space-y-3 scroll-mt-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-foreground">
-                      {t('User Profile')}
-                    </h3>
-                  </div>
-
-                  <div className="rounded-xl overflow-hidden border border-border bg-card shadow-xs">
-                    <div className="h-24 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-600 relative">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenEditProfile?.();
-                        }}
-                        className="absolute top-3 right-3 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all cursor-pointer"
-                      >
-                        {t('Edit User Profile')}
-                      </button>
-                    </div>
-                    <div className="px-5 pb-5 pt-0 relative">
-                      <div className="flex items-end justify-between -mt-10 mb-3">
-                        <div className="relative">
-                          <CommunityAvatar
-                            name={currentUserName}
-                            email={currentUser?.email}
-                            imageUrl={currentUser?.imageUrl}
-                            size={76}
-                            showStatus={false}
-                            className="shrink-0 ring-[6px] ring-card rounded-full shadow-lg bg-card"
-                          />
-                          <div className="absolute bottom-1 right-1 size-5 rounded-full bg-emerald-500 border-2 border-card" />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-base font-bold text-foreground">{currentUserName}</div>
-                        <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                          {currentUser?.username
-                            ? `@${currentUser.username}`
-                            : currentUser?.email
-                            ? `@${currentUser.email.split('@')[0]}`
-                            : ''}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Integrated Profile Customization Form */}
-                    <div id="profile-edit-form" className="border-t border-border/70 p-5 bg-card/60 space-y-4">
-                      <div>
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                          {t('Display Name')}
-                        </label>
-                        <form onSubmit={handleDisplayNameSubmit} className="flex gap-2">
-                          <Input
-                            value={editDisplayNameInput}
-                            onChange={(e) => setEditDisplayNameInput(e.target.value)}
-                            placeholder={t('Nama Lengkap')}
-                            className="text-xs h-9 bg-input border-border text-foreground"
-                          />
-                          <Button
-                            type="submit"
-                            size="sm"
-                            disabled={isSavingDisplayName || !editDisplayNameInput.trim() || editDisplayNameInput.trim() === currentUserName}
-                            className="h-9 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
-                          >
-                            {isSavingDisplayName ? t('Menyimpan...') : t('Simpan')}
-                          </Button>
-                        </form>
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                          {t('About Me')}
-                        </label>
-                        <textarea
-                          rows={2}
-                          placeholder={t('Tulis bio singkat tentang Anda di sini...')}
-                          className="w-full text-xs p-2.5 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                          defaultValue="Anticeil user building real-time community colonies."
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                          {t('Pronouns')}
-                        </label>
-                        <Input
-                          placeholder="he/him, they/them, dll."
-                          defaultValue="he/him"
-                          className="text-xs h-9 bg-input border-border text-foreground max-w-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 1. Account Info Section (Screenshot 1) */}
+                {/* 1. Account Info Section */}
                 <div id="account-info" className="space-y-3 scroll-mt-4">
                   <h3 className="text-sm font-bold text-foreground">
                     {t('Account Info')}
                   </h3>
 
                   <div className="rounded-xl border border-border bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
+                    {/* Display Name row */}
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                          {t('Display Name')}
+                        </div>
+                        <div className="text-xs font-semibold text-foreground mt-0.5">
+                          {currentUserName}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setIsEditingDisplayName(!isEditingDisplayName)}
+                        className="h-8 text-xs font-semibold px-3.5 cursor-pointer"
+                      >
+                        {isEditingDisplayName ? t('Batal') : t('Edit')}
+                      </Button>
+                    </div>
+
+                    {isEditingDisplayName && (
+                      <form onSubmit={handleDisplayNameSubmit} className="p-4 bg-muted/20 space-y-3">
+                        <Input
+                          value={editDisplayNameInput}
+                          onChange={(e) => setEditDisplayNameInput(e.target.value)}
+                          placeholder={t('Nama Lengkap')}
+                          className="text-xs h-9 bg-input border-border text-foreground"
+                          autoFocus
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setIsEditingDisplayName(false)}
+                            className="h-8 text-xs font-semibold"
+                          >
+                            {t('Batal')}
+                          </Button>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={
+                              isSavingDisplayName ||
+                              !editDisplayNameInput.trim() ||
+                              editDisplayNameInput.trim() === currentUserName
+                            }
+                            className="h-8 text-xs font-bold bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground"
+                          >
+                            {isSavingDisplayName ? t('Menyimpan...') : t('Simpan')}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
                     {/* Username row */}
                     <div className="p-4 flex items-center justify-between gap-4">
                       <div>
