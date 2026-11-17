@@ -38,7 +38,8 @@ export function useUrlSync({
       if (
         pathname === '/applications&activities' ||
         pathname === '/apps' ||
-        pathname === '/applications'
+        pathname === '/applications' ||
+        pathname === '/app-directory'
       ) {
         setHomeView?.('apps');
         setActiveColonyId?.('');
@@ -88,6 +89,70 @@ export function useUrlSync({
       }
     } catch {}
   }, []);
+
+  // 2b. Listen for PopState (Back / Forward browser navigation)
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const pathname = window.location.pathname.toLowerCase();
+        if (
+          pathname === '/applications&activities' ||
+          pathname === '/apps' ||
+          pathname === '/applications' ||
+          pathname === '/app-directory'
+        ) {
+          setHomeView?.('apps');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname === '/message-requests') {
+          setHomeView?.('message-requests');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname === '/notifications') {
+          setHomeView?.('notifications');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname === '/calendar') {
+          setHomeView?.('calendar');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname === '/assignments') {
+          setHomeView?.('assignments');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname === '/calls') {
+          setHomeView?.('calls');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname === '/colonies') {
+          setHomeView?.('colonies');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname === '/friends') {
+          setHomeView?.('friends');
+          setActiveColonyId?.('');
+          setActiveChannelId?.('');
+        } else if (pathname.startsWith('/channels/@me')) {
+          const parts = pathname.split('/').filter(Boolean);
+          setActiveColonyId?.('');
+          if (parts[2]) {
+            setActiveChannelId?.(parts[2]);
+          }
+        } else if (pathname.startsWith('/channels/')) {
+          const parts = pathname.split('/').filter(Boolean);
+          if (parts[1]) {
+            setActiveColonyId?.(parts[1]);
+          }
+          if (parts[2]) {
+            setActiveChannelId?.(parts[2]);
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setHomeView, setActiveColonyId, setActiveChannelId]);
 
   // 3. Synchronize browser URL address bar with active view, colony, channel, and activity
   useEffect(() => {

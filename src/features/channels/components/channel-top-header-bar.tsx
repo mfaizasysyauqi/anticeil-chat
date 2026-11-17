@@ -22,6 +22,7 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { ThreadsPopover, type ChannelThreadItem } from '@/features/threads';
 import { ChannelNotificationDropdown, type ChannelNotificationSettings } from './channel-notification-dropdown';
 import { PinnedMessagesPopover } from './pinned-messages-popover';
@@ -71,7 +72,7 @@ export interface ChannelTopHeaderBarProps {
 
 export function ChannelTopHeaderBar({
   activeChannel,
-  channelPaddingClass = 'px-4 lg:px-6',
+  channelPaddingClass = CHANNEL_HORIZONTAL_PADDING,
   isHome = false,
   onOpenMobileChannels,
   onStartVoiceCall,

@@ -107,13 +107,31 @@ export function ColonySettingsDialog({
 }: ColonySettingsDialogProps) {
   const { t } = useTranslation();
 
-  const [serverSettingsSection, setColonySettingsSection] = useState<ColonySettingsSection>(initialSection);
+  const [serverSettingsSection, setColonySettingsSection] = useState<ColonySettingsSection>(
+    initialSection === 'app-directory' ? 'profile' : initialSection
+  );
+
+  const handleNavigateSection = (sec: string) => {
+    if (sec === 'app-directory') {
+      onClose();
+      onNavigateToApps?.();
+      return;
+    }
+    setColonySettingsSection(sec as ColonySettingsSection);
+  };
 
   useEffect(() => {
-    if (isOpen && initialSection) {
-      setColonySettingsSection(initialSection);
+    if (isOpen) {
+      if (initialSection === 'app-directory' || serverSettingsSection === 'app-directory') {
+        onClose();
+        onNavigateToApps?.();
+        return;
+      }
+      if (initialSection) {
+        setColonySettingsSection(initialSection);
+      }
     }
-  }, [isOpen, initialSection]);
+  }, [isOpen, initialSection, serverSettingsSection, onClose, onNavigateToApps]);
 
   const [serverSettingsEditName, setServerSettingsEditName] = useState('');
   const [serverSettingsEditDesc, setServerSettingsEditDesc] = useState('');
@@ -251,7 +269,7 @@ export function ColonySettingsDialog({
                   serverTags={serverTags}
                   setServerTags={setServerTags}
                   onUpdateColony={onUpdateColony}
-                  onNavigateSection={(section) => setColonySettingsSection(section as ColonySettingsSection)}
+                  onNavigateSection={handleNavigateSection}
                   onClose={onClose}
                   t={t}
                 />
@@ -297,7 +315,7 @@ export function ColonySettingsDialog({
                 <StickersTab
                   activeColony={activeColony}
                   onUpdateColony={onUpdateColony}
-                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  onNavigateSection={handleNavigateSection}
                   t={t}
                 />
               )}
@@ -365,7 +383,7 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   channels={channels}
                   onUpdateColony={onUpdateColony}
-                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  onNavigateSection={handleNavigateSection}
                   onClose={onClose}
                   onOpenWebhooks={onOpenWebhooks}
                   t={t}
@@ -374,15 +392,9 @@ export function ColonySettingsDialog({
 
               {/* 9b. APP DIRECTORY */}
               {serverSettingsSection === 'app-directory' && (
-                <AppDirectoryTab
-                  activeColony={activeColony}
-                  channels={channels}
-                  onUpdateColony={onUpdateColony}
-                  onClose={onClose}
-                  onNavigateToApps={onNavigateToApps}
-                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
-                  t={t}
-                />
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  {t('Mengalihkan ke Aplikasi & Aktivitas...')}
+                </div>
               )}
 
               {/* 9c. SAFETY SETUP */}
@@ -414,7 +426,7 @@ export function ColonySettingsDialog({
                   serverBans={serverBans}
                   setServerBans={setServerBans}
                   onUpdateMembers={onUpdateMembers}
-                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  onNavigateSection={handleNavigateSection}
                   t={t}
                 />
               )}
@@ -425,7 +437,7 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   channels={channels}
                   onUpdateColony={onUpdateColony}
-                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  onNavigateSection={handleNavigateSection}
                   onClose={onClose}
                   t={t}
                 />
@@ -466,7 +478,7 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   onDeleteHub={onDeleteHub}
                   onClose={onClose}
-                  onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
+                  onNavigateSection={handleNavigateSection}
                   t={t}
                 />
               )}

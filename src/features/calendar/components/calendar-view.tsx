@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
@@ -58,7 +59,7 @@ export function CalendarView({
   onJoinChannel,
   onOpenSidebar,
   onCreateEvent,
-  horizontalPadding = 'px-4',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(dayjs());
@@ -199,7 +200,7 @@ export function CalendarView({
               icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
               label="Jadwalkan Meeting"
               shortLabel="Meeting"
-              iconOnlyMobile={true}
+              iconOnlyTablet={true}
               title="Jadwalkan Meeting"
               aria-label="Jadwalkan Meeting"
             />
@@ -328,7 +329,7 @@ export function CalendarView({
             />
 
             {/* Selected Day Agenda (Right Col) */}
-            <div className="flex flex-col bg-card border border-border rounded-xl p-4 shadow-xs">
+            <div className="flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
                   <h2 className="text-sm font-bold text-foreground">

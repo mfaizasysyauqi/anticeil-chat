@@ -15,10 +15,10 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ColonyIcon } from '@/features/colonies/components/colony-icon';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
@@ -41,7 +41,7 @@ export function CallsView({
   colonies = [],
   onStartCall,
   onOpenSidebar,
-  horizontalPadding = 'px-4 sm:px-6',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
 }: CallsViewProps) {
   const [activeTab, setActiveTab] = useState<CallsTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -210,16 +210,6 @@ export function CallsView({
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Riwayat Panggilan Terakhir ({filteredCalls.length})
             </h2>
-
-            <div className="relative w-44">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama kontak..."
-                className="h-7 pl-8 text-xs bg-card border-border"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">

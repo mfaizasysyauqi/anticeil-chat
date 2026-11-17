@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { FriendsHeader } from './friends-header';
 import { FriendsList } from './friends-list';
 import { AddFriendTab } from './add-friend-tab';
@@ -48,7 +49,7 @@ export function FriendsView({
   onCancelRequest,
   onOpenDmSearch,
   onOpenSidebar,
-  horizontalPadding = 'px-4',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
 }: FriendsViewProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/voice-activities';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
@@ -40,7 +41,7 @@ export function AppsView({
   activeCallChannelId,
   onLaunchActivity,
   onOpenSidebar,
-  horizontalPadding = 'px-4 sm:px-6',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   onStartDM,
   setActiveColonyId,
   setActiveChannelId,

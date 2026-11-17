@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import type { FriendsTab } from '../types';
 
@@ -29,7 +30,7 @@ export function FriendsHeader({
   onOpenDmSearch,
   onOpenAddFriendDialog,
   onOpenSidebar,
-  horizontalPadding = 'px-4',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
 }: FriendsHeaderProps) {
   const { t } = useTranslation();
 

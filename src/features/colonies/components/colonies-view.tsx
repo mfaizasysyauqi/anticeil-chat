@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -59,7 +60,7 @@ export function ColoniesView({
   onOpenCreateColony,
   onOpenCreateServer,
   onOpenSidebar,
-  horizontalPadding = 'px-4',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
 }: ColoniesViewProps) {
   const colonyList = colonies ?? servers ?? [];
   const handleSelectColony = onSelectColony ?? onSelectServer ?? (() => {});

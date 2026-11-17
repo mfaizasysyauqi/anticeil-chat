@@ -40,9 +40,11 @@ export function AnticeilLogo({
       {useGradient && !fill && (
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#026FE4" />
-            <stop offset="45%" stopColor="#02D5EB" />
-            <stop offset="100%" stopColor="#2CFAE6" />
+            <stop offset="0%" stopColor="#004AFF" />
+            <stop offset="35%" stopColor="#0064FF" />
+            <stop offset="60%" stopColor="#0392FF" />
+            <stop offset="85%" stopColor="#00CFFF" />
+            <stop offset="100%" stopColor="#08FBFF" />
           </linearGradient>
         </defs>
       )}

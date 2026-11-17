@@ -31,7 +31,21 @@ export function useChatViewModes({
 
   const [homeView, setHomeView] = useState<
     'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'
-  >('friends');
+  >(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const p = window.location.pathname.toLowerCase();
+        if (p === '/applications&activities' || p === '/apps' || p === '/applications' || p === '/app-directory') return 'apps';
+        if (p === '/calendar') return 'calendar';
+        if (p === '/calls') return 'calls';
+        if (p === '/colonies') return 'colonies';
+        if (p === '/notifications') return 'notifications';
+        if (p === '/message-requests') return 'message-requests';
+        if (p === '/assignments') return 'assignments';
+      }
+    } catch {}
+    return 'friends';
+  });
 
   const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
     try {
