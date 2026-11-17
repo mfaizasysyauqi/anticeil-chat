@@ -10,7 +10,6 @@ import {
   BarChart2,
   LayoutGrid,
   CalendarPlus,
-  Lock,
   Mic,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ import { SlashCommandAutocomplete } from './slash-command-autocomplete';
 import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
-import { isE2eeEnabled, setE2eeEnabled } from '@/lib/e2ee';
 import { MAX_MESSAGE_CHARS, getCurrentMaxMessageChars } from '../utils/text-limit';
 import { getCurrentUserPlan } from '../utils/attachment';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
@@ -126,25 +124,9 @@ export function ChatInputBar({
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [isSlashOpen, setIsSlashOpen] = useState(true);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
-  const [e2ee, setE2ee] = useState(() => isE2eeEnabled());
   const userPlan = getCurrentUserPlan();
   const maxMessageChars = getCurrentMaxMessageChars();
   const isNectar = userPlan === 'nectar_boost';
-
-  const toggleE2ee = () => {
-    const next = !e2ee;
-    setE2ee(next);
-    setE2eeEnabled(next);
-    if (next) {
-      toast.success('E2EE Diaktifkan', {
-        description: 'Pesan kini dienkripsi secara lokal (AES-256-GCM) sebelum dikirim ke server.',
-      });
-    } else {
-      toast.info('E2EE Dinonaktifkan', {
-        description: 'Pesan dikirim sebagai teks biasa.',
-      });
-    }
-  };
 
   // Auto-resize textarea to fit content dynamically up to 50vh max
   useEffect(() => {
@@ -262,7 +244,7 @@ export function ChatInputBar({
             align="start"
             side="top"
             sideOffset={10}
-            className="w-56 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md overflow-visible"
+            className="w-56 p-1.5 rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl backdrop-blur-md overflow-visible"
           >
             {/* 1. Upload a File */}
             <DropdownMenuItem
@@ -270,86 +252,99 @@ export function ChatInputBar({
                 fileInputRef.current?.click();
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
             >
               <Upload className="w-4 h-4 shrink-0" />
-              <span>Upload a File</span>
+              <span>{t('Upload a File')}</span>
             </DropdownMenuItem>
 
-            {/* 2. Create Thread */}
+            {/* 2. Voice Note / Pesan Suara */}
+            <DropdownMenuItem
+              onClick={() => {
+                setIsRecordingVoice(true);
+                setIsPlusMenuOpen(false);
+              }}
+              disabled={!activeChannel}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
+            >
+              <Mic className="w-4 h-4 shrink-0" />
+              <span>{t('Voice Message')}</span>
+            </DropdownMenuItem>
+
+            {/* 3. Create Thread */}
             <DropdownMenuItem
               onClick={() => {
                 onOpenCreateThreadModal?.();
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
             >
               <MessageSquarePlus className="w-4 h-4 shrink-0" />
-              <span>Create Thread</span>
+              <span>{t('Create Thread')}</span>
             </DropdownMenuItem>
 
-            {/* 3. Create Poll */}
+            {/* 4. Create Poll */}
             <DropdownMenuItem
               onClick={() => {
                 setIsPollModalOpen(true);
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
             >
               <BarChart2 className="w-4 h-4 shrink-0" />
-              <span>Create Poll</span>
+              <span>{t('Create Poll')}</span>
             </DropdownMenuItem>
 
-            {/* 4. Use Apps */}
+            {/* 5. Use Apps */}
             <DropdownMenuItem
               onClick={() => {
                 setIsTemplatePopoverOpen(true);
                 setIsPlusMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
             >
               <LayoutGrid className="w-4 h-4 shrink-0" />
-              <span>Use Apps</span>
+              <span>{t('Use Apps')}</span>
             </DropdownMenuItem>
 
-            {/* 5. Schedule Message */}
+            {/* 6. Schedule Message */}
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white data-[state=open]:bg-emerald-500 data-[state=open]:text-white transition-colors text-xs font-semibold">
+              <DropdownMenuSubTrigger className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold">
                 <CalendarPlus className="w-4 h-4 shrink-0" />
-                <span>Schedule Message</span>
+                <span>{t('Schedule Message')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent
                 sideOffset={8}
                 alignOffset={-4}
-                className="w-52 p-1.5 rounded-xl border border-white/10 bg-[#111214] text-[#dbdee1] shadow-2xl backdrop-blur-md z-50 overflow-visible"
+                className="w-52 p-1.5 rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl backdrop-blur-md z-50 overflow-visible"
               >
                 <DropdownMenuItem
                   onClick={() => handleQuickSchedule('tomorrow-9am')}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer text-xs font-medium"
                 >
-                  Tomorrow at 9:00am
+                  {t('Tomorrow at 9:00am')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleQuickSchedule('tomorrow-1pm')}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer text-xs font-medium"
                 >
-                  Tomorrow at 1:00pm
+                  {t('Tomorrow at 1:00pm')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleQuickSchedule('monday-9am')}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer text-xs font-medium"
                 >
-                  Monday at 9:00am
+                  {t('Monday at 9:00am')}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/10 my-1" />
+                <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={() => {
                     setIsCustomScheduleOpen(true);
                     setIsPlusMenuOpen(false);
                   }}
-                  className="px-3 py-2 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white data-[highlighted]:bg-emerald-500 data-[highlighted]:text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-lg cursor-pointer text-xs font-medium"
                 >
-                  Custom...
+                  {t('Custom...')}
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
@@ -425,24 +420,6 @@ export function ChatInputBar({
             </span>
           )}
 
-          {/* E2EE Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleE2ee}
-            className={`w-6 h-6 flex items-center justify-center rounded transition-all cursor-pointer ${
-              e2ee
-                ? 'text-emerald-500 bg-emerald-500/15 hover:bg-emerald-500/25'
-                : 'text-muted-foreground/60 hover:text-foreground'
-            }`}
-            title={
-              e2ee
-                ? 'E2EE Aktif: Pesan dienkripsi lokal (AES-256-GCM) sebelum dikirim'
-                : 'E2EE Nonaktif: Klik untuk mengaktifkan enkripsi end-to-end'
-            }
-          >
-            <Lock className="w-4 h-4" />
-          </button>
-
           {/* 1. Gift Icon */}
           <button
             type="button"
@@ -481,19 +458,6 @@ export function ChatInputBar({
             setAppsSearchQuery={setAppsSearchQuery}
             onLaunchActivity={onLaunchActivity}
           />
-
-          {/* Mic / Voice Note Record Button — visible when no text/attachment */}
-          {!inputText.trim() && !stagedAttachment && (
-            <button
-              type="button"
-              onClick={() => setIsRecordingVoice(true)}
-              disabled={!activeChannel}
-              className="w-6 h-6 ml-1 text-muted-foreground hover:text-primary flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40"
-              title="Rekam Pesan Suara (Voice Note)"
-            >
-              <Mic className="w-4 h-4" />
-            </button>
-          )}
 
           {/* Send Button — only visible when there's content */}
           {(inputText.trim() || stagedAttachment) && (

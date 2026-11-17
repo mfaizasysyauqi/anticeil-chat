@@ -76,7 +76,7 @@ export function CreatePollModal({
       <DialogContent className="sm:max-w-[460px] bg-background text-foreground border border-border">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <BarChart2 className="w-5 h-5 text-emerald-500" />
+            <BarChart2 className="w-5 h-5 text-primary" />
             Buat Jajak Pendapat (Create Poll)
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -92,7 +92,7 @@ export function CreatePollModal({
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Apa yang ingin kamu tanyakan?"
-                className="bg-muted border-border text-foreground placeholder:text-muted-foreground text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                 maxLength={200}
                 required
               />
@@ -116,7 +116,7 @@ export function CreatePollModal({
                       value={opt}
                       onChange={(e) => handleOptionChange(i, e.target.value)}
                       placeholder={`Opsi ${i + 1}`}
-                      className="bg-muted border-border text-foreground placeholder:text-muted-foreground text-xs flex-1 focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/80"
+                      className="bg-muted border-border text-foreground placeholder:text-muted-foreground text-xs flex-1 focus-visible:ring-primary/40 focus-visible:border-primary/80"
                       maxLength={100}
                       required
                     />
@@ -141,7 +141,7 @@ export function CreatePollModal({
                   variant="outline"
                   size="sm"
                   onClick={handleAddOption}
-                  className="w-full text-xs font-medium border-dashed border-border hover:border-emerald-500/50 hover:text-emerald-500 cursor-pointer gap-1.5 h-8 mt-1"
+                  className="w-full text-xs font-medium border-dashed border-border hover:border-primary/50 hover:text-primary cursor-pointer gap-1.5 h-8 mt-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Tambah Opsi
@@ -161,7 +161,7 @@ export function CreatePollModal({
             </Button>
             <Button
               type="submit"
-              className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold cursor-pointer shadow-xs"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer shadow-xs"
             >
               Kirim Poll
             </Button>
