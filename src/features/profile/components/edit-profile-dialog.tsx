@@ -79,13 +79,14 @@ export function EditProfileDialog({
   onOpenUserSettings,
 }: EditProfileDialogProps) {
   const { t } = useTranslation();
+  const defaultAvatar = currentUser?.imageUrl || currentUser?.avatar || null;
   const [profileSubTab, setProfileSubTab] = useState<'board' | 'activity' | 'wishlist'>('board');
   const [profileSelectedType, setProfileSelectedType] = useState<'main' | 'server'>('main');
 
   // Core profile fields
   const [profileBannerColor, setProfileBannerColor] = useState('#5c4d44');
   const [profileBannerUrl, setProfileBannerUrl] = useState<string | null>(null);
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(defaultAvatar);
   const [profileStatusThought, setProfileStatusThought] = useState('Shower thought?');
   const [isEditingStatusThought, setIsEditingStatusThought] = useState(false);
   const [profileBioText, setProfileBioText] = useState('Your life in one sentence');
@@ -184,12 +185,16 @@ export function EditProfileDialog({
 
   useEffect(() => {
     if (open) {
+      if (defaultAvatar && !profileAvatarUrl) {
+        setProfileAvatarUrl(defaultAvatar);
+      }
       profileApi.getProfile().then((data) => {
         if (data.bannerColor) setProfileBannerColor(data.bannerColor);
         if (data.bannerUrl !== undefined) setProfileBannerUrl(data.bannerUrl);
-        if (data.avatarUrl !== undefined) setProfileAvatarUrl(data.avatarUrl);
-        else if (currentUser?.avatar || currentUser?.imageUrl) {
-          setProfileAvatarUrl(currentUser.avatar || currentUser.imageUrl);
+        if (data.avatarUrl) {
+          setProfileAvatarUrl(data.avatarUrl);
+        } else if (defaultAvatar) {
+          setProfileAvatarUrl(defaultAvatar);
         }
         if (data.statusThought) setProfileStatusThought(data.statusThought);
         if (data.bio) setProfileBioText(data.bio);
@@ -217,7 +222,7 @@ export function EditProfileDialog({
         if (data.theme) setProfileTheme(data.theme);
       });
     }
-  }, [open, currentUser]);
+  }, [open, currentUser, defaultAvatar]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -233,7 +238,7 @@ export function EditProfileDialog({
       await profileApi.updateProfile({
         bannerColor: profileBannerColor,
         bannerUrl: profileBannerUrl,
-        avatarUrl: profileAvatarUrl,
+        avatarUrl: profileAvatarUrl === defaultAvatar ? null : profileAvatarUrl,
         statusThought: profileStatusThought,
         bio: profileBioText,
         pronouns: profilePronouns,
@@ -431,24 +436,32 @@ export function EditProfileDialog({
                   title={t('Klik untuk upload avatar baru')}
                 >
                   <div className="size-12 rounded-full overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center text-xl shadow-inner relative">
-                    {profileAvatarUrl ? (
-                      <img src={profileAvatarUrl} alt="Avatar" className="size-full object-cover" />
+                    {profileAvatarUrl || defaultAvatar ? (
+                      <img
+                        src={(profileAvatarUrl || defaultAvatar)!}
+                        alt="Avatar"
+                        className="size-full object-cover"
+                      />
                     ) : (
-                      <span>🐱</span>
+                      <div className="size-full flex items-center justify-center bg-sidebar-primary/20 text-sidebar-primary font-bold text-sm select-none">
+                        {currentUserName ? currentUserName.slice(0, 2).toUpperCase() : 'U'}
+                      </div>
                     )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                       <Upload className="w-4 h-4" />
                     </div>
                   </div>
                   <span className="text-[10px] text-muted-foreground font-semibold group-hover:text-sidebar-primary">
-                    {profileAvatarUrl ? t('Ganti Avatar') : t('Upload Avatar')}
+                    {profileAvatarUrl && profileAvatarUrl !== defaultAvatar
+                      ? t('Ganti Avatar')
+                      : t('Upload Avatar')}
                   </span>
                 </div>
                 <div
                   onClick={() => {
-                    if (profileAvatarUrl) {
+                    if (profileAvatarUrl && profileAvatarUrl !== defaultAvatar) {
                       setProfileAvatarUrl(null);
-                      toast.info(t('Avatar dikembalikan ke default'));
+                      toast.info(t('Avatar dikembalikan ke avatar default'));
                     } else {
                       const next =
                         profileFrame === 'none'
@@ -464,7 +477,7 @@ export function EditProfileDialog({
                   }}
                   className="p-3 rounded-xl border border-border/70 bg-card hover:border-sidebar-primary/60 flex flex-col items-center justify-center cursor-pointer group transition-colors gap-1.5"
                 >
-                  {profileAvatarUrl ? (
+                  {profileAvatarUrl && profileAvatarUrl !== defaultAvatar ? (
                     <>
                       <div className="size-12 rounded-full border border-destructive/40 bg-destructive/10 flex items-center justify-center text-destructive group-hover:bg-destructive group-hover:text-destructive-foreground transition-colors">
                         <Trash2 className="w-4 h-4" />
@@ -670,13 +683,14 @@ export function EditProfileDialog({
           </div>
 
           {/* COLUMN 2: MIDDLE AREA (40%) LIVE PROFILE CARD PREVIEW */}
-          <div className="w-full lg:w-[40%] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-muted/20 p-4 sm:p-6 flex items-start justify-center overflow-y-auto [scrollbar-width:thin]">
-            <div className="w-full max-w-[340px] xl:max-w-[380px] my-auto">
+          <div className="w-full lg:w-[40%] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 flex items-center justify-center overflow-y-auto [scrollbar-width:thin]">
+            <div className="w-full max-w-[420px] 2xl:max-w-[460px] my-auto">
               <ProfilePreviewCard
                 currentUserName={currentUserName}
                 profileBannerColor={profileBannerColor}
                 profileBannerUrl={profileBannerUrl}
                 profileAvatarUrl={profileAvatarUrl}
+                defaultAvatarUrl={defaultAvatar}
                 profileStatusThought={profileStatusThought}
                 setProfileStatusThought={setProfileStatusThought}
                 isEditingStatusThought={isEditingStatusThought}

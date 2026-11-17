@@ -20,6 +20,7 @@ export interface ProfilePreviewCardProps {
   profileBannerColor: string;
   profileBannerUrl?: string | null;
   profileAvatarUrl?: string | null;
+  defaultAvatarUrl?: string | null;
   profileStatusThought: string;
   setProfileStatusThought: (s: string) => void;
   isEditingStatusThought: boolean;
@@ -46,6 +47,7 @@ export function ProfilePreviewCard({
   profileBannerColor,
   profileBannerUrl,
   profileAvatarUrl,
+  defaultAvatarUrl,
   profileStatusThought,
   setProfileStatusThought,
   isEditingStatusThought,
@@ -67,6 +69,7 @@ export function ProfilePreviewCard({
   isNectarSubscriber = false,
 }: ProfilePreviewCardProps) {
   const { t } = useTranslation();
+  const displayAvatar = profileAvatarUrl || defaultAvatarUrl || null;
 
   const getFrameClassName = (frame?: string) => {
     switch (frame) {
@@ -109,14 +112,16 @@ export function ProfilePreviewCard({
                   profileFrame,
                 )}`}
               >
-                {profileAvatarUrl ? (
+                {displayAvatar ? (
                   <img
-                    src={profileAvatarUrl}
+                    src={displayAvatar}
                     alt={currentUserName}
                     className="size-full object-cover"
                   />
                 ) : (
-                  <span>🐱</span>
+                  <div className="size-full flex items-center justify-center bg-sidebar-primary/20 text-sidebar-primary font-bold text-xl select-none">
+                    {currentUserName ? currentUserName.slice(0, 2).toUpperCase() : 'U'}
+                  </div>
                 )}
                 {/* Visual Effect Overlay */}
                 {profileEffect && profileEffect !== 'none' && (
