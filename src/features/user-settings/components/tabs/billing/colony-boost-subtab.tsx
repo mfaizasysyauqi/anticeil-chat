@@ -14,7 +14,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 import { coloniesApi } from '@/features/colonies/api/colonies-api';
+import {
+  subscriptionsApi,
+  type UserSubscription,
+} from '@/features/billing/api/subscriptions-api';
 import type { Colony } from '@/chat/chat-types';
 
 export interface ColonyBoostSubtabProps {
@@ -27,11 +32,13 @@ export function ColonyBoostSubtab({
   const { t } = useTranslation();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [coloniesList, setColoniesList] = useState<Colony[]>([]);
+  const [userSub, setUserSub] = useState<UserSubscription | null>(null);
   const [boostedColonies, setBoostedColonies] = useState<{
     [id: string]: number;
   }>({});
 
   useEffect(() => {
+    subscriptionsApi.getSubscription().then(setUserSub);
     coloniesApi.getColonies().then((cols) => {
       setColoniesList(cols);
       const initial: Record<string, number> = {};
@@ -73,6 +80,42 @@ export function ColonyBoostSubtab({
               {t('Learn more')}
             </button>
           </p>
+
+          {/* User's Boost Slots Status Card */}
+          <div className="p-3 rounded-2xl border border-pink-500/30 bg-pink-500/5 flex items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <div className="size-8 rounded-xl bg-pink-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                <Sparkles className="w-4 h-4 fill-current" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-foreground flex items-center gap-2">
+                  <span>
+                    {userSub?.status === 'active' && userSub.planId === 'nectar_boost'
+                      ? t('Langganan Nectar Aktif')
+                      : t('Slot Colony Boost')}
+                  </span>
+                  <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-400">
+                    {userSub?.boostSlots ?? 0} {t('Slot Tersedia')}
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {(userSub?.boostSlots ?? 0) > 0
+                    ? t('Anda dapat meningkatkan colony favorit Anda sekarang!')
+                    : t('Berlangganan Nectar untuk mendapatkan 2 slot boost gratis.')}
+                </div>
+              </div>
+            </div>
+
+            {(userSub?.boostSlots ?? 0) <= 0 && (
+              <Button
+                size="sm"
+                onClick={() => onNavigateSection?.('nitro')}
+                className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-[11px] h-7 px-3 rounded-xl shadow-xs cursor-pointer shrink-0"
+              >
+                {t('Beli Nectar')}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Video Mockup Thumbnail Card */}
@@ -329,19 +372,45 @@ export function ColonyBoostSubtab({
                   <Button
                     size="sm"
                     onClick={async () => {
+                      if ((userSub?.boostSlots ?? 0) <= 0) {
+                        toast.error(
+                          t(
+                            'Anda tidak memiliki slot Colony Boost. Berlangganan Nectar untuk mendapatkan 2 slot Boost!',
+                          ),
+                          {
+                            action: {
+                              label: t('Beli Nectar'),
+                              onClick: () => onNavigateSection?.('nitro'),
+                            },
+                          },
+                        );
+                        return;
+                      }
                       try {
-                        await coloniesApi.boostHub(colony.id);
+                        const res = await coloniesApi.boostHub(colony.id);
+                        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
                         setBoostedColonies((prev) => ({
                           ...prev,
                           [colony.id]: (prev[colony.id] || 0) + 1,
                         }));
+                        setUserSub((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                boostSlots:
+                                  typeof (res as any)?.remainingBoostSlots === 'number'
+                                    ? (res as any).remainingBoostSlots
+                                    : Math.max(0, prev.boostSlots - 1),
+                              }
+                            : null,
+                        );
                         toast.success(
                           t(
-                            `Colony "${colony.name}" berhasil di-Boost! Terima kasih atas dukungan Anda. 💎`,
+                            `Colony "${colony.name}" berhasil di-Boost! Level saat ini: Level ${res?.boostTier || colony.boostTier || 1} 💎`,
                           ),
                         );
-                      } catch {
-                        toast.error(t('Gagal melakukan boost'));
+                      } catch (err: any) {
+                        toast.error(err?.message || t('Gagal melakukan boost'));
                       }
                     }}
                     className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs h-8 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"

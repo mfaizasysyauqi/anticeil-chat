@@ -31,6 +31,8 @@ export const membersApi = {
               u.role === 'platform_admin'
                 ? 'admin'
                 : 'member') as any,
+            isBooster: Boolean(u.isBooster),
+            subscriptionPlan: u.subscriptionPlan || 'free',
             status: (u.status || 'online') as any,
           };
         });

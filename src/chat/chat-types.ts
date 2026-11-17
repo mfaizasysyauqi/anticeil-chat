@@ -156,6 +156,8 @@ export type ColonyMember = {
   roleLabel?: string;
   platformRole?: string;
   projectRole?: string | null;
+  isBooster?: boolean;
+  subscriptionPlan?: 'free' | 'nectar_basic' | 'nectar_boost';
   status: 'online' | 'idle' | 'offline';
   customStatus?: string;
   bio?: string;

@@ -103,7 +103,7 @@ export function ColonyMembersSidebar({
                         showStatus
                       />
                       <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span
                             className={cn(
                               'text-xs font-medium truncate',
@@ -115,6 +115,21 @@ export function ColonyMembersSidebar({
                             {member.name}
                           </span>
                           <RoleBadge role={member.role} roleLabel={member.roleLabel} />
+                          {member.isBooster && (
+                            <span title={t('Server Booster 💎')} className="text-pink-500 shrink-0 text-xs">
+                              💎
+                            </span>
+                          )}
+                          {member.subscriptionPlan === 'nectar_boost' && (
+                            <span title={t('Nectar VIP 🍯')} className="text-amber-400 shrink-0 text-xs">
+                              🍯
+                            </span>
+                          )}
+                          {member.subscriptionPlan === 'nectar_basic' && (
+                            <span title={t('Pollen Tier 🌼')} className="text-yellow-400 shrink-0 text-xs">
+                              🌼
+                            </span>
+                          )}
                         </div>
                         {member.username && (
                           <span className="text-[10px] text-muted-foreground/60 truncate font-mono leading-none mt-0.5">
