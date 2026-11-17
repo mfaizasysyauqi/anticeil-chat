@@ -112,6 +112,9 @@ export const EXTENDED_ANTICEIL_APPS: AnticeilAppCatalogItem[] = [
   { id: 'whiteboard', title: 'Jamspace Whiteboard', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '🎨', iconBg: 'bg-blue-600', bannerGradient: 'from-blue-600 to-indigo-700', description: 'Papan tulis kolaboratif realtime untuk sketching arsitektur sistem dan wireframing.' },
   { id: 'chess', title: 'Anticeil Chess', developer: 'Anticeil Native', group: 'Promoted', icon: '👑', iconBg: 'bg-amber-600', bannerGradient: 'from-amber-600 to-stone-800', description: 'Bermain catur interaktif realtime bersama bot AI cerdas atau teman colony.' },
   { id: 'screenshare', title: 'Share Screen', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: '🖥️', iconBg: 'bg-purple-600', bannerGradient: 'from-purple-600 to-indigo-800', description: 'Bagikan layar atau jendela aplikasi dengan audio jernih dan latensi rendah.' },
+  { id: 'wordle', title: 'Wordle Daily Party', developer: 'Anticeil Games', group: 'Puzzle Games', icon: '🎲', iconBg: 'bg-emerald-600', bannerGradient: 'from-emerald-600 to-teal-800', description: 'Tebak kata 5 huruf harian bersama tim di panggung suara secara multiplayer.' },
+  { id: 'trivia', title: 'Cyber Trivia Battle', developer: 'Anticeil Games', group: 'Promoted', icon: '❓', iconBg: 'bg-indigo-600', bannerGradient: 'from-indigo-600 to-purple-800', description: 'Kuis interaktif trivia teknologi & game dengan papan skor realtime.' },
+  { id: 'farm-merge', title: 'Farm Merge Valley', developer: 'CoolGames Co-op', group: 'Puzzle Games', icon: '🌾', iconBg: 'bg-amber-600', bannerGradient: 'from-amber-500 to-orange-700', description: 'Game simulasi perkebunan santai co-op multiplayer di voice channel.' },
 ];
 
 // ── Backward-compatible Aliases ──────────────────────────────────────────────

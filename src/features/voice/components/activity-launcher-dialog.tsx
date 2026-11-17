@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X } from 'lucide-react';
+import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X, Dices, HelpCircle, Gamepad2, Bot } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { DISCORD_APPS, DiscordAppDefinition } from '../data/voice-activities';
+import { Colony } from '@/chat/chat-types';
 
 export interface ActivityLauncherDialogProps {
   open: boolean;
@@ -16,6 +18,7 @@ export interface ActivityLauncherDialogProps {
   isUpgradeModalOpen: boolean;
   setIsUpgradeModalOpen: (open: boolean) => void;
   onNavigateToBilling?: () => void;
+  activeColony?: Colony | null;
 }
 
 export function ActivityLauncherDialog({
@@ -28,20 +31,41 @@ export function ActivityLauncherDialog({
   isUpgradeModalOpen,
   setIsUpgradeModalOpen,
   onNavigateToBilling,
+  activeColony,
 }: ActivityLauncherDialogProps) {
   const [appSearchQuery, setAppSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'game' | 'entertainment' | 'productivity' | 'colony'>('all');
+
+  const installedColonyApps = useMemo(() => {
+    return activeColony?.installedApps || [];
+  }, [activeColony?.installedApps]);
 
   const filteredApps = useMemo(() => {
-    if (!appSearchQuery.trim()) return DISCORD_APPS;
+    let list = DISCORD_APPS;
+    if (selectedCategory !== 'all' && selectedCategory !== 'colony') {
+      list = list.filter((a) => a.category === selectedCategory);
+    }
+    if (!appSearchQuery.trim()) return list;
     const q = appSearchQuery.toLowerCase();
-    return DISCORD_APPS.filter(
+    return list.filter(
       (a) =>
         a.title.toLowerCase().includes(q) ||
         a.description.toLowerCase().includes(q) ||
         a.tagline.toLowerCase().includes(q) ||
         a.developer.toLowerCase().includes(q),
     );
-  }, [appSearchQuery]);
+  }, [appSearchQuery, selectedCategory]);
+
+  const filteredColonyApps = useMemo(() => {
+    if (!installedColonyApps.length) return [];
+    if (!appSearchQuery.trim()) return installedColonyApps;
+    const q = appSearchQuery.toLowerCase();
+    return installedColonyApps.filter(
+      (a) =>
+        a.name.toLowerCase().includes(q) ||
+        a.id.toLowerCase().includes(q)
+    );
+  }, [installedColonyApps, appSearchQuery]);
 
   return (
     <>
@@ -63,7 +87,7 @@ export function ActivityLauncherDialog({
                   type="text"
                   value={appSearchQuery}
                   onChange={(e) => setAppSearchQuery(e.target.value)}
-                  placeholder="Search"
+                  placeholder="Cari aktivitas, game, atau bot..."
                   className="w-full h-9 bg-muted/50 border border-border focus:border-border focus:ring-1 focus:ring-ring rounded-lg pl-9 pr-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
                 />
               </div>
@@ -77,10 +101,78 @@ export function ActivityLauncherDialog({
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('all')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  selectedCategory === 'all'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                Semua
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('game')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  selectedCategory === 'game'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                🎮 Games
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('entertainment')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  selectedCategory === 'entertainment'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                🍿 Hiburan
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('productivity')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  selectedCategory === 'productivity'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                🎨 Produktivitas
+              </button>
+              {installedColonyApps.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('colony')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                    selectedCategory === 'colony'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  🤖 Colony Apps ({installedColonyApps.length})
+                </button>
+              )}
+            </div>
+
             {activeAppId !== null && (
-              <div className="mt-2 px-2.5 py-1 rounded-lg bg-muted border border-border flex items-center justify-between text-xs">
-                <span className="text-[11px] text-muted-foreground">
-                  Aktif: <strong className="text-foreground">{currentActiveApp?.title}</strong>
+              <div className="mt-2.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+                <span className="text-[11px] text-emerald-500 font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Aktif: <strong className="text-foreground">{currentActiveApp?.title || activeAppId}</strong>
                 </span>
                 <button
                   type="button"
@@ -95,11 +187,11 @@ export function ActivityLauncherDialog({
 
           {/* Modal Scrollable Body */}
           <div className="flex-1 overflow-y-auto px-3.5 pb-3.5 space-y-3.5 [scrollbar-width:thin]">
-            {/* 1. Recents Row (YouTube, Whiteboard, Chess, ScreenShare) */}
-            {!appSearchQuery && (
+            {/* 1. Recents Row (YouTube, Whiteboard, Chess, ScreenShare, Wordle, Trivia) */}
+            {!appSearchQuery && selectedCategory === 'all' && (
               <div>
                 <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Recents</h3>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                   {/* YouTube Watch Together */}
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
@@ -150,6 +242,38 @@ export function ActivityLauncherDialog({
                     </Tooltip>
                   </TooltipProvider>
 
+                  {/* Wordle Party */}
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => onLaunchApp('wordle')}
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-emerald-500 shrink-0"
+                          title="Wordle Party"
+                        >
+                          <Dices className="w-5 h-5 stroke-[2.2]" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs font-semibold">Wordle Party</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  {/* Cyber Trivia */}
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => onLaunchApp('trivia')}
+                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-indigo-500 shrink-0"
+                          title="Cyber Trivia"
+                        >
+                          <HelpCircle className="w-5 h-5 stroke-[2.2]" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs font-semibold">Cyber Trivia</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
                   {/* Share Screen */}
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
@@ -165,6 +289,52 @@ export function ActivityLauncherDialog({
                       <TooltipContent side="bottom" className="text-xs font-semibold">Share Screen</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+                </div>
+              </div>
+            )}
+
+            {/* Installed Colony Apps & Bots Section (If Any) */}
+            {(selectedCategory === 'all' || selectedCategory === 'colony') && filteredColonyApps.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>Colony Installed Apps & Bots</span>
+                  <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20">
+                    {filteredColonyApps.length} Terpasang
+                  </Badge>
+                </h3>
+
+                <div className="grid grid-cols-2 gap-2.5 pb-1">
+                  {filteredColonyApps.map((bot) => (
+                    <div
+                      key={bot.id}
+                      onClick={() => onLaunchApp(bot.id)}
+                      className={cn(
+                        'rounded-xl border overflow-hidden transition-all duration-200 cursor-pointer group flex flex-col shadow-xs',
+                        activeAppId === bot.id
+                          ? 'border-primary ring-2 ring-primary/40 bg-card'
+                          : 'border-border/60 bg-card hover:border-border hover:bg-muted/60',
+                      )}
+                    >
+                      <div className="p-3 flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                          <Bot className="w-5 h-5" />
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-foreground truncate">
+                              {bot.name}
+                            </span>
+                            <Badge className="text-[8px] h-3.5 px-1 bg-primary/20 text-primary border-0 font-bold uppercase">
+                              BOT
+                            </Badge>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            Mulai sesi di voice channel
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

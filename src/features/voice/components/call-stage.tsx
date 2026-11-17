@@ -278,6 +278,7 @@ export function CallStage({
               activeAppId={activeAppId}
               currentActiveApp={currentActiveApp}
               channel={channel}
+              activeColony={activeColony}
               currentUserName={currentUserName}
               currentUser={currentUser}
               participants={participants}
@@ -371,6 +372,7 @@ export function CallStage({
         isUpgradeModalOpen={isUpgradeModalOpen}
         setIsUpgradeModalOpen={setIsUpgradeModalOpen}
         onNavigateToBilling={onNavigateToBilling}
+        activeColony={activeColony}
       />
 
       {/* Voice/Video Call Invite Modal */}

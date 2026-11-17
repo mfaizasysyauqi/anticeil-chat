@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
+import { Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCallMediaToggles } from './use-call-media-toggles';
 import { useCallActivitySync } from './use-call-activity-sync';
@@ -88,8 +89,29 @@ export function useCallWebRTC({
   const activeScreenStream = isScreenSharing ? screenStream : screenSharePeer?.stream || null;
 
   const currentActiveApp = useMemo(() => {
-    return DISCORD_APPS.find((app) => app.id === activeAppId);
-  }, [activeAppId]);
+    if (!activeAppId) return null;
+    const standardApp = DISCORD_APPS.find((app) => app.id === activeAppId);
+    if (standardApp) return standardApp;
+
+    const colonyApp = activeColony?.installedApps?.find((a) => a.id === activeAppId);
+    if (colonyApp) {
+      return {
+        id: colonyApp.id,
+        title: colonyApp.name,
+        bannerTitle: colonyApp.name.toUpperCase(),
+        developer: 'Colony Bot',
+        category: 'game' as const,
+        bannerGradient: 'from-blue-600 via-indigo-700 to-zinc-950',
+        iconBg: 'bg-primary',
+        iconColor: 'text-white',
+        icon: Bot,
+        tagline: 'Aplikasi terpasang di Colony',
+        description: `Aplikasi internal terpasang di koloni ${activeColony?.name || ''}`,
+        accentColor: '#3b82f6',
+      };
+    }
+    return null;
+  }, [activeAppId, activeColony?.installedApps, activeColony?.name]);
   const currentActiveAppRef = useRef(currentActiveApp);
   currentActiveAppRef.current = currentActiveApp;
 

@@ -1,16 +1,20 @@
 import React from 'react';
 import { Socket } from 'socket.io-client';
-import { ColonyChannel } from '@/chat/chat-types';
+import { ColonyChannel, Colony } from '@/chat/chat-types';
 import { DiscordAppDefinition } from '../../data/voice-activities';
 import { YouTubeWatchTogether } from './youtube-watch-together';
 import { WhiteboardCanvas } from './whiteboard-canvas';
 import { ChessGame } from './chess-game';
 import { ScreenShareView } from './screen-share-view';
+import { WordleGame } from './wordle-game';
+import { TriviaGame } from './trivia-game';
+import { ColonyAppStage } from './colony-app-stage';
 
 export interface ActivityStageProps {
   activeAppId: string;
   currentActiveApp?: DiscordAppDefinition | null;
   channel: ColonyChannel;
+  activeColony?: Colony | null;
   currentUserName: string;
   currentUser?: any;
   participants?: any[];
@@ -26,6 +30,7 @@ export function ActivityStage({
   activeAppId,
   currentActiveApp,
   channel,
+  activeColony,
   currentUserName,
   currentUser,
   participants,
@@ -78,6 +83,43 @@ export function ActivityStage({
           onStopActivity={onStopActivity}
         />
       )}
+
+      {activeAppId === 'wordle' && (
+        <WordleGame
+          channel={channel}
+          socket={socket}
+          currentUserName={currentUserName}
+          currentUser={currentUser}
+          participants={participants}
+        />
+      )}
+
+      {activeAppId === 'trivia' && (
+        <TriviaGame
+          channel={channel}
+          socket={socket}
+          currentUserName={currentUserName}
+          currentUser={currentUser}
+          participants={participants}
+        />
+      )}
+
+      {activeAppId !== 'watch-together' &&
+        activeAppId !== 'whiteboard' &&
+        activeAppId !== 'chess' &&
+        activeAppId !== 'screenshare' &&
+        activeAppId !== 'wordle' &&
+        activeAppId !== 'trivia' && (
+          <ColonyAppStage
+            appId={activeAppId}
+            channel={channel}
+            activeColony={activeColony}
+            socket={socket}
+            currentUserName={currentUserName}
+            currentUser={currentUser}
+            participants={participants}
+          />
+        )}
     </div>
   );
 }
