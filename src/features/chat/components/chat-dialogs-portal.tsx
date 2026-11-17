@@ -18,6 +18,7 @@ import {
   EditChannelDialog,
   DeleteChannelDialog,
   DmSearchDialog,
+  CreateGroupDmDialog,
   ChannelSettingsDialog,
   CreateCategoryDialog,
   type useChannelModals,
@@ -48,6 +49,9 @@ export interface ChatDialogsPortalProps {
   dmSearchQuery: string;
   setDmSearchQuery: (q: string) => void;
   dmChannels: ColonyChannel[];
+  isCreateGroupDmOpen?: boolean;
+  setIsCreateGroupDmOpen?: (open: boolean) => void;
+  handleCreateGroupDM?: (name: string, memberIds: string[]) => void;
   setActiveColonyId: (id: string) => void;
   setActiveChannelId: (id: string) => void;
   handleStartDM: (member: ColonyMember) => void;
@@ -124,6 +128,9 @@ export function ChatDialogsPortal({
   dmSearchQuery,
   setDmSearchQuery,
   dmChannels,
+  isCreateGroupDmOpen = false,
+  setIsCreateGroupDmOpen,
+  handleCreateGroupDM,
   setActiveColonyId,
   setActiveChannelId,
   handleStartDM,
@@ -352,8 +359,21 @@ export function ChatDialogsPortal({
           setActiveChannelId(channelId);
         }}
         onStartDM={handleStartDM}
+        onOpenCreateGroupDm={setIsCreateGroupDmOpen ? () => setIsCreateGroupDmOpen(true) : undefined}
         t={t}
       />
+
+      {/* Create Group DM Dialog */}
+      {setIsCreateGroupDmOpen && handleCreateGroupDM && (
+        <CreateGroupDmDialog
+          open={isCreateGroupDmOpen}
+          onOpenChange={setIsCreateGroupDmOpen}
+          friends={members}
+          currentUser={currentUser}
+          onCreateGroupDm={handleCreateGroupDM}
+          t={t}
+        />
+      )}
 
       {/* Server Invite Dialog */}
       <ColonyInviteDialog

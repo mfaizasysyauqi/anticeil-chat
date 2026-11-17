@@ -125,6 +125,80 @@ export function useChatMembers({
     setIsMobileMembersOpen(false);
   };
 
+  // Create Group DM handler
+  const handleCreateGroupDM = (name: string, memberIds: string[]) => {
+    if (!memberIds || memberIds.length === 0) return;
+    const gdmId = `gdm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const allMemberIds = Array.from(
+      new Set([...(currentUser?.id ? [currentUser.id] : []), ...memberIds]),
+    );
+
+    let gdmName = name?.trim();
+    if (!gdmName) {
+      const memberNames = allMemberIds
+        .map((id) => {
+          if (currentUser?.id && id === currentUser.id) return currentUser.name || 'Anda';
+          const found = members.find((m) => m.id === id);
+          return found?.name || found?.username || id;
+        })
+        .slice(0, 3)
+        .join(', ');
+      gdmName = memberNames || 'Grup DM';
+    }
+
+    const newGroupChannel: ColonyChannel = {
+      id: gdmId,
+      name: gdmName,
+      description: `Grup DM dengan ${allMemberIds.length} anggota`,
+      category: 'DIRECT MESSAGES',
+      colonyId: 'anticeil',
+      isDirectMessage: true,
+      isGroupDm: true,
+      dmUserIds: allMemberIds,
+      ownerId: currentUser?.id || 'u1',
+      type: 'text',
+    };
+
+    setChannels((prev) => {
+      const updated = [newGroupChannel, ...prev];
+      saveStoredDmChannels(
+        updated.filter((c) => c.category === 'DIRECT MESSAGES'),
+      );
+      return updated;
+    });
+
+    setActiveColonyId('anticeil');
+    setActiveChannelId(gdmId);
+    setHomeView('friends');
+    setIsMobileChannelsOpen(false);
+    setIsMobileMembersOpen(false);
+  };
+
+  // Add friend to existing Group DM
+  const handleAddMemberToGroupDM = (memberId: string) => {
+    if (!activeChannel || !activeChannel.isGroupDm || !memberId) return;
+    const currentMembers = activeChannel.dmUserIds || [];
+    if (currentMembers.includes(memberId)) return;
+    const nextMembers = [...currentMembers, memberId];
+
+    setChannels((prev) => {
+      const updated = prev.map((c) => {
+        if (c.id === activeChannel.id) {
+          return {
+            ...c,
+            dmUserIds: nextMembers,
+            description: `Grup DM dengan ${nextMembers.length} anggota`,
+          };
+        }
+        return c;
+      });
+      saveStoredDmChannels(
+        updated.filter((c) => c.category === 'DIRECT MESSAGES'),
+      );
+      return updated;
+    });
+  };
+
   // Close / remove DM channel from sidebar
   const handleCloseDM = (dmId: string) => {
     setChannels((prev) => {
@@ -188,6 +262,8 @@ export function useChatMembers({
     displayMembers,
     handleStartDM,
     handleCloseDM,
+    handleCreateGroupDM,
+    handleAddMemberToGroupDM,
     allKnownMembers,
     isDmMode,
     activeDmUserId,

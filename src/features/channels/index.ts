@@ -4,6 +4,8 @@ export * from './components/create-channel-dialog';
 export * from './components/edit-channel-dialog';
 export * from './components/delete-channel-dialog';
 export * from './components/dm-search-dialog';
+export * from './components/create-group-dm-dialog';
+export * from './components/group-dm-members-sidebar';
 export * from './components/channel-notification-dropdown';
 export * from './components/channel-top-header-bar';
 export * from './components/forum-channel-view';

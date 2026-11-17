@@ -1,6 +1,6 @@
 import React from 'react';
 import { ColonyRail } from '@/features/colonies';
-import { ChannelsSidebar } from '@/features/channels';
+import { ChannelsSidebar, GroupDmMembersSidebar } from '@/features/channels';
 import { UserBottomDock, DmUserProfileSidebar } from '@/features/profile';
 import { FriendsView } from '@/features/friends';
 import { ColonyMembersSidebar } from '@/features/members';
@@ -140,6 +140,7 @@ export interface ChannelsSidebarWrapperProps {
   requireAuth: (action: () => void, title?: string, desc?: string) => void;
   setIsDmSearchOpen: (open: boolean) => void;
   setDmSearchQuery: (q: string) => void;
+  setIsCreateGroupDmOpen?: (open: boolean) => void;
   setIsInviteOpen: (open: boolean) => void;
   setColonySettingsSection: (section: any) => void;
   setIsServerSettingsOpen: (open: boolean) => void;
@@ -189,6 +190,7 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
   requireAuth,
   setIsDmSearchOpen,
   setDmSearchQuery,
+  setIsCreateGroupDmOpen,
   setIsInviteOpen,
   setColonySettingsSection,
   setIsServerSettingsOpen,
@@ -241,6 +243,13 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
       onMoveChannelCategory={channelModals.handleMoveChannelCategory}
       onItemClick={onItemClick}
       onCloseDM={onCloseDM}
+      onOpenCreateGroupDm={() =>
+        requireAuth(
+          () => setIsCreateGroupDmOpen?.(true),
+          t('Buat Group DM'),
+          t('Masuk ke Anticeil untuk membuat obrolan grup.'),
+        )
+      }
       onOpenDmSearch={() =>
         requireAuth(
           () => {
@@ -462,6 +471,8 @@ export interface MembersSidebarContentWrapperProps {
   setShowMemberList: (show: boolean) => void;
   setIsInviteOpen: (open: boolean) => void;
   handleStartDM: (m: any) => void;
+  onAddMemberToGroup?: (memberId: string) => void;
+  onLeaveGroup?: (channelId: string) => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -480,8 +491,28 @@ export const MembersSidebarContentWrapper: React.FC<MembersSidebarContentWrapper
   setShowMemberList,
   setIsInviteOpen,
   handleStartDM,
+  onAddMemberToGroup,
+  onLeaveGroup,
   t,
 }) => {
+  if (activeChannel?.isGroupDm) {
+    return (
+      <GroupDmMembersSidebar
+        channel={activeChannel}
+        members={friends}
+        currentUser={currentUser}
+        onAddMember={(memberId) => onAddMemberToGroup?.(memberId)}
+        onLeaveGroup={(channelId) => onLeaveGroup?.(channelId)}
+        onStartDM={handleStartDM}
+        onClose={() => {
+          setShowMemberList(false);
+          setIsMobileMembersOpen(false);
+        }}
+        t={t}
+      />
+    );
+  }
+
   if (isDmMode && activeDmUserId) {
     return (
       <DmUserProfileSidebar

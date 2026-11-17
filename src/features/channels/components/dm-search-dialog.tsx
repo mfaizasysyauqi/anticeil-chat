@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, MessageSquare } from 'lucide-react';
+import { Search, MessageSquare, Users } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ export interface DmSearchDialogProps {
   currentUser: any;
   onSelectDmChannel: (channelId: string) => void;
   onStartDM: (member: ColonyMember) => void;
+  onOpenCreateGroupDm?: () => void;
   t: (key: string) => string;
 }
 
@@ -34,6 +35,7 @@ export function DmSearchDialog({
   currentUser,
   onSelectDmChannel,
   onStartDM,
+  onOpenCreateGroupDm,
   t,
 }: DmSearchDialogProps) {
   const q = dmSearchQuery.trim().toLowerCase();
@@ -74,6 +76,24 @@ export function DmSearchDialog({
             />
           </div>
         </div>
+
+        {/* Create Group DM shortcut */}
+        {onOpenCreateGroupDm && (
+          <div className="px-4 py-2 border-b border-border/50 bg-muted/20 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{t('Ingin mengobrol bersama beberapa teman?')}</span>
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                onOpenCreateGroupDm();
+              }}
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5 cursor-pointer"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>{t('Buat Group DM')}</span>
+            </button>
+          </div>
+        )}
 
         {/* Results */}
         <div className="max-h-[320px] overflow-y-auto [scrollbar-width:thin]">

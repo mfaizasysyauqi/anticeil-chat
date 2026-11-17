@@ -38,6 +38,7 @@ export interface ChannelsSidebarProps {
   onItemClick?: () => void;
   onCloseDM?: (id: string) => void;
   onOpenDmSearch: () => void;
+  onOpenCreateGroupDm?: () => void;
   onOpenInvite: () => void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
   onOpenCreateChannel: (category: string, type?: ColonyChannelType, categoryId?: string) => void;

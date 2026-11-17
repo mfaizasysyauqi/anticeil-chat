@@ -75,6 +75,7 @@ export function useChatSubsystems({
 
   const [isDmSearchOpen, setIsDmSearchOpen] = useState(false);
   const [dmSearchQuery, setDmSearchQuery] = useState('');
+  const [isCreateGroupDmOpen, setIsCreateGroupDmOpen] = useState(false);
 
   return {
     calendarEvents,
@@ -106,5 +107,7 @@ export function useChatSubsystems({
     setIsDmSearchOpen,
     dmSearchQuery,
     setDmSearchQuery,
+    isCreateGroupDmOpen,
+    setIsCreateGroupDmOpen,
   };
 }

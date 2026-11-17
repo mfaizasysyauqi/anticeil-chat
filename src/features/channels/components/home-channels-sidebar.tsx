@@ -35,6 +35,7 @@ export interface HomeChannelsSidebarProps {
   onItemClick?: () => void;
   onCloseDM?: (id: string) => void;
   onOpenDmSearch: () => void;
+  onOpenCreateGroupDm?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -65,6 +66,7 @@ export function HomeChannelsSidebar({
   onItemClick,
   onCloseDM,
   onOpenDmSearch,
+  onOpenCreateGroupDm,
   t,
 }: HomeChannelsSidebarProps) {
   const notifBadge = formatSidebarBadge(unreadNotificationsCount);
@@ -309,14 +311,14 @@ export function HomeChannelsSidebar({
           <Tooltip delayDuration={150}>
             <TooltipTrigger asChild>
               <button
-                onClick={() => onOpenDmSearch()}
+                onClick={() => (onOpenCreateGroupDm ? onOpenCreateGroupDm() : onOpenDmSearch())}
                 className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4} className="font-semibold text-xs">
-              {t('Mulai DM Baru')}
+              {t('Buat Group DM / Mulai DM')}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -328,6 +330,12 @@ export function HomeChannelsSidebar({
             const name = (dm.name || '').toLowerCase().trim();
             const id = String(dm.id || '');
             const dmUserId = String(dm.dmUserId || '');
+
+            // Group DMs are always valid in this list
+            if (dm.isGroupDm || id.startsWith('gdm-')) {
+              return true;
+            }
+
             if (
               !id.startsWith('dm-') ||
               id === 'dm-anticeil' ||
@@ -373,79 +381,92 @@ export function HomeChannelsSidebar({
             <div className="space-y-0.5">
               {validDms.map((dm) => {
                 const isActiveDm = activeChannelId === dm.id;
-              const member = members.find((m) => {
-                const isSelf =
-                  (currentUser?.id && m.id === currentUser.id) ||
-                  (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) ||
-                  (currentUser?.name && m.name && m.name.toLowerCase() === currentUser.name.toLowerCase());
-                if (isSelf) return false;
+                const isGroup = Boolean(dm.isGroupDm || dm.id.startsWith('gdm-'));
+                const member = isGroup
+                  ? null
+                  : members.find((m) => {
+                      const isSelf =
+                        (currentUser?.id && m.id === currentUser.id) ||
+                        (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                        (currentUser?.name && m.name && m.name.toLowerCase() === currentUser.name.toLowerCase());
+                      if (isSelf) return false;
 
-                // 1. Match by DM name (primary identifier of DM partner)
-                if (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) return true;
-                if (m.username && dm.name && m.username.toLowerCase() === dm.name.toLowerCase()) return true;
+                      // 1. Match by DM name (primary identifier of DM partner)
+                      if (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) return true;
+                      if (m.username && dm.name && m.username.toLowerCase() === dm.name.toLowerCase()) return true;
 
-                // 2. Match by DM user ID
-                if (dm.dmUserId && m.id === dm.dmUserId) return true;
-                if (m.id && `dm-${m.id}` === dm.id) return true;
-                if (m.id && dm.id.includes(m.id)) return true;
-                return false;
-              });
-              return (
-                <div
-                  key={dm.id}
-                  onClick={() => {
-                    setActiveChannelId(dm.id);
-                    onItemClick?.();
-                  }}
-                  className={cn(
-                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer',
-                    isActiveDm
-                      ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                      : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  )}
-                >
-                  {member ? (
-                    <CommunityAvatar
-                      name={member.name}
-                      imageUrl={member.avatar}
-                      size={18}
-                      status={member.status}
-                      showStatus
-                    />
-                  ) : (
-                    <MessageSquare
-                      className={cn(
-                        'w-3.5 h-3.5 shrink-0 transition-colors',
-                        isActiveDm ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
-                      )}
-                    />
-                  )}
-                  <span className="truncate flex-1">{dm.name}</span>
-                  {activeCallCounts[dm.id] && activeCallCounts[dm.id] > 0 ? (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
-                      <Radio className="w-2.5 h-2.5" />
-                      {activeCallCounts[dm.id]}
-                    </span>
-                  ) : null}
-                  {onCloseDM && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCloseDM(dm.id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-sidebar hover:text-foreground text-muted-foreground/60 transition-opacity shrink-0"
-                      title={t('Tutup Percakapan')}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
+                      // 2. Match by DM user ID
+                      if (dm.dmUserId && m.id === dm.dmUserId) return true;
+                      if (m.id && `dm-${m.id}` === dm.id) return true;
+                      if (m.id && dm.id.includes(m.id)) return true;
+                      return false;
+                    });
+
+                return (
+                  <div
+                    key={dm.id}
+                    onClick={() => {
+                      setActiveChannelId(dm.id);
+                      onItemClick?.();
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer',
+                      isActiveDm
+                        ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                        : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                    )}
+                  >
+                    {isGroup ? (
+                      <div className="w-[18px] h-[18px] rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                        <Users className="w-3 h-3" />
+                      </div>
+                    ) : member ? (
+                      <CommunityAvatar
+                        name={member.name}
+                        imageUrl={member.avatar}
+                        size={18}
+                        status={member.status}
+                        showStatus
+                      />
+                    ) : (
+                      <MessageSquare
+                        className={cn(
+                          'w-3.5 h-3.5 shrink-0 transition-colors',
+                          isActiveDm ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
+                        )}
+                      />
+                    )}
+                    <span className="truncate flex-1">{dm.name}</span>
+                    {isGroup && dm.dmUserIds && dm.dmUserIds.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground/70 font-semibold px-1 rounded bg-muted/40 shrink-0">
+                        {dm.dmUserIds.length}
+                      </span>
+                    )}
+                    {activeCallCounts[dm.id] && activeCallCounts[dm.id] > 0 ? (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
+                        <Radio className="w-2.5 h-2.5" />
+                        {activeCallCounts[dm.id]}
+                      </span>
+                    ) : null}
+                    {onCloseDM && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCloseDM(dm.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-sidebar hover:text-foreground text-muted-foreground/60 transition-opacity shrink-0"
+                        title={isGroup ? t('Tinggalkan Grup') : t('Tutup Percakapan')}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </>
   );

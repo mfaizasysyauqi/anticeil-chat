@@ -48,7 +48,7 @@ export function useChatNavigation({
       (c) =>
         c.category === 'DIRECT MESSAGES' &&
         typeof c.id === 'string' &&
-        c.id.startsWith('dm-') &&
+        (c.id.startsWith('dm-') || c.id.startsWith('gdm-') || c.isDirectMessage || c.isGroupDm) &&
         (!c.colonyId || c.colonyId === 'anticeil') &&
         c.type !== 'voice' &&
         c.type !== 'forum' &&
@@ -65,6 +65,9 @@ export function useChatNavigation({
       if (!activeChannelId) return null;
       const found = dmChannels.find((c) => c.id === activeChannelId);
       if (found) return found;
+      if (activeChannelId.startsWith('gdm-')) {
+        return channels.find((c) => c.id === activeChannelId) || null;
+      }
       if (activeChannelId.startsWith('dm-')) {
         const parts = activeChannelId.slice(3).split('-').filter(Boolean);
         const otherUserId =

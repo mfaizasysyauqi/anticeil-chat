@@ -104,7 +104,9 @@ export function ChannelTopHeaderBar({
     isHome ||
     activeChannel?.category === 'DIRECT MESSAGES' ||
     activeChannel?.isDirectMessage ||
-    activeChannel?.id?.startsWith('dm-')
+    activeChannel?.isGroupDm ||
+    activeChannel?.id?.startsWith('dm-') ||
+    activeChannel?.id?.startsWith('gdm-')
   );
 
   return (
@@ -121,7 +123,9 @@ export function ChannelTopHeaderBar({
           <Menu className="w-5 h-5" />
         </button>
 
-        {activeChannel?.category === 'DIRECT MESSAGES' || activeChannel?.isDirectMessage ? (
+        {activeChannel?.isGroupDm ? (
+          <Users className="w-5 h-5 text-muted-foreground shrink-0" />
+        ) : activeChannel?.category === 'DIRECT MESSAGES' || activeChannel?.isDirectMessage ? (
           <span className="text-muted-foreground font-bold text-base shrink-0 select-none">@</span>
         ) : activeChannel?.type === 'voice' ? (
           <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />
@@ -134,6 +138,11 @@ export function ChannelTopHeaderBar({
         )}
         <span className="text-sm font-semibold truncate text-foreground flex items-center gap-1.5 shrink-0 max-w-[180px] sm:max-w-[260px]">
           {activeChannel ? activeChannel.name : t('Belum ada channel')}
+          {activeChannel?.isGroupDm && activeChannel?.dmUserIds && activeChannel.dmUserIds.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold shrink-0">
+              {activeChannel.dmUserIds.length} {t('Anggota')}
+            </span>
+          )}
           {activeChannel?.isPrivate && (
             <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold flex items-center gap-1">
               <Lock className="w-2.5 h-2.5" /> Private
@@ -267,7 +276,11 @@ export function ChannelTopHeaderBar({
                 showMemberList ? 'text-foreground bg-accent' : 'text-foreground/70 hover:text-foreground hover:bg-accent/60',
               )}
               title={
-                isDmMode
+                activeChannel?.isGroupDm
+                  ? showMemberList
+                    ? t('Sembunyikan Anggota Grup')
+                    : t('Tampilkan Anggota Grup')
+                  : isDmMode
                   ? showMemberList
                     ? t('Sembunyikan Profil Pengguna')
                     : t('Tampilkan Profil Pengguna')
@@ -276,7 +289,11 @@ export function ChannelTopHeaderBar({
                   : t('Tampilkan Daftar Anggota')
               }
               aria-label={
-                isDmMode
+                activeChannel?.isGroupDm
+                  ? showMemberList
+                    ? t('Sembunyikan Anggota Grup')
+                    : t('Tampilkan Anggota Grup')
+                  : isDmMode
                   ? showMemberList
                     ? t('Sembunyikan Profil Pengguna')
                     : t('Tampilkan Profil Pengguna')
@@ -285,11 +302,19 @@ export function ChannelTopHeaderBar({
                   : t('Tampilkan Daftar Anggota')
               }
             >
-              {isDmMode ? <UserRound className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+              {isDmMode && !activeChannel?.isGroupDm ? (
+                <UserRound className="w-5 h-5" />
+              ) : (
+                <Users className="w-5 h-5" />
+              )}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-            {isDmMode
+            {activeChannel?.isGroupDm
+              ? showMemberList
+                ? t('Sembunyikan Anggota Grup')
+                : t('Tampilkan Anggota Grup')
+              : isDmMode
               ? showMemberList
                 ? t('Sembunyikan Profil Pengguna')
                 : t('Tampilkan Profil Pengguna')

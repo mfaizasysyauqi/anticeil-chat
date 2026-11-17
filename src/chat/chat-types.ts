@@ -40,6 +40,10 @@ export type ColonyChannel = {
   hubId?: string;
   isDirectMessage?: boolean;
   dmUserId?: string;
+  isGroupDm?: boolean;
+  dmUserIds?: string[];
+  dmIcon?: string;
+  ownerId?: string;
   unreadCount?: number;
   type?: ColonyChannelType;
   isPrivate?: boolean;

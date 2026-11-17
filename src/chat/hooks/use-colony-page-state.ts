@@ -241,6 +241,8 @@ export function useColonyPageState(): ChatPageContentProps {
     setIsDmSearchOpen,
     dmSearchQuery,
     setDmSearchQuery,
+    isCreateGroupDmOpen,
+    setIsCreateGroupDmOpen,
   } = chatSubsystems;
 
   // View Modes & UI Layout State Hook
@@ -401,6 +403,8 @@ export function useColonyPageState(): ChatPageContentProps {
     displayMembers,
     handleStartDM,
     handleCloseDM,
+    handleCreateGroupDM,
+    handleAddMemberToGroupDM,
     allKnownMembers,
     isDmMode,
     activeDmUserId,
@@ -464,6 +468,8 @@ export function useColonyPageState(): ChatPageContentProps {
     handleToggleRailMode,
     handleStartDM,
     handleCloseDM,
+    handleCreateGroupDM,
+    handleAddMemberToGroupDM,
     isAddFriendDialogOpen,
     setIsAddFriendDialogOpen,
     t,
@@ -492,6 +498,8 @@ export function useColonyPageState(): ChatPageContentProps {
     setIsDmSearchOpen,
     dmSearchQuery,
     setDmSearchQuery,
+    isCreateGroupDmOpen,
+    setIsCreateGroupDmOpen,
     setIsInviteOpen,
     setColonySettingsSection,
     setIsServerSettingsOpen,

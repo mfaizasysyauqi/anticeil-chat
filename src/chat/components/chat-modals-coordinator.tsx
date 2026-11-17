@@ -33,6 +33,9 @@ export interface ChatModalsCoordinatorProps {
   dmChannels: any[];
   setActiveColonyId: (id: string) => void;
   handleStartDM: (member: any) => void;
+  isCreateGroupDmOpen?: boolean;
+  setIsCreateGroupDmOpen?: (open: boolean) => void;
+  handleCreateGroupDM?: (name: string, memberIds: string[]) => void;
 
   isGiftModalOpen: boolean;
   setIsGiftModalOpen: (open: boolean) => void;
@@ -112,6 +115,9 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
   dmChannels,
   setActiveColonyId,
   handleStartDM,
+  isCreateGroupDmOpen,
+  setIsCreateGroupDmOpen,
+  handleCreateGroupDM,
 
   isGiftModalOpen,
   setIsGiftModalOpen,
@@ -207,6 +213,9 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
         dmSearchQuery={dmSearchQuery}
         setDmSearchQuery={setDmSearchQuery}
         dmChannels={dmChannels}
+        isCreateGroupDmOpen={isCreateGroupDmOpen}
+        setIsCreateGroupDmOpen={setIsCreateGroupDmOpen}
+        handleCreateGroupDM={handleCreateGroupDM}
         setActiveColonyId={setActiveColonyId}
         setActiveChannelId={setActiveChannelId}
         handleStartDM={handleStartDM}
