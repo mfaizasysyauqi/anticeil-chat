@@ -19,7 +19,58 @@ const DEFAULT_SUBSCRIPTION: UserSubscription = {
   perks: ['Akses chat standar', 'Upload file hingga 25MB', 'Voice chat 64kbps'],
 };
 
+export interface MidtransTokenResponse {
+  snapToken: string;
+  redirectUrl?: string;
+  orderId: string;
+  clientKey: string;
+}
+
+export interface MidtransVerifyResponse {
+  success: boolean;
+  status: string;
+  plan?: string;
+  message?: string;
+}
+
+export const loadMidtransSnap = (clientKey: string, isProduction = false): Promise<void> => {
+  return new Promise((resolve) => {
+    if ((window as any).snap) {
+      resolve();
+      return;
+    }
+    const src = isProduction
+      ? 'https://app.midtrans.com/snap/snap.js'
+      : 'https://app.sandbox.midtrans.com/snap/snap.js';
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.setAttribute('data-client-key', clientKey);
+    script.onload = () => resolve();
+    document.head.appendChild(script);
+  });
+};
+
 export const subscriptionsApi = {
+  createMidtransToken: async (
+    planId: 'nectar_basic' | 'nectar_boost'
+  ): Promise<MidtransTokenResponse> => {
+    return api.post<MidtransTokenResponse>('/v1/billing/midtrans-token', {
+      plan: planId,
+      cycle: 'month',
+    });
+  },
+
+  verifyMidtransPayment: async (orderId: string): Promise<MidtransVerifyResponse> => {
+    return api.post<MidtransVerifyResponse>('/v1/billing/midtrans-verify', {
+      orderId,
+    });
+  },
+
   getSubscription: async (): Promise<UserSubscription> => {
     try {
       const data = await api.get<UserSubscription>('/v1/billing/subscriptions');

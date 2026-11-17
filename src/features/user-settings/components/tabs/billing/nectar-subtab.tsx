@@ -17,7 +17,7 @@ import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { subscriptionsApi } from '@/features/billing/api/subscriptions-api';
+import { subscriptionsApi, loadMidtransSnap } from '@/features/billing/api/subscriptions-api';
 
 export interface NectarSubtabProps {
   theme?: any;
@@ -32,15 +32,56 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
   const handleSubscribe = async (plan: 'nectar_basic' | 'nectar_boost') => {
     setSubscribing(plan);
     try {
-      await subscriptionsApi.subscribe(plan);
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      toast.success(
-        plan === 'nectar_boost'
-          ? t('Selamat! Anda sekarang berlangganan Nectar VIP! 🎉')
-          : t('Selamat! Anda sekarang berlangganan Pollen! 🎉')
-      );
-    } catch {
-      toast.error(t('Gagal mengaktifkan langganan'));
+      const res = await subscriptionsApi.createMidtransToken(plan);
+      if (!res || !res.snapToken) {
+        throw new Error('Gagal mendapatkan token pembayaran dari server');
+      }
+
+      await loadMidtransSnap(res.clientKey || (import.meta.env.VITE_MIDTRANS_CLIENT_KEY as string) || '');
+
+      if (typeof window !== 'undefined' && (window as any).snap) {
+        (window as any).snap.pay(res.snapToken, {
+          onSuccess: async () => {
+            toast.loading(t('Memverifikasi pembayaran...'), { id: 'midtrans-verify' });
+            try {
+              await subscriptionsApi.verifyMidtransPayment(res.orderId);
+              await subscriptionsApi.subscribe(plan);
+              toast.dismiss('midtrans-verify');
+              confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+              toast.success(
+                plan === 'nectar_boost'
+                  ? t('Selamat! Anda sekarang berlangganan Nectar VIP! 🎉')
+                  : t('Selamat! Anda sekarang berlangganan Pollen! 🎉')
+              );
+            } catch {
+              toast.dismiss('midtrans-verify');
+              toast.success(t('Pembayaran berhasil diterima!'));
+            }
+          },
+          onPending: () => {
+            toast.info(t('Pembayaran pending. Silakan selesaikan pembayaran di QRIS atau Virtual Account Anda.'));
+          },
+          onError: () => {
+            toast.error(t('Pembayaran gagal atau dibatalkan.'));
+          },
+          onClose: () => {
+            setSubscribing(null);
+          },
+        });
+      } else if (res.redirectUrl) {
+        window.open(res.redirectUrl, '_blank');
+      } else {
+        // Fallback direct activation
+        await subscriptionsApi.subscribe(plan);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        toast.success(
+          plan === 'nectar_boost'
+            ? t('Selamat! Anda sekarang berlangganan Nectar VIP! 🎉')
+            : t('Selamat! Anda sekarang berlangganan Pollen! 🎉')
+        );
+      }
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal mengaktifkan langganan'));
     } finally {
       setSubscribing(null);
     }
@@ -78,17 +119,12 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
           <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
             <Button
               size="default"
-              onClick={() =>
-                toast.success(
-                  t(
-                    'Membuka langganan Nectar... Akun Anda memenuhi syarat promo perdana!',
-                  ),
-                )
-              }
+              onClick={() => handleSubscribe('nectar_boost')}
+              disabled={subscribing !== null}
               className="bg-white hover:bg-white/90 text-purple-950 font-black text-xs sm:text-sm h-10 px-6 rounded-xl shadow-xl cursor-pointer flex items-center gap-2"
             >
               <Zap className="w-4 h-4 fill-current text-purple-600" />
-              <span>{t('Subscribe')}</span>
+              <span>{subscribing === 'nectar_boost' ? t('Mengaktifkan...') : t('Subscribe')}</span>
             </Button>
 
             <Button
