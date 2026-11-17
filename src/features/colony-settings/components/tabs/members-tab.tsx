@@ -32,6 +32,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { CommunityAvatar } from '@/chat/chat-avatar';
+import { colonyApi } from '@/chat/chat-api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type {
@@ -311,35 +312,44 @@ export function MembersTab({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="start"
-                              className="bg-[#111214] border-border/80 w-36"
+                              className="bg-[#111214] border-border/80 w-40"
                             >
-                              {(['owner', 'admin', 'moderator', 'member'] as const).map(
-                                (r) => (
-                                  <DropdownMenuItem
-                                    key={r}
-                                    onClick={() => {
-                                      onUpdateMembers?.((prev) =>
-                                        prev.map((item) =>
-                                          item.id === m.id
-                                            ? { ...item, role: r }
-                                            : item,
-                                        ),
-                                      );
-                                      toast.success(
-                                        t(
-                                          `Peran ${m.name} diubah menjadi ${r}`,
-                                        ),
-                                      );
-                                    }}
-                                    className="text-xs capitalize cursor-pointer"
-                                  >
-                                    {m.role === r && (
-                                      <Check className="w-3 h-3 mr-1.5 text-emerald-500" />
-                                    )}
-                                    {r}
-                                  </DropdownMenuItem>
-                                ),
-                              )}
+                              {Array.from(
+                                new Set([
+                                  'owner',
+                                  'admin',
+                                  'moderator',
+                                  'member',
+                                  ...serverRoles.map((sr) => sr.name),
+                                ]),
+                              ).map((r) => (
+                                <DropdownMenuItem
+                                  key={r}
+                                  onClick={async () => {
+                                    onUpdateMembers?.((prev) =>
+                                      prev.map((item) =>
+                                        item.id === m.id
+                                          ? { ...item, role: r }
+                                          : item,
+                                      ),
+                                    );
+                                    try {
+                                      await colonyApi.updateMemberRole(activeColony.id, m.id, r);
+                                    } catch {}
+                                    toast.success(
+                                      t(
+                                        `Peran ${m.name} diubah menjadi ${r}`,
+                                      ),
+                                    );
+                                  }}
+                                  className="text-xs capitalize cursor-pointer"
+                                >
+                                  {m.role?.toLowerCase() === r.toLowerCase() && (
+                                    <Check className="w-3 h-3 mr-1.5 text-teal-400" />
+                                  )}
+                                  {r}
+                                </DropdownMenuItem>
+                              ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

@@ -244,6 +244,52 @@ export const coloniesApi = {
     return newRole;
   },
 
+  async updateRole(
+    colonyId: string,
+    roleId: string,
+    payload: { name?: string; color?: string; permissions?: string[]; position?: number },
+  ): Promise<ColonyCustomRole> {
+    try {
+      const res = await api.put<ColonyCustomRole>(`/v1/colony/colonies/${colonyId}/roles/${roleId}`, payload);
+      if (res && res.id) {
+        const stored = loadStoredRoles(colonyId);
+        const updated = stored.map((r) => (r.id === roleId ? { ...r, ...res } : r));
+        saveStoredRoles(colonyId, updated);
+        this.recordAudit(colonyId, 'ROLE_UPDATED', 'Admin', res.name, { color: res.color });
+        return res;
+      }
+    } catch {}
+    const stored = loadStoredRoles(colonyId);
+    let updatedRole: ColonyCustomRole | null = null;
+    const updated = stored.map((r) => {
+      if (r.id === roleId) {
+        updatedRole = {
+          ...r,
+          name: payload.name !== undefined ? payload.name : r.name,
+          color: payload.color !== undefined ? payload.color : r.color,
+          permissions: payload.permissions !== undefined ? payload.permissions : r.permissions,
+          position: payload.position !== undefined ? payload.position : r.position,
+        };
+        return updatedRole;
+      }
+      return r;
+    });
+    if (!updatedRole) {
+      updatedRole = {
+        id: roleId,
+        colonyId,
+        name: payload.name || 'Role',
+        color: payload.color || '#6366f1',
+        permissions: payload.permissions || ['SEND_MESSAGES'],
+        position: payload.position || 0,
+      };
+      updated.push(updatedRole);
+    }
+    saveStoredRoles(colonyId, updated);
+    this.recordAudit(colonyId, 'ROLE_UPDATED', 'Admin', updatedRole.name, { color: updatedRole.color });
+    return updatedRole;
+  },
+
   async deleteRole(colonyId: string, roleId: string): Promise<{ success: boolean; id: string }> {
     try {
       await api.delete(`/v1/colony/colonies/${colonyId}/roles/${roleId}`);

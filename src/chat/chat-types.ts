@@ -10,7 +10,8 @@ export type ColonyRole =
   | 'project_editor'
   | 'project_viewer'
   | 'creator'
-  | 'pro';
+  | 'pro'
+  | (string & {});
 
 export type {
   ColonyId,

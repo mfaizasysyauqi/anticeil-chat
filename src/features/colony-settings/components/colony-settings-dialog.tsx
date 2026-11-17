@@ -325,6 +325,7 @@ export function ColonySettingsDialog({
                   serverRoles={serverRoles}
                   setServerRoles={setServerRoles}
                   members={members}
+                  onUpdateMembers={onUpdateMembers}
                   t={t}
                 />
               )}

@@ -56,7 +56,7 @@ export function RoleDisplaySubtab({
                 value={roleName}
                 onChange={(e) => setRoleName(e.target.value)}
                 placeholder="new role"
-                className="w-full h-10 px-3.5 rounded-xl bg-[#1e1f22] border border-border/80 text-xs font-semibold text-foreground focus:outline-none focus:border-[#5865F2]"
+                className="w-full h-10 px-3.5 rounded-xl bg-[#1e1f22] border border-border/80 text-xs font-semibold text-foreground focus:outline-none focus:border-teal-500"
               />
             </div>
 
@@ -66,7 +66,7 @@ export function RoleDisplaySubtab({
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   {t('Role Style')}
                 </label>
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#5865F2] text-white">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-teal-600 text-white">
                   NEW
                 </span>
               </div>
@@ -80,7 +80,7 @@ export function RoleDisplaySubtab({
                     className={cn(
                       'p-3 rounded-xl border bg-[#1e1f22] flex flex-col items-center justify-center gap-1.5 capitalize text-xs font-semibold transition-all cursor-pointer',
                       roleStyle === style
-                        ? 'border-[#5865F2] ring-2 ring-[#5865F2] bg-[#2b2d31]'
+                        ? 'border-teal-500 ring-2 ring-teal-500 bg-[#2b2d31]'
                         : 'border-border/70 hover:border-border hover:bg-[#2b2d31]/50 text-muted-foreground',
                     )}
                   >
@@ -101,7 +101,7 @@ export function RoleDisplaySubtab({
                 <button
                   type="button"
                   onClick={() => toast.info(t('Tingkatkan server untuk membuka gaya peran kustom.'))}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#5865F2] via-[#8b5cf6] to-[#ec4899] text-white text-[10px] font-bold shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-600 text-white text-[10px] font-bold shadow-sm"
                 >
                   <Gem className="w-3 h-3" />
                   <span>{t('Unlock with Boosting')}</span>
@@ -130,7 +130,7 @@ export function RoleDisplaySubtab({
                   className={cn(
                     'size-9 rounded-xl border flex items-center justify-center bg-[#2b2d31] transition-transform cursor-pointer',
                     roleColor === '#94a3b8'
-                      ? 'border-white ring-2 ring-[#5865F2] scale-105'
+                      ? 'border-white ring-2 ring-teal-500 scale-105'
                       : 'border-border/70',
                   )}
                   title="Clear / Default"
@@ -150,7 +150,7 @@ export function RoleDisplaySubtab({
                       className={cn(
                         'size-9 rounded-xl border transition-all cursor-pointer shadow-xs',
                         isSelected
-                          ? 'border-white ring-2 ring-[#5865F2] scale-110'
+                          ? 'border-white ring-2 ring-teal-500 scale-110'
                           : 'border-transparent hover:scale-105',
                       )}
                       style={{ backgroundColor: col }}

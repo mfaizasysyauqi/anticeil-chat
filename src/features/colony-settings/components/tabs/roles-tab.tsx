@@ -38,6 +38,7 @@ interface RolesTabProps {
   serverRoles: CommunityCustomRole[];
   setServerRoles: React.Dispatch<React.SetStateAction<CommunityCustomRole[]>>;
   members: ColonyMember[];
+  onUpdateMembers?: (updater: (prev: ColonyMember[]) => ColonyMember[]) => void;
   t: (key: string) => string;
 }
 
@@ -46,6 +47,7 @@ export function RolesTab({
   serverRoles,
   setServerRoles,
   members,
+  onUpdateMembers,
   t,
 }: RolesTabProps) {
   // If activeRoleId is null, show main "Organize your members" screen
@@ -53,6 +55,7 @@ export function RolesTab({
   const [roleEditorTab, setRoleEditorTab] = useState<
     'display' | 'permissions' | 'links' | 'members'
   >('display');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Active role object
   const activeRole = useMemo(() => {
@@ -78,7 +81,7 @@ export function RolesTab({
   const [mentionable, setMentionable] = useState(false);
   const [permissionsSearch, setPermissionsSearch] = useState('');
 
-  // 35+ granular Discord permissions map
+  // Granular Discord permissions map
   const [permissions, setPermissions] = useState<Record<string, boolean>>({
     view_channels: true,
     send_messages: true,
@@ -132,6 +135,23 @@ export function RolesTab({
     setRoleColor(r.color || '#94a3b8');
     setRoleIcon(null);
     setRoleEditorTab('display');
+
+    // Parse existing permissions
+    const permMap: Record<string, boolean> = {};
+    if (Array.isArray(r.permissions)) {
+      for (const p of r.permissions) {
+        if (typeof p === 'string') {
+          permMap[p.toLowerCase()] = true;
+        }
+      }
+    }
+    setPermissions(permMap);
+
+    // Initial assigned members
+    const matching = members
+      .filter((m) => m.role?.toLowerCase() === r.name?.toLowerCase())
+      .map((m) => m.id);
+    setAssignedMemberIds(matching);
   };
 
   const handleCreateNewRole = async () => {
@@ -139,11 +159,13 @@ export function RolesTab({
       const created = await colonyApi.createRole(activeColony.id, {
         name: 'new role',
         color: '#94a3b8',
+        permissions: ['view_channels', 'send_messages', 'attach_files', 'add_reactions'],
       });
       const roleItem: CommunityCustomRole = {
         ...created,
-        name: 'new role',
-        color: '#94a3b8',
+        name: created?.name || 'new role',
+        color: created?.color || '#94a3b8',
+        permissions: created?.permissions || ['view_channels', 'send_messages', 'attach_files', 'add_reactions'],
       };
       setServerRoles((prev) => [...prev, roleItem]);
       handleSelectRole(roleItem);
@@ -154,7 +176,7 @@ export function RolesTab({
         colonyId: activeColony.id,
         name: 'new role',
         color: '#94a3b8',
-        permissions: [],
+        permissions: ['view_channels', 'send_messages', 'attach_files', 'add_reactions'],
       };
       setServerRoles((prev) => [...prev, fallback]);
       handleSelectRole(fallback);
@@ -168,14 +190,43 @@ export function RolesTab({
       toast.success(t('Izin @everyone berhasil diperbarui!'));
       return;
     }
-    const updated = serverRoles.map((r) =>
-      r.id === activeRole.id ? { ...r, name: roleName, color: roleColor } : r,
-    );
-    setServerRoles(updated);
-    toast.success(t(`Peran "${roleName}" berhasil disimpan! 🛡️`));
+    setIsSaving(true);
+    const activePerms = Object.keys(permissions).filter((k) => permissions[k]);
+    try {
+      const res = await colonyApi.updateRole(activeColony.id, activeRole.id, {
+        name: roleName,
+        color: roleColor,
+        permissions: activePerms,
+      });
+      const updated = serverRoles.map((r) =>
+        r.id === activeRole.id
+          ? {
+              ...r,
+              name: res?.name || roleName,
+              color: res?.color || roleColor,
+              permissions: res?.permissions || activePerms,
+            }
+          : r,
+      );
+      setServerRoles(updated);
+      toast.success(t(`Peran "${roleName}" berhasil disimpan! 🛡️`));
+    } catch {
+      const updated = serverRoles.map((r) =>
+        r.id === activeRole.id
+          ? { ...r, name: roleName, color: roleColor, permissions: activePerms }
+          : r,
+      );
+      setServerRoles(updated);
+      toast.success(t(`Peran "${roleName}" berhasil disimpan! 🛡️`));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteRole = async (id: string) => {
+    try {
+      await colonyApi.deleteRole(activeColony.id, id);
+    } catch {}
     const updated = serverRoles.filter((r) => r.id !== id);
     setServerRoles(updated);
     setActiveRoleId(null);
@@ -248,8 +299,9 @@ export function RolesTab({
           </p>
 
           <Button
+            variant="teal"
             onClick={handleCreateNewRole}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-5 h-9 rounded-lg cursor-pointer shadow-md"
+            className="text-xs font-semibold px-5 h-9 rounded-lg cursor-pointer shadow-md"
           >
             {t('Create Role')}
           </Button>
@@ -429,7 +481,7 @@ export function RolesTab({
           >
             <span>{t('Display')}</span>
             {roleEditorTab === 'display' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5865F2]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />
             )}
           </button>
 
@@ -445,7 +497,7 @@ export function RolesTab({
           >
             <span>{t('Permissions')}</span>
             {roleEditorTab === 'permissions' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5865F2]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />
             )}
           </button>
 
@@ -461,7 +513,7 @@ export function RolesTab({
           >
             <span>{t('Links')}</span>
             {roleEditorTab === 'links' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5865F2]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />
             )}
           </button>
 
@@ -477,7 +529,7 @@ export function RolesTab({
           >
             <span>{t('Manage Members')} ({roleMembers.length})</span>
             {roleEditorTab === 'members' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5865F2]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />
             )}
           </button>
         </div>
@@ -527,6 +579,7 @@ export function RolesTab({
         {roleEditorTab === 'members' && (
           <RoleMembersSubtab
             activeRole={activeRole}
+            activeColony={activeColony}
             members={members}
             assignedMemberIds={assignedMemberIds}
             setAssignedMemberIds={setAssignedMemberIds}
@@ -534,6 +587,7 @@ export function RolesTab({
             setMemberSearchInRole={setMemberSearchInRole}
             isAddingMembersModalOpen={isAddingMembersModalOpen}
             setIsAddingMembersModalOpen={setIsAddingMembersModalOpen}
+            onUpdateMembers={onUpdateMembers}
             t={t}
           />
         )}
@@ -541,10 +595,12 @@ export function RolesTab({
         {/* Footer Actions */}
         <div className="pt-4 border-t border-border/50 flex items-center gap-3">
           <Button
+            variant="teal"
+            disabled={isSaving}
             onClick={handleSaveRole}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
+            className="text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
           >
-            {t('Simpan Perubahan')}
+            {isSaving ? t('Menyimpan...') : t('Simpan Perubahan')}
           </Button>
           <Button
             variant="outline"

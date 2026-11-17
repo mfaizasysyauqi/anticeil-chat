@@ -34,7 +34,7 @@ export function RolePermissionsSubtab({
                   value={permissionsSearch}
                   onChange={(e) => setPermissionsSearch(e.target.value)}
                   placeholder={t('Search permissions')}
-                  className="w-full text-xs h-9 pl-9 pr-3 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground focus:outline-none focus:border-[#5865F2]"
+                  className="w-full text-xs h-9 pl-9 pr-3 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground focus:outline-none focus:border-teal-500"
                 />
               </div>
 
@@ -42,7 +42,7 @@ export function RolePermissionsSubtab({
                 variant="ghost"
                 size="sm"
                 onClick={clearAllPermissions}
-                className="text-xs text-blue-400 hover:text-blue-300 h-9"
+                className="text-xs text-teal-400 hover:text-teal-300 h-9"
               >
                 {t('Clear permissions')}
               </Button>
