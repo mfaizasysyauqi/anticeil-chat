@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MediaPickerPopover } from './media-picker-popover';
 import { ChatAppsPopover } from './chat-apps-popover';
+import { SlashCommandAutocomplete } from './slash-command-autocomplete';
 import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
@@ -118,6 +119,8 @@ export function ChatInputBar({
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [isCustomScheduleOpen, setIsCustomScheduleOpen] = useState(false);
+  const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+  const [isSlashOpen, setIsSlashOpen] = useState(true);
   const [e2ee, setE2ee] = useState(() => isE2eeEnabled());
   const userPlan = getCurrentUserPlan();
   const maxMessageChars = getCurrentMaxMessageChars();
@@ -204,6 +207,20 @@ export function ChatInputBar({
             <X className="w-3.5 h-3.5" />
           </Button>
         </div>
+      )}
+
+      {/* Bot Slash Command Autocomplete */}
+      {inputText.startsWith('/') && isSlashOpen && (
+        <SlashCommandAutocomplete
+          inputText={inputText}
+          activeColony={activeColony}
+          onSelectCommand={(cmd) => {
+            setInputText(`${cmd} `);
+            textareaRef.current?.focus();
+          }}
+          isOpen={isSlashOpen}
+          selectedIndex={slashSelectedIndex}
+        />
       )}
 
       {/* Discord Signature Chat Input Box: Auto-expanding multiline with max-height 50% screen height */}
@@ -331,8 +348,29 @@ export function ChatInputBar({
           rows={1}
           value={inputText}
           maxLength={maxMessageChars}
-          onChange={(e) => setInputText(e.target.value)}
+          onChange={(e) => {
+            setInputText(e.target.value);
+            if (!isSlashOpen && e.target.value.startsWith('/')) {
+              setIsSlashOpen(true);
+            }
+          }}
           onKeyDown={(e) => {
+            if (inputText.startsWith('/') && isSlashOpen) {
+              if (e.key === 'Escape') {
+                setIsSlashOpen(false);
+                return;
+              }
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSlashSelectedIndex((prev) => prev + 1);
+                return;
+              }
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSlashSelectedIndex((prev) => Math.max(0, prev - 1));
+                return;
+              }
+            }
             if (e.key === 'Enter' && !e.shiftKey) {
               if ((e.nativeEvent as any).isComposing) return;
               e.preventDefault();

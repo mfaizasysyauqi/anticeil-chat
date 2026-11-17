@@ -1,6 +1,6 @@
 import { getColonyInitials } from '../components/colony-icon';
 import { api } from '@/lib/api';
-import type { ServerInvitation, ColonyInvitation, ColonyOnboarding, ColonyTemplateSettings, ColonySafetySettings, ColonyAccessSettings, ColonyApplication } from '@/lib/colony';
+import type { ServerInvitation, ColonyInvitation, ColonyOnboarding, ColonyTemplateSettings, ColonySafetySettings, ColonyAccessSettings, ColonyApplication, ColonyApp } from '@/lib/colony';
 import {
   loadStoredChannels,
   loadStoredColonies,
@@ -970,6 +970,84 @@ export const coloniesApi = {
       } catch {}
     }
     return { success: true };
+  },
+
+  // ── Colony Apps & Bot Ecosystem ───────────────────────────────────────
+  async getColonyApps(colonyId: string): Promise<ColonyApp[]> {
+    try {
+      const res = await api.get<ColonyApp[]>(`/v1/colonies/${colonyId}/apps`);
+      if (Array.isArray(res)) return res;
+    } catch {
+      try {
+        const res2 = await api.get<ColonyApp[]>(`/v1/colony/colonies/${colonyId}/apps`);
+        if (Array.isArray(res2)) return res2;
+      } catch {}
+    }
+    return [];
+  },
+
+  async installColonyApp(
+    colonyId: string,
+    appId: string,
+    appData: Partial<ColonyApp>
+  ): Promise<{ success: boolean; app?: ColonyApp }> {
+    try {
+      const res = await api.post<{ success: boolean; app: ColonyApp }>(
+        `/v1/colonies/${colonyId}/apps/${appId}/install`,
+        appData
+      );
+      return res;
+    } catch {
+      try {
+        const res2 = await api.post<{ success: boolean; app: ColonyApp }>(
+          `/v1/colony/colonies/${colonyId}/apps/${appId}/install`,
+          appData
+        );
+        return res2;
+      } catch {}
+    }
+    return { success: false };
+  },
+
+  async uninstallColonyApp(colonyId: string, appId: string): Promise<{ success: boolean }> {
+    try {
+      const res = await api.delete<{ success: boolean }>(`/v1/colonies/${colonyId}/apps/${appId}`);
+      return res;
+    } catch {
+      try {
+        const res2 = await api.delete<{ success: boolean }>(`/v1/colony/colonies/${colonyId}/apps/${appId}`);
+        return res2;
+      } catch {}
+    }
+    return { success: false };
+  },
+
+  async updateColonyAppPermissions(
+    colonyId: string,
+    appId: string,
+    updates: {
+      permissions?: string[];
+      allowedChannels?: string[];
+      enabled?: boolean;
+      settings?: Record<string, unknown>;
+    }
+  ): Promise<{ success: boolean }> {
+    try {
+      const res = await api.put<{ success: boolean }>(
+        `/v1/colonies/${colonyId}/apps/${appId}/permissions`,
+        updates
+      );
+      return res;
+    } catch {
+      try {
+        const res2 = await api.put<{ success: boolean }>(
+          `/v1/colony/colonies/${colonyId}/apps/${appId}/permissions`,
+          updates
+        );
+        return res2;
+      } catch {}
+    }
+    return { success: false };
   },
 
   boostHub(id: string) { return this.boostColony(id); },

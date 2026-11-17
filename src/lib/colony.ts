@@ -35,6 +35,10 @@ export type ColonyApp = {
   verified?: boolean;
   slashCommands?: string[];
   permissions?: string[];
+  allowedChannels?: string[];
+  enabled?: boolean;
+  author?: string;
+  settings?: Record<string, unknown>;
   installedAt?: string;
 };
 

@@ -367,6 +367,7 @@ export function ColonySettingsDialog({
               {serverSettingsSection === 'app-directory' && (
                 <AppDirectoryTab
                   activeColony={activeColony}
+                  channels={channels}
                   onUpdateColony={onUpdateColony}
                   onClose={onClose}
                   onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}

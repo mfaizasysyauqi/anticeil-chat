@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { webhooksApi, type ColonyWebhook } from '@/features/webhooks';
 import type { Colony, ColonyChannel, ColonyApp } from '@/chat/chat-types';
+import { coloniesApi } from '@/features/colonies/api/colonies-api';
 import {
   CreateWebhookDialog,
   FollowedChannelsDialog,
@@ -148,6 +149,7 @@ export function IntegrationsTab({
     if (!onUpdateColony) return;
     try {
       const updated = installedApps.filter((a) => a.id !== appId);
+      await coloniesApi.uninstallColonyApp(activeColony.id, appId);
       await onUpdateColony(activeColony.id, { installedApps: updated });
       toast.success(t(`${appName} telah dihapus dari server.`));
     } catch {
