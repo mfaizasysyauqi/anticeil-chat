@@ -288,6 +288,21 @@ export function useColonyPageState(): ChatPageContentProps {
     t,
   });
 
+  // Channel Pins & Notifications Hook
+  const {
+    isPinnedPopoverOpen,
+    setIsPinnedPopoverOpen,
+    pinnedMessages,
+    setPinnedMessages,
+    isNotificationDropdownOpen,
+    setIsNotificationDropdownOpen,
+    channelNotification,
+    handleUpdateNotification,
+  } = useChannelPinsNotifications({
+    activeChannel,
+    socket,
+  });
+
   // Message Actions Hook
   const messageActions = useMessageActions({
     currentUser,
@@ -302,10 +317,10 @@ export function useColonyPageState(): ChatPageContentProps {
     setStagedAttachment,
     messagesMap,
     setMessagesMap,
-    setPinnedMessages: () => {},
+    setPinnedMessages,
     setIsMediaPickerOpen,
     setIsGiftModalOpen,
-    setIsPinnedPopoverOpen: () => {},
+    setIsPinnedPopoverOpen,
     setAuthFeatureInfo: authSession.setAuthFeatureInfo,
     setIsAuthRequiredOpen: authSession.setIsAuthRequiredOpen,
     createCalendarEvent,
@@ -399,18 +414,6 @@ export function useColonyPageState(): ChatPageContentProps {
     setHomeView,
     setIsMobileChannelsOpen,
     setIsMobileMembersOpen,
-  });
-
-  const {
-    isPinnedPopoverOpen,
-    setIsPinnedPopoverOpen,
-    pinnedMessages,
-    isNotificationDropdownOpen,
-    setIsNotificationDropdownOpen,
-    channelNotification,
-    handleUpdateNotification,
-  } = useChannelPinsNotifications({
-    activeChannel,
   });
 
   const handleKanbanCardsUpdate = useCallback(

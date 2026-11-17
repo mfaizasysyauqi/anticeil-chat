@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { colonyApi } from '@/chat/chat-api';
 import type {
@@ -10,9 +10,13 @@ import type {
 
 interface UseChannelPinsNotificationsOptions {
   activeChannel: ColonyChannel | null;
+  socket?: any;
 }
 
-export function useChannelPinsNotifications({ activeChannel }: UseChannelPinsNotificationsOptions) {
+export function useChannelPinsNotifications({
+  activeChannel,
+  socket,
+}: UseChannelPinsNotificationsOptions) {
   const [isPinnedPopoverOpen, setIsPinnedPopoverOpen] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState<ColonyMessage[]>([]);
 
@@ -24,6 +28,58 @@ export function useChannelPinsNotifications({ activeChannel }: UseChannelPinsNot
     isMuted: false,
     mutedUntil: null,
   });
+
+  // 1. Fetch channel pinned messages on channel switch
+  useEffect(() => {
+    if (!activeChannel?.id) {
+      setPinnedMessages([]);
+      return;
+    }
+    let isMounted = true;
+    colonyApi.getPinnedMessages(activeChannel.id).then((pins) => {
+      if (isMounted && Array.isArray(pins)) {
+        setPinnedMessages(pins);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [activeChannel?.id]);
+
+  // 2. Realtime socket event listeners for pins
+  useEffect(() => {
+    if (!socket || !activeChannel?.id) return;
+
+    const handlePinned = (msg: ColonyMessage) => {
+      if (msg.channelId === activeChannel.id) {
+        setPinnedMessages((prev) => {
+          if (msg.isPinned) {
+            const exists = prev.some((p) => p.id === msg.id);
+            if (exists) {
+              return prev.map((p) => (p.id === msg.id ? { ...p, ...msg } : p));
+            }
+            return [msg, ...prev];
+          } else {
+            return prev.filter((p) => p.id !== msg.id);
+          }
+        });
+      }
+    };
+
+    const handleUnpinned = (msg: ColonyMessage) => {
+      if (msg.channelId === activeChannel.id) {
+        setPinnedMessages((prev) => prev.filter((p) => p.id !== msg.id));
+      }
+    };
+
+    socket.on('COMMUNITY_MESSAGE_PINNED', handlePinned);
+    socket.on('COMMUNITY_MESSAGE_UNPINNED', handleUnpinned);
+
+    return () => {
+      socket.off('COMMUNITY_MESSAGE_PINNED', handlePinned);
+      socket.off('COMMUNITY_MESSAGE_UNPINNED', handleUnpinned);
+    };
+  }, [socket, activeChannel?.id]);
 
   const handleUpdateNotification = useCallback(
     async (
@@ -74,4 +130,3 @@ export function useChannelPinsNotifications({ activeChannel }: UseChannelPinsNot
     handleUpdateNotification,
   };
 }
-

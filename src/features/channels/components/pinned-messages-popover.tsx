@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pin, X } from 'lucide-react';
+import { Pin, X, CornerDownRight, Sparkles } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ColonyMessage } from '@/chat/chat-types';
+import { useTranslation } from '@/core/i18n';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -25,6 +26,8 @@ export function PinnedMessagesPopover({
   onJumpToMessage,
   onTogglePin,
 }: PinnedMessagesPopoverProps) {
+  const { t } = useTranslation();
+
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
@@ -34,16 +37,16 @@ export function PinnedMessagesPopover({
           className={cn(
             'h-8 w-8 transition-colors cursor-pointer relative',
             pinnedMessages.length > 0
-              ? 'text-foreground font-semibold'
+              ? 'text-sidebar-primary font-semibold'
               : isOpen
                 ? 'text-foreground bg-accent'
                 : 'text-foreground/70 hover:text-foreground hover:bg-accent/60',
           )}
-          title="Pinned Messages"
+          title={t('Pesan Tersemat')}
         >
-          <Pin className="w-5 h-5" />
+          <Pin className="w-4 h-4" />
           {pinnedMessages.length > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-card" />
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-sidebar-primary ring-1 ring-card animate-pulse" />
           )}
         </Button>
       </PopoverTrigger>
@@ -51,15 +54,19 @@ export function PinnedMessagesPopover({
         side="bottom"
         align="end"
         sideOffset={8}
-        className="w-[420px] max-w-[95vw] max-h-[500px] p-0 bg-background border border-border text-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
+        className="w-[420px] max-w-[95vw] max-h-[520px] p-0 bg-card border border-border/80 text-foreground shadow-2xl rounded-2xl select-none z-50 flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="p-3.5 border-b border-border/40 flex items-center gap-2 bg-muted/30">
-          <Pin className="w-4 h-4 text-foreground" />
-          <span className="font-bold text-foreground text-sm">Pinned Messages</span>
+        <div className="p-3.5 border-b border-border/50 flex items-center justify-between bg-muted/30">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
+              <Pin className="w-3.5 h-3.5" />
+            </div>
+            <span className="font-bold text-foreground text-xs">{t('Pesan Tersemat')}</span>
+          </div>
           {pinnedMessages.length > 0 && (
-            <span className="ml-auto text-[10px] text-[#949ba4] font-mono">
-              {pinnedMessages.length} tersemat
+            <span className="text-[10px] bg-sidebar-primary/10 text-sidebar-primary font-bold px-2 py-0.5 rounded-full border border-sidebar-primary/20">
+              {pinnedMessages.length} {t('tersemat')}
             </span>
           )}
         </div>
@@ -67,30 +74,26 @@ export function PinnedMessagesPopover({
         {/* Body */}
         <div className="flex-1 overflow-y-auto [scrollbar-width:thin] flex flex-col">
           {pinnedMessages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-              <div className="relative w-28 h-28 mb-4 flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-[#35373c] border-2 border-[#404249] flex items-center justify-center relative shadow-inner">
-                  <div className="flex items-center gap-5 -mt-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#1e1f22]" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#1e1f22]" />
-                  </div>
-                  <div className="absolute bottom-5 w-6 h-2.5 border-t-2 border-[#1e1f22] rounded-t-full" />
-                  <div className="absolute -top-3.5 -right-1 rotate-45 text-2xl filter drop-shadow">
-                    📌
-                  </div>
-                </div>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
+              <div className="relative w-20 h-20 rounded-2xl bg-secondary/50 border border-border/60 flex items-center justify-center shadow-inner">
+                <Pin className="w-8 h-8 text-muted-foreground/40 rotate-12" />
               </div>
 
-              <p className="text-sm font-semibold text-foreground max-w-xs leading-snug mb-6">
-                This channel doesn&apos;t have any pinned messages... yet.
-              </p>
+              <div className="space-y-1 max-w-xs">
+                <p className="text-xs font-bold text-foreground">
+                  {t('Belum ada pesan yang disematkan')}
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  {t('Sematkan pesan penting agar mudah ditemukan oleh semua anggota saluran ini.')}
+                </p>
+              </div>
             </div>
           ) : (
             <div className="p-3 space-y-2.5">
               {pinnedMessages.map((pMsg) => (
                 <div
                   key={pMsg.id}
-                  className="p-3 rounded-xl bg-card border border-border hover:border-border/80 transition-all flex flex-col gap-2 group"
+                  className="p-3 rounded-xl bg-secondary/40 border border-border/60 hover:border-sidebar-primary/40 transition-all flex flex-col gap-2 group"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -101,41 +104,54 @@ export function PinnedMessagesPopover({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <button
+                    <div className="flex items-center gap-1.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                      <Button
                         type="button"
-                        onClick={() => onJumpToMessage(pMsg.id)}
-                        className="px-2 py-0.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[10px] rounded transition-colors cursor-pointer"
+                        size="sm"
+                        variant="teal"
+                        onClick={() => {
+                          onJumpToMessage(pMsg.id);
+                          onOpenChange(false);
+                        }}
+                        className="h-6 px-2.5 text-[10px] font-bold rounded-lg cursor-pointer flex items-center gap-1 shadow-xs"
                       >
-                        Jump
-                      </button>
-                      <button
+                        <CornerDownRight className="w-3 h-3" />
+                        <span>{t('Lompat')}</span>
+                      </Button>
+                      <Button
                         type="button"
+                        size="sm"
+                        variant="ghost"
                         onClick={() => onTogglePin(pMsg.id)}
-                        className="p-1 hover:bg-red-500/20 text-muted-foreground hover:text-red-400 rounded transition-colors cursor-pointer"
-                        title="Unpin message"
+                        className="h-6 w-6 p-0 hover:bg-destructive/15 text-muted-foreground hover:text-destructive rounded-lg transition-colors cursor-pointer"
+                        title={t('Lepas Sematan (Unpin)')}
                       >
                         <X className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
-                  <p className="text-xs text-foreground/90 line-clamp-3 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs text-foreground/90 line-clamp-3 leading-relaxed whitespace-pre-wrap bg-background/40 p-2 rounded-lg border border-border/40">
                     {pMsg.content}
                   </p>
+
+                  {pMsg.pinnedBy && (
+                    <div className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+                      <span>{t('Disematkan oleh')}</span>
+                      <span className="font-semibold text-foreground">{pMsg.pinnedBy}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
 
           {/* Protip Box at bottom */}
-          <div className="p-3.5 bg-card/60 border-t border-border mt-auto">
-            <span className="text-xs font-bold text-emerald-500 block mb-0.5">
-              Protip:
+          <div className="p-3 bg-secondary/20 border-t border-border/50 mt-auto flex items-center gap-2 text-[11px] text-muted-foreground">
+            <Sparkles className="w-3.5 h-3.5 text-sidebar-primary shrink-0" />
+            <span>
+              {t('Tips: Anggota dengan izin moderasi dapat menyematkan pesan langsung dari menu aksi.')}
             </span>
-            <p className="text-[11px] text-muted-foreground leading-normal">
-              Users with the &apos;Pin Messages&apos; permission can pin a message from its context menu.
-            </p>
           </div>
         </div>
       </PopoverContent>
