@@ -112,7 +112,7 @@ export function SafetyModals({
       <Dialog open={activeModal === 'raid'} onOpenChange={(open) => !open && onCloseModal()}>
         <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-amber-400">
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-primary">
               <ShieldAlert className="w-4 h-4" />
               <span>{t('Raid Protection and CAPTCHA')}</span>
             </DialogTitle>
@@ -294,7 +294,7 @@ export function SafetyModals({
       <Dialog open={activeModal === 'automod'} onOpenChange={(open) => !open && onCloseModal()}>
         <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-indigo-400">
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-teal-400">
               <Bot className="w-4 h-4" />
               <span>{t('AutoMod Rules')}</span>
             </DialogTitle>

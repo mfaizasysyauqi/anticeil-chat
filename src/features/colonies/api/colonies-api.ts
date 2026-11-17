@@ -1,6 +1,6 @@
 import { getColonyInitials } from '../components/colony-icon';
 import { api } from '@/lib/api';
-import type { ServerInvitation, ColonyInvitation, ColonyOnboarding, ColonyTemplateSettings } from '@/lib/colony';
+import type { ServerInvitation, ColonyInvitation, ColonyOnboarding, ColonyTemplateSettings, ColonySafetySettings } from '@/lib/colony';
 import {
   loadStoredChannels,
   loadStoredColonies,
@@ -784,6 +784,53 @@ export const coloniesApi = {
     } catch {
       return { success: true };
     }
+  },
+
+  // ── Colony Safety & AutoMod ──────────────────────────────────────────
+  async getColonySafety(colonyId: string): Promise<ColonySafetySettings> {
+    try {
+      const res = await api.get<ColonySafetySettings>(`/v1/colonies/${colonyId}/safety`);
+      if (res && (res.autoMod || res.raidProtection)) {
+        return res;
+      }
+    } catch {
+      try {
+        const res2 = await api.get<ColonySafetySettings>(`/v1/colony/colonies/${colonyId}/safety`);
+        if (res2 && (res2.autoMod || res2.raidProtection)) {
+          return res2;
+        }
+      } catch {}
+    }
+    const colony = loadStoredColonies().find((c) => c.id === colonyId);
+    return colony?.safetySettings || {
+      raidProtection: { captchaOnJoin: true, raidAlerts: true, autoPauseInvites: false },
+      dmSpamProtection: { filterExplicitMedia: true, blockKnownSpam: true, rateLimitNewMembers: true, warnUnverifiedLinks: true, filterInvites: true },
+      autoMod: { blockFlaggedWords: true, blockSevereProfanity: false, blockSpamRepeated: false, blockEveryoneMentions: false, customBlocklist: ['free nitro', 'crypto-airdrop', 'steam-gift-card'] },
+      permissions: { restrictEveryoneMention: true, disableUploadsUnverified: false, require2faModeration: false },
+    };
+  },
+
+  async updateColonySafety(colonyId: string, payload: ColonySafetySettings): Promise<ColonySafetySettings> {
+    try {
+      const res = await api.put<ColonySafetySettings>(`/v1/colonies/${colonyId}/safety`, payload);
+      if (res) {
+        const stored = loadStoredColonies();
+        saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, safetySettings: res } : c));
+        return res;
+      }
+    } catch {
+      try {
+        const res2 = await api.put<ColonySafetySettings>(`/v1/colony/colonies/${colonyId}/safety`, payload);
+        if (res2) {
+          const stored = loadStoredColonies();
+          saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, safetySettings: res2 } : c));
+          return res2;
+        }
+      } catch {}
+    }
+    const stored = loadStoredColonies();
+    saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, safetySettings: payload } : c));
+    return payload;
   },
 
   boostHub(id: string) { return this.boostColony(id); },
