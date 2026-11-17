@@ -178,6 +178,7 @@ export type ColonyMember = {
 export type ColonyAuditEntry = {
   id: string;
   colonyId: string;
+  hubId?: string;
   action: string;
   actorName: string;
   targetName?: string;

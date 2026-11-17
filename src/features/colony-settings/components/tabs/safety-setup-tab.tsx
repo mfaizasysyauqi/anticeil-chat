@@ -17,8 +17,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type { Colony, ColonySafetySettings } from '@/chat/chat-types';
+import type { Colony, ColonySafetySettings, ColonyAuditEntry } from '@/chat/chat-types';
 import { colonyApi } from '@/features/colonies/api/colonies-api';
+import { getSocket } from '@/providers/socket-provider';
 import { SafetyModals } from './safety/safety-modals';
 
 interface SafetySetupTabProps {
@@ -76,6 +77,65 @@ export function SafetySetupTab({
   // AutoMod Simulator state
   const [testMessage, setTestMessage] = useState('');
   const [testResult, setTestResult] = useState<{ allowed: boolean; reason?: string } | null>(null);
+
+  // Incidents feed state
+  const [incidents, setIncidents] = useState<ColonyAuditEntry[]>([]);
+  const [isLoadingIncidents, setIsLoadingIncidents] = useState(false);
+
+  // Load incidents
+  useEffect(() => {
+    if (!activeColony?.id) return;
+    setIsLoadingIncidents(true);
+    colonyApi.getColonySafetyIncidents(activeColony.id)
+      .then(setIncidents)
+      .catch(() => {})
+      .finally(() => setIsLoadingIncidents(false));
+  }, [activeColony?.id]);
+
+  // Real-time socket listener for safety alerts
+  useEffect(() => {
+    if (!activeColony?.id) return;
+    const s = getSocket();
+
+    const handleSafetyAlert = (alertData: any) => {
+      if (alertData?.hubId && alertData.hubId !== activeColony.id) return;
+      const newEntry: ColonyAuditEntry = {
+        id: `inc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        colonyId: activeColony.id,
+        action: alertData?.type || 'AUTOMOD_BLOCK',
+        actorName: 'AutoMod',
+        targetName: alertData?.senderName || 'Member',
+        details: {
+          matchedKeyword: alertData?.matchedKeyword,
+          channelId: alertData?.channelId,
+          timestamp: alertData?.timestamp || new Date().toISOString(),
+        },
+        createdAt: new Date().toISOString(),
+      };
+      setIncidents((prev) => [newEntry, ...prev]);
+      toast.warning(
+        t(`[Peringatan AutoMod] Pesan diblokir untuk ${alertData?.senderName || 'anggota'}: kata "${alertData?.matchedKeyword || 'terlarang'}" terdeteksi.`)
+      );
+    };
+
+    const handleSafetyUpdated = (data: any) => {
+      if (data?.hubId === activeColony.id && data?.safetySettings) {
+        const live = data.safetySettings;
+        if (live.raidProtection) setRaidProtection(live.raidProtection);
+        if (live.dmSpamProtection) setDmSpamProtection(live.dmSpamProtection);
+        if (live.autoMod) setAutoMod(live.autoMod);
+        if (live.permissions) setPermissions(live.permissions);
+      }
+    };
+
+    s.on('COMMUNITY_SAFETY_ALERT', handleSafetyAlert);
+    s.on('COMMUNITY_SAFETY_UPDATED', handleSafetyUpdated);
+
+    return () => {
+      s.off('COMMUNITY_SAFETY_ALERT', handleSafetyAlert);
+      s.off('COMMUNITY_SAFETY_UPDATED', handleSafetyUpdated);
+    };
+  }, [activeColony.id, t]);
 
   // Load live safety settings on colony change
   useEffect(() => {
@@ -396,6 +456,81 @@ export function SafetySetupTab({
                 </div>
               </>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* ── AutoMod Incident History & Security Alerts Feed ── */}
+      <div className="p-5 rounded-2xl bg-card border border-border/70 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-400" />
+            <h3 className="text-sm font-bold text-foreground">
+              {t('Log Insiden AutoMod & Peringatan Keamanan')}
+            </h3>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-bold border border-amber-500/20">
+              {incidents.length} {t('kejadian')}
+            </span>
+          </div>
+          <span className="text-[10px] text-muted-foreground">
+            {t('Realtime Socket Updates')}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {t('Riwayat penegakan otomatis AutoMod, pemblokiran kata terlarang, proteksi anti-raid, dan pembaruan keamanan server.')}
+        </p>
+
+        {incidents.length === 0 ? (
+          <div className="p-6 rounded-xl bg-muted/30 border border-dashed border-border/60 text-center space-y-1.5">
+            <ShieldCheck className="w-6 h-6 text-emerald-400 mx-auto" />
+            <p className="text-xs font-bold text-foreground">
+              {t('Tidak Ada Insiden Pelanggaran')}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {t('Server Anda aman dan seluruh pesan yang dikirim mematuhi standar keamanan komunitas.')}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border/60 bg-muted/20 divide-y divide-border/40 max-h-56 overflow-y-auto [scrollbar-width:thin]">
+            {incidents.map((inc) => {
+              const details = (inc.details as any) || {};
+              const isBlock = inc.action === 'AUTOMOD_BLOCK';
+              return (
+                <div key={inc.id} className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-muted/40 transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={cn(
+                        'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold',
+                        isBlock ? 'bg-red-500/15 text-red-400' : 'bg-primary/15 text-primary'
+                      )}
+                    >
+                      {isBlock ? <AlertTriangle className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-foreground truncate">
+                          {inc.targetName || inc.actorName}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-sm bg-muted/60 text-muted-foreground font-mono">
+                          {inc.action}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {details.matchedKeyword
+                          ? `Kata terlarang: "${details.matchedKeyword}"`
+                          : details.channelId
+                          ? `Saluran: #${details.channelId}`
+                          : inc.action}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] text-muted-foreground shrink-0 font-mono">
+                    {new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

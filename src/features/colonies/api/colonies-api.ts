@@ -833,6 +833,19 @@ export const coloniesApi = {
     return payload;
   },
 
+  async getColonySafetyIncidents(colonyId: string): Promise<ColonyAuditEntry[]> {
+    try {
+      const res = await api.get<ColonyAuditEntry[]>(`/v1/colonies/${colonyId}/safety/incidents`);
+      if (Array.isArray(res)) return res;
+    } catch {
+      try {
+        const res2 = await api.get<ColonyAuditEntry[]>(`/v1/colony/colonies/${colonyId}/safety/incidents`);
+        if (Array.isArray(res2)) return res2;
+      } catch {}
+    }
+    return [];
+  },
+
   // ── Colony Server Tag & Badges ──────────────────────────────────────
   async getColonyTag(colonyId: string): Promise<Colony['serverTag']> {
     try {

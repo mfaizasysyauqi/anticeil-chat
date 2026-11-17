@@ -256,8 +256,14 @@ export function useMessageActions({
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to send message', err);
+      const errMsg = err?.response?.data?.message || err?.data?.message || err?.message;
+      if (errMsg && typeof errMsg === 'string') {
+        toast.error(errMsg);
+      } else {
+        toast.error(t('Gagal mengirim pesan'));
+      }
     }
   };
 
