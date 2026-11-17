@@ -1,17 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Lock,
-  Sparkles,
-  Gem,
-  Check,
-  Upload,
   Trash2,
-  Sticker as StickerIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Colony, ColonySticker } from '@/chat/chat-types';
+import { colonyApi } from '@/features/colonies/api/colonies-api';
 
 interface StickersTabProps {
   activeColony: Colony;
@@ -31,6 +27,29 @@ export function StickersTab({
   const [stickers, setStickers] = useState<ColonySticker[]>(
     activeColony.stickers || [],
   );
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchStickers = async () => {
+      try {
+        const dbStickers = await colonyApi.getServerStickers(activeColony.id);
+        if (isMounted && Array.isArray(dbStickers) && dbStickers.length > 0) {
+          const mapped: ColonySticker[] = dbStickers.map((s) => ({
+            id: s.id,
+            name: s.name,
+            url: s.url,
+          }));
+          setStickers(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load server stickers:', err);
+      }
+    };
+    fetchStickers();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeColony.id]);
 
   const boostTier = activeColony.boostTier || 0;
 
@@ -56,18 +75,41 @@ export function StickersTab({
       const url = e.target?.result as string;
       if (url) {
         const rawName = file.name.split('.')[0] || 'sticker';
-        const newSticker: ColonySticker = {
-          id: `sticker_${Date.now()}`,
-          name: rawName.replace(/[^a-zA-Z0-9_ -]/g, '').slice(0, 30),
-          url,
-        };
-        const next = [...stickers, newSticker];
-        setStickers(next);
-        await onUpdateColony(activeColony.id, { stickers: next });
-        toast.success(t(`Stiker "${newSticker.name}" berhasil diunggah! 🎨`));
+        const cleanName = rawName.replace(/[^a-zA-Z0-9_ -]/g, '').slice(0, 30);
+
+        try {
+          const created = await colonyApi.addServerSticker(activeColony.id, {
+            name: cleanName,
+            url,
+          });
+
+          const newSticker: ColonySticker = {
+            id: created?.id || `sticker_${Date.now()}`,
+            name: cleanName,
+            url,
+          };
+          const next = [...stickers, newSticker];
+          setStickers(next);
+          await onUpdateColony(activeColony.id, { stickers: next });
+          toast.success(t(`Stiker "${newSticker.name}" berhasil diunggah! 🎨`));
+        } catch {
+          toast.error(t('Gagal mengunggah stiker ke server.'));
+        }
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleDeleteSticker = async (sticker: ColonySticker) => {
+    try {
+      await colonyApi.deleteServerSticker(activeColony.id, sticker.id);
+      const next = stickers.filter((s) => s.id !== sticker.id);
+      setStickers(next);
+      await onUpdateColony(activeColony.id, { stickers: next });
+      toast.success(t(`Stiker "${sticker.name}" dihapus.`));
+    } catch {
+      toast.error(t('Gagal menghapus stiker.'));
+    }
   };
 
   return (
@@ -89,8 +131,8 @@ export function StickersTab({
         <h2 className="text-xl font-bold text-foreground">{t('Stickers')}</h2>
       </div>
 
-      {/* Top Banner: Get Boosted (Discord 1:1 Parity) */}
-      <div className="rounded-2xl bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#c026d3] p-6 text-white relative overflow-hidden shadow-xl">
+      {/* Top Banner: Get Boosted */}
+      <div className="rounded-2xl bg-gradient-to-r from-teal-900/80 via-sidebar-primary/40 to-slate-900 border border-sidebar-primary/40 p-6 text-white relative overflow-hidden shadow-xl">
         <div className="relative z-10 max-w-xl text-center mx-auto space-y-3">
           <h3 className="text-xl font-extrabold tracking-tight">
             {t('Get Boosted')}
@@ -103,8 +145,9 @@ export function StickersTab({
           <div className="pt-2 flex items-center justify-center gap-3">
             <Button
               type="button"
+              variant="teal"
               onClick={() => onNavigateSection?.('boost')}
-              className="bg-white hover:bg-white/90 text-slate-900 font-bold text-xs h-9 px-5 rounded-lg cursor-pointer shadow-md"
+              className="font-bold text-xs h-9 px-5 rounded-lg cursor-pointer shadow-md"
             >
               {t('Boost Server')}
             </Button>
@@ -128,12 +171,12 @@ export function StickersTab({
         <div className="absolute bottom-4 right-20 text-xl opacity-50">✨</div>
       </div>
 
-      {/* Progression Timeline (Discord 1:1 Parity) */}
+      {/* Progression Timeline */}
       <div className="relative pl-6 pt-2 space-y-8 before:absolute before:left-2.5 before:top-4 before:bottom-4 before:w-0.5 before:bg-border/60">
         {/* TIER 0: FREE SLOTS */}
         <div className="relative space-y-3">
           {/* Timeline Dot Indicator */}
-          <div className="absolute -left-6 top-1 size-5 rounded-full bg-[#ec4899] text-white flex items-center justify-center text-[10px] font-bold shadow-md">
+          <div className="absolute -left-6 top-1 size-5 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center text-[10px] font-bold shadow-md">
             ✓
           </div>
 
@@ -149,7 +192,7 @@ export function StickersTab({
           </div>
 
           {/* Free Slots Card */}
-          <div className="rounded-xl border border-border/80 bg-[#1e1f22] p-4 space-y-4">
+          <div className="rounded-xl border border-border/80 bg-card p-4 space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <span className="text-xs font-bold text-foreground">
@@ -162,8 +205,9 @@ export function StickersTab({
 
               <Button
                 size="sm"
+                variant="teal"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-8 px-3.5 rounded-lg cursor-pointer"
+                className="text-xs font-semibold h-8 px-3.5 rounded-lg cursor-pointer"
               >
                 {t('Upload Sticker')}
               </Button>
@@ -176,7 +220,7 @@ export function StickersTab({
                 return (
                   <div
                     key={slotIdx}
-                    className="h-28 rounded-xl bg-[#2b2d31]/70 border border-border/50 flex flex-col items-center justify-center p-2 relative group overflow-hidden"
+                    className="h-28 rounded-xl bg-secondary border border-border/50 flex flex-col items-center justify-center p-2 relative group overflow-hidden"
                   >
                     {sticker ? (
                       <>
@@ -190,18 +234,7 @@ export function StickersTab({
                         </span>
                         <button
                           type="button"
-                          onClick={async () => {
-                            const next = stickers.filter(
-                              (s) => s.id !== sticker.id,
-                            );
-                            setStickers(next);
-                            await onUpdateColony(activeColony.id, {
-                              stickers: next,
-                            });
-                            toast.success(
-                              t(`Stiker "${sticker.name}" dihapus.`),
-                            );
-                          }}
+                          onClick={() => handleDeleteSticker(sticker)}
                           className="absolute top-1.5 right-1.5 p-1 rounded bg-black/60 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -212,7 +245,6 @@ export function StickersTab({
                         onClick={() => fileInputRef.current?.click()}
                         className="flex flex-col items-center justify-center text-center cursor-pointer w-full h-full"
                       >
-                        {/* Discord gray wumpus/hair-dryer sticker placeholder */}
                         <div className="text-2xl opacity-30 mb-1">🏷️</div>
                         <span className="text-[9px] text-muted-foreground/60 font-semibold">
                           {t('Empty Slot')}
@@ -228,11 +260,11 @@ export function StickersTab({
 
         {/* TIER 1 */}
         <div className="relative space-y-3">
-          <div className="absolute -left-6 top-1 size-5 rounded-full bg-[#2b2d31] border border-border text-muted-foreground flex items-center justify-center text-[10px]">
+          <div className="absolute -left-6 top-1 size-5 rounded-full bg-secondary border border-border text-muted-foreground flex items-center justify-center text-[10px]">
             💎
           </div>
 
-          <div className="rounded-xl border border-border/80 bg-[#1e1f22] p-5 space-y-4">
+          <div className="rounded-xl border border-border/80 bg-card p-5 space-y-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
               <span className="text-sm font-bold text-foreground">
                 {t('Level 1')}
@@ -250,8 +282,9 @@ export function StickersTab({
               </div>
               <Button
                 type="button"
+                variant="teal"
                 onClick={() => onNavigateSection?.('boost')}
-                className="bg-[#23a55a] hover:bg-[#1d8b4c] text-white text-xs font-bold px-4 h-8 rounded-lg cursor-pointer"
+                className="text-xs font-bold px-4 h-8 rounded-lg cursor-pointer"
               >
                 {t('Buy Level')}
               </Button>
@@ -261,11 +294,11 @@ export function StickersTab({
 
         {/* TIER 2 */}
         <div className="relative space-y-3">
-          <div className="absolute -left-6 top-1 size-5 rounded-full bg-[#2b2d31] border border-border text-muted-foreground flex items-center justify-center text-[10px]">
+          <div className="absolute -left-6 top-1 size-5 rounded-full bg-secondary border border-border text-muted-foreground flex items-center justify-center text-[10px]">
             💎
           </div>
 
-          <div className="rounded-xl border border-border/80 bg-[#1e1f22] p-5 space-y-4">
+          <div className="rounded-xl border border-border/80 bg-card p-5 space-y-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
               <span className="text-sm font-bold text-foreground">
                 {t('Level 2')}
@@ -283,8 +316,9 @@ export function StickersTab({
               </div>
               <Button
                 type="button"
+                variant="teal"
                 onClick={() => onNavigateSection?.('boost')}
-                className="bg-[#23a55a] hover:bg-[#1d8b4c] text-white text-xs font-bold px-4 h-8 rounded-lg cursor-pointer"
+                className="text-xs font-bold px-4 h-8 rounded-lg cursor-pointer"
               >
                 {t('Buy Level')}
               </Button>
@@ -294,11 +328,11 @@ export function StickersTab({
 
         {/* TIER 3 */}
         <div className="relative space-y-3">
-          <div className="absolute -left-6 top-1 size-5 rounded-full bg-[#2b2d31] border border-border text-muted-foreground flex items-center justify-center text-[10px]">
+          <div className="absolute -left-6 top-1 size-5 rounded-full bg-secondary border border-border text-muted-foreground flex items-center justify-center text-[10px]">
             💎
           </div>
 
-          <div className="rounded-xl border border-border/80 bg-[#1e1f22] p-5 space-y-4">
+          <div className="rounded-xl border border-border/80 bg-card p-5 space-y-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
               <span className="text-sm font-bold text-foreground">
                 {t('Level 3')}
@@ -316,8 +350,9 @@ export function StickersTab({
               </div>
               <Button
                 type="button"
+                variant="teal"
                 onClick={() => onNavigateSection?.('boost')}
-                className="bg-[#23a55a] hover:bg-[#1d8b4c] text-white text-xs font-bold px-4 h-8 rounded-lg cursor-pointer"
+                className="text-xs font-bold px-4 h-8 rounded-lg cursor-pointer"
               >
                 {t('Buy Level')}
               </Button>

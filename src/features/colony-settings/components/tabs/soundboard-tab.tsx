@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, Play, Pause, Trash2, Plus, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { colonyApi } from '@/chat/chat-api';
 import type { Colony, ColonySound } from '@/chat/chat-types';
 
 interface SoundboardTabProps {
@@ -89,6 +90,23 @@ export function SoundboardTab({
   );
   const [playingSoundId, setPlayingSoundId] = useState<string | null>(null);
 
+  // Load soundboard items from backend on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadSounds = async () => {
+      try {
+        const res = await colonyApi.getServerSounds(activeColony.id);
+        if (isMounted && Array.isArray(res) && res.length > 0) {
+          setSounds(res);
+        }
+      } catch {}
+    };
+    loadSounds();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeColony.id]);
+
   // Default server community sounds
   const defaultSounds: ColonySound[] = [
     { id: 'def_airhorn', name: 'Airhorn', emoji: '🎺' },
@@ -111,24 +129,50 @@ export function SoundboardTab({
       const url = e.target?.result as string;
       if (url) {
         const rawName = file.name.split('.')[0] || 'sound';
-        const newSound: ColonySound = {
-          id: `sound_${Date.now()}`,
-          name: rawName.replace(/[^a-zA-Z0-9_ -]/g, '').slice(0, 32),
-          emoji: '🔊',
-          url,
-        };
-        const next = [...sounds, newSound];
-        setSounds(next);
-        await onUpdateColony(activeColony.id, { sounds: next });
-        toast.success(t(`Suara "${newSound.name}" berhasil diunggah! 🎵`));
+        const cleanName = rawName.replace(/[^a-zA-Z0-9_ -]/g, '').slice(0, 32);
+        try {
+          const created = await colonyApi.addServerSound(activeColony.id, {
+            name: cleanName,
+            emoji: '🔊',
+            url,
+            soundType: 'audio',
+            volume: 1.0,
+          });
+          const newSound: ColonySound = created || {
+            id: `sound_${Date.now()}`,
+            name: cleanName,
+            emoji: '🔊',
+            url,
+            soundType: 'audio',
+            volume: 1.0,
+          };
+          const next = [...sounds, newSound];
+          setSounds(next);
+          await onUpdateColony(activeColony.id, { sounds: next });
+          toast.success(t(`Suara "${newSound.name}" berhasil diunggah! 🎵`));
+        } catch {
+          const fallback: ColonySound = {
+            id: `sound_${Date.now()}`,
+            name: cleanName,
+            emoji: '🔊',
+            url,
+            soundType: 'audio',
+            volume: 1.0,
+          };
+          const next = [...sounds, fallback];
+          setSounds(next);
+          await onUpdateColony(activeColony.id, { sounds: next });
+          toast.success(t(`Suara "${fallback.name}" berhasil diunggah! 🎵`));
+        }
       }
     };
     reader.readAsDataURL(file);
   };
 
-  const handlePlay = (sound: ColonySound) => {
+  const handlePlay = async (sound: ColonySound) => {
     setPlayingSoundId(sound.id);
 
+    // Play locally
     if (sound.url) {
       const audio = new Audio(sound.url);
       audio.play().catch(() => {});
@@ -143,6 +187,27 @@ export function SoundboardTab({
 
       setTimeout(() => setPlayingSoundId(null), 600);
     }
+
+    // Broadcast in real-time to active colony / voice participants
+    try {
+      await colonyApi.playServerSound(activeColony.id, sound.id, {
+        name: sound.name,
+        emoji: sound.emoji,
+        url: sound.url,
+        soundType: sound.soundType,
+        volume: sound.volume,
+      });
+    } catch {}
+  };
+
+  const handleDeleteSound = async (snd: ColonySound) => {
+    try {
+      await colonyApi.deleteServerSound(activeColony.id, snd.id);
+    } catch {}
+    const next = sounds.filter((s) => s.id !== snd.id);
+    setSounds(next);
+    await onUpdateColony(activeColony.id, { sounds: next });
+    toast.success(t(`Suara "${snd.name}" dihapus.`));
   };
 
   const allSounds = [...defaultSounds, ...sounds];
@@ -177,8 +242,9 @@ export function SoundboardTab({
         {allSounds.length > 0 && (
           <Button
             size="sm"
+            variant="teal"
             onClick={() => fileInputRef.current?.click()}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer shrink-0"
+            className="text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer shrink-0"
           >
             {t('Upload Sound')}
           </Button>
@@ -209,7 +275,7 @@ export function SoundboardTab({
                 className={cn(
                   'flex items-center justify-between p-3 rounded-xl border bg-[#1e1f22] transition-all group',
                   isPlaying
-                    ? 'border-[#5865F2] bg-[#2b2d31] shadow-md ring-1 ring-[#5865F2]'
+                    ? 'border-teal-500 bg-[#2b2d31] shadow-md ring-1 ring-teal-500'
                     : 'border-border/70 hover:border-border hover:bg-[#2b2d31]/60',
                 )}
               >
@@ -228,7 +294,7 @@ export function SoundboardTab({
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <Volume2 className="w-3 h-3" />
                       {isPlaying ? (
-                        <span className="text-emerald-400 font-semibold">
+                        <span className="text-teal-400 font-semibold">
                           {t('Playing...')}
                         </span>
                       ) : (
@@ -245,7 +311,7 @@ export function SoundboardTab({
                     className={cn(
                       'p-2 rounded-lg transition-colors cursor-pointer',
                       isPlaying
-                        ? 'bg-[#5865F2] text-white'
+                        ? 'bg-teal-600 text-white'
                         : 'bg-[#2b2d31] text-muted-foreground hover:text-foreground hover:bg-[#35373c]',
                     )}
                     title={t('Putar Suara')}
@@ -260,12 +326,7 @@ export function SoundboardTab({
                   {isCustom && (
                     <button
                       type="button"
-                      onClick={async () => {
-                        const next = sounds.filter((s) => s.id !== snd.id);
-                        setSounds(next);
-                        await onUpdateColony(activeColony.id, { sounds: next });
-                        toast.success(t(`Suara "${snd.name}" dihapus.`));
-                      }}
+                      onClick={() => handleDeleteSound(snd)}
                       className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                       title={t('Hapus Suara')}
                     >

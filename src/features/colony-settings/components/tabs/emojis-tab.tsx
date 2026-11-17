@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Trash2, Smile, Sparkles, Plus, ImagePlus } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Colony, CommunityCustomEmoji } from '@/chat/chat-types';
+import { colonyApi } from '@/features/colonies/api/colonies-api';
 
 interface EmojisTabProps {
   activeColony: Colony;
@@ -22,6 +23,31 @@ export function EmojisTab({
 }: EmojisTabProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchEmojis = async () => {
+      try {
+        const dbEmojis = await colonyApi.getServerEmojis(activeColony.id);
+        if (isMounted && Array.isArray(dbEmojis) && dbEmojis.length > 0) {
+          const mapped: CommunityCustomEmoji[] = dbEmojis.map((e) => ({
+            id: e.id,
+            name: e.name,
+            url: e.url,
+            char: '',
+          }));
+          setServerEmojis(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load server emojis:', err);
+      }
+    };
+    fetchEmojis();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeColony.id, setServerEmojis]);
 
   const handleFileUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -33,9 +59,8 @@ export function EmojisTab({
     }
 
     const filesToProcess = Array.from(files).slice(0, remainingSlots);
-    const newEmojis: CommunityCustomEmoji[] = [];
 
-    filesToProcess.forEach((file, index) => {
+    filesToProcess.forEach((file) => {
       if (file.size > 2 * 1024 * 1024) {
         toast.error(
           t(`File ${file.name} melebihi batas 256 KB / 2 MB. Dilewati.`),
@@ -53,25 +78,28 @@ export function EmojisTab({
             .replace(/[^a-z0-9_]/g, '')
             .slice(0, 32);
 
-          const emItem: CommunityCustomEmoji = {
-            id: `emoji_${Date.now()}_${index}`,
-            name: cleanName || 'emoji',
-            url: url,
-            char: '',
-          };
+          try {
+            const created = await colonyApi.addServerEmoji(activeColony.id, {
+              name: cleanName || 'emoji',
+              code: `:${cleanName || 'emoji'}:`,
+              url,
+            });
 
-          newEmojis.push(emItem);
+            const emItem: CommunityCustomEmoji = {
+              id: created?.id || `emoji_${Date.now()}`,
+              name: cleanName || 'emoji',
+              url,
+              char: '',
+            };
 
-          if (
-            newEmojis.length === filesToProcess.length ||
-            index === filesToProcess.length - 1
-          ) {
-            const next = [...serverEmojis, ...newEmojis];
-            setServerEmojis(next);
-            await onUpdateColony(activeColony.id, { emojis: next });
-            toast.success(
-              t(`${newEmojis.length} emoji berhasil diunggah! ✨`),
-            );
+            setServerEmojis((prev) => {
+              const next = [...prev, emItem];
+              onUpdateColony(activeColony.id, { emojis: next }).catch(() => {});
+              return next;
+            });
+            toast.success(t(`Emoji :${cleanName}: berhasil diunggah! ✨`));
+          } catch {
+            toast.error(t('Gagal mengunggah emoji ke server.'));
           }
         }
       };
@@ -84,15 +112,38 @@ export function EmojisTab({
       toast.error(t('Batas maksimal 50 emoji telah tercapai.'));
       return;
     }
-    const newEm: CommunityCustomEmoji = {
-      id: `emoji_${Date.now()}`,
-      name,
-      char,
-    };
-    const next = [...serverEmojis, newEm];
-    setServerEmojis(next);
-    await onUpdateColony(activeColony.id, { emojis: next });
-    toast.success(t(`Emoji :${name}: berhasil ditambahkan!`));
+    try {
+      const created = await colonyApi.addServerEmoji(activeColony.id, {
+        name,
+        code: `:${name}:`,
+        url: '',
+      });
+      const newEm: CommunityCustomEmoji = {
+        id: created?.id || `emoji_${Date.now()}`,
+        name,
+        char,
+      };
+      setServerEmojis((prev) => {
+        const next = [...prev, newEm];
+        onUpdateColony(activeColony.id, { emojis: next }).catch(() => {});
+        return next;
+      });
+      toast.success(t(`Emoji :${name}: berhasil ditambahkan!`));
+    } catch {
+      toast.error(t('Gagal menambahkan preset emoji.'));
+    }
+  };
+
+  const handleDeleteEmoji = async (em: CommunityCustomEmoji) => {
+    try {
+      await colonyApi.deleteServerEmoji(activeColony.id, em.id);
+      const next = serverEmojis.filter((e) => e.id !== em.id);
+      setServerEmojis(next);
+      await onUpdateColony(activeColony.id, { emojis: next });
+      toast.success(t(`Emoji :${em.name}: berhasil dihapus.`));
+    } catch {
+      toast.error(t('Gagal menghapus emoji.'));
+    }
   };
 
   return (
@@ -122,7 +173,7 @@ export function EmojisTab({
         className="hidden"
       />
 
-      {/* Header (Discord 1:1 Parity) */}
+      {/* Header */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-bold text-foreground">{t('Emoji')}</h2>
@@ -136,8 +187,9 @@ export function EmojisTab({
         <div>
           <Button
             type="button"
+            variant="teal"
             onClick={() => fileInputRef.current?.click()}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
+            className="text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
           >
             {t('Upload Emoji')}
           </Button>
@@ -158,11 +210,11 @@ export function EmojisTab({
           className={cn(
             'py-16 px-4 rounded-2xl border border-dashed flex flex-col items-center justify-center text-center transition-colors',
             isDragging
-              ? 'border-[#5865F2] bg-[#5865F2]/10'
-              : 'border-border/60 bg-[#1e1f22]/50',
+              ? 'border-sidebar-primary bg-sidebar-primary/10'
+              : 'border-border/60 bg-card/50',
           )}
         >
-          <div className="size-14 rounded-2xl bg-[#2b2d31] flex items-center justify-center text-2xl mb-3 shadow-md">
+          <div className="size-14 rounded-2xl bg-secondary flex items-center justify-center text-2xl mb-3 shadow-md">
             ✨
           </div>
           <h3 className="text-sm font-bold text-foreground">{t('No Emoji')}</h3>
@@ -186,7 +238,7 @@ export function EmojisTab({
                 key={p.name}
                 type="button"
                 onClick={() => handleAddPreset(p.name, p.char)}
-                className="px-2.5 py-1 rounded-lg bg-[#2b2d31] hover:bg-[#35373c] text-xs flex items-center gap-1.5 cursor-pointer border border-border/50 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-xs flex items-center gap-1.5 cursor-pointer border border-border/50 transition-colors"
               >
                 <span>{p.char}</span>
                 <span className="text-[10px] text-muted-foreground font-mono">
@@ -207,14 +259,14 @@ export function EmojisTab({
             </span>
           </div>
 
-          <div className="rounded-xl border border-border/80 bg-[#1e1f22] overflow-hidden divide-y divide-border/60">
+          <div className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60">
             {serverEmojis.map((em) => (
               <div
                 key={em.id}
-                className="flex items-center justify-between p-3 hover:bg-white/[0.02] transition-colors group"
+                className="flex items-center justify-between p-3 hover:bg-accent/40 transition-colors group"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="size-9 rounded-lg bg-[#2b2d31] flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                  <div className="size-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
                     {em.url ? (
                       <img
                         src={em.url}
@@ -239,12 +291,7 @@ export function EmojisTab({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={async () => {
-                      const next = serverEmojis.filter((e) => e.id !== em.id);
-                      setServerEmojis(next);
-                      await onUpdateColony(activeColony.id, { emojis: next });
-                      toast.success(t(`Emoji :${em.name}: berhasil dihapus.`));
-                    }}
+                    onClick={() => handleDeleteEmoji(em)}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                     title={t('Hapus Emoji')}
                   >

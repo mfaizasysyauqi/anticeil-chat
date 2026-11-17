@@ -21,6 +21,7 @@ export type ColonySound = {
   emoji?: string;
   url?: string;
   volume?: number;
+  soundType?: string;
 };
 
 export type ColonyApp = {

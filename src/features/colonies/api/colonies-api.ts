@@ -590,9 +590,16 @@ export const coloniesApi = {
   getServerStickers: coloniesInvitesAssetsApi.getServerStickers,
   addServerSticker: coloniesInvitesAssetsApi.addServerSticker,
   deleteServerSticker: coloniesInvitesAssetsApi.deleteServerSticker,
+  getServerSounds: coloniesInvitesAssetsApi.getServerSounds,
+  addServerSound: coloniesInvitesAssetsApi.addServerSound,
+  deleteServerSound: coloniesInvitesAssetsApi.deleteServerSound,
+  playServerSound: coloniesInvitesAssetsApi.playServerSound,
 
   boostHub(id: string) { return this.boostColony(id); },
   createHub(payload: any) { return this.createColony(payload); },
   deleteHub(id: string) { return this.deleteColony(id); },
 };
+
+export const colonyApi = coloniesApi;
+
 

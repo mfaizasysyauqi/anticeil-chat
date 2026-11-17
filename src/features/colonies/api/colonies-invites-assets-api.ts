@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { ServerInvitation, ColonyInvitation } from '@/lib/colony';
+import type { ServerInvitation, ColonyInvitation, ColonySound } from '@/lib/colony';
 import type { Colony } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker } from '@/chat/anticeil-media-data';
 
@@ -113,5 +113,59 @@ export const coloniesInvitesAssetsApi = {
 
   async deleteServerSticker(colonyId: string, stickerId: string): Promise<void> {
     try { await api.delete(`/v1/colony/colonies/${colonyId}/stickers/${stickerId}`); } catch {}
+  },
+
+  // ── Server Soundboard (DB) ──────────────────────────────────────────────
+  async getServerSounds(colonyId: string): Promise<ColonySound[]> {
+    try {
+      const res = await api.get<any[]>(`/v1/colony/colonies/${colonyId}/sounds`);
+      if (Array.isArray(res) && res.length > 0) {
+        return res.map((r) => ({
+          id: r.id,
+          name: r.name,
+          emoji: r.emoji || '🔊',
+          volume: Number(r.volume || 1.0),
+          url: r.url || r.soundUrl,
+          soundType: r.soundType,
+        }));
+      }
+    } catch {}
+    return [];
+  },
+
+  async addServerSound(
+    colonyId: string,
+    payload: { name: string; emoji?: string; url?: string; soundType?: string; volume?: number },
+  ): Promise<ColonySound | null> {
+    try {
+      const res = await api.post<any>(`/v1/colony/colonies/${colonyId}/sounds`, payload);
+      if (res?.id) {
+        return {
+          id: res.id,
+          name: res.name,
+          emoji: res.emoji || '🔊',
+          volume: Number(res.volume || 1.0),
+          url: res.url || res.soundUrl,
+          soundType: res.soundType,
+        };
+      }
+    } catch {}
+    return null;
+  },
+
+  async deleteServerSound(colonyId: string, soundId: string): Promise<void> {
+    try {
+      await api.delete(`/v1/colony/colonies/${colonyId}/sounds/${soundId}`);
+    } catch {}
+  },
+
+  async playServerSound(
+    colonyId: string,
+    soundId: string,
+    payload?: { channelId?: string; name?: string; emoji?: string; url?: string; soundType?: string; volume?: number },
+  ): Promise<void> {
+    try {
+      await api.post(`/v1/colony/colonies/${colonyId}/sounds/${soundId}/play`, payload || {});
+    } catch {}
   },
 };
