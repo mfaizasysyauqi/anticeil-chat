@@ -95,10 +95,10 @@ export function ChatAppsPopover({
                     onLaunchActivity('whiteboard');
                     onOpenChange(false);
                   }}
-                  className="w-12 h-12 rounded-xl bg-card border border-border hover:border-blue-500/50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer shrink-0 group"
+                  className="w-12 h-12 rounded-xl bg-card border border-border hover:border-primary/50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer shrink-0 group"
                   title="Jamspace Whiteboard"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
+                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-xs">
                     <Palette className="w-4 h-4" />
                   </div>
                 </button>

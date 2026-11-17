@@ -317,7 +317,7 @@ export function TwoPaneSettingsDialog({
           )}
         >
           {/* Top App Bar Header (Discord 1:1 Parity) */}
-          <div className="h-14 border-b border-border/60 bg-background/95 backdrop-blur-xs flex items-center justify-between px-4 sm:px-6 md:px-8 z-10 shrink-0 select-none">
+          <div className={LAYOUT_DIALOG_SPACING.HEADER_CONTAINER}>
             {/* Left: Mobile back button (when in detail view) + Section Title */}
             <div className="flex items-center gap-2.5 min-w-0">
               <Button
@@ -357,7 +357,7 @@ export function TwoPaneSettingsDialog({
           <div
             ref={scrollRef as React.RefObject<HTMLDivElement>}
             className={cn(
-              'flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-8 [scrollbar-width:thin] w-full min-w-0',
+              LAYOUT_DIALOG_SPACING.BODY_PADDING,
               contentClassName,
             )}
           >

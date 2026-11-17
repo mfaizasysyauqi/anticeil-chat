@@ -134,7 +134,7 @@ export function InvitesTab({
           <Button
             size="sm"
             onClick={() => setIsModalOpen(true)}
-            className="h-9 px-4 text-xs font-semibold bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg cursor-pointer shadow-md"
+            className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg cursor-pointer shadow-md"
           >
             {t('Create Invite Link')}
           </Button>
@@ -149,10 +149,10 @@ export function InvitesTab({
       )}
 
       {/* Invites Table */}
-      <div className="rounded-xl border border-border/80 bg-[#1e1f22] overflow-hidden shadow-xl">
+      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-muted-foreground">
-            <thead className="bg-[#111214] text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60">
+            <thead className="bg-muted/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60">
               <tr>
                 <th className="py-3 px-4">{t('INVITER')}</th>
                 <th className="py-3 px-4">{t('INVITE CODE')}</th>
@@ -166,7 +166,7 @@ export function InvitesTab({
               <tr className="hover:bg-white/[0.02] transition-colors">
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="size-7 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-xs font-bold">
+                    <div className="size-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
                       ⭐
                     </div>
                     <span className="font-bold text-foreground text-xs">
@@ -290,7 +290,7 @@ export function InvitesTab({
               <select
                 value={inviteExpiry}
                 onChange={(e) => setInviteExpiry(e.target.value as any)}
-                className="w-full h-10 px-3 bg-[#111214] border border-border/70 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-[#5865F2]"
+                className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="1d">{t('24 Hours')}</option>
                 <option value="7d">{t('7 Days')}</option>
@@ -306,7 +306,7 @@ export function InvitesTab({
               <select
                 value={maxUses}
                 onChange={(e) => setMaxUses(Number(e.target.value))}
-                className="w-full h-10 px-3 bg-[#111214] border border-border/70 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-[#5865F2]"
+                className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
               >
                 <option value={0}>{t('No limit')}</option>
                 <option value={1}>{t('1 use')}</option>
@@ -329,7 +329,7 @@ export function InvitesTab({
             </Button>
             <Button
               onClick={handleCreateInvite}
-              className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold"
             >
               {t('Generate Link')}
             </Button>

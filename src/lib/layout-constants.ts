@@ -74,24 +74,25 @@ export const LAYOUT_DIALOG_SPACING = {
 
   /**
    * Single-pane dialog standard container (e.g. Create Channel, Add Friend, Schedule, etc.)
+   * Symmetrical horizontal padding matching the app bar (px-3.5 sm:px-4 md:px-5 lg:px-6)
    */
   STANDARD_CONTAINER:
-    'w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[calc(100svh-2.5rem)] p-4 sm:p-5',
+    'w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[calc(100svh-2.5rem)] px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5',
 
-  /** Symmetrical horizontal padding for dialog headers & body content */
-  PANE_HORIZONTAL: 'px-4 sm:px-6 md:px-8',
+  /** Symmetrical horizontal padding for dialog headers & body content matching App Bar */
+  PANE_HORIZONTAL: LAYOUT_PAGE_SPACING.HORIZONTAL,
 
   /** Symmetrical vertical padding for dialog body content */
   PANE_VERTICAL: 'py-5 sm:py-6 md:py-8',
 
-  /** Dialog detail pane header */
+  /** Dialog detail pane header with symmetrical horizontal padding matching App Bar */
   HEADER_HEIGHT: 'h-14',
   HEADER_CONTAINER:
-    'h-14 border-b border-border/60 bg-background/95 backdrop-blur-xs flex items-center justify-between px-4 sm:px-6 md:px-8 z-10 shrink-0 select-none',
+    'h-14 border-b border-border/60 bg-background/95 backdrop-blur-xs flex items-center justify-between px-3.5 sm:px-4 md:px-5 lg:px-6 z-10 shrink-0 select-none',
 
-  /** Dialog detail pane scrollable body */
+  /** Dialog detail pane scrollable body with symmetrical horizontal padding matching App Bar */
   BODY_PADDING:
-    'flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-8 [scrollbar-width:thin] w-full min-w-0',
+    'flex-1 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-5 sm:py-6 md:py-8 [scrollbar-width:thin] w-full min-w-0',
 
   /** Sidebar in two-pane settings */
   SIDEBAR_WIDTH: 'w-full md:w-56 lg:w-60',

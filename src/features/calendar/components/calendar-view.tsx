@@ -193,17 +193,6 @@ export function CalendarView({
                 <span className="text-[10px] text-muted-foreground/70">({filteredEvents.length})</span>
               )}
             </button>
-
-            {/* Theme Primary Button: Jadwalkan Meeting */}
-            <TopBarActionButton
-              onClick={() => setIsScheduleOpen(true)}
-              icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
-              label="Jadwalkan Meeting"
-              shortLabel="Meeting"
-              iconOnlyTablet={true}
-              title="Jadwalkan Meeting"
-              aria-label="Jadwalkan Meeting"
-            />
           </div>
 
           {viewMode === 'month' && (
@@ -248,8 +237,8 @@ export function CalendarView({
           )}
         </div>
 
-        {/* Right side filter: Desktop pills & Mobile/Tablet dropdown */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* Right side: Filters & FAR RIGHT Action Button (+) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Desktop Pills */}
           <div className="hidden lg:flex items-center gap-1">
             {[
@@ -313,6 +302,17 @@ export function CalendarView({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* Primary Theme Action Button: Jadwalkan Meeting placed at FAR RIGHT */}
+          <TopBarActionButton
+            onClick={() => setIsScheduleOpen(true)}
+            icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
+            label="Jadwalkan Meeting"
+            shortLabel="Meeting"
+            iconOnlyTablet={true}
+            title="Jadwalkan Meeting"
+            aria-label="Jadwalkan Meeting"
+          />
         </div>
       </div>
 

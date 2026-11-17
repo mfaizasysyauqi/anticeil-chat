@@ -156,7 +156,7 @@ export function ProfileTab({
             <Button
               type="button"
               onClick={() => serverIconFileInputRef.current?.click()}
-              className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
             >
               {t('Change Server Icon')}
             </Button>
@@ -184,7 +184,7 @@ export function ProfileTab({
                       'h-12 rounded-xl transition-all relative overflow-hidden border cursor-pointer group shadow-sm bg-gradient-to-br',
                       b.cls,
                       isSelected
-                        ? 'border-white ring-2 ring-[#5865F2] scale-105'
+                        ? 'border-white ring-2 ring-primary scale-105'
                         : 'border-white/10 hover:border-white/40 hover:scale-105',
                     )}
                     title={b.name}
@@ -217,7 +217,7 @@ export function ProfileTab({
               {[0, 1, 2, 3, 4].map((idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/70 bg-[#1e1f22] focus-within:border-[#5865F2] transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card focus-within:border-primary transition-colors"
                 >
                   <Smile className="w-4 h-4 text-muted-foreground shrink-0" />
                   <input
@@ -251,14 +251,14 @@ export function ProfileTab({
               onChange={(e) => setServerSettingsEditDesc(e.target.value)}
               placeholder={t('Tell the world a bit about this server.')}
               rows={3}
-              className="w-full text-xs text-foreground bg-[#1e1f22] border border-border/80 rounded-xl p-3 focus:outline-none focus:border-[#5865F2] min-h-[90px] resize-none leading-relaxed"
+              className="w-full text-xs text-foreground bg-card border border-border rounded-xl p-3 focus:outline-none focus:border-primary min-h-[90px] resize-none leading-relaxed"
             />
           </div>
 
           {/* Footer Save & Cancel Buttons */}
           <div className="pt-4 flex items-center gap-3">
             <Button
-              className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
               onClick={async () => {
                 const cleanedTraits = traits.filter((t) => t && t.trim().length > 0);
                 await onUpdateColony(activeColony.id, {
@@ -325,7 +325,7 @@ export function ProfileTab({
                   {serverSettingsEditName || activeColony?.name || 'Server'}
                 </span>
                 <span
-                  className="size-4 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-[10px] font-bold"
+                  className="size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold"
                   title="Verified Server"
                 >
                   ✓

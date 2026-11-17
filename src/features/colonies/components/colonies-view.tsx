@@ -299,20 +299,10 @@ export function ColoniesView({
               <Compass className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden lg:inline">{t('Jelajahi Colony')}</span>
             </button>
-
-            {/* Primary Theme Action Button: Buat Colony */}
-            <TopBarActionButton
-              onClick={handleOpenCreateColony}
-              icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
-              label={t('Buat Colony')}
-              iconOnlyTablet={true}
-              title={t('Buat Colony')}
-              aria-label={t('Buat Colony')}
-            />
           </div>
 
-        {/* Right side: Responsive Search Bar (Accessible on mobile too!) */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right side: Responsive Search Bar & FAR RIGHT Action Button (+) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <ResponsiveSearchBar
             value={searchQuery}
             onChange={setSearchQuery}
@@ -324,6 +314,16 @@ export function ColoniesView({
                 : 'Cari komunitas...'
             }
             inputWidth="w-36 sm:w-44 md:w-56"
+          />
+
+          {/* Primary Theme Action Button: Buat Colony placed at FAR RIGHT */}
+          <TopBarActionButton
+            onClick={handleOpenCreateColony}
+            icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
+            label={t('Buat Colony')}
+            iconOnlyTablet={true}
+            title={t('Buat Colony')}
+            aria-label={t('Buat Colony')}
           />
         </div>
       </div>

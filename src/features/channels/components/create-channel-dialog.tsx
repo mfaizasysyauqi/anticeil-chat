@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 import type { Colony } from '@/chat/chat-types';
 import type { ColonyCategory } from '../api/categories-api';
 
@@ -87,7 +88,7 @@ export function CreateChannelDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] p-4 sm:p-5">
+      <DialogContent className={cn('sm:max-w-[420px]', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
         <form onSubmit={onCreateChannelSubmit} className="flex flex-col h-full min-h-0">
           {/* Header */}
           <DialogHeader>

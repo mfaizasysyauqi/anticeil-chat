@@ -248,10 +248,10 @@ export function ChannelSettingsDialog({
                 onClick={() => {
                   onDeleteChannel(channel);
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer group"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer group"
               >
                 <span>{t('Delete Channel')}</span>
-                <Trash2 className="w-3.5 h-3.5 text-red-500/80 group-hover:text-red-400" />
+                <Trash2 className="w-3.5 h-3.5 text-destructive/80 group-hover:text-destructive" />
               </button>
             </nav>
           </div>

@@ -111,19 +111,9 @@ export function FriendsHeader({
               </span>
             )}
           </button>
-
-          {/* Top Bar Action Button: Tambah Teman */}
-          <TopBarActionButton
-            onClick={onOpenAddFriendDialog}
-            icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
-            label={t('Tambah Teman')}
-            shortLabel={t('Teman')}
-            iconOnlyMobile={true}
-            title={t('Tambah Teman')}
-          />
         </div>
 
-      {/* Right Top Header Actions */}
+      {/* Right Top Header Actions & FAR RIGHT Action Button (+) */}
       <div className="flex items-center gap-1.5 shrink-0">
         {/* Start new DM */}
         <Tooltip delayDuration={150}>
@@ -141,6 +131,16 @@ export function FriendsHeader({
             {t('Mulai DM Baru')}
           </TooltipContent>
         </Tooltip>
+
+        {/* Primary Theme Action Button: Tambah Teman placed at FAR RIGHT */}
+        <TopBarActionButton
+          onClick={onOpenAddFriendDialog}
+          icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
+          label={t('Tambah Teman')}
+          shortLabel={t('Teman')}
+          iconOnlyTablet={true}
+          title={t('Tambah Teman')}
+        />
       </div>
     </div>
   );

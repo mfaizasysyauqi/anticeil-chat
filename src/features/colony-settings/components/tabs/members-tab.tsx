@@ -130,7 +130,7 @@ export function MembersTab({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('Search by username or id')}
-              className="w-full text-xs h-9 pl-9 pr-3 rounded-lg bg-[#1e1f22] border border-border/70 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-[#5865F2]"
+              className="w-full text-xs h-9 pl-9 pr-3 rounded-lg bg-card border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary"
             />
           </div>
 
@@ -140,7 +140,7 @@ export function MembersTab({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-3 text-xs gap-1.5 bg-[#1e1f22] border-border/70 text-foreground hover:bg-[#2b2d31]"
+                className="h-9 px-3 text-xs gap-1.5 bg-card border-border text-foreground hover:bg-muted"
               >
                 <ArrowUpDown className="w-3.5 h-3.5" />
                 <span>{t('Sort')}</span>
@@ -193,7 +193,7 @@ export function MembersTab({
                       selectedMemberIds.length === filteredMembers.length
                     }
                     onChange={toggleSelectAll}
-                    className="rounded bg-[#1e1f22] border-border/80 accent-[#5865F2] cursor-pointer"
+                    className="rounded bg-card border-border accent-primary cursor-pointer"
                   />
                 </th>
                 <th className="py-3 px-4">{t('Name')}</th>
@@ -223,7 +223,7 @@ export function MembersTab({
                       key={m.id}
                       className={cn(
                         'hover:bg-white/[0.02] transition-colors group',
-                        isSelected && 'bg-[#5865F2]/10',
+                        isSelected && 'bg-primary/10',
                       )}
                     >
                       {/* Checkbox */}
@@ -232,7 +232,7 @@ export function MembersTab({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelectMember(m.id)}
-                          className="rounded bg-[#1e1f22] border-border/80 accent-[#5865F2] cursor-pointer"
+                          className="rounded bg-card border-border accent-primary cursor-pointer"
                         />
                       </td>
 
@@ -450,7 +450,7 @@ export function MembersTab({
             {t('Showing')} {filteredMembers.length} {t('members')}
           </span>
           {selectedMemberIds.length > 0 && (
-            <span className="text-xs text-[#5865F2] font-semibold">
+            <span className="text-xs text-primary font-semibold">
               {selectedMemberIds.length} {t('dipilih')}
             </span>
           )}

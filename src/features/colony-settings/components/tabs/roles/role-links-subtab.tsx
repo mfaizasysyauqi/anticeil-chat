@@ -46,7 +46,7 @@ export function RoleLinksSubtab({
             <div>
               <Button
                 onClick={() => setIsAddingRequirement(true)}
-                className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-10 rounded-lg cursor-pointer"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold h-10 rounded-lg cursor-pointer"
               >
                 {t('Add requirement')}
               </Button>

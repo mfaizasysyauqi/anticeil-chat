@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
+import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
+import { cn } from '@/lib/utils';
 import type { CalendarEvent } from '../types';
 
 export interface CalendarScheduleDialogProps {
@@ -74,7 +76,7 @@ export function CalendarScheduleDialog({
       <DialogContent className="max-w-md p-0 overflow-hidden bg-card border-border">
         <DialogTitle className="sr-only">Jadwalkan Acara Baru</DialogTitle>
         <form onSubmit={handleSubmit}>
-          <div className="p-5 border-b border-border bg-muted/20">
+          <div className={cn('py-4 border-b border-border bg-muted/20', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <CalendarIcon className="w-4 h-4 text-primary" />
               Jadwalkan Acara / Meeting
@@ -84,7 +86,7 @@ export function CalendarScheduleDialog({
             </p>
           </div>
 
-          <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]">
+          <div className={cn('py-4 space-y-4 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
                 Judul Acara / Meeting *
@@ -190,7 +192,7 @@ export function CalendarScheduleDialog({
             </div>
           </div>
 
-          <div className="p-4 bg-muted/40 border-t border-border flex items-center justify-end gap-2">
+          <div className={cn('py-3 bg-muted/40 border-t border-border flex items-center justify-end gap-2', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
             <Button
               type="button"
               variant="ghost"
@@ -203,7 +205,7 @@ export function CalendarScheduleDialog({
             <Button
               type="submit"
               size="sm"
-              className="h-8 text-xs font-semibold cursor-pointer"
+              className="h-8 text-xs font-semibold cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Simpan Jadwal
             </Button>

@@ -14,6 +14,8 @@ import { friendsApi } from '../api/friends-api';
 import type { FriendMember, FriendRequest } from '../types';
 import type { ColonyMember } from '@/chat/chat-types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
+import { cn } from '@/lib/utils';
 
 export interface AddFriendDialogProps {
   open: boolean;
@@ -120,7 +122,7 @@ export function AddFriendDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border">
-        <div className="p-5 pb-3 border-b border-border/50">
+        <div className={cn('py-4 pb-3 border-b border-border/50', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
           <DialogHeader className="pb-1 text-left">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <UserPlus className="w-5 h-5 text-primary" />
@@ -153,7 +155,7 @@ export function AddFriendDialog({
         </div>
 
         {/* Results / Empty View */}
-        <div className="p-4 max-h-[300px] overflow-y-auto [scrollbar-width:thin]">
+        <div className={cn('py-4 max-h-[300px] overflow-y-auto [scrollbar-width:thin]', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
           {isSearching ? (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -250,7 +252,7 @@ export function AddFriendDialog({
           )}
         </div>
 
-        <div className="p-3 bg-muted/20 border-t border-border/40 flex items-center justify-end">
+        <div className={cn('py-3 bg-muted/20 border-t border-border/40 flex items-center justify-end', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
           <Button
             type="button"
             variant="ghost"

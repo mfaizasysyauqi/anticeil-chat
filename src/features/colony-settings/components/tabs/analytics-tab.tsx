@@ -280,7 +280,7 @@ export function AnalyticsTab({
               className="size-4 rounded-full border border-muted-foreground flex items-center justify-center group-hover:border-foreground"
             >
               {defaultNotifications === 'all' && (
-                <div className="size-2 rounded-full bg-[#5865F2]" />
+                <div className="size-2 rounded-full bg-primary" />
               )}
             </div>
             <span
@@ -299,7 +299,7 @@ export function AnalyticsTab({
                 className="size-4 rounded-full border border-muted-foreground flex items-center justify-center group-hover:border-foreground"
               >
                 {defaultNotifications === 'mentions' && (
-                  <div className="size-2 rounded-full bg-[#5865F2]" />
+                  <div className="size-2 rounded-full bg-primary" />
                 )}
               </div>
               <span
@@ -462,7 +462,7 @@ export function AnalyticsTab({
       {/* Action Footer Buttons */}
       <div className="pt-4 flex items-center gap-3">
         <Button
-          className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
           onClick={handleSave}
         >
           {t('Simpan Perubahan')}

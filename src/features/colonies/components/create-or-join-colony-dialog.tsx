@@ -178,7 +178,7 @@ export function CreateOrJoinColonyDialog({
                   type="submit"
                   className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 cursor-pointer transition-all shadow-xs"
                 >
-                  {t('Buat Server')}
+                  {t('Buat Colony')}
                 </Button>
               </DialogFooter>
             </form>
@@ -215,7 +215,7 @@ export function CreateOrJoinColonyDialog({
                 disabled={isJoining || !joinInviteCode.trim()}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 cursor-pointer transition-all shadow-xs disabled:opacity-50"
               >
-                {isJoining ? t('Bergabung...') : t('Gabung Server')}
+                {isJoining ? t('Bergabung...') : t('Gabung Colony')}
               </Button>
             </DialogFooter>
           </TabsContent>

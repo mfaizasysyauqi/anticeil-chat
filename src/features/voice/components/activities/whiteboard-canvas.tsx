@@ -166,7 +166,7 @@ export function WhiteboardCanvas({
       {/* ── Discord Style Jamspace Top Header Bar ───────────────────── */}
       <div className="h-11 px-3 sm:px-4 bg-[#1e1f22] border-b border-border/50 flex items-center justify-between shrink-0 z-10 shadow-xs">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="size-6 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+          <div className="size-6 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shrink-0 shadow-xs">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs font-bold text-foreground truncate">Jamspace Whiteboard</span>
