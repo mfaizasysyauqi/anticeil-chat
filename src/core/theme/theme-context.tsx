@@ -59,14 +59,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Anticeil Secondary: Subtle Neutral Slate
       root.style.setProperty('--secondary', '#f1f5f9');
       root.style.setProperty('--secondary-foreground', '#0f172a');
-      // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
-      root.style.setProperty('--primary', '173 80% 36%');
+      // Anticeil Primary: Electric Azure Blue (#026fe4) from Anticeil Gradient Logo
+      root.style.setProperty('--primary', '211 98% 45%');
       root.style.setProperty('--primary-foreground', '0 0% 100%');
-      root.style.setProperty('--sidebar-primary', '173 80% 36%');
+      root.style.setProperty('--sidebar-primary', '211 98% 45%');
       root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
-      root.style.setProperty('--primary-100', '173 80% 90%');
-      root.style.setProperty('--primary-300', '173 80% 45%');
-      root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.35)');
+      root.style.setProperty('--primary-100', '211 98% 92%');
+      root.style.setProperty('--primary-300', '211 98% 60%');
+      root.style.setProperty('--ring', 'rgba(2, 111, 228, 0.4)');
     } else if (theme === 'midnight') {
       // Midnight: Classic Discord Grey (#313338 / #2b2d31)
       root.classList.add('dark', 'theme-midnight');
@@ -90,14 +90,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Anticeil Secondary: Midnight Slate
       root.style.setProperty('--secondary', '#2b2d31');
       root.style.setProperty('--secondary-foreground', '#f2f3f5');
-      // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
-      root.style.setProperty('--primary', '173 80% 36%');
+      // Anticeil Primary: Electric Azure Blue (#026fe4) from Anticeil Gradient Logo
+      root.style.setProperty('--primary', '211 98% 48%');
       root.style.setProperty('--primary-foreground', '0 0% 100%');
-      root.style.setProperty('--sidebar-primary', '173 80% 40%');
+      root.style.setProperty('--sidebar-primary', '211 98% 48%');
       root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
-      root.style.setProperty('--primary-100', '173 80% 18%');
-      root.style.setProperty('--primary-300', '173 80% 55%');
-      root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.4)');
+      root.style.setProperty('--primary-100', '211 98% 20%');
+      root.style.setProperty('--primary-300', '211 98% 65%');
+      root.style.setProperty('--ring', 'rgba(2, 111, 228, 0.45)');
     } else {
       // Dark Mode: Discord AMOLED Pure Black with Anticeil Palette (#000000 / #09090b)
       root.classList.add('dark', 'theme-dark');
@@ -121,14 +121,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Anticeil Secondary: Dark Surface Neutral
       root.style.setProperty('--secondary', '#18181b');
       root.style.setProperty('--secondary-foreground', '#f4f4f5');
-      // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
-      root.style.setProperty('--primary', '173 80% 36%');
+      // Anticeil Primary: Electric Azure Blue (#026fe4) from Anticeil Gradient Logo
+      root.style.setProperty('--primary', '211 98% 48%');
       root.style.setProperty('--primary-foreground', '0 0% 100%');
-      root.style.setProperty('--sidebar-primary', '173 80% 40%');
+      root.style.setProperty('--sidebar-primary', '211 98% 48%');
       root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
-      root.style.setProperty('--primary-100', '173 80% 18%');
-      root.style.setProperty('--primary-300', '173 80% 55%');
-      root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.4)');
+      root.style.setProperty('--primary-100', '211 98% 20%');
+      root.style.setProperty('--primary-300', '211 98% 65%');
+      root.style.setProperty('--ring', 'rgba(2, 111, 228, 0.45)');
     }
   }, [theme]);
 

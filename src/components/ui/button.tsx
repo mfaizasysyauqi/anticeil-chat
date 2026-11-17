@@ -32,6 +32,14 @@ const buttonVariants = cva(
           'border border-sidebar-primary/60 text-sidebar-primary bg-transparent enabled:hover:bg-sidebar-primary/10 enabled:hover:text-sidebar-primary',
         tealGhost:
           'text-muted-foreground enabled:hover:bg-sidebar-accent enabled:hover:text-sidebar-primary',
+        blue:
+          'bg-sidebar-primary text-sidebar-primary-foreground enabled:hover:bg-sidebar-primary/90 shadow-xs focus-visible:ring-sidebar-ring',
+        blueSecondary:
+          'bg-secondary text-secondary-foreground border border-border/70 enabled:hover:bg-muted enabled:hover:text-sidebar-primary enabled:hover:border-sidebar-primary/50 shadow-xs',
+        blueOutline:
+          'border border-sidebar-primary/60 text-sidebar-primary bg-transparent enabled:hover:bg-sidebar-primary/10 enabled:hover:text-sidebar-primary',
+        blueGhost:
+          'text-muted-foreground enabled:hover:bg-sidebar-accent enabled:hover:text-sidebar-primary',
       },
       size: {
         default: 'h-9 px-3 py-2 has-[>svg]:px-2.5',

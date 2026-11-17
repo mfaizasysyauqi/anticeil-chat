@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface AnticeilLogoProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
   size?: number;
+  useGradient?: boolean;
 }
 
 export const ANTICEIL_LOGO_PATH =
@@ -12,23 +13,40 @@ export const ANTICEIL_LOGO_PATH =
 /**
  * Anticeil Cyberpunk Geometric Logo
  * - Fully transparent background
- * - Adapts to current theme color (white in dark mode, black in light mode) via fill="currentColor"
+ * - Features the signature Electric Blue -> Vibrant Cyan vertical gradient
  */
-export function AnticeilLogo({ className, size, ...props }: AnticeilLogoProps) {
+export function AnticeilLogo({
+  className,
+  size,
+  useGradient = true,
+  fill,
+  ...props
+}: AnticeilLogoProps) {
+  const gradId = useId();
+  const fillValue = fill || (useGradient ? `url(#${gradId})` : 'currentColor');
+
   return (
     <svg
       viewBox="0 0 516 756"
-      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
       style={size ? { width: size, height: size } : undefined}
       className={cn(
-        'shrink-0 text-foreground transition-colors duration-150 select-none pointer-events-none',
+        'shrink-0 select-none pointer-events-none drop-shadow-[0_2px_10px_rgba(2,111,228,0.3)]',
         className,
       )}
       aria-label="Anticeil Logo"
       {...props}
     >
-      <path d={ANTICEIL_LOGO_PATH} fill="currentColor" fillRule="evenodd" />
+      {useGradient && !fill && (
+        <defs>
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#026FE4" />
+            <stop offset="45%" stopColor="#02D5EB" />
+            <stop offset="100%" stopColor="#2CFAE6" />
+          </linearGradient>
+        </defs>
+      )}
+      <path d={ANTICEIL_LOGO_PATH} fill={fillValue} fillRule="evenodd" />
     </svg>
   );
 }

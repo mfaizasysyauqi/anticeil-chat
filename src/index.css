@@ -29,15 +29,17 @@ body,
   --accent-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.16);
   --input: #111214;
-  --ring: #0d9488;
+  --ring: #026fe4;
   --radius: 0.5rem;
 
-  --primary: 173 80% 36%;
+  --primary: 211 98% 48%;
   --primary-foreground: 0 0% 100%;
-  --primary-100: 173 80% 18%;
-  --primary-300: 173 80% 55%;
+  --primary-100: 211 98% 20%;
+  --primary-300: 211 98% 65%;
 
-  --brand-teal: #0d9488;
+  --brand-blue: #026fe4;
+  --brand-cyan: #2cfae6;
+  --brand-teal: #026fe4;
   --brand-gold: #10b981;
 
   --success: 160 84% 39%;
