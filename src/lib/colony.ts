@@ -106,6 +106,42 @@ export type ColonyTemplateSettings = {
   lastSyncedAt?: string;
 };
 
+export interface ColonyInsights {
+  hubId: string;
+  timeRangeDays: number;
+  overview: {
+    totalMembers: number;
+    communicators: number;
+    communicatorsTrend: string;
+    memberRetention: string;
+    memberRetentionTrend: string;
+    welcomeCompletion: string;
+    welcomeCompletionTrend: string;
+    announcementViews: number;
+    announcementViewsTrend: string;
+    engagementScore: number;
+  };
+  dailyActivity: Array<{
+    date: string;
+    messages: number;
+    activeMembers: number;
+    voiceMinutes: number;
+  }>;
+  hourlyDistribution: Array<{
+    hour: number;
+    hourLabel: string;
+    count: number;
+  }>;
+  channelBreakdown: Array<{
+    channelId: string;
+    channelName: string;
+    channelType: string;
+    messageCount: number;
+    percent: number;
+  }>;
+  peakHoursSummary: string;
+}
+
 export type Colony = {
   id: ColonyId;
   name: string;

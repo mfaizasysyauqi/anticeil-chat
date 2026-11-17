@@ -236,6 +236,7 @@ import type {
   ColonyOnboardingQuestion,
   ColonyOnboardingOption,
   ColonyTemplateSettings,
+  ColonyInsights,
 } from '@/lib/colony';
 export type {
   ColonyApp,
@@ -245,6 +246,7 @@ export type {
   ColonyOnboardingQuestion,
   ColonyOnboardingOption,
   ColonyTemplateSettings,
+  ColonyInsights,
 };
 
 // ── Domain Aliases ────────────────────────────────────────────────────
