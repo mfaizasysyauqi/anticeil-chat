@@ -15,7 +15,18 @@ function AppContent() {
     >
       <Routes>
         <Route path="/" element={<CommunityPage />} />
+        <Route path="/applications&activities" element={<CommunityPage />} />
+        <Route path="/apps" element={<CommunityPage />} />
+        <Route path="/applications" element={<CommunityPage />} />
+        <Route path="/friends" element={<CommunityPage />} />
+        <Route path="/message-requests" element={<CommunityPage />} />
+        <Route path="/notifications" element={<CommunityPage />} />
+        <Route path="/calendar" element={<CommunityPage />} />
+        <Route path="/assignments" element={<CommunityPage />} />
+        <Route path="/calls" element={<CommunityPage />} />
+        <Route path="/colonies" element={<CommunityPage />} />
         <Route path="/messages" element={<CommunityPage />} />
+        <Route path="/channels/@me/:channelId?" element={<CommunityPage />} />
         <Route path="/channels/:colonyId?/:channelId?" element={<CommunityPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

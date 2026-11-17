@@ -104,15 +104,6 @@ export function useColonyPageState(): ChatPageContentProps {
   const [replyingToMessage, setReplyingToMessage] = useState<ColonyMessage | null>(null);
   const [messagesMap, setMessagesMap] = useState<Record<string, ColonyMessage[]>>({});
 
-  // ── 4. URL Sync Hook ───────────────────────────────────────────────
-  useUrlSync({
-    activeColonyId,
-    activeChannelId,
-    selectedActivityAppId,
-    channelsCount: channels.length,
-    isActivityOpen,
-  });
-
   const [inputText, setInputText] = useState('');
   const [stagedAttachment, setStagedAttachment] = useState<ColonyAttachment | null>(null);
   const [showMemberList, setShowMemberList] = useState(false);
@@ -286,6 +277,19 @@ export function useColonyPageState(): ChatPageContentProps {
     setActiveColonyId,
     setActiveChannelId,
     t,
+  });
+
+  // ── URL & Path Sync Hook ───────────────────────────────────────────
+  useUrlSync({
+    activeColonyId,
+    activeChannelId,
+    selectedActivityAppId,
+    channelsCount: channels.length,
+    isActivityOpen,
+    homeView,
+    setHomeView,
+    setActiveColonyId,
+    setActiveChannelId,
   });
 
   // Channel Pins & Notifications Hook

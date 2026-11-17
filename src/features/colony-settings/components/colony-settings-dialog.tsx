@@ -88,6 +88,7 @@ interface ColonySettingsDialogProps {
   onDeleteHub: (hub: Colony) => void;
   onOpenWebhooks?: () => void;
   onUpdateMembers?: (updater: (prev: ColonyMember[]) => ColonyMember[]) => void;
+  onNavigateToApps?: () => void;
 }
 
 export function ColonySettingsDialog({
@@ -102,6 +103,7 @@ export function ColonySettingsDialog({
   onDeleteHub,
   onOpenWebhooks,
   onUpdateMembers,
+  onNavigateToApps,
 }: ColonySettingsDialogProps) {
   const { t } = useTranslation();
 
@@ -183,7 +185,14 @@ export function ColonySettingsDialog({
         title={t('Pengaturan Colony')}
         groups={colonyGroups}
         activeSection={serverSettingsSection}
-        onSectionChange={(id) => setColonySettingsSection(id as ColonySettingsSection)}
+        onSectionChange={(id) => {
+          if (id === 'app-directory') {
+            onClose();
+            onNavigateToApps?.();
+            return;
+          }
+          setColonySettingsSection(id as ColonySettingsSection);
+        }}
         initialMobileView={initialSection && initialSection !== 'profile' ? 'detail' : 'menu'}
         sidebarHeader={
           <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/50 border border-sidebar-border">
@@ -370,6 +379,7 @@ export function ColonySettingsDialog({
                   channels={channels}
                   onUpdateColony={onUpdateColony}
                   onClose={onClose}
+                  onNavigateToApps={onNavigateToApps}
                   onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
                   t={t}
                 />

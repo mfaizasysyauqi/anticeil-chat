@@ -80,6 +80,7 @@ export interface ChatModalsCoordinatorProps {
   isAddFriendDialogOpen: boolean;
   setIsAddFriendDialogOpen: (open: boolean) => void;
   friends: any;
+  onNavigateToApps?: () => void;
 
   t: (key: string, params?: Record<string, any>) => string;
 }
@@ -158,6 +159,7 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
   isAddFriendDialogOpen,
   setIsAddFriendDialogOpen,
   friends,
+  onNavigateToApps,
 
   t,
 }) => {
@@ -247,6 +249,7 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
         setIsAuthRequiredOpen={setIsAuthRequiredOpen}
         authFeatureInfo={authFeatureInfo}
         onDevMockLogin={handleDevMockLogin}
+        onNavigateToApps={onNavigateToApps}
         t={t}
       />
 

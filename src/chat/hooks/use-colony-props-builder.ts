@@ -542,6 +542,12 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       isAddFriendDialogOpen,
       setIsAddFriendDialogOpen,
       friends,
+      onNavigateToApps: () => {
+        setActiveColonyId('');
+        setActiveChannelId('');
+        setHomeView('apps');
+        navigate('/applications&activities');
+      },
       t,
     },
     t,

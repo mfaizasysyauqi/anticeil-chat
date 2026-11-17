@@ -6,6 +6,10 @@ interface UseUrlSyncOptions {
   selectedActivityAppId: string | null;
   channelsCount: number;
   isActivityOpen: boolean;
+  homeView?: string;
+  setHomeView?: (view: any) => void;
+  setActiveColonyId?: (id: string) => void;
+  setActiveChannelId?: (id: string) => void;
 }
 
 export function useUrlSync({
@@ -14,56 +18,135 @@ export function useUrlSync({
   selectedActivityAppId,
   channelsCount,
   isActivityOpen,
+  homeView,
+  setHomeView,
+  setActiveColonyId,
+  setActiveChannelId,
 }: UseUrlSyncOptions) {
-  // Broadcast activeColonyId to Unified Mini Rail
+  // 1. Broadcast activeColonyId to Unified Mini Rail
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('anticeil_active_colony_changed', { detail: activeColonyId }));
     window.dispatchEvent(new CustomEvent('anticeil_active_hub_changed', { detail: activeColonyId }));
   }, [activeColonyId]);
 
-  // Synchronize browser URL address bar with active colony, channel, and activity
+  // 2. Initial Route Parsing on Mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const url = new URL(window.location.href);
-      let changed = false;
+      const pathname = window.location.pathname.toLowerCase();
 
-      if (activeColonyId && activeColonyId !== 'anticeil') {
-        if (url.searchParams.get('colony') !== activeColonyId) {
-          url.searchParams.set('colony', activeColonyId);
-          url.searchParams.delete('hub');
-          changed = true;
+      if (
+        pathname === '/applications&activities' ||
+        pathname === '/apps' ||
+        pathname === '/applications'
+      ) {
+        setHomeView?.('apps');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname === '/message-requests') {
+        setHomeView?.('message-requests');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname === '/notifications') {
+        setHomeView?.('notifications');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname === '/calendar') {
+        setHomeView?.('calendar');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname === '/assignments') {
+        setHomeView?.('assignments');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname === '/calls') {
+        setHomeView?.('calls');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname === '/colonies') {
+        setHomeView?.('colonies');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname === '/friends') {
+        setHomeView?.('friends');
+        setActiveColonyId?.('');
+        setActiveChannelId?.('');
+      } else if (pathname.startsWith('/channels/@me')) {
+        const parts = pathname.split('/').filter(Boolean);
+        setActiveColonyId?.('');
+        if (parts[2]) {
+          setActiveChannelId?.(parts[2]);
         }
-      } else if (url.searchParams.has('colony') || url.searchParams.has('hub')) {
-        url.searchParams.delete('colony');
-        url.searchParams.delete('hub');
-        changed = true;
-      }
-
-      if (activeChannelId) {
-        if (url.searchParams.get('channel') !== activeChannelId) {
-          url.searchParams.set('channel', activeChannelId);
-          changed = true;
+      } else if (pathname.startsWith('/channels/')) {
+        const parts = pathname.split('/').filter(Boolean);
+        if (parts[1]) {
+          setActiveColonyId?.(parts[1]);
         }
-      } else if (url.searchParams.has('channel') && channelsCount > 0) {
-        url.searchParams.delete('channel');
-        changed = true;
-      }
-
-      if (selectedActivityAppId) {
-        if (url.searchParams.get('activity') !== selectedActivityAppId) {
-          url.searchParams.set('activity', selectedActivityAppId);
-          changed = true;
+        if (parts[2]) {
+          setActiveChannelId?.(parts[2]);
         }
-      } else if (url.searchParams.has('activity') && channelsCount > 0 && !isActivityOpen) {
-        url.searchParams.delete('activity');
-        changed = true;
-      }
-
-      if (changed) {
-        window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
       }
     } catch {}
-  }, [activeColonyId, activeChannelId, selectedActivityAppId, channelsCount, isActivityOpen]);
-}
+  }, []);
 
+  // 3. Synchronize browser URL address bar with active view, colony, channel, and activity
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      let targetPath = '/friends';
+
+      if (activeColonyId && activeColonyId !== 'anticeil') {
+        targetPath = `/channels/${activeColonyId}${activeChannelId ? '/' + activeChannelId : ''}`;
+      } else if (activeChannelId) {
+        targetPath = `/channels/@me/${activeChannelId}`;
+      } else if (homeView) {
+        switch (homeView) {
+          case 'apps':
+            targetPath = '/applications&activities';
+            break;
+          case 'message-requests':
+            targetPath = '/message-requests';
+            break;
+          case 'notifications':
+            targetPath = '/notifications';
+            break;
+          case 'calendar':
+            targetPath = '/calendar';
+            break;
+          case 'assignments':
+            targetPath = '/assignments';
+            break;
+          case 'calls':
+            targetPath = '/calls';
+            break;
+          case 'colonies':
+            targetPath = '/colonies';
+            break;
+          case 'friends':
+          default:
+            targetPath = '/friends';
+            break;
+        }
+      }
+
+      const currentPath = window.location.pathname;
+      const url = new URL(window.location.href);
+
+      if (selectedActivityAppId) {
+        url.searchParams.set('activity', selectedActivityAppId);
+      } else {
+        url.searchParams.delete('activity');
+      }
+
+      // Remove obsolete query params
+      url.searchParams.delete('colony');
+      url.searchParams.delete('hub');
+      url.searchParams.delete('channel');
+
+      const newSearch = url.search ? url.search : '';
+      if (currentPath !== targetPath) {
+        window.history.replaceState(null, '', targetPath + newSearch);
+      }
+    } catch {}
+  }, [activeColonyId, activeChannelId, homeView, selectedActivityAppId, channelsCount, isActivityOpen]);
+}

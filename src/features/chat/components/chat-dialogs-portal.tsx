@@ -100,6 +100,7 @@ export interface ChatDialogsPortalProps {
   setIsAuthRequiredOpen: (open: boolean) => void;
   authFeatureInfo: { title?: string; desc?: string };
   onDevMockLogin?: (userIndex: number) => void;
+  onNavigateToApps?: () => void;
 
   t: (key: string, params?: Record<string, any>) => string;
 }
@@ -165,6 +166,7 @@ export function ChatDialogsPortal({
   setIsAuthRequiredOpen,
   authFeatureInfo,
   onDevMockLogin,
+  onNavigateToApps,
   t,
 }: CommunityDialogsPortalProps) {
   const [isOnboardingWelcomeOpen, setIsOnboardingWelcomeOpen] = React.useState(false);
@@ -251,6 +253,7 @@ export function ChatDialogsPortal({
         onDeleteHub={(hub) => colonyModals.setColonyToDelete(hub)}
         onOpenWebhooks={() => channelModals.setIsWebhookDialogOpen(true)}
         onUpdateMembers={setMembers}
+        onNavigateToApps={onNavigateToApps}
       />
 
       {/* Edit Server Dialog */}
