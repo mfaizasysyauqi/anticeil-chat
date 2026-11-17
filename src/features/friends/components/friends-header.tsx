@@ -117,6 +117,8 @@ export function FriendsHeader({
             icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
             label={t('Tambah Teman')}
             shortLabel={t('Teman')}
+            iconOnlyMobile={true}
+            title={t('Tambah Teman')}
           />
         </div>
 

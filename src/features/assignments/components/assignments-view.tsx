@@ -170,22 +170,15 @@ export function AssignmentsView({
             })}
           </div>
 
-        {/* Search & Hub Filter */}
+        {/* Hub Filter & Search (Server Filter on Left, Search on Far Right) */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <ResponsiveSearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Cari tugas..."
-            inputWidth="w-32 sm:w-40 md:w-48"
-          />
-
           <Select
             value={selectedColonyFilter}
             onValueChange={setSelectedColonyFilter}
           >
             <SelectTrigger
               size="xs"
-              className="h-7 w-24 sm:w-32 md:w-36 text-xs bg-muted/40 border-sidebar-border"
+              className="h-7 w-24 sm:w-28 md:w-32 lg:w-36 text-xs bg-muted/40 border-sidebar-border"
             >
               <SelectValue placeholder="Semua Colony" />
             </SelectTrigger>
@@ -198,6 +191,13 @@ export function AssignmentsView({
               ))}
             </SelectContent>
           </Select>
+
+          <ResponsiveSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Cari tugas..."
+            inputWidth="w-32 sm:w-40 md:w-48"
+          />
         </div>
       </div>
 

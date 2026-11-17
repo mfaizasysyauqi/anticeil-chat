@@ -287,26 +287,27 @@ export function ColoniesView({
             <button
               onClick={() => setActiveTab('explore')}
               className={cn(
-                'px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
+                'px-2 sm:px-2.5 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
                 activeTab === 'explore'
                   ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
+              title={t('Jelajahi Colony')}
+              aria-label={t('Jelajahi Colony')}
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>{t('Jelajahi Colony')}</span>
+              <Compass className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden lg:inline">{t('Jelajahi Colony')}</span>
             </button>
 
-            {/* Emerald Highlight Button: Buat Server Baru */}
-            <Button
-              size="xs"
+            {/* Primary Theme Action Button: Buat Colony */}
+            <TopBarActionButton
               onClick={handleOpenCreateColony}
-              className="px-2.5 py-1 text-xs font-bold transition-all bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 flex items-center gap-1 ml-0.5 shadow-2xs cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">{t('Buat Colony')}</span>
-              <span className="sm:hidden">{t('Colony')}</span>
-            </Button>
+              icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
+              label={t('Buat Colony')}
+              iconOnlyTablet={true}
+              title={t('Buat Colony')}
+              aria-label={t('Buat Colony')}
+            />
           </div>
 
         {/* Right side: Responsive Search Bar (Accessible on mobile too!) */}

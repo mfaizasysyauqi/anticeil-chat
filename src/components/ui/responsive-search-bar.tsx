@@ -43,8 +43,8 @@ export function ResponsiveSearchBar({
 
   return (
     <div className={cn('flex items-center shrink-0', className)}>
-      {/* ── Desktop & Tablet View (Always Visible on sm+) ────────── */}
-      <div className={cn('hidden sm:flex relative items-center', inputWidth)}>
+      {/* ── Desktop View (Always Visible on lg+) ────────── */}
+      <div className={cn('hidden lg:flex relative items-center', inputWidth)}>
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <Input
           id={id}
@@ -67,16 +67,20 @@ export function ResponsiveSearchBar({
         )}
       </div>
 
-      {/* ── Mobile View: Icon Button that toggles full search overlay ── */}
-      <div className="sm:hidden flex items-center">
+      {/* ── Mobile & Tablet View (< lg): Icon Button that toggles search overlay ── */}
+      <div className="lg:hidden flex items-center">
         {!isMobileOpen ? (
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
             onClick={() => setIsMobileOpen(true)}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 relative cursor-pointer"
+            className={cn(
+              'h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 relative cursor-pointer',
+              value && 'text-primary bg-primary/10 hover:bg-primary/20',
+            )}
             title={placeholder}
+            aria-label={placeholder}
           >
             <Search className="w-4 h-4" />
             {value && (
@@ -84,7 +88,7 @@ export function ResponsiveSearchBar({
             )}
           </Button>
         ) : (
-          <div className="fixed inset-x-0 top-0 h-12 bg-background border-b border-sidebar-border z-50 flex items-center px-3 gap-2 animate-in fade-in slide-in-from-top-1 duration-150 shadow-md">
+          <div className="fixed inset-x-0 top-0 h-12 bg-background border-b border-sidebar-border z-50 flex items-center px-3.5 sm:px-4 md:px-5 gap-2 animate-in fade-in slide-in-from-top-1 duration-150 shadow-md">
             <Search className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
             <Input
               ref={inputRef}
@@ -93,7 +97,7 @@ export function ResponsiveSearchBar({
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="h-8 text-xs bg-muted/50 border-input flex-1"
+              className="h-8 text-xs bg-muted/50 border-input flex-1 focus-visible:ring-1 focus-visible:ring-primary"
             />
             {value && (
               <Button
@@ -101,7 +105,7 @@ export function ResponsiveSearchBar({
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => onChange('')}
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Hapus teks"
               >
                 <X className="w-3.5 h-3.5" />
@@ -111,7 +115,7 @@ export function ResponsiveSearchBar({
               type="button"
               size="xs"
               onClick={() => setIsMobileOpen(false)}
-              className="text-xs font-bold px-2.5 h-7 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-2xs shrink-0"
+              className="text-xs font-bold px-2.5 h-7 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-2xs shrink-0"
             >
               Tutup
             </Button>

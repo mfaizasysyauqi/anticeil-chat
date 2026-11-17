@@ -199,6 +199,9 @@ export function CalendarView({
               icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
               label="Jadwalkan Meeting"
               shortLabel="Meeting"
+              iconOnlyMobile={true}
+              title="Jadwalkan Meeting"
+              aria-label="Jadwalkan Meeting"
             />
           </div>
 
@@ -268,24 +271,24 @@ export function CalendarView({
             ))}
           </div>
 
-          {/* Mobile & Tablet Dropdown (Ensures filters never disappear!) */}
+          {/* Mobile & Tablet Dropdown (Icon button only on mobile & tablet) */}
           <div className="flex lg:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  size="xs"
-                  className="h-7 px-2 text-xs font-semibold gap-1 bg-muted/40 border-sidebar-border hover:bg-muted text-foreground"
+                  size="icon-xs"
+                  className={cn(
+                    'h-7 w-7 text-xs font-semibold bg-muted/40 border-sidebar-border hover:bg-muted text-foreground p-0 flex items-center justify-center relative cursor-pointer',
+                    filterType !== 'all' && 'border-primary/50 text-primary bg-primary/10'
+                  )}
+                  title={filterType === 'all' ? 'Filter Jadwal: Semua' : `Filter: ${filterType}`}
+                  aria-label="Filter Jadwal"
                 >
-                  <Filter className="w-3 h-3 text-muted-foreground" />
-                  <span>
-                    {filterType === 'all'
-                      ? 'Semua'
-                      : filterType === 'meeting'
-                      ? 'Meeting'
-                      : 'Tugas'}
-                  </span>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground opacity-70" />
+                  <Filter className="w-3.5 h-3.5" />
+                  {filterType !== 'all' && (
+                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-32">
