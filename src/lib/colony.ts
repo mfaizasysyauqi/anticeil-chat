@@ -65,6 +65,26 @@ export type ColonySafetySettings = {
   };
 };
 
+export type ColonyAccessSettings = {
+  joinMethod?: 'invite_only' | 'apply' | 'discoverable';
+  ageRestricted?: boolean;
+  rulesEnabled?: boolean;
+  rules?: string[];
+  screeningQuestions?: Array<{ id: string; question: string; required?: boolean }>;
+  requireVerification?: boolean;
+};
+
+export type ColonyApplication = {
+  id: string;
+  hubId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string | null;
+  answers: Record<string, string>;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+};
+
 export type ColonyCommunitySettings = {
   enabled?: boolean;
   rulesChannelId?: string;
@@ -184,12 +204,7 @@ export type Colony = {
   customInviteVanity?: string;
   stickers?: ColonySticker[];
   sounds?: ColonySound[];
-  accessSettings?: {
-    joinMethod?: 'invite_only' | 'apply' | 'discoverable';
-    ageRestricted?: boolean;
-    rulesEnabled?: boolean;
-    rules?: string[];
-  };
+  accessSettings?: ColonyAccessSettings;
   installedApps?: ColonyApp[];
   safetySettings?: ColonySafetySettings;
   communitySettings?: ColonyCommunitySettings;

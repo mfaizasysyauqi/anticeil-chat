@@ -1,6 +1,6 @@
 import { getColonyInitials } from '../components/colony-icon';
 import { api } from '@/lib/api';
-import type { ServerInvitation, ColonyInvitation, ColonyOnboarding, ColonyTemplateSettings, ColonySafetySettings } from '@/lib/colony';
+import type { ServerInvitation, ColonyInvitation, ColonyOnboarding, ColonyTemplateSettings, ColonySafetySettings, ColonyAccessSettings, ColonyApplication } from '@/lib/colony';
 import {
   loadStoredChannels,
   loadStoredColonies,
@@ -869,6 +869,107 @@ export const coloniesApi = {
     const stored = loadStoredColonies();
     saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, serverTag } : c));
     return serverTag;
+  },
+
+  async getColonyAccess(colonyId: string): Promise<ColonyAccessSettings> {
+    try {
+      const res = await api.get<ColonyAccessSettings>(`/v1/colonies/${colonyId}/access`);
+      if (res && typeof res === 'object') return res;
+    } catch {
+      try {
+        const res2 = await api.get<ColonyAccessSettings>(`/v1/colony/colonies/${colonyId}/access`);
+        if (res2 && typeof res2 === 'object') return res2;
+      } catch {}
+    }
+    const colony = loadStoredColonies().find((c) => c.id === colonyId);
+    return colony?.accessSettings || {
+      joinMethod: 'invite_only',
+      ageRestricted: false,
+      rulesEnabled: true,
+      rules: [
+        'Be civil and respectful to all members.',
+        'No spamming, advertising, or self-promotion without permission.',
+        'Keep discussions in relevant channels.'
+      ],
+      screeningQuestions: [
+        { id: 'q1', question: 'Mengapa kamu tertarik bergabung dengan colony ini?', required: true }
+      ]
+    };
+  },
+
+  async updateColonyAccess(colonyId: string, accessSettings: ColonyAccessSettings): Promise<ColonyAccessSettings> {
+    try {
+      const res = await api.put<{ success: boolean; accessSettings: ColonyAccessSettings }>(`/v1/colonies/${colonyId}/access`, accessSettings);
+      if (res && res.accessSettings) {
+        const stored = loadStoredColonies();
+        saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, accessSettings: res.accessSettings } : c));
+        return res.accessSettings;
+      }
+    } catch {
+      try {
+        const res2 = await api.put<{ success: boolean; accessSettings: ColonyAccessSettings }>(`/v1/colony/colonies/${colonyId}/access`, accessSettings);
+        if (res2 && res2.accessSettings) {
+          const stored = loadStoredColonies();
+          saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, accessSettings: res2.accessSettings } : c));
+          return res2.accessSettings;
+        }
+      } catch {}
+    }
+    const stored = loadStoredColonies();
+    saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, accessSettings } : c));
+    return accessSettings;
+  },
+
+  async getColonyApplications(colonyId: string): Promise<ColonyApplication[]> {
+    try {
+      const res = await api.get<ColonyApplication[]>(`/v1/colonies/${colonyId}/applications`);
+      if (Array.isArray(res)) return res;
+    } catch {
+      try {
+        const res2 = await api.get<ColonyApplication[]>(`/v1/colony/colonies/${colonyId}/applications`);
+        if (Array.isArray(res2)) return res2;
+      } catch {}
+    }
+    return [];
+  },
+
+  async createColonyApplication(colonyId: string, payload: { answers: Record<string, string>; userId?: string; userName?: string; userAvatar?: string }): Promise<{ success: boolean; application?: ColonyApplication }> {
+    try {
+      const res = await api.post<{ success: boolean; application?: ColonyApplication }>(`/v1/colonies/${colonyId}/applications`, payload);
+      return res;
+    } catch {
+      try {
+        const res2 = await api.post<{ success: boolean; application?: ColonyApplication }>(`/v1/colony/colonies/${colonyId}/applications`, payload);
+        return res2;
+      } catch {}
+    }
+    return { success: true };
+  },
+
+  async approveColonyApplication(colonyId: string, appId: string): Promise<{ success: boolean }> {
+    try {
+      const res = await api.post<{ success: boolean }>(`/v1/colonies/${colonyId}/applications/${appId}/approve`, {});
+      return res;
+    } catch {
+      try {
+        const res2 = await api.post<{ success: boolean }>(`/v1/colony/colonies/${colonyId}/applications/${appId}/approve`, {});
+        return res2;
+      } catch {}
+    }
+    return { success: true };
+  },
+
+  async rejectColonyApplication(colonyId: string, appId: string): Promise<{ success: boolean }> {
+    try {
+      const res = await api.post<{ success: boolean }>(`/v1/colonies/${colonyId}/applications/${appId}/reject`, {});
+      return res;
+    } catch {
+      try {
+        const res2 = await api.post<{ success: boolean }>(`/v1/colony/colonies/${colonyId}/applications/${appId}/reject`, {});
+        return res2;
+      } catch {}
+    }
+    return { success: true };
   },
 
   boostHub(id: string) { return this.boostColony(id); },

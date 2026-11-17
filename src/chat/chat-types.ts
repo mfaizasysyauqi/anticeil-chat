@@ -237,6 +237,8 @@ import type {
   ColonyOnboardingOption,
   ColonyTemplateSettings,
   ColonyInsights,
+  ColonyAccessSettings,
+  ColonyApplication,
 } from '@/lib/colony';
 export type {
   ColonyApp,
@@ -247,6 +249,8 @@ export type {
   ColonyOnboardingOption,
   ColonyTemplateSettings,
   ColonyInsights,
+  ColonyAccessSettings,
+  ColonyApplication,
 };
 
 // ── Domain Aliases ────────────────────────────────────────────────────
