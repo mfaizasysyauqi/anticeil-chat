@@ -517,6 +517,19 @@ export const coloniesApi = {
     };
   },
 
+  async getDiscoverColonies(params?: { q?: string; category?: string }): Promise<Colony[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.q) queryParams.set('q', params.q);
+      if (params?.category) queryParams.set('category', params.category);
+      const qs = queryParams.toString();
+      const res = await api.get<Colony[]>(`/v1/colony/colonies/discover${qs ? `?${qs}` : ''}`);
+      if (Array.isArray(res) && res.length > 0) return res;
+    } catch {}
+    const stored = loadStoredColonies();
+    return stored.filter((h) => h.id !== 'anticeil');
+  },
+
   async joinHub(inviteCode: string): Promise<Colony> {
     const cleanId = inviteCode.startsWith('hub_') ? inviteCode : `hub_${inviteCode}`;
     const stored = loadStoredColonies();

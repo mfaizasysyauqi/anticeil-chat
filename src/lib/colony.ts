@@ -115,6 +115,8 @@ export type Colony = {
   unreadCount?: number;
   inviteCode?: string;
   membersCount?: number;
+  onlineCount?: number;
+  verified?: boolean;
   color?: string;
   iconUrl?: string;
   role?: 'owner' | 'admin' | 'moderator' | 'member';

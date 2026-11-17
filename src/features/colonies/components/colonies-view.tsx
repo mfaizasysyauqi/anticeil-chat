@@ -101,7 +101,7 @@ export function ColoniesView({
     const fetchPublicColonies = async () => {
       setIsLoadingPublic(true);
       try {
-        const all = await chatApi.getColonies();
+        const all = await colonyApi.getDiscoverColonies();
         if (mounted && Array.isArray(all)) {
           // Filter out DM hub and servers the current user is already member of
           const available = all.filter(
