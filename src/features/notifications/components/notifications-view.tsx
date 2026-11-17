@@ -160,7 +160,7 @@ export function NotificationsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-6 [scrollbar-width:thin]`}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-6', horizontalPadding)}>
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff className="w-8 h-8 stroke-[1.8] text-muted-foreground/80" />}

@@ -96,7 +96,7 @@ export function VoiceVideoSettingsModal({
         </div>
 
         {/* Right Settings Content */}
-        <div className={cn('flex-1 overflow-y-auto max-h-[75vh] [scrollbar-width:thin] space-y-6', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL, 'py-5 sm:py-6 md:py-8')}>
+        <div className={cn('flex-1 overflow-y-auto h-full max-md:scrollbar-none lg:[scrollbar-width:thin] space-y-6', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL, 'py-5 sm:py-6 md:py-8')}>
           <DialogHeader className="p-0 text-left border-b border-border pb-3">
             <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
               <Mic className="w-5 h-5 text-primary" />

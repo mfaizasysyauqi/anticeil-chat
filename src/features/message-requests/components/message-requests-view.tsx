@@ -123,7 +123,7 @@ export function MessageRequestsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-6 [scrollbar-width:thin]`}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-6', horizontalPadding)}>
         {/* Section Header Count */}
         <div className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-4">
           {activeTab === 'requests'

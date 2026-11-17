@@ -318,7 +318,7 @@ export function CalendarView({
       </div>
 
       {/* ── Main Content Area: Month Grid vs Agenda List ────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
         {viewMode === 'month' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-[500px]">
             {/* Calendar Month Grid (Left 2 cols) */}

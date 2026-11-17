@@ -342,7 +342,7 @@ export function TwoPaneSettingsDialog({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground p-1.5 -mr-1.5 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group"
               title={t('Tutup (ESC)')}
               aria-label={t('Tutup')}
             >

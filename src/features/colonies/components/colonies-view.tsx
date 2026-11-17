@@ -330,7 +330,7 @@ export function ColoniesView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-5 [scrollbar-width:thin] space-y-6`}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-5 space-y-6', horizontalPadding)}>
         {activeTab === 'joined' ? (
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">

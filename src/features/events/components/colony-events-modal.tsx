@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 
 import {
@@ -130,24 +131,23 @@ export function ColonyEventsModal({
             </div>
 
             {/* List Body */}
-            <div className="p-4 space-y-3 overflow-y-auto max-h-[500px] [scrollbar-width:thin]">
+            <div className="p-4 space-y-3 overflow-y-auto max-h-[500px] max-md:scrollbar-none lg:[scrollbar-width:thin]">
               {serverEvents.length === 0 ? (
-                <div className="py-12 px-4 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary">
-                    <CalendarIcon className="w-6 h-6" />
-                  </div>
-                  <h4 className="text-sm font-semibold text-foreground">Belum ada event terjadwal</h4>
-                  <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                    Rencanakan acara komunitas, streaming game bareng, atau rapat suara terjadwal di sini.
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={handleOpenCreate}
-                    className="mt-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 shadow-xs cursor-pointer"
-                  >
-                    Buat Event Pertama
-                  </Button>
-                </div>
+                <EmptyState
+                  compact
+                  icon={<CalendarIcon className="w-6 h-6 stroke-[1.8] text-primary/80" />}
+                  title="Belum ada event terjadwal"
+                  description="Rencanakan acara komunitas, streaming game bareng, atau rapat suara terjadwal di sini."
+                  action={
+                    <Button
+                      size="sm"
+                      onClick={handleOpenCreate}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 shadow-xs cursor-pointer"
+                    >
+                      Buat Event Pertama
+                    </Button>
+                  }
+                />
               ) : (
                 serverEvents.map((ev) => {
                   const evDate = dayjs(ev.startTime);

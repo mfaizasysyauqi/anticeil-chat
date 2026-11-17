@@ -79,7 +79,7 @@ export function ActivityLauncherDialog({
           <DialogDescription className="sr-only">Browse and launch activities in this voice call.</DialogDescription>
 
           {/* Top Search Bar & Close button */}
-          <div className="p-3 pb-2 shrink-0">
+          <div className="px-3.5 sm:px-4 pt-3.5 pb-2 shrink-0">
             <div className="flex items-center gap-2">
               <div className="relative flex-1 min-w-0">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -186,7 +186,7 @@ export function ActivityLauncherDialog({
           </div>
 
           {/* Modal Scrollable Body */}
-          <div className="flex-1 overflow-y-auto px-3.5 pb-3.5 space-y-3.5 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto px-3.5 sm:px-4 pb-3.5 space-y-3.5 max-md:scrollbar-none lg:[scrollbar-width:thin]">
             {/* 1. Recents Row (YouTube, Whiteboard, Chess, ScreenShare, Wordle, Trivia) */}
             {!appSearchQuery && selectedCategory === 'all' && (
               <div>

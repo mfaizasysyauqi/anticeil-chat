@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { FriendsHeader } from './friends-header';
 import { FriendsList } from './friends-list';
@@ -71,7 +72,7 @@ export function FriendsView({
       {/* Body Content */}
       <div className="flex flex-1 min-h-0 overflow-hidden bg-background">
         {/* Main Friends Column */}
-        <div className={`flex-1 min-h-0 overflow-y-auto ${horizontalPadding} py-5 [scrollbar-width:thin]`}>
+        <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-5', horizontalPadding)}>
           {friendsTab === 'add' ? (
             <AddFriendTab
               onAddFriend={onAddFriend}

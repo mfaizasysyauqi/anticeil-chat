@@ -203,7 +203,7 @@ export function AssignmentsView({
       </div>
 
       {/* ── Task Items List ────────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
         <div className="w-full space-y-3">
           {filteredList.length === 0 ? (
             <EmptyState

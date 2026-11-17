@@ -36,9 +36,18 @@ export const LAYOUT_PAGE_SPACING = {
   VERTICAL: 'py-4 sm:py-5 md:py-6',
 
   /**
+   * Universal scrollable body classes:
+   * Uses max-lg:scrollbar-none on mobile/tablet so scrollbar does NOT displace right padding,
+   * guaranteeing 100% horizontal symmetry with the App Bar.
+   */
+  BODY_SCROLL:
+    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]',
+
+  /**
    * Combined page content scroll container classes
    */
-  BODY_PADDING: 'px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6',
+  BODY_PADDING:
+    'px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]',
 
   /**
    * Universal App Bar header height (48px)
@@ -64,13 +73,13 @@ export const CHANNEL_HORIZONTAL_PADDING = LAYOUT_PAGE_SPACING.HORIZONTAL;
  */
 export const LAYOUT_DIALOG_SPACING = {
   /**
-   * Two-pane settings modal (Colony Settings, User Settings, Channel Settings):
-   * - Mobile (<768px): w-[96vw] max-w-[96vw] h-[94dvh] rounded-2xl
-   * - Tablet (768px - 1023px): w-[92vw] max-w-4xl h-[86vh] rounded-2xl
-   * - Desktop (>=1024px): w-full max-w-5xl lg:max-w-6xl h-[85vh] max-h-[820px] rounded-2xl
+   * Two-pane settings modal (Colony Settings, User Settings, Channel Settings, Edit Profile):
+   * Proportional 90% viewport size with 5% outer padding on all sides, matching Edit Profile dialog.
+   * - Mobile (<768px): w-[94vw] max-w-[94vw] h-[94dvh] max-h-[94dvh] rounded-2xl
+   * - Tablet & Desktop (>=768px): w-[90vw] max-w-[90vw] h-[90vh] max-h-[90vh] rounded-2xl
    */
   TWO_PANE_CONTAINER:
-    'p-0 w-[96vw] md:w-[92vw] lg:w-full max-w-5xl lg:max-w-6xl h-[94dvh] md:h-[86vh] max-h-[820px] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0',
+    'p-0 w-[94vw] md:w-[90vw] max-w-[90vw] h-[94dvh] md:h-[90vh] max-h-[90vh] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0 select-none',
 
   /**
    * Single-pane dialog standard container (e.g. Create Channel, Add Friend, Schedule, etc.)
@@ -92,7 +101,7 @@ export const LAYOUT_DIALOG_SPACING = {
 
   /** Dialog detail pane scrollable body with symmetrical horizontal padding matching App Bar */
   BODY_PADDING:
-    'flex-1 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-5 sm:py-6 md:py-8 [scrollbar-width:thin] w-full min-w-0',
+    'flex-1 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-5 sm:py-6 md:py-8 max-md:scrollbar-none lg:[scrollbar-width:thin] w-full min-w-0',
 
   /** Sidebar in two-pane settings */
   SIDEBAR_WIDTH: 'w-full md:w-56 lg:w-60',

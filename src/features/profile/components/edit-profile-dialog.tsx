@@ -21,6 +21,7 @@ import {
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { ProfilePreviewCard } from '@/features/user-settings/components/tabs/profiles/profile-preview-card';
@@ -343,7 +344,7 @@ export function EditProfileDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="p-0 w-[90vw] max-w-[90vw] h-[90vh] sm:h-[90dvh] max-h-[90vh] sm:max-h-[90dvh] overflow-hidden bg-card border border-border flex flex-col rounded-2xl shadow-2xl gap-0 select-none z-[70]"
+        className={cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, "bg-card z-[70]")}
         overlayClassName="z-[70]"
       >
         <DialogTitle className="sr-only">{t('Edit Profiles')}</DialogTitle>

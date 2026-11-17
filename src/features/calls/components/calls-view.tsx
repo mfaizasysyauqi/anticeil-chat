@@ -214,7 +214,7 @@ export function CallsView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] py-4 sm:py-6 space-y-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6 space-y-6', horizontalPadding)}>
         {/* Speed Dial / Kontak Cepat Section */}
         {friends && friends.length > 0 && (
           <div className="space-y-3">
