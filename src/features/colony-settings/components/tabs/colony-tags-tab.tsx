@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Shield,
   ChevronDown,
@@ -7,12 +7,17 @@ import {
   Pipette,
   Gem,
   CheckCircle2,
+  Tag,
+  Plus,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import type { Colony } from '@/chat/chat-types';
+import { colonyApi } from '@/features/colonies/api/colonies-api';
 import {
   ALL_TAG_BADGES,
   TAG_COLOR_OPTIONS,
@@ -40,7 +45,6 @@ export function ColonyTagsTab({
   onClose,
   t,
 }: ColonyTagsTabProps) {
-  // Color picker hidden input ref
   const colorPickerInputRef = useRef<HTMLInputElement | null>(null);
 
   const allBadges = ALL_TAG_BADGES;
@@ -53,9 +57,27 @@ export function ColonyTagsTab({
     initialTag?.badge || 'sword',
   );
   const [selectedColor, setSelectedColor] = useState<string>(
-    initialTag?.color || '#ec4899',
+    initialTag?.color || '#14b8a6',
   );
   const [showAllBadges, setShowAllBadges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Colony category tags state
+  const [currentTags, setCurrentTags] = useState<string[]>(
+    activeColony.tags && activeColony.tags.length > 0 ? activeColony.tags : ['komunitas']
+  );
+  const [newTagInput, setNewTagInput] = useState('');
+
+  // Fetch live tag on mount
+  useEffect(() => {
+    colonyApi.getColonyTag(activeColony.id).then((tag) => {
+      if (tag) {
+        if (tag.name) setTagName(tag.name);
+        if (tag.badge) setSelectedBadgeId(tag.badge);
+        if (tag.color) setSelectedColor(tag.color);
+      }
+    }).catch(() => {});
+  }, [activeColony.id]);
 
   // Active badge object
   const activeBadge = useMemo(() => {
@@ -70,8 +92,53 @@ export function ColonyTagsTab({
     return showAllBadges ? allBadges : allBadges.slice(0, 10);
   }, [allBadges, showAllBadges]);
 
+  const handleAddTag = () => {
+    const val = newTagInput.trim().toLowerCase().replace(/^#/, '');
+    if (!val) return;
+    if (currentTags.includes(val)) {
+      toast.info(t('Tag ini sudah ditambahkan.'));
+      return;
+    }
+    if (currentTags.length >= 8) {
+      toast.error(t('Maksimal 8 tag per server.'));
+      return;
+    }
+    const updated = [...currentTags, val];
+    setCurrentTags(updated);
+    setServerTags(updated);
+    setNewTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const updated = currentTags.filter((t) => t !== tagToRemove);
+    setCurrentTags(updated);
+    setServerTags(updated);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const tagPayload = {
+        name: tagName.trim() || 'WUMP',
+        badge: selectedBadgeId,
+        color: selectedColor,
+      };
+      await colonyApi.updateColonyTag(activeColony.id, tagPayload);
+      await onUpdateColony(activeColony.id, {
+        serverTag: tagPayload,
+        tags: currentTags,
+      } as any);
+      toast.success(t('Server Tag & Lencana berhasil disimpan! 🎉'));
+      onClose?.();
+    } catch {
+      toast.error(t('Gagal menyimpan server tag'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full text-foreground">
       {/* Hidden Color Picker for custom color */}
       <input
         type="color"
@@ -85,32 +152,37 @@ export function ColonyTagsTab({
         {/* LEFT COLUMN: CONTROLS */}
         <div className="flex-1 space-y-6 max-w-xl">
           {/* Header */}
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              {t('Server Tag')}
-            </h2>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-foreground">
+                {t('Server Tag & Badges')}
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                Identity
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {t(
-                'Create a tag that your server members can display next to their name! Anyone outside your server can view your Server Profile through the Server Tag, and if applications are enabled, they can apply to join.',
+                'Buat tag dan lencana unik yang dapat disematkan di samping nama anggota komunitas Anda dalam obrolan chat!'
               )}
             </p>
           </div>
 
-          {/* Blue Info Notice */}
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#1e293b]/70 border border-blue-500/30 text-xs text-blue-200">
-            <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+          {/* Info Notice */}
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs text-primary/90">
+            <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div>
               <span>
                 {t(
-                  'Your Server Profile is private. Users will not be able to see it from a Server Tag.',
+                  'Tag dan lencana server akan terlihat di samping profil anggota ketika mereka mengirim pesan di server ini.'
                 )}{' '}
               </span>
               <button
                 type="button"
                 onClick={() => onNavigateSection?.('profile')}
-                className="text-blue-400 hover:underline font-semibold cursor-pointer"
+                className="text-primary hover:underline font-semibold cursor-pointer ml-1"
               >
-                {t('Edit Setting')}
+                {t('Edit Profil Server')}
               </button>
             </div>
           </div>
@@ -123,10 +195,10 @@ export function ColonyTagsTab({
                 onNavigateSection?.('boost');
                 toast.info(t('Server Tag memerlukan Colony Boost Level 2.'));
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#5865F2] via-[#8b5cf6] to-[#ec4899] text-white text-xs font-bold shadow-lg shadow-purple-500/20 hover:opacity-95 transition-opacity cursor-pointer border border-white/20"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 text-xs font-bold shadow-lg shadow-teal-500/20 hover:opacity-95 transition-opacity cursor-pointer border border-white/20"
             >
-              <Gem className="w-4 h-4 text-white" />
-              <span>{t('Unlock with Boosting')}</span>
+              <Gem className="w-4 h-4 text-slate-950" />
+              <span>{t('Unlocked via Server Boost Level 2')}</span>
             </button>
           </div>
 
@@ -134,14 +206,14 @@ export function ColonyTagsTab({
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Choose Name')}
+                {t('Nama Server Tag')}
               </label>
               <span className="text-[11px] text-muted-foreground">
-                {t('You may use max 4 characters, alphabet and numbers.')}
+                {t('Maksimal 4 karakter huruf & angka.')}
               </span>
             </div>
 
-            <div className="relative flex items-center bg-[#1e1f22] border border-border/80 rounded-xl px-3.5 h-12 focus-within:border-[#5865F2] transition-colors">
+            <div className="relative flex items-center bg-card border border-border/80 rounded-xl px-3.5 h-12 focus-within:border-primary transition-colors">
               <div className="mr-3 flex items-center justify-center shrink-0">
                 {activeBadge.icon(selectedColor, 'w-5 h-5')}
               </div>
@@ -162,27 +234,15 @@ export function ColonyTagsTab({
             </div>
           </div>
 
-          {/* Gray Warning Box */}
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#1e1f22] border border-border/60 text-xs text-muted-foreground leading-relaxed">
+          {/* Notice Box */}
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-card border border-border/60 text-xs text-muted-foreground leading-relaxed">
             <Info className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
             <div>
               <span>
                 {t(
-                  'Updating your Server Tag will require all of your members to manually reapply the tag to their profile. We do this to prevent abuse.',
-                )}{' '}
+                  'Mengubah Server Tag akan secara otomatis memperbarui lencana pada semua anggota komunitas.'
+                )}
               </span>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toast.info(
-                    t('Server tag adalah lencana identitas untuk para anggota server.'),
-                  );
-                }}
-                className="text-blue-400 hover:underline font-semibold"
-              >
-                {t('Learn more')}
-              </a>
             </div>
           </div>
 
@@ -190,10 +250,10 @@ export function ColonyTagsTab({
           <div className="space-y-3">
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                {t('Choose Badge')}
+                {t('Pilih Ikon Lencana (Badge)')}
               </label>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {t("Changing just the badge won't remove the Server Tag from members.")}
+                {t('Pilih simbol visual yang mewakili identitas komunitas Anda.')}
               </p>
             </div>
 
@@ -206,10 +266,10 @@ export function ColonyTagsTab({
                     type="button"
                     onClick={() => setSelectedBadgeId(badge.id)}
                     className={cn(
-                      'h-14 rounded-xl flex items-center justify-center border transition-all cursor-pointer bg-[#1e1f22]',
+                      'h-14 rounded-xl flex items-center justify-center border transition-all cursor-pointer bg-card',
                       isSelected
-                        ? 'border-[#5865F2] ring-2 ring-[#5865F2] bg-[#2b2d31] scale-105 shadow-md'
-                        : 'border-border/60 hover:border-border hover:bg-[#2b2d31]/70',
+                        ? 'border-primary ring-2 ring-primary/40 bg-primary/10 scale-105 shadow-md'
+                        : 'border-border/60 hover:border-border hover:bg-muted/70',
                     )}
                     title={badge.name}
                   >
@@ -225,9 +285,9 @@ export function ColonyTagsTab({
             <button
               type="button"
               onClick={() => setShowAllBadges((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold pt-1 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-semibold pt-1 transition-colors cursor-pointer"
             >
-              <span>{showAllBadges ? t('Show fewer badges') : t('Show all badges')}</span>
+              <span>{showAllBadges ? t('Tampilkan lebih sedikit') : t('Tampilkan semua lencana')}</span>
               {showAllBadges ? (
                 <ChevronUp className="w-4 h-4" />
               ) : (
@@ -239,7 +299,7 @@ export function ColonyTagsTab({
           {/* Choose Color Section */}
           <div className="space-y-3 pt-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-              {t('Choose Color')}
+              {t('Pilih Warna Lencana & Tag')}
             </label>
 
             <div className="grid grid-cols-5 gap-2.5">
@@ -252,10 +312,10 @@ export function ColonyTagsTab({
                     type="button"
                     onClick={() => setSelectedColor(c.hex)}
                     className={cn(
-                      'h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer bg-[#1e1f22]',
+                      'h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer bg-card',
                       isSelected
-                        ? 'border-white ring-2 ring-[#5865F2] bg-[#2b2d31] scale-105'
-                        : 'border-border/60 hover:border-border hover:bg-[#2b2d31]/70',
+                        ? 'border-white ring-2 ring-primary bg-primary/10 scale-105'
+                        : 'border-border/60 hover:border-border hover:bg-muted/70',
                     )}
                     title={c.name}
                   >
@@ -264,17 +324,17 @@ export function ColonyTagsTab({
                 );
               })}
 
-              {/* 15th: Custom Pipette Eyedropper */}
+              {/* Custom Pipette Eyedropper */}
               <button
                 type="button"
                 onClick={() => colorPickerInputRef.current?.click()}
                 className={cn(
-                  'h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer bg-[#1e1f22]',
+                  'h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer bg-card',
                   !colorOptions.some(
                     (c) => c.hex.toLowerCase() === selectedColor.toLowerCase(),
                   )
-                    ? 'border-white ring-2 ring-[#5865F2] bg-[#2b2d31]'
-                    : 'border-border/60 hover:border-border hover:bg-[#2b2d31]/70',
+                    ? 'border-white ring-2 ring-primary bg-primary/10'
+                    : 'border-border/60 hover:border-border hover:bg-muted/70',
                 )}
                 title={t('Pilih Warna Kustom')}
               >
@@ -283,23 +343,70 @@ export function ColonyTagsTab({
             </div>
           </div>
 
+          {/* Colony Category Tags (Discovery / Filter) */}
+          <div className="space-y-3 pt-2">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                {t('Tag Kategori Server')}
+              </label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t('Tag ini membantu pengguna menemukan server Anda di menu Eksplorasi Komunitas.')}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Tag className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder="contoh: gaming, ai, dev, musik..."
+                  className="pl-8 text-xs bg-card border-border/80 h-9 focus-visible:ring-primary/40"
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={handleAddTag}
+                className="h-9 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                {t('Tambah Tag')}
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {currentTags.map((tVal) => (
+                <span
+                  key={tVal}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-xs font-semibold text-primary"
+                >
+                  <span>#{tVal}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tVal)}
+                    className="text-primary/70 hover:text-primary transition-colors cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="pt-4 flex items-center gap-3">
             <Button
-              className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
-              onClick={async () => {
-                await onUpdateColony(activeColony.id, {
-                  serverTag: {
-                    name: tagName,
-                    badge: selectedBadgeId,
-                    color: selectedColor,
-                  },
-                } as any);
-                toast.success(t('Server Tag berhasil disimpan! 🎉'));
-                onClose?.();
-              }}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer shadow-xs"
+              onClick={handleSave}
+              disabled={isSaving}
             >
-              {t('Simpan Perubahan')}
+              {isSaving ? t('Menyimpan...') : t('Simpan Perubahan')}
             </Button>
             {onClose && (
               <Button
@@ -313,11 +420,11 @@ export function ColonyTagsTab({
           </div>
         </div>
 
-        {/* RIGHT COLUMN: DISCORD LIVE CHAT PREVIEW */}
+        {/* RIGHT COLUMN: LIVE CHAT PREVIEW */}
         <div className="w-full sm:w-80 shrink-0 sticky top-2">
-          <div className="rounded-2xl border border-border/80 bg-[#111214] shadow-2xl p-4 overflow-hidden">
+          <div className="rounded-2xl border border-border/80 bg-card shadow-2xl p-4 overflow-hidden">
             <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3 px-1">
-              {t('Chat Preview')}
+              {t('Pratinjau Obrolan Live')}
             </div>
 
             <div className="space-y-4">
@@ -354,18 +461,18 @@ export function ColonyTagsTab({
               </div>
 
               {/* Message 3: Lily (WITH SERVER TAG) */}
-              <div className="flex items-start gap-3 p-1.5 -mx-1.5 rounded-xl bg-white/[0.03]">
+              <div className="flex items-start gap-3 p-2 -mx-1.5 rounded-xl bg-primary/5 border border-primary/10">
                 <div className="relative shrink-0">
-                  <div className="size-9 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-xs font-bold text-amber-300 shadow-md">
+                  <div className="size-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-xs font-bold text-primary shadow-md">
                     🐰
                   </div>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-extrabold text-amber-300">Lily</span>
+                    <span className="text-xs font-extrabold text-primary">Lily</span>
 
                     {/* LIVE SERVER TAG BADGE */}
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[5px] bg-[#1e1f22] border border-white/10 text-[10px] font-bold shadow-xs">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[5px] bg-background border border-border text-[10px] font-bold shadow-xs">
                       {activeBadge.icon(selectedColor, 'w-3.5 h-3.5')}
                       <span
                         className="tracking-wider uppercase font-black"
@@ -378,7 +485,7 @@ export function ColonyTagsTab({
                     <span className="text-[10px] text-muted-foreground ml-auto">14:22</span>
                   </div>
                   <div className="text-xs text-foreground font-medium mt-0.5">
-                    check out my tag!
+                    check out our new server tag!
                   </div>
                 </div>
               </div>
@@ -394,32 +501,7 @@ export function ColonyTagsTab({
                     <span className="text-[10px] text-muted-foreground">14:22</span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    woah how did you get that
-                  </div>
-                </div>
-              </div>
-
-              {/* Message 5: Lily */}
-              <div className="flex items-start gap-3">
-                <div className="size-9 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-xs font-bold text-amber-300 shrink-0">
-                  🐰
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-extrabold text-amber-300">Lily</span>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[5px] bg-[#1e1f22] border border-white/10 text-[10px] font-bold shadow-xs">
-                      {activeBadge.icon(selectedColor, 'w-3.5 h-3.5')}
-                      <span
-                        className="tracking-wider uppercase font-black"
-                        style={{ color: selectedColor }}
-                      >
-                        {tagName || 'TAG'}
-                      </span>
-                    </span>
-                    <span className="text-[10px] text-muted-foreground ml-auto">14:23</span>
-                  </div>
-                  <div className="text-xs text-foreground font-medium mt-0.5">
-                    anyone here can get it!
+                    woah look at that badge!
                   </div>
                 </div>
               </div>

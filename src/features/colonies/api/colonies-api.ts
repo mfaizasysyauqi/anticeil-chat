@@ -833,6 +833,44 @@ export const coloniesApi = {
     return payload;
   },
 
+  // ── Colony Server Tag & Badges ──────────────────────────────────────
+  async getColonyTag(colonyId: string): Promise<Colony['serverTag']> {
+    try {
+      const res = await api.get<Colony['serverTag']>(`/v1/colonies/${colonyId}/tag`);
+      if (res && res.name) return res;
+    } catch {
+      try {
+        const res2 = await api.get<Colony['serverTag']>(`/v1/colony/colonies/${colonyId}/tag`);
+        if (res2 && res2.name) return res2;
+      } catch {}
+    }
+    const colony = loadStoredColonies().find((c) => c.id === colonyId);
+    return colony?.serverTag || { name: 'WUMP', badge: 'sword', color: '#14b8a6' };
+  },
+
+  async updateColonyTag(colonyId: string, serverTag: Colony['serverTag']): Promise<Colony['serverTag']> {
+    try {
+      const res = await api.put<{ success: boolean; serverTag: Colony['serverTag'] }>(`/v1/colonies/${colonyId}/tag`, serverTag);
+      if (res && res.serverTag) {
+        const stored = loadStoredColonies();
+        saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, serverTag: res.serverTag } : c));
+        return res.serverTag;
+      }
+    } catch {
+      try {
+        const res2 = await api.put<{ success: boolean; serverTag: Colony['serverTag'] }>(`/v1/colony/colonies/${colonyId}/tag`, serverTag);
+        if (res2 && res2.serverTag) {
+          const stored = loadStoredColonies();
+          saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, serverTag: res2.serverTag } : c));
+          return res2.serverTag;
+        }
+      } catch {}
+    }
+    const stored = loadStoredColonies();
+    saveStoredColonies(stored.map((c) => c.id === colonyId ? { ...c, serverTag } : c));
+    return serverTag;
+  },
+
   boostHub(id: string) { return this.boostColony(id); },
   createHub(payload: any) { return this.createColony(payload); },
   deleteHub(id: string) { return this.deleteColony(id); },
