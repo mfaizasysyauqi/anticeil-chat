@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   User,
   Mic,
@@ -66,6 +66,12 @@ export function UserSettingsModal({
   const [activeSection, setActiveSection] = useState<SettingsSection>(
     (initialSection as SettingsSection) || 'account',
   );
+
+  useEffect(() => {
+    if (open && initialSection) {
+      setActiveSection(initialSection as SettingsSection);
+    }
+  }, [open, initialSection]);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Full Discord settings navigation groups

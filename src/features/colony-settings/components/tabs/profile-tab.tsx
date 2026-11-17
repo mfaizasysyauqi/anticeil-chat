@@ -123,11 +123,11 @@ export function ProfileTab({
           {/* Header */}
           <div>
             <h2 className="text-xl font-bold text-foreground">
-              {t('Server Profile')}
+              {t('Colony Profile')}
             </h2>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               {t(
-                'Customize how your server appears in invite links and, if enabled, in Server Discovery and Announcement Channel messages',
+                'Customize how your colony appears in invite links and, if enabled, in Colony Discovery and Announcement Channel messages',
               )}
             </p>
           </div>
@@ -140,8 +140,8 @@ export function ProfileTab({
             <Input
               value={serverSettingsEditName}
               onChange={(e) => setServerSettingsEditName(e.target.value)}
-              placeholder="e.g. zmsta's server"
-              className="h-10 text-sm bg-[#1e1f22] border-border/80 text-foreground"
+              placeholder="e.g. zmsta's colony"
+              className="h-10 text-sm bg-muted/40 border-border/80 text-foreground"
             />
           </div>
 
@@ -158,7 +158,7 @@ export function ProfileTab({
               onClick={() => serverIconFileInputRef.current?.click()}
               className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
             >
-              {t('Change Server Icon')}
+              {t('Change Colony Icon')}
             </Button>
           </div>
 
@@ -208,7 +208,7 @@ export function ProfileTab({
               </label>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {t(
-                  "Add up to 5 traits to show off your server's interests and personality.",
+                  "Add up to 5 traits to show off your colony's interests and personality.",
                 )}
               </div>
             </div>

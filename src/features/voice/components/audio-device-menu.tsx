@@ -53,7 +53,7 @@ export function AudioDeviceMenu({
   // e.g. "Microphone Array (Realtek(R) Audio)" -> title: "Realtek(R) Audio", subtitle: "Microphone Array"
   // e.g. "Speakers (Realtek(R) Audio)" -> title: "Realtek(R) Audio", subtitle: "Speakers"
   const parseDeviceName = (rawLabel: string) => {
-    if (!rawLabel) return { title: isInput ? 'Microphone' : 'Speakers', subtitle: '' };
+    if (!rawLabel) return { title: isInput ? 'Default Microphone' : 'Default Speaker', subtitle: '' };
     const match = rawLabel.match(/^(.*?)\s*\((.*?)\)$/);
     if (match) {
       const typePart = match[1].trim(); // "Microphone Array" or "Speakers"
@@ -74,7 +74,7 @@ export function AudioDeviceMenu({
 
   const getSelectedDeviceLabel = () => {
     if (currentDeviceId === 'default') {
-      return 'Windows Default';
+      return isInput ? 'Default Microphone' : 'Default Speaker';
     }
     const found = devices.find((d) => d.deviceId === currentDeviceId);
     return found?.label || (isInput ? 'Microphone' : 'Speakers');
@@ -105,7 +105,7 @@ export function AudioDeviceMenu({
         side="top"
         align="start"
         sideOffset={12}
-        className="w-[230px] p-2 bg-[#111214] border border-[#2b2d31] rounded-xl shadow-2xl text-foreground text-xs select-none z-50 animate-in fade-in-50 zoom-in-95 duration-150"
+        className="w-[230px] p-2 bg-popover border border-border rounded-xl shadow-2xl text-popover-foreground text-xs select-none z-50 animate-in fade-in-50 zoom-in-95 duration-150"
       >
         <div className="space-y-1 relative">
           {/* Item 1: Device Selection (Flyout Submenu) */}
@@ -114,8 +114,8 @@ export function AudioDeviceMenu({
               type="button"
               onClick={() => setActiveSubmenu(activeSubmenu === 'device' ? null : 'device')}
               className={cn(
-                "w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#232428] transition-colors cursor-pointer text-left",
-                activeSubmenu === 'device' && "bg-[#232428]"
+                "w-full flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left",
+                activeSubmenu === 'device' && "bg-accent text-accent-foreground"
               )}
             >
               <div className="flex flex-col min-w-0 pr-2">
@@ -131,7 +131,7 @@ export function AudioDeviceMenu({
 
             {/* Submenu: Devices List */}
             {activeSubmenu === 'device' && (
-              <div className="absolute left-[103%] top-0 w-[240px] p-1.5 bg-[#111214] border border-[#2b2d31] rounded-xl shadow-2xl space-y-1 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150">
+              <div className="absolute left-[103%] top-0 w-[240px] p-1.5 bg-popover border border-border rounded-xl shadow-2xl space-y-1 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150">
                 {/* Default option */}
                 <button
                   type="button"
@@ -139,7 +139,7 @@ export function AudioDeviceMenu({
                     updateSetting(isInput ? 'inputDeviceId' : 'outputDeviceId', 'default');
                     setActiveSubmenu(null);
                   }}
-                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#232428] transition-colors cursor-pointer text-left group/item"
+                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left group/item"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {isInput ? <Mic className="w-4 h-4 text-muted-foreground shrink-0" /> : <Headphones className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -150,9 +150,9 @@ export function AudioDeviceMenu({
                   </div>
                   <div className={cn(
                     "size-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all",
-                    currentDeviceId === 'default' ? "border-indigo-500 bg-indigo-500" : "border-muted-foreground/40"
+                    currentDeviceId === 'default' ? "border-primary bg-primary" : "border-muted-foreground/40"
                   )}>
-                    {currentDeviceId === 'default' && <div className="size-1.5 rounded-full bg-white" />}
+                    {currentDeviceId === 'default' && <div className="size-1.5 rounded-full bg-primary-foreground" />}
                   </div>
                 </button>
 
@@ -177,7 +177,7 @@ export function AudioDeviceMenu({
                         updateSetting(isInput ? 'inputDeviceId' : 'outputDeviceId', device.deviceId);
                         setActiveSubmenu(null);
                       }}
-                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#232428] transition-colors cursor-pointer text-left group/item"
+                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left group/item"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         {isInput ? <Mic className="w-4 h-4 text-muted-foreground shrink-0" /> : <Headphones className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -187,9 +187,9 @@ export function AudioDeviceMenu({
                       </div>
                       <div className={cn(
                         "size-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all",
-                        isSelected ? "border-indigo-500 bg-indigo-500" : "border-muted-foreground/40"
+                        isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                       )}>
-                        {isSelected && <div className="size-1.5 rounded-full bg-white" />}
+                        {isSelected && <div className="size-1.5 rounded-full bg-primary-foreground" />}
                       </div>
                     </button>
                   );
@@ -205,8 +205,8 @@ export function AudioDeviceMenu({
                 type="button"
                 onClick={() => setActiveSubmenu(activeSubmenu === 'profile' ? null : 'profile')}
                 className={cn(
-                  "w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#232428] transition-colors cursor-pointer text-left",
-                  activeSubmenu === 'profile' && "bg-[#232428]"
+                  "w-full flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left",
+                  activeSubmenu === 'profile' && "bg-accent text-accent-foreground"
                 )}
               >
                 <div className="flex flex-col min-w-0 pr-2">
@@ -222,7 +222,7 @@ export function AudioDeviceMenu({
 
               {/* Submenu: Profile Options */}
               {activeSubmenu === 'profile' && (
-                <div className="absolute left-[103%] top-0 w-[200px] p-1.5 bg-[#111214] border border-[#2b2d31] rounded-xl shadow-2xl space-y-1 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150">
+                <div className="absolute left-[103%] top-0 w-[200px] p-1.5 bg-popover border border-border rounded-xl shadow-2xl space-y-1 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150">
                   {(['voice-isolation', 'studio', 'custom'] as InputProfile[]).map((p) => {
                     const isSelected = settings.inputProfile === p;
                     return (
@@ -233,16 +233,16 @@ export function AudioDeviceMenu({
                           updateSetting('inputProfile', p);
                           setActiveSubmenu(null);
                         }}
-                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#232428] transition-colors cursor-pointer text-left"
+                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left"
                       >
                         <span className="font-medium text-xs text-foreground capitalize">
                           {getProfileLabel(p)}
                         </span>
                         <div className={cn(
                           "size-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all",
-                          isSelected ? "border-indigo-500 bg-indigo-500" : "border-muted-foreground/40"
+                          isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                         )}>
-                          {isSelected && <div className="size-1.5 rounded-full bg-white" />}
+                          {isSelected && <div className="size-1.5 rounded-full bg-primary-foreground" />}
                         </div>
                       </button>
                     );
@@ -264,11 +264,11 @@ export function AudioDeviceMenu({
               max="100"
               value={currentVolume}
               onChange={(e) => updateSetting(isInput ? 'inputVolume' : 'outputVolume', Number(e.target.value))}
-              className="w-full h-1.5 bg-[#2b2d31] rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
             />
           </div>
 
-          <div className="h-px bg-[#2b2d31] my-1" />
+          <div className="h-px bg-border my-1" />
 
           {/* Voice Settings Launcher */}
           <button
@@ -284,7 +284,7 @@ export function AudioDeviceMenu({
                 onOpenFullSettings();
               }, 100);
             }}
-            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-[#232428] text-foreground font-semibold text-xs transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-accent hover:text-accent-foreground text-foreground font-semibold text-xs transition-colors cursor-pointer"
           >
             <Settings className="w-4 h-4 text-muted-foreground" />
             <span>{t('Voice Settings')}</span>

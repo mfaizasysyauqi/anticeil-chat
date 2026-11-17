@@ -322,7 +322,7 @@ export function ChannelSettingsDialog({
 
             {/* Invites Tab */}
             {activeTab === 'invites' && (
-              <div className="max-w-xl space-y-6">
+              <div className="w-full space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Invites')}</h2>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -359,7 +359,7 @@ export function ChannelSettingsDialog({
 
             {/* Integrations Tab */}
             {activeTab === 'integrations' && (
-              <div className="max-w-xl space-y-6">
+              <div className="w-full space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Integrations')}</h2>
                   <p className="text-xs text-muted-foreground mt-1">

@@ -48,21 +48,21 @@ export function VoiceAudioSection({
             <select
               value={settings.inputDeviceId}
               onChange={(e) => updateSetting('inputDeviceId', e.target.value)}
-              className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
+              className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-muted/40 border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
             >
               {audioInputDevices.length > 0 ? (
-                audioInputDevices.map((d) => (
+                audioInputDevices.map((d, idx) => (
                   <option
-                    key={d.deviceId}
+                    key={d.deviceId || idx}
                     value={d.deviceId}
-                    className="bg-[#2b2d31] text-foreground"
+                    className="bg-popover text-popover-foreground"
                   >
-                    {d.label || `Microphone (${d.deviceId.slice(0, 5)})`}
+                    {d.label || (d.deviceId === 'default' || !d.deviceId ? 'Default Microphone (Sistem)' : `Microphone ${idx + 1} (${d.deviceId.slice(0, 5)})`)}
                   </option>
                 ))
               ) : (
-                <option value="default" className="bg-[#2b2d31] text-foreground">
-                  Windows Default (Realtek(R) Audio)
+                <option value="default" className="bg-popover text-popover-foreground">
+                  Default Microphone (Realtek(R) Audio)
                 </option>
               )}
             </select>
@@ -79,21 +79,21 @@ export function VoiceAudioSection({
             <select
               value={settings.outputDeviceId}
               onChange={(e) => updateSetting('outputDeviceId', e.target.value)}
-              className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
+              className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-muted/40 border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
             >
               {audioOutputDevices.length > 0 ? (
-                audioOutputDevices.map((d) => (
+                audioOutputDevices.map((d, idx) => (
                   <option
-                    key={d.deviceId}
+                    key={d.deviceId || idx}
                     value={d.deviceId}
-                    className="bg-[#2b2d31] text-foreground"
+                    className="bg-popover text-popover-foreground"
                   >
-                    {d.label || `Speaker (${d.deviceId.slice(0, 5)})`}
+                    {d.label || (d.deviceId === 'default' || !d.deviceId ? 'Default Speaker (Sistem)' : `Speaker ${idx + 1} (${d.deviceId.slice(0, 5)})`)}
                   </option>
                 ))
               ) : (
-                <option value="default" className="bg-[#2b2d31] text-foreground">
-                  Windows Default (soundcore R50i)
+                <option value="default" className="bg-popover text-popover-foreground">
+                  Default Speaker (soundcore R50i)
                 </option>
               )}
             </select>

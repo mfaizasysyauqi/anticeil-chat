@@ -122,7 +122,7 @@ export function ColonySettingsDialog({
 
   useEffect(() => {
     if (isOpen) {
-      if (initialSection === 'app-directory' || serverSettingsSection === 'app-directory') {
+      if (initialSection === 'app-directory') {
         onClose();
         onNavigateToApps?.();
         return;
@@ -131,7 +131,7 @@ export function ColonySettingsDialog({
         setColonySettingsSection(initialSection);
       }
     }
-  }, [isOpen, initialSection, serverSettingsSection, onClose, onNavigateToApps]);
+  }, [isOpen, initialSection]);
 
   const [serverSettingsEditName, setServerSettingsEditName] = useState('');
   const [serverSettingsEditDesc, setServerSettingsEditDesc] = useState('');

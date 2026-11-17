@@ -142,7 +142,7 @@ export function AnalyticsTab({
           {t('Engagement')}
         </h2>
         <p className="text-xs text-muted-foreground mt-1">
-          {t('Manage settings that help keep your server active.')}
+          {t('Manage settings that help keep your colony active.')}
         </p>
       </div>
 
@@ -153,7 +153,7 @@ export function AnalyticsTab({
             {t('System Messages')}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t('Configure system event messages sent to your server.')}
+            {t('Configure system event messages sent to your colony.')}
           </p>
         </div>
 
@@ -161,7 +161,7 @@ export function AnalyticsTab({
           {/* Switch 1 */}
           <div className="flex items-center justify-between gap-4">
             <span className="text-xs text-foreground font-medium">
-              {t('Send a random welcome message when someone joins this server.')}
+              {t('Send a random welcome message when someone joins this colony.')}
             </span>
             <Switch
               checked={sendWelcomeMessage}
@@ -183,7 +183,7 @@ export function AnalyticsTab({
           {/* Switch 3 */}
           <div className="flex items-center justify-between gap-4">
             <span className="text-xs text-foreground font-medium">
-              {t('Send a message when someone boosts this server.')}
+              {t('Send a message when someone boosts this colony.')}
             </span>
             <Switch
               checked={sendBoostMessage}
@@ -194,7 +194,7 @@ export function AnalyticsTab({
           {/* Switch 4 */}
           <div className="flex items-center justify-between gap-4">
             <span className="text-xs text-foreground font-medium">
-              {t('Send helpful tips for server setup.')}
+              {t('Send helpful tips for colony setup.')}
             </span>
             <Switch
               checked={sendSetupTips}
@@ -241,14 +241,14 @@ export function AnalyticsTab({
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {t(
-              'Shows a feed of activity from games and connected apps in this server.',
+              'Shows a feed of activity from games and connected apps in this colony.',
             )}
           </p>
         </div>
 
         <div className="flex items-center justify-between gap-4">
           <span className="text-xs text-foreground font-medium">
-            {t('Display Activity Feed in this server')}
+            {t('Display Activity Feed in this colony')}
           </span>
           <Switch
             checked={activityFeedEnabled}
@@ -267,7 +267,7 @@ export function AnalyticsTab({
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
             {t(
-              'This will determine whether members who have not explicitly set their notification settings receive a notification for every message sent in this server or not.',
+              'This will determine whether members who have not explicitly set their notification settings receive a notification for every message sent in this colony or not.',
             )}
           </p>
         </div>

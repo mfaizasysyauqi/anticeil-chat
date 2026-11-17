@@ -36,10 +36,10 @@ export function buildColonyNavGroups({
   return [
     {
       key: 'COLONY_SETTINGS',
-      title: activeColonyName || t('Server Settings'),
+      title: activeColonyName || t('Colony Settings'),
       items: [
-        { id: 'profile', label: t('Server Profile'), icon: <Globe className="h-4 w-4 shrink-0" /> },
-        { id: 'colony-tag', label: t('Server Tag'), icon: <Tag className="h-4 w-4 shrink-0" /> },
+        { id: 'profile', label: t('Colony Profile'), icon: <Globe className="h-4 w-4 shrink-0" /> },
+        { id: 'colony-tag', label: t('Colony Tag'), icon: <Tag className="h-4 w-4 shrink-0" /> },
         { id: 'engagement', label: t('Engagement'), icon: <BarChart3 className="h-4 w-4 shrink-0" /> },
         { id: 'boost', label: t('Boost Perks'), icon: <Zap className="h-4 w-4 shrink-0" /> },
       ],
@@ -91,20 +91,8 @@ export function buildColonyNavGroups({
       items: [
         { id: 'community-overview', label: t('Community Overview'), icon: <Globe className="h-4 w-4 shrink-0" /> },
         { id: 'onboarding', label: t('Onboarding'), icon: <Sparkles className="h-4 w-4 shrink-0" /> },
-        { id: 'server-insights', label: t('Server Insights'), icon: <LineChart className="h-4 w-4 shrink-0" /> },
-      ],
-    },
-    {
-      key: 'TEMPLATES_AND_DELETE',
-      title: '',
-      items: [
-        { id: 'server-template', label: t('Server Template'), icon: <Layers className="h-4 w-4 shrink-0" /> },
-        {
-          id: 'delete-server',
-          label: t('Delete Server'),
-          icon: <Trash2 className="h-4 w-4 shrink-0" />,
-          isDanger: true,
-        },
+        { id: 'server-insights', label: t('Colony Insights'), icon: <LineChart className="h-4 w-4 shrink-0" /> },
+        { id: 'server-template', label: t('Colony Template'), icon: <Layers className="h-4 w-4 shrink-0" /> },
       ],
     },
   ];
