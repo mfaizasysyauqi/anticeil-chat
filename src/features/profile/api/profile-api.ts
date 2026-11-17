@@ -4,6 +4,8 @@ export interface UserProfileData {
   bio: string;
   pronouns: string;
   bannerColor: string;
+  bannerUrl?: string | null;
+  avatarUrl?: string | null;
   statusThought: string;
   theme?: string;
   customStatus?: string;

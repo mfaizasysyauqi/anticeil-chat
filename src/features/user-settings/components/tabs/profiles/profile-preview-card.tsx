@@ -18,6 +18,8 @@ import { toast } from 'sonner';
 export interface ProfilePreviewCardProps {
   currentUserName: string;
   profileBannerColor: string;
+  profileBannerUrl?: string | null;
+  profileAvatarUrl?: string | null;
   profileStatusThought: string;
   setProfileStatusThought: (s: string) => void;
   isEditingStatusThought: boolean;
@@ -36,6 +38,8 @@ export interface ProfilePreviewCardProps {
 export function ProfilePreviewCard({
   currentUserName,
   profileBannerColor,
+  profileBannerUrl,
+  profileAvatarUrl,
   profileStatusThought,
   setProfileStatusThought,
   isEditingStatusThought,
@@ -57,8 +61,11 @@ export function ProfilePreviewCard({
       <div className="rounded-2xl bg-card border border-border/80 shadow-2xl overflow-hidden">
         {/* Banner Area */}
         <div
-          className="h-28 relative transition-colors"
-          style={{ backgroundColor: profileBannerColor }}
+          className="h-28 relative transition-colors bg-cover bg-center"
+          style={{
+            backgroundColor: profileBannerColor,
+            backgroundImage: profileBannerUrl ? `url(${profileBannerUrl})` : undefined,
+          }}
         >
           <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2 py-1 rounded-md text-[10px] text-white/90 font-semibold border border-white/10">
             <Palette className="w-3 h-3" />
@@ -71,7 +78,15 @@ export function ProfilePreviewCard({
           <div className="flex items-end justify-between -mt-10 relative">
             <div className="relative">
               <div className="size-20 rounded-full border-4 border-card overflow-hidden bg-muted flex items-center justify-center text-3xl shadow-md">
-                🐱
+                {profileAvatarUrl ? (
+                  <img
+                    src={profileAvatarUrl}
+                    alt={currentUserName}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <span>🐱</span>
+                )}
               </div>
               <div className="absolute bottom-0 right-0 size-5 rounded-full border-2 border-card bg-emerald-500 shadow-sm" />
             </div>

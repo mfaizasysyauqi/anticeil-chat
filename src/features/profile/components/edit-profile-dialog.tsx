@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   Pencil,
@@ -10,6 +10,9 @@ import {
   Gamepad2,
   ExternalLink,
   Check,
+  Upload,
+  Trash2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -40,6 +43,8 @@ export function EditProfileDialog({
   const [profileSubTab, setProfileSubTab] = useState<'board' | 'activity' | 'wishlist'>('board');
   const [profileSelectedType, setProfileSelectedType] = useState<'main' | 'server'>('main');
   const [profileBannerColor, setProfileBannerColor] = useState('#5c4d44');
+  const [profileBannerUrl, setProfileBannerUrl] = useState<string | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [profileStatusThought, setProfileStatusThought] = useState('Shower thought?');
   const [isEditingStatusThought, setIsEditingStatusThought] = useState(false);
   const [profileBioText, setProfileBioText] = useState('Your life in one sentence');
@@ -49,22 +54,69 @@ export function EditProfileDialog({
   const [profileWidgetsDismissed, setProfileWidgetsDismissed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const compressAndLoadImage = (
+    file: File,
+    maxWidth: number,
+    maxHeight: number,
+    onSuccess: (dataUrl: string) => void
+  ) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('Silakan pilih file gambar (PNG, JPG, WebP)'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/webp', 0.85);
+          onSuccess(dataUrl);
+        } else {
+          onSuccess(e.target?.result as string);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     if (open) {
       profileApi.getProfile().then((data) => {
         if (data.bannerColor) setProfileBannerColor(data.bannerColor);
+        if (data.bannerUrl !== undefined) setProfileBannerUrl(data.bannerUrl);
+        if (data.avatarUrl !== undefined) setProfileAvatarUrl(data.avatarUrl);
+        else if (currentUser?.avatar || currentUser?.imageUrl) {
+          setProfileAvatarUrl(currentUser.avatar || currentUser.imageUrl);
+        }
         if (data.statusThought) setProfileStatusThought(data.statusThought);
         if (data.bio) setProfileBioText(data.bio);
         if (data.pronouns) setProfilePronouns(data.pronouns);
       });
     }
-  }, [open]);
+  }, [open, currentUser]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
       await profileApi.updateProfile({
         bannerColor: profileBannerColor,
+        bannerUrl: profileBannerUrl,
+        avatarUrl: profileAvatarUrl,
         statusThought: profileStatusThought,
         bio: profileBioText,
         pronouns: profilePronouns,
@@ -162,31 +214,95 @@ export function EditProfileDialog({
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 {t('Avatar & Decoration')}
               </span>
+              <input
+                type="file"
+                ref={avatarInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    compressAndLoadImage(file, 256, 256, (dataUrl) => {
+                      setProfileAvatarUrl(dataUrl);
+                      toast.success(t('Foto avatar dipilih!'));
+                    });
+                  }
+                }}
+              />
               <div className="grid grid-cols-2 gap-2">
                 <div
-                  onClick={() => toast.info(t('Klik pada avatar untuk mengganti foto'))}
-                  className="p-3 rounded-xl border border-border/70 bg-card hover:border-border flex items-center justify-center cursor-pointer group relative transition-colors"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="p-3 rounded-xl border border-border/70 bg-card hover:border-border flex flex-col items-center justify-center cursor-pointer group relative transition-colors gap-1.5"
+                  title={t('Klik untuk upload avatar baru')}
                 >
-                  <div className="size-12 rounded-full overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center text-xl shadow-inner">
-                    🐱
+                  <div className="size-12 rounded-full overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center text-xl shadow-inner relative">
+                    {profileAvatarUrl ? (
+                      <img src={profileAvatarUrl} alt="Avatar" className="size-full object-cover" />
+                    ) : (
+                      <span>🐱</span>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                      <Upload className="w-4 h-4" />
+                    </div>
                   </div>
+                  <span className="text-[10px] text-muted-foreground font-semibold group-hover:text-foreground">
+                    {profileAvatarUrl ? t('Ganti Avatar') : t('Upload Avatar')}
+                  </span>
                 </div>
                 <div
-                  onClick={() => toast.info(t('Jelajahi dekorasi avatar unik di Nectar Shop!'))}
-                  className="p-3 rounded-xl border border-border/70 bg-card hover:border-border flex items-center justify-center cursor-pointer group transition-colors"
+                  onClick={() => {
+                    if (profileAvatarUrl) {
+                      setProfileAvatarUrl(null);
+                      toast.info(t('Avatar dikembalikan ke default'));
+                    } else {
+                      toast.info(t('Jelajahi dekorasi avatar unik di Nectar Shop!'));
+                    }
+                  }}
+                  className="p-3 rounded-xl border border-border/70 bg-card hover:border-border flex flex-col items-center justify-center cursor-pointer group transition-colors gap-1.5"
                 >
-                  <div className="size-12 rounded-full border border-dashed border-muted-foreground/40 flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:border-primary transition-colors">
-                    <Plus className="w-4 h-4" />
-                  </div>
+                  {profileAvatarUrl ? (
+                    <>
+                      <div className="size-12 rounded-full border border-destructive/40 bg-destructive/10 flex items-center justify-center text-destructive group-hover:bg-destructive group-hover:text-destructive-foreground transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] text-destructive font-semibold">
+                        {t('Hapus Custom')}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="size-12 rounded-full border border-dashed border-muted-foreground/40 flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:border-primary transition-colors">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-semibold">
+                        {t('Dekorasi')}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* 3. Banner Color */}
+            {/* 3. Banner Color & Image */}
             <div className="space-y-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Banner Color')}
+                {t('Banner Color & Image')}
               </span>
+              <input
+                type="file"
+                ref={bannerInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    compressAndLoadImage(file, 1200, 400, (dataUrl) => {
+                      setProfileBannerUrl(dataUrl);
+                      toast.success(t('Gambar banner dipilih!'));
+                    });
+                  }
+                }}
+              />
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -195,13 +311,48 @@ export function EditProfileDialog({
                   className="size-8 rounded-lg border border-border cursor-pointer bg-transparent"
                 />
                 <div
-                  className="flex-1 h-8 rounded-lg border border-border/70 flex items-center px-3 text-xs font-mono text-muted-foreground shadow-xs"
-                  style={{ backgroundColor: profileBannerColor }}
+                  className="flex-1 h-8 rounded-lg border border-border/70 flex items-center justify-between px-3 text-xs font-mono text-muted-foreground shadow-xs bg-cover bg-center overflow-hidden"
+                  style={{
+                    backgroundColor: profileBannerColor,
+                    backgroundImage: profileBannerUrl ? `url(${profileBannerUrl})` : undefined,
+                  }}
                 >
                   <span className="bg-black/60 px-1.5 py-0.5 rounded text-white font-mono text-[11px]">
                     {profileBannerColor}
                   </span>
+                  {profileBannerUrl && (
+                    <span className="bg-primary/80 px-1.5 py-0.5 rounded text-primary-foreground font-sans text-[10px] font-bold">
+                      {t('Custom Image')}
+                    </span>
+                  )}
                 </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => bannerInputRef.current?.click()}
+                  className="flex-1 h-7 text-[11px] rounded-lg flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>{profileBannerUrl ? t('Ganti Gambar Banner') : t('Upload Banner')}</span>
+                </Button>
+                {profileBannerUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setProfileBannerUrl(null);
+                      toast.info(t('Gambar banner dihapus'));
+                    }}
+                    className="h-7 text-[11px] text-destructive hover:bg-destructive/10 rounded-lg px-2 cursor-pointer"
+                    title={t('Hapus Banner')}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -287,6 +438,8 @@ export function EditProfileDialog({
             <ProfilePreviewCard
               currentUserName={currentUserName}
               profileBannerColor={profileBannerColor}
+              profileBannerUrl={profileBannerUrl}
+              profileAvatarUrl={profileAvatarUrl}
               profileStatusThought={profileStatusThought}
               setProfileStatusThought={setProfileStatusThought}
               isEditingStatusThought={isEditingStatusThought}
