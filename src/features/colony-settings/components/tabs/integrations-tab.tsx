@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Webhook,
   Radio,
@@ -25,7 +25,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { colonyApi } from '@/chat/chat-api';
+import { webhooksApi, type ColonyWebhook } from '@/features/webhooks';
 import type { Colony, ColonyChannel, ColonyApp } from '@/chat/chat-types';
 import {
   CreateWebhookDialog,
@@ -44,15 +44,6 @@ interface IntegrationsTabProps {
   t: (key: string) => string;
 }
 
-interface WebhookItem {
-  id: string;
-  name: string;
-  channelId: string;
-  url: string;
-  avatarText?: string;
-  createdAt: string;
-}
-
 export function IntegrationsTab({
   activeColony,
   channels = [],
@@ -63,10 +54,21 @@ export function IntegrationsTab({
   t,
 }: IntegrationsTabProps) {
   // Webhooks State
-  const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
+  const [webhooks, setWebhooks] = useState<ColonyWebhook[]>([]);
+  const [isLoadingWebhooks, setIsLoadingWebhooks] = useState(false);
   const [isCreateWebhookOpen, setIsCreateWebhookOpen] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeColony?.id) {
+      setIsLoadingWebhooks(true);
+      webhooksApi
+        .getColonyWebhooks(activeColony.id)
+        .then(setWebhooks)
+        .finally(() => setIsLoadingWebhooks(false));
+    }
+  }, [activeColony?.id]);
 
   // Channels Followed Modal State
   const [isFollowedChannelsOpen, setIsFollowedChannelsOpen] = useState(false);
@@ -82,45 +84,61 @@ export function IntegrationsTab({
 
   const installedApps: ColonyApp[] = activeColony.installedApps || [];
 
-  const handleCreateWebhook = (name: string, channelId: string) => {
-    const newId = `wh_${Date.now()}`;
-    const generatedUrl = `${window.location.origin}/api/v1/community/webhook?hubId=${activeColony.id}&id=${newId}`;
-    const newWebhook: WebhookItem = {
-      id: newId,
-      name: name.trim() || 'Captain Hook',
-      channelId,
-      url: generatedUrl,
-      avatarText: '🪝',
-      createdAt: new Date().toISOString(),
-    };
-
-    setWebhooks((prev) => [newWebhook, ...prev]);
-    toast.success(t(`Webhook "${newWebhook.name}" berhasil dibuat! 🪝`));
+  const handleCreateWebhook = async (name: string, channelId: string, avatarUrl?: string) => {
+    try {
+      const created = await webhooksApi.createColonyWebhook(activeColony.id, {
+        name,
+        channelId,
+        avatarUrl,
+      });
+      if (created) {
+        setWebhooks((prev) => [created, ...prev]);
+        toast.success(t(`Webhook "${created.name}" berhasil dibuat! 🪝`));
+      } else {
+        toast.error(t('Gagal membuat webhook'));
+      }
+    } catch {
+      toast.error(t('Gagal membuat webhook'));
+    }
   };
 
-  const handleDeleteWebhook = (id: string) => {
-    setWebhooks((prev) => prev.filter((w) => w.id !== id));
-    toast.info(t('Webhook telah dihapus.'));
+  const handleDeleteWebhook = async (id: string) => {
+    try {
+      const ok = await webhooksApi.deleteColonyWebhook(activeColony.id, id);
+      if (ok) {
+        setWebhooks((prev) => prev.filter((w) => w.id !== id));
+        toast.info(t('Webhook telah dihapus.'));
+      } else {
+        toast.error(t('Gagal menghapus webhook'));
+      }
+    } catch {
+      toast.error(t('Gagal menghapus webhook'));
+    }
   };
 
   const handleCopyWebhookUrl = (url: string) => {
-    navigator.clipboard.writeText(url);
+    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+    navigator.clipboard.writeText(fullUrl);
     setCopiedUrl(url);
     toast.success(t('URL Webhook berhasil disalin! 📋'));
     setTimeout(() => setCopiedUrl(null), 2000);
   };
 
-  const handleSendTestWebhook = async (wh: WebhookItem) => {
+  const handleSendTestWebhook = async (wh: ColonyWebhook) => {
     setIsSendingTest(true);
     try {
-      await colonyApi.testWebhook({
-        colonyId: activeColony.id,
-        botName: wh.name,
+      const ok = await webhooksApi.sendTestWebhook(wh.url, {
         content: `Halo dari webhook **${wh.name}**! Integrasi server #${activeColony.name} berfungsi sempurna. 🚀`,
+        username: wh.name,
+        avatar_url: wh.avatarUrl || undefined,
       });
-      toast.success(t('Pesan tes webhook berhasil dikirim ke channel! 🎉'));
+      if (ok) {
+        toast.success(t('Pesan tes webhook berhasil dikirim ke channel! 🎉'));
+      } else {
+        toast.error(t('Gagal mengirim tes webhook'));
+      }
     } catch {
-      toast.info(t('Pesan tes webhook dikirim.'));
+      toast.error(t('Gagal mengirim tes webhook'));
     } finally {
       setIsSendingTest(false);
     }
@@ -160,10 +178,10 @@ export function IntegrationsTab({
       {/* ── 4 Integration Action Cards (Screenshot 1) ── */}
       <div className="space-y-3">
         {/* 1. Webhooks Card */}
-        <div className="p-4 rounded-xl border border-border/70 bg-[#1e1f22] flex items-center justify-between gap-4 transition-colors">
+        <div className="p-4 rounded-xl border border-border/70 bg-card flex items-center justify-between gap-4 transition-colors shadow-xs">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-card/80 border border-border/60 flex items-center justify-center text-muted-foreground shrink-0">
-              <Webhook className="w-5 h-5 text-foreground/80" />
+            <div className="w-9 h-9 rounded-lg bg-sidebar-primary/10 border border-sidebar-primary/20 flex items-center justify-center text-sidebar-primary shrink-0">
+              <Webhook className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h3 className="text-sm font-bold text-foreground">
@@ -177,8 +195,9 @@ export function IntegrationsTab({
 
           <Button
             size="sm"
+            variant="teal"
             onClick={() => setIsCreateWebhookOpen(true)}
-            className="h-9 px-4 text-xs font-semibold bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg cursor-pointer shrink-0 shadow-xs"
+            className="h-9 px-4 text-xs font-semibold rounded-xl cursor-pointer shrink-0 shadow-xs"
           >
             {t('Create Webhook')}
           </Button>
@@ -190,16 +209,22 @@ export function IntegrationsTab({
             {webhooks.map((wh) => (
               <div
                 key={wh.id}
-                className="p-3 rounded-lg border border-border/60 bg-[#111214] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="p-3.5 rounded-xl border border-border/60 bg-card/60 hover:bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-lg">{wh.avatarText || '🪝'}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  {wh.avatarUrl ? (
+                    <img src={wh.avatarUrl} alt={wh.name} className="size-8 rounded-lg object-cover border border-border/60" />
+                  ) : (
+                    <div className="size-8 rounded-lg bg-sidebar-primary/15 border border-sidebar-primary/30 flex items-center justify-center text-sidebar-primary text-xs font-bold">
+                      🪝
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <span className="text-xs font-bold text-foreground block truncate">
                       {wh.name}
                     </span>
-                    <span className="text-[11px] text-muted-foreground truncate block">
-                      #{channels.find((c) => c.id === wh.channelId)?.name || 'general'}
+                    <span className="text-[11px] text-muted-foreground truncate block font-mono">
+                      #{wh.channelName || channels.find((c) => c.id === wh.channelId)?.name || 'general'}
                     </span>
                   </div>
                 </div>
@@ -207,22 +232,22 @@ export function IntegrationsTab({
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="tealGhost"
                     onClick={() => handleSendTestWebhook(wh)}
                     disabled={isSendingTest}
-                    className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1 px-2.5"
+                    className="h-7 text-xs gap-1 px-2.5 cursor-pointer"
                   >
                     <Send className="w-3 h-3" />
                     <span>{t('Test')}</span>
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="tealSecondary"
                     onClick={() => handleCopyWebhookUrl(wh.url)}
-                    className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1 px-2.5"
+                    className="h-7 text-xs gap-1 px-2.5 cursor-pointer"
                   >
                     {copiedUrl === wh.url ? (
-                      <Check className="w-3 h-3 text-emerald-400" />
+                      <Check className="w-3 h-3 text-sidebar-primary" />
                     ) : (
                       <Copy className="w-3 h-3" />
                     )}
@@ -232,7 +257,8 @@ export function IntegrationsTab({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleDeleteWebhook(wh.id)}
-                    className="h-7 px-2 text-muted-foreground hover:text-red-400"
+                    className="h-7 px-2 text-destructive hover:bg-destructive/10 cursor-pointer"
+                    title={t('Hapus Webhook')}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
@@ -243,7 +269,7 @@ export function IntegrationsTab({
         )}
 
         {/* 2. Channels Followed Card */}
-        <div className="p-4 rounded-xl border border-border/70 bg-[#1e1f22] flex items-center justify-between gap-4 transition-colors">
+        <div className="p-4 rounded-xl border border-border/70 bg-card flex items-center justify-between gap-4 transition-colors shadow-xs">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-card/80 border border-border/60 flex items-center justify-center text-muted-foreground shrink-0">
               <Radio className="w-5 h-5 text-foreground/80" />
@@ -262,14 +288,14 @@ export function IntegrationsTab({
             size="sm"
             variant="outline"
             onClick={() => setIsFollowedChannelsOpen(true)}
-            className="h-9 px-4 text-xs font-semibold bg-[#2b2d31] hover:bg-[#35373c] text-white border-border/70 rounded-lg cursor-pointer shrink-0"
+            className="h-9 px-4 text-xs font-semibold rounded-lg cursor-pointer shrink-0"
           >
             {t('Learn More')}
           </Button>
         </div>
 
         {/* 3. Twitch Card */}
-        <div className="p-4 rounded-xl border border-border/70 bg-[#1e1f22] flex items-center justify-between gap-4 transition-colors">
+        <div className="p-4 rounded-xl border border-border/70 bg-card flex items-center justify-between gap-4 transition-colors shadow-xs">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-[#9146FF]/20 border border-[#9146FF]/40 flex items-center justify-center text-[#9146FF] shrink-0">
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -290,20 +316,16 @@ export function IntegrationsTab({
 
           <Button
             size="sm"
+            variant={isTwitchConnected ? 'teal' : 'tealSecondary'}
             onClick={() => setIsTwitchModalOpen(true)}
-            className={cn(
-              'h-9 px-4 text-xs font-semibold rounded-lg cursor-pointer shrink-0',
-              isTwitchConnected
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-[#5865F2] hover:bg-[#4752C4] text-white'
-            )}
+            className="h-9 px-4 text-xs font-semibold rounded-lg cursor-pointer shrink-0"
           >
             {isTwitchConnected ? t('Manage Twitch') : t('Connect Twitch')}
           </Button>
         </div>
 
         {/* 4. YouTube Card */}
-        <div className="p-4 rounded-xl border border-border/70 bg-[#1e1f22] flex items-center justify-between gap-4 transition-colors">
+        <div className="p-4 rounded-xl border border-border/70 bg-card flex items-center justify-between gap-4 transition-colors shadow-xs">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-500 shrink-0">
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -324,13 +346,9 @@ export function IntegrationsTab({
 
           <Button
             size="sm"
+            variant={isYoutubeConnected ? 'teal' : 'tealSecondary'}
             onClick={() => setIsYoutubeModalOpen(true)}
-            className={cn(
-              'h-9 px-4 text-xs font-semibold rounded-lg cursor-pointer shrink-0',
-              isYoutubeConnected
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-[#5865F2] hover:bg-[#4752C4] text-white'
-            )}
+            className="h-9 px-4 text-xs font-semibold rounded-lg cursor-pointer shrink-0"
           >
             {isYoutubeConnected ? t('Manage YouTube') : t('Connect YouTube')}
           </Button>

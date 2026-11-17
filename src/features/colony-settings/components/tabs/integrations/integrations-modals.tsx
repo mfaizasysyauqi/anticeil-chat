@@ -24,7 +24,7 @@ export interface CreateWebhookDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   channels: ColonyChannel[];
-  onCreateWebhook: (name: string, channelId: string) => void;
+  onCreateWebhook: (name: string, channelId: string, avatarUrl?: string) => void;
   t: (key: string) => string;
 }
 
@@ -37,18 +37,19 @@ export function CreateWebhookDialog({
 }: CreateWebhookDialogProps) {
   const [name, setName] = useState('Captain Hook');
   const [channelId, setChannelId] = useState(channels[0]?.id || 'general');
+  const [avatarUrl, setAvatarUrl] = useState('');
 
   const handleCreate = () => {
-    onCreateWebhook(name, channelId);
+    onCreateWebhook(name, channelId, avatarUrl ? avatarUrl.trim() : undefined);
     onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] bg-[#1e1f22] border-border/80 text-foreground">
+      <DialogContent className="sm:max-w-[440px] bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <Webhook className="w-4 h-4 text-primary" />
+            <Webhook className="w-4 h-4 text-sidebar-primary" />
             <span>{t('Create New Webhook')}</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -64,20 +65,32 @@ export function CreateWebhookDialog({
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Captain Hook"
-              className="text-xs bg-[#111214] border-border/70 h-9"
+              placeholder="e.g. TradingBot / DeployBot"
+              className="text-xs bg-muted/40 border-border/70 h-9"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">
-              {t('Channel')}
+              {t('Bot Avatar URL (Opsional)')}
+            </label>
+            <Input
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              placeholder="https://example.com/avatar.png"
+              className="text-xs bg-muted/40 border-border/70 h-9"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">
+              {t('Target Channel')}
             </label>
             <Select value={channelId} onValueChange={setChannelId}>
-              <SelectTrigger className="text-xs bg-[#111214] border-border/70 h-9">
+              <SelectTrigger className="text-xs bg-muted/40 border-border/70 h-9">
                 <SelectValue placeholder={t('Pilih Channel')} />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1f22] border-border/80">
+              <SelectContent className="bg-card border-border/80">
                 {channels.map((c) => (
                   <SelectItem key={c.id} value={c.id} className="text-xs">
                     #{c.name}
@@ -101,8 +114,9 @@ export function CreateWebhookDialog({
           <Button
             type="button"
             size="sm"
+            variant="teal"
             onClick={handleCreate}
-            className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white cursor-pointer"
+            className="text-xs cursor-pointer font-semibold"
           >
             {t('Simpan Webhook')}
           </Button>
