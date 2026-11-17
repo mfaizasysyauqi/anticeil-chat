@@ -165,6 +165,7 @@ export function useChatInitLoader({
               }
             } else if (
               channelsRes.length > 0 &&
+              activeColonyId &&
               activeColonyId !== 'anticeil'
             ) {
               const activeVoice = channelsRes.find(
@@ -178,7 +179,12 @@ export function useChatInitLoader({
                 setActiveCallChannelId(activeVoice.id);
                 setIsCallPiP(false);
               } else {
-                setActiveChannelId((curr) => curr || channelsRes[0].id);
+                const colonyFirstChannel = channelsRes.find(
+                  (c) => (c.colonyId || 'anticeil') === activeColonyId,
+                );
+                if (colonyFirstChannel) {
+                  setActiveChannelId((curr) => curr || colonyFirstChannel.id);
+                }
               }
             }
           }

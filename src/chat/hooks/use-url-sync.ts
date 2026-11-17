@@ -42,39 +42,39 @@ export function useUrlSync({
         pathname === '/app-directory'
       ) {
         setHomeView?.('apps');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname === '/message-requests') {
         setHomeView?.('message-requests');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname === '/notifications') {
         setHomeView?.('notifications');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname === '/calendar') {
         setHomeView?.('calendar');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname === '/assignments') {
         setHomeView?.('assignments');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname === '/calls') {
         setHomeView?.('calls');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname === '/colonies') {
         setHomeView?.('colonies');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
-      } else if (pathname === '/friends') {
+      } else if (pathname === '/friends' || pathname === '/') {
         setHomeView?.('friends');
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname.startsWith('/channels/@me')) {
         const parts = pathname.split('/').filter(Boolean);
-        setActiveColonyId?.('');
+        setActiveColonyId?.('anticeil');
         if (parts[2]) {
           setActiveChannelId?.(parts[2]);
         }
@@ -102,39 +102,39 @@ export function useUrlSync({
           pathname === '/app-directory'
         ) {
           setHomeView?.('apps');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname === '/message-requests') {
           setHomeView?.('message-requests');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname === '/notifications') {
           setHomeView?.('notifications');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname === '/calendar') {
           setHomeView?.('calendar');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname === '/assignments') {
           setHomeView?.('assignments');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname === '/calls') {
           setHomeView?.('calls');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname === '/colonies') {
           setHomeView?.('colonies');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
-        } else if (pathname === '/friends') {
+        } else if (pathname === '/friends' || pathname === '/') {
           setHomeView?.('friends');
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname.startsWith('/channels/@me')) {
           const parts = pathname.split('/').filter(Boolean);
-          setActiveColonyId?.('');
+          setActiveColonyId?.('anticeil');
           if (parts[2]) {
             setActiveChannelId?.(parts[2]);
           }

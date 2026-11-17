@@ -14,12 +14,20 @@ export function useColonyData(options?: UseColonyDataOptions) {
   const [colonies, setColonies] = useState<Colony[]>(() => loadStoredColonies());
 
   const [activeColonyId, setActiveColonyId] = useState<ColonyId>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const fromUrl =
-      params.get('colony') ||
-      params.get('hub') ||
-      (params.get('invite')?.startsWith('hub_') ? params.get('invite') : null);
-    return fromUrl || 'anticeil';
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname.toLowerCase();
+      if (pathname.startsWith('/channels/') && !pathname.startsWith('/channels/@me')) {
+        const parts = pathname.split('/').filter(Boolean);
+        if (parts[1]) return parts[1];
+      }
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl =
+        params.get('colony') ||
+        params.get('hub') ||
+        (params.get('invite')?.startsWith('hub_') ? params.get('invite') : null);
+      if (fromUrl) return fromUrl;
+    }
+    return 'anticeil';
   });
 
   const [channels, setChannels] = useState<ColonyChannel[]>(() => {
@@ -39,7 +47,10 @@ export function useColonyData(options?: UseColonyDataOptions) {
 
   // Derived: active colony object
   const activeColony = useMemo(
-    () => colonies.find((h) => h.id === activeColonyId) || colonies[0],
+    () =>
+      colonies.find((h) => h.id === activeColonyId) ||
+      colonies.find((h) => h.id === 'anticeil') ||
+      colonies[0],
     [colonies, activeColonyId],
   );
 
