@@ -399,8 +399,10 @@ export function ColonySettingsDialog({
               {serverSettingsSection === 'bans' && (
                 <BansTab
                   activeColony={activeColony}
+                  members={members}
                   serverBans={serverBans}
                   setServerBans={setServerBans}
+                  onUpdateMembers={onUpdateMembers}
                   onNavigateSection={(sec) => setColonySettingsSection(sec as ColonySettingsSection)}
                   t={t}
                 />
