@@ -137,10 +137,10 @@ export function FollowedChannelsDialog({
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] bg-[#1e1f22] border-border/80 text-foreground">
+      <DialogContent className="sm:max-w-[440px] bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <Radio className="w-4 h-4 text-primary" />
+            <Radio className="w-4 h-4 text-sidebar-primary" />
             <span>{t('Channels Followed')}</span>
           </DialogTitle>
         </DialogHeader>
@@ -156,8 +156,9 @@ export function FollowedChannelsDialog({
           <Button
             type="button"
             size="sm"
+            variant="teal"
             onClick={() => onOpenChange(false)}
-            className="text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white cursor-pointer"
+            className="text-xs cursor-pointer"
           >
             {t('Mengerti')}
           </Button>
@@ -186,7 +187,7 @@ export function TwitchIntegrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] bg-[#1e1f22] border-border/80 text-foreground">
+      <DialogContent className="sm:max-w-[420px] bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-[#9146FF]">
             <span>Twitch Creator Integration</span>
@@ -203,7 +204,7 @@ export function TwitchIntegrationModal({
             value={account}
             onChange={(e) => setAccount(e.target.value)}
             placeholder="e.g. shroud"
-            className="text-xs bg-[#111214] border-border/70 h-9"
+            className="text-xs bg-secondary border-border/70 h-9 text-foreground"
           />
         </div>
         <DialogFooter className="gap-2">
@@ -262,7 +263,7 @@ export function YoutubeIntegrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] bg-[#1e1f22] border-border/80 text-foreground">
+      <DialogContent className="sm:max-w-[420px] bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-red-500">
             <span>YouTube Creator Integration</span>
@@ -279,7 +280,7 @@ export function YoutubeIntegrationModal({
             value={channel}
             onChange={(e) => setChannel(e.target.value)}
             placeholder="e.g. @MrBeast"
-            className="text-xs bg-[#111214] border-border/70 h-9"
+            className="text-xs bg-secondary border-border/70 h-9 text-foreground"
           />
         </div>
         <DialogFooter className="gap-2">

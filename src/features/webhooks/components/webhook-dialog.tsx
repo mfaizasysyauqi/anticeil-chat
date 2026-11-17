@@ -185,7 +185,7 @@ export function WebhookDialog({
                   <Button
                     type="button"
                     size="sm"
-                    variant={isCopiedWebhook ? 'default' : 'outline'}
+                    variant={isCopiedWebhook ? 'teal' : 'outline'}
                     className="shrink-0 h-9 px-3 gap-1.5 text-xs"
                     onClick={() => {
                       navigator.clipboard.writeText(webhookUrl);
@@ -286,7 +286,7 @@ export function WebhookDialog({
                   <Button
                     type="button"
                     size="sm"
-                    variant="secondary"
+                    variant="teal"
                     disabled={isTestingWebhook}
                     onClick={async () => {
                       setIsTestingWebhook(true);

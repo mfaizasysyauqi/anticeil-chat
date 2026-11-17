@@ -168,7 +168,7 @@ export function IntegrationsTab({
               e.preventDefault();
               toast.info(t('Dokumentasi integrasi Anticeil'));
             }}
-            className="text-blue-400 hover:underline font-semibold"
+            className="text-sidebar-primary hover:underline font-semibold"
           >
             {t('Learn more about managing integrations.')}
           </a>
@@ -376,17 +376,17 @@ export function IntegrationsTab({
 
         {/* Empty State when no apps installed (Matching Screenshot 2) */}
         {installedApps.length === 0 ? (
-          <div className="rounded-xl border border-border/70 bg-[#1e1f22] p-10 flex flex-col items-center justify-center text-center space-y-4">
+          <div className="rounded-xl border border-border/70 bg-card p-10 flex flex-col items-center justify-center text-center space-y-4">
             {/* Discord Magnifying Glass & Floating Shapes Illustration */}
             <div className="relative w-28 h-28 flex items-center justify-center">
-              <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-xl pointer-events-none" />
+              <div className="absolute inset-0 bg-sidebar-primary/10 rounded-full blur-xl pointer-events-none" />
               <svg className="w-24 h-24 drop-shadow-md" viewBox="0 0 120 120" fill="none">
-                <circle cx="52" cy="52" r="32" stroke="#5865F2" strokeWidth="5" fill="#18191c" />
-                <path d="M75 75L102 102" stroke="#5865F2" strokeWidth="6" strokeLinecap="round" />
+                <circle cx="52" cy="52" r="32" stroke="#0d9488" strokeWidth="5" fill="#18191c" />
+                <path d="M75 75L102 102" stroke="#0d9488" strokeWidth="6" strokeLinecap="round" />
                 {/* Floating app shape items inside lens */}
-                <polygon points="52,32 57,44 70,44 59,52 63,65 52,57 41,65 45,52 34,44 47,44" fill="#5865F2" opacity="0.9" />
+                <polygon points="52,32 57,44 70,44 59,52 63,65 52,57 41,65 45,52 34,44 47,44" fill="#0d9488" opacity="0.9" />
                 <circle cx="40" cy="58" r="4.5" fill="#3BA55D" />
-                <rect x="58" y="52" width="8" height="8" rx="2" fill="#FAA81A" />
+                <rect x="58" y="52" width="8" height="8" rx="2" fill="#0d9488" />
               </svg>
             </div>
 
@@ -405,7 +405,7 @@ export function IntegrationsTab({
                       toast.info(t('Buka tab App Directory di panel samping.'));
                     }
                   }}
-                  className="text-blue-400 hover:underline font-semibold cursor-pointer"
+                  className="text-sidebar-primary hover:underline font-semibold cursor-pointer"
                 >
                   {t('App Directory')}
                 </button>{' '}
@@ -415,7 +415,7 @@ export function IntegrationsTab({
           </div>
         ) : (
           /* Installed Apps List */
-          <div className="rounded-xl border border-border/70 bg-[#1e1f22] divide-y divide-border/60 overflow-hidden">
+          <div className="rounded-xl border border-border/70 bg-card divide-y divide-border/60 overflow-hidden">
             {installedApps.map((app) => (
               <div
                 key={app.id}
