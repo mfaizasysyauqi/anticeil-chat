@@ -67,7 +67,7 @@ const THEME_OPTIONS = [
   { id: 'teal', label: 'Teal Mint', gradient: 'from-sidebar-primary/80 to-emerald-600/80' },
   { id: 'charcoal', label: 'Charcoal Dark', gradient: 'from-zinc-700/80 to-zinc-900/80' },
   { id: 'cyber', label: 'Cyber Neon', gradient: 'from-cyan-600/80 to-blue-700/80' },
-  { id: 'gold', label: 'Golden Honey', gradient: 'from-amber-500/80 to-orange-600/80' },
+  { id: 'emerald', label: 'Emerald Forest', gradient: 'from-emerald-600/80 to-teal-800/80' },
 ];
 
 export function EditProfileDialog({

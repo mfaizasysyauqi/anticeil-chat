@@ -76,7 +76,7 @@ export function ProfilePreviewCard({
       case 'teal_ring':
         return 'ring-4 ring-sidebar-primary ring-offset-2 ring-offset-card';
       case 'gold_bee':
-        return 'ring-4 ring-amber-400 ring-offset-2 ring-offset-card';
+        return 'ring-4 ring-teal-400 ring-offset-2 ring-offset-card';
       case 'cyber_matrix':
         return 'ring-4 ring-cyan-400 ring-offset-2 ring-offset-card animate-pulse';
       case 'sakura_blossom':

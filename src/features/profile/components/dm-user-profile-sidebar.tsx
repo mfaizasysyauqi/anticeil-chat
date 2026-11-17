@@ -154,15 +154,15 @@ export function DmUserProfileSidebar({
       {/* Scrollable Profile Body */}
       <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin]">
         {/* Banner */}
-        <div className="h-28 w-full bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-violet-600/25 relative border-b border-sidebar-border shrink-0 flex items-start justify-end p-2.5">
+        <div className="h-28 w-full bg-gradient-to-r from-teal-900/40 via-sidebar-primary/20 to-emerald-900/30 relative border-b border-sidebar-border shrink-0 flex items-start justify-end p-2.5">
           {role === 'owner' || role === 'admin' ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1 backdrop-blur-xs">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sidebar-primary/20 border border-sidebar-primary/40 text-sidebar-primary flex items-center gap-1 backdrop-blur-xs">
               <ShieldCheck className="w-3 h-3" />
               {role === 'owner' ? t('Pemilik') : t('Admin')}
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 border border-white/15 text-white/90 flex items-center gap-1 backdrop-blur-xs">
-              <Sparkles className="w-3 h-3 text-amber-300" />
+              <Sparkles className="w-3 h-3 text-sidebar-primary" />
               {t('Anggota')}
             </span>
           )}
@@ -271,7 +271,7 @@ export function DmUserProfileSidebar({
             )}
 
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <ShieldCheck className="w-3.5 h-3.5 text-sidebar-primary shrink-0" />
               <span className="capitalize">
                 {role === 'owner'
                   ? t('Pemilik Platform')
@@ -317,7 +317,7 @@ export function DmUserProfileSidebar({
                     onClick={() => onSelectColony?.(hub.id)}
                     className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left hover:bg-sidebar-accent transition-colors group cursor-pointer"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-amber-400/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-amber-400 group-hover:text-black transition-colors">
+                    <div className="w-7 h-7 rounded-lg bg-sidebar-primary/20 text-sidebar-primary flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-sidebar-primary group-hover:text-sidebar-primary-foreground transition-colors">
                       {hub.initials || hub.name.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -344,7 +344,7 @@ export function DmUserProfileSidebar({
               onChange={(e) => handleSaveNote(e.target.value)}
               placeholder={t('Klik untuk menambahkan catatan pribadi...')}
               rows={2}
-              className="w-full resize-none bg-background/50 border border-border/40 rounded-lg p-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:border-amber-400 transition-colors"
+              className="w-full resize-none bg-background/50 border border-border/40 rounded-lg p-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:border-sidebar-primary transition-colors"
             />
             <p className="text-[10px] text-muted-foreground/60">
               {t('Hanya Anda yang dapat melihat catatan ini.')}

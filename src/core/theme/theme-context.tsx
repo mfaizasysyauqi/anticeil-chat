@@ -56,12 +56,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', '#f4f4f5');
       root.style.setProperty('--accent-foreground', '#18181b');
       root.style.setProperty('--input', '#f4f4f5');
-      // Anticeil Secondary: Warm Gold / Amber (#f59e0b)
-      root.style.setProperty('--secondary', '#f59e0b');
-      root.style.setProperty('--secondary-foreground', '#000000');
+      // Anticeil Secondary: Subtle Neutral Slate
+      root.style.setProperty('--secondary', '#f1f5f9');
+      root.style.setProperty('--secondary-foreground', '#0f172a');
       // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
       root.style.setProperty('--primary', '173 80% 36%');
       root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--sidebar-primary', '173 80% 36%');
+      root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
       root.style.setProperty('--primary-100', '173 80% 90%');
       root.style.setProperty('--primary-300', '173 80% 45%');
       root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.35)');
@@ -85,12 +87,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', '#35373c');
       root.style.setProperty('--accent-foreground', '#ffffff');
       root.style.setProperty('--input', '#383a40');
-      // Anticeil Secondary: Warm Gold (#f59e0b)
-      root.style.setProperty('--secondary', '#f59e0b');
-      root.style.setProperty('--secondary-foreground', '#000000');
+      // Anticeil Secondary: Midnight Slate
+      root.style.setProperty('--secondary', '#2b2d31');
+      root.style.setProperty('--secondary-foreground', '#f2f3f5');
       // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
       root.style.setProperty('--primary', '173 80% 36%');
       root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--sidebar-primary', '173 80% 40%');
+      root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
       root.style.setProperty('--primary-100', '173 80% 18%');
       root.style.setProperty('--primary-300', '173 80% 55%');
       root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.4)');
@@ -114,12 +118,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent', '#18181b');
       root.style.setProperty('--accent-foreground', '#ffffff');
       root.style.setProperty('--input', '#121215');
-      // Anticeil Secondary: Warm Gold (#f59e0b)
-      root.style.setProperty('--secondary', '#f59e0b');
-      root.style.setProperty('--secondary-foreground', '#000000');
+      // Anticeil Secondary: Dark Surface Neutral
+      root.style.setProperty('--secondary', '#18181b');
+      root.style.setProperty('--secondary-foreground', '#f4f4f5');
       // Anticeil Primary: Deep Teal (#0d9488) from Anticeil Logo
       root.style.setProperty('--primary', '173 80% 36%');
       root.style.setProperty('--primary-foreground', '0 0% 100%');
+      root.style.setProperty('--sidebar-primary', '173 80% 40%');
+      root.style.setProperty('--sidebar-primary-foreground', '0 0% 100%');
       root.style.setProperty('--primary-100', '173 80% 18%');
       root.style.setProperty('--primary-300', '173 80% 55%');
       root.style.setProperty('--ring', 'rgba(13, 148, 136, 0.4)');
