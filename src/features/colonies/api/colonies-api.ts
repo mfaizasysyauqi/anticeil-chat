@@ -563,6 +563,77 @@ export const coloniesApi = {
     return newColony;
   },
 
+  // ── Colony Blueprint & Server Templates ────────────────────────────
+  async getTemplate(code: string): Promise<any> {
+    try {
+      return await api.get<any>(`/v1/colony/templates/${code}`);
+    } catch {
+      return null;
+    }
+  },
+
+  async syncColonyTemplate(
+    colonyId: string,
+    payload: { name: string; description: string; code?: string }
+  ): Promise<any> {
+    try {
+      const res = await api.post<any>(`/v1/colony/colonies/${colonyId}/template`, payload);
+      this.recordAudit(colonyId, 'TEMPLATE_SYNC', 'Admin', payload.name, payload);
+      return res;
+    } catch {
+      const stored = loadStoredColonies();
+      const updated = stored.map((c) =>
+        c.id === colonyId
+          ? {
+              ...c,
+              templateSettings: {
+                name: payload.name,
+                description: payload.description,
+                code: payload.code || `tpl-${colonyId.substring(0, 6)}`,
+                lastSyncedAt: new Date().toISOString(),
+              },
+            }
+          : c
+      );
+      saveStoredColonies(updated);
+      return { success: true, templateSettings: payload };
+    }
+  },
+
+  async deleteColonyTemplate(colonyId: string): Promise<{ success: boolean }> {
+    try {
+      await api.delete(`/v1/colony/colonies/${colonyId}/template`);
+    } catch {}
+    const stored = loadStoredColonies();
+    const updated = stored.map((c) => (c.id === colonyId ? { ...c, templateSettings: undefined } : c));
+    saveStoredColonies(updated);
+    this.recordAudit(colonyId, 'TEMPLATE_DELETE', 'Admin', colonyId);
+    return { success: true };
+  },
+
+  async useTemplate(code: string, payload?: { name?: string }): Promise<Colony> {
+    try {
+      const res = await api.post<Colony>(`/v1/colony/templates/${code}/use`, payload || {});
+      if (res && res.id) {
+        const stored = loadStoredColonies();
+        saveStoredColonies([...stored, res]);
+        return res;
+      }
+    } catch {}
+    const newColony: Colony = {
+      id: `hub_${Date.now()}`,
+      name: payload?.name || 'Server dari Template',
+      description: 'Dibuat dari template server komunitas',
+      iconType: 'initials',
+      initials: (payload?.name || 'SV').slice(0, 2).toUpperCase(),
+      role: 'owner',
+      color: 'bg-emerald-600',
+    };
+    const stored = loadStoredColonies();
+    saveStoredColonies([...stored, newColony]);
+    return newColony;
+  },
+
   async inviteMemberByUsername(
     colonyId: string,
     username: string,

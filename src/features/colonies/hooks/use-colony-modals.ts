@@ -163,12 +163,36 @@ export function useColonyModals({
     let code = rawCode;
     if (rawCode.includes('invite=')) {
       code = rawCode.split('invite=')[1].split('&')[0];
+    } else if (rawCode.includes('template=')) {
+      code = rawCode.split('template=')[1].split('&')[0];
     } else if (rawCode.includes('/')) {
       code = rawCode.split('/').pop() || rawCode;
     }
 
     try {
       setIsJoiningColony(true);
+
+      // Template Blueprint Instantiation
+      if (code.startsWith('tpl-')) {
+        const instantiatedHub = await colonyApi.useTemplate(code, {
+          name: newHubName.trim() || undefined,
+        });
+        const updatedHubs = [...colonies.filter((h) => h.id !== instantiatedHub.id), instantiatedHub];
+        setColonies(updatedHubs);
+        saveStoredColonies(updatedHubs);
+        setActiveColonyId(instantiatedHub.id);
+
+        const colonyChannels = await colonyApi.getChannels(instantiatedHub.id);
+        if (colonyChannels && colonyChannels.length > 0) {
+          setChannels((prev) => [...prev.filter((c) => c.colonyId !== instantiatedHub.id), ...colonyChannels]);
+          setActiveChannelId(colonyChannels[0].id);
+        }
+
+        setIsCreateHubOpen(false);
+        setJoinInviteCode('');
+        toast.success(t('Berhasil membuat server baru dari blueprint template!'));
+        return;
+      }
       const joinedHub = await colonyApi.joinHub(code);
       setColonies((prev) => {
         const next = [...prev.filter((h) => h.id !== joinedHub.id), joinedHub];

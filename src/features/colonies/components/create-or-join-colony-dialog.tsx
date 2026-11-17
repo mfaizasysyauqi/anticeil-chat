@@ -187,16 +187,16 @@ export function CreateOrJoinColonyDialog({
           <TabsContent value="join">
             <div className="grid gap-3 py-3">
               <div className="grid gap-1.5">
-                <label className="text-xs font-semibold">{t('Kode atau Link Undangan')}</label>
+                <label className="text-xs font-semibold">{t('Kode Undangan atau Blueprint Template')}</label>
                 <Input
                   value={joinInviteCode}
                   onChange={(e) => setJoinInviteCode(e.target.value)}
-                  placeholder="contoh: inv_9f2a1b atau https://.../messages?invite=..."
+                  placeholder="contoh: inv_9f2a1b atau tpl-k9x2m1..."
                   className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                   autoFocus
                 />
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {t('Tempel link undangan dari pembuat server untuk langsung bergabung ke komunitas mereka.')}
+                  {t('Tempel link undangan anggota atau kode template (tpl-...) untuk menduplikasi blueprint channel & peran komunitas.')}
                 </p>
               </div>
             </div>
