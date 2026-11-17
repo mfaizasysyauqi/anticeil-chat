@@ -9,6 +9,13 @@ import {
   DialogBody,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -156,18 +163,28 @@ export function CreateChannelDialog({
               <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
                 {t('KATEGORI')}
               </label>
-              <select
-                value={targetCategoryId || ''}
-                onChange={(e) => setTargetCategoryId?.(e.target.value)}
-                className="w-full bg-muted/40 border border-border text-foreground rounded-lg h-9 px-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+              <Select
+                value={targetCategoryId || 'none'}
+                onValueChange={(val) => setTargetCategoryId?.(val === 'none' ? '' : val)}
               >
-                <option value="">{t('Tanpa Kategori (Uncategorized)')}</option>
-                {(categories || []).map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full bg-muted/40 hover:bg-muted/60 border border-border text-foreground rounded-lg h-9 px-3 text-xs focus:ring-1 focus:ring-primary shadow-xs">
+                  <SelectValue placeholder={t('Tanpa Kategori (Uncategorized)')} />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border text-foreground shadow-2xl rounded-xl z-[60]">
+                  <SelectItem value="none" className="text-xs focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                    {t('Tanpa Kategori (Uncategorized)')}
+                  </SelectItem>
+                  {(categories || []).map((cat) => (
+                    <SelectItem
+                      key={cat.id}
+                      value={cat.id}
+                      className="text-xs focus:bg-accent focus:text-accent-foreground cursor-pointer"
+                    >
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* 2. CHANNEL NAME */}

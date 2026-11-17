@@ -107,29 +107,31 @@ export function AssignmentsView({
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
       <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
-        <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] min-w-0">
+        <div className="flex items-center gap-2 shrink-0">
           {onOpenSidebar && (
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
               title="Buka Menu Sidebar"
             >
               <Menu className="w-5 h-5" />
             </Button>
           )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Backpack className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">Tugas Saya</span>
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
+        </div>
 
-          {/* Tab Pills */}
-          <div className="flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none]">
+        {/* Tab Pills */}
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
             {[
               { id: 'assigned_to_me', label: 'Perlu Dikerjakan', count: totalActive },
               { id: 'upcoming', label: 'Mendatang' },
@@ -167,7 +169,6 @@ export function AssignmentsView({
               );
             })}
           </div>
-        </div>
 
         {/* Search & Hub Filter */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">

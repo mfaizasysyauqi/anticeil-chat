@@ -225,15 +225,15 @@ export function ColoniesView({
           horizontalPadding
         )}
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
-          {/* Mobile burger menu */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile burger menu: Fixed non-scrollable */}
           {onOpenSidebar && (
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
               title={t('Buka Menu Sidebar')}
               aria-label={t('Buka Menu Sidebar')}
             >
@@ -241,15 +241,17 @@ export function ColoniesView({
             </Button>
           )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Globe className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">{t('Colony')}</span>
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
+        </div>
 
-          {/* Tab Filter Pills: Server Saya & Jelajahi */}
-          <div className="flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none]">
+        {/* Tab Filter Pills: Server Saya & Jelajahi */}
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
             <button
               onClick={() => setActiveTab('joined')}
               className={cn(
@@ -306,7 +308,6 @@ export function ColoniesView({
               <span className="sm:hidden">{t('Colony')}</span>
             </Button>
           </div>
-        </div>
 
         {/* Right side: Responsive Search Bar (Accessible on mobile too!) */}
         <div className="flex items-center gap-2 shrink-0">

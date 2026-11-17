@@ -63,17 +63,20 @@ export function NotificationsView({
     <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-background overflow-hidden select-none">
       {/* Top Header Bar */}
       <div
-        className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background z-10`}
+        className={cn(
+          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10',
+          horizontalPadding
+        )}
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
-          {/* Mobile burger menu */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile burger menu: Fixed non-scrollable */}
           {onOpenSidebar && (
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
               title={t('Buka Menu Sidebar')}
               aria-label={t('Buka Menu Sidebar')}
             >
@@ -81,15 +84,17 @@ export function NotificationsView({
             </Button>
           )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Bell className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">{t('Notifikasi')}</span>
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
+        </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto [scrollbar-width:none]">
+        {/* Filter Pills */}
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] px-1">
             <button
               onClick={() => setActiveTab('all')}
               className={cn(
@@ -137,7 +142,6 @@ export function NotificationsView({
               )}
             </button>
           </div>
-        </div>
 
         {/* Right Action: Mark All as Read */}
         {unreadCount > 0 && (

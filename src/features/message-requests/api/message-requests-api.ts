@@ -3,37 +3,12 @@ import type { MessageRequestItem } from '../types';
 
 const STORAGE_KEY = 'anticeil_message_requests';
 
-const DEFAULT_REQUESTS: MessageRequestItem[] = [
-  {
-    id: 'req_cyber_knight',
-    userId: 'usr_knight',
-    name: 'Cyber Knight',
-    username: 'cyber_knight',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=knight',
-    date: 'Hari ini pukul 14.30',
-    mutualServers: 2,
-    isSpam: false,
-    initialMessage: 'Halo bro! Mau tanya soal custom bot Anticeil di colony?',
-  },
-  {
-    id: 'req_spam_bot',
-    userId: 'usr_spambot',
-    name: 'Free Nitro Generator 2026',
-    username: 'nitro_bot_free',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=free_gift',
-    date: 'Kemarin',
-    mutualServers: 0,
-    isSpam: true,
-    initialMessage: 'Klaim hadiah gratis Nectar Nitro kamu sekarang juga di link berikut!',
-  },
-];
-
 function loadStoredRequests(): MessageRequestItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return DEFAULT_REQUESTS;
+  return [];
 }
 
 function saveStoredRequests(items: MessageRequestItem[]): void {
@@ -46,13 +21,27 @@ export const messageRequestsApi = {
   getMessageRequests: async (): Promise<MessageRequestItem[]> => {
     try {
       const data = await api.get<MessageRequestItem[]>('/v1/community/message-requests');
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         saveStoredRequests(data);
         return data;
       }
     } catch {}
 
     return loadStoredRequests();
+  },
+
+  createMessageRequest: async (payload: {
+    receiverId: string;
+    initialMessage?: string;
+    isSpam?: boolean;
+    mutualServers?: number;
+  }): Promise<{ success: boolean; id: string }> => {
+    try {
+      const res = await api.post<{ success: boolean; id: string }>('/v1/community/message-requests', payload);
+      return res;
+    } catch {
+      return { success: false, id: '' };
+    }
   },
 
   acceptMessageRequest: async (id: string): Promise<{ success: boolean; id: string }> => {

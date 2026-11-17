@@ -60,57 +60,58 @@ export function CallsView({
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
       <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
-        <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] min-w-0">
+        <div className="flex items-center gap-2 shrink-0">
           {onOpenSidebar && (
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
               title="Buka Menu Sidebar"
             >
               <Menu className="w-5 h-5" />
             </Button>
           )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Phone className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">Panggilan</span>
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
+        </div>
 
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={cn(
-                'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors shrink-0',
-                activeTab === 'all'
-                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              Semua
-            </button>
-            <button
-              onClick={() => setActiveTab('missed')}
-              className={cn(
-                'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5 shrink-0',
-                activeTab === 'missed'
-                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              <span>Terlewat</span>
-              {missedCount > 0 && (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-red-500 text-white">
-                  {missedCount}
-                </span>
-              )}
-            </button>
-          </div>
+        {/* Filter Tabs */}
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={cn(
+              'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors shrink-0',
+              activeTab === 'all'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            Semua
+          </button>
+          <button
+            onClick={() => setActiveTab('missed')}
+            className={cn(
+              'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5 shrink-0',
+              activeTab === 'missed'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <span>Terlewat</span>
+            {missedCount > 0 && (
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-red-500 text-white">
+                {missedCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Search */}

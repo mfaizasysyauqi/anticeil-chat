@@ -50,13 +50,26 @@ export const channelsApi = {
     categoryName?: string;
   }): Promise<ColonyChannel> {
     try {
-      const res = await api.post<ColonyChannel>('/v1/colony/channels', payload);
+      const targetColonyId = payload.colonyId || 'anticeil';
+      const body = {
+        ...payload,
+        hubId: targetColonyId,
+        colonyId: targetColonyId,
+      };
+      const res = await api.post<ColonyChannel>('/v1/colony/channels', body);
       if (res && res.id) {
         const stored = loadStoredChannels();
-        const merged = { ...res, categoryId: payload.categoryId || res.categoryId, categoryName: payload.categoryName || res.categoryName };
+        const resAny = res as any;
+        const merged: ColonyChannel = {
+          ...res,
+          colonyId: res.colonyId || resAny.hubId || targetColonyId,
+          hubId: resAny.hubId || res.colonyId || targetColonyId,
+          categoryId: payload.categoryId || res.categoryId,
+          categoryName: payload.categoryName || res.categoryName,
+        };
         const updated = [...stored.filter((c) => c.id !== res.id), merged];
         saveStoredChannels(updated);
-        return res;
+        return merged;
       }
     } catch {}
     const newChannel: ColonyChannel = {

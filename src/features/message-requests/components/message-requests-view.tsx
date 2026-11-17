@@ -36,17 +36,20 @@ export function MessageRequestsView({
     <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-background overflow-hidden select-none">
       {/* Top Header Bar: Discord Style Message Requests */}
       <div
-        className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background z-10`}
+        className={cn(
+          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10',
+          horizontalPadding
+        )}
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
-          {/* Mobile burger menu */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile burger menu: Fixed non-scrollable */}
           {onOpenSidebar && (
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
               title={t('Buka Menu Sidebar')}
               aria-label={t('Buka Menu Sidebar')}
             >
@@ -54,45 +57,46 @@ export function MessageRequestsView({
             </Button>
           )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Mail className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">{t('Permintaan Pesan')}</span>
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
+        </div>
 
-          {/* Tab Filter Pills: Requests & Spam */}
-          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto [scrollbar-width:none]">
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={cn(
-                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
-                activeTab === 'requests'
-                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <span>{t('Permintaan')}</span>
-              {pendingRequests.length > 0 && (
-                <span className="text-[10px] text-muted-foreground/80">({pendingRequests.length})</span>
-              )}
-            </button>
+        {/* Tab Filter Pills: Requests & Spam */}
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] px-1">
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={cn(
+              'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
+              activeTab === 'requests'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            <span>{t('Permintaan')}</span>
+            {pendingRequests.length > 0 && (
+              <span className="text-[10px] text-muted-foreground/80">({pendingRequests.length})</span>
+            )}
+          </button>
 
-            <button
-              onClick={() => setActiveTab('spam')}
-              className={cn(
-                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
-                activeTab === 'spam'
-                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <span>{t('Spam')}</span>
-              {spamRequests.length > 0 && (
-                <span className="text-[10px] text-muted-foreground/80">({spamRequests.length})</span>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => setActiveTab('spam')}
+            className={cn(
+              'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
+              activeTab === 'spam'
+                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            <span>{t('Spam')}</span>
+            {spamRequests.length > 0 && (
+              <span className="text-[10px] text-muted-foreground/80">({spamRequests.length})</span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -176,7 +180,7 @@ export function MessageRequestsView({
                       </button>
                       <button
                         onClick={() => onAccept(item)}
-                        className="px-3.5 py-1.5 text-xs font-semibold bg-[#5865f2] hover:bg-[#4752c4] text-white rounded-md transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
                       >
                         <Check className="w-3.5 h-3.5" />
                         <span>{t('Terima DM')}</span>
@@ -192,7 +196,7 @@ export function MessageRequestsView({
                       </button>
                       <button
                         onClick={() => onReportSpam(item)}
-                        className="px-3.5 py-1.5 text-xs font-semibold bg-[#da373c] hover:bg-[#be3135] text-white rounded-md transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
                       >
                         <X className="w-3.5 h-3.5" />
                         <span>{t('Laporkan Spam')}</span>

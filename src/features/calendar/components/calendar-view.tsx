@@ -137,15 +137,15 @@ export function CalendarView({
           horizontalPadding
         )}
       >
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-x-auto [scrollbar-width:none]">
-          {/* Mobile burger menu */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile burger menu: Fixed non-scrollable */}
           {onOpenSidebar && (
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
               title="Buka Menu Sidebar"
               aria-label="Buka Menu Sidebar"
             >
@@ -153,12 +153,16 @@ export function CalendarView({
             </Button>
           )}
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
+          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
             <CalendarIcon className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">Kalender</span>
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
+        </div>
+
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto [scrollbar-width:none] px-1">
 
           {/* Mode Tabs: Bulan & Agenda */}
           <div className="flex items-center gap-1 shrink-0">

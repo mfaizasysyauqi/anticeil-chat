@@ -37,6 +37,7 @@ export type ColonyChannel = {
   description: string;
   category: 'CHANNELS' | 'DIRECT MESSAGES';
   colonyId?: string;
+  hubId?: string;
   isDirectMessage?: boolean;
   dmUserId?: string;
   unreadCount?: number;

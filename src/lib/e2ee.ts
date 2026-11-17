@@ -12,8 +12,9 @@ const decryptedCache = new Map<string, string>();
 export const E2EE_STORAGE_KEY = 'anticeil_e2ee_enabled';
 
 export function isE2eeEnabled(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(E2EE_STORAGE_KEY) === 'true';
+  if (typeof window === 'undefined') return true;
+  // Default to true (always active out-of-the-box like modern messaging apps)
+  return localStorage.getItem(E2EE_STORAGE_KEY) !== 'false';
 }
 
 export function setE2eeEnabled(enabled: boolean): void {

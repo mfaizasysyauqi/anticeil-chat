@@ -37,7 +37,7 @@ export function FriendsHeader({
     <div
       className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background z-10`}
     >
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-x-auto [scrollbar-width:none]">
+      <div className="flex items-center gap-2 shrink-0">
         {/* Burger Menu Button (Visible on Mobile: md:hidden) */}
         {onOpenSidebar && (
           <Button
@@ -45,7 +45,7 @@ export function FriendsHeader({
             variant="ghost"
             size="icon-xs"
             onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 mr-0.5 cursor-pointer shrink-0"
+            className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
             title={t('Buka Menu Sidebar')}
             aria-label={t('Buka Menu Sidebar')}
           >
@@ -53,15 +53,17 @@ export function FriendsHeader({
           </Button>
         )}
 
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
           <Users className="w-5 h-5 text-muted-foreground" />
           <span className="text-sm font-bold text-foreground">{t('Teman')}</span>
         </div>
 
-        <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+        <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
+      </div>
 
-        {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
-        <div className="flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none]">
+      {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
+      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
           <button
             onClick={() => onTabChange('online')}
             className={cn(
@@ -117,7 +119,6 @@ export function FriendsHeader({
             shortLabel={t('Teman')}
           />
         </div>
-      </div>
 
       {/* Right Top Header Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
