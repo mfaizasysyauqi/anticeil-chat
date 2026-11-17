@@ -243,7 +243,8 @@ export function AccountTab({
                               !editUsernameInput.trim() ||
                               editUsernameInput.trim() === currentUser?.username
                             }
-                            className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                            variant="teal"
+                            className="h-8 text-xs font-bold"
                           >
                             {isSavingUsername ? t('Menyimpan...') : t('Simpan')}
                           </Button>
@@ -345,7 +346,8 @@ export function AccountTab({
                               toast.success(t('Nomor telepon berhasil diperbarui!'));
                               setIsEditingPhone(false);
                             }}
-                            className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                            variant="teal"
+                            className="h-8 text-xs font-bold"
                           >
                             {t('Simpan Nomor')}
                           </Button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Play, ChevronDown, Check, Mic, ChevronRight } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { userSettingsApi, NotificationSettings } from '../../api/user-settings-api';
 
 export interface NotificationsTabProps {
   onNavigateSection?: (section: string) => void;
@@ -38,6 +39,30 @@ export function NotificationsTab({ onNavigateSection }: NotificationsTabProps) {
   const [mobileTimeout, setMobileTimeout] = useState('10m');
   const [ttsNotifications, setTtsNotifications] = useState('never');
   const [allowTtsCommand, setAllowTtsCommand] = useState(true);
+
+  useEffect(() => {
+    userSettingsApi.getSettings().then((s) => {
+      if (s?.notifications) {
+        if (s.notifications.enableDesktopNotifications !== undefined) setEnableDesktopNotifications(s.notifications.enableDesktopNotifications);
+        if (s.notifications.enableTaskbarFlashing !== undefined) setEnableTaskbarFlashing(s.notifications.enableTaskbarFlashing);
+        if (s.notifications.soundNewMessage !== undefined) setSoundNewMessage(s.notifications.soundNewMessage);
+        if (s.notifications.soundCurrentChannel !== undefined) setSoundCurrentChannel(s.notifications.soundCurrentChannel);
+        if (s.notifications.soundIncomingRing !== undefined) setSoundIncomingRing(s.notifications.soundIncomingRing);
+        if (s.notifications.disableAllSounds !== undefined) setDisableAllSounds(s.notifications.disableAllSounds);
+        if (s.notifications.enableUnreadBadges !== undefined) setEnableUnreadBadges(s.notifications.enableUnreadBadges);
+        if (s.notifications.emailCommunication !== undefined) setEmailCommunication(s.notifications.emailCommunication);
+        if (s.notifications.emailSocial !== undefined) setEmailSocial(s.notifications.emailSocial);
+        if (s.notifications.notifyReactions !== undefined) setNotifyReactions(s.notifications.notifyReactions);
+      }
+    });
+  }, []);
+
+  const updateNotify = (partial: Partial<NotificationSettings>) => {
+    userSettingsApi.updateSettings({
+      notifications: partial as any,
+    });
+    toast.success(t('Pengaturan notifikasi disimpan!'));
+  };
 
   const playPreviewSound = (type: string) => {
     try {
@@ -133,7 +158,10 @@ export function NotificationsTab({ onNavigateSection }: NotificationsTabProps) {
                   </div>
                   <Switch
                     checked={enableDesktopNotifications}
-                    onCheckedChange={setEnableDesktopNotifications}
+                    onCheckedChange={(checked) => {
+                      setEnableDesktopNotifications(checked);
+                      updateNotify({ enableDesktopNotifications: checked });
+                    }}
                   />
                 </div>
 
@@ -148,7 +176,10 @@ export function NotificationsTab({ onNavigateSection }: NotificationsTabProps) {
                   </div>
                   <Switch
                     checked={enableTaskbarFlashing}
-                    onCheckedChange={setEnableTaskbarFlashing}
+                    onCheckedChange={(checked) => {
+                      setEnableTaskbarFlashing(checked);
+                      updateNotify({ enableTaskbarFlashing: checked });
+                    }}
                   />
                 </div>
               </div>
@@ -256,7 +287,10 @@ export function NotificationsTab({ onNavigateSection }: NotificationsTabProps) {
                   <Switch
                     checked={!disableAllSounds && soundNewMessage}
                     disabled={disableAllSounds}
-                    onCheckedChange={setSoundNewMessage}
+                    onCheckedChange={(checked) => {
+                      setSoundNewMessage(checked);
+                      updateNotify({ soundNewMessage: checked });
+                    }}
                   />
                 </div>
 
@@ -276,7 +310,10 @@ export function NotificationsTab({ onNavigateSection }: NotificationsTabProps) {
                   <Switch
                     checked={!disableAllSounds && soundCurrentChannel}
                     disabled={disableAllSounds}
-                    onCheckedChange={setSoundCurrentChannel}
+                    onCheckedChange={(checked) => {
+                      setSoundCurrentChannel(checked);
+                      updateNotify({ soundCurrentChannel: checked });
+                    }}
                   />
                 </div>
 
@@ -296,7 +333,10 @@ export function NotificationsTab({ onNavigateSection }: NotificationsTabProps) {
                   <Switch
                     checked={!disableAllSounds && soundIncomingRing}
                     disabled={disableAllSounds}
-                    onCheckedChange={setSoundIncomingRing}
+                    onCheckedChange={(checked) => {
+                      setSoundIncomingRing(checked);
+                      updateNotify({ soundIncomingRing: checked });
+                    }}
                   />
                 </div>
 
@@ -311,7 +351,10 @@ export function NotificationsTab({ onNavigateSection }: NotificationsTabProps) {
                   </div>
                   <Switch
                     checked={disableAllSounds}
-                    onCheckedChange={setDisableAllSounds}
+                    onCheckedChange={(checked) => {
+                      setDisableAllSounds(checked);
+                      updateNotify({ disableAllSounds: checked });
+                    }}
                   />
                 </div>
               </div>
