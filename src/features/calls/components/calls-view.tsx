@@ -214,7 +214,7 @@ export function CallsView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6 space-y-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-6', horizontalPadding)}>
         {/* Speed Dial / Kontak Cepat Section */}
         {friends && friends.length > 0 && (
           <div className="space-y-3">
@@ -333,7 +333,7 @@ export function CallsView({
               {groupedCalls.map((group) => (
                 <div key={group.dateKey} className="space-y-2.5">
                   {/* Date Section Header */}
-                  <div className="flex items-center gap-2 px-1">
+                  <div className="flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       {group.title}
