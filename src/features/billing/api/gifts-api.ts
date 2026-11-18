@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { billingApi } from './billing-api';
 
 export interface GiftItem {
   id: string;
@@ -130,6 +131,25 @@ export const giftsApi = {
       const current = await giftsApi.getGifts();
       const updated = [res.gift, ...current.filter((g) => g.id !== res.gift!.id)];
       localStorage.setItem(GIFTS_STORAGE_KEY, JSON.stringify(updated));
+
+      const giftAmount =
+        res.gift.type === 'nectar_1y'
+          ? 850000
+          : res.gift.type === 'boost_1m'
+          ? 65000
+          : res.gift.type === 'nectar_boost'
+          ? 85000
+          : 29000;
+
+      billingApi
+        .createTransaction({
+          description: `Pembelian Hadiah: ${res.gift.title}`,
+          amount: giftAmount,
+          currency: 'IDR',
+          status: 'settlement',
+          paymentMethod: 'Midtrans QRIS / GoPay',
+        })
+        .catch(() => {});
     }
     return res;
   },

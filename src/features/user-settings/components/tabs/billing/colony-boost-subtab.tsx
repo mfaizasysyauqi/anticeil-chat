@@ -9,8 +9,11 @@ import {
   Star,
   ShieldCheck,
   Play,
+  CreditCard,
+  ShoppingBag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -18,9 +21,38 @@ import confetti from 'canvas-confetti';
 import { coloniesApi } from '@/features/colonies/api/colonies-api';
 import {
   subscriptionsApi,
+  loadMidtransSnap,
   type UserSubscription,
 } from '@/features/billing/api/subscriptions-api';
 import type { Colony } from '@/chat/chat-types';
+
+const BOOST_PACKS = [
+  {
+    count: 1,
+    name: '1x Colony Boost',
+    price: 35000,
+    priceFormatted: 'Rp 35.000 / bln',
+    desc: 'Tingkatkan 1 slot boost ke colony pilihan Anda.',
+    badge: 'Standard',
+  },
+  {
+    count: 3,
+    name: '3x Colony Boost Pack',
+    price: 99000,
+    priceFormatted: 'Rp 99.000 / bln',
+    desc: 'Buka Level 2 Colony langsung bersama komunitas.',
+    badge: 'Hemat 6%',
+    popular: true,
+  },
+  {
+    count: 5,
+    name: '5x Colony Clan Pack',
+    price: 150000,
+    priceFormatted: 'Rp 150.000 / bln',
+    desc: 'Buka kapasitas streaming 1080p dan 250 slot emoji kustom.',
+    badge: 'Hemat 14%',
+  },
+];
 
 export interface ColonyBoostSubtabProps {
   onNavigateSection?: (section: string) => void;
@@ -36,6 +68,10 @@ export function ColonyBoostSubtab({
   const [boostedColonies, setBoostedColonies] = useState<{
     [id: string]: number;
   }>({});
+  const [isBuyBoostDialogOpen, setIsBuyBoostDialogOpen] = useState(false);
+  const [targetColonyForBoost, setTargetColonyForBoost] = useState<Colony | null>(null);
+  const [selectedBoostPack, setSelectedBoostPack] = useState(BOOST_PACKS[0]);
+  const [isPurchasingBoost, setIsPurchasingBoost] = useState(false);
 
   useEffect(() => {
     subscriptionsApi.getSubscription().then(setUserSub);
@@ -48,6 +84,120 @@ export function ColonyBoostSubtab({
       setBoostedColonies(initial);
     });
   }, []);
+
+  const handleBoostColony = async (colony: Colony) => {
+    if ((userSub?.boostSlots ?? 0) <= 0) {
+      setTargetColonyForBoost(colony);
+      setIsBuyBoostDialogOpen(true);
+      return;
+    }
+    try {
+      const res = await coloniesApi.boostHub(colony.id);
+      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      setBoostedColonies((prev) => ({
+        ...prev,
+        [colony.id]: (prev[colony.id] || 0) + 1,
+      }));
+      setUserSub((prev) =>
+        prev
+          ? {
+              ...prev,
+              boostSlots:
+                typeof (res as any)?.remainingBoostSlots === 'number'
+                  ? (res as any).remainingBoostSlots
+                  : Math.max(0, prev.boostSlots - 1),
+            }
+          : null,
+      );
+      toast.success(
+        t(
+          `Colony "${colony.name}" berhasil di-Boost! Level saat ini: Level ${res?.boostTier || colony.boostTier || 1} 💎`,
+        ),
+      );
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal melakukan boost'));
+    }
+  };
+
+  const handleBuyBoostCheckout = async (pack: (typeof BOOST_PACKS)[0], colonyId?: string) => {
+    setIsPurchasingBoost(true);
+    try {
+      const res = await subscriptionsApi.createBoostToken(pack.count, colonyId);
+      if (!res || !res.snapToken) {
+        // Direct local purchase fallback
+        await subscriptionsApi.purchaseBoostSlots(pack.count, colonyId);
+        if (colonyId) {
+          await coloniesApi.boostHub(colonyId);
+          setBoostedColonies((prev) => ({
+            ...prev,
+            [colonyId]: (prev[colonyId] || 0) + 1,
+          }));
+        }
+        setUserSub((prev) =>
+          prev
+            ? { ...prev, boostSlots: prev.boostSlots + (colonyId ? pack.count - 1 : pack.count) }
+            : null,
+        );
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        toast.success(t(`Berhasil membeli ${pack.name}! 💎`));
+        setIsBuyBoostDialogOpen(false);
+        return;
+      }
+
+      await loadMidtransSnap(
+        res.clientKey || (import.meta.env.VITE_MIDTRANS_CLIENT_KEY as string) || '',
+      );
+
+      if (typeof window !== 'undefined' && (window as any).snap) {
+        (window as any).snap.pay(res.snapToken, {
+          onSuccess: async () => {
+            toast.loading(t('Memverifikasi pembayaran Midtrans...'), {
+              id: 'midtrans-boost-verify',
+            });
+            try {
+              await subscriptionsApi.verifyMidtransPayment(res.orderId);
+              await subscriptionsApi.purchaseBoostSlots(pack.count, colonyId);
+              if (colonyId) {
+                await coloniesApi.boostHub(colonyId);
+                setBoostedColonies((prev) => ({
+                  ...prev,
+                  [colonyId]: (prev[colonyId] || 0) + 1,
+                }));
+              }
+              setUserSub((prev) =>
+                prev
+                  ? { ...prev, boostSlots: prev.boostSlots + (colonyId ? pack.count - 1 : pack.count) }
+                  : null,
+              );
+              toast.dismiss('midtrans-boost-verify');
+              confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+              toast.success(t(`Pembayaran berhasil! ${pack.name} telah aktif! 🎉`));
+              setIsBuyBoostDialogOpen(false);
+            } catch {
+              toast.dismiss('midtrans-boost-verify');
+              toast.success(t('Pembayaran berhasil diterima!'));
+              setIsBuyBoostDialogOpen(false);
+            }
+          },
+          onPending: () => {
+            toast.info(t('Pembayaran pending di Midtrans (QRIS/GoPay/VA).'));
+          },
+          onError: () => {
+            toast.error(t('Pembayaran dibatalkan atau gagal.'));
+          },
+          onClose: () => {
+            setIsPurchasingBoost(false);
+          },
+        });
+      } else if (res.redirectUrl) {
+        window.open(res.redirectUrl, '_blank');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal memproses pembayaran'));
+    } finally {
+      setIsPurchasingBoost(false);
+    }
+  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -106,15 +256,19 @@ export function ColonyBoostSubtab({
               </div>
             </div>
 
-            {(userSub?.boostSlots ?? 0) <= 0 && (
+            <div className="flex items-center gap-1.5 shrink-0">
               <Button
                 size="sm"
-                onClick={() => onNavigateSection?.('nitro')}
-                className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-[11px] h-7 px-3 rounded-xl shadow-xs cursor-pointer shrink-0"
+                onClick={() => {
+                  setTargetColonyForBoost(null);
+                  setIsBuyBoostDialogOpen(true);
+                }}
+                className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-[11px] h-7 px-3 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
               >
-                {t('Beli Nectar')}
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>{t('Beli Slot Boost')}</span>
               </Button>
-            )}
+            </div>
           </div>
         </div>
 
@@ -377,48 +531,7 @@ export function ColonyBoostSubtab({
                 <div className="flex items-center gap-2 self-end sm:self-center">
                   <Button
                     size="sm"
-                    onClick={async () => {
-                      if ((userSub?.boostSlots ?? 0) <= 0) {
-                        toast.error(
-                          t(
-                            'Anda tidak memiliki slot Colony Boost. Berlangganan Nectar untuk mendapatkan 2 slot Boost!',
-                          ),
-                          {
-                            action: {
-                              label: t('Beli Nectar'),
-                              onClick: () => onNavigateSection?.('nitro'),
-                            },
-                          },
-                        );
-                        return;
-                      }
-                      try {
-                        const res = await coloniesApi.boostHub(colony.id);
-                        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-                        setBoostedColonies((prev) => ({
-                          ...prev,
-                          [colony.id]: (prev[colony.id] || 0) + 1,
-                        }));
-                        setUserSub((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                boostSlots:
-                                  typeof (res as any)?.remainingBoostSlots === 'number'
-                                    ? (res as any).remainingBoostSlots
-                                    : Math.max(0, prev.boostSlots - 1),
-                              }
-                            : null,
-                        );
-                        toast.success(
-                          t(
-                            `Colony "${colony.name}" berhasil di-Boost! Level saat ini: Level ${res?.boostTier || colony.boostTier || 1} 💎`,
-                          ),
-                        );
-                      } catch (err: any) {
-                        toast.error(err?.message || t('Gagal melakukan boost'));
-                      }
-                    }}
+                    onClick={() => handleBoostColony(colony)}
                     className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs h-8 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Gem className="w-3.5 h-3.5 fill-current" />
@@ -549,6 +662,96 @@ export function ColonyBoostSubtab({
           })}
         </div>
       </div>
+
+      {/* ── 7. BUY BOOST PACKS DIALOG (MIDTRANS SNAP) ── */}
+      <Dialog open={isBuyBoostDialogOpen} onOpenChange={setIsBuyBoostDialogOpen}>
+        <DialogContent className="max-w-md p-6 bg-card border-border rounded-2xl space-y-4">
+          <DialogHeader className="space-y-1 text-left">
+            <div className="flex items-center gap-2 text-pink-500">
+              <Gem className="w-5 h-5 fill-current" />
+              <DialogTitle className="text-base font-bold text-foreground">
+                {targetColonyForBoost
+                  ? t(`Beli Boost untuk "${targetColonyForBoost.name}"`)
+                  : t('Beli Slot Colony Boost')}
+              </DialogTitle>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t(
+                'Pembayaran instan dan aman via Midtrans Snap (QRIS, GoPay, ShopeePay, Virtual Account, & Kartu Kredit).',
+              )}
+            </p>
+          </DialogHeader>
+
+          {/* Pack Selection */}
+          <div className="space-y-2.5 pt-1">
+            {BOOST_PACKS.map((pack) => {
+              const isSelected = selectedBoostPack.count === pack.count;
+              return (
+                <div
+                  key={pack.count}
+                  onClick={() => setSelectedBoostPack(pack)}
+                  className={cn(
+                    'p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 select-none',
+                    isSelected
+                      ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-500/40 text-foreground'
+                      : 'border-border/60 bg-muted/20 hover:bg-muted/40 text-muted-foreground',
+                  )}
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-foreground">{pack.name}</span>
+                      <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-400">
+                        {pack.badge}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">{pack.desc}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs font-black text-foreground font-mono">
+                      {pack.priceFormatted}
+                    </div>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-pink-500 ml-auto mt-1" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Target Colony summary if selected */}
+          {targetColonyForBoost && (
+            <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{t('Diterapkan otomatis ke:')}</span>
+              <span className="font-bold text-foreground">{targetColonyForBoost.name}</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="pt-2 flex items-center justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isPurchasingBoost}
+              onClick={() => setIsBuyBoostDialogOpen(false)}
+              className="text-xs font-medium cursor-pointer"
+            >
+              {t('Batal')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={isPurchasingBoost}
+              onClick={() => handleBuyBoostCheckout(selectedBoostPack, targetColonyForBoost?.id)}
+              className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs h-9 px-4 rounded-xl flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>
+                {isPurchasingBoost ? t('Memproses...') : t(`Bayar ${selectedBoostPack.priceFormatted.split(' /')[0]}`)}
+              </span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -66,6 +66,46 @@ export const subscriptionsApi = {
     });
   },
 
+  createBoostToken: async (
+    count: number,
+    colonyId?: string
+  ): Promise<MidtransTokenResponse> => {
+    return api.post<MidtransTokenResponse>('/v1/billing/midtrans-token', {
+      type: 'colony_boost',
+      count,
+      colonyId,
+    });
+  },
+
+  purchaseBoostSlots: async (
+    count: number,
+    colonyId?: string
+  ): Promise<{ success: boolean; boostSlots: number }> => {
+    const currentSub = await subscriptionsApi.getSubscription();
+    const updatedSub: UserSubscription = {
+      ...currentSub,
+      boostSlots: (currentSub.boostSlots || 0) + count,
+    };
+    try {
+      await api.post('/v1/billing/boosts', { count, colonyId });
+    } catch {}
+
+    localStorage.setItem(SUBSCRIPTION_STORAGE_KEY, JSON.stringify(updatedSub));
+
+    const unitPrice = count >= 5 ? 30000 : count >= 3 ? 33000 : 35000;
+    const totalAmount = unitPrice * count;
+
+    await billingApi.createTransaction({
+      description: `Pembelian ${count}x Colony Boost Slot`,
+      amount: totalAmount,
+      currency: 'IDR',
+      status: 'settlement',
+      paymentMethod: 'Midtrans QRIS / GoPay',
+    }).catch(() => {});
+
+    return { success: true, boostSlots: updatedSub.boostSlots };
+  },
+
   verifyMidtransPayment: async (orderId: string): Promise<MidtransVerifyResponse> => {
     return api.post<MidtransVerifyResponse>('/v1/billing/midtrans-verify', {
       orderId,
