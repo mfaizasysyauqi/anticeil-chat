@@ -116,7 +116,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       }
 
       // Enforce strictly 1 active activity: auto-close / leave any previous activity
-      if (activeCallChannelId && voiceDest && activeCallChannelId !== voiceDest.id) {
+      if (activeCallChannelId && (!voiceDest || activeCallChannelId !== voiceDest.id)) {
         socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
           channelId: activeCallChannelId,
           action: 'ACTIVITY_STOP',
@@ -140,7 +140,12 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
           setActiveColonyId(voiceDest.colonyId);
         }
         setActiveChannelId(voiceDest.id);
-        setActiveCallChannelId(voiceDest.id);
+        // Only set activeCallChannelId for voice channels so text channels stay text channels
+        if (voiceDest.type === 'voice') {
+          setActiveCallChannelId(voiceDest.id);
+        } else {
+          setActiveCallChannelId(null);
+        }
         setIsActivityOpen(true);
         setIsCallPiP(false);
 

@@ -152,8 +152,11 @@ export function useCallWebRTC({
     currentUser?.email?.split('@')[0] ||
     'Pengguna Anticeil';
 
-  // 1. Initialize Local Media
+  // 1. Initialize Local Media (only acquire audio for voice channels, never force mic on text channels)
   const startLocalMedia = useCallback(async () => {
+    if (channel.type !== 'voice') {
+      return null;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: false,
@@ -190,10 +193,9 @@ export function useCallWebRTC({
       return stream;
     } catch (err: any) {
       console.warn('Could not acquire audio stream:', err);
-      toast.error('Tidak dapat mengakses mikrofon. Pastikan izin mikrofon browser diizinkan.');
       return null;
     }
-  }, []);
+  }, [channel.type]);
 
   // 2. WebRTC Peer Connection Factory
   const createPeerConnection = (

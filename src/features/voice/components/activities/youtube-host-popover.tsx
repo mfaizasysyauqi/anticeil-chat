@@ -149,8 +149,14 @@ export function YouTubeHostPopover({
                 )}
               </div>
 
-              {/* Remote Participants */}
-              {participants.map((p) => {
+              {/* Remote Participants (strictly deduplicated against current user) */}
+              {participants
+                .filter(
+                  (p) =>
+                    p.userId !== currentUser?.id &&
+                    (!p.userName || p.userName.toLowerCase() !== currentUserName.toLowerCase())
+                )
+                .map((p) => {
                 const isRemoteHost = hostUserId === p.userId || hostUserId === p.socketId;
                 return (
                   <div

@@ -455,7 +455,7 @@ export function ChatChannelView({
         />
       )}
 
-      {(activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice') && !isCallPiP ? (
+      {(activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice' || (isActivityOpen && Boolean(selectedActivityAppId))) && !isCallPiP ? (
         <div ref={splitContainerRef} className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full relative">
           <div
             style={{

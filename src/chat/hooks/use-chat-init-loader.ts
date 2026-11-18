@@ -120,9 +120,16 @@ export function useChatInitLoader({
             const mergedAllChannels = [...storedDms, ...serverChannels];
             setChannels(mergedAllChannels);
 
-            const targetChannelParam = new URLSearchParams(
-              window.location.search,
-            ).get('channel');
+            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            const pathChannelId =
+              pathParts[0] === 'channels'
+                ? pathParts[1] === '@me'
+                  ? pathParts[2]
+                  : pathParts[2]
+                : null;
+            const targetChannelParam =
+              pathChannelId ||
+              new URLSearchParams(window.location.search).get('channel');
             const targetActivityParam = new URLSearchParams(
               window.location.search,
             ).get('activity');
@@ -135,33 +142,15 @@ export function useChatInitLoader({
               setIsActivityOpen(true);
             }
             if (targetChannelParam) {
-              let matchedChannel = mergedAllChannels.find(
+              const matchedChannel = mergedAllChannels.find(
                 (c) => c.id === targetChannelParam,
               );
-              if (!matchedChannel && targetActivityParam) {
-                matchedChannel = mergedAllChannels.find(
-                  (c) =>
-                    (c.colonyId || 'anticeil') === activeColonyId &&
-                    c.type === 'voice',
-                );
-              }
               if (matchedChannel) {
                 setActiveChannelId(matchedChannel.id);
                 if (matchedChannel.type === 'voice') {
                   setActiveCallChannelId(matchedChannel.id);
                   setIsCallPiP(false);
                 }
-              }
-            } else if (targetActivityParam) {
-              const activeVoice = channelsRes.find(
-                (c) =>
-                  (c.colonyId || 'anticeil') === activeColonyId &&
-                  c.type === 'voice',
-              );
-              if (activeVoice) {
-                setActiveChannelId(activeVoice.id);
-                setActiveCallChannelId(activeVoice.id);
-                setIsCallPiP(false);
               }
             } else if (
               channelsRes.length > 0 &&

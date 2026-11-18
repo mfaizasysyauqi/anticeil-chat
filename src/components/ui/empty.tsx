@@ -125,7 +125,7 @@ export function EmptyState({
         <div
           data-slot="empty-icon-badge"
           className={cn(
-            'rounded-full bg-accent/40 border border-border/50 flex items-center justify-center text-primary/80 mb-4 shadow-xs shrink-0',
+            'rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-4 shadow-xs shrink-0',
             compact ? 'size-12 [&_svg]:size-6' : 'size-16 [&_svg]:size-8',
           )}
         >

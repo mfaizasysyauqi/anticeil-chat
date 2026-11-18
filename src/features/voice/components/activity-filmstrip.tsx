@@ -22,6 +22,7 @@ export interface ActivityFilmstripProps {
   localStream: MediaStream | null;
   currentUserName: string;
   currentUser?: {
+    id?: string;
     imageUrl?: string | null;
     email?: string;
   } | null;
@@ -104,8 +105,14 @@ export function ActivityFilmstrip({
             </div>
           </div>
 
-          {/* Remote Participants Tiles */}
-          {participants.map((peer) => (
+          {/* Remote Participants Tiles (filtered to prevent current user duplication) */}
+          {participants
+            .filter(
+              (peer) =>
+                peer.userId !== currentUser?.id &&
+                (!peer.userName || peer.userName.toLowerCase() !== currentUserName.toLowerCase())
+            )
+            .map((peer) => (
             <div
               key={peer.socketId}
               className="w-24 sm:w-32 md:w-36 h-16 sm:h-20 md:h-24 rounded-xl bg-card border border-border relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group"
@@ -141,7 +148,7 @@ export function ActivityFilmstrip({
 
           {/* Screen Share Tile if sharing */}
           {isScreenSharing && (
-            <div className="w-24 sm:w-32 md:w-36 h-16 sm:h-20 md:h-24 rounded-xl bg-card border border-emerald-500/40 relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
+            <div className="w-24 sm:w-32 md:w-36 h-16 sm:h-20 md:h-24 rounded-xl bg-card border border-primary/40 relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
               <ScreenVideoView
                 stream={screenStream}
                 className="w-full h-full object-cover"

@@ -20,6 +20,24 @@ export const YT_CATEGORIES = [
 const CURATED_CATEGORY_VIDEOS: Record<string, YouTubeVideoItem[]> = {
   semua: [
     {
+      id: 'MhQ_w0xN7_4',
+      title: 'Yura Yunita - Dunia Tipu-Tipu (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/MhQ_w0xN7_4/hqdefault.jpg',
+      duration: '4:21',
+      views: '58M views',
+      uploadedAt: '2 tahun lalu',
+    },
+    {
+      id: 'Yl3L-y_D8uE',
+      title: 'Yura Yunita - Tutur Batin (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/Yl3L-y_D8uE/hqdefault.jpg',
+      duration: '3:56',
+      views: '45M views',
+      uploadedAt: '2 tahun lalu',
+    },
+    {
       id: 'jfKfPfyJRdk',
       title: 'lofi hip hop radio 📚 - beats to relax/study to',
       channel: 'Lofi Girl',
@@ -45,6 +63,33 @@ const CURATED_CATEGORY_VIDEOS: Record<string, YouTubeVideoItem[]> = {
       duration: '4:04',
       views: '190M views',
       uploadedAt: '2 tahun lalu',
+    },
+    {
+      id: 'k6M7FvJ6458',
+      title: 'Yura Yunita - Berawal Dari Tatap (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/k6M7FvJ6458/hqdefault.jpg',
+      duration: '3:45',
+      views: '62M views',
+      uploadedAt: '8 tahun lalu',
+    },
+    {
+      id: 'fGq_yD1k2nU',
+      title: 'Yura Yunita ft. Glenn Fredly - Cinta Dan Rahasia (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/fGq_yD1k2nU/hqdefault.jpg',
+      duration: '4:20',
+      views: '145M views',
+      uploadedAt: '9 tahun lalu',
+    },
+    {
+      id: 'sJ3v53BfT10',
+      title: 'Yura Yunita - Risalah Hati (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/sJ3v53BfT10/hqdefault.jpg',
+      duration: '4:49',
+      views: '24M views',
+      uploadedAt: '1 tahun lalu',
     },
     {
       id: 'kJQP7kiw5Fk',
@@ -93,6 +138,51 @@ const CURATED_CATEGORY_VIDEOS: Record<string, YouTubeVideoItem[]> = {
     },
   ],
   music: [
+    {
+      id: 'MhQ_w0xN7_4',
+      title: 'Yura Yunita - Dunia Tipu-Tipu (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/MhQ_w0xN7_4/hqdefault.jpg',
+      duration: '4:21',
+      views: '58M views',
+      uploadedAt: '2 tahun lalu',
+    },
+    {
+      id: 'Yl3L-y_D8uE',
+      title: 'Yura Yunita - Tutur Batin (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/Yl3L-y_D8uE/hqdefault.jpg',
+      duration: '3:56',
+      views: '45M views',
+      uploadedAt: '2 tahun lalu',
+    },
+    {
+      id: 'k6M7FvJ6458',
+      title: 'Yura Yunita - Berawal Dari Tatap (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/k6M7FvJ6458/hqdefault.jpg',
+      duration: '3:45',
+      views: '62M views',
+      uploadedAt: '8 tahun lalu',
+    },
+    {
+      id: 'fGq_yD1k2nU',
+      title: 'Yura Yunita ft. Glenn Fredly - Cinta Dan Rahasia (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/fGq_yD1k2nU/hqdefault.jpg',
+      duration: '4:20',
+      views: '145M views',
+      uploadedAt: '9 tahun lalu',
+    },
+    {
+      id: 'sJ3v53BfT10',
+      title: 'Yura Yunita - Risalah Hati (Official Music Video)',
+      channel: 'YURA YUNITA',
+      thumbnail: 'https://i.ytimg.com/vi/sJ3v53BfT10/hqdefault.jpg',
+      duration: '4:49',
+      views: '24M views',
+      uploadedAt: '1 tahun lalu',
+    },
     {
       id: 'WPni755-Krg',
       title: 'Tulus - Hati-Hati di Jalan (Official Lyric Video)',
@@ -230,12 +320,6 @@ const CURATED_CATEGORY_VIDEOS: Record<string, YouTubeVideoItem[]> = {
   ],
 };
 
-const INVIDIOUS_MIRRORS = [
-  'https://invidious.nerdvpn.de',
-  'https://inv.tux.pizza',
-  'https://invidious.jing.rocks',
-];
-
 export function useYouTubeSearch({
   submittedSearchQuery,
   ytCategory,
@@ -274,73 +358,43 @@ export function useYouTubeSearch({
       try {
         let items: YouTubeVideoItem[] = [];
 
-        // 1. Check backend scraper first
-        try {
-          const endpoint = rawQ
-            ? `/v1/community/youtube/search?q=${encodeURIComponent(rawQ)}`
-            : `/v1/community/youtube/search?category=${encodeURIComponent(catObj?.q || ytCategory || '')}`;
-          const backendRes = await api.get<{ items: any[] }>(endpoint);
-          if (Array.isArray(backendRes?.items) && backendRes.items.length > 0) {
-            items = backendRes.items;
+        // 1. Check if raw query matches curated catalog with token-based search
+        if (rawQ) {
+          const qTokens = rawQ.toLowerCase().split(/\s+/).filter(Boolean);
+          const allCurated = Object.values(CURATED_CATEGORY_VIDEOS)
+            .flat()
+            .filter((v, idx, arr) => arr.findIndex((x) => x.id === v.id) === idx);
+
+          const matched = allCurated.filter((v) => {
+            const title = v.title.toLowerCase();
+            const channel = v.channel.toLowerCase();
+            return qTokens.some((tok) => title.includes(tok) || channel.includes(tok));
+          });
+
+          if (matched.length > 0) {
+            items = matched;
           }
-        } catch {
-          // backend scraper optional
         }
 
-        // 2. Direct zero-quota search via public Invidious instances without API key
-        if (items.length === 0 && rawQ) {
-          for (const mirror of INVIDIOUS_MIRRORS) {
-            if (items.length > 0) break;
-            try {
-              const controller = new AbortController();
-              const timeout = setTimeout(() => controller.abort(), 3500);
-              const res = await fetch(
-                `${mirror}/api/v1/search?q=${encodeURIComponent(rawQ)}&type=video`,
-                { signal: controller.signal }
-              );
-              clearTimeout(timeout);
-
-              if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data) && data.length > 0) {
-                  items = data.slice(0, 16).map((item: any) => ({
-                    id: item.videoId || item.id,
-                    title: item.title,
-                    channel: item.author || item.channelTitle || 'YouTube Channel',
-                    thumbnail:
-                      item.videoThumbnails?.[0]?.url ||
-                      `https://i.ytimg.com/vi/${item.videoId || item.id}/hqdefault.jpg`,
-                    duration: item.lengthSeconds
-                      ? `${Math.floor(item.lengthSeconds / 60)}:${(item.lengthSeconds % 60).toString().padStart(2, '0')}`
-                      : '',
-                    views: item.viewCountText || (item.viewCount ? `${item.viewCount} views` : ''),
-                    uploadedAt: item.publishedText || '',
-                  }));
-                }
-              }
-            } catch {
-              // try next mirror
+        // 2. Query backend scraper if available
+        if (items.length === 0) {
+          try {
+            const endpoint = rawQ
+              ? `/v1/community/youtube/search?q=${encodeURIComponent(rawQ)}`
+              : `/v1/community/youtube/search?category=${encodeURIComponent(catObj?.q || ytCategory || '')}`;
+            const backendRes = await api.get<{ items: any[] }>(endpoint);
+            if (Array.isArray(backendRes?.items) && backendRes.items.length > 0) {
+              items = backendRes.items;
             }
+          } catch {
+            // backend scraper optional
           }
         }
 
-        // 3. Fallback to curated high-quality videos if query or category has matching items
+        // 3. Fallback to curated category list without displaying red API error banners
         if (items.length === 0) {
           const baseList = CURATED_CATEGORY_VIDEOS[ytCategory] || CURATED_CATEGORY_VIDEOS.semua;
-          if (rawQ) {
-            const qLower = rawQ.toLowerCase();
-            const matched = Object.values(CURATED_CATEGORY_VIDEOS)
-              .flat()
-              .filter(
-                (v, idx, arr) =>
-                  arr.findIndex((x) => x.id === v.id) === idx &&
-                  (v.title.toLowerCase().includes(qLower) ||
-                    v.channel.toLowerCase().includes(qLower))
-              );
-            items = matched.length > 0 ? matched : baseList;
-          } else {
-            items = baseList;
-          }
+          items = baseList;
         }
 
         if (!isCancelled) {
