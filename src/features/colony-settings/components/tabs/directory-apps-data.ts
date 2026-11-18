@@ -109,7 +109,7 @@ export const DIRECTORY_APPS: DirectoryAppItem[] = [
     category: 'Moderation and Tools',
     description: 'Advanced reaction roles, mod logs, auto-moderation, custom embeds, and server management.',
     longDescription:
-      'One of the most trusted moderation suites in Discord history. Fast reaction role assignment, highly configurable auto-punishments, logging feeds, and announcement builders.',
+      'One of the most trusted moderation suites in Anticeil history. Fast reaction role assignment, highly configurable auto-punishments, logging feeds, and announcement builders.',
     bannerGradient: 'from-cyan-950/70 via-stone-900 to-zinc-950',
     bannerImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
     iconBg: 'bg-cyan-600',

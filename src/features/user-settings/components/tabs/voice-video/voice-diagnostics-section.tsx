@@ -49,7 +49,7 @@ export const VoiceDiagnosticsSection: React.FC<VoiceDiagnosticsSectionProps> = (
           <div>
             <div className="text-xs font-bold text-foreground">{t('Show Diagnostic Settings')}</div>
             <div className="text-[11px] text-muted-foreground mt-0.5">
-              {t('Settings that collect technical data for Discord Support to analyze, such as debug logging and audio recording')}
+              {t('Settings that collect technical data for Anticeil Support to analyze, such as debug logging and audio recording')}
             </div>
           </div>
           <ChevronDown

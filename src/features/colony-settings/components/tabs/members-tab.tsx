@@ -198,7 +198,7 @@ export function MembersTab({
                 </th>
                 <th className="py-3 px-4">{t('Name')}</th>
                 <th className="py-3 px-4">{t('Member Since')}</th>
-                <th className="py-3 px-4">{t('Joined Discord')}</th>
+                <th className="py-3 px-4">{t('Joined Anticeil')}</th>
                 <th className="py-3 px-4">{t('Join Method')}</th>
                 <th className="py-3 px-4">{t('Roles')}</th>
                 <th className="py-3 px-4">{t('Signals')}</th>

@@ -234,7 +234,7 @@ export function SoundboardTab({
           </h2>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
             {t(
-              'Upload custom sound reactions that anyone in this server can use. Nitro members will be able to access these sounds in any server on Discord.',
+              'Upload custom sound reactions that anyone in this server can use. Nectar members will be able to access these sounds in any server on Anticeil.',
             )}
           </p>
         </div>

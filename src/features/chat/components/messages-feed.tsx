@@ -154,7 +154,7 @@ export function MessagesFeed({
                     {isUnreadDivider && (
                       <div
                         className="relative my-4 flex items-center select-none"
-                        id="discord-unread-divider"
+                        id="anticeil-unread-divider"
                       >
                         <div className="w-full border-t border-[#da373c]/80" />
                         <span className="absolute right-4 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white bg-[#da373c] rounded-full shadow-xs leading-none">

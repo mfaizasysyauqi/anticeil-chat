@@ -49,7 +49,7 @@ export function ChatBoxAppearanceSection({
               {t('Automatically convert emoticons in your messages to emoji')}
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5">
-              {t('For example, when you type :) Discord will convert it to 🙂')}
+              {t('For example, when you type :) Anticeil will convert it to 🙂')}
             </div>
           </div>
           <Switch checked={convertEmoticonsToEmoji} onCheckedChange={setConvertEmoticonsToEmoji} />

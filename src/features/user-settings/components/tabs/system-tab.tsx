@@ -74,7 +74,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                 {/* Auto start with OS */}
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <div className="text-xs font-semibold text-foreground">
-                    {t('Automatically open Discord when your computer starts up')}
+                    {t('Automatically open Anticeil when your computer starts up')}
                   </div>
                   <Switch checked={autoStartApp} onCheckedChange={setAutoStartApp} />
                 </div>
@@ -87,9 +87,9 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                   )}
                 >
                   <div>
-                    <div className="text-xs font-semibold text-foreground">{t('Start Discord minimized')}</div>
+                    <div className="text-xs font-semibold text-foreground">{t('Start Anticeil minimized')}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {t('Start Discord in the background, out of your way.')}
+                      {t('Start Anticeil in the background, out of your way.')}
                     </div>
                   </div>
                   <Switch
@@ -102,9 +102,9 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                 {/* Minimize to tray */}
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <div>
-                    <div className="text-xs font-semibold text-foreground">{t('Minimize Discord to System Tray')}</div>
+                    <div className="text-xs font-semibold text-foreground">{t('Minimize Anticeil to System Tray')}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {t('Clicking X minimizes Discord instead of closing it completely.')}
+                      {t('Clicking X minimizes Anticeil instead of closing it completely.')}
                     </div>
                   </div>
                   <Switch checked={minimizeToTray} onCheckedChange={setMinimizeToTray} />
@@ -116,7 +116,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                     <div className="text-xs font-semibold text-foreground">{t('Enable Hardware Acceleration')}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                       {t(
-                        "Uses your GPU to make Discord run more smoothly. Turn this off if you're experiencing visual glitches like frame drops in games or performance problems.",
+                        "Uses your GPU to make Anticeil run more smoothly. Turn this off if you're experiencing visual glitches like frame drops in games or performance problems.",
                       )}
                     </div>
                   </div>
@@ -138,7 +138,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                   <h2 className="text-xl font-bold text-foreground">{t('Custom Keybinds')}</h2>
                   <p className="text-[11px] text-muted-foreground mt-1 max-w-xl">
                     {t(
-                      'Keybinds are custom keyboard shortcuts that let you perform specific actions in Discord without needing to click through menus.',
+                      'Keybinds are custom keyboard shortcuts that let you perform specific actions in Anticeil without needing to click through menus.',
                     )}
                   </p>
                 </div>
@@ -494,10 +494,10 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/70 bg-[#1e1f22]">
                 <div>
-                  <div className="text-xs font-bold text-foreground">{t('Discord System Helper')}</div>
+                  <div className="text-xs font-bold text-foreground">{t('Anticeil System Helper')}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5 max-w-lg leading-relaxed">
                     {t(
-                      "Improves Discord's functionality across games and apps. Helps ensure things like keybinds and other features work reliably.",
+                      "Improves Anticeil's functionality across games and apps. Helps ensure things like keybinds and other features work reliably.",
                     )}{' '}
                     <span
                       onClick={() => toast.info(t('System helper menyediakan integrasi hooks sistem OS yang aman.'))}
@@ -512,7 +512,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                   size="sm"
                   onClick={() => {
                     setIsSystemHelperInstalled(true);
-                    toast.success(t('Discord System Helper berhasil dipasang!'));
+                    toast.success(t('Anticeil System Helper berhasil dipasang!'));
                   }}
                   className={cn(
                     'text-xs font-bold px-5 h-9 rounded-md shrink-0 cursor-pointer transition-all shadow-xs',

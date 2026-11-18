@@ -131,7 +131,7 @@ export function AccessibilityPreview({
                       alwaysUnderlineLinks && 'underline',
                     )}
                   >
-                    https://discord.com/accessibility
+                    https://anticeil.com/accessibility
                   </a>
                 </div>
               </div>

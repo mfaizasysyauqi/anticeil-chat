@@ -419,7 +419,7 @@ export function AppearanceTab({
                     <Switch checked={showMediaFromLinks} onCheckedChange={setShowMediaFromLinks} />
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                    <div className="text-xs font-semibold text-foreground">{t('When uploaded directly to Discord')}</div>
+                    <div className="text-xs font-semibold text-foreground">{t('When uploaded directly to Anticeil')}</div>
                     <Switch checked={showMediaUploaded} onCheckedChange={setShowMediaUploaded} />
                   </div>
                 </div>

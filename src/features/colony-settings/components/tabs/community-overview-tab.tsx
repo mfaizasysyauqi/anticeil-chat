@@ -212,7 +212,7 @@ export function CommunityOverviewTab({
             </h3>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               {t(
-                'This is the channel where Discord will send relevant updates for Community admins and moderators. As some info might be sensitive, we recommend selecting a role-restricted channel.'
+                'This is the channel where Anticeil will send relevant updates for Community admins and moderators. As some info might be sensitive, we recommend selecting a role-restricted channel.'
               )}
             </p>
             <span className="text-[10px] text-muted-foreground/80 block mt-1">
@@ -254,7 +254,7 @@ export function CommunityOverviewTab({
             </h3>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               {t(
-                'This is the channel where Discord will send you important safety updates about your server. As some info might be sensitive, we recommend selecting a role-restricted channel.'
+                'This is the channel where Anticeil will send you important safety updates about your server. As some info might be sensitive, we recommend selecting a role-restricted channel.'
               )}
             </p>
           </div>
@@ -292,7 +292,7 @@ export function CommunityOverviewTab({
               {t('Server Primary Language')}
             </h3>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              {t('This helps Discord customize features for you and your members.')}
+              {t('This helps Anticeil customize features for you and your members.')}
             </p>
           </div>
 

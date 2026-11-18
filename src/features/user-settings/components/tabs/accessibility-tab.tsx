@@ -142,7 +142,7 @@ export function AccessibilityTab({
                 <div>
                   <div className="text-xs font-bold text-foreground">{t('Display Name Styles')}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {t('Enable display name styles — including font, effect, and color — across Discord.')}
+                    {t('Enable display name styles — including font, effect, and color — across Anticeil.')}
                   </div>
                 </div>
                 <Switch checked={displayNameStyles} onCheckedChange={setDisplayNameStyles} />
@@ -368,7 +368,7 @@ export function AccessibilityTab({
                   <div>
                     <div className="text-xs font-bold text-foreground">{t('Sync contrast settings')}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {t("This allows Discord to use your computer's contrast theme. Learn more about contrast settings.")}
+                      {t("This allows Anticeil to use your computer's contrast theme. Learn more about contrast settings.")}
                     </div>
                   </div>
                   <Switch checked={syncContrastSettings} onCheckedChange={setSyncContrastSettings} />

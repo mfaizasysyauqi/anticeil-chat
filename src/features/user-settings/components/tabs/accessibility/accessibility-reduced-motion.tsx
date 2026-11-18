@@ -92,7 +92,7 @@ export function AccessibilityReducedMotion({
       <div className="space-y-2 pt-2">
         <div className="flex items-center justify-between py-2 border-b border-border/50">
           <div className="text-xs font-semibold text-foreground">
-            {t('Play GIFs when Discord is focused')}
+            {t('Play GIFs when Anticeil is focused')}
           </div>
           <Switch checked={playGifsFocused} onCheckedChange={setPlayGifsFocused} />
         </div>

@@ -216,7 +216,7 @@ export function VoiceAudioSection({
             {
               id: 'voice-isolation',
               title: 'Voice Isolation',
-              desc: 'Just your beautiful voice: let Discord cut through the noise',
+              desc: 'Just your beautiful voice: let Anticeil cut through the noise',
             },
             {
               id: 'studio',
@@ -278,7 +278,7 @@ export function VoiceAudioSection({
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5 max-w-xl leading-relaxed">
               {t(
-                'Controls how much sound Discord transmits from your mic. Speak to test your mic — if the meter is filled, Discord is transmitting your beautiful voice.',
+                'Controls how much sound Anticeil transmits from your mic. Speak to test your mic — if the meter is filled, Anticeil is transmitting your beautiful voice.',
               )}
             </div>
           </div>

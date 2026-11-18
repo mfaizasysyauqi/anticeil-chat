@@ -60,7 +60,7 @@ export function ConnectedAppsSubtab({
           </h2>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
             {t(
-              "These are accounts from other platforms. Connecting them here can unlock new features on Discord, like the ability to share what you're currently listening to, get paid safely and securely, and more.",
+              "These are accounts from other platforms. Connecting them here can unlock new features on Anticeil, like the ability to share what you're currently listening to, get paid safely and securely, and more.",
             )}
           </p>
         </div>
@@ -233,7 +233,7 @@ export function ConnectedAppsSubtab({
           </h2>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
             {t(
-              "These include third-party services you've given permission to access your Discord account. You can review what each app can do and revoke access anytime.",
+              "These include third-party services you've given permission to access your Anticeil account. You can review what each app can do and revoke access anytime.",
             )}
           </p>
         </div>

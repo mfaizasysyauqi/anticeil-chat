@@ -32,12 +32,12 @@ export function DeveloperTab(_props: DeveloperTabProps) {
                 <div className="text-[11px] text-muted-foreground leading-relaxed">
                   {t('Developer Mode exposes context menu items helpful for people writing apps using the')}{' '}
                   <a
-                    href="https://discord.com/developers/docs"
+                    href="https://anticeil.com/docs"
                     target="_blank"
                     rel="noreferrer"
                     className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
                   >
-                    Discord API
+                    Anticeil API
                     <ExternalLink className="w-3 h-3 ml-0.5 inline" />
                   </a>
                   .
@@ -62,7 +62,7 @@ export function DeveloperTab(_props: DeveloperTabProps) {
                     {t('Application Test Mode')}
                   </div>
                   <div className="text-[11px] text-muted-foreground leading-relaxed">
-                    {t('Enter your Discord application ID to enable test mode for that application.')}
+                    {t('Enter your Anticeil application ID to enable test mode for that application.')}
                   </div>
                 </div>
                 <Switch

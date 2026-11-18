@@ -76,7 +76,7 @@ export function StreamerModeSection({
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
             <div className="text-xs font-semibold text-foreground">
-              {t('Hide invite links to my Discord servers')}
+              {t('Hide invite links to my Anticeil colonies')}
             </div>
             <Switch checked={streamerHideInviteLinks} onCheckedChange={setStreamerHideInviteLinks} />
           </div>
@@ -99,10 +99,10 @@ export function StreamerModeSection({
       <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
         <div>
           <div className="text-xs font-bold text-foreground">
-            {t('Hide Discord Window from Screen Capture')}
+            {t('Hide Anticeil Window from Screen Capture')}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
-            {t('Hides most Discord windows from most screen capture software.')}
+            {t('Hides most Anticeil windows from most screen capture software.')}
           </div>
         </div>
         <Switch checked={streamerHideWindowCapture} onCheckedChange={setStreamerHideWindowCapture} />

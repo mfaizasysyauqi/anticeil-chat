@@ -179,7 +179,7 @@ export function EmojisTab({
           <h2 className="text-xl font-bold text-foreground">{t('Emoji')}</h2>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
             {t(
-              'Add up to 50 custom emoji that anyone can use in this server. Animated GIF emoji may be used by members with Discord Nitro.',
+              'Add up to 50 custom emoji that anyone can use in this server. Animated GIF emoji may be used by members with Anticeil Nectar.',
             )}
           </p>
         </div>
