@@ -158,12 +158,6 @@ export function EditProfileDialog({
   const { t } = useTranslation();
   const defaultAvatar = currentUser?.imageUrl || currentUser?.avatar || null;
   const [profileSubTab, setProfileSubTab] = useState<'board' | 'activity' | 'wishlist'>('board');
-  const [profileSelectedType, setProfileSelectedType] = useState<'main' | 'server'>('main');
-
-  // Colony list & Server Profile State
-  const [coloniesList, setColoniesList] = useState<Colony[]>(initialColonies || []);
-  const [selectedColonyId, setSelectedColonyId] = useState<string>('');
-  const [colonyProfile, setColonyProfile] = useState<ColonyUserProfile | null>(null);
 
   // Main Profile Core Fields
   const [profileBannerColor, setProfileBannerColor] = useState('#5c4d44');
@@ -225,8 +219,6 @@ export function EditProfileDialog({
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
-  const colonyAvatarInputRef = useRef<HTMLInputElement>(null);
-  const colonyBannerInputRef = useRef<HTMLInputElement>(null);
 
   const compressAndLoadImage = (
     file: File,
@@ -310,64 +302,38 @@ export function EditProfileDialog({
 
     // Load real user connections
     gamesAppsApi.getUserConnections().then(setUserConnections);
-
-    // Load colonies
-    if (initialColonies && initialColonies.length > 0) {
-      setColoniesList(initialColonies);
-      if (!selectedColonyId) setSelectedColonyId(initialColonies[0].id);
-    } else {
-      coloniesApi.getColonies().then((cols) => {
-        if (cols && cols.length > 0) {
-          setColoniesList(cols);
-          if (!selectedColonyId) setSelectedColonyId(cols[0].id);
-        }
-      });
-    }
   }, [open, currentUser, defaultAvatar]);
-
-  // Load colony profile when selected colony changes
-  useEffect(() => {
-    if (profileSelectedType === 'server' && selectedColonyId) {
-      profileApi.getColonyProfile(selectedColonyId).then(setColonyProfile);
-    }
-  }, [profileSelectedType, selectedColonyId]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      if (profileSelectedType === 'server' && selectedColonyId && colonyProfile) {
-        // Save Colony-Specific Profile
-        await profileApi.updateColonyProfile(selectedColonyId, colonyProfile);
-        toast.success(t('Profil server berhasil disimpan!'));
-      } else {
-        // Save Global Main Profile
-        const mergedWidgets: UserProfileWidgets = {
-          ...profileWidgets,
-          nameplate: profileNameplate,
-          profileFrame: profileFrame,
-          profileEffect: profileEffect,
-          profileTheme: profileTheme,
-          avatarDecoration: profileAvatarDecoration,
-          displayNameStyle: displayNameStyle,
-        };
+      // Save Global Main Profile
+      const mergedWidgets: UserProfileWidgets = {
+        ...profileWidgets,
+        nameplate: profileNameplate,
+        profileFrame: profileFrame,
+        profileEffect: profileEffect,
+        profileTheme: profileTheme,
+        avatarDecoration: profileAvatarDecoration,
+        displayNameStyle: displayNameStyle,
+      };
 
-        await profileApi.updateProfile({
-          bannerColor: profileBannerColor,
-          bannerUrl: profileBannerUrl,
-          avatarUrl: profileAvatarUrl === defaultAvatar ? null : profileAvatarUrl,
-          avatarDecoration: profileAvatarDecoration,
-          statusThought: profileStatusThought,
-          bio: profileBioText,
-          pronouns: profilePronouns,
-          nameplate: profileNameplate,
-          profileFrame: profileFrame,
-          profileEffect: profileEffect,
-          theme: profileTheme,
-          displayNameStyle: displayNameStyle,
-          widgets: mergedWidgets,
-        });
-        toast.success(t('Profil berhasil diperbarui dan disimpan! 🎉'));
-      }
+      await profileApi.updateProfile({
+        bannerColor: profileBannerColor,
+        bannerUrl: profileBannerUrl,
+        avatarUrl: profileAvatarUrl === defaultAvatar ? null : profileAvatarUrl,
+        avatarDecoration: profileAvatarDecoration,
+        statusThought: profileStatusThought,
+        bio: profileBioText,
+        pronouns: profilePronouns,
+        nameplate: profileNameplate,
+        profileFrame: profileFrame,
+        profileEffect: profileEffect,
+        theme: profileTheme,
+        displayNameStyle: displayNameStyle,
+        widgets: mergedWidgets,
+      });
+      toast.success(t('Profil berhasil diperbarui dan disimpan! 🎉'));
     } catch {
       toast.error(t('Gagal menyimpan profil'));
     } finally {
@@ -518,33 +484,12 @@ export function EditProfileDialog({
     }
   };
 
-  const selectedColony = coloniesList.find((c) => c.id === selectedColonyId);
-
   // Active display values for Middle Preview Card
-  const activeAvatar =
-    profileSelectedType === 'server' && colonyProfile?.avatarUrl
-      ? colonyProfile.avatarUrl
-      : profileAvatarUrl || defaultAvatar;
-
-  const activeName =
-    profileSelectedType === 'server' && colonyProfile?.nickname
-      ? colonyProfile.nickname
-      : currentUserName;
-
-  const activeBannerColor =
-    profileSelectedType === 'server' && colonyProfile?.bannerColor
-      ? colonyProfile.bannerColor
-      : profileBannerColor;
-
-  const activeBannerUrl =
-    profileSelectedType === 'server' && colonyProfile?.bannerUrl
-      ? colonyProfile.bannerUrl
-      : profileBannerUrl;
-
-  const activeBio =
-    profileSelectedType === 'server' && colonyProfile?.bio
-      ? colonyProfile.bio
-      : profileBioText;
+  const activeAvatar = profileAvatarUrl || defaultAvatar;
+  const activeName = currentUserName;
+  const activeBannerColor = profileBannerColor;
+  const activeBannerUrl = profileBannerUrl;
+  const activeBio = profileBioText;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -573,209 +518,11 @@ export function EditProfileDialog({
 
         {/* Main 3-Column Profile Editor Body (20% Left | 40% Middle | 40% Right) */}
         <div className="flex-1 w-full h-full overflow-hidden flex flex-col lg:flex-row">
-          {/* COLUMN 1: LEFT AREA (20%) */}
+            {/* COLUMN 1: LEFT AREA (20%) */}
           <div className="w-full lg:w-[22%] lg:min-w-[240px] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-background/30 p-4 sm:p-5 overflow-y-auto [scrollbar-width:thin] space-y-4">
-            {/* Profile Switcher (Main Profile / Server Profile) */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                {t('Profiles')}
-              </span>
-              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-secondary/80 border border-border/70">
-                <button
-                  type="button"
-                  onClick={() => setProfileSelectedType('main')}
-                  className={cn(
-                    'py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
-                    profileSelectedType === 'main'
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {t('Main Profile')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setProfileSelectedType('server')}
-                  className={cn(
-                    'py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
-                    profileSelectedType === 'server'
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {t('Server Profile')}
-                </button>
-              </div>
-            </div>
 
-            {/* SERVER PROFILE CONTROLS */}
-            {profileSelectedType === 'server' ? (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                {/* Select Colony */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Pilih Server / Colony')}
-                  </span>
-                  {coloniesList.length > 0 ? (
-                    <select
-                      value={selectedColonyId}
-                      onChange={(e) => setSelectedColonyId(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-border/80 bg-card text-xs font-semibold text-foreground focus:outline-none focus:border-sidebar-primary cursor-pointer"
-                    >
-                      {coloniesList.map((colony) => (
-                        <option key={colony.id} value={colony.id} className="bg-card text-foreground">
-                          {colony.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="p-2 text-xs text-muted-foreground italic rounded-lg bg-card border border-border">
-                      {t('Belum ada colony yang diikuti')}
-                    </div>
-                  )}
-                </div>
-
-                {/* Server Nickname */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Nama Panggilan Server')}
-                  </span>
-                  <input
-                    type="text"
-                    value={colonyProfile?.nickname || ''}
-                    onChange={(e) =>
-                      setColonyProfile((prev) => ({
-                        ...(prev || { colonyId: selectedColonyId, nickname: '' }),
-                        nickname: e.target.value,
-                      }))
-                    }
-                    placeholder={currentUserName}
-                    className="w-full text-xs p-2.5 rounded-xl border border-border/80 bg-card text-foreground focus:outline-none focus:border-sidebar-primary"
-                  />
-                </div>
-
-                {/* Server Avatar */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Avatar Server')}
-                  </span>
-                  <input
-                    type="file"
-                    ref={colonyAvatarInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        compressAndLoadImage(file, 256, 256, (dataUrl) => {
-                          setColonyProfile((prev) => ({
-                            ...(prev || { colonyId: selectedColonyId, nickname: '' }),
-                            avatarUrl: dataUrl,
-                          }));
-                          toast.success(t('Avatar server dipilih!'));
-                        });
-                      }
-                    }}
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="tealOutline"
-                      onClick={() => colonyAvatarInputRef.current?.click()}
-                      className="flex-1 text-xs h-8 font-semibold cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5 mr-1.5" />
-                      {t('Upload Avatar')}
-                    </Button>
-                    {colonyProfile?.avatarUrl && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          setColonyProfile((prev) => ({
-                            ...(prev || { colonyId: selectedColonyId, nickname: '' }),
-                            avatarUrl: null,
-                          }))
-                        }
-                        className="h-8 px-2 text-destructive hover:bg-destructive/10 cursor-pointer"
-                        title={t('Gunakan Avatar Utama')}
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Server Banner */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Banner Server')}
-                  </span>
-                  <input
-                    type="file"
-                    ref={colonyBannerInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        compressAndLoadImage(file, 800, 300, (dataUrl) => {
-                          setColonyProfile((prev) => ({
-                            ...(prev || { colonyId: selectedColonyId, nickname: '' }),
-                            bannerUrl: dataUrl,
-                          }));
-                          toast.success(t('Banner server dipilih!'));
-                        });
-                      }
-                    }}
-                  />
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={colonyProfile?.bannerColor || '#5c4d44'}
-                      onChange={(e) =>
-                        setColonyProfile((prev) => ({
-                          ...(prev || { colonyId: selectedColonyId, nickname: '' }),
-                          bannerColor: e.target.value,
-                        }))
-                      }
-                      className="size-8 rounded-lg border border-border cursor-pointer bg-transparent"
-                    />
-                    <Button
-                      size="sm"
-                      variant="tealOutline"
-                      onClick={() => colonyBannerInputRef.current?.click()}
-                      className="flex-1 text-xs h-8 font-semibold cursor-pointer"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5 mr-1.5" />
-                      {t('Upload Banner')}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Server Bio */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Bio Server')}
-                  </span>
-                  <textarea
-                    value={colonyProfile?.bio || ''}
-                    onChange={(e) =>
-                      setColonyProfile((prev) => ({
-                        ...(prev || { colonyId: selectedColonyId, nickname: '' }),
-                        bio: e.target.value,
-                      }))
-                    }
-                    rows={2}
-                    placeholder={t('Bio khusus untuk server ini...')}
-                    className="w-full text-xs p-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-sidebar-primary resize-none"
-                  />
-                </div>
-              </div>
-            ) : (
-              /* MAIN GLOBAL PROFILE CONTROLS */
-              <div className="space-y-4 animate-in fade-in duration-150">
-                {/* 1. Nameplate Selector */}
+            <div className="space-y-4">
+              {/* 1. Nameplate Selector */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     {t('Nameplate')}
@@ -1052,7 +799,6 @@ export function EditProfileDialog({
                   </Button>
                 </div>
               </div>
-            )}
 
             {/* Save Changes Button */}
             <div className="pt-2 border-t border-border/60">
@@ -1086,16 +832,8 @@ export function EditProfileDialog({
                 setProfilePronouns={setProfilePronouns}
                 isEditingPronouns={isEditingPronouns}
                 setIsEditingPronouns={setIsEditingPronouns}
-                profileBioText={activeBio}
-                setProfileBioText={
-                  profileSelectedType === 'server'
-                    ? (b) =>
-                        setColonyProfile((prev) => ({
-                          ...(prev || { colonyId: selectedColonyId, nickname: '' }),
-                          bio: b,
-                        }))
-                    : setProfileBioText
-                }
+                profileBioText={profileBioText}
+                setProfileBioText={setProfileBioText}
                 isEditingBioText={isEditingBioText}
                 setIsEditingBioText={setIsEditingBioText}
                 onNavigateSection={handleNectarCta}
@@ -1106,7 +844,6 @@ export function EditProfileDialog({
                 avatarDecoration={profileAvatarDecoration}
                 displayNameStyle={displayNameStyle}
                 connections={userConnections}
-                colonyName={profileSelectedType === 'server' ? selectedColony?.name : undefined}
                 memberSince={
                   currentUser?.createdAt
                     ? new Date(currentUser.createdAt).toLocaleDateString('id-ID', {
