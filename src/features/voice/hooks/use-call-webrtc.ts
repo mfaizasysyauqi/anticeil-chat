@@ -311,7 +311,14 @@ export function useCallWebRTC({
           if (res?.success && Array.isArray(res.participants)) {
             res.participants.forEach((existingPeer: any) => {
               setParticipants((prev) => {
-                if (prev.some((p) => p.socketId === existingPeer.socketId)) return prev;
+                if (
+                  prev.some((p) => p.socketId === existingPeer.socketId) ||
+                  existingPeer.socketId === socket?.id ||
+                  existingPeer.userId === currentUserId ||
+                  (existingPeer.userName && existingPeer.userName.toLowerCase() === currentUserName.toLowerCase())
+                ) {
+                  return prev;
+                }
                 const newPeer: CallParticipant = {
                   socketId: existingPeer.socketId,
                   userId: existingPeer.userId,
@@ -366,7 +373,14 @@ export function useCallWebRTC({
       const isScreenSharing = data.mediaState?.isScreenSharing ?? data.isScreenSharing ?? false;
 
       setParticipants((prev) => {
-        if (prev.some((p) => p.socketId === data.socketId)) return prev;
+        if (
+          prev.some((p) => p.socketId === data.socketId) ||
+          data.socketId === socket?.id ||
+          data.userId === currentUserId ||
+          (data.userName && data.userName.toLowerCase() === currentUserName.toLowerCase())
+        ) {
+          return prev;
+        }
         const newPeer: CallParticipant = {
           socketId: data.socketId,
           userId: data.userId,

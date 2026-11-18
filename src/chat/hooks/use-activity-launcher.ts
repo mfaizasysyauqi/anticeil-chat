@@ -98,17 +98,31 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         // embedded directly in that text channel in Discord-style split view.
         // Never jump away to a voice channel!
         if (targetChannelId) {
-          voiceDest = channels.find((c) => c.id === targetChannelId) || null;
+          voiceDest =
+            channels.find((c) => c.id === targetChannelId) ||
+            ({
+              id: targetChannelId,
+              name: 'Channel',
+              type: 'text',
+              colonyId: activeColonyId,
+            } as ColonyChannel);
+        } else if (activeChannel && activeChannel.type !== 'voice') {
+          voiceDest = activeChannel;
+        } else if (activeCallChannelId) {
+          voiceDest = channels.find((c) => c.id === activeCallChannelId) || null;
+        } else {
+          voiceDest = targetChannel || activeChannel || null;
         }
-        if (!voiceDest) {
-          if (activeChannel && activeChannel.type !== 'voice') {
-            voiceDest = activeChannel;
-          } else if (activeCallChannelId) {
-            voiceDest = channels.find((c) => c.id === activeCallChannelId) || null;
-          } else {
-            voiceDest = targetChannel || activeChannel || null;
-          }
-        }
+      }
+
+      // Enforce strictly 1 active activity: auto-close / leave any previous activity
+      if (activeCallChannelId && voiceDest && activeCallChannelId !== voiceDest.id) {
+        socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+          channelId: activeCallChannelId,
+          action: 'ACTIVITY_STOP',
+          payload: {},
+        });
+        socket?.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: activeCallChannelId });
       }
 
       const app = EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {

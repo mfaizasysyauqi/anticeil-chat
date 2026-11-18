@@ -83,7 +83,7 @@ export function VoiceInviteDialog({
               <DialogDescription className="text-xs text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
                 <span>{activeColony?.name || 'Colony'} • #{channel.name}</span>
                 {currentActiveApp && (
-                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 shrink-0">
+                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-primary/15 text-primary border border-primary/20 shrink-0">
                     🎮 {currentActiveApp.title}
                   </span>
                 )}
@@ -100,7 +100,7 @@ export function VoiceInviteDialog({
                 Bagikan link ini ke rekan Anda. Saat membuka link, mereka akan{' '}
                 <strong className="text-foreground">otomatis bergabung ke server</strong>,{' '}
                 <strong className="text-foreground">langsung masuk ke panggilan</strong>, dan langsung membuka aktivitas{' '}
-                <strong className="text-emerald-500 font-semibold">{currentActiveApp.title}</strong> bersama.
+                <strong className="text-primary font-semibold">{currentActiveApp.title}</strong> bersama.
               </>
             ) : (
               <>
@@ -130,7 +130,7 @@ export function VoiceInviteDialog({
                 className={cn(
                   'h-9 px-3.5 text-xs font-semibold transition-all shrink-0 gap-1.5 shadow-sm rounded-lg cursor-pointer',
                   copied
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    ? 'bg-primary/80 text-primary-foreground'
                     : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                 )}
               >

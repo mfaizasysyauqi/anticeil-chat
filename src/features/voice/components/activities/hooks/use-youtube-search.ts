@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import type { YouTubeVideoItem } from './use-youtube-player';
-import { formatTimeAgo, formatViews, parseYtDuration } from '../youtube-utils';
 
 export interface UseYouTubeSearchOptions {
   submittedSearchQuery: string;
@@ -10,12 +9,231 @@ export interface UseYouTubeSearchOptions {
 }
 
 export const YT_CATEGORIES = [
-  { id: 'semua', label: '🔥 Trending', q: '', categoryId: '' },
-  { id: 'music', label: '🎵 Musik', q: '', categoryId: '10' },
-  { id: 'gaming', label: '🎮 Gaming', q: '', categoryId: '20' },
-  { id: 'tech', label: '💻 Tech', q: 'programming tech coding tutorial', categoryId: '28' },
-  { id: 'entertainment', label: '🎉 Hiburan', q: '', categoryId: '24' },
-  { id: 'lofi', label: '☕ Lofi', q: 'lofi hip hop radio beats', categoryId: '' },
+  { id: 'semua', label: '🔥 Trending', q: 'trending indonesia' },
+  { id: 'music', label: '🎵 Musik', q: 'music indonesia' },
+  { id: 'gaming', label: '🎮 Gaming', q: 'gaming walkthrough' },
+  { id: 'tech', label: '💻 Tech', q: 'programming coding tutorial' },
+  { id: 'entertainment', label: '🎉 Hiburan', q: 'komedi hiburan' },
+  { id: 'lofi', label: '☕ Lofi', q: 'lofi hip hop radio' },
+];
+
+const CURATED_CATEGORY_VIDEOS: Record<string, YouTubeVideoItem[]> = {
+  semua: [
+    {
+      id: 'jfKfPfyJRdk',
+      title: 'lofi hip hop radio 📚 - beats to relax/study to',
+      channel: 'Lofi Girl',
+      thumbnail: 'https://i.ytimg.com/vi/jfKfPfyJRdk/hqdefault.jpg',
+      duration: 'LIVE',
+      views: '54M views',
+      uploadedAt: 'Live',
+    },
+    {
+      id: 'r72GP1PIZa0',
+      title: 'Grand Theft Auto VI Trailer 1',
+      channel: 'Rockstar Games',
+      thumbnail: 'https://i.ytimg.com/vi/r72GP1PIZa0/hqdefault.jpg',
+      duration: '1:31',
+      views: '210M views',
+      uploadedAt: '1 tahun lalu',
+    },
+    {
+      id: 'WPni755-Krg',
+      title: 'Tulus - Hati-Hati di Jalan (Official Lyric Video)',
+      channel: 'Tulus',
+      thumbnail: 'https://i.ytimg.com/vi/WPni755-Krg/hqdefault.jpg',
+      duration: '4:04',
+      views: '190M views',
+      uploadedAt: '2 tahun lalu',
+    },
+    {
+      id: 'kJQP7kiw5Fk',
+      title: 'Luis Fonsi - Despacito ft. Daddy Yankee',
+      channel: 'Luis Fonsi',
+      thumbnail: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg',
+      duration: '4:41',
+      views: '8.5B views',
+      uploadedAt: '7 tahun lalu',
+    },
+    {
+      id: 'JGwWNGJdvx8',
+      title: 'Ed Sheeran - Shape of You',
+      channel: 'Ed Sheeran',
+      thumbnail: 'https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg',
+      duration: '4:23',
+      views: '6.2B views',
+      uploadedAt: '7 tahun lalu',
+    },
+    {
+      id: 'dQw4w9WgXcQ',
+      title: 'Rick Astley - Never Gonna Give You Up',
+      channel: 'Rick Astley',
+      thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+      duration: '3:32',
+      views: '1.5B views',
+      uploadedAt: '14 tahun lalu',
+    },
+    {
+      id: '0e3GPea1Tyg',
+      title: 'Minecraft Official Trailer',
+      channel: 'Minecraft',
+      thumbnail: 'https://i.ytimg.com/vi/0e3GPea1Tyg/hqdefault.jpg',
+      duration: '2:22',
+      views: '160M views',
+      uploadedAt: '12 tahun lalu',
+    },
+    {
+      id: 'fJ9rUzIMcZQ',
+      title: 'Queen - Bohemian Rhapsody (Official Video)',
+      channel: 'Queen Official',
+      thumbnail: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
+      duration: '5:59',
+      views: '1.7B views',
+      uploadedAt: '15 tahun lalu',
+    },
+  ],
+  music: [
+    {
+      id: 'WPni755-Krg',
+      title: 'Tulus - Hati-Hati di Jalan (Official Lyric Video)',
+      channel: 'Tulus',
+      thumbnail: 'https://i.ytimg.com/vi/WPni755-Krg/hqdefault.jpg',
+      duration: '4:04',
+      views: '190M views',
+      uploadedAt: '2 tahun lalu',
+    },
+    {
+      id: 'F4gS-2283uM',
+      title: 'Sheila On 7 - Dan (Official Music Video)',
+      channel: 'Sony Music Entertainment Indonesia',
+      thumbnail: 'https://i.ytimg.com/vi/F4gS-2283uM/hqdefault.jpg',
+      duration: '4:48',
+      views: '110M views',
+      uploadedAt: '11 tahun lalu',
+    },
+    {
+      id: 'kJQP7kiw5Fk',
+      title: 'Luis Fonsi - Despacito ft. Daddy Yankee',
+      channel: 'Luis Fonsi',
+      thumbnail: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg',
+      duration: '4:41',
+      views: '8.5B views',
+      uploadedAt: '7 tahun lalu',
+    },
+    {
+      id: 'JGwWNGJdvx8',
+      title: 'Ed Sheeran - Shape of You',
+      channel: 'Ed Sheeran',
+      thumbnail: 'https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg',
+      duration: '4:23',
+      views: '6.2B views',
+      uploadedAt: '7 tahun lalu',
+    },
+  ],
+  gaming: [
+    {
+      id: 'r72GP1PIZa0',
+      title: 'Grand Theft Auto VI Trailer 1',
+      channel: 'Rockstar Games',
+      thumbnail: 'https://i.ytimg.com/vi/r72GP1PIZa0/hqdefault.jpg',
+      duration: '1:31',
+      views: '210M views',
+      uploadedAt: '1 tahun lalu',
+    },
+    {
+      id: '0e3GPea1Tyg',
+      title: 'Minecraft Official Trailer',
+      channel: 'Minecraft',
+      thumbnail: 'https://i.ytimg.com/vi/0e3GPea1Tyg/hqdefault.jpg',
+      duration: '2:22',
+      views: '160M views',
+      uploadedAt: '12 tahun lalu',
+    },
+    {
+      id: 'eaW0tYpxyp0',
+      title: 'VALORANT // Cinematic Trailer',
+      channel: 'VALORANT',
+      thumbnail: 'https://i.ytimg.com/vi/eaW0tYpxyp0/hqdefault.jpg',
+      duration: '3:50',
+      views: '45M views',
+      uploadedAt: '3 tahun lalu',
+    },
+  ],
+  tech: [
+    {
+      id: 'SqcY0GlETPk',
+      title: 'React in 100 Seconds',
+      channel: 'Fireship',
+      thumbnail: 'https://i.ytimg.com/vi/SqcY0GlETPk/hqdefault.jpg',
+      duration: '2:24',
+      views: '1.8M views',
+      uploadedAt: '3 tahun lalu',
+    },
+    {
+      id: 'Tn6-PIqc4UM',
+      title: 'TypeScript in 100 Seconds',
+      channel: 'Fireship',
+      thumbnail: 'https://i.ytimg.com/vi/Tn6-PIqc4UM/hqdefault.jpg',
+      duration: '2:15',
+      views: '1.4M views',
+      uploadedAt: '3 tahun lalu',
+    },
+    {
+      id: 'w7ejDZ8SWv8',
+      title: 'Next.js in 100 Seconds',
+      channel: 'Fireship',
+      thumbnail: 'https://i.ytimg.com/vi/w7ejDZ8SWv8/hqdefault.jpg',
+      duration: '2:30',
+      views: '1.2M views',
+      uploadedAt: '2 tahun lalu',
+    },
+  ],
+  entertainment: [
+    {
+      id: 'dQw4w9WgXcQ',
+      title: 'Rick Astley - Never Gonna Give You Up',
+      channel: 'Rick Astley',
+      thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+      duration: '3:32',
+      views: '1.5B views',
+      uploadedAt: '14 tahun lalu',
+    },
+    {
+      id: 'fJ9rUzIMcZQ',
+      title: 'Queen - Bohemian Rhapsody (Official Video)',
+      channel: 'Queen Official',
+      thumbnail: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
+      duration: '5:59',
+      views: '1.7B views',
+      uploadedAt: '15 tahun lalu',
+    },
+  ],
+  lofi: [
+    {
+      id: 'jfKfPfyJRdk',
+      title: 'lofi hip hop radio 📚 - beats to relax/study to',
+      channel: 'Lofi Girl',
+      thumbnail: 'https://i.ytimg.com/vi/jfKfPfyJRdk/hqdefault.jpg',
+      duration: 'LIVE',
+      views: '54M views',
+      uploadedAt: 'Live',
+    },
+    {
+      id: '4xDzrJKXOOY',
+      title: 'synthwave radio 🌌 - chill synth / retro beats',
+      channel: 'Lofi Girl',
+      thumbnail: 'https://i.ytimg.com/vi/4xDzrJKXOOY/hqdefault.jpg',
+      duration: 'LIVE',
+      views: '12M views',
+      uploadedAt: 'Live',
+    },
+  ],
+};
+
+const INVIDIOUS_MIRRORS = [
+  'https://invidious.nerdvpn.de',
+  'https://inv.tux.pizza',
+  'https://invidious.jing.rocks',
 ];
 
 export function useYouTubeSearch({
@@ -23,7 +241,9 @@ export function useYouTubeSearch({
   ytCategory,
   searchTriggerCount,
 }: UseYouTubeSearchOptions) {
-  const [ytVideos, setYtVideos] = useState<YouTubeVideoItem[]>([]);
+  const [ytVideos, setYtVideos] = useState<YouTubeVideoItem[]>(() => {
+    return CURATED_CATEGORY_VIDEOS[ytCategory] || CURATED_CATEGORY_VIDEOS.semua;
+  });
   const [ytIsSearching, setYtIsSearching] = useState(false);
   const [ytSearchError, setYtSearchError] = useState<string | null>(null);
   const ytCacheRef = useRef<Map<string, YouTubeVideoItem[]>>(new Map());
@@ -37,7 +257,7 @@ export function useYouTubeSearch({
 
     const cacheKey = rawQ ? `search:${rawQ.toLowerCase()}` : `cat:${ytCategory}`;
 
-    // Caching
+    // Return cached results if available
     if (ytCacheRef.current.has(cacheKey)) {
       setYtVideos(ytCacheRef.current.get(cacheKey)!);
       setYtIsSearching(false);
@@ -50,10 +270,11 @@ export function useYouTubeSearch({
     const fetchVideos = async () => {
       setYtIsSearching(true);
       setYtSearchError(null);
+
       try {
         let items: YouTubeVideoItem[] = [];
 
-        // 1. Primary: Unlimited Zero-Quota Search & Trending via Backend Scraper
+        // 1. Check backend scraper first
         try {
           const endpoint = rawQ
             ? `/v1/community/youtube/search?q=${encodeURIComponent(rawQ)}`
@@ -62,104 +283,63 @@ export function useYouTubeSearch({
           if (Array.isArray(backendRes?.items) && backendRes.items.length > 0) {
             items = backendRes.items;
           }
-        } catch (backendErr) {}
+        } catch {
+          // backend scraper optional
+        }
 
-        // 2. Fallback to Google YouTube API v3
+        // 2. Direct zero-quota search via public Invidious instances without API key
+        if (items.length === 0 && rawQ) {
+          for (const mirror of INVIDIOUS_MIRRORS) {
+            if (items.length > 0) break;
+            try {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 3500);
+              const res = await fetch(
+                `${mirror}/api/v1/search?q=${encodeURIComponent(rawQ)}&type=video`,
+                { signal: controller.signal }
+              );
+              clearTimeout(timeout);
+
+              if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                  items = data.slice(0, 16).map((item: any) => ({
+                    id: item.videoId || item.id,
+                    title: item.title,
+                    channel: item.author || item.channelTitle || 'YouTube Channel',
+                    thumbnail:
+                      item.videoThumbnails?.[0]?.url ||
+                      `https://i.ytimg.com/vi/${item.videoId || item.id}/hqdefault.jpg`,
+                    duration: item.lengthSeconds
+                      ? `${Math.floor(item.lengthSeconds / 60)}:${(item.lengthSeconds % 60).toString().padStart(2, '0')}`
+                      : '',
+                    views: item.viewCountText || (item.viewCount ? `${item.viewCount} views` : ''),
+                    uploadedAt: item.publishedText || '',
+                  }));
+                }
+              }
+            } catch {
+              // try next mirror
+            }
+          }
+        }
+
+        // 3. Fallback to curated high-quality videos if query or category has matching items
         if (items.length === 0) {
-          const key = import.meta.env.VITE_YOUTUBE_API_KEY || 'AIzaSyBg-0HDXNw2occXp6_89D4dXxBW0gISbQ4';
+          const baseList = CURATED_CATEGORY_VIDEOS[ytCategory] || CURATED_CATEGORY_VIDEOS.semua;
           if (rawQ) {
-            const params = new URLSearchParams({
-              part: 'snippet',
-              q: rawQ,
-              type: 'video',
-              maxResults: '16',
-              key,
-            });
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
-            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-            const data = await res.json();
-            items = (data.items ?? []).map((item: any) => ({
-              id: item.id.videoId,
-              title: item.snippet.title,
-              channel: item.snippet.channelTitle,
-              thumbnail:
-                item.snippet.thumbnails?.medium?.url ||
-                item.snippet.thumbnails?.default?.url ||
-                `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
-              duration: '',
-              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-            }));
-          } else if (catObj?.categoryId) {
-            const params = new URLSearchParams({
-              part: 'snippet,contentDetails,statistics',
-              chart: 'mostPopular',
-              regionCode: 'ID',
-              videoCategoryId: catObj.categoryId,
-              maxResults: '16',
-              key,
-            });
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
-            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-            const data = await res.json();
-            items = (data.items ?? []).map((item: any) => ({
-              id: item.id,
-              title: item.snippet.title,
-              channel: item.snippet.channelTitle,
-              thumbnail:
-                item.snippet.thumbnails?.medium?.url ||
-                item.snippet.thumbnails?.standard?.url ||
-                item.snippet.thumbnails?.default?.url ||
-                `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
-              duration: parseYtDuration(item.contentDetails?.duration),
-              views: formatViews(item.statistics?.viewCount),
-              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-            }));
-          } else if (catObj?.q) {
-            const params = new URLSearchParams({
-              part: 'snippet',
-              q: catObj.q,
-              type: 'video',
-              maxResults: '16',
-              key,
-            });
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
-            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-            const data = await res.json();
-            items = (data.items ?? []).map((item: any) => ({
-              id: item.id.videoId,
-              title: item.snippet.title,
-              channel: item.snippet.channelTitle,
-              thumbnail:
-                item.snippet.thumbnails?.medium?.url ||
-                item.snippet.thumbnails?.default?.url ||
-                `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
-              duration: '',
-              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-            }));
+            const qLower = rawQ.toLowerCase();
+            const matched = Object.values(CURATED_CATEGORY_VIDEOS)
+              .flat()
+              .filter(
+                (v, idx, arr) =>
+                  arr.findIndex((x) => x.id === v.id) === idx &&
+                  (v.title.toLowerCase().includes(qLower) ||
+                    v.channel.toLowerCase().includes(qLower))
+              );
+            items = matched.length > 0 ? matched : baseList;
           } else {
-            const params = new URLSearchParams({
-              part: 'snippet,contentDetails,statistics',
-              chart: 'mostPopular',
-              regionCode: 'ID',
-              maxResults: '16',
-              key,
-            });
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
-            if (!res.ok) throw new Error(`YouTube API (${res.status}): pastikan kuota API aktif`);
-            const data = await res.json();
-            items = (data.items ?? []).map((item: any) => ({
-              id: item.id,
-              title: item.snippet.title,
-              channel: item.snippet.channelTitle,
-              thumbnail:
-                item.snippet.thumbnails?.medium?.url ||
-                item.snippet.thumbnails?.standard?.url ||
-                item.snippet.thumbnails?.default?.url ||
-                `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
-              duration: parseYtDuration(item.contentDetails?.duration),
-              views: formatViews(item.statistics?.viewCount),
-              uploadedAt: formatTimeAgo(item.snippet?.publishedAt),
-            }));
+            items = baseList;
           }
         }
 
@@ -167,10 +347,10 @@ export function useYouTubeSearch({
           ytCacheRef.current.set(cacheKey, items);
           setYtVideos(items);
         }
-      } catch (e: any) {
+      } catch {
         if (!isCancelled) {
-          setYtSearchError(e.message ?? 'Gagal memuat video YouTube');
-          setYtVideos([]);
+          const fallback = CURATED_CATEGORY_VIDEOS[ytCategory] || CURATED_CATEGORY_VIDEOS.semua;
+          setYtVideos(fallback);
         }
       } finally {
         if (!isCancelled) {

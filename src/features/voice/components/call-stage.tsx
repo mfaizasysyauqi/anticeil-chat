@@ -216,17 +216,25 @@ export function CallStage({
 
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="flex items-center -space-x-1.5 overflow-hidden">
-              {participants.slice(0, 3).map((p) => (
-                <CommunityAvatar
-                  key={p.socketId}
-                  name={p.userName}
-                  imageUrl={p.userAvatar}
-                  size={24}
-                  showStatus={false}
-                  tooltipText={p.userName}
-                  className="ring-2 ring-background shrink-0"
-                />
-              ))}
+              {participants
+                .filter(
+                  (p) =>
+                    p.userId !== currentUser?.id &&
+                    p.socketId !== socket?.id &&
+                    (!p.userName || p.userName.toLowerCase() !== currentUserName.toLowerCase())
+                )
+                .slice(0, 3)
+                .map((p) => (
+                  <CommunityAvatar
+                    key={p.socketId}
+                    name={p.userName}
+                    imageUrl={p.userAvatar}
+                    size={24}
+                    showStatus={false}
+                    tooltipText={p.userName}
+                    className="ring-2 ring-background shrink-0"
+                  />
+                ))}
               <CommunityAvatar
                 name={currentUserName}
                 imageUrl={currentUser?.imageUrl}

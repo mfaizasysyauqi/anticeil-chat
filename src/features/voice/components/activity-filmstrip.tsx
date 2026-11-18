@@ -58,7 +58,7 @@ export function ActivityFilmstrip({
       >
         {isFilmstripCollapsed ? (
           <>
-            <ChevronUp className="w-3 h-3 text-emerald-400" />
+            <ChevronUp className="w-3 h-3 text-primary" />
             <Users className="w-2.5 h-2.5" />
             <span>Kamera & Peserta ({totalInCall})</span>
           </>
@@ -163,9 +163,9 @@ export function ActivityFilmstrip({
               <Button
                 size="sm"
                 onClick={onCopyCallLink}
-                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs gap-1.5 transition-colors cursor-pointer border-0 shrink-0"
+                className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-xs gap-1.5 transition-colors cursor-pointer border-0 shrink-0"
               >
-                <Copy className="w-3 h-3 text-white" /> Salin Link
+                <Copy className="w-3 h-3 fill-current" /> Salin Link
               </Button>
             </div>
           )}

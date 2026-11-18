@@ -169,9 +169,9 @@ export function ActivityLauncherDialog({
             </div>
 
             {activeAppId !== null && (
-              <div className="mt-2.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
-                <span className="text-[11px] text-emerald-500 font-semibold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="mt-2.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between text-xs">
+                <span className="text-[11px] text-primary font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   Aktif: <strong className="text-foreground">{currentActiveApp?.title || activeAppId}</strong>
                 </span>
                 <button
@@ -444,19 +444,19 @@ export function ActivityLauncherDialog({
 
             <div className="space-y-2 rounded-xl bg-muted/40 p-3.5 border border-border text-xs">
               <div className="flex items-center gap-2 text-foreground/90">
-                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                <Check className="w-4 h-4 text-primary shrink-0" />
                 <span>Group Video & Voice Call hingga 25+ peserta bersamaan</span>
               </div>
               <div className="flex items-center gap-2 text-foreground/90">
-                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                <Check className="w-4 h-4 text-primary shrink-0" />
                 <span>High-Definition 1080p 60FPS Screen Sharing & Activities</span>
               </div>
               <div className="flex items-center gap-2 text-foreground/90">
-                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                <Check className="w-4 h-4 text-primary shrink-0" />
                 <span>Anticeil Activity: YouTube Watch Together, Games, & Workflow Canvas</span>
               </div>
               <div className="flex items-center gap-2 text-foreground/90">
-                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                <Check className="w-4 h-4 text-primary shrink-0" />
                 <span>Tanpa batas durasi panggilan (*unlimited minutes*)</span>
               </div>
             </div>

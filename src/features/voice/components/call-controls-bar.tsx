@@ -352,7 +352,7 @@ export function CallControlsBar({
                   className={cn(
                     'h-9 w-10 items-center justify-center rounded-lg transition-colors cursor-pointer hidden md:flex',
                     isScreenSharing
-                      ? 'bg-emerald-600/20 text-emerald-500 hover:bg-emerald-600/30'
+                      ? 'bg-primary/20 text-primary hover:bg-primary/30'
                       : 'text-foreground hover:bg-muted/60',
                   )}
                 >
@@ -375,13 +375,13 @@ export function CallControlsBar({
                   className={cn(
                     'h-9 w-10 items-center justify-center rounded-lg transition-colors cursor-pointer relative hidden md:flex',
                     activeAppId !== null
-                      ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30'
+                      ? 'bg-primary/20 text-primary hover:bg-primary/30'
                       : 'text-foreground hover:bg-muted/60',
                   )}
                 >
                   <Shapes className="w-5 h-5" />
                   {activeAppId !== null && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-card" />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
                   )}
                 </button>
               </TooltipTrigger>
@@ -422,7 +422,7 @@ export function CallControlsBar({
                 <MoreHorizontal className="w-5 h-5" />
                 {/* On mobile: show indicator if screen sharing or activity is active */}
                 {(isScreenSharing || activeAppId !== null) && (
-                  <span className="md:hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-card" />
+                  <span className="md:hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
                 )}
               </button>
             </DropdownMenuTrigger>
@@ -440,8 +440,8 @@ export function CallControlsBar({
                 >
                   {isScreenSharing ? (
                     <>
-                      <MonitorOff className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-emerald-500 font-semibold">Hentikan Berbagi Layar</span>
+                      <MonitorOff className="w-4 h-4 text-primary shrink-0" />
+                      <span className="text-primary font-semibold">Hentikan Berbagi Layar</span>
                     </>
                   ) : (
                     <>
@@ -458,13 +458,13 @@ export function CallControlsBar({
                   <Shapes
                     className={cn(
                       'w-4 h-4 shrink-0',
-                      activeAppId !== null ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent-foreground',
+                      activeAppId !== null ? 'text-primary' : 'text-muted-foreground group-hover:text-accent-foreground',
                     )}
                   />
                   <div className="flex items-center justify-between flex-1 min-w-0">
                     <span>Aktivitas & Games</span>
                     {activeAppId !== null && (
-                      <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">
+                      <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">
                         Aktif
                       </span>
                     )}

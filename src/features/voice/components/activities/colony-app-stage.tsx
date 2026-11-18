@@ -127,7 +127,7 @@ export function ColonyAppStage({
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs font-bold">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-bold">
             <CheckCircle className="w-3.5 h-3.5" />
             <span>Terhubung Realtime</span>
           </div>

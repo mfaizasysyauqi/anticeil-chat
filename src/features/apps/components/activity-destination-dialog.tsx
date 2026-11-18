@@ -291,7 +291,7 @@ export function ActivityDestinationDialog({
                   <div className="space-y-1.5 pt-1 border-t border-border/50">
                     <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
                       <span>2. Pilih Saluran di {selectedColony?.name}</span>
-                      <span className="text-[10px] text-emerald-500 font-semibold">
+                      <span className="text-[10px] text-primary font-semibold">
                         Disarankan: Saluran Suara
                       </span>
                     </label>
@@ -307,20 +307,20 @@ export function ActivityDestinationDialog({
                             className={cn(
                               'flex items-center justify-between px-3 py-2 rounded-lg border cursor-pointer transition-all select-none',
                               isSelected
-                                ? 'bg-emerald-500/10 border-emerald-500 text-foreground ring-1 ring-emerald-500/30'
+                                ? 'bg-primary/10 border-primary text-foreground ring-1 ring-primary/30'
                                 : 'bg-muted/20 border-border/40 hover:bg-muted/60 text-muted-foreground'
                             )}
                           >
                             <div className="flex items-center gap-2 truncate">
-                              <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                              <Volume2 className="w-4 h-4 text-primary shrink-0" />
                               <span className="text-xs font-semibold truncate text-foreground">
                                 {ch.name}
                               </span>
-                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">
                                 Voice
                               </Badge>
                             </div>
-                            {isSelected && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
+                            {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                           </div>
                         );
                       })}

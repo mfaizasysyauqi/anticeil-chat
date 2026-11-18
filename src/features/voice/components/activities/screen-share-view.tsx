@@ -100,7 +100,7 @@ export function ScreenShareView({
       ) : (
         /* Empty / Prompt Stage */
         <div className="max-w-md w-full flex flex-col items-center text-center p-6 lg:p-8 rounded-2xl bg-zinc-900/90 border border-zinc-800 shadow-2xl space-y-5">
-          <div className="size-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-inner">
+          <div className="size-16 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-inner">
             <Monitor className="size-8" />
           </div>
 
@@ -117,14 +117,14 @@ export function ScreenShareView({
             <Button
               size="default"
               onClick={handleStart}
-              className="w-full h-10 gap-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md cursor-pointer"
+              className="w-full h-10 gap-2 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md cursor-pointer"
             >
               <ScreenShare className="size-4" />
               Mulai Bagikan Layar Sekarang
             </Button>
 
             <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-500 pt-1">
-              <ShieldCheck className="size-3.5 text-emerald-500" />
+              <ShieldCheck className="size-3.5 text-primary" />
               <span>Transmisi WebRTC terenkripsi end-to-end tanpa rekaman colony</span>
             </div>
           </div>
