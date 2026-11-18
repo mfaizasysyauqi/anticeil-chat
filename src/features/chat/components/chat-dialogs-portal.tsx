@@ -104,6 +104,7 @@ export interface ChatDialogsPortalProps {
   isAuthRequiredOpen: boolean;
   setIsAuthRequiredOpen: (open: boolean) => void;
   authFeatureInfo: { title?: string; desc?: string };
+  onGuestLogin?: (nickname: string) => void;
   onDevMockLogin?: (userIndex: number) => void;
   onNavigateToApps?: () => void;
 
@@ -174,6 +175,7 @@ export function ChatDialogsPortal({
   isAuthRequiredOpen,
   setIsAuthRequiredOpen,
   authFeatureInfo,
+  onGuestLogin,
   onDevMockLogin,
   onNavigateToApps,
   t,
@@ -505,6 +507,7 @@ export function ChatDialogsPortal({
         isOpen={isAuthRequiredOpen}
         onClose={() => setIsAuthRequiredOpen(false)}
         onGoogleSignIn={handleGoogleSignIn}
+        onGuestLogin={onGuestLogin}
         onDevMockLogin={onDevMockLogin}
         featureTitle={authFeatureInfo.title}
         featureDescription={authFeatureInfo.desc}

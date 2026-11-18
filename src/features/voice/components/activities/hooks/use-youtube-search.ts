@@ -311,6 +311,90 @@ const CURATED_CATEGORY_VIDEOS: Record<string, YouTubeVideoItem[]> = {
   ],
 };
 
+async function resolveDirectVideo(urlOrId: string, signal?: AbortSignal): Promise<YouTubeVideoItem | null> {
+  const match = urlOrId.match(
+    /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  );
+  const videoId = match
+    ? match[1]
+    : urlOrId.trim().length === 11 && !urlOrId.includes(' ')
+      ? urlOrId.trim()
+      : null;
+
+  if (!videoId) return null;
+
+  try {
+    const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`, { signal });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        id: videoId,
+        title: data.title || `YouTube Video (${videoId})`,
+        channel: data.author_name || 'YouTube',
+        thumbnail: data.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        duration: '',
+        views: '',
+        uploadedAt: 'Direct Video',
+      };
+    }
+  } catch {}
+
+  return {
+    id: videoId,
+    title: `YouTube Video (${videoId})`,
+    channel: 'YouTube',
+    thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    duration: '',
+    views: '',
+    uploadedAt: 'Direct Video',
+  };
+}
+
+async function searchPipedVideos(query: string, signal?: AbortSignal): Promise<YouTubeVideoItem[]> {
+  try {
+    const res = await fetch(
+      `https://api.piped.private.coffee/search?q=${encodeURIComponent(query)}&filter=videos`,
+      { signal },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data?.items)) return [];
+
+    return data.items
+      .filter((it: any) => (it.type === 'stream' || it.url) && it.title)
+      .map((it: any) => {
+        const vId = it.url ? it.url.replace('/watch?v=', '') : it.id || '';
+        const durationSec = typeof it.duration === 'number' ? it.duration : 0;
+        const m = Math.floor(durationSec / 60);
+        const s = durationSec % 60;
+        const durationStr = durationSec > 0 ? `${m}:${s < 10 ? '0' : ''}${s}` : it.duration || '';
+
+        let viewsStr = '';
+        if (typeof it.views === 'number' && it.views > 0) {
+          if (it.views >= 1e9) viewsStr = `${(it.views / 1e9).toFixed(1)}B views`;
+          else if (it.views >= 1e6) viewsStr = `${(it.views / 1e6).toFixed(1)}M views`;
+          else if (it.views >= 1e3) viewsStr = `${(it.views / 1e3).toFixed(1)}K views`;
+          else viewsStr = `${it.views} views`;
+        } else if (it.views) {
+          viewsStr = String(it.views);
+        }
+
+        return {
+          id: vId,
+          title: it.title,
+          channel: it.uploaderName || 'YouTube Creator',
+          thumbnail: it.thumbnail || `https://i.ytimg.com/vi/${vId}/hqdefault.jpg`,
+          duration: durationStr,
+          views: viewsStr,
+          uploadedAt: it.uploadedDate || 'YouTube',
+        };
+      })
+      .filter((it: any) => it.id && it.id.length === 11);
+  } catch {
+    return [];
+  }
+}
+
 export function useYouTubeSearch({
   submittedSearchQuery,
   ytCategory,
@@ -327,7 +411,6 @@ export function useYouTubeSearch({
     const catObj = YT_CATEGORIES.find((c) => c.id === ytCategory);
     const rawQ = submittedSearchQuery.trim();
 
-    if (rawQ.includes('youtube.com') || rawQ.includes('youtu.be')) return;
     if (rawQ.length === 1) return;
 
     const cacheKey = rawQ ? `search:${rawQ.toLowerCase()}` : `cat:${ytCategory}`;
@@ -349,8 +432,34 @@ export function useYouTubeSearch({
       try {
         let items: YouTubeVideoItem[] = [];
 
-        // 1. Check if raw query matches curated catalog with token-based search
+        // 1. Check if raw query is a direct YouTube URL or 11-char ID
         if (rawQ) {
+          const direct = await resolveDirectVideo(rawQ);
+          if (direct) {
+            if (!isCancelled) {
+              ytCacheRef.current.set(cacheKey, [direct]);
+              setYtVideos([direct]);
+              setYtIsSearching(false);
+            }
+            return;
+          }
+        }
+
+        // 2. Query live Piped search API if keyword present
+        if (rawQ) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4500);
+            const liveItems = await searchPipedVideos(rawQ, controller.signal);
+            clearTimeout(timeoutId);
+            if (liveItems.length > 0) {
+              items = liveItems;
+            }
+          } catch {}
+        }
+
+        // 3. Fallback to curated catalog with token-based search
+        if (rawQ && items.length === 0) {
           const qTokens = rawQ.toLowerCase().split(/\s+/).filter(Boolean);
           const allCurated = Object.values(CURATED_CATEGORY_VIDEOS)
             .flat()
@@ -367,7 +476,7 @@ export function useYouTubeSearch({
           }
         }
 
-        // 2. Query backend scraper if available
+        // 4. Query backend scraper if still empty
         if (items.length === 0) {
           try {
             const endpoint = rawQ
@@ -377,15 +486,16 @@ export function useYouTubeSearch({
             if (Array.isArray(backendRes?.items) && backendRes.items.length > 0) {
               items = backendRes.items;
             }
-          } catch {
-            // backend scraper optional
-          }
+          } catch {}
         }
 
-        // 3. Fallback to curated category list without displaying red API error banners
+        // 5. Default Category fallback if no search query or no match
         if (items.length === 0) {
           const baseList = CURATED_CATEGORY_VIDEOS[ytCategory] || CURATED_CATEGORY_VIDEOS.semua;
           items = baseList;
+          if (rawQ) {
+            setYtSearchError(`Tidak ada hasil untuk "${rawQ}". Menampilkan rekomendasi video populer.`);
+          }
         }
 
         if (!isCancelled) {

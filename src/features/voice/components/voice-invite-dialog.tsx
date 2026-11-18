@@ -36,7 +36,20 @@ export function VoiceInviteDialog({
   currentActiveApp,
 }: VoiceInviteDialogProps) {
   const [localCopied, setLocalCopied] = useState(false);
+  const [guestCopied, setGuestCopied] = useState(false);
   const copied = externalCopied ?? localCopied;
+
+  const guestInviteUrl = callInviteUrl
+    ? `${callInviteUrl}${callInviteUrl.includes('?') ? '&' : '?'}guest=1`
+    : '';
+
+  const handleCopyGuestLink = () => {
+    if (!guestInviteUrl) return;
+    navigator.clipboard.writeText(guestInviteUrl);
+    setGuestCopied(true);
+    toast.success('Link Tamu (Guest Mode) disalin! Teman Anda bisa langsung join tanpa login.');
+    setTimeout(() => setGuestCopied(false), 2000);
+  };
 
   const handleCopy = () => {
     if (onCopyCallLink) {
@@ -138,6 +151,33 @@ export function VoiceInviteDialog({
                 <span>{copied ? 'Tersalin' : 'Salin'}</span>
               </Button>
             </div>
+          </div>
+
+          {/* Guest Mode Instant Link */}
+          <div className="flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="min-w-0 pr-2">
+              <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                <span>👤 Link Tamu Cepat (Guest Join)</span>
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                Teman Anda dapat langsung join & tonton tanpa perlu login Google.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyGuestLink}
+              className={cn(
+                'h-7 px-2.5 text-[11px] font-medium shrink-0 rounded-lg cursor-pointer transition-all',
+                guestCopied
+                  ? 'bg-primary/20 text-primary border-primary/40'
+                  : 'hover:bg-primary hover:text-primary-foreground border-border'
+              )}
+            >
+              {guestCopied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+              <span>{guestCopied ? 'Tersalin' : 'Salin Link Tamu'}</span>
+            </Button>
           </div>
 
           {/* Quick Share Buttons */}

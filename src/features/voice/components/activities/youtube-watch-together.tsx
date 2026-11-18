@@ -325,6 +325,27 @@ export function YouTubeWatchTogether({
       handleSelectVideo(newVideo);
       setYtSearchQuery('');
       setSubmittedSearchQuery('');
+
+      if (!existing) {
+        fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data?.title) {
+              const enriched: YouTubeVideoItem = {
+                id: videoId,
+                title: data.title,
+                channel: data.author_name || 'YouTube',
+                thumbnail: data.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                duration: '',
+                uploadedAt: 'Direct Link',
+              };
+              setYtPlaylist((prev) =>
+                prev.map((item) => (item.id === videoId ? { ...item, ...enriched } : item)),
+              );
+            }
+          })
+          .catch(() => {});
+      }
     }
   };
 

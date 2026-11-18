@@ -136,6 +136,32 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     toast.success(`[DEV MODE] Masuk sebagai ${selected.name}`);
   };
 
+  const handleGuestLogin = (nickname?: string) => {
+    const guestNum = Math.floor(1000 + Math.random() * 9000);
+    const cleanName = (nickname || '').trim() || `Guest #${guestNum}`;
+    const guestUser = {
+      id: `guest_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      name: cleanName,
+      firstName: cleanName,
+      lastName: '',
+      username: cleanName.toLowerCase().replace(/[^a-z0-9_]/g, '') || `guest${guestNum}`,
+      email: `guest_${guestNum}@anticeil.com`,
+      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=guest_${guestNum}`,
+      imageUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=guest_${guestNum}`,
+      role: 'GUEST',
+      isGuest: true,
+    };
+    const guestToken = `guest_jwt_${guestUser.id}`;
+    localStorage.setItem('token', guestToken);
+    localStorage.setItem('ap_token', guestToken);
+    localStorage.setItem('anticeil_current_user', JSON.stringify(guestUser));
+    setCurrentUser(guestUser);
+    setIsAuthRequiredOpen(false);
+    window.dispatchEvent(new Event('storage'));
+    toast.success(t('Masuk sebagai tamu: {{name}} 👤', { name: cleanName }));
+    return guestUser;
+  };
+
   const handleGoogleSignIn = async () => {
     try {
       toast.loading(t('Menghubungkan ke Google OAuth...'), { id: 'google-oauth' });
@@ -180,6 +206,17 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
       }
     }
 
+    const guestParam = params.get('guest');
+    const guestNameParam = params.get('guest_name');
+    const inviteParam = params.get('invite');
+    const activityParam = params.get('activity');
+
+    // Auto guest mode if explicit param, or if arriving via invite / activity link without prior session
+    if (guestParam || guestNameParam) {
+      handleGuestLogin(guestNameParam || undefined);
+      return;
+    }
+
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
       localStorage.setItem('token', tokenFromUrl);
@@ -191,10 +228,28 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
       toast.success(t('Berhasil masuk!'));
     }
 
+    const storedToken = localStorage.getItem('token') || localStorage.getItem('ap_token');
+    if (!storedToken && (inviteParam || activityParam)) {
+      setAuthFeatureInfo({
+        title: activityParam ? t('Gabung Aktivitas & Panggilan Anticeil') : t('Gabung Colony & Komunitas'),
+        desc: t('Masuk dengan akun Google atau gunakan Guest Mode untuk langsung bergabung ke aktivitas bersama kawan.'),
+      });
+      setIsAuthRequiredOpen(true);
+    }
+
     const fetchLiveUser = async (customToken?: string) => {
       const token = customToken || localStorage.getItem('token') || localStorage.getItem('ap_token');
       if (!token) {
         setCurrentUser(null);
+        return;
+      }
+      if (token.startsWith('guest_jwt_') || token.startsWith('mock_jwt_')) {
+        const stored = localStorage.getItem('anticeil_current_user');
+        if (stored) {
+          try {
+            setCurrentUser(JSON.parse(stored));
+          } catch {}
+        }
         return;
       }
       const payload = parseJwt(token);
@@ -295,6 +350,7 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     handleLogout,
     handleGoogleSignIn,
     handleDevMockLogin,
+    handleGuestLogin,
     isDevLoginEnabled,
     mockDevUsers: MOCK_DEV_USERS,
   };

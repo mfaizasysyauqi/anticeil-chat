@@ -213,6 +213,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     renderFormattedMessage,
     isAuthRequiredOpen,
     authFeatureInfo,
+    handleGuestLogin,
     handleDevMockLogin,
   } = state;
 
@@ -559,6 +560,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       isAuthRequiredOpen,
       setIsAuthRequiredOpen,
       authFeatureInfo,
+      handleGuestLogin,
       handleDevMockLogin,
       isAddFriendDialogOpen,
       setIsAddFriendDialogOpen,

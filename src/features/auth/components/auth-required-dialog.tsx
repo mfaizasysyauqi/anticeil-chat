@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/core/i18n';
-import { Sparkles, Bot, Shield } from 'lucide-react';
+import { Sparkles, Bot, Shield, UserPlus } from 'lucide-react';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { isDevLoginEnabled, MOCK_DEV_USERS } from '../hooks/use-auth-session';
 
@@ -17,6 +18,7 @@ interface AuthRequiredDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onGoogleSignIn: () => void;
+  onGuestLogin?: (nickname: string) => void;
   onDevMockLogin?: (userIndex: number) => void;
   featureTitle?: string;
   featureDescription?: string;
@@ -26,11 +28,13 @@ export function AuthRequiredDialog({
   isOpen,
   onClose,
   onGoogleSignIn,
+  onGuestLogin,
   onDevMockLogin,
   featureTitle,
   featureDescription,
 }: AuthRequiredDialogProps) {
   const { t } = useTranslation();
+  const [guestName, setGuestName] = useState('');
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -84,6 +88,49 @@ export function AuthRequiredDialog({
               </svg>
               <span>{t('Lanjutkan dengan Google')}</span>
             </Button>
+
+            {/* Quick Guest Mode Join */}
+            <div className="w-full pt-2.5 pb-1 text-left space-y-2 border-t border-border/60">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5 text-primary" />
+                  <span>{t('Atau Masuk sebagai Tamu (Guest Mode)')}</span>
+                </span>
+                <Badge variant="outline" className="text-[9px] py-0 h-4 border-primary/30 text-primary">
+                  {t('Tanpa Akun')}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                {t('Langsung gabung ke aktivitas, Watch Together, atau voice channel tanpa login Google.')}
+              </p>
+              <div className="flex items-center gap-2 pt-0.5">
+                <Input
+                  type="text"
+                  placeholder={t('Nama panggilan tamu...')}
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      onClose();
+                      onGuestLogin?.(guestName);
+                    }
+                  }}
+                  className="h-9 text-xs rounded-xl bg-muted/40 border-border"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    onClose();
+                    onGuestLogin?.(guestName);
+                  }}
+                  className="h-9 px-3.5 text-xs font-semibold shrink-0 rounded-xl hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
+                >
+                  {t('Masuk Tamu 👤')}
+                </Button>
+              </div>
+            </div>
 
             <Button
               type="button"

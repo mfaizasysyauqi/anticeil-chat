@@ -655,6 +655,7 @@ export function useColonyPageState(): ChatPageContentProps {
     renderFormattedMessage,
     isAuthRequiredOpen: authSession.isAuthRequiredOpen,
     authFeatureInfo: authSession.authFeatureInfo,
+    handleGuestLogin: authSession.handleGuestLogin,
     handleDevMockLogin: authSession.handleDevMockLogin,
     ...messageActions,
   });
