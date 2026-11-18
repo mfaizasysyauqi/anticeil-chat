@@ -428,6 +428,7 @@ export function ChatDialogsPortal({
         onOpenChange={setIsEditProfileOpen}
         currentUser={currentUser}
         currentUserName={currentUserName}
+        colonies={colonies}
         onOpenUserSettings={() => {
           setIsEditProfileOpen(false);
           setIsUserSettingsOpen(true);

@@ -34,46 +34,9 @@ const GAMES_STORAGE_KEY = 'anticeil_registered_games';
 const CONNS_STORAGE_KEY = 'anticeil_user_connections';
 const APPS_STORAGE_KEY = 'anticeil_authorized_apps';
 
-const DEFAULT_GAMES: RegisteredGame[] = [
-  {
-    id: 'terraria',
-    name: 'Terraria',
-    verified: true,
-    lastPlayed: '2 days ago',
-    enabled: true,
-    icon: '🌳',
-  },
-];
-
-const DEFAULT_CONNECTIONS: UserConnectionItem[] = [
-  {
-    id: 'conn-spotify',
-    platformId: 'spotify',
-    accountName: 'ESTEFANO',
-    platformName: 'Spotify',
-    icon: '🟢',
-    displayOnProfile: true,
-    displayStatus: true,
-  },
-];
-
-const DEFAULT_APPS: AuthorizedAppDetail[] = [
-  {
-    id: 'app-nve',
-    name: 'Neverness to Everness',
-    authorizedDate: '11/1/2026',
-    icon: '🌸',
-    permissionsCount: 4,
-    permissionsList: [
-      'Akses info profil publik',
-      'Lihat aktivitas bermain game',
-      'Kirim status pencapaian game',
-      'Sinkronisasi teman dalam game',
-    ],
-    aboutInfo: 'Game RPG open-world anime futuristik resmi terintegrasi dengan Anticeil.',
-    policiesUrl: 'https://anticeil.com/privacy',
-  },
-];
+const DEFAULT_GAMES: RegisteredGame[] = [];
+const DEFAULT_CONNECTIONS: UserConnectionItem[] = [];
+const DEFAULT_APPS: AuthorizedAppDetail[] = [];
 
 export const gamesAppsApi = {
   // Games

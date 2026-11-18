@@ -12,8 +12,11 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+
+import type { UserConnectionItem } from '@/features/user-settings/api/games-apps-api';
 
 export interface ProfilePreviewCardProps {
   currentUserName: string;
@@ -40,6 +43,10 @@ export interface ProfilePreviewCardProps {
   profileTheme?: string;
   memberSince?: string;
   isNectarSubscriber?: boolean;
+  avatarDecoration?: string;
+  displayNameStyle?: string;
+  connections?: UserConnectionItem[];
+  colonyName?: string;
 }
 
 export function ProfilePreviewCard({
@@ -67,6 +74,10 @@ export function ProfilePreviewCard({
   profileTheme,
   memberSince,
   isNectarSubscriber = false,
+  avatarDecoration,
+  displayNameStyle = 'default',
+  connections = [],
+  colonyName,
 }: ProfilePreviewCardProps) {
   const { t } = useTranslation();
   const displayAvatar = profileAvatarUrl || defaultAvatarUrl || null;
@@ -76,15 +87,54 @@ export function ProfilePreviewCard({
       case 'teal_ring':
         return 'ring-4 ring-sidebar-primary ring-offset-2 ring-offset-card';
       case 'gold_bee':
-        return 'ring-4 ring-teal-400 ring-offset-2 ring-offset-card';
+        return 'ring-4 ring-amber-400 ring-offset-2 ring-offset-card';
       case 'cyber_matrix':
         return 'ring-4 ring-cyan-400 ring-offset-2 ring-offset-card animate-pulse';
       case 'sakura_blossom':
         return 'ring-4 ring-pink-400 ring-offset-2 ring-offset-card';
+      case 'dark_void':
+        return 'ring-4 ring-violet-600 ring-offset-2 ring-offset-card';
       default:
         return '';
     }
   };
+
+  const getDisplayNameStyleClass = (style?: string) => {
+    switch (style) {
+      case 'cyber':
+        return 'font-mono tracking-wider text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]';
+      case 'retro':
+        return 'font-serif italic text-amber-300 tracking-wide';
+      case 'gradient':
+        return 'bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent font-black';
+      case 'mono':
+        return 'font-mono font-bold tracking-tight text-emerald-400';
+      default:
+        return 'text-foreground';
+    }
+  };
+
+  const getDecorationBadge = (dec?: string) => {
+    switch (dec) {
+      case 'sakura':
+        return { icon: '🌸', tooltip: 'Sakura Petals Aura' };
+      case 'cyber_crown':
+        return { icon: '👑', tooltip: 'Cyberpunk Crown' };
+      case 'flame_aura':
+        return { icon: '🔥', tooltip: 'Inferno Flame Aura' };
+      case 'gold_bee':
+        return { icon: '🍯', tooltip: 'Golden Hive Halo' };
+      case 'dark_smoke':
+        return { icon: '🌫️', tooltip: 'Midnight Dark Smoke' };
+      case 'angel_wings':
+        return { icon: '🪽', tooltip: 'Celestial Wings' };
+      default:
+        return null;
+    }
+  };
+
+  const visibleConnections = (connections || []).filter((c) => c.displayOnProfile !== false);
+  const decoration = getDecorationBadge(avatarDecoration);
 
   return (
     <div className="w-full">
@@ -107,8 +157,17 @@ export function ProfilePreviewCard({
         <div className="px-4 pb-4">
           <div className="flex items-end justify-between -mt-10 relative">
             <div className="relative">
+              {/* Avatar Decoration Overlay Graphic */}
+              {decoration && (
+                <div
+                  className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 text-2xl filter drop-shadow-lg pointer-events-none select-none animate-pulse"
+                  title={decoration.tooltip}
+                >
+                  {decoration.icon}
+                </div>
+              )}
               <div
-                className={`size-20 rounded-full border-4 border-card overflow-hidden bg-muted flex items-center justify-center text-3xl shadow-md transition-all ${getFrameClassName(
+                className={`size-20 rounded-full border-4 border-card overflow-hidden bg-muted flex items-center justify-center text-3xl shadow-md transition-all relative ${getFrameClassName(
                   profileFrame,
                 )}`}
               >
@@ -159,14 +218,16 @@ export function ProfilePreviewCard({
                   className="w-24 bg-transparent border-b border-sidebar-primary text-[11px] text-foreground focus:outline-none"
                 />
               ) : (
-                <span className="truncate max-w-[120px]">{profileStatusThought}</span>
+                <span className={cn('truncate max-w-[140px]', !profileStatusThought && 'text-muted-foreground/70 italic')}>
+                  {profileStatusThought || t('Tambah status...')}
+                </span>
               )}
             </div>
           </div>
 
           {/* Profile Header Details */}
           <div className="mt-3 space-y-1">
-            <div className="text-lg font-bold text-foreground leading-tight">
+            <div className={cn("text-lg font-bold leading-tight transition-all", getDisplayNameStyleClass(displayNameStyle))}>
               {currentUserName}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
@@ -193,7 +254,7 @@ export function ProfilePreviewCard({
               )}
               <span>•</span>
               <span className="text-[11px] bg-sidebar-primary/15 text-sidebar-primary px-1.5 py-0.5 rounded border border-sidebar-primary/30 font-medium">
-                {nameplate && nameplate !== 'none' ? nameplate : 'Server Tag ⌵'}
+                {colonyName ? `@${colonyName}` : (nameplate && nameplate !== 'none' ? nameplate : 'Server Tag ⌵')}
               </span>
             </div>
 
@@ -292,15 +353,21 @@ export function ProfilePreviewCard({
                 onBlur={() => setIsEditingBioText(false)}
                 rows={2}
                 autoFocus
+                placeholder={t('Tulis sesuatu tentang diri Anda...')}
                 className="w-full text-xs text-foreground bg-secondary/80 p-2 rounded-lg border border-sidebar-primary focus:outline-none resize-none"
               />
             ) : (
               <p
                 onClick={() => setIsEditingBioText(true)}
-                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                className={cn(
+                  'text-xs cursor-pointer transition-colors',
+                  profileBioText
+                    ? 'text-muted-foreground hover:text-foreground'
+                    : 'text-muted-foreground/60 italic hover:text-sidebar-primary',
+                )}
                 title={t('Klik untuk mengubah bio')}
               >
-                {profileBioText}
+                {profileBioText || t('(Belum ada bio - klik untuk menambahkan)')}
               </p>
             )}
           </div>
@@ -311,25 +378,48 @@ export function ProfilePreviewCard({
               {t('Anggota Sejak')}
             </div>
             <div className="text-xs text-foreground font-medium">
-              {memberSince || 'Nov 17, 2026'}
+              {memberSince || '17 Nov 2026'}
             </div>
           </div>
 
-          {/* Connections */}
-          <div className="mt-3 pt-3 border-t border-border/40 space-y-1.5">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {t('Koneksi')}
-            </div>
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/80 border border-border/60">
-              <div className="size-5 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center text-xs font-bold shadow-xs">
-                🟢
+          {/* Connections (Real connected accounts from user-settings) */}
+          {visibleConnections.length > 0 ? (
+            <div className="mt-3 pt-3 border-t border-border/40 space-y-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('Koneksi')}
               </div>
-              <span className="text-xs font-semibold text-foreground truncate">
-                ESTEFANO
-              </span>
-              <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto" />
+              <div className="space-y-1.5">
+                {visibleConnections.map((conn) => (
+                  <div
+                    key={conn.id || conn.platformId}
+                    className="flex items-center gap-2 p-2 rounded-lg bg-secondary/80 border border-border/60"
+                  >
+                    <div className="size-5 rounded-full bg-sidebar-primary/20 text-sidebar-primary flex items-center justify-center text-xs font-bold shadow-xs">
+                      {conn.icon || '🔗'}
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-xs font-semibold text-foreground truncate">
+                        {conn.accountName}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {conn.platformName}
+                      </span>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0" />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-3 pt-3 border-t border-border/40 space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('Koneksi')}
+              </div>
+              <p className="text-[11px] text-muted-foreground/60 italic">
+                {t('Belum ada akun eksternal yang dihubungkan.')}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
