@@ -89,7 +89,7 @@ export function HomeChannelsSidebar({
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin]">
         {/* Navigation buttons */}
         <div className="space-y-0.5 mb-3">
-          {/* Apps & Activities (Home Default) */}
+          {/* 1. Aplikasi & Activities (Launcher utama) */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -114,37 +114,7 @@ export function HomeChannelsSidebar({
             <span className="flex-1 font-medium">{t('Aplikasi & Activities')}</span>
           </button>
 
-          {/* Friends */}
-          <button
-            onClick={() => {
-              setActiveChannelId('');
-              setHomeView?.('friends');
-              onItemClick?.();
-            }}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
-              !activeChannelId && homeView === 'friends'
-                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            )}
-          >
-            <Users
-              className={cn(
-                'w-4 h-4 shrink-0 transition-colors',
-                !activeChannelId && homeView === 'friends'
-                  ? 'text-primary'
-                  : 'text-muted-foreground group-hover:text-foreground',
-              )}
-            />
-            <span className="flex-1 font-medium">{t('Teman')}</span>
-            {friendReqBadge && (
-              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
-                {friendReqBadge}
-              </span>
-            )}
-          </button>
-
-          {/* Servers & Communities */}
+          {/* 2. Colony & Komunitas (Workspace / Discovery) */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -169,37 +139,7 @@ export function HomeChannelsSidebar({
             <span className="flex-1 font-medium">{t('Colony & Komunitas')}</span>
           </button>
 
-          {/* Message Requests */}
-          <button
-            onClick={() => {
-              setActiveChannelId('');
-              setHomeView?.('message-requests');
-              onItemClick?.();
-            }}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
-              !activeChannelId && homeView === 'message-requests'
-                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            )}
-          >
-            <Mail
-              className={cn(
-                'w-4 h-4 shrink-0 transition-colors',
-                !activeChannelId && homeView === 'message-requests'
-                  ? 'text-primary'
-                  : 'text-muted-foreground group-hover:text-foreground',
-              )}
-            />
-            <span className="flex-1 font-medium">{t('Permintaan Pesan')}</span>
-            {msgReqBadge && (
-              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
-                {msgReqBadge}
-              </span>
-            )}
-          </button>
-
-          {/* Notifications */}
+          {/* 3. Notifikasi (Global Activity Feed) */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -229,7 +169,7 @@ export function HomeChannelsSidebar({
             )}
           </button>
 
-          {/* Calendar */}
+          {/* 4. Kalender & Tugas Saya (Jadwal operasional & tugas lintas app) */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -254,7 +194,6 @@ export function HomeChannelsSidebar({
             <span className="flex-1 font-medium">{t('Kalender')}</span>
           </button>
 
-          {/* Assignments */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -279,7 +218,69 @@ export function HomeChannelsSidebar({
             <span className="flex-1 font-medium">{t('Tugas Saya')}</span>
           </button>
 
-          {/* Calls */}
+          {/* 5. Pemisah tipis / section personal */}
+          <div className="my-2 mx-1 border-t border-sidebar-border/60" />
+
+          {/* 6. Teman */}
+          <button
+            onClick={() => {
+              setActiveChannelId('');
+              setHomeView?.('friends');
+              onItemClick?.();
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+              !activeChannelId && homeView === 'friends'
+                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Users
+              className={cn(
+                'w-4 h-4 shrink-0 transition-colors',
+                !activeChannelId && homeView === 'friends'
+                  ? 'text-primary'
+                  : 'text-muted-foreground group-hover:text-foreground',
+              )}
+            />
+            <span className="flex-1 font-medium">{t('Teman')}</span>
+            {friendReqBadge && (
+              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
+                {friendReqBadge}
+              </span>
+            )}
+          </button>
+
+          {/* 7. Permintaan Pesan & Panggilan */}
+          <button
+            onClick={() => {
+              setActiveChannelId('');
+              setHomeView?.('message-requests');
+              onItemClick?.();
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+              !activeChannelId && homeView === 'message-requests'
+                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Mail
+              className={cn(
+                'w-4 h-4 shrink-0 transition-colors',
+                !activeChannelId && homeView === 'message-requests'
+                  ? 'text-primary'
+                  : 'text-muted-foreground group-hover:text-foreground',
+              )}
+            />
+            <span className="flex-1 font-medium">{t('Permintaan Pesan')}</span>
+            {msgReqBadge && (
+              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
+                {msgReqBadge}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => {
               setActiveChannelId('');
