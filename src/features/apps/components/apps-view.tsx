@@ -1,20 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import {
   Rocket,
-  Search,
   Play,
   Gamepad2,
   Tv,
   Sparkles,
   Menu,
-  ExternalLink,
   Flame,
-  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import { EmptyState } from '@/components/ui/empty';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/voice-activities';
@@ -34,6 +31,121 @@ export interface AppsViewProps {
   setActiveChannelId?: (chId: string) => void;
 }
 
+interface ActivitySectionConfig {
+  id: 'productivity' | 'game' | 'entertainment';
+  title: string;
+  description: string;
+  icon: React.ElementType;
+}
+
+const ACTIVITY_SECTIONS: ActivitySectionConfig[] = [
+  {
+    id: 'productivity',
+    title: 'Utilitas & Produktivitas',
+    description: 'Papan tulis kolaboratif, berbagi layar, dan alat pendukung kerja tim.',
+    icon: Sparkles,
+  },
+  {
+    id: 'game',
+    title: 'Game & Rekreasi',
+    description: 'Mainkan berbagai mini-game multiplayer interaktif bersama di channel suara.',
+    icon: Gamepad2,
+  },
+  {
+    id: 'entertainment',
+    title: 'Hiburan & Co-Watch',
+    description: 'Nonton bareng video streaming dan nikmati konten hiburan secara sinkron.',
+    icon: Tv,
+  },
+];
+
+const CATEGORY_TABS = [
+  { id: 'all', label: 'Semua' },
+  { id: 'productivity', label: 'Utilitas' },
+  { id: 'game', label: 'Game' },
+  { id: 'entertainment', label: 'Hiburan' },
+] as const;
+
+function ActivityCard({
+  app,
+  onLaunch,
+}: {
+  app: DiscordAppDefinition;
+  onLaunch: (app: DiscordAppDefinition) => void;
+}) {
+  const AppIcon = app.icon || Gamepad2;
+
+  const categoryLabel =
+    app.category === 'productivity'
+      ? 'Utilitas'
+      : app.category === 'game'
+      ? 'Game'
+      : 'Hiburan';
+
+  return (
+    <div
+      key={app.id}
+      className="rounded-xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden shadow-xs group"
+    >
+      {/* Banner / Header */}
+      <div
+        className={cn(
+          'h-24 p-3 relative flex items-start justify-between bg-gradient-to-br',
+          app.bannerGradient || 'from-muted to-card'
+        )}
+      >
+        <div className="flex items-center gap-2.5 z-10 min-w-0">
+          <div
+            className={cn(
+              'size-9 rounded-lg flex items-center justify-center shadow-md shrink-0',
+              app.iconBg || 'bg-primary',
+              app.iconColor || 'text-white'
+            )}
+          >
+            <AppIcon className="w-5 h-5" />
+          </div>
+          <div className="text-white min-w-0">
+            <span className="text-[10px] font-semibold text-white/80 block uppercase tracking-wider truncate">
+              {app.developer}
+            </span>
+            <span className="text-xs font-bold line-clamp-1">
+              {app.title}
+            </span>
+          </div>
+        </div>
+
+        {app.badge && (
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md shrink-0">
+            {app.badge}
+          </span>
+        )}
+      </div>
+
+      {/* Body Content */}
+      <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+          {app.description}
+        </p>
+
+        <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold text-muted-foreground capitalize">
+            {categoryLabel}
+          </span>
+
+          <Button
+            size="sm"
+            onClick={() => onLaunch(app)}
+            className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Play className="w-3 h-3 fill-current" />
+            <span>Luncurkan</span>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AppsView({
   channels,
   colonies = [],
@@ -51,8 +163,6 @@ export function AppsView({
 
   const [selectedAppForLaunch, setSelectedAppForLaunch] = useState<DiscordAppDefinition | null>(null);
   const [isLaunchDialogOpen, setIsLaunchDialogOpen] = useState(false);
-
-  const voiceChannels = channels.filter((c) => c.type === 'voice');
 
   const filteredApps = useMemo(() => {
     return DISCORD_APPS.filter((app) => {
@@ -108,9 +218,18 @@ export function AppsView({
     }
   };
 
+  const visibleSections = useMemo(() => {
+    return ACTIVITY_SECTIONS.filter((section) => {
+      if (activeCategory !== 'all' && activeCategory !== section.id) {
+        return false;
+      }
+      return true;
+    });
+  }, [activeCategory]);
+
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── Discord Style Single App Bar (h-12) ─────────────────────────── */}
+      {/* ── Single App Bar (h-12) ─────────────────────────── */}
       <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
         <div className="flex items-center gap-2 shrink-0">
           {onOpenSidebar && (
@@ -137,17 +256,12 @@ export function AppsView({
 
         {/* Category Tabs */}
         <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
-          {[
-            { id: 'all', label: 'Semua' },
-            { id: 'entertainment', label: 'Hiburan & Co-Watch' },
-            { id: 'game', label: 'Game' },
-            { id: 'productivity', label: 'Produktivitas' },
-          ].map((tab) => {
+          {CATEGORY_TABS.map((tab) => {
             const active = activeCategory === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveCategory(tab.id as any)}
+                onClick={() => setActiveCategory(tab.id)}
                 className={cn(
                   'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors shrink-0',
                   active
@@ -173,7 +287,7 @@ export function AppsView({
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6 space-y-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6 space-y-8', horizontalPadding)}>
         {/* Featured Hero Banner: YouTube Watch Together */}
         {!searchQuery && activeCategory === 'all' && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
@@ -203,83 +317,68 @@ export function AppsView({
           </div>
         )}
 
-        {/* Apps Grid */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between pb-1 border-b border-border/50">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Daftar Aktivitas ({filteredApps.length})
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredApps.map((app) => {
-              const AppIcon = app.icon || Gamepad2;
-
-              return (
-                <div
-                  key={app.id}
-                  className="rounded-xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden shadow-xs group"
+        {/* Content by Sections */}
+        {filteredApps.length === 0 ? (
+          <EmptyState
+            icon={<Rocket className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+            title="Tidak Ada Aktivitas Ditemukan"
+            description={
+              searchQuery
+                ? `Tidak ada aktivitas yang cocok dengan "${searchQuery}". Coba kata kunci lain.`
+                : 'Belum ada aktivitas yang tersedia di kategori ini.'
+            }
+            action={
+              searchQuery ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSearchQuery('')}
+                  className="h-8 px-4 text-xs font-semibold cursor-pointer"
                 >
-                  {/* Banner / Header */}
-                  <div
-                    className={cn(
-                      'h-24 p-3 relative flex items-start justify-between bg-gradient-to-br',
-                      app.bannerGradient || 'from-muted to-card'
-                    )}
-                  >
-                    <div className="flex items-center gap-2 z-10">
-                      <div
-                        className={cn(
-                          'size-9 rounded-lg flex items-center justify-center shadow-md',
-                          app.iconBg || 'bg-primary',
-                          app.iconColor || 'text-white'
-                        )}
-                      >
-                        <AppIcon className="w-5 h-5" />
-                      </div>
-                      <div className="text-white">
-                        <span className="text-[10px] font-semibold text-white/80 block uppercase tracking-wider">
-                          {app.developer}
-                        </span>
-                        <span className="text-xs font-bold line-clamp-1">
-                          {app.title}
-                        </span>
-                      </div>
-                    </div>
+                  Reset Pencarian
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : (
+          visibleSections.map((section) => {
+            const SectionIcon = section.icon;
+            const sectionApps = filteredApps.filter((app) => app.category === section.id);
 
-                    {app.badge && (
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md">
-                        {app.badge}
-                      </span>
-                    )}
+            if (sectionApps.length === 0) return null;
+
+            return (
+              <div key={section.id} className="space-y-3.5">
+                {/* Section Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <SectionIcon className="w-4 h-4 text-primary shrink-0" />
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                      {section.title}
+                    </h3>
+                    <span className="text-[11px] font-semibold text-muted-foreground">
+                      ({sectionApps.length})
+                    </span>
                   </div>
-
-                  {/* Body Content */}
-                  <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                      {app.description}
-                    </p>
-
-                    <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-semibold text-muted-foreground capitalize">
-                        {app.category}
-                      </span>
-
-                      <Button
-                        size="sm"
-                        onClick={() => handleLaunchClick(app)}
-                        className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <Play className="w-3 h-3 fill-current" />
-                        <span>Luncurkan</span>
-                      </Button>
-                    </div>
-                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {section.description}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+
+                {/* Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sectionApps.map((app) => (
+                    <ActivityCard
+                      key={app.id}
+                      app={app}
+                      onLaunch={handleLaunchClick}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* ── Modal Dialog: Pilih Tujuan Luncurkan (DM vs Server) ─────── */}

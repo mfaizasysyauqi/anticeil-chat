@@ -89,6 +89,31 @@ export function HomeChannelsSidebar({
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin]">
         {/* Navigation buttons */}
         <div className="space-y-0.5 mb-3">
+          {/* Apps & Activities (Home Default) */}
+          <button
+            onClick={() => {
+              setActiveChannelId('');
+              setHomeView?.('apps');
+              onItemClick?.();
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+              !activeChannelId && homeView === 'apps'
+                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Rocket
+              className={cn(
+                'w-4 h-4 shrink-0 transition-colors',
+                !activeChannelId && homeView === 'apps'
+                  ? 'text-primary'
+                  : 'text-muted-foreground group-hover:text-foreground',
+              )}
+            />
+            <span className="flex-1 font-medium">{t('Aplikasi & Activities')}</span>
+          </button>
+
           {/* Friends */}
           <button
             onClick={() => {
@@ -277,31 +302,6 @@ export function HomeChannelsSidebar({
               )}
             />
             <span className="flex-1 font-medium">{t('Panggilan')}</span>
-          </button>
-
-          {/* Apps & Activities */}
-          <button
-            onClick={() => {
-              setActiveChannelId('');
-              setHomeView?.('apps');
-              onItemClick?.();
-            }}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
-              !activeChannelId && homeView === 'apps'
-                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            )}
-          >
-            <Rocket
-              className={cn(
-                'w-4 h-4 shrink-0 transition-colors',
-                !activeChannelId && homeView === 'apps'
-                  ? 'text-primary'
-                  : 'text-muted-foreground group-hover:text-foreground',
-              )}
-            />
-            <span className="flex-1 font-medium">{t('Aplikasi & Activities')}</span>
           </button>
         </div>
 

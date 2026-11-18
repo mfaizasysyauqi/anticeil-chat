@@ -68,8 +68,12 @@ export function useUrlSync({
         setHomeView?.('colonies');
         setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
-      } else if (pathname === '/friends' || pathname === '/') {
+      } else if (pathname === '/friends') {
         setHomeView?.('friends');
+        setActiveColonyId?.('anticeil');
+        setActiveChannelId?.('');
+      } else if (pathname === '/' || pathname === '') {
+        setHomeView?.('apps');
         setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
       } else if (pathname.startsWith('/channels/@me')) {
@@ -128,8 +132,12 @@ export function useUrlSync({
           setHomeView?.('colonies');
           setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
-        } else if (pathname === '/friends' || pathname === '/') {
+        } else if (pathname === '/friends') {
           setHomeView?.('friends');
+          setActiveColonyId?.('anticeil');
+          setActiveChannelId?.('');
+        } else if (pathname === '/' || pathname === '') {
+          setHomeView?.('apps');
           setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname.startsWith('/channels/@me')) {
@@ -158,7 +166,7 @@ export function useUrlSync({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      let targetPath = '/friends';
+      let targetPath = '/applications&activities';
 
       if (activeColonyId && activeColonyId !== 'anticeil') {
         targetPath = `/channels/${activeColonyId}${activeChannelId ? '/' + activeChannelId : ''}`;
@@ -188,8 +196,10 @@ export function useUrlSync({
             targetPath = '/colonies';
             break;
           case 'friends':
-          default:
             targetPath = '/friends';
+            break;
+          default:
+            targetPath = '/applications&activities';
             break;
         }
       }
