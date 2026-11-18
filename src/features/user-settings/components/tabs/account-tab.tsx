@@ -13,6 +13,9 @@ import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { AccountStandingView } from './account/account-standing-view';
 import { AccountSecuritySection } from './account/account-security-section';
+import { AccountDevicesView } from './account/account-devices-view';
+import { AccountTwoFactorModal } from './account/account-two-factor-modal';
+import { securityApi } from '../../api/security-api';
 
 export interface AccountTabProps {
   currentUser: any;
@@ -51,6 +54,28 @@ export function AccountTab({
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPhone, setIsEditingPhone] = useState(false);
 
+  // Security & 2FA state
+  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [sessionCount, setSessionCount] = useState(1);
+
+  const loadSecurityData = React.useCallback(async () => {
+    try {
+      const [sessions, tfa] = await Promise.all([
+        securityApi.getSessions(),
+        securityApi.getTwoFactorStatus(),
+      ]);
+      if (Array.isArray(sessions)) {
+        setSessionCount(sessions.length);
+      }
+      if (tfa) {
+        setTwoFactorEnabled(Boolean(tfa.isEnabled));
+      }
+    } catch (err) {
+      console.error('Failed to load security status:', err);
+    }
+  }, []);
+
 
   // Account name & username state
   const suggestedUsername = useMemo(() => {
@@ -76,8 +101,9 @@ export function AccountTab({
       setEditDisplayNameInput(currentUserName);
       setEditUsernameInput(suggestedUsername);
       setEditEmailInput(currentUser?.email || '');
+      loadSecurityData();
     }
-  }, [open, currentUserName, suggestedUsername, currentUser?.email]);
+  }, [open, currentUserName, suggestedUsername, currentUser?.email, loadSecurityData]);
 
   const usernameLastChangedAt = currentUser?.usernameLastChangedAt;
   const usernameCooldownEnd = usernameLastChangedAt
@@ -125,6 +151,13 @@ export function AccountTab({
                 currentUserName={currentUserName}
                 currentUser={currentUser}
                 onBack={() => setAccountSubView('main')}
+              />
+            ) : accountSubView === 'devices' ? (
+              <AccountDevicesView
+                onBack={() => {
+                  setAccountSubView('main');
+                  loadSecurityData();
+                }}
               />
             ) : (
               /* MAIN ACCOUNT VIEW */
@@ -358,7 +391,12 @@ export function AccountTab({
                 </div>
 
                 {/* 2. Password & Security Section */}
-                <AccountSecuritySection />
+                <AccountSecuritySection
+                  onOpenDevices={() => setAccountSubView('devices')}
+                  onOpen2FA={() => setIs2FAModalOpen(true)}
+                  twoFactorEnabled={twoFactorEnabled}
+                  sessionCount={sessionCount}
+                />
 
                 {/* 3. Account Status Section (Screenshot 2) */}
                 <div id="account-status" className="space-y-3 scroll-mt-4">
@@ -518,6 +556,16 @@ export function AccountTab({
                 </div>
               </div>
             )}
+
+            {/* 2FA Authenticator Modal */}
+            <AccountTwoFactorModal
+              open={is2FAModalOpen}
+              onOpenChange={(val) => {
+                setIs2FAModalOpen(val);
+                if (!val) loadSecurityData();
+              }}
+              userEmail={currentUser?.email}
+            />
           </>
 
   );

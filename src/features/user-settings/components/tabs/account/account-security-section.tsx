@@ -5,7 +5,19 @@ import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 
-export function AccountSecuritySection() {
+export interface AccountSecuritySectionProps {
+  onOpenDevices?: () => void;
+  onOpen2FA?: () => void;
+  twoFactorEnabled?: boolean;
+  sessionCount?: number;
+}
+
+export function AccountSecuritySection({
+  onOpenDevices,
+  onOpen2FA,
+  twoFactorEnabled = false,
+  sessionCount = 1,
+}: AccountSecuritySectionProps) {
   const { t } = useTranslation();
   const [isEditingPassword, setIsEditingPassword] = useState(false);
 
@@ -56,7 +68,7 @@ export function AccountSecuritySection() {
                   toast.success(t('Password berhasil diperbarui!'));
                   setIsEditingPassword(false);
                 }}
-                className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
+                className="h-8 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
               >
                 {t('Simpan Password Baru')}
               </Button>
@@ -66,7 +78,7 @@ export function AccountSecuritySection() {
 
         {/* Multi-Factor Authentication */}
         <div
-          onClick={() => toast.info(t('Fitur 2FA Authenticator sedang disiapkan!'))}
+          onClick={onOpen2FA}
           className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3">
@@ -80,21 +92,26 @@ export function AccountSecuritySection() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground group-hover:text-foreground">
-            <span>{t('Set up')}</span>
-            <ChevronRight className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            {twoFactorEnabled ? (
+              <span className="inline-flex items-center gap-1 text-emerald-500 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {t('Aktif')}
+              </span>
+            ) : (
+              <span className="text-muted-foreground group-hover:text-foreground">{t('Set up')}</span>
+            )}
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
           </div>
         </div>
 
         {/* Logged-in Devices */}
         <div
-          onClick={() => {
-            toast.info(t('4 Perangkat aktif: Windows Desktop App, Chrome Browser, Android App, Web session.'));
-          }}
+          onClick={onOpenDevices}
           className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3">
-            <Laptop className="w-4 h-4 text-emerald-500" />
+            <Laptop className="w-4 h-4 text-primary" />
             <div>
               <div className="text-xs font-semibold text-foreground">
                 {t('Logged-in Devices')}
@@ -105,7 +122,9 @@ export function AccountSecuritySection() {
             </div>
           </div>
           <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground group-hover:text-foreground">
-            <span>4 devices</span>
+            <span>
+              {sessionCount} {sessionCount > 1 ? t('devices') : t('device')}
+            </span>
             <ChevronRight className="w-4 h-4" />
           </div>
         </div>
