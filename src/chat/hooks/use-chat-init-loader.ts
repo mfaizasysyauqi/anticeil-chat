@@ -157,23 +157,18 @@ export function useChatInitLoader({
               activeColonyId &&
               activeColonyId !== 'anticeil'
             ) {
-              const activeVoice = channelsRes.find(
-                (c) =>
-                  (c.colonyId || 'anticeil') === activeColonyId &&
-                  c.type === 'voice' &&
-                  (activeCallCounts[c.id] || 0) > 0,
-              );
-              if (activeVoice) {
-                setActiveChannelId(activeVoice.id);
-                setActiveCallChannelId(activeVoice.id);
-                setIsCallPiP(false);
-              } else {
-                const colonyFirstChannel = channelsRes.find(
+              const firstTextChannel =
+                channelsRes.find(
+                  (c) =>
+                    (c.colonyId || 'anticeil') === activeColonyId &&
+                    (c.type === 'text' || !c.type) &&
+                    !c.isDirectMessage,
+                ) ||
+                channelsRes.find(
                   (c) => (c.colonyId || 'anticeil') === activeColonyId,
                 );
-                if (colonyFirstChannel) {
-                  setActiveChannelId((curr) => curr || colonyFirstChannel.id);
-                }
+              if (firstTextChannel) {
+                setActiveChannelId((curr) => curr || firstTextChannel.id);
               }
             }
           }
@@ -326,9 +321,13 @@ export function useChatInitLoader({
             );
             return [...others, ...res];
           });
-          const targetChannelParam = new URLSearchParams(
-            window.location.search,
-          ).get('channel');
+          const pathParts = window.location.pathname.split('/').filter(Boolean);
+          const pathChannel =
+            pathParts[0] === 'channels' && pathParts[2] && pathParts[2] !== '@me'
+              ? pathParts[2]
+              : null;
+          const targetChannelParam =
+            new URLSearchParams(window.location.search).get('channel') || pathChannel;
           const targetActivityParam = new URLSearchParams(
             window.location.search,
           ).get('activity');
@@ -353,7 +352,9 @@ export function useChatInitLoader({
             setActiveChannelId((curr) => {
               const exists = res.some((c) => c.id === curr);
               if (exists) return curr;
-              const defaultText = res.find((c) => c.type === 'text' || !c.type);
+              const defaultText = res.find(
+                (c) => (c.type === 'text' || !c.type) && !c.isDirectMessage,
+              );
               return defaultText?.id || res[0]?.id || '';
             });
           }

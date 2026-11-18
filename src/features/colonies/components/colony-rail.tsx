@@ -184,7 +184,7 @@ export function ColonyRail({
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-              {platformName ? `${platformName} (${mainServer.name})` : `${mainServer.name} Workspace`}
+              {t('Aplikasi & Activities')}
             </TooltipContent>
           </Tooltip>
         </div>

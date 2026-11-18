@@ -23,6 +23,9 @@ export interface ColonyRailWrapperProps {
   setUnreadCounts: React.Dispatch<React.SetStateAction<Record<string, number | string>>>;
   setActiveColonyId: (id: string) => void;
   setActiveChannelId: (id: string) => void;
+  setHomeView?: (view: any) => void;
+  navigate?: (path: string) => void;
+  onNavigateToApps?: () => void;
   setAuthFeatureInfo: (info: { title: string; desc: string }) => void;
   setIsAuthRequiredOpen: (open: boolean) => void;
   requireAuth: (action: () => void, title?: string, desc?: string) => void;
@@ -46,6 +49,9 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
   setUnreadCounts,
   setActiveColonyId,
   setActiveChannelId,
+  setHomeView,
+  navigate,
+  onNavigateToApps,
   setAuthFeatureInfo,
   setIsAuthRequiredOpen,
   requireAuth,
@@ -72,15 +78,22 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
           setIsAuthRequiredOpen(true);
           return;
         }
-        setActiveColonyId(id);
         if (id === 'anticeil') {
+          setActiveColonyId('anticeil');
           setActiveChannelId('');
-        } else {
-          const firstCh = channels.find(
-            (c) => (c.colonyId || 'anticeil') === id && c.category === 'CHANNELS',
-          );
-          setActiveChannelId(firstCh?.id || '');
+          if (onNavigateToApps) {
+            onNavigateToApps();
+          } else {
+            setHomeView?.('apps');
+            navigate?.('/applications&activities');
+          }
+          return;
         }
+        setActiveColonyId(id);
+        const firstCh = channels.find(
+          (c) => (c.colonyId || 'anticeil') === id && (c.type === 'text' || !c.type) && !c.isDirectMessage,
+        );
+        setActiveChannelId(firstCh?.id || '');
       }}
       onOpenCreateServer={() =>
         requireAuth(

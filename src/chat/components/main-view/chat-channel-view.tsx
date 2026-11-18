@@ -517,8 +517,10 @@ export function ChatChannelView({
                 setActiveCallChannelId(null);
                 setSelectedActivityAppId(null);
                 setIsActivityOpen(false);
-                const defaultTextChannel = colonyChannels.find((c) => c.type === 'text' || !c.type);
-                if (defaultTextChannel && activeChannel?.type === 'voice') {
+                const defaultTextChannel = colonyChannels.find(
+                  (c) => (c.type === 'text' || !c.type) && !c.isDirectMessage,
+                );
+                if (defaultTextChannel && (activeChannel?.type === 'voice' || !selectedActivityAppId)) {
                   setActiveChannelId(defaultTextChannel.id);
                 }
               }}

@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
+import { colonyApi } from '@/chat/chat-api';
 
 export interface ActivityDestinationDialogProps {
   open: boolean;
@@ -75,11 +76,32 @@ export function ActivityDestinationDialog({
     return availableServers.find((h) => h.id === selectedColonyId) || availableServers[0];
   }, [availableServers, selectedColonyId]);
 
+  const [extraChannels, setExtraChannels] = useState<ColonyChannel[]>([]);
+
+  React.useEffect(() => {
+    if (!selectedColonyId || selectedColonyId === 'anticeil') return;
+    const existing = channels.filter((c) => (c.colonyId || 'anticeil') === selectedColonyId);
+    if (existing.length === 0) {
+      colonyApi.getChannels(selectedColonyId).then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+          setExtraChannels((prev) => {
+            const others = prev.filter((c) => (c.colonyId || 'anticeil') !== selectedColonyId);
+            return [...others, ...res];
+          });
+        }
+      }).catch(() => {});
+    }
+  }, [selectedColonyId, channels]);
+
+  const allAvailableChannels = useMemo(() => {
+    return [...channels, ...extraChannels];
+  }, [channels, extraChannels]);
+
   // Channels for the selected server
   const serverChannels = useMemo(() => {
     if (!selectedColonyId) return [];
-    return channels.filter((c) => (c.colonyId || 'anticeil') === selectedColonyId && !c.isDirectMessage);
-  }, [channels, selectedColonyId]);
+    return allAvailableChannels.filter((c) => (c.colonyId || 'anticeil') === selectedColonyId && !c.isDirectMessage);
+  }, [allAvailableChannels, selectedColonyId]);
 
   const voiceChannels = useMemo(() => {
     return serverChannels.filter((c) => c.type === 'voice');

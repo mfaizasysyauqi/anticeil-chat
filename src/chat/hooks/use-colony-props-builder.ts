@@ -238,6 +238,14 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       setUnreadCounts,
       setActiveColonyId,
       setActiveChannelId,
+      setHomeView,
+      navigate,
+      onNavigateToApps: () => {
+        setActiveColonyId('anticeil');
+        setActiveChannelId('');
+        setHomeView('apps');
+        navigate('/applications&activities');
+      },
       setAuthFeatureInfo,
       setIsAuthRequiredOpen,
       requireAuth,

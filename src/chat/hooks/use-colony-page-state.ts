@@ -95,6 +95,7 @@ export function useColonyPageState(): ChatPageContentProps {
     isActivityOpen,
     setIsActivityOpen,
     activeCallCounts,
+    setActiveCallCounts,
     selectedActivityAppId,
     setSelectedActivityAppId,
     appsSearchQuery,
@@ -378,22 +379,28 @@ export function useColonyPageState(): ChatPageContentProps {
       });
       socket.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: channelToLeave });
     }
+    if (channelToLeave) {
+      setActiveCallCounts((prev) => {
+        if (!prev[channelToLeave]) return prev;
+        const next = { ...prev };
+        delete next[channelToLeave];
+        return next;
+      });
+    }
     setActiveCallChannelId(null);
     setSelectedActivityAppId(null);
     setIsActivityOpen(false);
     setIsCallPiP(false);
 
-    if (activeChannel?.type === 'voice') {
-      const currentColonyId = activeColonyId || activeChannel?.colonyId;
-      const defaultText =
-        colonyChannels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
-        channels.find((c) => (c.colonyId || 'anticeil') === currentColonyId && (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
-        channels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage);
-      if (defaultText) {
-        setActiveChannelId(defaultText.id);
-      } else {
-        setActiveChannelId('');
-      }
+    const currentColonyId = activeColonyId || activeChannel?.colonyId;
+    const defaultText =
+      colonyChannels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
+      channels.find((c) => (c.colonyId || 'anticeil') === currentColonyId && (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
+      channels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage);
+    if (defaultText) {
+      setActiveChannelId(defaultText.id);
+    } else {
+      setActiveChannelId('');
     }
   }, [
     activeCallChannelId,
@@ -402,6 +409,7 @@ export function useColonyPageState(): ChatPageContentProps {
     colonyChannels,
     channels,
     activeColonyId,
+    setActiveCallCounts,
     setActiveCallChannelId,
     setSelectedActivityAppId,
     setIsActivityOpen,
