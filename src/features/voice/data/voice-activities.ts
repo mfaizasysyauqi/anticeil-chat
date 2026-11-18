@@ -45,8 +45,10 @@ export interface VoiceAppDefinition {
   isPromoted?: boolean;
   badge?: string;
   accentColor: string;
+  buttonClass?: string;
 }
 
+export type AnticeilAppDefinition = VoiceAppDefinition;
 export type DiscordAppDefinition = VoiceAppDefinition;
 
 export const VOICE_APPS: VoiceAppDefinition[] = [
@@ -67,6 +69,7 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     isPromoted: true,
     badge: 'POPULER',
     accentColor: '#ef4444',
+    buttonClass: 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-600/30 border-0',
   },
   {
     id: 'whiteboard',
@@ -85,6 +88,7 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     isPromoted: true,
     badge: 'OFFICIAL',
     accentColor: '#3b82f6',
+    buttonClass: 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 border-0',
   },
   {
     id: 'chess',
@@ -103,6 +107,7 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     isPromoted: true,
     badge: 'OFFICIAL',
     accentColor: '#f59e0b',
+    buttonClass: 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/30 border-0',
   },
   {
     id: 'screenshare',
@@ -121,6 +126,7 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     isPromoted: true,
     badge: 'OFFICIAL',
     accentColor: '#8b5cf6',
+    buttonClass: 'bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-600/30 border-0',
   },
   {
     id: 'wordle',
@@ -139,6 +145,7 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     isPromoted: true,
     badge: 'POPULER',
     accentColor: '#10b981',
+    buttonClass: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 border-0',
   },
   {
     id: 'trivia',
@@ -157,6 +164,7 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     isPromoted: true,
     badge: 'BARU',
     accentColor: '#6366f1',
+    buttonClass: 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 border-0',
   },
   {
     id: 'farm-merge',
@@ -175,7 +183,9 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     isPromoted: false,
     badge: 'CO-OP',
     accentColor: '#f59e0b',
+    buttonClass: 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/30 border-0',
   },
 ];
 
+export const ANTICEIL_APPS = VOICE_APPS;
 export const DISCORD_APPS = VOICE_APPS;

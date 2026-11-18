@@ -14,7 +14,7 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { EmptyState } from '@/components/ui/empty';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
-import { DISCORD_APPS, type DiscordAppDefinition } from '@/features/voice/data/voice-activities';
+import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
 
@@ -70,8 +70,8 @@ function ActivityCard({
   app,
   onLaunch,
 }: {
-  app: DiscordAppDefinition;
-  onLaunch: (app: DiscordAppDefinition) => void;
+  app: VoiceAppDefinition;
+  onLaunch: (app: VoiceAppDefinition) => void;
 }) {
   const AppIcon = app.icon || Gamepad2;
 
@@ -135,7 +135,10 @@ function ActivityCard({
           <Button
             size="sm"
             onClick={() => onLaunch(app)}
-            className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+            className={cn(
+              'h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs transition-all',
+              app.buttonClass || 'bg-primary hover:bg-primary/90 text-primary-foreground'
+            )}
           >
             <Play className="w-3 h-3 fill-current" />
             <span>Luncurkan</span>
@@ -161,11 +164,15 @@ export function AppsView({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'entertainment' | 'game' | 'productivity'>('all');
 
-  const [selectedAppForLaunch, setSelectedAppForLaunch] = useState<DiscordAppDefinition | null>(null);
+  const [selectedAppForLaunch, setSelectedAppForLaunch] = useState<VoiceAppDefinition | null>(null);
   const [isLaunchDialogOpen, setIsLaunchDialogOpen] = useState(false);
 
+  const featuredApp = useMemo(() => {
+    return ANTICEIL_APPS.find((a) => a.id === 'watch-together') || ANTICEIL_APPS[0];
+  }, []);
+
   const filteredApps = useMemo(() => {
-    return DISCORD_APPS.filter((app) => {
+    return ANTICEIL_APPS.filter((app) => {
       const matchesSearch =
         app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -176,9 +183,9 @@ export function AppsView({
     });
   }, [searchQuery, activeCategory]);
 
-  const handleLaunchClick = (appOrId: DiscordAppDefinition | string) => {
+  const handleLaunchClick = (appOrId: VoiceAppDefinition | string) => {
     const app = typeof appOrId === 'string'
-      ? DISCORD_APPS.find((a) => a.id === appOrId) || null
+      ? ANTICEIL_APPS.find((a) => a.id === appOrId) || null
       : appOrId;
     if (app) {
       setSelectedAppForLaunch(app);
@@ -287,7 +294,7 @@ export function AppsView({
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6 space-y-8', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-8', horizontalPadding)}>
         {/* Featured Hero Banner: YouTube Watch Together */}
         {!searchQuery && activeCategory === 'all' && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
@@ -306,7 +313,10 @@ export function AppsView({
             <Button
               size="lg"
               onClick={() => handleLaunchClick('watch-together')}
-              className="bg-red-600 hover:bg-red-500 text-white font-bold h-10 px-6 gap-2 shadow-lg shadow-red-600/30 cursor-pointer z-10"
+              className={cn(
+                'font-bold h-10 px-6 gap-2 cursor-pointer z-10 transition-all shadow-lg',
+                featuredApp?.buttonClass || 'bg-primary hover:bg-primary/90 text-primary-foreground'
+              )}
             >
               <Play className="w-4 h-4 fill-white" />
               <span>Mulai Menonton</span>
