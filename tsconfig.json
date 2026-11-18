@@ -5,10 +5,10 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "module": "esnext",
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": false,
-    "skipLibCheck": true,
-    "ignoreDeprecations": "6.0"
+    "skipLibCheck": true
   },
   "references": [
     { "path": "./tsconfig.app.json" },
