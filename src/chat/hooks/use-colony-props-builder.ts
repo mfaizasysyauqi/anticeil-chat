@@ -484,6 +484,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       t,
     },
     modalProps: {
+      colonies,
       isColonyEventsModalOpen,
       setIsColonyEventsModalOpen,
       activeColony,

@@ -15,12 +15,14 @@ export interface GamesAppsTabProps {
   currentUser?: any;
   currentUserName?: string;
   onNavigateSection?: (section: string) => void;
+  colonies?: any[];
 }
 
 export function GamesAppsTab({
   activeSection,
   currentUserName,
   onNavigateSection,
+  colonies,
 }: GamesAppsTabProps) {
   switch (activeSection) {
     case 'registered_games':
@@ -29,7 +31,7 @@ export function GamesAppsTab({
       );
     case 'activity_privacy':
       return (
-        <ActivityPrivacySubtab onNavigateSection={onNavigateSection} />
+        <ActivityPrivacySubtab onNavigateSection={onNavigateSection} colonies={colonies} />
       );
     case 'overlay':
       return <GameOverlaySubtab />;

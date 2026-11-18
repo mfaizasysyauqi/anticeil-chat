@@ -37,4 +37,5 @@ export interface UserSettingsModalProps {
   onLogout: () => void;
   initialSection?: string;
   onOpenEditProfile?: () => void;
+  colonies?: any[];
 }

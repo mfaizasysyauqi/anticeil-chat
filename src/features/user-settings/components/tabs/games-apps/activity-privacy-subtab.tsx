@@ -12,22 +12,32 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { loadStoredColonies } from '@/lib/colony';
 import { ActivityColonyListSection } from './activity-colony-list-section';
 
-export interface ActivityServerItem {
+export interface ActivityColonyItem {
   id: string;
   name: string;
   members: number;
   avatarFallback: string;
+  iconUrl?: string;
+  color?: string;
   isPrimary?: boolean;
 }
 
+export type ActivityServerItem = ActivityColonyItem;
+
 export interface ActivityPrivacySubtabProps {
   onNavigateSection?: (section: string) => void;
+  colonies?: any[];
 }
+
+const STORAGE_KEY_MAP = 'anticeil_activity_colony_privacy_map';
+const STORAGE_KEY_SCOPE = 'anticeil_activity_colony_privacy_scope';
 
 export function ActivityPrivacySubtab({
   onNavigateSection,
+  colonies = [],
 }: ActivityPrivacySubtabProps) {
   const { t } = useTranslation();
 
@@ -36,7 +46,14 @@ export function ActivityPrivacySubtab({
   const [shareWhenStreaming, setShareWhenStreaming] = useState(true);
   const [shareServerScope, setShareServerScope] = useState<
     'all' | 'small' | 'none'
-  >('all');
+  >(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_SCOPE);
+      if (stored === 'all' || stored === 'small' || stored === 'none') return stored;
+    } catch {}
+    return 'all';
+  });
+
   const [activityServerSearch, setActivityServerSearch] = useState('');
   const [activityServerSortOrder, setActivityServerSortOrder] = useState<
     'order' | 'name' | 'members'
@@ -49,113 +66,77 @@ export function ActivityPrivacySubtab({
     setAllowVoiceParticipantsJoinGame,
   ] = useState(true);
 
-  const initialActivityServers: ActivityServerItem[] = useMemo(
-    () => [
-      {
-        id: 'hok-id',
-        name: 'Honor of Kings Indonesia',
-        members: 70494,
-        avatarFallback: 'HOK',
-        isPrimary: true,
-      },
-      {
-        id: 'zmsta-srv',
-        name: "zmsta's server",
-        members: 1,
-        avatarFallback: 'zs',
-        isPrimary: true,
-      },
-      {
-        id: 'fullz',
-        name: '[FULLZ]',
-        members: 9140,
-        avatarFallback: 'FZ',
-        isPrimary: true,
-      },
-      {
-        id: 'nasgul',
-        name: 'Nasgul Community',
-        members: 132520,
-        avatarFallback: 'NC',
-        isPrimary: true,
-      },
-      {
-        id: 'awd',
-        name: 'awd',
-        members: 4,
-        avatarFallback: 'a',
-        isPrimary: true,
-      },
-      { id: 'moku', name: 'Moku', members: 24500, avatarFallback: 'MK' },
-      {
-        id: 'wild-forest',
-        name: 'Wild Forest',
-        members: 18200,
-        avatarFallback: 'WF',
-      },
-      {
-        id: 'cerita-crypto',
-        name: 'Cerita Crypto',
-        members: 45310,
-        avatarFallback: 'CC',
-      },
-      {
-        id: 'genshin-id',
-        name: 'Genshin Impact ID',
-        members: 58920,
-        avatarFallback: 'GI',
-      },
-      {
-        id: 'valorant-sea',
-        name: 'Valorant SEA',
-        members: 89400,
-        avatarFallback: 'VS',
-      },
-      {
-        id: 'indonesia-dev',
-        name: 'Developer Indonesia',
-        members: 31200,
-        avatarFallback: 'DI',
-      },
-    ],
-    [],
-  );
+  // Real colonies mapped from props or local storage
+  const initialActivityServers: ActivityServerItem[] = useMemo(() => {
+    const list = colonies && colonies.length > 0 ? colonies : loadStoredColonies();
+    const valid = list.filter((c: any) => c.id !== 'direct-messages');
+    return valid.map((c: any, index: number) => {
+      const memberCount =
+        c.membersCount ||
+        (c.onlineCount ? Math.max(c.onlineCount, 1) : 1);
+      return {
+        id: String(c.id),
+        name: c.name,
+        members: memberCount,
+        avatarFallback: c.initials || c.name.slice(0, 2).toUpperCase(),
+        iconUrl: c.iconUrl,
+        color: c.color,
+        isPrimary: index < 5,
+      };
+    });
+  }, [colonies]);
 
   const [serverActivityEnabledMap, setServerActivityEnabledMap] = useState<
     Record<string, boolean>
   >(() => {
-    return {
-      'hok-id': true,
-      'zmsta-srv': true,
-      fullz: true,
-      nasgul: true,
-      awd: true,
-      moku: true,
-      'wild-forest': true,
-      'cerita-crypto': true,
-      'genshin-id': true,
-      'valorant-sea': true,
-      'indonesia-dev': true,
-    };
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_MAP);
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return {};
   });
 
+  const handleUpdateServerActivityMap = (
+    updater: React.SetStateAction<Record<string, boolean>>
+  ) => {
+    setServerActivityEnabledMap((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        localStorage.setItem(STORAGE_KEY_MAP, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleScopeChange = (scope: 'all' | 'small' | 'none') => {
+    setShareServerScope(scope);
+    try {
+      localStorage.setItem(STORAGE_KEY_SCOPE, scope);
+    } catch {}
+  };
+
   const isAnyServerActivityOn = useMemo(() => {
-    return Object.values(serverActivityEnabledMap).some(Boolean);
-  }, [serverActivityEnabledMap]);
+    if (initialActivityServers.length === 0) return false;
+    return initialActivityServers.some((server) => {
+      const explicit = serverActivityEnabledMap[server.id];
+      if (explicit !== undefined) return explicit;
+      if (shareServerScope === 'none') return false;
+      if (shareServerScope === 'small') return server.members <= 200;
+      return true;
+    });
+  }, [initialActivityServers, serverActivityEnabledMap, shareServerScope]);
 
   const handleToggleAllServers = () => {
     const nextState = !isAnyServerActivityOn;
-    setServerActivityEnabledMap((prev) => {
-      const updated: Record<string, boolean> = {};
-      Object.keys(prev).forEach((k) => {
-        updated[k] = nextState;
-      });
-      return updated;
+    const updated: Record<string, boolean> = { ...serverActivityEnabledMap };
+    initialActivityServers.forEach((server) => {
+      updated[server.id] = nextState;
     });
+    handleUpdateServerActivityMap(updated);
     toast.success(
       nextState
-        ? t('Semua server diaktifkan pembagian aktivitas')
-        : t('Semua server dinonaktifkan pembagian aktivitas'),
+        ? t('Semua colony diaktifkan pembagian aktivitas')
+        : t('Semua colony dinonaktifkan pembagian aktivitas'),
     );
   };
 
@@ -306,7 +287,7 @@ export function ActivityPrivacySubtab({
       {/* SUB-SECTION 2: WHERE I SHARE ACTIVITY */}
       <ActivityColonyListSection
         shareServerScope={shareServerScope}
-        setShareServerScope={setShareServerScope}
+        setShareServerScope={handleScopeChange}
         activityServerSearch={activityServerSearch}
         setActivityServerSearch={setActivityServerSearch}
         activityServerSortOrder={activityServerSortOrder}
@@ -316,7 +297,7 @@ export function ActivityPrivacySubtab({
         primaryActivityServers={primaryActivityServers}
         secondaryActivityServers={secondaryActivityServers}
         serverActivityEnabledMap={serverActivityEnabledMap}
-        setServerActivityEnabledMap={setServerActivityEnabledMap}
+        setServerActivityEnabledMap={handleUpdateServerActivityMap}
         showMoreActivityServers={showMoreActivityServers}
         setShowMoreActivityServers={setShowMoreActivityServers}
         onNavigateSection={onNavigateSection}

@@ -7,6 +7,7 @@ import { saveStoredColonies } from '../chat-defaults';
 import type { Colony, ColonyChannel } from '../chat-types';
 
 export interface ChatModalsCoordinatorProps {
+  colonies?: Colony[];
   isColonyEventsModalOpen: boolean;
   setIsColonyEventsModalOpen: (open: boolean) => void;
   activeColony: Colony | null;
@@ -89,6 +90,7 @@ export interface ChatModalsCoordinatorProps {
 }
 
 export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
+  colonies = [],
   isColonyEventsModalOpen,
   setIsColonyEventsModalOpen,
   activeColony,
@@ -186,6 +188,7 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
       />
 
       <ChatDialogsPortal
+        colonies={colonies}
         colonyModals={colonyModals}
         channelModals={channelModals}
         mediaModals={mediaModals}

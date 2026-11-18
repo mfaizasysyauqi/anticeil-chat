@@ -52,7 +52,7 @@ export function ActivityColonyListSection({
           {t('Where I Share Activity')}
         </h2>
         <div className="text-xs font-semibold text-foreground mt-2">
-          {t('Automatically share my activity when joining a server')}
+          {t('Automatically share my activity when joining a colony')}
         </div>
         <div className="text-[11px] text-muted-foreground mt-0.5">
           {t('Your activity is always shared with your friends.')}
@@ -62,12 +62,12 @@ export function ActivityColonyListSection({
       {/* Radio Options */}
       <div className="space-y-2.5 pt-1">
         {[
-          { id: 'all', title: t('Share in all servers') },
+          { id: 'all', title: t('Share in all colonies') },
           {
             id: 'small',
-            title: t('Share in servers with 200 or fewer members'),
+            title: t('Share in colonies with 200 or fewer members'),
           },
-          { id: 'none', title: t('Do not share in any servers') },
+          { id: 'none', title: t('Do not share in any colonies') },
         ].map((opt) => {
           const isSelected = shareServerScope === opt.id;
           return (
@@ -75,7 +75,7 @@ export function ActivityColonyListSection({
               key={opt.id}
               onClick={() => {
                 setShareServerScope(opt.id as any);
-                toast.success(t(`Pengaturan server diubah: ${opt.title}`));
+                toast.success(t(`Pengaturan colony diubah: ${opt.title}`));
               }}
               className={cn(
                 'flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer',
@@ -104,19 +104,19 @@ export function ActivityColonyListSection({
         })}
       </div>
 
-      {/* Search my servers Input */}
+      {/* Search my colonies Input */}
       <div className="relative pt-2">
         <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none mt-1" />
         <Input
           type="text"
-          placeholder={t('Search my servers')}
+          placeholder={t('Search my colonies')}
           value={activityServerSearch}
           onChange={(e) => setActivityServerSearch(e.target.value)}
-          className="pl-9 h-9 text-xs bg-[#1e1f22] border-border/80 text-foreground"
+          className="pl-9 h-9 text-xs bg-muted/40 border-border/80 text-foreground"
         />
       </div>
 
-      {/* Server List Controls: Order & Toggle All Off */}
+      {/* Colony List Controls: Order & Toggle All Off */}
       <div className="flex items-center justify-between pt-1 text-xs">
         <div className="relative">
           <select
@@ -126,13 +126,13 @@ export function ActivityColonyListSection({
             }
             className="bg-transparent text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none pr-4"
           >
-            <option value="order" className="bg-[#1e1f22] text-foreground">
-              {t('Server Order ⌵')}
+            <option value="order" className="bg-popover text-popover-foreground">
+              {t('Colony Order ⌵')}
             </option>
-            <option value="name" className="bg-[#1e1f22] text-foreground">
-              {t('Server Name ⌵')}
+            <option value="name" className="bg-popover text-popover-foreground">
+              {t('Colony Name ⌵')}
             </option>
-            <option value="members" className="bg-[#1e1f22] text-foreground">
+            <option value="members" className="bg-popover text-popover-foreground">
               {t('Member Count ⌵')}
             </option>
           </select>
@@ -148,74 +148,97 @@ export function ActivityColonyListSection({
         </button>
       </div>
 
-      {/* Primary Servers List */}
+      {/* Primary Colonies List */}
       <div className="space-y-2">
-        {primaryActivityServers.map((server) => {
-          const isShared = serverActivityEnabledMap[server.id] ?? true;
-          return (
-            <div
-              key={server.id}
-              className="flex items-center justify-between p-3 rounded-xl border border-border/80 bg-card hover:border-border transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-xs text-primary shrink-0">
-                  {server.avatarFallback}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-foreground truncate">
-                    {server.name}
+        {primaryActivityServers.length === 0 ? (
+          <div className="p-4 rounded-xl border border-dashed border-border/70 text-center text-xs text-muted-foreground bg-card/50">
+            {activityServerSearch.trim()
+              ? t('Tidak ada colony yang cocok dengan pencarian.')
+              : t('Belum ada colony yang diikuti.')}
+          </div>
+        ) : (
+          primaryActivityServers.map((server) => {
+            const isShared =
+              serverActivityEnabledMap[server.id] !== undefined
+                ? serverActivityEnabledMap[server.id]
+                : shareServerScope === 'none'
+                ? false
+                : shareServerScope === 'small'
+                ? server.members <= 200
+                : true;
+
+            return (
+              <div
+                key={server.id}
+                className="flex items-center justify-between p-3 rounded-xl border border-border/80 bg-card hover:border-border transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-xs text-primary shrink-0 overflow-hidden">
+                    {server.iconUrl ? (
+                      <img
+                        src={server.iconUrl}
+                        alt={server.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      server.avatarFallback
+                    )}
                   </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {server.members.toLocaleString()} {t('members')}
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-foreground truncate">
+                      {server.name}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {server.members.toLocaleString()} {t('members')}
+                    </div>
                   </div>
                 </div>
+                <Switch
+                  checked={isShared}
+                  onCheckedChange={(checked) => {
+                    setServerActivityEnabledMap((prev) => ({
+                      ...prev,
+                      [server.id]: checked,
+                    }));
+                    toast.success(
+                      checked
+                        ? t(`Aktivitas dibagikan ke ${server.name}`)
+                        : t(`Aktivitas tidak dibagikan ke ${server.name}`),
+                    );
+                  }}
+                />
               </div>
-              <Switch
-                checked={isShared}
-                onCheckedChange={(checked) => {
-                  setServerActivityEnabledMap((prev) => ({
-                    ...prev,
-                    [server.id]: checked,
-                  }));
-                  toast.success(
-                    checked
-                      ? t(`Aktivitas dibagikan ke ${server.name}`)
-                      : t(`Aktivitas tidak dibagikan ke ${server.name}`),
-                  );
-                }}
-              />
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
-      {/* Show 40 more servers Accordion */}
+      {/* Show more colonies Accordion */}
       {secondaryActivityServers.length > 0 && (
         <div className="space-y-2">
           <div
             onClick={() =>
               setShowMoreActivityServers(!showMoreActivityServers)
             }
-            className="flex items-center justify-between p-3.5 rounded-xl border border-border/80 bg-[#1e1f22] hover:bg-[#2b2d31] transition-colors cursor-pointer group"
+            className="flex items-center justify-between p-3.5 rounded-xl border border-border/80 bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#e67e22]/20 border border-[#e67e22]/40 flex items-center justify-center text-sm shadow-inner">
-                🦊
+              <div className="w-8 h-8 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary shadow-inner">
+                +{secondaryActivityServers.length}
               </div>
               <div>
                 <div className="text-xs font-bold text-foreground">
                   {showMoreActivityServers
-                    ? t('Hide additional servers')
-                    : t('Show 40 more servers')}
+                    ? t('Hide additional colonies')
+                    : t(`Show ${secondaryActivityServers.length} more colonies`)}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
-                  {t(
-                    'Moku, Wild Forest, Cerita Crypto, and +37 more servers',
-                  )}
+                  {secondaryActivityServers.slice(0, 3).map((s) => s.name).join(', ')}
+                  {secondaryActivityServers.length > 3 ? `, and +${secondaryActivityServers.length - 3} more` : ''}
                 </div>
               </div>
             </div>
-            <div className="w-7 h-7 rounded-lg bg-[#2b2d31] flex items-center justify-center text-muted-foreground group-hover:text-foreground">
+            <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-foreground">
               <ChevronDown
                 className={cn(
                   'w-4 h-4 transition-transform duration-200',
@@ -225,19 +248,34 @@ export function ActivityColonyListSection({
             </div>
           </div>
 
-          {/* Expanded secondary servers list */}
+          {/* Expanded secondary colonies list */}
           {showMoreActivityServers && (
             <div className="space-y-2 pl-2 border-l-2 border-border/40 animate-in fade-in duration-150">
               {secondaryActivityServers.map((server) => {
-                const isShared = serverActivityEnabledMap[server.id] ?? true;
+                const isShared =
+                  serverActivityEnabledMap[server.id] !== undefined
+                    ? serverActivityEnabledMap[server.id]
+                    : shareServerScope === 'none'
+                    ? false
+                    : shareServerScope === 'small'
+                    ? server.members <= 200
+                    : true;
                 return (
                   <div
                     key={server.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-border/80 bg-[#1e1f22] hover:border-border transition-colors"
+                    className="flex items-center justify-between p-3 rounded-xl border border-border/80 bg-card hover:border-border transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs text-foreground shrink-0">
-                        {server.avatarFallback}
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs text-foreground shrink-0 overflow-hidden">
+                        {server.iconUrl ? (
+                          <img
+                            src={server.iconUrl}
+                            alt={server.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          server.avatarFallback
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-foreground truncate">
@@ -279,7 +317,7 @@ export function ActivityColonyListSection({
         </div>
         <div
           onClick={() => onNavigateSection?.('privacy')}
-          className="flex items-center justify-between p-3.5 rounded-xl border border-border/80 bg-[#1e1f22] hover:bg-[#2b2d31] transition-colors cursor-pointer group"
+          className="flex items-center justify-between p-3.5 rounded-xl border border-border/80 bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">

@@ -61,6 +61,7 @@ export function UserSettingsModal({
   onLogout,
   initialSection = 'account',
   onOpenEditProfile,
+  colonies = [],
 }: UserSettingsModalProps) {
   const { t, locale, setLocale } = useTranslation();
   const [activeSection, setActiveSection] = useState<SettingsSection>(
@@ -446,6 +447,7 @@ export function UserSettingsModal({
             activeSection={activeSection}
             currentUser={currentUser}
             currentUserName={currentUserName}
+            colonies={colonies}
           />
         )}
 

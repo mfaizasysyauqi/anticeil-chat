@@ -31,6 +31,7 @@ import { EditProfileDialog } from '@/features/profile';
 import { CommunityWelcomeDialog } from '@/features/onboarding/components/community-welcome-dialog';
 
 export interface ChatDialogsPortalProps {
+  colonies?: Colony[];
   colonyModals: ReturnType<typeof useColonyModals>;
   channelModals: ReturnType<typeof useChannelModals>;
   mediaModals: ReturnType<typeof useMediaModals>;
@@ -112,6 +113,7 @@ export interface ChatDialogsPortalProps {
 export type CommunityDialogsPortalProps = ChatDialogsPortalProps;
 
 export function ChatDialogsPortal({
+  colonies = [],
   colonyModals,
   channelModals,
   mediaModals,
@@ -389,6 +391,7 @@ export function ChatDialogsPortal({
       <UserSettingsModal
         open={isUserSettingsOpen}
         onOpenChange={setIsUserSettingsOpen}
+        colonies={colonies}
         currentUser={currentUser}
         currentUserName={currentUserName}
         onSaveDisplayName={async (name) => {
