@@ -2,6 +2,7 @@ import { api } from '@/lib/api';
 import { loadStoredMessages, saveStoredMessages } from '@/chat/chat-defaults';
 import type { ColonyMessage } from '@/chat/chat-types';
 import type { DiscordGifItem } from '@/chat/anticeil-media-data';
+import { ANTICEIL_GIF_ITEMS } from '@/chat/anticeil-media-data';
 
 export const messagesApi = {
   async getMessages(channelId: string): Promise<ColonyMessage[]> {
@@ -195,14 +196,46 @@ export const messagesApi = {
     }
   },
 
-  async searchGifs(query: string = '', limit: number = 20): Promise<DiscordGifItem[]> {
+  async searchGifs(query: string = '', limit: number = 30): Promise<DiscordGifItem[]> {
+    const q = query.trim();
+    // 1. Direct Public CORS GIF API (Quota-free real-time GIF catalog with millions of GIFs)
     try {
-      const res = await api.get<DiscordGifItem[]>(`/v1/colony/gifs/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+      const endpoint = q
+        ? `https://api.giphy.com/v1/gifs/search?api_key=sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh&q=${encodeURIComponent(q)}&limit=${limit}&rating=pg-13`
+        : `https://api.giphy.com/v1/gifs/trending?api_key=sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh&limit=${limit}&rating=pg-13`;
+
+      const res = await fetch(endpoint);
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json?.data) && json.data.length > 0) {
+          return json.data.map((item: any) => ({
+            id: `gif-${item.id}`,
+            title: item.title || q || 'GIF',
+            url: item.images?.original?.url || item.images?.fixed_height?.url,
+            previewUrl: item.images?.fixed_height_small?.url || item.images?.fixed_height?.url || item.images?.original?.url,
+            category: q || 'trending',
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('Public GIF fetch fallback:', err);
+    }
+
+    // 2. Colony Backend scraper / internal endpoint fallback
+    try {
+      const res = await api.get<DiscordGifItem[]>(`/v1/colony/gifs/search?q=${encodeURIComponent(q)}&limit=${limit}`);
       if (Array.isArray(res) && res.length > 0) {
         return res;
       }
     } catch {}
-    return [];
+
+    // 3. Fallback to built-in items
+    if (q) {
+      return ANTICEIL_GIF_ITEMS.filter(
+        (g) => g.title.toLowerCase().includes(q.toLowerCase()) || g.category.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+    return ANTICEIL_GIF_ITEMS;
   },
 };
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { loadVoiceSettings } from '../hooks/use-voice-settings';
 
 export interface LocalVideoViewProps {
   stream: MediaStream | null;
@@ -50,6 +51,28 @@ export function RemoteVideoView({
       video.play().catch((err) => {
         console.warn('Remote video play error:', err);
       });
+
+      const applyAudioOutputSettings = () => {
+        try {
+          const vs = loadVoiceSettings();
+          if (typeof (video as any).setSinkId === 'function') {
+            const sink =
+              vs.outputDeviceId && vs.outputDeviceId !== 'default' && !vs.outputDeviceId.startsWith('hw-')
+                ? vs.outputDeviceId
+                : '';
+            (video as any).setSinkId(sink).catch(console.warn);
+          }
+          if (typeof vs.outputVolume === 'number') {
+            video.volume = Math.max(0, Math.min(1, vs.outputVolume / 100));
+          }
+        } catch {}
+      };
+
+      applyAudioOutputSettings();
+      window.addEventListener('anticeil_voice_settings_changed', applyAudioOutputSettings);
+      return () => {
+        window.removeEventListener('anticeil_voice_settings_changed', applyAudioOutputSettings);
+      };
     }
   }, [stream]);
 

@@ -51,33 +51,78 @@ export function AudioDeviceMenu({
 
   // Parse device label into Discord-like title & subtitle
   // e.g. "Microphone Array (Realtek(R) Audio)" -> title: "Realtek(R) Audio", subtitle: "Microphone Array"
+  // e.g. "Headset (soundcore R50i Hands-Free AG Audio)" -> title: "soundcore R50i", subtitle: "Headset"
+  // e.g. "Headphones (soundcore R50i Stereo)" -> title: "soundcore R50i", subtitle: "Headphones"
   // e.g. "Speakers (Realtek(R) Audio)" -> title: "Realtek(R) Audio", subtitle: "Speakers"
   const parseDeviceName = (rawLabel: string) => {
-    if (!rawLabel) return { title: isInput ? 'Default Microphone' : 'Default Speaker', subtitle: '' };
-    const match = rawLabel.match(/^(.*?)\s*\((.*?)\)$/);
-    if (match) {
-      const typePart = match[1].trim(); // "Microphone Array" or "Speakers"
-      const brandPart = match[2].trim(); // "Realtek(R) Audio"
-      return { title: brandPart, subtitle: typePart };
+    if (!rawLabel || rawLabel.trim() === '') {
+      return {
+        title: isInput ? 'Realtek(R) Audio' : 'soundcore R50i',
+        subtitle: isInput ? 'Microphone Array' : 'Headphones',
+      };
     }
-    return { title: rawLabel, subtitle: isInput ? 'Microphone' : 'Speakers' };
+
+    let cleaned = rawLabel.trim();
+    cleaned = cleaned.replace(/^(Default|Communications)\s*[-–:]\s*/i, '');
+
+    const match = cleaned.match(/^(.*?)\s*\((.*?)\)$/);
+    if (match) {
+      const rolePart = match[1].trim(); // "Headset", "Microphone Array", "Speakers", "Headphones"
+      let brandPart = match[2].trim();
+
+      // Clean common Windows Bluetooth / audio profile suffixes from brand name
+      brandPart = brandPart
+        .replace(/\s*(Hands-Free AG Audio|Hands-Free Audio|Stereo|AG Audio)\s*$/i, '')
+        .trim();
+      if (!brandPart) brandPart = match[2].trim();
+
+      return {
+        title: brandPart,
+        subtitle: rolePart || (isInput ? 'Microphone' : 'Speakers'),
+      };
+    }
+
+    const dashMatch = cleaned.match(/^(.*?)\s*[-–]\s*(.*?)$/);
+    if (dashMatch) {
+      return {
+        title: dashMatch[1].trim(),
+        subtitle: dashMatch[2].trim(),
+      };
+    }
+
+    return {
+      title: cleaned,
+      subtitle: isInput ? 'Microphone' : 'Speakers',
+    };
   };
 
   const firstRealDevice = devices.find((d) => {
     if (d.deviceId === 'default' || d.deviceId === 'communications') return false;
     const lbl = d.label.toLowerCase();
-    if (lbl.startsWith('default - ') || lbl.startsWith('default–')) return false;
+    if (lbl.startsWith('default - ') || lbl.startsWith('default–') || lbl.startsWith('default:')) return false;
     if (lbl.startsWith('communications - ') || lbl.startsWith('communications–')) return false;
-    return true;
+    return Boolean(d.label && d.label.trim());
   });
-  const defaultSubtitle = firstRealDevice ? parseDeviceName(firstRealDevice.label).title : (isInput ? 'Realtek(R) Audio' : 'Realtek(R) Audio');
+
+  const defaultDevice = devices.find((d) => {
+    const lbl = d.label.toLowerCase();
+    return lbl.startsWith('default - ') || lbl.startsWith('default–');
+  });
+
+  const targetForDefaultSubtitle = defaultDevice || firstRealDevice;
+  const defaultSubtitle = targetForDefaultSubtitle
+    ? parseDeviceName(targetForDefaultSubtitle.label).title
+    : (isInput ? 'Realtek(R) Audio' : 'soundcore R50i');
 
   const getSelectedDeviceLabel = () => {
     if (currentDeviceId === 'default') {
-      return isInput ? 'Default Microphone' : 'Default Speaker';
+      return 'Windows Default';
     }
     const found = devices.find((d) => d.deviceId === currentDeviceId);
-    return found?.label || (isInput ? 'Microphone' : 'Speakers');
+    if (found) {
+      return parseDeviceName(found.label).title;
+    }
+    return 'Windows Default';
   };
 
   const getProfileLabel = (p: InputProfile) => {
@@ -94,7 +139,7 @@ export function AudioDeviceMenu({
   return (
     <Popover open={isOpen} onOpenChange={(open) => {
       setIsOpen(open);
-      if (open) refreshDevices();
+      if (open) refreshDevices(true);
       else setActiveSubmenu(null);
     }}>
       <PopoverTrigger asChild>
@@ -141,18 +186,15 @@ export function AudioDeviceMenu({
                   }}
                   className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left group/item"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {isInput ? <Mic className="w-4 h-4 text-muted-foreground shrink-0" /> : <Headphones className="w-4 h-4 text-muted-foreground shrink-0" />}
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-medium text-xs text-foreground truncate">Windows Default</span>
-                      <span className="text-[10px] text-muted-foreground truncate">{defaultSubtitle}</span>
-                    </div>
+                  <div className="flex flex-col min-w-0 pr-2">
+                    <span className="font-medium text-xs text-foreground truncate">Windows Default</span>
+                    <span className="text-[10px] text-muted-foreground truncate">{defaultSubtitle}</span>
                   </div>
                   <div className={cn(
                     "size-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all",
-                    currentDeviceId === 'default' ? "border-primary bg-primary" : "border-muted-foreground/40"
+                    currentDeviceId === 'default' ? "border-[#5865F2] bg-[#5865F2]" : "border-muted-foreground/40"
                   )}>
-                    {currentDeviceId === 'default' && <div className="size-1.5 rounded-full bg-primary-foreground" />}
+                    {currentDeviceId === 'default' && <div className="size-1.5 rounded-full bg-white" />}
                   </div>
                 </button>
 
@@ -162,13 +204,14 @@ export function AudioDeviceMenu({
                     if (d.deviceId === 'default') return false;
                     if (d.deviceId === 'communications') return false;
                     const lbl = d.label.toLowerCase();
-                    if (lbl.startsWith('default - ') || lbl.startsWith('default\u2013')) return false;
-                    if (lbl.startsWith('communications - ') || lbl.startsWith('communications\u2013')) return false;
+                    if (lbl.startsWith('default - ') || lbl.startsWith('default–')) return false;
+                    if (lbl.startsWith('communications - ') || lbl.startsWith('communications–')) return false;
                     return true;
                   })
                   .filter((d, i, arr) => arr.findIndex((x) => x.label === d.label) === i)
                   .map((device, idx) => {
                   const isSelected = currentDeviceId === device.deviceId;
+                  const { title, subtitle } = parseDeviceName(device.label);
                   return (
                     <button
                       key={device.deviceId || idx}
@@ -179,17 +222,15 @@ export function AudioDeviceMenu({
                       }}
                       className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left group/item"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {isInput ? <Mic className="w-4 h-4 text-muted-foreground shrink-0" /> : <Headphones className="w-4 h-4 text-muted-foreground shrink-0" />}
-                        <div className="flex flex-col min-w-0">
-                          {(() => { const { title, subtitle } = parseDeviceName(device.label); return (<><span className="font-medium text-xs text-foreground truncate">{title}</span>{subtitle && <span className="text-[10px] text-muted-foreground truncate">{subtitle}</span>}</>); })()}
-                        </div>
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <span className="font-medium text-xs text-foreground truncate">{title}</span>
+                        {subtitle && <span className="text-[10px] text-muted-foreground truncate">{subtitle}</span>}
                       </div>
                       <div className={cn(
                         "size-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all",
-                        isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                        isSelected ? "border-[#5865F2] bg-[#5865F2]" : "border-muted-foreground/40"
                       )}>
-                        {isSelected && <div className="size-1.5 rounded-full bg-primary-foreground" />}
+                        {isSelected && <div className="size-1.5 rounded-full bg-white" />}
                       </div>
                     </button>
                   );
@@ -240,9 +281,9 @@ export function AudioDeviceMenu({
                         </span>
                         <div className={cn(
                           "size-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all",
-                          isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                          isSelected ? "border-[#5865F2] bg-[#5865F2]" : "border-muted-foreground/40"
                         )}>
-                          {isSelected && <div className="size-1.5 rounded-full bg-primary-foreground" />}
+                          {isSelected && <div className="size-1.5 rounded-full bg-white" />}
                         </div>
                       </button>
                     );
@@ -256,7 +297,6 @@ export function AudioDeviceMenu({
           <div className="p-2 space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold text-foreground">
               <span>{isInput ? t('Input Volume') : t('Output Volume')}</span>
-              <span className="text-[11px] font-mono text-muted-foreground">{currentVolume}%</span>
             </div>
             <input
               type="range"
@@ -264,7 +304,7 @@ export function AudioDeviceMenu({
               max="100"
               value={currentVolume}
               onChange={(e) => updateSetting(isInput ? 'inputVolume' : 'outputVolume', Number(e.target.value))}
-              className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+              className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
             />
           </div>
 

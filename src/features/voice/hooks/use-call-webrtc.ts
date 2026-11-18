@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useCallMediaToggles } from './use-call-media-toggles';
 import { useCallActivitySync } from './use-call-activity-sync';
 import { DISCORD_APPS, DiscordAppDefinition } from '../data/voice-activities';
+import { loadVoiceSettings } from './use-voice-settings';
 import type { CallParticipant } from '../types';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 
@@ -159,9 +160,22 @@ export function useCallWebRTC({
       return null;
     }
     try {
+      const voiceSettings = loadVoiceSettings();
+      const audioConstraints: MediaTrackConstraints = {
+        echoCancellation: voiceSettings.echoCancellation,
+        noiseSuppression: voiceSettings.noiseSuppression !== 'none',
+        autoGainControl: true,
+      };
+      if (
+        voiceSettings.inputDeviceId &&
+        voiceSettings.inputDeviceId !== 'default' &&
+        !voiceSettings.inputDeviceId.startsWith('hw-')
+      ) {
+        audioConstraints.deviceId = { exact: voiceSettings.inputDeviceId };
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: false,
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: audioConstraints,
       });
       setLocalStream(stream);
       setIsVideoOff(true);

@@ -281,17 +281,6 @@ export function UserBottomDock({
             >
               <Settings className="w-3.5 h-3.5" />
             </button>
-
-            {onLogout && (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-md cursor-pointer transition-colors"
-                title={t('Keluar (Log Out)')}
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            )}
           </div>
         </div>
       )}

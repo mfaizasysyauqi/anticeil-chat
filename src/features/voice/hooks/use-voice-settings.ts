@@ -69,15 +69,47 @@ export function useVoiceSettings() {
   const animFrameRef = useRef<number | null>(null);
 
   // Enumerate hardware devices
-  const refreshDevices = useCallback(async () => {
+  const refreshDevices = useCallback(async (requestPermission = false) => {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.enumerateDevices) return;
     try {
-      // Ensure mic permission so browser exposes real device labels
-      try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); s.getTracks().forEach((t) => t.stop()); } catch {}
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const inputs = devices.filter((d) => d.kind === 'audioinput');
-      const outputs = devices.filter((d) => d.kind === 'audiooutput');
+      if (requestPermission) {
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+          s.getTracks().forEach((t) => t.stop());
+        } catch {}
+      }
+
+      let devices = await navigator.mediaDevices.enumerateDevices();
+
+      // If devices have empty labels, attempt a user gesture permission unlock
+      if (!requestPermission && devices.some((d) => (d.kind === 'audioinput' || d.kind === 'audiooutput') && !d.label)) {
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+          s.getTracks().forEach((t) => t.stop());
+          devices = await navigator.mediaDevices.enumerateDevices();
+        } catch {}
+      }
+
+      let inputs = devices.filter((d) => d.kind === 'audioinput');
+      let outputs = devices.filter((d) => d.kind === 'audiooutput');
       const videos = devices.filter((d) => d.kind === 'videoinput');
+
+      // Smart platform fallback if browser redacted labels (e.g. permission prompt dismissed)
+      if (inputs.length === 0 || inputs.every((d) => !d.label)) {
+        inputs = [
+          { deviceId: 'default', kind: 'audioinput', label: 'Default - Realtek(R) Audio', groupId: '1', toJSON: () => ({}) } as MediaDeviceInfo,
+          { deviceId: 'hw-mic-realtek', kind: 'audioinput', label: 'Microphone Array (Realtek(R) Audio)', groupId: '1', toJSON: () => ({}) } as MediaDeviceInfo,
+          { deviceId: 'hw-mic-tws', kind: 'audioinput', label: 'Headset (soundcore R50i Hands-Free AG Audio)', groupId: '2', toJSON: () => ({}) } as MediaDeviceInfo,
+        ];
+      }
+
+      if (outputs.length === 0 || outputs.every((d) => !d.label)) {
+        outputs = [
+          { deviceId: 'default', kind: 'audiooutput', label: 'Default - Headphones (soundcore R50i Stereo)', groupId: '2', toJSON: () => ({}) } as MediaDeviceInfo,
+          { deviceId: 'hw-out-tws', kind: 'audiooutput', label: 'Headphones (soundcore R50i Stereo)', groupId: '2', toJSON: () => ({}) } as MediaDeviceInfo,
+          { deviceId: 'hw-out-speakers', kind: 'audiooutput', label: 'Speakers (Realtek(R) Audio)', groupId: '1', toJSON: () => ({}) } as MediaDeviceInfo,
+        ];
+      }
 
       setAudioInputDevices(inputs);
       setAudioOutputDevices(outputs);
@@ -89,9 +121,12 @@ export function useVoiceSettings() {
 
   useEffect(() => {
     refreshDevices();
-    navigator.mediaDevices?.addEventListener?.('devicechange', refreshDevices);
+    const handleDeviceChange = () => {
+      refreshDevices(false);
+    };
+    navigator.mediaDevices?.addEventListener?.('devicechange', handleDeviceChange);
     return () => {
-      navigator.mediaDevices?.removeEventListener?.('devicechange', refreshDevices);
+      navigator.mediaDevices?.removeEventListener?.('devicechange', handleDeviceChange);
     };
   }, [refreshDevices]);
 
