@@ -8,6 +8,7 @@ import {
   Video,
   VideoOff,
   Monitor,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -41,6 +42,66 @@ export interface PiPCallStageProps {
   handleToggleVideo: () => void;
 }
 
+function ActivityMonitorGraphic() {
+  return (
+    <svg
+      viewBox="0 0 240 140"
+      className="w-48 h-28 drop-shadow-md select-none pointer-events-none"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Background Cloud */}
+      <path
+        d="M50 85 C30 85 20 70 30 55 C35 40 55 35 70 45 C80 25 110 20 130 35 C145 25 170 30 180 50 C200 55 205 75 190 90 C180 100 150 100 50 100 Z"
+        fill="#3b489a"
+        opacity="0.9"
+      />
+
+      {/* Little Stars / Sparkles */}
+      <path d="M40 32 L42 37 L47 39 L42 41 L40 46 L38 41 L33 39 L38 37 Z" fill="#7289da" opacity="0.8" />
+      <path d="M190 40 L191.5 43.5 L195 45 L191.5 46.5 L190 50 L188.5 46.5 L185 45 L188.5 43.5 Z" fill="#7289da" opacity="0.8" />
+      <path d="M72 15 L73 17.5 L75.5 18.5 L73 19.5 L72 22 L71 19.5 L68.5 18.5 L71 17.5 Z" fill="#7289da" opacity="0.8" />
+
+      {/* Monitor Tower / Stand Behind */}
+      <rect x="156" y="42" width="22" height="60" rx="3" fill="#4b5563" />
+      <rect x="160" y="48" width="14" height="2" fill="#9ca3af" />
+      <rect x="160" y="53" width="14" height="2" fill="#9ca3af" />
+      <rect x="160" y="58" width="14" height="2" fill="#9ca3af" />
+
+      {/* Monitor Outer Casing */}
+      <rect x="68" y="38" width="86" height="64" rx="4" fill="#e5e7eb" stroke="#374151" strokeWidth="2" />
+      {/* Monitor Screen Inset */}
+      <rect x="74" y="44" width="74" height="48" rx="2" fill="#ffffff" />
+      {/* YouTube Play Icon on Screen */}
+      <rect x="97" y="58" width="28" height="20" rx="4" fill="#ef4444" />
+      <polygon points="108,63 118,68 108,73" fill="#ffffff" />
+
+      {/* Monitor Base Stand */}
+      <rect x="99" y="102" width="24" height="6" fill="#d1d5db" />
+      <rect x="91" y="108" width="40" height="4" rx="1" fill="#9ca3af" />
+
+      {/* Cactus Plant on top of Monitor */}
+      <rect x="105" y="26" width="12" height="12" rx="2" fill="#d97706" />
+      <ellipse cx="111" cy="22" rx="4" ry="7" fill="#10b981" />
+      <circle cx="107" cy="20" r="1.5" fill="#059669" />
+      <circle cx="115" cy="22" r="1.5" fill="#059669" />
+      <polygon points="111,13 113,16 109,16" fill="#f43f5e" />
+
+      {/* Red Coffee Mug */}
+      <rect x="170" y="78" width="16" height="22" rx="2" fill="#ef4444" />
+      <path d="M186 83 C191 83 191 95 186 95" stroke="#ef4444" strokeWidth="2.5" fill="none" />
+
+      {/* Keyboard */}
+      <rect x="52" y="112" width="80" height="12" rx="2" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1" />
+      <rect x="56" y="115" width="72" height="6" rx="1" fill="#d1d5db" />
+
+      {/* Mouse */}
+      <rect x="142" y="114" width="10" height="12" rx="4" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1" />
+      <line x1="147" y1="114" x2="147" y2="119" stroke="#9ca3af" strokeWidth="1" />
+    </svg>
+  );
+}
+
 export function PiPCallStage({
   channel,
   totalInCall,
@@ -61,6 +122,63 @@ export function PiPCallStage({
   handleToggleMute,
   handleToggleVideo,
 }: PiPCallStageProps) {
+  // Discord-style Minimized Activity PiP Window (Image 2)
+  if (activeAppId !== null && currentActiveApp) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50 w-[300px] sm:w-[320px] rounded-2xl bg-[#111214] border border-white/10 text-foreground shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        {/* Top Header: ← Watch Together */}
+        <div className="h-10 px-3.5 pt-2 flex items-center justify-between select-none">
+          <button
+            type="button"
+            onClick={onTogglePiP}
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer text-left min-w-0 group"
+            title={`Kembali ke ${currentActiveApp.title}`}
+          >
+            <ArrowLeft className="w-4 h-4 text-muted-foreground group-hover:text-white group-hover:-translate-x-0.5 transition-transform shrink-0" />
+            <span className="text-sm font-bold text-white truncate">
+              {currentActiveApp.title}
+            </span>
+          </button>
+        </div>
+
+        {/* Center: Activity Illustration & Return Prompt */}
+        <div
+          onClick={onTogglePiP}
+          className="px-4 py-3 flex flex-col items-center justify-center cursor-pointer group select-none"
+          title="Klik untuk membuka aktivitas"
+        >
+          <ActivityMonitorGraphic />
+          <p className="mt-3 text-xs font-semibold text-[#949ba4] text-center group-hover:text-white transition-colors">
+            {activeAppId === 'watch-together' || activeAppId === 'youtube'
+              ? 'Return to Watch Together to add videos!'
+              : `Return to ${currentActiveApp.title} to play!`}
+          </p>
+        </div>
+
+        {/* Footer: Current User Avatar on left, Leave button on right */}
+        <div className="h-12 px-3.5 pb-2 flex items-center justify-between select-none">
+          <div className="flex items-center gap-2 min-w-0">
+            <CommunityAvatar
+              name={currentUserName}
+              imageUrl={currentUser?.imageUrl}
+              email={currentUser?.email}
+              size={28}
+              className="w-7 h-7 rounded-full shrink-0 ring-1 ring-border"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onEndCall}
+            className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+            title="Tinggalkan Aktivitas"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="fixed bottom-4 right-4 z-50 w-[320px] sm:w-[340px] rounded-2xl bg-card border border-border text-foreground shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
       {/* Header (Discord PiP Style) */}

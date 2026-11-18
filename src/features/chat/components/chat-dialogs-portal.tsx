@@ -474,8 +474,10 @@ export function ChatDialogsPortal({
       />
 
       {/* Floating PiP Call Stage */}
-      {activeCallChannelId && isCallPiP && (() => {
-        const pipChannel = channels.find((c) => c.id === activeCallChannelId);
+      {isCallPiP && (Boolean(activeCallChannelId) || Boolean(selectedActivityAppId)) && (() => {
+        const pipChannel =
+          (activeCallChannelId ? channels.find((c) => c.id === activeCallChannelId) : null) ||
+          activeChannel;
         if (!pipChannel) return null;
         return (
           <CallStage
@@ -490,12 +492,27 @@ export function ChatDialogsPortal({
             onToggleActivity={(open) => setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))}
             onActivityChange={(appId) => setSelectedActivityAppId?.(appId)}
             onTogglePiP={() => {
-              setActiveChannelId(activeCallChannelId);
+              const targetChannelId = activeCallChannelId || activeChannel?.id;
+              if (targetChannelId) {
+                setActiveChannelId(targetChannelId);
+              }
               setIsCallPiP(false);
+              setIsActivityOpen(true);
             }}
             onEndCall={() => {
+              const channelToLeave = activeCallChannelId || activeChannel?.id;
+              if (channelToLeave && socket) {
+                socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+                  channelId: channelToLeave,
+                  action: 'ACTIVITY_STOP',
+                  payload: {},
+                });
+                socket.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: channelToLeave });
+              }
               setActiveCallChannelId(null);
               setIsActivityOpen(false);
+              setIsCallPiP(false);
+              setSelectedActivityAppId?.(null);
             }}
             onNavigateToBilling={() => navigate('/platform/billing')}
           />

@@ -323,6 +323,10 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       setActiveCallChannelId,
       setIsActivityOpen,
       onDisconnectCall: handleDisconnectCall,
+      selectedActivityAppId,
+      isActivityOpen,
+      isCallPiP,
+      activeChannel,
     },
     friendsProps: {
       friends,

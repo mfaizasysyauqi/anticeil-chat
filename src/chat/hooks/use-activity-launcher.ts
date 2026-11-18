@@ -146,12 +146,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
           setActiveColonyId(destColonyId);
         }
         setActiveChannelId(voiceDest.id);
-        // Only set activeCallChannelId for voice channels so text channels stay text channels
-        if (voiceDest.type === 'voice') {
-          setActiveCallChannelId(voiceDest.id);
-        } else {
-          setActiveCallChannelId(null);
-        }
+        setActiveCallChannelId(voiceDest.id);
         setIsActivityOpen(true);
         setIsCallPiP(false);
 

@@ -8,6 +8,7 @@ import {
   Maximize2,
   PhoneOff,
   LogOut,
+  Play,
   ChevronUp,
 } from 'lucide-react';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -32,6 +33,9 @@ interface UserBottomDockProps {
   activeColonyName?: string;
   /** True when the active call is a text-channel activity, not a voice channel call */
   isActivityChannel?: boolean;
+  selectedActivityAppId?: string | null;
+  isActivityOpen?: boolean;
+  isCallPiP?: boolean;
   onReturnToCall?: () => void;
   onDisconnectCall?: () => void;
   className?: string;
@@ -52,6 +56,9 @@ export function UserBottomDock({
   activeCallChannelName,
   activeColonyName,
   isActivityChannel = false,
+  selectedActivityAppId,
+  isActivityOpen,
+  isCallPiP,
   onReturnToCall,
   onDisconnectCall,
   className,
@@ -65,8 +72,58 @@ export function UserBottomDock({
         className,
       )}
     >
-      {/* Active Voice Call Connected Banner */}
-      {activeCallChannelId && (
+      {/* 1. Discord-Style Active Activity Dock Card (Image 1) */}
+      {selectedActivityAppId && (isActivityOpen || isCallPiP || Boolean(activeCallChannelId)) ? (
+        <div className="px-2 pt-2 pb-0">
+          <div
+            onClick={onReturnToCall}
+            className="w-full px-2.5 py-2 rounded-lg bg-[#1e1f22] hover:bg-[#2b2d31] border border-white/5 transition-all flex items-center justify-between gap-2.5 cursor-pointer group shadow-sm"
+            title="Klik untuk membuka aktivitas"
+          >
+            {/* Left: App Icon */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              {selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube' ? (
+                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-xs">
+                  <svg className="w-5 h-4 text-[#ff0000] fill-current" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shrink-0">
+                  <Play className="w-4 h-4 fill-current" />
+                </div>
+              )}
+
+              {/* Middle: Title & Location */}
+              <div className="flex flex-col min-w-0 text-left">
+                <span className="text-xs sm:text-[13px] font-bold text-white leading-tight truncate group-hover:text-primary transition-colors">
+                  {selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube'
+                    ? 'Watch Together'
+                    : selectedActivityAppId}
+                </span>
+                <span className="text-[11px] text-[#949ba4] truncate leading-tight mt-0.5">
+                  {activeCallChannelName || 'general'} / {activeColonyName || 'server'}
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Disconnect / Leave Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDisconnectCall?.();
+              }}
+              className="h-7 w-7 text-[#949ba4] hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0"
+              title="Tinggalkan Aktivitas"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      ) : activeCallChannelId ? (
+        /* 2. Active Voice Call Connected Banner */
         <div className="px-2 pt-2 pb-0">
           <div className="px-2.5 py-1.5 rounded-[8px] bg-sidebar-accent/50 border border-sidebar-border flex items-center justify-between animate-in slide-in-from-bottom-2">
             <div className="flex items-center gap-2 min-w-0">
@@ -102,7 +159,7 @@ export function UserBottomDock({
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* User Dock Bar */}
       {!currentUser ? (

@@ -359,6 +359,10 @@ export interface UserBottomDockWrapperProps {
   setActiveCallChannelId: (id: string | null) => void;
   setIsActivityOpen: (open: boolean) => void;
   onDisconnectCall?: () => void;
+  selectedActivityAppId?: string | null;
+  isActivityOpen?: boolean;
+  isCallPiP?: boolean;
+  activeChannel?: ColonyChannel | null;
 }
 
 export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
@@ -380,8 +384,14 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
   setActiveCallChannelId,
   setIsActivityOpen,
   onDisconnectCall,
+  selectedActivityAppId,
+  isActivityOpen,
+  isCallPiP,
+  activeChannel,
 }) => {
-  const activeCallChannel = channels.find((c) => c.id === activeCallChannelId);
+  const activeCallChannel =
+    (activeCallChannelId ? channels.find((c) => c.id === activeCallChannelId) : null) ||
+    activeChannel;
   return (
     <UserBottomDock
       currentUser={currentUser}
@@ -397,10 +407,17 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
       activeCallChannelId={activeCallChannelId}
       activeCallChannelName={activeCallChannel?.name}
       activeColonyName={activeColony?.name}
-      isActivityChannel={!!activeCallChannelId && activeCallChannel?.type !== 'voice'}
+      isActivityChannel={Boolean(selectedActivityAppId) || (!!activeCallChannelId && activeCallChannel?.type !== 'voice')}
+      selectedActivityAppId={selectedActivityAppId}
+      isActivityOpen={isActivityOpen}
+      isCallPiP={isCallPiP}
       onReturnToCall={() => {
-        setActiveChannelId(activeCallChannelId!);
+        const destId = activeCallChannelId || activeChannel?.id;
+        if (destId) {
+          setActiveChannelId(destId);
+        }
         setIsCallPiP(false);
+        setIsActivityOpen(true);
       }}
       onDisconnectCall={() => {
         if (onDisconnectCall) {
@@ -408,6 +425,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
         } else {
           setActiveCallChannelId(null);
           setIsActivityOpen(false);
+          setIsCallPiP(false);
         }
       }}
     />
