@@ -223,9 +223,11 @@ export function ColonyBoostSubtab({
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                toast.success(t('Pilih colony untuk mengaktifkan Level 1.'))
-              }
+              onClick={() => {
+                const el = document.getElementById('my-colonies-boost-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                else toast.info(t('Pilih colony di daftar bawah untuk mengaktifkan Boost.'));
+              }}
               className="w-full text-xs font-bold rounded-xl cursor-pointer"
             >
               {t('Boost Colony')}
@@ -267,9 +269,11 @@ export function ColonyBoostSubtab({
             </div>
             <Button
               size="sm"
-              onClick={() =>
-                toast.success(t('Pilih colony untuk mengaktifkan Level 2.'))
-              }
+              onClick={() => {
+                const el = document.getElementById('my-colonies-boost-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                else toast.info(t('Pilih colony di daftar bawah untuk mengaktifkan Boost.'));
+              }}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl cursor-pointer shadow-xs"
             >
               {t('Boost Colony')}
@@ -311,9 +315,11 @@ export function ColonyBoostSubtab({
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                toast.success(t('Pilih colony untuk mengaktifkan Level 3.'))
-              }
+              onClick={() => {
+                const el = document.getElementById('my-colonies-boost-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                else toast.info(t('Pilih colony di daftar bawah untuk mengaktifkan Boost.'));
+              }}
               className="w-full text-xs font-bold rounded-xl cursor-pointer"
             >
               {t('Boost Colony')}
@@ -323,7 +329,7 @@ export function ColonyBoostSubtab({
       </div>
 
       {/* ── 4. YOUR ACTIVE COLONY BOOSTS ── */}
-      <div className="space-y-3 pt-2">
+      <div id="my-colonies-boost-section" className="space-y-3 pt-2">
         <h3 className="text-sm font-bold text-foreground">
           {t('Your Boosts & Supported Colonies')}
         </h3>

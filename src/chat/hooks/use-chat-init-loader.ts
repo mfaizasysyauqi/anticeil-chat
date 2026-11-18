@@ -353,15 +353,6 @@ export function useChatInitLoader({
             setActiveChannelId((curr) => {
               const exists = res.some((c) => c.id === curr);
               if (exists) return curr;
-              const activeVoice = res.find(
-                (c) =>
-                  c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0,
-              );
-              if (activeVoice) {
-                setActiveCallChannelId(activeVoice.id);
-                setIsCallPiP(false);
-                return activeVoice.id;
-              }
               const defaultText = res.find((c) => c.type === 'text' || !c.type);
               return defaultText?.id || res[0]?.id || '';
             });

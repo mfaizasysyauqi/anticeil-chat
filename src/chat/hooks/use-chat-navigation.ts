@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import type { ColonyChannel, ColonyMember } from '../chat-types';
 
 export interface UseChatNavigationProps {
@@ -22,12 +22,15 @@ export function useChatNavigation({
   setActiveCallChannelId,
   setIsCallPiP,
 }: UseChatNavigationProps) {
-  // Channels filtered by selected Hub
+  // Channels filtered by selected Hub (must match colony sidebar and avoid dropping custom categories)
   const colonyChannels = useMemo(() => {
     return channels.filter(
       (c) =>
         (c.colonyId || 'anticeil') === (activeColonyId || 'anticeil') &&
-        c.category === 'CHANNELS',
+        !c.isDirectMessage &&
+        c.category !== 'DIRECT MESSAGES' &&
+        !c.id.startsWith('dm-') &&
+        !c.id.startsWith('gdm-'),
     );
   }, [channels, activeColonyId]);
 
@@ -91,18 +94,31 @@ export function useChatNavigation({
       }
       return null;
     }
-    if (colonyChannels.length === 0) return null;
+    if (colonyChannels.length === 0) {
+      if (activeChannelId) {
+        return channels.find((c) => c.id === activeChannelId) || null;
+      }
+      return null;
+    }
     if (activeChannelId) {
-      const current = colonyChannels.find((c) => c.id === activeChannelId);
+      const current =
+        colonyChannels.find((c) => c.id === activeChannelId) ||
+        channels.find((c) => c.id === activeChannelId);
       if (current) return current;
     }
-    return colonyChannels[0] || null;
-  }, [isHome, activeChannelId, dmChannels, colonyChannels, members, currentUser]);
+    // Default to the first text channel (# general), NEVER accidentally jump into a voice channel
+    const defaultText = colonyChannels.find((c) => c.type === 'text' || !c.type);
+    return defaultText || colonyChannels[0] || null;
+  }, [isHome, activeChannelId, dmChannels, colonyChannels, channels, members, currentUser]);
 
-  // Automatically connect to voice call when switching to or opening a voice channel
+  // Track previous channel ID so voice call auto-connects ONLY when the user explicitly switches into a voice channel,
+  // and NEVER re-triggers when activeCallChannelId is cleared (e.g. on disconnect/leave).
+  const prevChannelIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (activeChannel?.type === 'voice') {
-      if (activeCallChannelId !== activeChannel.id) {
+    if (activeChannel?.id && activeChannel.id !== prevChannelIdRef.current) {
+      prevChannelIdRef.current = activeChannel.id;
+      if (activeChannel.type === 'voice') {
         setActiveCallChannelId(activeChannel.id);
         setIsCallPiP(false);
       }
@@ -110,7 +126,6 @@ export function useChatNavigation({
   }, [
     activeChannel?.id,
     activeChannel?.type,
-    activeCallChannelId,
     setActiveCallChannelId,
     setIsCallPiP,
   ]);

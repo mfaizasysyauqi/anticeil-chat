@@ -129,7 +129,7 @@ export function ActivityDestinationDialog({
 
   const handleLaunch = () => {
     if (targetType === 'server') {
-      const ch = serverChannels.find((c) => c.id === selectedChannelId) || voiceChannels[0] || serverChannels[0];
+      const ch = serverChannels.find((c) => c.id === selectedChannelId) || textChannels[0] || voiceChannels[0] || serverChannels[0];
       if (!ch) return;
       onConfirmLaunch({
         targetType: 'server',

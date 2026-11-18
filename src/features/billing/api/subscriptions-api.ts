@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { billingApi } from './billing-api';
 
 export interface UserSubscription {
   planId: 'free' | 'nectar_basic' | 'nectar_boost';
@@ -109,6 +110,14 @@ export const subscriptionsApi = {
     try {
       await api.post('/v1/billing/subscriptions', newSub);
     } catch {}
+
+    billingApi.createTransaction({
+      description: planId === 'nectar_boost' ? 'Langganan Nectar Tier (Bulanan)' : 'Langganan Pollen Tier (Bulanan)',
+      amount: planId === 'nectar_boost' ? 149000 : 49000,
+      currency: 'IDR',
+      status: 'settlement',
+      paymentMethod: 'Midtrans QRIS / GoPay',
+    }).catch(() => {});
 
     localStorage.setItem(SUBSCRIPTION_STORAGE_KEY, JSON.stringify(newSub));
     return newSub;

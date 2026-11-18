@@ -384,9 +384,15 @@ export function useColonyPageState(): ChatPageContentProps {
     setIsCallPiP(false);
 
     if (activeChannel?.type === 'voice') {
-      const defaultText = colonyChannels.find((c) => c.type === 'text' || !c.type);
+      const currentColonyId = activeColonyId || activeChannel?.colonyId;
+      const defaultText =
+        colonyChannels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
+        channels.find((c) => (c.colonyId || 'anticeil') === currentColonyId && (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
+        channels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage);
       if (defaultText) {
         setActiveChannelId(defaultText.id);
+      } else {
+        setActiveChannelId('');
       }
     }
   }, [
@@ -394,6 +400,8 @@ export function useColonyPageState(): ChatPageContentProps {
     activeChannel,
     socket,
     colonyChannels,
+    channels,
+    activeColonyId,
     setActiveCallChannelId,
     setSelectedActivityAppId,
     setIsActivityOpen,
