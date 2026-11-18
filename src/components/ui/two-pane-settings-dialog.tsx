@@ -212,7 +212,7 @@ export function TwoPaneSettingsDialog({
             </button>
           </div>
 
-          <div className="p-3 md:py-5 md:px-3 flex-1 flex flex-col min-h-0">
+          <div className={cn(LAYOUT_DIALOG_SPACING.SIDEBAR_PADDING, 'flex-1 flex flex-col min-h-0')}>
             {/* Sidebar header (e.g. Colony info or User card) */}
             {sidebarHeader && <div className="mb-4">{sidebarHeader}</div>}
 

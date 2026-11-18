@@ -46,7 +46,7 @@ export function VoiceVideoSettingsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn('overflow-hidden text-foreground flex flex-col md:flex-row', LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER)}>
         {/* Left Navigation Sidebar */}
-        <div className="w-full md:w-56 bg-muted/40 border-b md:border-b-0 md:border-r border-border p-4 flex flex-col justify-between shrink-0">
+        <div className={cn('w-full md:w-56 bg-muted/40 border-b md:border-b-0 md:border-r border-border flex flex-col justify-between shrink-0', LAYOUT_DIALOG_SPACING.SIDEBAR_PADDING)}>
           <div className="space-y-4">
             <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2">
               {t('Voice & Video')}
@@ -96,7 +96,7 @@ export function VoiceVideoSettingsModal({
         </div>
 
         {/* Right Settings Content */}
-        <div className={cn('flex-1 overflow-y-auto h-full max-md:scrollbar-none lg:[scrollbar-width:thin] space-y-6', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL, 'py-5 sm:py-6 md:py-8')}>
+        <div className={cn('flex-1 overflow-y-auto h-full max-md:scrollbar-none lg:[scrollbar-width:thin] space-y-6', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL, LAYOUT_DIALOG_SPACING.PANE_VERTICAL)}>
           <DialogHeader className="p-0 text-left border-b border-border pb-3">
             <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
               <Mic className="w-5 h-5 text-primary" />

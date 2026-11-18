@@ -384,7 +384,7 @@ export function UserSettingsModal({
         )
       }
     >
-      <div className="space-y-6 pb-12 w-full">
+      <div className="space-y-6 w-full">
         {activeSection === 'account' && (
           <AccountTab
             currentUser={currentUser}
