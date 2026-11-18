@@ -139,6 +139,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     socket,
     isActivityOpen,
     setIsActivityOpen,
+    handleDisconnectCall,
     navigate,
     threadMessages,
     forumSearchQuery,
@@ -312,6 +313,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       setIsCallPiP,
       setActiveCallChannelId,
       setIsActivityOpen,
+      onDisconnectCall: handleDisconnectCall,
     },
     friendsProps: {
       friends,

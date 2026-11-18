@@ -76,8 +76,8 @@ export function useCallWebRTC({
   }, [colonyId, channel.id, inviteCode, activeAppId]);
 
   useEffect(() => {
+    setActiveAppId(initialAppId || null);
     if (initialAppId) {
-      setActiveAppId(initialAppId);
       onToggleActivity?.(true);
       onActivityChange?.(initialAppId);
     }
@@ -90,7 +90,8 @@ export function useCallWebRTC({
 
   const currentActiveApp = useMemo(() => {
     if (!activeAppId) return null;
-    const standardApp = DISCORD_APPS.find((app) => app.id === activeAppId);
+    const targetId = activeAppId === 'youtube' ? 'watch-together' : activeAppId;
+    const standardApp = DISCORD_APPS.find((app) => app.id === targetId);
     if (standardApp) return standardApp;
 
     const colonyApp = activeColony?.installedApps?.find((a) => a.id === activeAppId);

@@ -368,6 +368,39 @@ export function useColonyPageState(): ChatPageContentProps {
     setMessagesMap,
   });
 
+  const handleDisconnectCall = useCallback(() => {
+    const channelToLeave = activeCallChannelId || (activeChannel?.type === 'voice' ? activeChannel.id : null);
+    if (channelToLeave && socket) {
+      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: channelToLeave,
+        action: 'ACTIVITY_STOP',
+        payload: {},
+      });
+      socket.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: channelToLeave });
+    }
+    setActiveCallChannelId(null);
+    setSelectedActivityAppId(null);
+    setIsActivityOpen(false);
+    setIsCallPiP(false);
+
+    if (activeChannel?.type === 'voice') {
+      const defaultText = colonyChannels.find((c) => c.type === 'text' || !c.type);
+      if (defaultText) {
+        setActiveChannelId(defaultText.id);
+      }
+    }
+  }, [
+    activeCallChannelId,
+    activeChannel,
+    socket,
+    colonyChannels,
+    setActiveCallChannelId,
+    setSelectedActivityAppId,
+    setIsActivityOpen,
+    setIsCallPiP,
+    setActiveChannelId,
+  ]);
+
   const updateNameMutation = userMutations.useUpdateName({
     onSuccess: (data: any) => {
       userHooks.invalidateCurrentUser(queryClient);
@@ -564,6 +597,7 @@ export function useColonyPageState(): ChatPageContentProps {
     socket,
     isActivityOpen,
     setIsActivityOpen,
+    handleDisconnectCall,
     navigate,
     handleKanbanCardsUpdate,
     replyingToMessage,

@@ -23,7 +23,7 @@ export interface AppsViewProps {
   colonies?: Colony[];
   members?: ColonyMember[];
   activeCallChannelId?: string | null;
-  onLaunchActivity: (appId: string, fromChat?: boolean, targetChannelId?: string) => void;
+  onLaunchActivity: (appId: string, fromChat?: boolean, targetChannelId?: string, targetColonyId?: string) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
   onStartDM?: (member: ColonyMember) => void;
@@ -211,7 +211,7 @@ export function AppsView({
       if (options.channelId && setActiveChannelId) {
         setActiveChannelId(options.channelId);
       }
-      onLaunchActivity(options.appId, false, options.channelId);
+      onLaunchActivity(options.appId, false, options.channelId, options.colonyId);
     } else {
       if (options.member && onStartDM) {
         onStartDM(options.member);
@@ -221,7 +221,7 @@ export function AppsView({
           setActiveChannelId(options.channelId);
         }
       }
-      onLaunchActivity(options.appId, false, options.channelId);
+      onLaunchActivity(options.appId, false, options.channelId, 'anticeil');
     }
   };
 

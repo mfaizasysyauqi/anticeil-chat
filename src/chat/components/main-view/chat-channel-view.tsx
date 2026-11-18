@@ -96,7 +96,7 @@ export interface ChatChannelViewProps {
   setNewThreadName: (name: string) => void;
   setNewThreadInitialMsg: (msg: string) => void;
   handleDeleteMessage: (messageId: string) => void;
-  handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string) => void;
+  handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string, colonyId?: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   stagedAttachment: CommunityAttachment | null;
   setStagedAttachment: (att: CommunityAttachment | null) => void;
@@ -464,6 +464,7 @@ export function ChatChannelView({
             className="w-full min-h-[50%] overflow-hidden flex flex-col"
           >
             <CallStage
+              key={`${activeChannel?.id}-${selectedActivityAppId || 'stage'}`}
               channel={activeChannel!}
               activeColony={activeColony}
               currentUser={currentUser}
@@ -481,6 +482,15 @@ export function ChatChannelView({
               onTogglePiP={() => setIsCallPiP(true)}
               onEndCall={() => {
                 setIsActivityChatSplitOpen(false);
+                const channelToLeave = activeCallChannelId || activeChannel?.id;
+                if (channelToLeave && socket) {
+                  socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+                    channelId: channelToLeave,
+                    action: 'ACTIVITY_STOP',
+                    payload: {},
+                  });
+                  socket.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: channelToLeave });
+                }
                 if (activeChannel) {
                   const elapsedSec = callStartTimeRef.current
                     ? Math.max(1, Math.floor((Date.now() - callStartTimeRef.current) / 1000))

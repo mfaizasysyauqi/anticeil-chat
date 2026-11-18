@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { YouTubeVideoItem } from './hooks/use-youtube-player';
 
+const FALLBACK_THUMBNAIL = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180' viewBox='0 0 320 180' fill='%2318181b'><rect width='320' height='180' fill='%2318181b'/><circle cx='160' cy='90' r='26' fill='%23ef4444'/><polygon points='153,78 173,90 153,102' fill='%23ffffff'/></svg>";
+
 export interface YouTubePlaylistViewProps {
   playlist: YouTubeVideoItem[];
   activeVideoId: string | null;
@@ -36,8 +38,9 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
             className="w-full h-full object-cover"
             onError={(e) => {
               const target = e.currentTarget;
-              if (!target.src.includes('mqdefault')) {
-                target.src = `https://i.ytimg.com/vi/${activeVideoId}/mqdefault.jpg`;
+              if (!target.dataset.triedFallback) {
+                target.dataset.triedFallback = '1';
+                target.src = FALLBACK_THUMBNAIL;
               }
             }}
           />
@@ -94,8 +97,9 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.currentTarget;
-                  if (!target.src.includes('mqdefault')) {
-                    target.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`;
+                  if (!target.dataset.triedFallback) {
+                    target.dataset.triedFallback = '1';
+                    target.src = FALLBACK_THUMBNAIL;
                   }
                 }}
               />

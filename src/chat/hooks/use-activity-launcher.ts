@@ -61,6 +61,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       appId: string,
       fromChatInvite: boolean = false,
       targetChannelId?: string,
+      targetColonyId?: string,
     ) => {
       setSelectedActivityAppId(appId);
       setIsTemplatePopoverOpen(false);
@@ -95,17 +96,21 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       } else {
         // In Server:
         // If launching or joining inside a text channel (e.g. #general), keep the activity
-        // embedded directly in that text channel in Discord-style split view.
+        // embedded directly in that text channel in split view.
         // Never jump away to a voice channel!
         if (targetChannelId) {
+          const found = channels.find((c) => c.id === targetChannelId);
           voiceDest =
-            channels.find((c) => c.id === targetChannelId) ||
+            found ||
             ({
               id: targetChannelId,
               name: 'Channel',
               type: 'text',
-              colonyId: activeColonyId,
+              colonyId: targetColonyId || activeColonyId,
             } as ColonyChannel);
+          if (targetColonyId && voiceDest) {
+            voiceDest.colonyId = targetColonyId;
+          }
         } else if (activeChannel && activeChannel.type !== 'voice') {
           voiceDest = activeChannel;
         } else if (activeCallChannelId) {
@@ -136,8 +141,9 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       };
 
       if (voiceDest) {
-        if (voiceDest.colonyId && voiceDest.colonyId !== activeColonyId) {
-          setActiveColonyId(voiceDest.colonyId);
+        const destColonyId = targetColonyId || voiceDest.colonyId;
+        if (destColonyId && destColonyId !== activeColonyId) {
+          setActiveColonyId(destColonyId);
         }
         setActiveChannelId(voiceDest.id);
         // Only set activeCallChannelId for voice channels so text channels stay text channels

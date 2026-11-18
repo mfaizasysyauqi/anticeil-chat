@@ -46,7 +46,7 @@ export interface ChatHomeViewsProps {
   isAppsView: boolean;
   members: ColonyMember[];
   activeCallChannelId: string | null;
-  handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string) => void;
+  handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string, colonyId?: string) => void;
   handleStartDM: (member: ColonyMember) => void;
   isColoniesView: boolean;
   requireAuth: (action: () => void, title?: string, desc?: string) => void;

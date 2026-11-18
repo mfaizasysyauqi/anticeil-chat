@@ -340,10 +340,9 @@ export function useChatInitLoader({
             setSelectedActivityAppId(normalizedAct);
             setIsActivityOpen(true);
           }
-          let matchedTarget = res.find((c) => c.id === targetChannelParam);
-          if (!matchedTarget && targetActivityParam) {
-            matchedTarget = res.find((c) => c.type === 'voice');
-          }
+          let matchedTarget = targetChannelParam
+            ? res.find((c) => c.id === targetChannelParam)
+            : null;
           if (matchedTarget) {
             setActiveChannelId(matchedTarget.id);
             if (matchedTarget.type === 'voice') {
@@ -354,14 +353,6 @@ export function useChatInitLoader({
             setActiveChannelId((curr) => {
               const exists = res.some((c) => c.id === curr);
               if (exists) return curr;
-              if (targetActivityParam) {
-                const voiceCh = res.find((c) => c.type === 'voice');
-                if (voiceCh) {
-                  setActiveCallChannelId(voiceCh.id);
-                  setIsCallPiP(false);
-                  return voiceCh.id;
-                }
-              }
               const activeVoice = res.find(
                 (c) =>
                   c.type === 'voice' && (activeCallCounts[c.id] || 0) > 0,
@@ -371,7 +362,8 @@ export function useChatInitLoader({
                 setIsCallPiP(false);
                 return activeVoice.id;
               }
-              return res[0]?.id || '';
+              const defaultText = res.find((c) => c.type === 'text' || !c.type);
+              return defaultText?.id || res[0]?.id || '';
             });
           }
         }

@@ -43,7 +43,7 @@ export function ActivityStage({
 }: ActivityStageProps) {
   return (
     <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col bg-background">
-      {activeAppId === 'watch-together' && (
+      {(activeAppId === 'watch-together' || activeAppId === 'youtube') && (
         <YouTubeWatchTogether
           channel={channel}
           currentUserName={currentUserName}
@@ -105,6 +105,7 @@ export function ActivityStage({
       )}
 
       {activeAppId !== 'watch-together' &&
+        activeAppId !== 'youtube' &&
         activeAppId !== 'whiteboard' &&
         activeAppId !== 'chess' &&
         activeAppId !== 'screenshare' &&

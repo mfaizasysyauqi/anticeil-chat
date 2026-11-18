@@ -345,6 +345,7 @@ export interface UserBottomDockWrapperProps {
   setIsCallPiP: (pip: boolean) => void;
   setActiveCallChannelId: (id: string | null) => void;
   setIsActivityOpen: (open: boolean) => void;
+  onDisconnectCall?: () => void;
 }
 
 export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
@@ -365,6 +366,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
   setIsCallPiP,
   setActiveCallChannelId,
   setIsActivityOpen,
+  onDisconnectCall,
 }) => {
   const activeCallChannel = channels.find((c) => c.id === activeCallChannelId);
   return (
@@ -388,8 +390,12 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
         setIsCallPiP(false);
       }}
       onDisconnectCall={() => {
-        setActiveCallChannelId(null);
-        setIsActivityOpen(false);
+        if (onDisconnectCall) {
+          onDisconnectCall();
+        } else {
+          setActiveCallChannelId(null);
+          setIsActivityOpen(false);
+        }
       }}
     />
   );
