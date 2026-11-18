@@ -164,7 +164,7 @@ export function BansTab({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl pb-16">
+    <div className="space-y-6 w-full pb-16">
       {/* ── Header ── */}
       <div className="space-y-1">
         <h2 className="text-xl font-bold text-foreground">

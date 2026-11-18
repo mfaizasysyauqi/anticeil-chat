@@ -117,9 +117,9 @@ export function ProfileTab({
       />
 
       {/* Main 2-Column Discord Layout */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="w-full flex flex-col lg:flex-row gap-8 items-start justify-between">
         {/* LEFT COLUMN: EDIT FORM */}
-        <div className="flex-1 space-y-6 max-w-xl">
+        <div className="flex-1 min-w-0 space-y-6 w-full">
           {/* Header */}
           <div>
             <h2 className="text-xl font-bold text-foreground">

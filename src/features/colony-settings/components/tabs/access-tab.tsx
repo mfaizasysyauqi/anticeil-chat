@@ -258,7 +258,7 @@ export function AccessTab({
   const pendingCount = applications.filter((a) => a.status === 'pending').length;
 
   return (
-    <div className="space-y-8 max-w-3xl pb-16">
+    <div className="space-y-8 w-full pb-16">
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-foreground flex items-center gap-2">

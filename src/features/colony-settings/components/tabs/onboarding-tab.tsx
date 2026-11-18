@@ -178,7 +178,7 @@ export function OnboardingTab({
   };
 
   return (
-    <div className="space-y-12 max-w-4xl pb-24 text-foreground">
+    <div className="space-y-12 w-full pb-24 text-foreground">
       {/* ── Top Hero: Wooden Signpost Illustration in Teal Aesthetics ── */}
       <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4">
         {/* Status Pill */}

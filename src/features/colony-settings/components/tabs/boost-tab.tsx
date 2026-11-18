@@ -353,7 +353,7 @@ export function BoostTab({
               <Button
                 type="button"
                 onClick={() => serverBannerInputRef.current?.click()}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5 mr-1.5" />
                 {serverBannerUrl ? t('Change Background') : t('Upload Background')}
@@ -444,7 +444,7 @@ export function BoostTab({
               <Button
                 type="button"
                 onClick={() => inviteBackgroundInputRef.current?.click()}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-4 h-9 rounded-lg cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5 mr-1.5" />
                 {inviteBackgroundUrl ? t('Change Background') : t('Upload Background')}
@@ -539,7 +539,7 @@ export function BoostTab({
                   )
                 }
                 placeholder="nama-server-kustom"
-                className="h-9 px-3 rounded-lg bg-[#1e1f22] border border-border/80 text-xs font-semibold text-foreground focus:outline-none focus:border-[#5865F2] w-full"
+                className="h-9 px-3 rounded-lg bg-[#1e1f22] border border-border/80 text-xs font-semibold text-foreground focus:outline-none focus:border-primary w-full"
               />
             </div>
           ) : (
@@ -558,7 +558,7 @@ export function BoostTab({
       {/* Footer Save & Cancel Buttons */}
       <div className="pt-6 border-t border-border/50 flex items-center gap-3">
         <Button
-          className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-9 rounded-lg font-semibold cursor-pointer"
           onClick={handleSave}
         >
           {t('Simpan Perubahan')}

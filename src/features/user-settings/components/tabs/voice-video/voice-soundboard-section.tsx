@@ -69,13 +69,13 @@ export const VoiceSoundboardSection: React.FC<VoiceSoundboardSectionProps> = ({
           max="100"
           value={soundboardVolume}
           onChange={(e) => setSoundboardVolume(Number(e.target.value))}
-          className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+          className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
         />
         <p className="text-[11px] text-muted-foreground">
           {t('Control how loud sounds are for you personally.')}{' '}
           <span
             onClick={() => toast.info(t('Soundboard Volume hanya memengaruhi volume yang Anda dengar, bukan pengguna lain.'))}
-            className="text-[#5865F2] hover:underline cursor-pointer font-medium"
+            className="text-primary hover:underline cursor-pointer font-medium"
           >
             {t('Learn more about Soundboard volume.')}
           </span>
@@ -92,7 +92,7 @@ export const VoiceSoundboardSection: React.FC<VoiceSoundboardSectionProps> = ({
             )}{' '}
             <span
               onClick={() => toast.info(t('Fitur Entrance Sounds memainkan sound effect kustom secara otomatis ketika Anda masuk ke room suara.'))}
-              className="text-[#5865F2] hover:underline cursor-pointer font-medium"
+              className="text-primary hover:underline cursor-pointer font-medium"
             >
               {t('Learn More.')}
             </span>
@@ -156,12 +156,12 @@ export const VoiceSoundboardSection: React.FC<VoiceSoundboardSectionProps> = ({
                   className={cn(
                     'px-3 py-2 rounded-lg text-xs font-bold border transition-all text-left flex items-center justify-between cursor-pointer',
                     entranceSound === snd.id
-                      ? 'bg-[#5865F2]/10 border-[#5865F2] text-[#5865F2]'
-                      : 'bg-[#1e1f22] border-border/60 text-muted-foreground hover:text-foreground',
+                      ? 'bg-primary/10 border-primary text-primary'
+                      : 'bg-card border-border/60 text-muted-foreground hover:text-foreground',
                   )}
                 >
                   <span>{snd.label}</span>
-                  {entranceSound === snd.id && <Check className="w-3 h-3 text-[#5865F2]" />}
+                  {entranceSound === snd.id && <Check className="w-3 h-3 text-primary" />}
                 </button>
               ))}
             </div>

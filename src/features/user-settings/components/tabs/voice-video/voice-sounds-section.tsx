@@ -79,7 +79,7 @@ export const VoiceSoundsSection: React.FC<VoiceSoundsSectionProps> = ({
               <button
                 type="button"
                 onClick={() => playPreviewSound(item.key)}
-                className="text-[11px] text-[#5865F2] hover:underline font-semibold cursor-pointer block mt-0.5"
+                className="text-[11px] text-primary hover:underline font-semibold cursor-pointer block mt-0.5"
               >
                 {t('Preview Sound')}
               </button>
@@ -119,7 +119,7 @@ export const VoiceSoundsSection: React.FC<VoiceSoundsSectionProps> = ({
                   <button
                     type="button"
                     onClick={() => playPreviewSound(snd.sound)}
-                    className="text-[10px] text-[#5865F2] hover:underline font-medium cursor-pointer"
+                    className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
                   >
                     {t('Preview Sound')}
                   </button>

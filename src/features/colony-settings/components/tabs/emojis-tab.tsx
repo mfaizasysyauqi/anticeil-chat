@@ -148,7 +148,7 @@ export function EmojisTab({
 
   return (
     <div
-      className="w-full max-w-2xl space-y-6"
+      className="w-full space-y-6"
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragging(true);

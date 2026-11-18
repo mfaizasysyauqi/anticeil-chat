@@ -83,7 +83,7 @@ export function VoiceCameraSection({
               'px-6 py-2.5 h-10 text-xs font-bold rounded-md transition-all cursor-pointer shadow-sm',
               isCameraTesting
                 ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                : 'bg-[#5865F2] hover:bg-[#4752C4] text-white',
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground',
             )}
           >
             {isCameraTesting ? t('Stop Video') : t('Test Video')}
@@ -162,7 +162,7 @@ export function VoiceCameraSection({
                 ),
               )
             }
-            className="text-[#5865F2] hover:underline cursor-pointer font-medium"
+            className="text-primary hover:underline cursor-pointer font-medium"
           >
             {t('system camera settings')}
           </span>
@@ -253,13 +253,13 @@ export function VoiceCameraSection({
                 className={cn(
                   'relative aspect-video rounded-xl overflow-hidden border-2 transition-all p-2 flex flex-col justify-end cursor-pointer group',
                   isSelected
-                    ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 shadow-md'
+                    ? 'border-primary ring-2 ring-primary/40 shadow-md'
                     : 'border-border/60 hover:border-border hover:shadow-xs',
                   bg.grad ? `bg-linear-to-br ${bg.grad}` : 'bg-[#1e1f22]',
                 )}
               >
                 {bg.isNew && (
-                  <span className="absolute top-2 left-2 bg-[#5865F2] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                  <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
                     NEW
                   </span>
                 )}

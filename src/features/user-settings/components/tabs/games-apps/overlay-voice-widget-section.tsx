@@ -65,7 +65,7 @@ export function OverlayVoiceWidgetSection({
           <div className="flex items-center gap-2.5">
             <div
               className={cn(
-                'rounded-full bg-[#5865F2] flex items-center justify-center text-xs text-white shrink-0 ring-2 ring-emerald-500 shadow-sm shadow-emerald-500/50',
+                'rounded-full bg-primary flex items-center justify-center text-xs text-primary-foreground shrink-0 ring-2 ring-emerald-500 shadow-sm shadow-emerald-500/50',
                 overlayAvatarSize === 'Large' ? 'size-8' : 'size-6',
               )}
             >
@@ -84,7 +84,7 @@ export function OverlayVoiceWidgetSection({
             <div className="flex items-center gap-2.5">
               <div
                 className={cn(
-                  'rounded-full bg-[#5865F2] flex items-center justify-center text-xs text-white shrink-0',
+                  'rounded-full bg-primary flex items-center justify-center text-xs text-primary-foreground shrink-0',
                   overlayAvatarSize === 'Large' ? 'size-8' : 'size-6',
                 )}
               >
@@ -103,7 +103,7 @@ export function OverlayVoiceWidgetSection({
             <div className="flex items-center gap-2.5">
               <div
                 className={cn(
-                  'rounded-full bg-[#5865F2] flex items-center justify-center text-xs text-white shrink-0',
+                  'rounded-full bg-primary flex items-center justify-center text-xs text-primary-foreground shrink-0',
                   overlayAvatarSize === 'Large' ? 'size-8' : 'size-6',
                 )}
               >
@@ -136,7 +136,7 @@ export function OverlayVoiceWidgetSection({
               className={cn(
                 'size-6 rounded-full flex items-center justify-center transition-all cursor-pointer',
                 isVoiceWidgetPinned
-                  ? 'bg-[#5865F2] text-white shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'bg-white/10 text-muted-foreground hover:bg-white/20',
               )}
               title={isVoiceWidgetPinned ? t('Pinned') : t('Unpinned')}

@@ -77,7 +77,7 @@ export function GameOverlaySubtab() {
       <div id="overlay-overview" className="scroll-mt-6 space-y-4">
         <div>
           <h2 className="text-xl font-bold text-foreground">
-            {t('Game Overlay')}
+            {t('App Overlay')}
           </h2>
         </div>
 
@@ -154,7 +154,7 @@ export function GameOverlaySubtab() {
                 ),
               )
             }
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs px-5 h-9 rounded-lg font-semibold shrink-0 cursor-pointer"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-9 rounded-lg font-semibold shrink-0 cursor-pointer"
           >
             {t('Report')}
           </Button>
@@ -175,13 +175,13 @@ export function GameOverlaySubtab() {
                     onChange={(e) =>
                       setTempOverlayKeybind(e.target.value.toUpperCase())
                     }
-                    className="h-8 w-32 text-xs font-mono bg-[#2b2d31] border-[#5865F2] text-foreground text-center"
+                    className="h-8 w-32 text-xs font-mono bg-muted/40 border-primary text-foreground text-center"
                     autoFocus
                     placeholder="Tekan shortcut..."
                   />
                   <Button
                     size="sm"
-                    className="h-8 px-3 text-xs bg-[#5865F2] hover:bg-[#4752C4] text-white"
+                    className="h-8 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
                     onClick={() => {
                       if (tempOverlayKeybind.trim()) {
                         setOverlayLockKeybind(tempOverlayKeybind.trim());

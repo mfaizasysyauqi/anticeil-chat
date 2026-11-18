@@ -244,7 +244,7 @@ export function RolesTab({
   // ==========================================
   if (!activeRole) {
     return (
-      <div className="w-full max-w-2xl space-y-6">
+      <div className="w-full space-y-6">
         <div>
           <h2 className="text-xl font-bold text-foreground">{t('Roles')}</h2>
         </div>

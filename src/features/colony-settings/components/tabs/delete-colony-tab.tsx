@@ -40,7 +40,7 @@ export function DeleteColonyTab({
   };
 
   return (
-    <div className="space-y-6 max-w-lg pb-16 text-foreground">
+    <div className="space-y-6 w-full pb-16 text-foreground">
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-destructive">

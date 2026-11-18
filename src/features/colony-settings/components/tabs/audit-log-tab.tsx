@@ -247,7 +247,7 @@ export function AuditLogTab({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl pb-16">
+    <div className="space-y-6 w-full pb-16">
       {/* ── Top Bar: Title & Filter Controls ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

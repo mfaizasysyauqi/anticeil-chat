@@ -107,7 +107,7 @@ export function ColonyTemplateTab({
   };
 
   return (
-    <div className="space-y-6 max-w-3xl pb-20 text-foreground">
+    <div className="space-y-6 w-full pb-20 text-foreground">
       {/* Header */}
       <div className="space-y-1">
         <div className="flex items-center gap-2">

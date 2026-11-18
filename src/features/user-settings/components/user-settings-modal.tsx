@@ -232,11 +232,11 @@ export function UserSettingsModal({
         items: [
           {
             id: 'registered_games',
-            label: t('Registered Games'),
+            label: t('Registered App'),
             icon: <Gamepad2 className="w-4 h-4" />,
             subItems: [
-              { id: 'registered-current-game', label: t('Current Game') },
-              { id: 'registered-added-games', label: t('Added Games') },
+              { id: 'registered-current-game', label: t('Current App') },
+              { id: 'registered-added-games', label: t('Added Apps') },
             ],
           },
           {
@@ -251,7 +251,7 @@ export function UserSettingsModal({
           },
           {
             id: 'overlay',
-            label: t('Game Overlay'),
+            label: t('App Overlay'),
             icon: <Layers className="w-4 h-4" />,
             subItems: [
               { id: 'overlay-overview', label: t('Overview') },

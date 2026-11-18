@@ -270,7 +270,7 @@ export function ColonyBoostSubtab({
               onClick={() =>
                 toast.success(t('Pilih colony untuk mengaktifkan Level 2.'))
               }
-              className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl cursor-pointer shadow-xs"
             >
               {t('Boost Colony')}
             </Button>

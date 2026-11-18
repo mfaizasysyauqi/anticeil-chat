@@ -138,7 +138,7 @@ export function ColonyInsightsTab({
   const maxHourlyCount = Math.max(...hourlyDistribution.map((h) => h.count), 1);
 
   return (
-    <div className="space-y-6 max-w-4xl pb-20 text-foreground">
+    <div className="space-y-6 w-full pb-20 text-foreground">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">

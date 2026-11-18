@@ -122,7 +122,7 @@ export function VoiceAudioSection({
             onChange={(e) =>
               updateSetting('inputVolume', Number(e.target.value))
             }
-            className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+            className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
           />
         </div>
 
@@ -144,7 +144,7 @@ export function VoiceAudioSection({
             onChange={(e) =>
               updateSetting('outputVolume', Number(e.target.value))
             }
-            className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+            className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
           />
         </div>
       </div>
@@ -159,7 +159,7 @@ export function VoiceAudioSection({
               'px-5 py-2 h-9 text-xs font-bold rounded-md transition-all shrink-0 cursor-pointer shadow-sm',
               isMicTesting
                 ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                : 'bg-[#5865F2] hover:bg-[#4752C4] text-white',
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground',
             )}
           >
             {isMicTesting ? t('Stop Testing') : t('Mic Test')}
@@ -196,7 +196,7 @@ export function VoiceAudioSection({
                 t('Troubleshooting: Pastikan izin mikrofon browser Anda aktif.'),
               )
             }
-            className="text-[#5865F2] hover:underline cursor-pointer font-medium"
+            className="text-primary hover:underline cursor-pointer font-medium"
           >
             {t('troubleshooting guide')}
           </span>
@@ -237,7 +237,7 @@ export function VoiceAudioSection({
                 className={cn(
                   'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
                   isSelected
-                    ? 'bg-[#5865F2]/5 border-[#5865F2] shadow-xs'
+                    ? 'bg-primary/5 border-primary shadow-xs'
                     : 'bg-card border-border/70 hover:bg-muted/30',
                 )}
               >
@@ -246,12 +246,12 @@ export function VoiceAudioSection({
                     className={cn(
                       'size-4 rounded-full border-2 flex items-center justify-center transition-all',
                       isSelected
-                        ? 'border-[#5865F2]'
+                        ? 'border-primary'
                         : 'border-muted-foreground/50',
                     )}
                   >
                     {isSelected && (
-                      <div className="size-2 rounded-full bg-[#5865F2]" />
+                      <div className="size-2 rounded-full bg-primary" />
                     )}
                   </div>
                 </div>
@@ -291,7 +291,7 @@ export function VoiceAudioSection({
         {/* Horizontal Sensitivity Meter */}
         <div className="relative w-full h-3 bg-[#1e1f22] rounded-full overflow-hidden border border-border/60">
           <div
-            className="h-full bg-linear-to-r from-emerald-500 via-teal-400 to-[#5865F2] transition-all duration-75"
+            className="h-full bg-linear-to-r from-emerald-500 via-teal-400 to-primary transition-all duration-75"
             style={{
               width: `${isMicTesting ? Math.min(100, micVolumeLevel) : 35}%`,
             }}
@@ -311,7 +311,7 @@ export function VoiceAudioSection({
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             {t('Reduces background noise from your mic. Powered by')}{' '}
-            <span className="text-[#5865F2] font-semibold">Krisp</span>.
+            <span className="text-primary font-semibold">Krisp</span>.
           </div>
           <div className="mt-1 font-black text-sm tracking-tight text-foreground lowercase flex items-center gap-1">
             krisp

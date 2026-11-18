@@ -87,7 +87,7 @@ export function VoiceStreamingSection() {
                 min="0"
                 max="100"
                 defaultValue={75}
-                className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
               />
             </div>
             <div className="flex items-center justify-between gap-4 py-1">

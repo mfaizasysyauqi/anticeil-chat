@@ -132,7 +132,7 @@ export function LanguageTab({
                             className={cn(
                               'w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left',
                               isSelected
-                                ? 'bg-[#5865F2]/10 text-[#5865F2] font-bold'
+                                ? 'bg-primary/10 text-primary font-bold'
                                 : 'hover:bg-muted/40 text-foreground',
                             )}
                           >
@@ -140,7 +140,7 @@ export function LanguageTab({
                               <span className="text-xl leading-none">{lang.flag}</span>
                               <span>{lang.name}</span>
                             </div>
-                            {isSelected && <Check className="w-4 h-4 text-[#5865F2]" />}
+                            {isSelected && <Check className="w-4 h-4 text-primary" />}
                           </button>
                         );
                       })}
@@ -184,17 +184,17 @@ export function LanguageTab({
                       className={cn(
                         'flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
                         isSelected
-                          ? 'bg-[#5865F2]/5 border-[#5865F2]'
-                          : 'bg-[#1e1f22] border-border/70 hover:bg-muted/30',
+                          ? 'bg-primary/5 border-primary'
+                          : 'bg-card border-border/70 hover:bg-muted/30',
                       )}
                     >
                       <div
                         className={cn(
                           'size-4 rounded-full border-2 flex items-center justify-center transition-all',
-                          isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                          isSelected ? 'border-primary' : 'border-muted-foreground/50',
                         )}
                       >
-                        {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                        {isSelected && <div className="size-2 rounded-full bg-primary" />}
                       </div>
                       <div className="flex-1 flex items-center justify-between">
                         <span className="text-xs font-semibold text-foreground">{tf.title}</span>

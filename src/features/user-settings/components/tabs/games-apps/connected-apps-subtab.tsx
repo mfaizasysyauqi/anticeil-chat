@@ -101,8 +101,8 @@ export function ConnectedAppsSubtab({
                   className={cn(
                     'size-10 rounded-xl border border-border/70 flex items-center justify-center text-lg transition-all cursor-pointer shadow-sm relative group',
                     isConnected
-                      ? 'bg-[#5865F2]/20 border-[#5865F2] ring-1 ring-[#5865F2]'
-                      : 'bg-[#1e1f22] hover:bg-[#2b2d31] hover:border-border hover:scale-105',
+                      ? 'bg-primary/20 border-primary ring-1 ring-primary'
+                      : 'bg-card hover:bg-muted/40 hover:border-border hover:scale-105',
                   )}
                   title={
                     isConnected
@@ -112,7 +112,7 @@ export function ConnectedAppsSubtab({
                 >
                   <span>{p.icon}</span>
                   {isConnected && (
-                    <div className="absolute -top-1 -right-1 size-3.5 bg-[#5865F2] rounded-full text-white flex items-center justify-center text-[9px] font-bold">
+                    <div className="absolute -top-1 -right-1 size-3.5 bg-primary rounded-full text-primary-foreground flex items-center justify-center text-[9px] font-bold">
                       ✓
                     </div>
                   )}
@@ -320,7 +320,7 @@ export function ConnectedAppsSubtab({
                             href={app.policiesUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[#5865F2] hover:underline font-medium inline-flex items-center gap-1"
+                            className="text-primary hover:underline font-medium inline-flex items-center gap-1"
                           >
                             {t('Terms & Privacy Policy')}
                             <ExternalLink className="w-3 h-3 inline" />

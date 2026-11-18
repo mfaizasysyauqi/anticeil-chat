@@ -281,7 +281,7 @@ export function ActivityPrivacySubtab({
               </div>
               <div>
                 <div className="text-xs font-bold text-foreground">
-                  {t('Registered Games')}
+                  {t('Registered App')}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
                   {t(

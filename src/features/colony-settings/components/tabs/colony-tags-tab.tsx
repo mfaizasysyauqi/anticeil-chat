@@ -148,9 +148,9 @@ export function ColonyTagsTab({
         className="hidden"
       />
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="w-full flex flex-col lg:flex-row gap-8 items-start justify-between">
         {/* LEFT COLUMN: CONTROLS */}
-        <div className="flex-1 space-y-6 max-w-xl">
+        <div className="flex-1 min-w-0 space-y-6 w-full">
           {/* Header */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">

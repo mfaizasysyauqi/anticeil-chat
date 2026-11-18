@@ -158,7 +158,7 @@ export function IntegrationsTab({
   };
 
   return (
-    <div className="space-y-8 max-w-4xl pb-16">
+    <div className="space-y-8 w-full pb-16">
       {/* ── Header (Screenshot 1 Discord Parity) ── */}
       <div>
         <h2 className="text-xl font-bold text-foreground">{t('Integrations')}</h2>

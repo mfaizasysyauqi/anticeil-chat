@@ -135,7 +135,7 @@ export function AnalyticsTab({
   };
 
   return (
-    <div className="w-full max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-foreground">
@@ -215,7 +215,7 @@ export function AnalyticsTab({
             <select
               value={systemChannelId}
               onChange={(e) => setSystemChannelId(e.target.value)}
-              className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-[#5865F2] cursor-pointer"
+              className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-primary cursor-pointer"
             >
               {textChannels.map((ch) => (
                 <option key={ch.id} value={ch.id}>
@@ -332,7 +332,7 @@ export function AnalyticsTab({
               <select
                 value={afkChannelId}
                 onChange={(e) => setAfkChannelId(e.target.value)}
-                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-[#5865F2] cursor-pointer"
+                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-primary cursor-pointer"
               >
                 <option value="none">{t('No Inactive Channel')}</option>
                 {voiceChannels.map((vc) => (
@@ -354,7 +354,7 @@ export function AnalyticsTab({
               <select
                 value={afkTimeout}
                 onChange={(e) => setAfkTimeout(Number(e.target.value))}
-                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-[#5865F2] cursor-pointer"
+                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-primary cursor-pointer"
               >
                 <option value={60}>{t('1 minute')}</option>
                 <option value={300}>{t('5 minutes')}</option>

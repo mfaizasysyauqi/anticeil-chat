@@ -80,20 +80,20 @@ export function ActivityColonyListSection({
               className={cn(
                 'flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer',
                 isSelected
-                  ? 'bg-[#5865F2]/5 border-[#5865F2]'
-                  : 'bg-[#1e1f22] border-border/70 hover:bg-muted/30',
+                  ? 'bg-primary/5 border-primary'
+                  : 'bg-card border-border/70 hover:bg-muted/30',
               )}
             >
               <div
                 className={cn(
                   'size-4 rounded-full border-2 flex items-center justify-center transition-all',
                   isSelected
-                    ? 'border-[#5865F2]'
+                    ? 'border-primary'
                     : 'border-muted-foreground/50',
                 )}
               >
                 {isSelected && (
-                  <div className="size-2 rounded-full bg-[#5865F2]" />
+                  <div className="size-2 rounded-full bg-primary" />
                 )}
               </div>
               <span className="text-xs font-semibold text-foreground">
@@ -140,7 +140,7 @@ export function ActivityColonyListSection({
         <button
           type="button"
           onClick={handleToggleAllServers}
-          className="text-[#5865F2] hover:underline font-semibold cursor-pointer text-xs"
+          className="text-primary hover:underline font-semibold cursor-pointer text-xs"
         >
           {isAnyServerActivityOn
             ? t('Toggle All Off')
@@ -155,10 +155,10 @@ export function ActivityColonyListSection({
           return (
             <div
               key={server.id}
-              className="flex items-center justify-between p-3 rounded-xl border border-border/80 bg-[#1e1f22] hover:border-border transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl border border-border/80 bg-card hover:border-border transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-[#5865F2]/20 border border-[#5865F2]/30 flex items-center justify-center font-bold text-xs text-[#5865F2] shrink-0">
+                <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-xs text-primary shrink-0">
                   {server.avatarFallback}
                 </div>
                 <div className="min-w-0">

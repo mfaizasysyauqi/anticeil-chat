@@ -108,7 +108,7 @@ export function BillingHistorySubtab() {
             size="sm"
             onClick={handleAddPaymentMethod}
             disabled={isAdding}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs cursor-pointer shrink-0"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-9 px-4 rounded-xl shadow-xs cursor-pointer shrink-0"
           >
             {isAdding ? t('Menambahkan...') : t('Add Payment Method')}
           </Button>

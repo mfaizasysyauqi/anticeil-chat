@@ -113,7 +113,7 @@ export function StickersTab({
   };
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
+    <div className="w-full space-y-6">
       {/* Hidden File Input */}
       <input
         type="file"

@@ -127,7 +127,7 @@ export function AccessibilityPreview({
                     href="#"
                     onClick={(e) => e.preventDefault()}
                     className={cn(
-                      'text-[#5865F2] font-semibold',
+                      'text-primary font-semibold',
                       alwaysUnderlineLinks && 'underline',
                     )}
                   >
@@ -154,7 +154,7 @@ export function AccessibilityPreview({
             <Button
               type="button"
               size="sm"
-              className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-3 py-1.5 h-8 rounded-md shadow-xs cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-3 py-1.5 h-8 rounded-md shadow-xs cursor-pointer"
             >
               Example Button
             </Button>

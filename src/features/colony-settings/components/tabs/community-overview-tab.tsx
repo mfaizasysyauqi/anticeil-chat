@@ -109,7 +109,7 @@ export function CommunityOverviewTab({
   };
 
   return (
-    <div className="space-y-8 max-w-3xl pb-20">
+    <div className="space-y-8 w-full pb-20">
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-foreground">

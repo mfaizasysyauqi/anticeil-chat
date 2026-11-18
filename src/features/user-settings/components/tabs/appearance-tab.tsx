@@ -119,7 +119,7 @@ export function AppearanceTab({
                           'relative size-12 rounded-xl border-2 transition-all flex items-center justify-center cursor-pointer shadow-xs',
                           item.bg,
                           isSelected
-                            ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 scale-105'
+                            ? 'border-primary ring-2 ring-primary/40 scale-105'
                             : 'border-border/60 hover:scale-105',
                         )}
                         title={item.label}
@@ -128,7 +128,7 @@ export function AppearanceTab({
                           <span className="text-sm font-bold text-muted-foreground">{item.icon}</span>
                         ) : null}
                         {isSelected && (
-                          <span className="absolute -top-1.5 -right-1.5 size-4 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                          <span className="absolute -top-1.5 -right-1.5 size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shadow-xs">
                             ✓
                           </span>
                         )}
@@ -160,7 +160,7 @@ export function AppearanceTab({
                     onNavigateSection?.('nitro');
                     toast.info(t('Tema kustom tersedia dengan Nectar & Pollen!'));
                   }}
-                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-4 h-8 rounded-md shrink-0 cursor-pointer shadow-xs"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-4 h-8 rounded-md shrink-0 cursor-pointer shadow-xs"
                 >
                   {t('Try It out')}
                 </Button>
@@ -215,7 +215,7 @@ export function AppearanceTab({
                     className={cn(
                       'aspect-square rounded-xl border flex items-center justify-center text-sm cursor-pointer transition-all',
                       selectedColorTheme === 'custom'
-                        ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 bg-muted/40'
+                        ? 'border-primary ring-2 ring-primary/40 bg-muted/40'
                         : 'border-border/60 hover:bg-muted/20',
                     )}
                     title="Custom Palette"
@@ -255,7 +255,7 @@ export function AppearanceTab({
                           'aspect-square rounded-xl border transition-all cursor-pointer bg-linear-to-br',
                           sw.grad,
                           isSelected
-                            ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 scale-105'
+                            ? 'border-primary ring-2 ring-primary/40 scale-105'
                             : 'border-white/10 hover:scale-105',
                         )}
                         title={sw.name}
@@ -385,14 +385,14 @@ export function AppearanceTab({
                         'relative aspect-square rounded-2xl border-2 flex items-center justify-center text-xl transition-all cursor-pointer shadow-xs',
                         ic.bg,
                         isSelected
-                          ? 'border-[#5865F2] ring-2 ring-[#5865F2]/40 scale-105'
+                          ? 'border-primary ring-2 ring-primary/40 scale-105'
                           : 'border-border/60 hover:scale-105',
                       )}
                       title={ic.label}
                     >
                       <span>{ic.icon}</span>
                       {isSelected && (
-                        <span className="absolute -top-1 -right-1 size-4 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                        <span className="absolute -top-1 -right-1 size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shadow-xs">
                           ✓
                         </span>
                       )}
@@ -476,7 +476,7 @@ export function AppearanceTab({
                   <div>
                     <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                       <span>{t('Show Favorites server')}</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider bg-[#5865F2] text-white px-1.5 py-0.5 rounded-full shadow-xs">
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full shadow-xs">
                         BETA
                       </span>
                     </div>
@@ -557,17 +557,17 @@ export function AppearanceTab({
                         className={cn(
                           'flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
                           isSelected
-                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                            ? 'bg-primary/5 border-primary'
                             : 'bg-card border-border/70 hover:bg-muted/30',
                         )}
                       >
                         <div
                           className={cn(
                             'size-4 rounded-full border-2 flex items-center justify-center transition-all',
-                            isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                            isSelected ? 'border-primary' : 'border-muted-foreground/50',
                           )}
                         >
-                          {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                          {isSelected && <div className="size-2 rounded-full bg-primary" />}
                         </div>
                         <span className="text-xs font-semibold text-foreground">{sc.title}</span>
                       </div>

@@ -76,7 +76,7 @@ export function AccessibilityReducedMotion({
             step="1"
             value={notificationDuration}
             onChange={(e) => setNotificationDuration(Number(e.target.value))}
-            className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+            className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
             <span className="text-emerald-400 font-bold">3s</span>
@@ -126,7 +126,7 @@ export function AccessibilityReducedMotion({
                 className={cn(
                   'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
                   isSelected
-                    ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                    ? 'bg-primary/5 border-primary'
                     : 'bg-card border-border/70 hover:bg-muted/30',
                 )}
               >
@@ -134,10 +134,10 @@ export function AccessibilityReducedMotion({
                   <div
                     className={cn(
                       'size-4 rounded-full border-2 flex items-center justify-center transition-all',
-                      isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                      isSelected ? 'border-primary' : 'border-muted-foreground/50',
                     )}
                   >
-                    {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                    {isSelected && <div className="size-2 rounded-full bg-primary" />}
                   </div>
                 </div>
                 <div>

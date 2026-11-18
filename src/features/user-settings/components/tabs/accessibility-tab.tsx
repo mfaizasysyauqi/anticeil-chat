@@ -112,7 +112,7 @@ export function AccessibilityTab({
                     step="1"
                     value={chatFontSize}
                     onChange={(e) => setChatFontSize(Number(e.target.value))}
-                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
                     <span>12px</span>
@@ -177,17 +177,17 @@ export function AccessibilityTab({
                         className={cn(
                           'flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer',
                           isSelected
-                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                            ? 'bg-primary/5 border-primary'
                             : 'bg-card border-border/70 hover:bg-muted/30',
                         )}
                       >
                         <div
                           className={cn(
                             'size-4 rounded-full border-2 flex items-center justify-center transition-all',
-                            isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                            isSelected ? 'border-primary' : 'border-muted-foreground/50',
                           )}
                         >
-                          {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                          {isSelected && <div className="size-2 rounded-full bg-primary" />}
                         </div>
                         <span className="text-xs font-semibold text-foreground">{d.title}</span>
                       </div>
@@ -217,7 +217,7 @@ export function AccessibilityTab({
                         className={cn(
                           'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
                           isSelected
-                            ? 'bg-[#5865F2]/5 border-[#5865F2]'
+                            ? 'bg-primary/5 border-primary'
                             : 'bg-card border-border/70 hover:bg-muted/30',
                         )}
                       >
@@ -225,10 +225,10 @@ export function AccessibilityTab({
                           <div
                             className={cn(
                               'size-4 rounded-full border-2 flex items-center justify-center transition-all',
-                              isSelected ? 'border-[#5865F2]' : 'border-muted-foreground/50',
+                              isSelected ? 'border-primary' : 'border-muted-foreground/50',
                             )}
                           >
-                            {isSelected && <div className="size-2 rounded-full bg-[#5865F2]" />}
+                            {isSelected && <div className="size-2 rounded-full bg-primary" />}
                           </div>
                         </div>
                         <div>
@@ -256,7 +256,7 @@ export function AccessibilityTab({
                     step="4"
                     value={spaceMessageGroups}
                     onChange={(e) => setSpaceMessageGroups(Number(e.target.value))}
-                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
                     <span>0px</span>
@@ -285,7 +285,7 @@ export function AccessibilityTab({
                     step="5"
                     value={zoomLevel}
                     onChange={(e) => setZoomLevel(Number(e.target.value))}
-                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
                     <span>50</span>
@@ -329,7 +329,7 @@ export function AccessibilityTab({
                     step="10"
                     value={saturationLevel}
                     onChange={(e) => setSaturationLevel(Number(e.target.value))}
-                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
                     <span>0%</span>
@@ -501,7 +501,7 @@ export function AccessibilityTab({
                     step="0.1"
                     value={ttsRate}
                     onChange={(e) => setTtsRate(Number(e.target.value))}
-                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-[#5865F2]"
+                    className="w-full h-2 bg-muted/60 rounded-lg appearance-none cursor-pointer accent-primary"
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
                     <span>Slower</span>
@@ -514,7 +514,7 @@ export function AccessibilityTab({
                   type="button"
                   size="sm"
                   onClick={previewTtsSpeech}
-                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-4 h-8 rounded-md flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-4 h-8 rounded-md flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Play className="w-3.5 h-3.5 fill-white" />
                   <span>{t('Preview')}</span>

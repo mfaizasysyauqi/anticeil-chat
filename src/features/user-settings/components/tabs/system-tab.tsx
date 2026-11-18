@@ -158,7 +158,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                     ]);
                     toast.success(t('Pintasan tombol baru ditambahkan'));
                   }}
-                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-3.5 h-8.5 rounded-md shrink-0 cursor-pointer shadow-xs"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-3.5 h-8.5 rounded-md shrink-0 cursor-pointer shadow-xs"
                 >
                   {t('+ Add a Keybind')}
                 </Button>
@@ -243,7 +243,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                       <div className="col-span-5 flex items-center gap-2">
                         <div className="flex-1 px-3 py-2 rounded-lg bg-[#2b2d31] border border-border/80 text-xs font-mono font-semibold text-foreground truncate">
                           {recordingKeybindId === kb.id ? (
-                            <span className="text-[#5865F2] animate-pulse">Tekan kombinasi tombol...</span>
+                            <span className="text-primary animate-pulse">Tekan kombinasi tombol...</span>
                           ) : (
                             kb.keybind
                           )}
@@ -281,7 +281,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                           }}
                           className={cn(
                             'h-8 text-xs font-semibold px-2.5 shrink-0 cursor-pointer',
-                            recordingKeybindId === kb.id && 'bg-[#5865F2] text-white',
+                            recordingKeybindId === kb.id && 'bg-primary text-primary-foreground',
                           )}
                         >
                           {recordingKeybindId === kb.id ? t('Stop') : t('Record Keybind')}
@@ -501,7 +501,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                     )}{' '}
                     <span
                       onClick={() => toast.info(t('System helper menyediakan integrasi hooks sistem OS yang aman.'))}
-                      className="text-[#5865F2] hover:underline cursor-pointer font-medium"
+                      className="text-primary hover:underline cursor-pointer font-medium"
                     >
                       {t('Learn more')}
                     </span>
@@ -518,7 +518,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                     'text-xs font-bold px-5 h-9 rounded-md shrink-0 cursor-pointer transition-all shadow-xs',
                     isSystemHelperInstalled
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-[#5865F2] hover:bg-[#4752C4] text-white',
+                      : 'bg-primary hover:bg-primary/90 text-primary-foreground',
                   )}
                 >
                   {isSystemHelperInstalled ? t('Installed ✓') : t('Install')}
@@ -532,7 +532,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                 <h2 className="text-xl font-bold text-foreground">{t('Advanced')}</h2>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/70 bg-[#1e1f22]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/70 bg-card">
                 <div>
                   <div className="text-xs font-bold text-foreground">{t('Capture Performance Trace')}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5 max-w-lg leading-relaxed">
@@ -548,7 +548,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                       </div>
                       <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-linear-to-r from-emerald-500 to-[#5865F2] transition-all duration-150"
+                          className="h-full bg-linear-to-r from-emerald-500 to-primary transition-all duration-150"
                           style={{ width: `${traceProgress}%` }}
                         />
                       </div>
@@ -560,7 +560,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                   size="sm"
                   disabled={isCapturingTrace}
                   onClick={startPerformanceTrace}
-                  className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold px-5 h-9 rounded-md shrink-0 cursor-pointer shadow-xs"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-5 h-9 rounded-md shrink-0 cursor-pointer shadow-xs"
                 >
                   {isCapturingTrace ? t('Capturing...') : t('Capture')}
                 </Button>
