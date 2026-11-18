@@ -134,10 +134,11 @@ function ActivityCard({
 
           <Button
             size="sm"
+            variant="custom"
             onClick={() => onLaunch(app)}
             className={cn(
-              'h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs transition-all',
-              app.buttonClass || 'bg-primary hover:bg-primary/90 text-primary-foreground'
+              'h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs transition-colors',
+              app.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
             )}
           >
             <Play className="w-3 h-3 fill-current" />
@@ -312,10 +313,11 @@ export function AppsView({
 
             <Button
               size="lg"
+              variant="custom"
               onClick={() => handleLaunchClick('watch-together')}
               className={cn(
-                'font-bold h-10 px-6 gap-2 cursor-pointer z-10 transition-all shadow-lg',
-                featuredApp?.buttonClass || 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                'font-bold h-10 px-6 gap-2 cursor-pointer z-10 transition-colors shadow-lg',
+                featuredApp?.buttonClass || 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white'
               )}
             >
               <Play className="w-4 h-4 fill-white" />

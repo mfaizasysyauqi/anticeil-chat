@@ -11,6 +11,7 @@ const buttonVariants = cva(
       variant: {
         default:
           'bg-primary stroke-background text-primary-foreground enabled:hover:bg-primary/90',
+        custom: '',
         basic:
           'text-primary font-medium underline-offset-4 enabled:hover:bg-accent',
         secondary:

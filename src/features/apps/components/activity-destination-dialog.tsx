@@ -459,8 +459,12 @@ export function ActivityDestinationDialog({
             <Button
               type="button"
               size="sm"
+              variant="custom"
               onClick={handleLaunch}
-              className="text-xs h-8 px-4 font-bold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-md"
+              className={cn(
+                'text-xs h-8 px-4 font-bold gap-1.5 cursor-pointer shadow-md transition-colors',
+                app?.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
+              )}
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>Luncurkan Aktivitas</span>
