@@ -36,6 +36,7 @@ import {
 } from '../services/ai-storage';
 import { executeGroqCommand } from '../services/groq-service';
 import { GroqSettingsDialog } from './groq-settings-dialog';
+import { AiCommandCenterHeader } from './ai-command-center-header';
 import { useAiCommandCenterContext } from '../context/ai-command-center-context';
 
 export interface AiCommandCenterViewProps {
@@ -265,67 +266,16 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 w-full bg-background relative overflow-hidden select-none">
-      {/* 1. App Bar Header */}
-      <div className="h-12 border-b border-sidebar-border px-3.5 sm:px-4 md:px-5 lg:px-6 flex items-center justify-between shrink-0 bg-background/95 backdrop-blur-xs z-10">
-        <div className="flex items-center gap-2.5 min-w-0">
-          {onOpenSidebar && (
-            <button
-              type="button"
-              onClick={onOpenSidebar}
-              className="md:hidden p-1.5 -ml-1 text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
-              title="Buka Navigasi"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-          )}
-
-          <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4" />
-          </div>
-
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-foreground truncate">
-              AI Command Center
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Active Model Pill */}
-          <button
-            type="button"
-            onClick={() => setIsSettingsOpen(true)}
-            className="text-[11px] font-medium text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-card border border-border/40 transition-colors flex items-center gap-1 cursor-pointer"
-            title="Ubah Model / API Key"
-          >
-            <span className="max-w-[120px] truncate">{groqConfig.model}</span>
-          </button>
-
-          {/* Settings Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsSettingsOpen(true)}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-md"
-            title="Pengaturan Mesin AI (Groq)"
-          >
-            <Settings2 className="w-4 h-4" />
-          </Button>
-
-          {/* Clear Session Chat */}
-          {activeSession && messages.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onClearSessionMessages(activeSession.id)}
-              className="h-8 w-8 text-muted-foreground hover:text-red-400 rounded-md"
-              title="Bersihkan Percakapan Sesi Ini"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* 1. App Bar Header (100% DRY reusable component matching Friends, Quests, & Shop) */}
+      <AiCommandCenterHeader
+        onOpenSidebar={onOpenSidebar}
+        activeSessionTitle={activeSession?.title}
+        modelName={groqConfig.model}
+        onOpenGroqSettings={() => setIsSettingsOpen(true)}
+        onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
+        onCreateNewSession={onCreateNewSession ? () => onCreateNewSession() : undefined}
+        hasMessages={messages.length > 0}
+      />
 
       {/* 2. Messages & Capability Hero Feed */}
       <div className="flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 space-y-4 [scrollbar-width:thin]">
