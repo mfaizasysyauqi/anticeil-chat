@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Heart,
   Sparkles,
@@ -137,29 +137,91 @@ export function ShopView({
   const [searchQuery, setSearchQuery] = useState('');
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
-  // Responsive dynamic tabs container (collapse overflowing tabs into 'More' like Discord)
+  // Responsive dynamic tabs container (collapse overflowing tabs to the left of More into More)
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
-  const [tabsContainerWidth, setTabsContainerWidth] = useState<number>(600);
+  const tabWidthsRef = useRef<{ [key: string]: number }>({
+    featured: 78,
+    browse: 88,
+    dew: 88,
+    app_shops: 110,
+    more: 74,
+  });
+  const [collapsedCount, setCollapsedCount] = useState<number>(0);
+
+  // Measure and compute collapsed tabs based on available container width
+  const updateTabsLayout = useCallback(() => {
+    const el = tabsContainerRef.current;
+    if (!el) return;
+
+    // 1. Update cached widths from currently rendered tab elements
+    const children = Array.from(el.children) as HTMLElement[];
+    for (const child of children) {
+      const tabId = child.getAttribute('data-tab-id');
+      if (tabId && child.offsetWidth > 0) {
+        tabWidthsRef.current[tabId] = child.offsetWidth;
+      }
+    }
+
+    const availableWidth = el.clientWidth;
+    if (availableWidth <= 0) return;
+
+    const gap = 4; // gap-1 (4px)
+    const hysteresis = 4; // Small margin to prevent boundary oscillation
+    const wFeatured = tabWidthsRef.current.featured || 78;
+    const wBrowse = tabWidthsRef.current.browse || 88;
+    const wDew = tabWidthsRef.current.dew || 88;
+    const wAppShops = tabWidthsRef.current.app_shops || 110;
+    const wMore = tabWidthsRef.current.more || 74;
+
+    // Width needed for all 4 tabs without More button:
+    const widthAll = wFeatured + gap + wBrowse + gap + wDew + gap + wAppShops + hysteresis;
+
+    // Width needed for 3 tabs + More (App Shops collapsed into More):
+    const width3PlusMore = wFeatured + gap + wBrowse + gap + wDew + gap + wMore + hysteresis;
+
+    // Width needed for 2 tabs + More (Dew Shop & App Shops collapsed into More):
+    const width2PlusMore = wFeatured + gap + wBrowse + gap + wMore + hysteresis;
+
+    let targetCollapsed = 0;
+    if (availableWidth >= widthAll) {
+      targetCollapsed = 0;
+    } else if (availableWidth >= width3PlusMore) {
+      targetCollapsed = 1;
+    } else if (availableWidth >= width2PlusMore) {
+      targetCollapsed = 2;
+    } else {
+      targetCollapsed = 3;
+    }
+
+    setCollapsedCount(targetCollapsed);
+  }, []);
 
   useEffect(() => {
-    if (!tabsContainerRef.current) return;
     const el = tabsContainerRef.current;
-    setTabsContainerWidth(el.clientWidth);
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect) {
-          setTabsContainerWidth(entry.contentRect.width);
-        }
-      }
+    if (!el) return;
+    updateTabsLayout();
+
+    const observer = new ResizeObserver(() => {
+      updateTabsLayout();
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [updateTabsLayout]);
 
-  const showAppShops = tabsContainerWidth >= 360;
-  const showDewShop = tabsContainerWidth >= 260;
-  const showBrowse = tabsContainerWidth >= 160;
-  const hasOverflow = !showAppShops || !showDewShop || !showBrowse;
+  // Safety check: if More button still overflows (scrollWidth > clientWidth),
+  // collapse the next tab to the left into More until More does not overflow.
+  useLayoutEffect(() => {
+    const el = tabsContainerRef.current;
+    if (!el) return;
+    if (el.scrollWidth > el.clientWidth + 1 && collapsedCount < 3) {
+      setCollapsedCount((prev) => Math.min(3, prev + 1));
+    }
+  });
+
+  const showAppShops = collapsedCount < 1;
+  const showDewShop = collapsedCount < 2;
+  const showBrowse = collapsedCount < 3;
+  const hasOverflow = collapsedCount > 0;
 
   const isMoreActive =
     (!showAppShops && activeTab === 'app_shops') ||
@@ -952,9 +1014,10 @@ export function ShopView({
         </div>
 
         {/* Tab Filter Pills: Responsive dynamic tabs container (overflowing tabs move to 'More' like Discord) */}
-        <div ref={tabsContainerRef} className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-hidden px-1">
+        <div ref={tabsContainerRef} className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden px-1">
           {/* 1. Featured Tab */}
           <TopBarTabButton
+            data-tab-id="featured"
             active={activeTab === 'featured'}
             onClick={() => {
               setActiveTab('featured');
@@ -969,7 +1032,7 @@ export function ShopView({
           {showBrowse && (
             <DropdownMenu open={isBrowseOpen} onOpenChange={setIsBrowseOpen}>
               <DropdownMenuTrigger asChild>
-                <TopBarTabButton active={activeTab === 'browse' || activeTab === 'all'}>
+                <TopBarTabButton data-tab-id="browse" active={activeTab === 'browse' || activeTab === 'all'}>
                   <span>{t('Browse')}</span>
                   <ChevronDown
                     className={cn(
@@ -1058,6 +1121,7 @@ export function ShopView({
           {/* 3. Dew Shop Tab (Visible if width permits) */}
           {showDewShop && (
             <TopBarTabButton
+              data-tab-id="dew"
               active={activeTab === 'dew'}
               onClick={() => {
                 setActiveTab('dew');
@@ -1073,7 +1137,7 @@ export function ShopView({
           {showAppShops && (
             <DropdownMenu open={isAppShopsOpen} onOpenChange={setIsAppShopsOpen}>
               <DropdownMenuTrigger asChild>
-                <TopBarTabButton active={activeTab === 'app_shops'}>
+                <TopBarTabButton data-tab-id="app_shops" active={activeTab === 'app_shops'}>
                   <span>{selectedApp ? `${selectedApp}` : t('App Shops')}</span>
                   <ChevronDown
                     className={cn(
@@ -1116,7 +1180,7 @@ export function ShopView({
           {hasOverflow && (
             <DropdownMenu open={isMoreOpen} onOpenChange={setIsMoreOpen}>
               <DropdownMenuTrigger asChild>
-                <TopBarTabButton active={isMoreActive}>
+                <TopBarTabButton data-tab-id="more" active={isMoreActive}>
                   <span>{t('More')}</span>
                   <ChevronDown
                     className={cn(
