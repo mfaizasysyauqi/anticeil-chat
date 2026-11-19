@@ -34,6 +34,8 @@ export interface ChatHomeViewsProps {
   setActiveChannelId: (id: string) => void;
   setActiveCallChannelId: (id: string | null) => void;
   createCalendarEvent: (event: Partial<CalendarEvent>) => void;
+  updateCalendarEvent?: (id: string, updates: Partial<CalendarEvent>) => void;
+  deleteCalendarEvent?: (id: string) => void;
   isAssignmentsView: boolean;
   assignments: AssignmentItem[];
   handleToggleComplete: (id: string) => void;
@@ -81,6 +83,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   setActiveChannelId,
   setActiveCallChannelId,
   createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
   isAssignmentsView,
   assignments,
   handleToggleComplete,
@@ -148,6 +152,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         }}
         onOpenSidebar={() => setIsMobileChannelsOpen(true)}
         onCreateEvent={createCalendarEvent}
+        onUpdateEvent={updateCalendarEvent}
+        onDeleteEvent={deleteCalendarEvent}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
     );

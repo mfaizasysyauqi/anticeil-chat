@@ -14,6 +14,8 @@ import {
   Filter,
   ChevronDown,
   Check,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
@@ -50,6 +52,8 @@ export interface CalendarViewProps {
   onJoinChannel?: (channelId: string) => void;
   onOpenSidebar: () => void;
   onCreateEvent?: (event: Omit<CalendarEvent, 'id'>) => void;
+  onUpdateEvent?: (id: string, updates: Partial<CalendarEvent>) => void;
+  onDeleteEvent?: (id: string) => void;
   horizontalPadding?: string;
 }
 
@@ -60,6 +64,8 @@ export function CalendarView({
   onJoinChannel,
   onOpenSidebar,
   onCreateEvent,
+  onUpdateEvent,
+  onDeleteEvent,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(dayjs());
@@ -67,6 +73,45 @@ export function CalendarView({
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
   const [filterType, setFilterType] = useState<CalendarFilterType>('all');
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+
+  // Edit Event State
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editType, setEditType] = useState<'meeting' | 'task' | 'activity'>('meeting');
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('14:00');
+
+  const handleOpenEdit = (ev: CalendarEvent) => {
+    setEditingEvent(ev);
+    setEditTitle(ev.title || '');
+    setEditDescription(ev.description || '');
+    setEditType((ev.type as any) || 'meeting');
+    const d = ev.startTime ? dayjs(ev.startTime) : dayjs();
+    setEditDate(d.format('YYYY-MM-DD'));
+    setEditTime(d.format('HH:mm'));
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent || !editTitle.trim()) return;
+    onUpdateEvent?.(editingEvent.id, {
+      title: editTitle.trim(),
+      description: editDescription.trim() || undefined,
+      type: editType,
+      startTime: `${editDate}T${editTime}:00`,
+    });
+    setIsEditDialogOpen(false);
+    setEditingEvent(null);
+  };
+
+  const handleDelete = (id: string, title: string) => {
+    if (window.confirm(`Hapus agenda "${title}"?`)) {
+      onDeleteEvent?.(id);
+    }
+  };
 
 
 
@@ -519,16 +564,40 @@ export function CalendarView({
                       </div>
                     </div>
 
-                    {ev.type === 'meeting' && ev.channelId && (
-                      <Button
-                        size="sm"
-                        onClick={() => onJoinChannel?.(ev.channelId!)}
-                        className="h-8 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 cursor-pointer shadow-xs"
-                      >
-                        <Video className="w-3.5 h-3.5 mr-1.5" />
-                        Gabung Call
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {ev.type === 'meeting' && ev.channelId && (
+                        <Button
+                          size="sm"
+                          onClick={() => onJoinChannel?.(ev.channelId!)}
+                          className="h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 cursor-pointer shadow-xs"
+                        >
+                          <Video className="w-3.5 h-3.5 mr-1.5" />
+                          Gabung Call
+                        </Button>
+                      )}
+                      {onUpdateEvent && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEdit(ev)}
+                          className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                          title="Edit Agenda"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {onDeleteEvent && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(ev.id, ev.title)}
+                          className="h-8 px-2.5 text-xs text-rose-500 hover:text-rose-400 hover:border-rose-500/50 cursor-pointer"
+                          title="Hapus Agenda"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
@@ -545,6 +614,87 @@ export function CalendarView({
         channels={channels}
         onCreateEvent={onCreateEvent}
       />
+
+      {/* ── Dialog Edit Agenda ─────────────────────────── */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[460px] p-6 bg-card border-border text-foreground">
+          <DialogTitle className="text-lg font-bold text-foreground">Edit Agenda</DialogTitle>
+          <form onSubmit={handleSaveEdit} className="space-y-4 mt-2">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Judul Agenda</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Contoh: Rapat Mingguan Developer"
+                className="bg-muted/40 border-border"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Tipe Agenda</label>
+              <Select value={editType} onValueChange={(val: any) => setEditType(val)}>
+                <SelectTrigger className="bg-muted/40 border-border text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="meeting">Video Call / Meeting</SelectItem>
+                  <SelectItem value="task">Tugas / Task</SelectItem>
+                  <SelectItem value="activity">Aktivitas / Event</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Tanggal</label>
+                <Input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="bg-muted/40 border-border text-xs"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Waktu (WIB)</label>
+                <Input
+                  type="time"
+                  value={editTime}
+                  onChange={(e) => setEditTime(e.target.value)}
+                  className="bg-muted/40 border-border text-xs"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Deskripsi (Opsional)</label>
+              <Input
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Tuliskan catatan singkat..."
+                className="bg-muted/40 border-border text-xs"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditDialogOpen(false)}
+                className="text-xs"
+              >
+                Batal
+              </Button>
+              <Button type="submit" size="sm" className="text-xs font-bold bg-primary text-primary-foreground">
+                Simpan Perubahan
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

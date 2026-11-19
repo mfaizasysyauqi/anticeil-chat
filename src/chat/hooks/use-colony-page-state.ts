@@ -221,6 +221,8 @@ export function useColonyPageState(): ChatPageContentProps {
   const {
     calendarEvents,
     createCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
     isColonyEventsModalOpen,
     setIsColonyEventsModalOpen,
     assignments,
@@ -607,6 +609,8 @@ export function useColonyPageState(): ChatPageContentProps {
     isCalendarView,
     colonyChannels,
     createCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
     isAssignmentsView,
     assignments,
     handleToggleComplete,

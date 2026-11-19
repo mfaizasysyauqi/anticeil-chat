@@ -23,6 +23,8 @@ export function useChatSubsystems({
   const {
     events: calendarEvents,
     handleCreateEvent: createCalendarEvent,
+    handleUpdateEvent: updateCalendarEvent,
+    handleDeleteEvent: deleteCalendarEvent,
   } = useCalendarEvents();
   const [isColonyEventsModalOpen, setIsColonyEventsModalOpen] = useState(false);
 
@@ -80,6 +82,8 @@ export function useChatSubsystems({
   return {
     calendarEvents,
     createCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
     isColonyEventsModalOpen,
     setIsColonyEventsModalOpen,
     assignments,

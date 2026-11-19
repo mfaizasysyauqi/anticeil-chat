@@ -23,17 +23,7 @@ export interface GiftsResponse {
 
 const GIFTS_STORAGE_KEY = 'anticeil_gifts_inventory';
 
-const DEFAULT_GIFTS: GiftItem[] = [
-  {
-    id: 'gift_welcome',
-    code: 'WUMP-WELCOME-PASS-2026',
-    type: 'nectar_1m',
-    title: '1 Bulan Nectar Pass (Welcome Bonus)',
-    redeemed: true,
-    redeemedAt: '2026-11-01T10:00:00.000Z',
-    createdAt: '2026-11-01T09:00:00.000Z',
-  },
-];
+const DEFAULT_GIFTS: GiftItem[] = [];
 
 declare global {
   interface Window {
@@ -78,15 +68,21 @@ export const giftsApi = {
     try {
       const res = await api.get<any>('/v1/billing/gifts');
       const list = Array.isArray(res) ? res : res?.gifts;
-      if (Array.isArray(list) && list.length > 0) {
-        localStorage.setItem(GIFTS_STORAGE_KEY, JSON.stringify(list));
-        return list;
+      if (Array.isArray(list)) {
+        const clean = list.filter((g) => g && g.id !== 'gift_welcome');
+        localStorage.setItem(GIFTS_STORAGE_KEY, JSON.stringify(clean));
+        return clean;
       }
     } catch {}
 
     try {
       const stored = localStorage.getItem(GIFTS_STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((g) => g && g.id !== 'gift_welcome');
+        }
+      }
     } catch {}
 
     return DEFAULT_GIFTS;

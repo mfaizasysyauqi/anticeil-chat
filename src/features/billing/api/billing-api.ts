@@ -22,42 +22,28 @@ export interface TransactionItem {
 const PM_STORAGE_KEY = 'anticeil_payment_methods';
 const TX_STORAGE_KEY = 'anticeil_billing_transactions';
 
-const DEFAULT_PAYMENT_METHODS: PaymentMethodItem[] = [
-  {
-    id: 'pm-qris',
-    name: 'QRIS / GoPay (Midtrans)',
-    type: 'e-wallet',
-    details: 'Instant QRIS & GoPay Auto-Debit',
-    isDefault: true,
-    createdAt: '2026-11-01T10:00:00.000Z',
-  },
-];
-
-const DEFAULT_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: 'trx_init_01',
-    description: 'Nectar Pass Monthly Subscription',
-    amount: 149000,
-    currency: 'IDR',
-    status: 'settlement',
-    date: '2026-11-01T10:05:00.000Z',
-    paymentMethod: 'GoPay / QRIS',
-  },
-];
+const DEFAULT_PAYMENT_METHODS: PaymentMethodItem[] = [];
+const DEFAULT_TRANSACTIONS: TransactionItem[] = [];
 
 export const billingApi = {
   getPaymentMethods: async (): Promise<PaymentMethodItem[]> => {
     try {
       const data = await api.get<PaymentMethodItem[]>('/v1/billing/payment-methods');
-      if (Array.isArray(data) && data.length > 0) {
-        localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(data));
-        return data;
+      if (Array.isArray(data)) {
+        const clean = data.filter((p) => p && p.id !== 'pm-qris');
+        localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(clean));
+        return clean;
       }
     } catch {}
 
     try {
       const stored = localStorage.getItem(PM_STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((p) => p && p.id !== 'pm-qris');
+        }
+      }
     } catch {}
 
     return DEFAULT_PAYMENT_METHODS;
@@ -95,15 +81,21 @@ export const billingApi = {
   getTransactions: async (): Promise<TransactionItem[]> => {
     try {
       const data = await api.get<TransactionItem[]>('/v1/billing/transactions');
-      if (Array.isArray(data) && data.length > 0) {
-        localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(data));
-        return data;
+      if (Array.isArray(data)) {
+        const clean = data.filter((t) => t && t.id !== 'trx_init_01');
+        localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(clean));
+        return clean;
       }
     } catch {}
 
     try {
       const stored = localStorage.getItem(TX_STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((t) => t && t.id !== 'trx_init_01');
+        }
+      }
     } catch {}
 
     return DEFAULT_TRANSACTIONS;

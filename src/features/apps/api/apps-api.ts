@@ -1,12 +1,29 @@
 import { api } from '@/lib/api';
 import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
+import { Sparkles } from 'lucide-react';
 
 export const appsApi = {
   async getApps(): Promise<VoiceAppDefinition[]> {
     try {
       const res = await api.get<any[]>('/v1/community/apps');
-      if (Array.isArray(res)) {
-        return ANTICEIL_APPS;
+      if (Array.isArray(res) && res.length > 0) {
+        const customApps: VoiceAppDefinition[] = res
+          .filter((a) => a && !ANTICEIL_APPS.some((def) => def.id === a.id))
+          .map((a) => ({
+            id: a.id,
+            title: a.title || a.name || 'Community App',
+            developer: a.developer || a.author || 'Komunitas Anticeil',
+            category: a.category || 'productivity',
+            bannerGradient: a.bannerGradient || 'from-indigo-600 via-purple-700 to-zinc-950',
+            bannerImage: a.bannerImage || a.imageUrl,
+            iconBg: a.iconBg || 'bg-primary/20',
+            iconColor: a.iconColor || 'text-primary',
+            icon: Sparkles,
+            tagline: a.tagline || a.aboutInfo || 'Aplikasi komunitas',
+            description: a.description || a.aboutInfo || 'Aplikasi kolaborasi komunitas Anticeil.',
+            accentColor: a.accentColor || '#6366f1',
+          }));
+        return [...ANTICEIL_APPS, ...customApps];
       }
     } catch {}
     return ANTICEIL_APPS;

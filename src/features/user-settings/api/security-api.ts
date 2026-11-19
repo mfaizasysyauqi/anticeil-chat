@@ -85,45 +85,6 @@ const DEFAULT_SESSIONS: SessionDevice[] = [
     ...detectCurrentDevice(),
     createdAt: new Date().toISOString(),
   },
-  {
-    id: 'sess_win_desktop',
-    deviceName: 'Anticeil Desktop App for Windows',
-    deviceType: 'desktop',
-    platform: 'windows',
-    browser: 'Anticeil Client v1.4.2',
-    os: 'Windows 11 Pro',
-    ipAddress: '182.1.23.45',
-    location: 'Jakarta, Indonesia',
-    lastActive: '3 jam lalu',
-    isCurrent: false,
-    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-  },
-  {
-    id: 'sess_android',
-    deviceName: 'Samsung Galaxy S24 Ultra',
-    deviceType: 'mobile',
-    platform: 'android',
-    browser: 'Anticeil Mobile v2.1.0',
-    os: 'Android 14 (One UI 6.1)',
-    ipAddress: '36.72.18.91',
-    location: 'Bandung, Indonesia',
-    lastActive: 'Kemarin, 21:14',
-    isCurrent: false,
-    createdAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
-  },
-  {
-    id: 'sess_mac_safari',
-    deviceName: 'MacBook Pro 14"',
-    deviceType: 'desktop',
-    platform: 'macos',
-    browser: 'Safari 17.4',
-    os: 'macOS Sonoma',
-    ipAddress: '103.111.45.12',
-    location: 'Surabaya, Indonesia',
-    lastActive: '3 hari lalu',
-    isCurrent: false,
-    createdAt: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
-  },
 ];
 
 function generateBackupCodesList(): string[] {
@@ -147,7 +108,12 @@ export const securityApi = {
     try {
       const stored = localStorage.getItem(SESSIONS_STORAGE_KEY);
       if (stored) {
-        cached = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const legacyDummyIds = new Set(['sess_win_desktop', 'sess_android', 'sess_mac_safari']);
+          cached = parsed.filter((s: SessionDevice) => !legacyDummyIds.has(s.id));
+          if (cached.length === 0) cached = DEFAULT_SESSIONS;
+        }
       } else {
         localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(DEFAULT_SESSIONS));
       }

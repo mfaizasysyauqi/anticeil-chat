@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Rocket,
   Play,
@@ -16,6 +16,7 @@ import { EmptyState } from '@/components/ui/empty';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
+import { appsApi } from '../api/apps-api';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
 
@@ -165,16 +166,29 @@ export function AppsView({
 }: AppsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'entertainment' | 'game' | 'productivity'>('all');
+  const [appList, setAppList] = useState<VoiceAppDefinition[]>(ANTICEIL_APPS);
+
+  useEffect(() => {
+    let isMounted = true;
+    appsApi.getApps().then((apps) => {
+      if (isMounted && Array.isArray(apps) && apps.length > 0) {
+        setAppList(apps);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [selectedAppForLaunch, setSelectedAppForLaunch] = useState<VoiceAppDefinition | null>(null);
   const [isLaunchDialogOpen, setIsLaunchDialogOpen] = useState(false);
 
   const featuredApp = useMemo(() => {
-    return ANTICEIL_APPS.find((a) => a.id === 'watch-together') || ANTICEIL_APPS[0];
-  }, []);
+    return appList.find((a) => a.id === 'watch-together') || appList[0] || ANTICEIL_APPS[0];
+  }, [appList]);
 
   const filteredApps = useMemo(() => {
-    return ANTICEIL_APPS.filter((app) => {
+    return appList.filter((app) => {
       const matchesSearch =
         app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -183,11 +197,11 @@ export function AppsView({
       const matchesCat = activeCategory === 'all' || app.category === activeCategory;
       return matchesSearch && matchesCat;
     });
-  }, [searchQuery, activeCategory]);
+  }, [appList, searchQuery, activeCategory]);
 
   const handleLaunchClick = (appOrId: VoiceAppDefinition | string) => {
     const app = typeof appOrId === 'string'
-      ? ANTICEIL_APPS.find((a) => a.id === appOrId) || null
+      ? appList.find((a) => a.id === appOrId) || null
       : appOrId;
     if (app) {
       setSelectedAppForLaunch(app);
