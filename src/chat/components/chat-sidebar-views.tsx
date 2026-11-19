@@ -85,7 +85,7 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
             onNavigateToApps();
           } else {
             setHomeView?.('apps');
-            navigate?.('/applications&activities');
+            navigate?.('/applications');
           }
           return;
         }

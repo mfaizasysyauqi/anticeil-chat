@@ -36,7 +36,7 @@ export function useChatViewModes({
       if (typeof window !== 'undefined') {
         const p = window.location.pathname.toLowerCase();
         if (p === '/shop') return 'shop';
-        if (p === '/applications&activities' || p === '/apps' || p === '/applications' || p === '/app-directory') return 'apps';
+        if (p === '/applications' || p === '/applications&activities' || p === '/apps' || p === '/app-directory') return 'apps';
         if (p === '/friends') return 'friends';
         if (p === '/calendar') return 'calendar';
         if (p === '/calls') return 'calls';

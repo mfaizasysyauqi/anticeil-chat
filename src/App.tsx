@@ -15,10 +15,10 @@ function AppContent() {
     >
       <Routes>
         <Route path="/" element={<Navigate to="/friends" replace />} />
-        <Route path="/applications&activities" element={<CommunityPage />} />
-        <Route path="/apps" element={<Navigate to="/applications&activities" replace />} />
-        <Route path="/applications" element={<Navigate to="/applications&activities" replace />} />
-        <Route path="/app-directory" element={<Navigate to="/applications&activities" replace />} />
+        <Route path="/applications" element={<CommunityPage />} />
+        <Route path="/applications&activities" element={<Navigate to="/applications" replace />} />
+        <Route path="/apps" element={<Navigate to="/applications" replace />} />
+        <Route path="/app-directory" element={<Navigate to="/applications" replace />} />
         <Route path="/friends" element={<CommunityPage />} />
         <Route path="/message-requests" element={<CommunityPage />} />
         <Route path="/notifications" element={<CommunityPage />} />

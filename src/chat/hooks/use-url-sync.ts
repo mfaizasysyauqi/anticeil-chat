@@ -36,9 +36,9 @@ export function useUrlSync({
       const pathname = window.location.pathname.toLowerCase();
 
       if (
+        pathname === '/applications' ||
         pathname === '/applications&activities' ||
         pathname === '/apps' ||
-        pathname === '/applications' ||
         pathname === '/app-directory'
       ) {
         setHomeView?.('apps');
@@ -104,9 +104,9 @@ export function useUrlSync({
       try {
         const pathname = window.location.pathname.toLowerCase();
         if (
+          pathname === '/applications' ||
           pathname === '/applications&activities' ||
           pathname === '/apps' ||
-          pathname === '/applications' ||
           pathname === '/app-directory'
         ) {
           setHomeView?.('apps');
@@ -174,7 +174,7 @@ export function useUrlSync({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      let targetPath = '/applications&activities';
+      let targetPath = '/applications';
 
       if (activeColonyId && activeColonyId !== 'anticeil') {
         targetPath = `/channels/${activeColonyId}${activeChannelId ? '/' + activeChannelId : ''}`;
@@ -183,7 +183,7 @@ export function useUrlSync({
       } else if (homeView) {
         switch (homeView) {
           case 'apps':
-            targetPath = '/applications&activities';
+            targetPath = '/applications';
             break;
           case 'message-requests':
             targetPath = '/message-requests';
@@ -210,7 +210,7 @@ export function useUrlSync({
             targetPath = '/shop';
             break;
           default:
-            targetPath = '/applications&activities';
+            targetPath = '/applications';
             break;
         }
       }

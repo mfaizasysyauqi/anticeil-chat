@@ -246,7 +246,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
         setActiveColonyId('anticeil');
         setActiveChannelId('');
         setHomeView('apps');
-        navigate('/applications&activities');
+        navigate('/applications');
       },
       setAuthFeatureInfo,
       setIsAuthRequiredOpen,
@@ -575,7 +575,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
         setActiveColonyId('anticeil');
         setActiveChannelId('');
         setHomeView('apps');
-        navigate('/applications&activities');
+        navigate('/applications');
       },
       t,
     },
