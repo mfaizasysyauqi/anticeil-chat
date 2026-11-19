@@ -41,6 +41,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     activeColony,
     activeCallChannelId,
     setActiveCallChannelId,
+    isAiCommandCenterView,
     isFriendsView,
     homeView,
     setHomeView,
@@ -255,6 +256,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       channels,
       platformName: platform?.name,
       railMode,
+      homeView,
       friends: friends.allFriends,
       activeChannelId,
       setUnreadCounts,
@@ -387,6 +389,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     contentProps: {
       isDmMode,
       activeDmUserId,
+      isAiCommandCenterView,
       isFriendsView,
       isMessageRequestsView,
       messageRequests,

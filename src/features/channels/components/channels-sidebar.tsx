@@ -1,6 +1,7 @@
 import React from 'react';
 import { HomeChannelsSidebar } from './home-channels-sidebar';
 import { ColonyChannelsSidebar } from './colony-channels-sidebar';
+import { AiCommandCenterSidebar } from '@/features/ai-command-center';
 import type {
   Colony,
   ColonyChannel,
@@ -20,8 +21,8 @@ export interface ChannelsSidebarProps {
   activeCallChannelId: string | null;
   setActiveCallChannelId: (id: string | null) => void;
   isFriendsView: boolean;
-  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests';
-  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests') => void;
+  homeView?: 'ai' | 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests';
+  setHomeView?: (view: 'ai' | 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests') => void;
   messageRequestsCount?: number | string;
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
@@ -62,11 +63,20 @@ export interface ChannelsSidebarProps {
 }
 
 export function ChannelsSidebar(props: ChannelsSidebarProps) {
-  const { isHome, userBottomDock } = props;
+  const { isHome, userBottomDock, homeView, activeChannelId } = props;
+  const isAiActive = isHome && (homeView === 'ai' || !homeView) && !activeChannelId;
 
   return (
     <div className="flex flex-col h-full bg-sidebar select-none flex-1 min-w-0 overflow-hidden">
-      {isHome ? (
+      {isAiActive ? (
+        <AiCommandCenterSidebar
+          onSelectPromptPreset={(prompt) => {
+            window.dispatchEvent(
+              new CustomEvent('anticeil_ai_preset_prompt', { detail: prompt }),
+            );
+          }}
+        />
+      ) : isHome ? (
         <HomeChannelsSidebar {...props} />
       ) : (
         <ColonyChannelsSidebar {...props} />

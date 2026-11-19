@@ -20,6 +20,7 @@ export interface ColonyRailWrapperProps {
   railMode: 'servers' | 'friends';
   friends: any[];
   activeChannelId: string;
+  homeView?: any;
   setUnreadCounts: React.Dispatch<React.SetStateAction<Record<string, number | string>>>;
   setActiveColonyId: (id: string) => void;
   setActiveChannelId: (id: string) => void;
@@ -59,6 +60,7 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
   onToggleRailMode,
   handleStartDM,
   setIsAddFriendDialogOpen,
+  homeView,
   t,
 }) => {
   return (
@@ -66,7 +68,22 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
       servers={colonies}
       activeServerId={activeColonyId}
       unreadCounts={unreadCounts}
+      homeView={homeView}
+      isAiActive={activeColonyId === 'anticeil' && (homeView === 'ai' || !homeView) && !activeChannelId}
+      onSelectAiCenter={() => {
+        setActiveColonyId('anticeil');
+        setActiveChannelId('');
+        setHomeView?.('ai');
+        navigate?.('/ai');
+      }}
       onSelectServer={(id) => {
+        if (id === 'ai-center') {
+          setActiveColonyId('anticeil');
+          setActiveChannelId('');
+          setHomeView?.('ai');
+          navigate?.('/ai');
+          return;
+        }
         if (id !== 'anticeil') {
           setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
         }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Users, Globe, UserPlus, Compass } from 'lucide-react';
+import { Plus, Users, Globe, UserPlus, Compass, MessageSquare, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { Colony } from '@/lib/colony';
@@ -27,6 +28,9 @@ export interface ColonyRailProps {
   activeChannelId?: string;
   onSelectFriend?: (friend: any) => void;
   onOpenAddFriend?: () => void;
+  isAiActive?: boolean;
+  onSelectAiCenter?: () => void;
+  homeView?: string;
 }
 
 function formatUnreadBadge(count: number | string | undefined): string | null {
@@ -101,6 +105,9 @@ export function ColonyRail({
   activeChannelId,
   onSelectFriend,
   onOpenAddFriend,
+  isAiActive,
+  onSelectAiCenter,
+  homeView,
 }: ColonyRailProps) {
   const { t } = useTranslation();
 
@@ -145,50 +152,94 @@ export function ColonyRail({
   const serverModeBadge = sumServerUnread(unreadCounts, otherServers);
   const friendModeBadge = sumFriendUnread(unreadCounts, friendList);
 
+  const isAiCurrentlyActive =
+    Boolean(isAiActive) ||
+    (currentActiveId === 'anticeil' && (homeView === 'ai' || !homeView) && !activeChannelId);
+
+  const isDirectMessagesActive =
+    currentActiveId === 'anticeil' && (homeView !== 'ai' || Boolean(activeChannelId));
+
   return (
     <div id="anticeil-mini-rail" className="w-14 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
-      {/* Top Server (Workspace / Home) - Exactly h-14 to align with top bar */}
-      {mainServer && (
-        <div className="h-14 w-14 shrink-0 flex items-center justify-center relative group">
-          {/* Signature left pill indicator */}
-          <span
-            className={cn(
-              'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
-              currentActiveId === mainServer.id && !activeChannelId?.startsWith('dm-')
-                ? 'h-10'
-                : mainUnread
-                ? 'h-2 group-hover:h-5'
-                : 'h-0 group-hover:h-3.5 opacity-80',
-            )}
-          />
+      {/* 1. Top Button: Logo Anticeil -> AI Command Center (Halaman Utama) */}
+      <div className="h-14 w-14 shrink-0 flex items-center justify-center relative group">
+        <span
+          className={cn(
+            'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+            isAiCurrentlyActive
+              ? 'h-10'
+              : 'h-0 group-hover:h-3.5 opacity-80',
+          )}
+        />
 
-          <Tooltip delayDuration={150}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => handleSelect(mainServer.id)}
-                className={cn(
-                  'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
-                  currentActiveId === mainServer.id && !activeChannelId?.startsWith('dm-')
-                    ? 'bg-sidebar-accent text-foreground shadow-xs'
-                    : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
-                )}
-              >
-                {renderIcon(mainServer)}
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => {
+                if (onSelectAiCenter) {
+                  onSelectAiCenter();
+                } else {
+                  handleSelect('ai-center');
+                }
+              }}
+              className={cn(
+                'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                isAiCurrentlyActive
+                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                  : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
+              )}
+            >
+              <AnticeilLogo className="size-6 transition-colors duration-150" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+            {t('AI Command Center')}
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
-                {/* Discord-style bottom-right unread badge pill */}
-                {mainUnread && (
-                  <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
-                    {mainUnread}
-                  </span>
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-              {t('Aplikasi & Activities')}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      )}
+      {/* 2. New Dedicated Button: Direct Messages & Home Activities (Pesan Langsung & Aktivitas) */}
+      <div className="h-12 w-14 shrink-0 flex items-center justify-center relative group">
+        <span
+          className={cn(
+            'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+            isDirectMessagesActive
+              ? 'h-10'
+              : mainUnread
+              ? 'h-2 group-hover:h-5'
+              : 'h-0 group-hover:h-3.5 opacity-80',
+          )}
+        />
+
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => handleSelect('anticeil')}
+              className={cn(
+                'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                isDirectMessagesActive
+                  ? 'bg-sidebar-accent text-foreground shadow-xs'
+                  : 'bg-sidebar-accent text-muted-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
+              )}
+            >
+              <MessageSquare className="w-5 h-5 transition-transform duration-200 group-hover:scale-105" />
+
+              {/* Discord-style bottom-right unread badge pill */}
+              {mainUnread && (
+                <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
+                  {mainUnread}
+                </span>
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+            {t('Pesan Langsung & Aktivitas')}
+          </TooltipContent>
+        </Tooltip>
+      </div>
+
+      {/* Rail Separator Divider */}
+      <div className="w-8 h-[2px] bg-sidebar-border/70 rounded-full my-1 shrink-0" />
 
       {/* Scrollable lower rail: Switcher, Add (+), then list */}
       <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-0 pb-16">

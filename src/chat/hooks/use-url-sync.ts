@@ -182,7 +182,7 @@ export function useUrlSync({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      let targetPath = '/applications';
+      let targetPath = '/ai';
 
       if (activeColonyId && activeColonyId !== 'anticeil') {
         targetPath = `/channels/${activeColonyId}${activeChannelId ? '/' + activeChannelId : ''}`;
@@ -190,6 +190,9 @@ export function useUrlSync({
         targetPath = `/channels/@me/${activeChannelId}`;
       } else if (homeView) {
         switch (homeView) {
+          case 'ai':
+            targetPath = '/ai';
+            break;
           case 'apps':
             targetPath = '/applications';
             break;

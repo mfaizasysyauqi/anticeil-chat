@@ -26,8 +26,8 @@ export interface HomeChannelsSidebarProps {
   currentUser?: any;
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
-  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests';
-  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests') => void;
+  homeView?: 'ai' | 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests';
+  setHomeView?: (view: 'ai' | 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests') => void;
   messageRequestsCount?: number | string;
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;

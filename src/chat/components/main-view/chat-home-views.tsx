@@ -10,9 +10,12 @@ import { AppsView } from '@/features/apps';
 import { ColoniesView } from '@/features/colonies';
 import { ShopView } from '@/features/shop';
 import { QuestsView } from '@/features/quests';
+import { AiCommandCenterView } from '@/features/ai-command-center';
+import { messagesApi } from '@/features/chat/api/messages-api';
 import type { ColonyChannel, Colony, ColonyMember } from '../../chat-types';
 
 export interface ChatHomeViewsProps {
+  isAiCommandCenterView?: boolean;
   isFriendsView: boolean;
   renderFriendsMainPage: () => React.ReactNode;
   isMessageRequestsView: boolean;
@@ -65,6 +68,7 @@ export interface ChatHomeViewsProps {
 }
 
 export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
+  isAiCommandCenterView,
   isFriendsView,
   renderFriendsMainPage,
   isMessageRequestsView,
@@ -113,6 +117,51 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   t,
 }) => {
   const handleOpenNav = onOpenSidebar || (() => setIsMobileChannelsOpen(true));
+
+  if (isAiCommandCenterView) {
+    return (
+      <AiCommandCenterView
+        colonies={colonies}
+        channels={channels}
+        members={members}
+        friends={friends}
+        currentUser={currentUser}
+        onOpenSidebar={handleOpenNav}
+        onLaunchActivity={(appId) => handleLaunchActivity(appId, false)}
+        onSendMessageToChannel={async (channelId, content) => {
+          return messagesApi.sendMessage(channelId, {
+            content,
+            senderId: currentUser?.id || 'me',
+            senderName: currentUser?.name || currentUser?.username || 'Me',
+            senderAvatar: currentUser?.imageUrl || null,
+          });
+        }}
+        onSendDirectMessage={async (recipient, content) => {
+          const target = members.find(
+            (m) =>
+              m.name?.toLowerCase().includes(recipient.toLowerCase()) ||
+              m.username?.toLowerCase().includes(recipient.toLowerCase()),
+          ) || { id: `dm_${recipient}`, name: recipient };
+          handleStartDM(target as any);
+          const dmId = currentUser?.id ? `dm-${currentUser.id}-${target.id}` : `dm-${target.id}`;
+          return messagesApi.sendMessage(dmId, {
+            content,
+            senderId: currentUser?.id || 'me',
+            senderName: currentUser?.name || currentUser?.username || 'Me',
+            senderAvatar: currentUser?.imageUrl || null,
+          });
+        }}
+        onNavigateToChannel={(colonyId, channelId) => {
+          setActiveColonyId(colonyId);
+          setActiveChannelId(channelId);
+        }}
+        onNavigateToDM={(memberId) => {
+          const target = members.find((m) => m.id === memberId);
+          if (target) handleStartDM(target);
+        }}
+      />
+    );
+  }
 
   if (isFriendsView) {
     return <>{renderFriendsMainPage()}</>;

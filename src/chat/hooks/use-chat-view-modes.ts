@@ -30,11 +30,12 @@ export function useChatViewModes({
   }));
 
   const [homeView, setHomeView] = useState<
-    'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests'
+    'ai' | 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests'
   >(() => {
     try {
       if (typeof window !== 'undefined') {
         const p = window.location.pathname.toLowerCase();
+        if (p === '/' || p === '/ai' || p === '/ai-center' || p === '/command-center') return 'ai';
         if (p === '/quests' || p === '/quest') return 'quests';
         if (p === '/shop') return 'shop';
         if (p === '/applications' || p === '/applications&activities' || p === '/apps' || p === '/app-directory') return 'apps';
@@ -47,7 +48,7 @@ export function useChatViewModes({
         if (p === '/assignments') return 'assignments';
       }
     } catch {}
-    return 'apps';
+    return 'ai';
   });
 
   const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
@@ -142,6 +143,7 @@ export function useChatViewModes({
     });
   };
 
+  const isAiCommandCenterView = isHome && !activeChannel && (homeView === 'ai' || !homeView);
   const isFriendsView = isHome && !activeChannel && homeView === 'friends';
   const isMessageRequestsView = isHome && !activeChannel && homeView === 'message-requests';
   const isNotificationsView = isHome && !activeChannel && homeView === 'notifications';
@@ -174,6 +176,7 @@ export function useChatViewModes({
     isDesktopSidebarCollapsed,
     setIsDesktopSidebarCollapsed,
     toggleDesktopSidebarCollapsed,
+    isAiCommandCenterView,
     isFriendsView,
     isMessageRequestsView,
     isNotificationsView,

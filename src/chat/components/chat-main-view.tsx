@@ -6,6 +6,7 @@ export type ChatMainViewProps = ChatHomeViewsProps & ChatChannelViewProps;
 
 export function ChatMainView(props: ChatMainViewProps) {
   const isHomeView =
+    props.isAiCommandCenterView ||
     props.isFriendsView ||
     props.isMessageRequestsView ||
     props.isNotificationsView ||
