@@ -273,6 +273,7 @@ export function useColonyPageState(): ChatPageContentProps {
     isCallsView,
     isAppsView,
     isShopView,
+    isQuestsView,
     isColoniesView,
   } = useChatViewModes({
     isHome,
@@ -613,6 +614,7 @@ export function useColonyPageState(): ChatPageContentProps {
     callLogs,
     isAppsView,
     isShopView,
+    isQuestsView,
     handleLaunchActivity,
     isColoniesView,
     activeChannel,

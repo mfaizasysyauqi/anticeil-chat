@@ -24,8 +24,8 @@ export interface HomeChannelsSidebarProps {
   currentUser?: any;
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
-  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop';
-  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop') => void;
+  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests';
+  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop' | 'quests') => void;
   messageRequestsCount?: number | string;
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
@@ -329,6 +329,34 @@ export function HomeChannelsSidebar({
               )}
             />
             <span className="flex-1 font-medium">{t('Shop')}</span>
+          </button>
+
+          {/* 9. Quests (Discord 1:1 Gamification) */}
+          <button
+            onClick={() => {
+              setActiveChannelId('');
+              setHomeView?.('quests');
+              onItemClick?.();
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+              !activeChannelId && homeView === 'quests'
+                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Compass
+              className={cn(
+                'w-4 h-4 shrink-0 transition-colors',
+                !activeChannelId && homeView === 'quests'
+                  ? 'text-primary'
+                  : 'text-muted-foreground group-hover:text-foreground',
+              )}
+            />
+            <span className="flex-1 font-medium">{t('Quests')}</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+              F2P
+            </span>
           </button>
         </div>
 

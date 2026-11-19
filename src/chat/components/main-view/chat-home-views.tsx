@@ -9,6 +9,7 @@ import { CallsView, type CallLogItem } from '@/features/calls';
 import { AppsView } from '@/features/apps';
 import { ColoniesView } from '@/features/colonies';
 import { ShopView } from '@/features/shop';
+import { QuestsView } from '@/features/quests';
 import type { ColonyChannel, Colony, ColonyMember } from '../../chat-types';
 
 export interface ChatHomeViewsProps {
@@ -50,6 +51,8 @@ export interface ChatHomeViewsProps {
   handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string, colonyId?: string) => void;
   handleStartDM: (member: ColonyMember) => void;
   isShopView?: boolean;
+  isQuestsView?: boolean;
+  setHomeView?: (view: any) => void;
   isColoniesView: boolean;
   requireAuth: (action: () => void, title?: string, desc?: string) => void;
   setIsCreateHubOpen: (open: boolean) => void;
@@ -88,6 +91,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   handleStartDirectMessage,
   isAppsView,
   isShopView,
+  isQuestsView,
+  setHomeView,
   members,
   activeCallChannelId,
   handleLaunchActivity,
@@ -210,6 +215,18 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         currentUser={members.find((m) => m.id === 'me')}
         onOpenSidebar={() => setIsMobileChannelsOpen(true)}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        onNavigateSection={(sec) => setHomeView?.(sec as any)}
+      />
+    );
+  }
+
+  if (isQuestsView) {
+    return (
+      <QuestsView
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        onNavigateShop={() => setHomeView?.('shop')}
+        onLaunchActivity={(appId) => handleLaunchActivity(appId)}
       />
     );
   }

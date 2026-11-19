@@ -68,6 +68,10 @@ export function useUrlSync({
         setHomeView?.('colonies');
         setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
+      } else if (pathname === '/quests' || pathname === '/quest') {
+        setHomeView?.('quests');
+        setActiveColonyId?.('anticeil');
+        setActiveChannelId?.('');
       } else if (pathname === '/shop' || pathname === '/store') {
         setHomeView?.('shop');
         setActiveColonyId?.('anticeil');
@@ -136,7 +140,11 @@ export function useUrlSync({
           setHomeView?.('colonies');
           setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
-        } else if (pathname === '/shop' || pathname === '/store') {
+        } else if (pathname === '/quests' || pathname === '/quest') {
+        setHomeView?.('quests');
+        setActiveColonyId?.('anticeil');
+        setActiveChannelId?.('');
+      } else if (pathname === '/shop' || pathname === '/store') {
           setHomeView?.('shop');
           setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
@@ -208,6 +216,9 @@ export function useUrlSync({
             break;
           case 'shop':
             targetPath = '/shop';
+            break;
+          case 'quests':
+            targetPath = '/quests';
             break;
           default:
             targetPath = '/applications';

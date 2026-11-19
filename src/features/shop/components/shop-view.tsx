@@ -1119,18 +1119,22 @@ export function ShopView({
                   <span>{(balance?.dew ?? balance?.orbs ?? 0).toLocaleString()}</span>
                 </div>
               </div>
+              <div className="px-2.5 py-1 text-[11px] text-muted-foreground leading-relaxed">
+                {t('Dew adalah mata uang F2P eksklusif yang hanya bisa didapatkan dari menyelesaikan Quests.')}
+              </div>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
-                onClick={() => handleTopupDew(500)}
-                className="text-xs cursor-pointer text-cyan-400 font-bold"
+                onClick={() => {
+                  if (onNavigateSection) {
+                    onNavigateSection('quests');
+                  } else {
+                    window.location.pathname = '/quests';
+                  }
+                }}
+                className="text-xs cursor-pointer text-cyan-400 font-bold flex items-center justify-between"
               >
-                + Klaim 500 Dew Gratis
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleTopupDew(1500)}
-                className="text-xs cursor-pointer font-semibold"
-              >
-                + Top Up 1.500 Dew
+                <span>{t('Dapatkan Dew dari Quests')}</span>
+                <span>🎯</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1254,18 +1258,24 @@ export function ShopView({
                 {t('Tukarkan Dew dengan Item Eksklusif')}
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                {t('Dapatkan item kosmetik profil gratis dengan mengumpulkan Dew komunitas atau klaim saldo harian.')}
+                {t('Dew adalah mata uang F2P eksklusif. Selesaikan tantangan dan misi di Quests untuk mengumpulkan Dew gratis!')}
               </p>
             </div>
 
             <div className="flex items-center gap-2.5 z-10 shrink-0">
               <Button
                 size="sm"
-                onClick={() => handleTopupDew(500)}
+                onClick={() => {
+                  if (onNavigateSection) {
+                    onNavigateSection('quests');
+                  } else {
+                    window.location.pathname = '/quests';
+                  }
+                }}
                 className="font-bold h-9 px-4 gap-1.5 cursor-pointer shadow-md bg-cyan-600 hover:bg-cyan-500 text-white"
               >
-                <span>💧</span>
-                <span>+500 Dew Gratis</span>
+                <span>🎯</span>
+                <span>{t('Dapatkan Dew dari Quests')}</span>
               </Button>
             </div>
 
