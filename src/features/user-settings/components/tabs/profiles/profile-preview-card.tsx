@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Palette,
   Sparkles,
@@ -28,6 +28,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { ShareProfileDialog } from '@/features/profile/components/share-profile-dialog';
 
 import type { UserConnectionItem } from '@/features/user-settings/api/games-apps-api';
 
@@ -97,14 +98,11 @@ export function ProfilePreviewCard({
   onOpenShop,
 }: ProfilePreviewCardProps) {
   const { t } = useTranslation();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const displayAvatar = profileAvatarUrl || defaultAvatarUrl || null;
 
   const handleShareProfile = () => {
-    const url = typeof window !== 'undefined'
-      ? `${window.location.origin}/users/${userId || 'me'}`
-      : 'https://dev-chat.anticeil.com';
-    navigator.clipboard?.writeText(url);
-    toast.success(t('Tautan profil berhasil disalin!'));
+    setIsShareModalOpen(true);
   };
 
   const handleCopyUserId = () => {
@@ -356,26 +354,26 @@ export function ProfilePreviewCard({
             </Tooltip>
 
             {/* Three Dots More Menu Button */}
-            <DropdownMenu>
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="tealSecondary"
-                      className="h-8 px-2.5 cursor-pointer rounded-lg hover:bg-secondary transition-all data-[state=open]:bg-secondary"
-                      aria-label={t('Opsi Lainnya')}
-                    >
-                      <MoreHorizontal className="w-3.5 h-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs font-semibold">
-                  {t('Opsi Lainnya')}
-                </TooltipContent>
-              </Tooltip>
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="tealSecondary"
+                  className="h-8 px-2.5 cursor-pointer rounded-lg hover:bg-secondary transition-all data-[state=open]:bg-secondary"
+                  aria-label={t('Opsi Lainnya')}
+                  title={t('Opsi Lainnya')}
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-xl border border-border/80 bg-popover shadow-xl">
+              <DropdownMenuContent
+                align="end"
+                side="bottom"
+                sideOffset={6}
+                className="w-48 p-1.5 rounded-xl border border-border/80 bg-popover shadow-2xl z-[150]"
+              >
                 <DropdownMenuItem
                   onClick={handleShareProfile}
                   className="flex items-center gap-2 px-2.5 py-2 text-xs font-medium cursor-pointer rounded-lg hover:bg-accent transition-colors"
@@ -397,6 +395,18 @@ export function ProfilePreviewCard({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Share Profile Modal Dialog (1:1 Discord fullstack) */}
+            <ShareProfileDialog
+              open={isShareModalOpen}
+              onOpenChange={setIsShareModalOpen}
+              profileUser={{
+                id: userId,
+                name: currentUserName,
+                username: currentUserName.toLowerCase().replace(/\s+/g, '_'),
+                avatar: displayAvatar,
+              }}
+            />
           </div>
 
           {/* Amp up your profile Promo banner */}
