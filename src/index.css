@@ -670,14 +670,35 @@ body,
     background: transparent;
   }
 
-  /* Firefox — thin track, hidden at rest, visible on hover */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
+  /* Firefox only — thin track, hidden at rest, visible on hover without overriding WebKit custom scrollbar */
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+    }
+
+    *:hover {
+      scrollbar-color: var(--border) transparent;
+    }
   }
 
-  *:hover {
-    scrollbar-color: var(--border) transparent;
+  /* Global overlay scrollbar: floats over padding box without consuming clientWidth or displacing content */
+  html,
+  body,
+  .overflow-y-auto,
+  .overflow-y-scroll,
+  .overflow-auto,
+  [class*='overflow-y-auto'],
+  [class*='overflow-auto'] {
+    overflow-y: auto;
+    overflow-y: overlay;
+  }
+
+  .overflow-x-auto,
+  .overflow-x-scroll,
+  [class*='overflow-x-auto'] {
+    overflow-x: auto;
+    overflow-x: overlay;
   }
 
   /* Restore scrollbar-none for elements that opt out */

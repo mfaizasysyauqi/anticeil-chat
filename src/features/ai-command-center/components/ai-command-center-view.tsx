@@ -350,7 +350,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       />
 
       {/* 2. Messages & Capability Hero Feed */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 space-y-4 [scrollbar-width:thin]">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 space-y-4">
         {messages.length === 0 ? (
           <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
             <div className="relative inline-flex">

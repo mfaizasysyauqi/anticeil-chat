@@ -41,13 +41,13 @@ export const LAYOUT_PAGE_SPACING = {
    * guaranteeing 100% horizontal symmetry with the App Bar.
    */
   BODY_SCROLL:
-    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]',
+    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none',
 
   /**
    * Combined page content scroll container classes
    */
   BODY_PADDING:
-    'px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]',
+    'px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none',
 
   /**
    * Universal App Bar header height (48px)
@@ -103,7 +103,7 @@ export const LAYOUT_DIALOG_SPACING = {
 
   /** Dialog detail pane scrollable body with symmetrical horizontal and vertical padding matching Sidebar and App Bar */
   BODY_PADDING:
-    'flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-3.5 sm:py-4 md:py-5 max-md:scrollbar-none lg:[scrollbar-width:thin] w-full min-w-0',
+    'flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-3.5 sm:py-4 md:py-5 max-md:scrollbar-none w-full min-w-0',
 
   /** Sidebar in two-pane settings */
   SIDEBAR_WIDTH: 'w-full md:w-56 lg:w-60',

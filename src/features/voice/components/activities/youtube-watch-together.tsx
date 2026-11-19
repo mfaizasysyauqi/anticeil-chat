@@ -565,12 +565,12 @@ export function YouTubeWatchTogether({
           {/* Right Column (Desktop) or Browse Area (Mobile) */}
           <div
             className={cn(
-              'flex-1 min-h-0 flex flex-col pt-0 pb-3 md:pb-4 gap-2 md:gap-3 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]',
+              'flex-1 min-h-0 flex flex-col pt-0 pb-3 md:pb-4 gap-2 md:gap-3 overflow-y-auto overflow-x-hidden',
               isExpandedVideo ? 'hidden' : (mobileTab === 'browse' ? 'flex' : 'hidden md:flex'),
               CHANNEL_HORIZONTAL_PADDING,
             )}
           >
-            <div className="sticky top-0 z-20 bg-background pt-3 pb-2.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-3 px-3 sm:-mx-4 sm:px-4 shadow-xs">
+            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xs pt-3 pb-2.5 border-b border-border/50 flex flex-col gap-2 shrink-0 w-full shadow-xs">
               <YouTubeSearchBar
                 query={ytSearchQuery}
                 setQuery={setYtSearchQuery}
@@ -613,11 +613,11 @@ export function YouTubeWatchTogether({
         /* Empty / Idle State */
         <div
           className={cn(
-            'flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden [scrollbar-width:thin] bg-background pb-4 gap-2',
+            'flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden bg-background pb-4 gap-2',
             CHANNEL_HORIZONTAL_PADDING,
           )}
         >
-          <div className="sticky top-0 z-30 bg-background pt-3 pb-2.5 border-b border-border/50 flex flex-col gap-2 shrink-0 -mx-3 px-3 sm:-mx-4 sm:px-4 shadow-xs">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xs pt-3 pb-2.5 border-b border-border/50 flex flex-col gap-2 shrink-0 w-full shadow-xs">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {renderHostPopover()}
               <YouTubeSearchBar
