@@ -180,6 +180,8 @@ export type Colony = {
   color?: string;
   iconUrl?: string;
   role?: 'owner' | 'admin' | 'moderator' | 'member';
+  isPublic?: boolean;
+  visibility?: 'public' | 'private';
   tags?: string[];
   category?: string;
   emojis?: ColonyCustomEmoji[];
@@ -253,6 +255,8 @@ export function cleanLegacyStorage(): void {
   } catch {}
 }
 
+const DUMMY_COLONY_IDS = new Set(['hub_agl', 'hub_tech', 'hub_lofi', 'hub_edu', 'hub_hangout']);
+
 export function loadStoredColonies(): Colony[] {
   try {
     cleanLegacyStorage();
@@ -261,7 +265,9 @@ export function loadStoredColonies(): Colony[] {
     const raw = localStorage.getItem(STORAGE_KEY_COLONIES);
     if (!raw) return DEFAULT_COLONIES;
     const parsed = JSON.parse(raw);
-    const list = Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_COLONIES;
+    const list = Array.isArray(parsed) && parsed.length > 0
+      ? parsed.filter((c) => !DUMMY_COLONY_IDS.has(c.id))
+      : DEFAULT_COLONIES;
     return list.map((c) => (c.id === 'anticeil' ? { ...c, iconType: 'logo', iconUrl: undefined } : c));
   } catch {
     return DEFAULT_COLONIES;

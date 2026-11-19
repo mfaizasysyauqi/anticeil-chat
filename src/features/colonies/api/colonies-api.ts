@@ -49,8 +49,12 @@ export const coloniesApi = {
     color?: string;
     icon?: string;
     iconUrl?: string;
+    isPublic?: boolean;
+    visibility?: 'public' | 'private';
+    category?: string;
   }): Promise<Colony> {
     const newId = `hub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const isPublic = payload.isPublic !== undefined ? payload.isPublic : (payload.visibility === 'public');
     const newColony: Colony = {
       id: newId,
       name: payload.name,
@@ -63,6 +67,12 @@ export const coloniesApi = {
       color: payload.color || 'bg-indigo-600',
       role: 'owner',
       tags: ['komunitas', 'anticeil'],
+      isPublic,
+      visibility: isPublic ? 'public' : 'private',
+      accessSettings: {
+        joinMethod: isPublic ? 'discoverable' : 'invite_only',
+      },
+      category: payload.category || 'community',
       emojis: [
         { id: '1', name: 'rocket', char: '🚀' },
         { id: '2', name: 'fire', char: '🔥' },
@@ -78,6 +88,9 @@ export const coloniesApi = {
         id: newId,
         tags: newColony.tags,
         emojis: newColony.emojis,
+        isPublic,
+        visibility: newColony.visibility,
+        accessSettings: newColony.accessSettings,
       });
       if (res && res.id) {
         const stored = loadStoredColonies();
@@ -563,10 +576,24 @@ export const coloniesApi = {
       if (params?.category) queryParams.set('category', params.category);
       const qs = queryParams.toString();
       const res = await api.get<Colony[]>(`/v1/colony/colonies/discover${qs ? `?${qs}` : ''}`);
-      if (Array.isArray(res) && res.length > 0) return res;
+      if (Array.isArray(res)) {
+        return res.filter((c) =>
+          c.id !== 'anticeil' &&
+          c.id !== 'direct-messages' &&
+          (c.isPublic === true || c.visibility === 'public' || c.accessSettings?.joinMethod === 'discoverable') &&
+          c.isPublic !== false &&
+          c.visibility !== 'private'
+        );
+      }
     } catch {}
     const stored = loadStoredColonies();
-    return stored.filter((h) => h.id !== 'anticeil');
+    return stored.filter((h) =>
+      h.id !== 'anticeil' &&
+      h.id !== 'direct-messages' &&
+      (h.isPublic === true || h.visibility === 'public' || h.accessSettings?.joinMethod === 'discoverable') &&
+      h.isPublic !== false &&
+      h.visibility !== 'private'
+    );
   },
 
   async joinColony(colonyOrId: Colony | string): Promise<Colony> {

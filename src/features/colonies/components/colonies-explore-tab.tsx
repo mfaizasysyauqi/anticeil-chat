@@ -182,8 +182,16 @@ export function ColoniesExploreTab({
       ) : categorizedList.length === 0 ? (
         <EmptyState
           icon={<Compass className="w-8 h-8 stroke-[1.8] text-primary/80" />}
-          title={t('Tidak Ada Colony di Kategori Ini')}
-          description={t('Belum ada colony publik yang cocok dengan filter atau pencarian Anda.')}
+          title={
+            filteredExplore.length === 0
+              ? t('Belum Ada Colony Publik')
+              : t('Tidak Ada Colony di Kategori Ini')
+          }
+          description={
+            filteredExplore.length === 0
+              ? t('Belum ada colony publik yang dapat dijelajahi. Buat colony baru atau bergabung melalui tautan/kode undangan!')
+              : t('Belum ada colony publik yang cocok dengan filter atau pencarian Anda.')
+          }
           action={
             <Button
               size="sm"

@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Camera, Server } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Camera, Server, Globe, Lock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export interface CreateOrJoinColonyDialogProps {
   open: boolean;
@@ -22,6 +23,8 @@ export interface CreateOrJoinColonyDialogProps {
   setNewServerDesc?: (val: string) => void;
   newServerIconUrl?: string;
   setNewServerIconUrl?: (val: string) => void;
+  isPublic?: boolean;
+  setIsPublic?: (val: boolean) => void;
   joinInviteCode: string;
   setJoinInviteCode: (val: string) => void;
   isJoiningServer?: boolean;
@@ -50,6 +53,8 @@ export function CreateOrJoinColonyDialog({
   setNewServerDesc,
   newServerIconUrl,
   setNewServerIconUrl,
+  isPublic,
+  setIsPublic,
   joinInviteCode,
   setJoinInviteCode,
   isJoiningServer,
@@ -67,6 +72,7 @@ export function CreateOrJoinColonyDialog({
   setNewHubIconUrl,
 }: CreateOrJoinColonyDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [internalIsPublic, setInternalIsPublic] = useState(true);
 
   const serverName = newServerName ?? newHubName ?? '';
   const setServerName = setNewServerName ?? setNewHubName ?? (() => {});
@@ -75,6 +81,8 @@ export function CreateOrJoinColonyDialog({
   const serverIconUrl = newServerIconUrl ?? newHubIconUrl ?? '';
   const setServerIconUrl = setNewServerIconUrl ?? setNewHubIconUrl ?? (() => {});
   const isJoining = isJoiningServer ?? isJoiningHub ?? false;
+  const isColonyPublic = isPublic !== undefined ? isPublic : internalIsPublic;
+  const handleSetIsPublic = setIsPublic || setInternalIsPublic;
   const handleSubmit = onCreateServerSubmit ?? onCreateHubSubmit ?? (() => {});
   const handleJoin = onJoinServer ?? onJoinHub ?? (() => {});
 
@@ -162,6 +170,46 @@ export function CreateOrJoinColonyDialog({
                     placeholder="Ruang diskusi untuk alur kerja dan bot..."
                     className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                   />
+                </div>
+
+                {/* Colony Visibility: Public vs Private */}
+                <div className="grid gap-1.5 pt-0.5">
+                  <label className="text-xs font-semibold">{t('Visibilitas Colony')}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSetIsPublic(true)}
+                      className={cn(
+                        'flex items-center gap-2.5 p-2.5 rounded-xl border text-left cursor-pointer transition-all',
+                        isColonyPublic
+                          ? 'border-primary bg-primary/10 text-foreground ring-1 ring-primary/40'
+                          : 'border-border/70 bg-card text-muted-foreground hover:border-border hover:bg-muted/40'
+                      )}
+                    >
+                      <Globe className={cn('size-4 shrink-0', isColonyPublic ? 'text-primary' : 'text-muted-foreground')} />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold leading-tight">{t('Publik')}</div>
+                        <div className="text-[10px] text-muted-foreground leading-tight line-clamp-1">{t('Muncul di Jelajahi')}</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSetIsPublic(false)}
+                      className={cn(
+                        'flex items-center gap-2.5 p-2.5 rounded-xl border text-left cursor-pointer transition-all',
+                        !isColonyPublic
+                          ? 'border-primary bg-primary/10 text-foreground ring-1 ring-primary/40'
+                          : 'border-border/70 bg-card text-muted-foreground hover:border-border hover:bg-muted/40'
+                      )}
+                    >
+                      <Lock className={cn('size-4 shrink-0', !isColonyPublic ? 'text-primary' : 'text-muted-foreground')} />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold leading-tight">{t('Privat')}</div>
+                        <div className="text-[10px] text-muted-foreground leading-tight line-clamp-1">{t('Hanya via tautan/kode')}</div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
 

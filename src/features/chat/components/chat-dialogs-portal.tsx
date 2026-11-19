@@ -243,6 +243,8 @@ export function ChatDialogsPortal({
         setNewServerDesc={colonyModals.setNewHubDesc}
         newServerIconUrl={colonyModals.newHubIconUrl}
         setNewServerIconUrl={colonyModals.setNewHubIconUrl}
+        isPublic={colonyModals.newHubIsPublic}
+        setIsPublic={colonyModals.setNewHubIsPublic}
         joinInviteCode={colonyModals.joinInviteCode}
         setJoinInviteCode={colonyModals.setJoinInviteCode}
         isJoiningServer={colonyModals.isJoiningColony}

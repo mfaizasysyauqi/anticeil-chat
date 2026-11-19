@@ -107,8 +107,15 @@ export function ColoniesView({
         const all = await colonyApi.getDiscoverColonies();
         if (mounted && Array.isArray(all)) {
           // Filter out DM hub and servers the current user is already member of
+          // And strictly enforce only public colonies
           const available = all.filter(
-            (h) => h.id !== 'anticeil' && !colonyList.some((s) => s.id === h.id)
+            (h) =>
+              h.id !== 'anticeil' &&
+              h.id !== 'direct-messages' &&
+              !colonyList.some((s) => s.id === h.id) &&
+              (h.isPublic === true || h.visibility === 'public' || h.accessSettings?.joinMethod === 'discoverable') &&
+              h.isPublic !== false &&
+              h.visibility !== 'private'
           );
           setPublicColonies(available);
         }
@@ -120,8 +127,11 @@ export function ColoniesView({
     };
 
     fetchPublicColonies();
+    const handleColoniesChange = () => fetchPublicColonies();
+    window.addEventListener('anticeil_colonies_changed', handleColoniesChange);
     return () => {
       mounted = false;
+      window.removeEventListener('anticeil_colonies_changed', handleColoniesChange);
     };
   }, [colonyList, activeTab]);
 

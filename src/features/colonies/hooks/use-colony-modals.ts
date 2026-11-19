@@ -42,6 +42,7 @@ export function useColonyModals({
   const [newHubName, setNewHubName] = useState('');
   const [newHubDesc, setNewHubDesc] = useState('');
   const [newHubIconUrl, setNewHubIconUrl] = useState('');
+  const [newHubIsPublic, setNewHubIsPublic] = useState(true);
   const [joinInviteCode, setJoinInviteCode] = useState('');
   const [isJoiningColony, setIsJoiningColony] = useState(false);
 
@@ -73,6 +74,8 @@ export function useColonyModals({
         name: newHubName.trim(),
         description: newHubDesc.trim() || undefined,
         iconUrl: newHubIconUrl || undefined,
+        isPublic: newHubIsPublic,
+        visibility: newHubIsPublic ? 'public' : 'private',
       });
 
       const updatedHubs = [...colonies.filter((h) => h.id !== createdHub.id), createdHub];
@@ -107,6 +110,7 @@ export function useColonyModals({
       setNewHubName('');
       setNewHubDesc('');
       setNewHubIconUrl('');
+      setNewHubIsPublic(true);
       toast.success(t('Colony baru berhasil dibuat!'));
     } catch (err) {
       console.warn('API createColony fallback', err);
@@ -118,6 +122,8 @@ export function useColonyModals({
         initials: getColonyInitials(newHubName.trim()),
         description: newHubDesc.trim() || '',
         iconUrl: newHubIconUrl || undefined,
+        isPublic: newHubIsPublic,
+        visibility: newHubIsPublic ? 'public' : 'private',
       };
 
       const defaultText: ColonyChannel = {
@@ -378,6 +384,8 @@ export function useColonyModals({
     setNewHubDesc,
     newHubIconUrl,
     setNewHubIconUrl,
+    newHubIsPublic,
+    setNewHubIsPublic,
     joinInviteCode,
     setJoinInviteCode,
     isJoiningColony,
