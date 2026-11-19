@@ -15,6 +15,7 @@ import {
   X,
   Loader2,
   Plus,
+  Pencil,
   Trash2,
   Menu,
   SlidersHorizontal,
@@ -128,7 +129,7 @@ export function ShopView({
   const [searchQuery, setSearchQuery] = useState('');
   
   // Backend data states with resilient fallbacks
-  const [items, setItems] = useState<ShopItem[]>(FALLBACK_SHOP_ITEMS);
+  const [items, setItems] = useState<ShopItem[]>([]);
   const [collections, setCollections] = useState<ShopCollection[]>([]);
   const [heroCollection, setHeroCollection] = useState<ShopCollection | null>(null);
   const [balance, setBalance] = useState<ShopBalance>({ dew: 1500, currencyCode: 'IDR' });
@@ -142,13 +143,14 @@ export function ShopView({
   const [isEquipping, setIsEquipping] = useState(false);
   const [isWishlistDrawerOpen, setIsWishlistDrawerOpen] = useState(false);
 
-  // Custom product creation modal (Fullstack CRUD)
+  // Custom product creation & editing modal (Fullstack CRUD)
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ShopItem | null>(null);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [newProductForm, setNewProductForm] = useState({
     name: '',
     collection: 'Anticeil Cyber Core',
-    category: 'avatar_decoration' as 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle',
+    category: 'avatar_decoration' as ShopItem['category'],
     description: '',
     priceIdr: 65000,
     priceDew: 500,
@@ -156,6 +158,38 @@ export function ShopView({
     badge: 'Baru',
     featured: true,
   });
+
+  const handleOpenCreateProduct = () => {
+    setEditingProduct(null);
+    setNewProductForm({
+      name: '',
+      collection: 'Anticeil Cyber Core',
+      category: 'avatar_decoration',
+      description: '',
+      priceIdr: 65000,
+      priceDew: 500,
+      previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
+      badge: 'Baru',
+      featured: true,
+    });
+    setIsAddProductOpen(true);
+  };
+
+  const handleOpenEditProduct = (item: ShopItem) => {
+    setEditingProduct(item);
+    setNewProductForm({
+      name: item.name,
+      collection: item.collection,
+      category: item.category,
+      description: item.description,
+      priceIdr: item.priceIdr || 65000,
+      priceDew: item.priceDew || item.priceOrbs || 500,
+      previewIcon: item.previewIcon || item.gifUrl || '',
+      badge: item.badge || 'Baru',
+      featured: Boolean(item.featured),
+    });
+    setIsAddProductOpen(true);
+  };
 
   // Load Shop data from fullstack backend
   const fetchShopData = async () => {
@@ -168,7 +202,7 @@ export function ShopView({
         shopApi.getInventory(),
         shopApi.getWishlist(),
       ]);
-      if (Array.isArray(allItems) && allItems.length > 0) {
+      if (Array.isArray(allItems)) {
         setItems(allItems);
       }
       if (featuredRes && featuredRes.heroCollection) {
@@ -456,8 +490,8 @@ export function ShopView({
     }
   };
 
-  // Add custom product to database (Fullstack CRUD)
-  const handleCreateProduct = async (e: React.FormEvent) => {
+  // Save product to database (Create or Update Fullstack CRUD)
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProductForm.name.trim()) {
       toast.error(t('Nama produk tidak boleh kosong'));
@@ -465,24 +499,39 @@ export function ShopView({
     }
     setIsCreatingProduct(true);
     try {
-      const res = await shopApi.createItem(newProductForm);
-      if (res.success && res.item) {
-        setItems((prev) => [res.item!, ...prev]);
-        toast.success(res.message || t('Produk baru berhasil ditambahkan! 🎉'));
-        setIsAddProductOpen(false);
-        setNewProductForm({
-          name: '',
-          collection: 'Anticeil Cyber Core',
-          category: 'avatar_decoration',
-          description: '',
-          priceIdr: 65000,
-          priceDew: 500,
-          previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
-          badge: 'Baru',
-          featured: true,
-        });
+      if (editingProduct) {
+        const res = await shopApi.updateItem(editingProduct.id, newProductForm);
+        if (res.success && res.item) {
+          setItems((prev) => prev.map((i) => (i.id === editingProduct.id ? res.item! : i)));
+          toast.success(res.message || t('Produk berhasil diperbarui! ✨'));
+          setIsAddProductOpen(false);
+          setEditingProduct(null);
+          if (activeModalItem?.id === editingProduct.id) {
+            setActiveModalItem(res.item);
+          }
+        } else {
+          toast.error(res.message || t('Gagal memperbarui produk'));
+        }
       } else {
-        toast.error(res.message || t('Gagal menambahkan produk'));
+        const res = await shopApi.createItem(newProductForm);
+        if (res.success && res.item) {
+          setItems((prev) => [res.item!, ...prev]);
+          toast.success(res.message || t('Produk baru berhasil ditambahkan! 🎉'));
+          setIsAddProductOpen(false);
+          setNewProductForm({
+            name: '',
+            collection: 'Anticeil Cyber Core',
+            category: 'avatar_decoration',
+            description: '',
+            priceIdr: 65000,
+            priceDew: 500,
+            previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
+            badge: 'Baru',
+            featured: true,
+          });
+        } else {
+          toast.error(res.message || t('Gagal menambahkan produk'));
+        }
       }
     } catch {
       toast.error(t('Terjadi kesalahan saat menyimpan produk'));
@@ -1118,7 +1167,7 @@ export function ShopView({
             label={t('Tambah Item')}
             shortLabel={t('Tambah')}
             iconOnlyMobile
-            onClick={() => setIsAddProductOpen(true)}
+            onClick={handleOpenCreateProduct}
             title={t('Tambah Produk Baru ke Database Shop')}
           />
         </div>
@@ -1344,17 +1393,28 @@ export function ShopView({
                         <Heart className={cn('w-3.5 h-3.5', isWishlisted && 'text-pink-500 fill-pink-500')} />
                       </button>
 
-                      {/* Delete button if custom */}
-                      {item.id.startsWith('shop_custom_') && (
+                      {/* Edit & Delete buttons on card hover */}
+                      <div className="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditProduct(item);
+                          }}
+                          className="size-6 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                          title={t('Edit Item ini')}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => handleDeleteProduct(e, item.id)}
-                          className="absolute bottom-2.5 right-2.5 z-20 size-6 rounded-md bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors cursor-pointer"
+                          className="size-6 rounded-md bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs"
                           title={t('Hapus Item ini dari Database Shop')}
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
-                      )}
+                      </div>
 
                       {/* Dedicated Cosmetic Artwork Renderer */}
                       {renderCardArtwork(item)}
@@ -1640,6 +1700,33 @@ export function ShopView({
                           )}
                         />
                       </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditProduct(activeModalItem);
+                        }}
+                        className="h-9 px-3 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
+                        title={t('Edit Item')}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProduct(e, activeModalItem.id);
+                          setActiveModalItem(null);
+                        }}
+                        className="h-9 px-3 cursor-pointer text-destructive hover:bg-destructive hover:text-destructive-foreground shrink-0"
+                        title={t('Hapus Item')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
 
                     {(balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0) && (
@@ -1723,17 +1810,17 @@ export function ShopView({
         </DialogContent>
       </Dialog>
 
-      {/* ── 5. Reusable Dialog: Add Custom Product (Fullstack CRUD) ── */}
+      {/* ── 5. Reusable Dialog: Add or Edit Product (Fullstack CRUD) ── */}
       <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
         <DialogContent className="w-[92vw] sm:w-[460px] p-5 rounded-xl bg-card border border-border shadow-xl z-[160]">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
-              <Plus className="w-4 h-4 text-primary" />
-              <span>{t('Tambah Produk ke Database Shop')}</span>
+              {editingProduct ? <Pencil className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
+              <span>{editingProduct ? t('Edit Item Katalog Shop') : t('Tambah Produk ke Database Shop')}</span>
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleCreateProduct} className="space-y-3 pt-2">
+          <form onSubmit={handleSaveProduct} className="space-y-3 pt-2">
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1">{t('Nama Produk')}</label>
               <Input

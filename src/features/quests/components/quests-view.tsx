@@ -13,6 +13,10 @@ import {
   Play,
   RotateCcw,
   SlidersHorizontal,
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -25,11 +29,18 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { questsApi, type QuestItem, FALLBACK_QUESTS } from '../api/quests-api';
+import { questsApi, type QuestItem } from '../api/quests-api';
 import { shopApi, type ShopBalance } from '@/features/shop/api/shop-api';
 
 export interface QuestsViewProps {
@@ -47,13 +58,117 @@ export function QuestsView({
 }: QuestsViewProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'all' | 'claimed'>('all');
-  const [quests, setQuests] = useState<QuestItem[]>(FALLBACK_QUESTS);
+  const [quests, setQuests] = useState<QuestItem[]>([]);
   const [claimedQuests, setClaimedQuests] = useState<QuestItem[]>([]);
   const [balance, setBalance] = useState<ShopBalance>({ dew: 1500, currencyCode: 'IDR' });
   const [isLoading, setIsLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'suggested' | 'reward_desc' | 'alphabetical'>('suggested');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Quest CRUD State
+  const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
+  const [editingQuest, setEditingQuest] = useState<QuestItem | null>(null);
+  const [isSubmittingQuest, setIsSubmittingQuest] = useState(false);
+  const [questForm, setQuestForm] = useState({
+    title: '',
+    subtitle: '',
+    category: 'activity' as 'activity' | 'game' | 'social' | 'profile',
+    promoter: 'Anticeil Activities',
+    coverUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80',
+    badge: 'Baru',
+    rewardDew: 300,
+    target: 5,
+    unit: 'kali',
+    actionLabel: 'Mulai',
+    appId: '',
+  });
+
+  const handleOpenCreateQuest = () => {
+    setEditingQuest(null);
+    setQuestForm({
+      title: '',
+      subtitle: '',
+      category: 'activity',
+      promoter: 'Anticeil Community',
+      coverUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80',
+      badge: 'Baru',
+      rewardDew: 300,
+      target: 5,
+      unit: 'kali',
+      actionLabel: 'Mulai',
+      appId: '',
+    });
+    setIsQuestModalOpen(true);
+  };
+
+  const handleOpenEditQuest = (quest: QuestItem) => {
+    setEditingQuest(quest);
+    setQuestForm({
+      title: quest.title,
+      subtitle: quest.subtitle,
+      category: quest.category || 'activity',
+      promoter: quest.promoter,
+      coverUrl: quest.coverUrl,
+      badge: quest.badge || '',
+      rewardDew: quest.rewardDew || 100,
+      target: quest.target || 1,
+      unit: quest.unit || 'kali',
+      actionLabel: quest.actionLabel || 'Mulai',
+      appId: quest.appId || '',
+    });
+    setIsQuestModalOpen(true);
+  };
+
+  const handleSaveQuest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!questForm.title.trim()) {
+      toast.error(t('Judul quest tidak boleh kosong'));
+      return;
+    }
+    setIsSubmittingQuest(true);
+    try {
+      if (editingQuest) {
+        const res = await questsApi.updateQuest(editingQuest.id, questForm);
+        if (res.success && res.quest) {
+          setQuests((prev) => prev.map((q) => (q.id === editingQuest.id ? res.quest! : q)));
+          toast.success(res.message || t('Quest berhasil diperbarui'));
+          setIsQuestModalOpen(false);
+        } else {
+          toast.error(res.message || t('Gagal memperbarui quest'));
+        }
+      } else {
+        const res = await questsApi.createQuest(questForm);
+        if (res.success && res.quest) {
+          setQuests((prev) => [res.quest!, ...prev]);
+          toast.success(res.message || t('Quest baru berhasil ditambahkan'));
+          setIsQuestModalOpen(false);
+        } else {
+          toast.error(res.message || t('Gagal membuat quest'));
+        }
+      }
+    } catch {
+      toast.error(t('Terjadi kesalahan koneksi'));
+    } finally {
+      setIsSubmittingQuest(false);
+    }
+  };
+
+  const handleDeleteQuest = async (e: React.MouseEvent, questId: string) => {
+    e.stopPropagation();
+    if (!window.confirm(t('Hapus quest ini dari database?'))) return;
+    try {
+      const res = await questsApi.deleteQuest(questId);
+      if (res.success) {
+        setQuests((prev) => prev.filter((q) => q.id !== questId));
+        toast.success(res.message || t('Quest berhasil dihapus'));
+      } else {
+        toast.error(res.message || t('Gagal menghapus quest'));
+      }
+    } catch {
+      toast.error(t('Gagal menghapus quest'));
+    }
+  };
 
   // Load Quests & Dew Balance
   const fetchQuestsData = async () => {
@@ -64,7 +179,7 @@ export function QuestsView({
         questsApi.getClaimedQuests(),
         shopApi.getBalance(),
       ]);
-      if (Array.isArray(questsRes) && questsRes.length > 0) {
+      if (Array.isArray(questsRes)) {
         setQuests(questsRes);
       }
       if (Array.isArray(claimedRes)) {
@@ -289,6 +404,27 @@ export function QuestsView({
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   )}
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenEditQuest(heroQuest)}
+                      className="h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/60 backdrop-blur-xs"
+                      title={t('Edit Quest')}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => handleDeleteQuest(e, heroQuest.id)}
+                      className="h-11 px-3 text-xs font-semibold gap-1 cursor-pointer text-destructive hover:bg-destructive hover:text-destructive-foreground bg-card/60 backdrop-blur-xs"
+                      title={t('Hapus Quest')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
@@ -376,6 +512,16 @@ export function QuestsView({
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-auto">
+                  {/* Create Quest Button (Fullstack CRUD) */}
+                  <Button
+                    size="sm"
+                    onClick={handleOpenCreateQuest}
+                    className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{t('Tambah Quest')}</span>
+                  </Button>
+
                   {/* Sort dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -439,35 +585,73 @@ export function QuestsView({
               </div>
 
               {/* ── Quests Cards Grid (Discord 1:1 Layout) ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredQuests.map((quest) => {
-                  const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+              {filteredQuests.length === 0 ? (
+                <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 rounded-xl border border-dashed border-border/80 p-8">
+                  <div className="size-16 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center text-3xl select-none">
+                    🎯
+                  </div>
+                  <div className="space-y-1 max-w-sm">
+                    <h4 className="text-sm font-bold text-foreground">{t('Belum Ada Quest')}</h4>
+                    <p className="text-xs text-muted-foreground">{t('Database quest kosong atau tidak ada quest yang cocok dengan filter pencarian Anda.')}</p>
+                  </div>
+                  <Button size="sm" onClick={handleOpenCreateQuest} className="gap-1.5 text-xs font-semibold cursor-pointer">
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{t('Tambah Quest Pertama')}</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredQuests.map((quest) => {
+                    const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
 
-                  return (
-                    <div
-                      key={quest.id}
-                      className="rounded-xl border border-border bg-card flex flex-col justify-between overflow-hidden shadow-xs hover:border-primary/50 transition-all group"
-                    >
-                      {/* Quest Artwork Banner */}
-                      <div className="relative h-36 bg-[#111214] overflow-hidden">
-                        <img
-                          src={quest.coverUrl}
-                          alt={quest.title}
-                          className="size-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-70"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
+                    return (
+                      <div
+                        key={quest.id}
+                        className="rounded-xl border border-border bg-card flex flex-col justify-between overflow-hidden shadow-xs hover:border-primary/50 transition-all group relative"
+                      >
+                        {/* Quest Artwork Banner */}
+                        <div className="relative h-36 bg-[#111214] overflow-hidden">
+                          <img
+                            src={quest.coverUrl}
+                            alt={quest.title}
+                            className="size-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-70"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
 
-                        {quest.badge && (
-                          <span className="absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
-                            {quest.badge}
+                          {quest.badge && (
+                            <span className="absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
+                              {quest.badge}
+                            </span>
+                          )}
+
+                          {/* Hover Edit & Delete Buttons (Fullstack CRUD) */}
+                          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditQuest(quest);
+                              }}
+                              className="size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
+                              title={t('Edit Quest')}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteQuest(e, quest.id)}
+                              className="size-7 rounded-md bg-destructive/20 hover:bg-destructive hover:text-destructive-foreground text-destructive border border-destructive/30 flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
+                              title={t('Hapus Quest')}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {quest.promoter}
                           </span>
-                        )}
-
-                        <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                          {quest.promoter}
-                        </span>
-                      </div>
+                        </div>
 
                       {/* Quest Body */}
                       <div className="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -566,6 +750,7 @@ export function QuestsView({
                   );
                 })}
               </div>
+            )}
             </div>
           </>
         ) : (
@@ -641,6 +826,169 @@ export function QuestsView({
           </div>
         )}
       </div>
+
+      {/* ── 3. Reusable Dialog: Create / Edit Quest (Fullstack CRUD) ── */}
+      <Dialog open={isQuestModalOpen} onOpenChange={setIsQuestModalOpen}>
+        <DialogContent className="w-[92vw] sm:w-[500px] p-5 rounded-xl bg-card border border-border shadow-xl z-[160] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+              {editingQuest ? <Pencil className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
+              <span>{editingQuest ? t('Edit Quest Database') : t('Tambah Quest Baru ke Database')}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveQuest} className="space-y-3 pt-2">
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">{t('Judul Quest')}</label>
+              <Input
+                value={questForm.title}
+                onChange={(e) => setQuestForm((f) => ({ ...f, title: e.target.value }))}
+                placeholder="misal: Anticeil Chess Grandmaster"
+                className="h-8 text-xs bg-muted/40 border-border"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">{t('Deskripsi / Subtitle')}</label>
+              <Input
+                value={questForm.subtitle}
+                onChange={(e) => setQuestForm((f) => ({ ...f, subtitle: e.target.value }))}
+                placeholder="misal: Menangkan 3 pertandingan catur bersama teman di Voice Channel."
+                className="h-8 text-xs bg-muted/40 border-border"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Kategori')}</label>
+                <select
+                  value={questForm.category}
+                  onChange={(e) => setQuestForm((f) => ({ ...f, category: e.target.value as any }))}
+                  className="w-full h-8 px-2 rounded-md bg-muted/40 border border-border text-xs text-foreground cursor-pointer"
+                >
+                  <option value="activity">{t('Aktivitas Video')}</option>
+                  <option value="game">{t('Game & Rekreasi')}</option>
+                  <option value="social">{t('Komunitas & Chat')}</option>
+                  <option value="profile">{t('Kustomisasi Profil')}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Promoter / Penyelenggara')}</label>
+                <Input
+                  value={questForm.promoter}
+                  onChange={(e) => setQuestForm((f) => ({ ...f, promoter: e.target.value }))}
+                  placeholder="Anticeil Games"
+                  className="h-8 text-xs bg-muted/40 border-border"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Hadiah (Dew)')}</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={questForm.rewardDew}
+                  onChange={(e) => setQuestForm((f) => ({ ...f, rewardDew: Number(e.target.value) }))}
+                  className="h-8 text-xs bg-muted/40 border-border"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Target')}</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={questForm.target}
+                  onChange={(e) => setQuestForm((f) => ({ ...f, target: Number(e.target.value) }))}
+                  className="h-8 text-xs bg-muted/40 border-border"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Satuan')}</label>
+                <Input
+                  value={questForm.unit}
+                  onChange={(e) => setQuestForm((f) => ({ ...f, unit: e.target.value }))}
+                  placeholder="menit / kali"
+                  className="h-8 text-xs bg-muted/40 border-border"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Badge (Opsional)')}</label>
+                <Input
+                  value={questForm.badge}
+                  onChange={(e) => setQuestForm((f) => ({ ...f, badge: e.target.value }))}
+                  placeholder="Unggulan / Baru"
+                  className="h-8 text-xs bg-muted/40 border-border"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Teks Tombol Aksi')}</label>
+                <Input
+                  value={questForm.actionLabel}
+                  onChange={(e) => setQuestForm((f) => ({ ...f, actionLabel: e.target.value }))}
+                  placeholder="Mulai Bermain"
+                  className="h-8 text-xs bg-muted/40 border-border"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">{t('App ID (Opsional)')}</label>
+              <Input
+                value={questForm.appId}
+                onChange={(e) => setQuestForm((f) => ({ ...f, appId: e.target.value }))}
+                placeholder="anticeil-chess, youtube-watch, atau kosongkan"
+                className="h-8 text-xs bg-muted/40 border-border"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">{t('Cover Image URL')}</label>
+              <Input
+                value={questForm.coverUrl}
+                onChange={(e) => setQuestForm((f) => ({ ...f, coverUrl: e.target.value }))}
+                placeholder="https://images.unsplash.com/..."
+                className="h-8 text-xs bg-muted/40 border-border"
+                required
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsQuestModalOpen(false)}
+                className="h-8 text-xs cursor-pointer"
+              >
+                {t('Batal')}
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSubmittingQuest}
+                className="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+              >
+                {isSubmittingQuest && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{editingQuest ? t('Simpan Perubahan') : t('Tambah Quest')}</span>
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

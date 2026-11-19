@@ -231,9 +231,9 @@ export const shopApi = {
       if (category && category !== 'all') params.category = category;
       if (query) params.q = query;
       const res = await api.get<any>('/v1/community/shop/items', { params });
-      if (Array.isArray(res) && res.length > 0) return res;
+      if (Array.isArray(res)) return res;
     } catch {}
-    return FALLBACK_SHOP_ITEMS;
+    return [];
   },
 
   async getFeatured(): Promise<ShopFeaturedResponse | null> {
@@ -320,6 +320,14 @@ export const shopApi = {
       return await api.post('/v1/community/shop/items', item);
     } catch (err: any) {
       return { success: false, message: err?.message || 'Gagal menambahkan item ke database' };
+    }
+  },
+
+  async updateItem(itemId: string, item: Partial<ShopItem>): Promise<{ success: boolean; message: string; item?: ShopItem }> {
+    try {
+      return await api.put(`/v1/community/shop/items/${itemId}`, item);
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal memperbarui item' };
     }
   },
 

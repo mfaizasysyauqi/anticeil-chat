@@ -118,9 +118,33 @@ export const questsApi = {
   async getQuests(): Promise<QuestItem[]> {
     try {
       const res = await api.get<any>('/v1/community/quests');
-      if (Array.isArray(res) && res.length > 0) return res;
+      if (Array.isArray(res)) return res;
     } catch {}
-    return FALLBACK_QUESTS;
+    return [];
+  },
+
+  async createQuest(data: Partial<QuestItem>): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
+    try {
+      return await api.post('/v1/community/quests', data);
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal membuat quest' };
+    }
+  },
+
+  async updateQuest(questId: string, data: Partial<QuestItem>): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
+    try {
+      return await api.put(`/v1/community/quests/${questId}`, data);
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal memperbarui quest' };
+    }
+  },
+
+  async deleteQuest(questId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      return await api.delete(`/v1/community/quests/${questId}`);
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal menghapus quest' };
+    }
   },
 
   async acceptQuest(questId: string): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
