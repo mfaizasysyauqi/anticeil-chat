@@ -161,85 +161,88 @@ export function ColonyRail({
 
   return (
     <div id="anticeil-mini-rail" className="w-14 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
-      {/* 1. Top Button: Logo Anticeil -> AI Command Center (Halaman Utama) */}
-      <div className="h-14 w-14 shrink-0 flex items-center justify-center relative group">
-        <span
-          className={cn(
-            'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
-            isAiCurrentlyActive
-              ? 'h-10'
-              : 'h-0 group-hover:h-3.5 opacity-80',
-          )}
-        />
+      {/* 1. Fixed top buttons: AI Command Center (Logo), Hub Fitur (LayoutGrid) with symmetrical gap-2 */}
+      <div className="w-full flex flex-col items-center gap-2 pt-2 shrink-0">
+        {/* 1. Top Button: Logo Anticeil -> AI Command Center (Halaman Utama) */}
+        <div className="relative group w-full flex items-center justify-center">
+          <span
+            className={cn(
+              'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+              isAiCurrentlyActive
+                ? 'h-10'
+                : 'h-0 group-hover:h-3.5 opacity-80',
+            )}
+          />
 
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => {
-                if (onSelectAiCenter) {
-                  onSelectAiCenter();
-                } else {
-                  handleSelect('ai-center');
-                }
-              }}
-              className={cn(
-                'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
-                isAiCurrentlyActive
-                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
-                  : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
-              )}
-            >
-              <AnticeilLogo className="size-6 transition-colors duration-150" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-            {t('AI Command Center')}
-          </TooltipContent>
-        </Tooltip>
-      </div>
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  if (onSelectAiCenter) {
+                    onSelectAiCenter();
+                  } else {
+                    handleSelect('ai-center');
+                  }
+                }}
+                className={cn(
+                  'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                  isAiCurrentlyActive
+                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                    : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
+                )}
+              >
+                <AnticeilLogo className="size-6 transition-colors duration-150" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+              {t('AI Command Center')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-      {/* 2. New Dedicated Button: Direct Messages & Home Activities (Pesan Langsung & Aktivitas) */}
-      <div className="h-12 w-14 shrink-0 flex items-center justify-center relative group">
-        <span
-          className={cn(
-            'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
-            isDirectMessagesActive
-              ? 'h-10'
-              : mainUnread
-              ? 'h-2 group-hover:h-5'
-              : 'h-0 group-hover:h-3.5 opacity-80',
-          )}
-        />
+        {/* 2. Dedicated Button: Direct Messages & Home Activities (Pesan Langsung & Aktivitas) */}
+        <div className="relative group w-full flex items-center justify-center">
+          <span
+            className={cn(
+              'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+              isDirectMessagesActive
+                ? 'h-10'
+                : mainUnread
+                ? 'h-2 group-hover:h-5'
+                : 'h-0 group-hover:h-3.5 opacity-80',
+            )}
+          />
 
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => handleSelect('anticeil')}
-              className={cn(
-                'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
-                isDirectMessagesActive
-                  ? 'bg-sidebar-accent text-foreground shadow-xs'
-                  : 'bg-sidebar-accent text-muted-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
-              )}
-            >
-              <LayoutGrid className="w-5 h-5 transition-transform duration-200 group-hover:scale-105" />
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => handleSelect('anticeil')}
+                className={cn(
+                  'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                  isDirectMessagesActive
+                    ? 'bg-sidebar-accent text-foreground shadow-xs'
+                    : 'bg-sidebar-accent text-muted-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
+                )}
+              >
+                <LayoutGrid className="w-5 h-5 transition-transform duration-200 group-hover:scale-105" />
 
-              {/* Discord-style bottom-right unread badge pill */}
-              {mainUnread && (
-                <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
-                  {mainUnread}
-                </span>
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-            {t('Hub Fitur & Pesan Langsung')}
-          </TooltipContent>
-        </Tooltip>
+                {/* Discord-style bottom-right unread badge pill */}
+                {mainUnread && (
+                  <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
+                    {mainUnread}
+                  </span>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+              {t('Hub Fitur & Pesan Langsung')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       {/* Scrollable lower rail: Switcher, Add (+), then list */}
-      <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-0 pb-16">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
         {/* Switcher Button: Servers vs Friends (matches standard server icon aesthetic) */}
         <div className="relative group w-full flex items-center justify-center">
           <Tooltip delayDuration={150}>
