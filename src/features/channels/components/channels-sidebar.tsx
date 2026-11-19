@@ -71,11 +71,6 @@ export function ChannelsSidebar(props: ChannelsSidebarProps) {
       {isAiActive ? (
         <AiCommandCenterSidebar
           onToggleCollapseSidebar={props.onToggleCollapseSidebar}
-          onSelectPromptPreset={(prompt) => {
-            window.dispatchEvent(
-              new CustomEvent('anticeil_ai_preset_prompt', { detail: prompt }),
-            );
-          }}
         />
       ) : isHome ? (
         <HomeChannelsSidebar {...props} />

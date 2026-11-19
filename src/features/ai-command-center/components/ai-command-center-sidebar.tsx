@@ -181,49 +181,6 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
             </div>
           )}
         </div>
-
-        {/* Suggested Quick Prompts */}
-        {onSelectPromptPreset && (
-          <div className="pt-4 border-t border-sidebar-border/40 mt-3">
-            <span className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-              Perintah Cepat
-            </span>
-            <div className="space-y-1">
-              <button
-                type="button"
-                onClick={() => onSelectPromptPreset('Buka papan tulis Jamspace Whiteboard')}
-                className="w-full text-left px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors flex items-center gap-1.5"
-              >
-                <span>🎨</span>
-                <span className="truncate">Buka Whiteboard</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelectPromptPreset('Buka YouTube Watch Together')}
-                className="w-full text-left px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors flex items-center gap-1.5"
-              >
-                <span>🎬</span>
-                <span className="truncate">YouTube Watch Together</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelectPromptPreset('Kirim pesan ke channel general: Halo rekan-rekan!')}
-                className="w-full text-left px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors flex items-center gap-1.5"
-              >
-                <span>📢</span>
-                <span className="truncate">Kirim Pesan ke Channel</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelectPromptPreset('Kirim DM ke teman')}
-                className="w-full text-left px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors flex items-center gap-1.5"
-              >
-                <span>✉️</span>
-                <span className="truncate">Kirim Pesan Langsung (DM)</span>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
