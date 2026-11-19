@@ -117,7 +117,7 @@ export function ChannelTopHeaderBar({
         <button
           type="button"
           onClick={onOpenMobileChannels}
-          className="md:hidden h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
+          className="md:hidden sidebar-toggle-btn h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
           title={t('Buka Menu Sidebar')}
           aria-label={t('Buka Menu Sidebar')}
         >

@@ -169,6 +169,7 @@ export interface ChannelsSidebarWrapperProps {
   selectedActivityAppId: string | null;
   onItemClick?: () => void;
   onCloseDM?: (id: string) => void;
+  onToggleCollapseSidebar?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -219,6 +220,7 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
   selectedActivityAppId,
   onItemClick,
   onCloseDM,
+  onToggleCollapseSidebar,
   t,
 }) => {
   return (
@@ -227,6 +229,7 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
       isHome={isHome}
       activeColony={activeColony}
       channels={channels}
+      onToggleCollapseSidebar={onToggleCollapseSidebar}
       activeChannelId={activeChannelId}
       setActiveChannelId={setActiveChannelId}
       activeCallChannelId={activeCallChannelId}

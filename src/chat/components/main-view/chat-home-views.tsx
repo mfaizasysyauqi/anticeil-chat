@@ -21,6 +21,7 @@ export interface ChatHomeViewsProps {
   handleIgnoreMessageRequest: (item: MessageRequestItem) => void | Promise<void>;
   handleReportSpamMessageRequest: (item: MessageRequestItem) => void | Promise<void>;
   setIsMobileChannelsOpen: (open: boolean) => void;
+  onOpenSidebar?: () => void;
   isNotificationsView: boolean;
   notifications: NotificationItem[];
   handleMarkAllNotificationsRead: () => void;
@@ -70,6 +71,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   handleIgnoreMessageRequest,
   handleReportSpamMessageRequest,
   setIsMobileChannelsOpen,
+  onOpenSidebar,
   isNotificationsView,
   notifications,
   handleMarkAllNotificationsRead,
@@ -106,6 +108,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   setIsCreateHubOpen,
   t,
 }) => {
+  const handleOpenNav = onOpenSidebar || (() => setIsMobileChannelsOpen(true));
+
   if (isFriendsView) {
     return <>{renderFriendsMainPage()}</>;
   }
@@ -117,7 +121,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         onAccept={handleAcceptMessageRequest}
         onIgnore={handleIgnoreMessageRequest}
         onReportSpam={handleReportSpamMessageRequest}
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
     );
@@ -130,7 +134,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         onMarkAllAsRead={handleMarkAllNotificationsRead}
         onMarkAsRead={handleMarkNotificationRead}
         onJumpToMessage={handleJumpToNotification}
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
     );
@@ -150,7 +154,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           setActiveChannelId(channelId);
           setActiveCallChannelId(channelId);
         }}
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         onCreateEvent={createCalendarEvent}
         onUpdateEvent={updateCalendarEvent}
         onDeleteEvent={deleteCalendarEvent}
@@ -169,7 +173,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           setActiveChannelId(channelId);
         }}
         onToggleComplete={handleToggleComplete}
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
     );
@@ -192,7 +196,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           });
           handleStartDirectMessage(friend);
         }}
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
     );
@@ -206,7 +210,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         members={members}
         activeCallChannelId={activeCallChannelId}
         onLaunchActivity={handleLaunchActivity}
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
         onStartDM={handleStartDM}
         setActiveColonyId={setActiveColonyId}
@@ -219,7 +223,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
     return (
       <ShopView
         currentUser={members.find((m) => m.id === 'me')}
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
         onNavigateSection={(sec) => setHomeView?.(sec as any)}
       />
@@ -229,7 +233,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   if (isQuestsView) {
     return (
       <QuestsView
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
         onNavigateShop={() => setHomeView?.('shop')}
         onLaunchActivity={(appId) => handleLaunchActivity(appId)}
@@ -255,7 +259,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
             t('Masuk ke Anticeil untuk membuat colony komunitas Anda sendiri.'),
           )
         }
-        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
     );

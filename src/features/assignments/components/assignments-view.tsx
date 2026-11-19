@@ -118,7 +118,7 @@ export function AssignmentsView({
               variant="ghost"
               size="icon-xs"
               onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
+              className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
               title="Buka Menu Sidebar"
             >
               <Menu className="w-5 h-5" />

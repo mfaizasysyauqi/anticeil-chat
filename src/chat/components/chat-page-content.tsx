@@ -26,6 +26,8 @@ export interface ChatPageContentProps {
   setIsMobileChannelsOpen: (open: boolean) => void;
   isMobileMembersOpen: boolean;
   setIsMobileMembersOpen: (open: boolean) => void;
+  isDesktopSidebarCollapsed?: boolean;
+  toggleDesktopSidebarCollapsed?: () => void;
 
   railProps: ColonyRailWrapperProps;
   channelsSidebarProps: Omit<ChannelsSidebarWrapperProps, 'onItemClick'>;
@@ -49,6 +51,7 @@ export const ChatPageContent: React.FC<ChatPageContentProps> = ({
   setIsMobileChannelsOpen,
   isMobileMembersOpen,
   setIsMobileMembersOpen,
+  isDesktopSidebarCollapsed = false,
   railProps,
   channelsSidebarProps,
   userDockProps,
@@ -82,7 +85,10 @@ export const ChatPageContent: React.FC<ChatPageContentProps> = ({
       )}
     >
       <TooltipProvider delayDuration={200}>
-        <div className="flex h-full w-full overflow-hidden bg-background">
+        <div
+          className="flex h-full w-full overflow-hidden bg-background"
+          data-sidebar-collapsed={isDesktopSidebarCollapsed ? 'true' : 'false'}
+        >
           {/* DESKTOP & TABLET COMBINED LEFT COLUMN */}
           <ChatDesktopSidebar
             sidebarWidth={sidebarWidth}
@@ -92,6 +98,7 @@ export const ChatPageContent: React.FC<ChatPageContentProps> = ({
             renderDiscordHubRail={renderDiscordHubRail}
             renderChannelsSidebarContent={renderChannelsSidebarContent}
             renderUserBottomDock={renderUserBottomDock}
+            isSidebarCollapsed={isDesktopSidebarCollapsed}
             t={t}
           />
 

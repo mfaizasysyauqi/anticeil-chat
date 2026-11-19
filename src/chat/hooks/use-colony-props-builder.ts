@@ -10,6 +10,9 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     setIsMobileChannelsOpen,
     isMobileMembersOpen,
     setIsMobileMembersOpen,
+    isDesktopSidebarCollapsed,
+    setIsDesktopSidebarCollapsed,
+    toggleDesktopSidebarCollapsed,
     colonies,
     activeColonyId,
     unreadCounts,
@@ -221,6 +224,17 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     handleDevMockLogin,
   } = state;
 
+  const handleOpenSidebar = () => {
+    if (window.innerWidth < 768) {
+      setIsMobileChannelsOpen(true);
+    } else {
+      setIsDesktopSidebarCollapsed(false);
+      try {
+        localStorage.setItem('anticeil_desktop_sidebar_collapsed', 'false');
+      } catch {}
+    }
+  };
+
   return {
     sidebarWidth,
     isResizingSidebar,
@@ -230,6 +244,8 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     setIsMobileChannelsOpen,
     isMobileMembersOpen,
     setIsMobileMembersOpen,
+    isDesktopSidebarCollapsed,
+    toggleDesktopSidebarCollapsed,
     railProps: {
       colonies,
       activeColonyId,
@@ -306,6 +322,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       setIsCallPiP,
       selectedActivityAppId,
       onCloseDM: handleCloseDM,
+      onToggleCollapseSidebar: toggleDesktopSidebarCollapsed,
       t,
     },
     userDockProps: {
@@ -376,6 +393,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       handleIgnoreMessageRequest,
       handleReportSpamMessageRequest,
       setIsMobileChannelsOpen,
+      onOpenSidebar: handleOpenSidebar,
       isNotificationsView,
       notifications,
       handleMarkAllNotificationsRead,

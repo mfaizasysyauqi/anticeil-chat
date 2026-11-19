@@ -21,6 +21,7 @@ export interface ChatChannelViewProps {
   isHome: boolean;
   isCallPiP: boolean;
   setIsMobileChannelsOpen: (open: boolean) => void;
+  onOpenSidebar?: () => void;
   isThreadsPopoverOpen: boolean;
   setIsThreadsPopoverOpen: (open: boolean) => void;
   channelThreads: any[];
@@ -138,6 +139,7 @@ export function ChatChannelView({
   isHome,
   isCallPiP,
   setIsMobileChannelsOpen,
+  onOpenSidebar,
   isThreadsPopoverOpen,
   setIsThreadsPopoverOpen,
   channelThreads,
@@ -414,7 +416,7 @@ export function ChatChannelView({
           activeChannel={activeChannel}
           channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
           isHome={isHome}
-          onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
+          onOpenMobileChannels={onOpenSidebar || (() => setIsMobileChannelsOpen(true))}
           onStartVoiceCall={() => {
             if (activeChannel) setActiveCallChannelId(activeChannel.id);
           }}
@@ -601,7 +603,7 @@ export function ChatChannelView({
           activeColony={activeColony}
           displayMembers={displayMembers}
           currentUser={currentUser}
-          onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+          onOpenSidebar={onOpenSidebar || (() => setIsMobileChannelsOpen(true))}
           horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
           onCardsUpdate={handleKanbanCardsUpdate}
         />

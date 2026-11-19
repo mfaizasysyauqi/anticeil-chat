@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface UseChatViewModesOptions {
@@ -70,6 +70,41 @@ export function useChatViewModes({
   const [isMobileChannelsOpen, setIsMobileChannelsOpen] = useState(false);
   const [isMobileMembersOpen, setIsMobileMembersOpen] = useState(false);
 
+  // Desktop sidebar full collapse state
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('anticeil_desktop_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleDesktopSidebarCollapsed = useCallback(() => {
+    setIsDesktopSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('anticeil_desktop_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar collapse
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        const target = e.target as HTMLElement;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+          return;
+        }
+        e.preventDefault();
+        toggleDesktopSidebarCollapsed();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleDesktopSidebarCollapsed]);
+
   useEffect(() => {
     const handleToggleMobileChannels = () => {
       setIsMobileChannelsOpen((prev) => !prev);
@@ -136,6 +171,9 @@ export function useChatViewModes({
     setIsMobileChannelsOpen,
     isMobileMembersOpen,
     setIsMobileMembersOpen,
+    isDesktopSidebarCollapsed,
+    setIsDesktopSidebarCollapsed,
+    toggleDesktopSidebarCollapsed,
     isFriendsView,
     isMessageRequestsView,
     isNotificationsView,

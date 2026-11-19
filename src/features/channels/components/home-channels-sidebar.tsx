@@ -14,7 +14,9 @@ import {
   MessageSquare,
   Radio,
   X,
+  PanelLeftClose,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -37,6 +39,7 @@ export interface HomeChannelsSidebarProps {
   onCloseDM?: (id: string) => void;
   onOpenDmSearch: () => void;
   onOpenCreateGroupDm?: () => void;
+  onToggleCollapseSidebar?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -68,6 +71,7 @@ export function HomeChannelsSidebar({
   onCloseDM,
   onOpenDmSearch,
   onOpenCreateGroupDm,
+  onToggleCollapseSidebar,
   t,
 }: HomeChannelsSidebarProps) {
   const notifBadge = formatSidebarBadge(unreadNotificationsCount);
@@ -76,14 +80,32 @@ export function HomeChannelsSidebar({
   return (
     <>
       {/* Home Header: Search bar "Find or start a conversation" */}
-      <div className="h-12 border-b border-sidebar-border px-2 flex items-center font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
+      <div className="h-12 border-b border-sidebar-border px-2 flex items-center justify-between gap-1.5 font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
         <button
           onClick={onOpenDmSearch}
-          className="w-full h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] transition-colors cursor-pointer border border-border"
+          className="flex-1 min-w-0 h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] transition-colors cursor-pointer border border-border"
         >
           <Search className="w-3 h-3 shrink-0 opacity-60" />
           <span className="truncate">{t('Cari atau mulai percakapan...')}</span>
         </button>
+        {onToggleCollapseSidebar && (
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleCollapseSidebar}
+                className="hidden md:flex h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent cursor-pointer shrink-0"
+                title={t('Tutup Sidebar (Ctrl+B)')}
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              {t('Tutup Sidebar')} <kbd className="ml-1 text-[10px] text-muted-foreground font-mono">Ctrl+B</kbd>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       {/* Scroll Area: Home navigation and DMs */}

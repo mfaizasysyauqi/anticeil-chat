@@ -62,6 +62,7 @@ export interface ColonyChannelsSidebarProps {
   calendarEvents?: any[];
   onOpenServerEvents?: () => void;
   selectedActivityAppId?: string | null;
+  onToggleCollapseSidebar?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -95,6 +96,7 @@ export function ColonyChannelsSidebar({
   calendarEvents = [],
   onOpenServerEvents,
   selectedActivityAppId,
+  onToggleCollapseSidebar,
   t,
 }: ColonyChannelsSidebarProps) {
   const [editingCategory, setEditingCategory] = useState<ColonyCategory | null>(null);
@@ -244,6 +246,7 @@ export function ColonyChannelsSidebar({
         onOpenCreateChannel={onOpenCreateChannel}
         onOpenCreateCategory={onOpenCreateCategory}
         onOpenCreateColony={onOpenCreateColony}
+        onToggleCollapseSidebar={onToggleCollapseSidebar}
         t={t}
       />
 

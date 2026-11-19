@@ -13,7 +13,10 @@ import {
   ScrollText,
   ExternalLink,
   FolderPlus,
+  PanelLeftClose,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +36,7 @@ export interface SidebarColonyHeaderProps {
   onOpenCreateChannel: (category: string, type?: any) => void;
   onOpenCreateCategory?: () => void;
   onOpenCreateColony?: () => void;
+  onToggleCollapseSidebar?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -43,13 +47,14 @@ export const SidebarColonyHeader: React.FC<SidebarColonyHeaderProps> = ({
   onOpenCreateChannel,
   onOpenCreateCategory,
   onOpenCreateColony,
+  onToggleCollapseSidebar,
   t,
 }) => {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="h-12 border-b border-sidebar-border px-2 flex items-center font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
-      <div className="w-full">
+    <div className="h-12 border-b border-sidebar-border px-2 flex items-center justify-between gap-1 font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
+      <div className="flex-1 min-w-0">
         <input
           type="file"
           ref={serverIconQuickInputRef}
@@ -177,6 +182,25 @@ export const SidebarColonyHeader: React.FC<SidebarColonyHeaderProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {onToggleCollapseSidebar && (
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleCollapseSidebar}
+              className="hidden md:flex h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent cursor-pointer shrink-0 ml-0.5"
+              title={t('Tutup Sidebar (Ctrl+B)')}
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="text-xs">
+            {t('Tutup Sidebar')} <kbd className="ml-1 text-[10px] text-muted-foreground font-mono">Ctrl+B</kbd>
+          </TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 };

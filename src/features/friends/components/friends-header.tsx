@@ -46,7 +46,7 @@ export function FriendsHeader({
             variant="ghost"
             size="icon-xs"
             onClick={onOpenSidebar}
-            className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
+            className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
             title={t('Buka Menu Sidebar')}
             aria-label={t('Buka Menu Sidebar')}
           >

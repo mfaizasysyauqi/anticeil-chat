@@ -57,6 +57,7 @@ export interface ChannelsSidebarProps {
   onOpenServerEvents?: () => void;
   userBottomDock?: React.ReactNode;
   selectedActivityAppId?: string | null;
+  onToggleCollapseSidebar?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
