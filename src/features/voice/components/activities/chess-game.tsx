@@ -58,6 +58,32 @@ export function ChessGame({
   const myName = currentUserName || currentUser?.firstName || 'Pemain';
 
   const moveHistoryEndRef = useRef<HTMLDivElement>(null);
+  const boardWrapperRef = useRef<HTMLDivElement>(null);
+  const [boardDimension, setBoardDimension] = useState<number>(400);
+
+  // Responsively scale board so it fits 100% within available width AND height without any overflow
+  useEffect(() => {
+    const el = boardWrapperRef.current;
+    if (!el) return;
+
+    const updateDimension = () => {
+      const rect = el.getBoundingClientRect();
+      // Leave safety padding so borders and shadows never cause overflow
+      const availableSize = Math.floor(Math.min(rect.width, rect.height) - 4);
+      if (availableSize > 100) {
+        setBoardDimension(availableSize);
+      }
+    };
+
+    updateDimension();
+    const ro = new ResizeObserver(updateDimension);
+    ro.observe(el);
+    window.addEventListener('resize', updateDimension);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateDimension);
+    };
+  }, []);
 
   // Auto scroll history notation
   useEffect(() => {
@@ -398,9 +424,12 @@ export function ChessGame({
   return (
     <div className="h-full w-full flex flex-col xl:flex-row items-center justify-center p-2 sm:p-4 gap-2 sm:gap-4 lg:gap-6 bg-zinc-950 text-foreground overflow-hidden select-none">
       {/* ── BOARD COLUMN (Scales responsively on Mobile, Tablet & Desktop) ── */}
-      <div className="flex flex-col items-center justify-center h-full max-h-full w-full max-w-[min(100%,calc(100vh-140px),440px)] xl:max-w-[min(520px,calc(100vh-60px))] shrink min-h-0">
+      <div className="flex flex-col items-center justify-center h-full max-h-full flex-1 min-h-0 min-w-0 max-w-full xl:max-w-[min(560px,calc(100vh-80px))] py-1">
         {/* Top Player Info Bar */}
-        <div className="w-full flex items-center justify-between py-1 px-2.5 mb-1.5 rounded-lg bg-zinc-900/95 border border-zinc-800 text-[11px] sm:text-xs shrink-0 shadow-xs">
+        <div
+          style={{ width: boardDimension, maxWidth: '100%' }}
+          className="flex items-center justify-between py-1 px-2.5 mb-1.5 rounded-lg bg-zinc-900/95 border border-zinc-800 text-[11px] sm:text-xs shrink-0 shadow-xs transition-all"
+        >
           <div className="flex items-center gap-1.5 truncate">
             <span
               className={cn(
@@ -424,27 +453,35 @@ export function ChessGame({
           </div>
         </div>
 
-        {/* The Chessboard Container (strictly contained to aspect-square and max viewport height) */}
-        <div className="w-full aspect-square max-h-[min(calc(100vh-220px),calc(100vw-24px),440px)] xl:max-h-[min(480px,calc(100vh-130px))] rounded-xl overflow-hidden shadow-2xl border-2 sm:border-4 border-zinc-800 bg-zinc-900 shrink min-h-0 flex items-center justify-center">
-          <Chessboard
-            options={{
-              position: gameFen,
-              onPieceDrop: onDrop,
-              canDragPiece,
-              boardOrientation: orientation,
-              darkSquareStyle: { backgroundColor: '#2e3846' },
-              lightSquareStyle: { backgroundColor: '#475569' },
-              boardStyle: {
-                borderRadius: '8px',
-                width: '100%',
-                height: '100%',
-              },
-            }}
-          />
+        {/* The Chessboard Flex Wrapper: takes remaining height and centers square perfectly */}
+        <div ref={boardWrapperRef} className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden">
+          <div
+            style={{ width: boardDimension, height: boardDimension }}
+            className="rounded-xl overflow-hidden shadow-2xl border-2 sm:border-4 border-zinc-800 bg-zinc-900 shrink-0 flex items-center justify-center transition-all"
+          >
+            <Chessboard
+              options={{
+                position: gameFen,
+                onPieceDrop: onDrop,
+                canDragPiece,
+                boardOrientation: orientation,
+                darkSquareStyle: { backgroundColor: '#2e3846' },
+                lightSquareStyle: { backgroundColor: '#475569' },
+                boardStyle: {
+                  borderRadius: '8px',
+                  width: `${boardDimension}px`,
+                  height: `${boardDimension}px`,
+                },
+              }}
+            />
+          </div>
         </div>
 
         {/* Bottom Player Info Bar */}
-        <div className="w-full flex items-center justify-between py-1 px-2.5 mt-1.5 rounded-lg bg-zinc-900/95 border border-zinc-800 text-[11px] sm:text-xs shrink-0 shadow-xs">
+        <div
+          style={{ width: boardDimension, maxWidth: '100%' }}
+          className="flex items-center justify-between py-1 px-2.5 mt-1.5 rounded-lg bg-zinc-900/95 border border-zinc-800 text-[11px] sm:text-xs shrink-0 shadow-xs transition-all"
+        >
           <div className="flex items-center gap-1.5 truncate">
             <span
               className={cn(
@@ -466,7 +503,10 @@ export function ChessGame({
         </div>
 
         {/* Mobile / Tablet Quick Control Ribbon */}
-        <div className="xl:hidden w-full flex items-center justify-between gap-1 mt-1.5 pt-1 border-t border-zinc-800/60 shrink-0">
+        <div
+          style={{ width: boardDimension, maxWidth: '100%' }}
+          className="xl:hidden flex items-center justify-between gap-1 mt-1.5 pt-1 border-t border-zinc-800/60 shrink-0 transition-all"
+        >
           <div className="flex items-center gap-1">
             <Badge
               variant="outline"
