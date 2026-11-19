@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { AssignmentItem, AssignmentTab } from '../types';
 import type { Colony } from '@/chat/chat-types';
@@ -40,6 +41,7 @@ export interface AssignmentsViewProps {
   onToggleComplete?: (assignmentId: string, isCompleted: boolean) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function AssignmentsView({
@@ -48,7 +50,8 @@ export function AssignmentsView({
   onOpenBoard,
   onToggleComplete,
   onOpenSidebar,
-  horizontalPadding = 'px-4 sm:px-6',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: AssignmentsViewProps) {
   const [activeTab, setActiveTab] = useState<AssignmentTab>('assigned_to_me');
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,7 +206,7 @@ export function AssignmentsView({
       </div>
 
       {/* ── Task Items List ────────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
         <div className="w-full space-y-3">
           {filteredList.length === 0 ? (
             <EmptyState

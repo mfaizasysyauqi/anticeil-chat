@@ -66,6 +66,8 @@ export const LAYOUT_PAGE_SPACING = {
  * Used across app bar, body/feed, and bottom bar/input dock to ensure perfect horizontal symmetry and consistency.
  */
 export const CHANNEL_HORIZONTAL_PADDING = LAYOUT_PAGE_SPACING.HORIZONTAL;
+export const CHANNEL_VERTICAL_PADDING = LAYOUT_PAGE_SPACING.VERTICAL;
+export const CHANNEL_BODY_PADDING = LAYOUT_PAGE_SPACING.BODY_PADDING;
 
 /**
  * Dialog & Modal Layout Tokens

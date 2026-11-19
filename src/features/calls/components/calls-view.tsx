@@ -24,7 +24,7 @@ import { EmptyState } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ColonyIcon } from '@/features/colonies/components/colony-icon';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
@@ -39,6 +39,7 @@ export interface CallsViewProps {
   onStartCall: (friend: FriendMember, isVideo?: boolean) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 const PAGE_SIZE = 10;
@@ -50,6 +51,7 @@ export function CallsView({
   onStartCall,
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: CallsViewProps) {
   const [activeTab, setActiveTab] = useState<CallsTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,7 +216,7 @@ export function CallsView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-6', horizontalPadding, verticalPadding)}>
         {/* Speed Dial / Kontak Cepat Section */}
         {friends && friends.length > 0 && (
           <div className="space-y-3">

@@ -25,7 +25,7 @@ import { EmptyState } from '@/components/ui/empty';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -52,6 +52,7 @@ export interface ColoniesViewProps {
   onOpenCreateServer?: () => void;
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function ColoniesView({
@@ -63,6 +64,7 @@ export function ColoniesView({
   onOpenCreateServer,
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: ColoniesViewProps) {
   const colonyList = colonies ?? servers ?? [];
   const handleSelectColony = onSelectColony ?? onSelectServer ?? (() => {});
@@ -363,7 +365,7 @@ export function ColoniesView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-5 space-y-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-6', horizontalPadding, verticalPadding)}>
         {activeTab === 'joined' ? (
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">

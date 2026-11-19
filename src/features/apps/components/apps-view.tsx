@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import { appsApi } from '../api/apps-api';
@@ -28,6 +28,7 @@ export interface AppsViewProps {
   onLaunchActivity: (appId: string, fromChat?: boolean, targetChannelId?: string, targetColonyId?: string) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
   onStartDM?: (member: ColonyMember) => void;
   setActiveColonyId?: (colonyId: string) => void;
   setActiveChannelId?: (chId: string) => void;
@@ -160,6 +161,7 @@ export function AppsView({
   onLaunchActivity,
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
   onStartDM,
   setActiveColonyId,
   setActiveChannelId,
@@ -302,7 +304,7 @@ export function AppsView({
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-8', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-8', horizontalPadding, verticalPadding)}>
         {/* Featured Hero Banner: YouTube Watch Together */}
         {!searchQuery && activeCategory === 'all' && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">

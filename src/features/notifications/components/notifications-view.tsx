@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { NotificationItem, NotificationsTab } from '../types';
@@ -25,6 +26,7 @@ interface NotificationsViewProps {
   onJumpToMessage: (item: NotificationItem) => void;
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function NotificationsView({
@@ -33,7 +35,8 @@ export function NotificationsView({
   onMarkAsRead,
   onJumpToMessage,
   onOpenSidebar,
-  horizontalPadding = 'px-6',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: NotificationsViewProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<NotificationsTab>('all');
@@ -160,7 +163,7 @@ export function NotificationsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff className="w-8 h-8 stroke-[1.8] text-primary" />}

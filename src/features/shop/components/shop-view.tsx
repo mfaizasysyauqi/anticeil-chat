@@ -58,7 +58,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -112,6 +112,7 @@ export interface ShopViewProps {
   currentUser?: any;
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
   onOpenProfile?: () => void;
   onNavigateSection?: (section: string) => void;
 }
@@ -120,6 +121,7 @@ export function ShopView({
   currentUser,
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
   onOpenProfile,
   onNavigateSection,
 }: ShopViewProps) {
@@ -1379,7 +1381,7 @@ export function ShopView({
       {/* ── 2. Main Content Row: Center Catalog + Discord-style Right Filter Sidebar ── */}
       <div className="flex-1 min-h-0 flex flex-row overflow-hidden">
         {/* Scrollable Center Catalog */}
-        <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-6', horizontalPadding)}>
+        <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-6', horizontalPadding, verticalPadding)}>
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
           <div className="flex items-center justify-between gap-3 pb-1">
             <div className="flex items-center gap-2">

@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { MessageRequestItem, MessageRequestsTab } from '../types';
@@ -15,6 +16,7 @@ interface MessageRequestsViewProps {
   onReportSpam: (item: MessageRequestItem) => void;
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function MessageRequestsView({
@@ -23,7 +25,8 @@ export function MessageRequestsView({
   onIgnore,
   onReportSpam,
   onOpenSidebar,
-  horizontalPadding = 'px-6',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: MessageRequestsViewProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<MessageRequestsTab>('requests');
@@ -123,7 +126,7 @@ export function MessageRequestsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
         {/* Section Header Count */}
         <div className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-4">
           {activeTab === 'requests'

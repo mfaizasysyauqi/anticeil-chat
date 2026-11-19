@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
@@ -55,6 +55,7 @@ export interface CalendarViewProps {
   onUpdateEvent?: (id: string, updates: Partial<CalendarEvent>) => void;
   onDeleteEvent?: (id: string) => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function CalendarView({
@@ -67,6 +68,7 @@ export function CalendarView({
   onUpdateEvent,
   onDeleteEvent,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(dayjs());
@@ -363,7 +365,7 @@ export function CalendarView({
       </div>
 
       {/* ── Main Content Area: Month Grid vs Agenda List ────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-4 sm:py-6', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
         {viewMode === 'month' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-[500px]">
             {/* Calendar Month Grid (Left 2 cols) */}

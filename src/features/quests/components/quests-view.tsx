@@ -36,7 +36,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -46,6 +46,7 @@ import { shopApi, type ShopBalance } from '@/features/shop/api/shop-api';
 export interface QuestsViewProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
   onNavigateShop?: () => void;
   onLaunchActivity?: (appId: string) => void;
 }
@@ -53,6 +54,7 @@ export interface QuestsViewProps {
 export function QuestsView({
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
   onNavigateShop,
   onLaunchActivity,
 }: QuestsViewProps) {
@@ -339,7 +341,7 @@ export function QuestsView({
       />
 
       {/* ── 2. Main Content Area ── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-8', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-8', horizontalPadding, verticalPadding)}>
         {activeTab === 'all' ? (
           <>
             {/* ── Featured Hero Quest Banner (Discord 1:1) ── */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { FriendsHeader } from './friends-header';
 import { FriendsList } from './friends-list';
 import { AddFriendTab } from './add-friend-tab';
@@ -29,6 +29,7 @@ interface FriendsViewProps {
   onOpenDmSearch: () => void;
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function FriendsView({
@@ -51,6 +52,7 @@ export function FriendsView({
   onOpenDmSearch,
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: FriendsViewProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
@@ -72,7 +74,7 @@ export function FriendsView({
       {/* Body Content */}
       <div className="flex flex-1 min-h-0 overflow-hidden bg-background">
         {/* Main Friends Column */}
-        <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] py-5', horizontalPadding)}>
+        <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
           {friendsTab === 'add' ? (
             <AddFriendTab
               onAddFriend={onAddFriend}
