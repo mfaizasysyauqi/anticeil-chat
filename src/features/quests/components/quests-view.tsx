@@ -552,9 +552,73 @@ export function QuestsView({
       />
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-8', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', horizontalPadding, verticalPadding)}>
         {activeTab === 'all' ? (
           <>
+            {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest (100% Consistent with ShopView & FriendsView) ── */}
+            <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-primary shrink-0" />
+                <span className={TEXT_STYLES.SECTION_MUTED}>
+                  {t('Available Quests')}
+                </span>
+                <span className={TEXT_STYLES.COUNTER_LABEL}>
+                  ({filteredQuests.length})
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Sort dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={BUTTON_STYLES.TOOLBAR_BORDERED}
+                    >
+                      <span>
+                        {sortBy === 'suggested'
+                          ? t('Suggested')
+                          : sortBy === 'reward_desc'
+                          ? t('Hadiah Tertinggi')
+                          : t('Nama (A-Z)')}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40 bg-card border-border z-[150] text-foreground">
+                    <DropdownMenuItem onClick={() => setSortBy('suggested')} className="text-xs cursor-pointer">
+                      {t('Suggested')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy('reward_desc')} className="text-xs cursor-pointer">
+                      {t('Hadiah Tertinggi')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy('alphabetical')} className="text-xs cursor-pointer">
+                      {t('Nama (A-Z)')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
+                <FilterToggleButton
+                  isOpen={isFilterDrawerOpen}
+                  label={t('Filter')}
+                  activeCount={activeFilterCount}
+                  onClick={() => setIsFilterDrawerOpen(true)}
+                />
+
+                {/* Create Quest Button (Fullstack CRUD) - Placed at the far right after Filters */}
+                <Button
+                  size="sm"
+                  onClick={handleOpenCreateQuest}
+                  className={BUTTON_STYLES.TOOLBAR_ACTION}
+                  title={t('Tambah Quest Baru ke Database')}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{t('Tambah Quest')}</span>
+                </Button>
+              </div>
+            </div>
+
             {/* ── Featured Hero Quest Banner (Discord 1:1) ── */}
             {heroQuest && (
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/25 via-card to-background border border-primary/30 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
@@ -645,138 +709,75 @@ export function QuestsView({
             )}
 
             {/* ── Active Promoted Quests Spotlight Row (4 desktop, 3 tablet, 2 mobile) ── */}
-            <div className={SURFACE_STYLES.CARD_GRID}>
-              {quests.slice(0, 4).map((q) => (
-                <div
-                  key={q.id}
-                  className="rounded-xl border border-border/80 bg-card p-4 flex flex-col justify-between gap-3 shadow-xs relative overflow-hidden group hover:border-primary/50 transition-all"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase text-primary tracking-wider">
-                      {q.promoter}
-                    </span>
-                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-black">
-                      <span>💧</span>
-                      <span>{q.rewardDew} Dew</span>
+            {quests.length > 0 && (
+              <div className={SURFACE_STYLES.CARD_GRID}>
+                {quests.slice(0, 4).map((q) => (
+                  <div
+                    key={q.id}
+                    className="rounded-xl border border-border/80 bg-card p-4 flex flex-col justify-between gap-3 shadow-xs relative overflow-hidden group hover:border-primary/50 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[10px] font-bold uppercase text-primary tracking-wider">
+                        {q.promoter}
+                      </span>
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-black">
+                        <span>💧</span>
+                        <span>{q.rewardDew} Dew</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                        {q.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                        {q.subtitle}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold text-muted-foreground">
+                        {q.progress} / {q.target} {q.unit}
+                      </span>
+
+                      {q.status === 'completed' ? (
+                        <Button
+                          size="xs"
+                          onClick={() => handleClaimReward(q)}
+                          className="h-7 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
+                        >
+                          {t('Klaim')}
+                        </Button>
+                      ) : q.status === 'in_progress' ? (
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          onClick={() => handleProgressQuest(q)}
+                          className="h-7 px-3 text-xs font-semibold cursor-pointer"
+                        >
+                          {t('Lanjut')}
+                        </Button>
+                      ) : q.status === 'claimed' ? (
+                        <span className="text-emerald-500 text-xs font-bold flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> {t('Selesai')}
+                        </span>
+                      ) : (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => handleAcceptQuest(q)}
+                          className="h-7 px-3 text-xs font-semibold cursor-pointer"
+                        >
+                          {t('Terima')}
+                        </Button>
+                      )}
                     </div>
                   </div>
-
-                  <div>
-                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                      {q.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                      {q.subtitle}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold text-muted-foreground">
-                      {q.progress} / {q.target} {q.unit}
-                    </span>
-
-                    {q.status === 'completed' ? (
-                      <Button
-                        size="xs"
-                        onClick={() => handleClaimReward(q)}
-                        className="h-7 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
-                      >
-                        {t('Klaim')}
-                      </Button>
-                    ) : q.status === 'in_progress' ? (
-                      <Button
-                        size="xs"
-                        variant="secondary"
-                        onClick={() => handleProgressQuest(q)}
-                        className="h-7 px-3 text-xs font-semibold cursor-pointer"
-                      >
-                        {t('Lanjut')}
-                      </Button>
-                    ) : q.status === 'claimed' ? (
-                      <span className="text-emerald-500 text-xs font-bold flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5" /> {t('Selesai')}
-                      </span>
-                    ) : (
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onClick={() => handleAcceptQuest(q)}
-                        className="h-7 px-3 text-xs font-semibold cursor-pointer"
-                      >
-                        {t('Terima')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* ── Available Quests Section Header & Filter Controls ── */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/50">
-                <div className="flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-primary shrink-0" />
-                  <h3 className={TEXT_STYLES.SECTION_TITLE}>
-                    {t('Available Quests')}
-                  </h3>
-                  <span className={TEXT_STYLES.COUNTER_LABEL}>
-                    ({filteredQuests.length})
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  {/* Sort dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className={BUTTON_STYLES.TOOLBAR_BORDERED}
-                      >
-                        <span>
-                          {sortBy === 'suggested'
-                            ? t('Suggested')
-                            : sortBy === 'reward_desc'
-                            ? t('Hadiah Tertinggi')
-                            : t('Nama (A-Z)')}
-                        </span>
-                        <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40 bg-card border-border z-[150] text-foreground">
-                      <DropdownMenuItem onClick={() => setSortBy('suggested')} className="text-xs cursor-pointer">
-                        {t('Suggested')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy('reward_desc')} className="text-xs cursor-pointer">
-                        {t('Hadiah Tertinggi')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy('alphabetical')} className="text-xs cursor-pointer">
-                        {t('Nama (A-Z)')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
-                  <FilterToggleButton
-                    isOpen={isFilterDrawerOpen}
-                    label={t('Filter')}
-                    activeCount={activeFilterCount}
-                    onClick={() => setIsFilterDrawerOpen(true)}
-                  />
-
-                  {/* Create Quest Button (Fullstack CRUD) - Placed at the far right after Filters */}
-                  <Button
-                    size="sm"
-                    onClick={handleOpenCreateQuest}
-                    className={BUTTON_STYLES.TOOLBAR_ACTION}
-                    title={t('Tambah Quest Baru ke Database')}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{t('Tambah Quest')}</span>
-                  </Button>
-                </div>
+                ))}
               </div>
+            )}
 
-              {/* ── Quests Cards Grid (Discord 1:1 Layout) ── */}
+            {/* ── Quests Cards Grid (Discord 1:1 Layout) ── */}
               {filteredQuests.length === 0 ? (
                 <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 rounded-xl border border-dashed border-border/80 p-8">
                   <div className="size-16 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center text-3xl select-none">
@@ -943,7 +944,6 @@ export function QuestsView({
                 })}
               </div>
             )}
-            </div>
           </>
         ) : (
           /* ── Claimed Quests Tab View (Discord 1:1) ── */
@@ -1017,7 +1017,7 @@ export function QuestsView({
             )}
           </div>
         )}
-        </div>
+      </div>
 
       {/* Reusable Filter Sheet Drawer (Slides in on demand, preserving 100% page symmetry) */}
       <Sheet open={isFilterDrawerOpen} onOpenChange={setIsFilterDrawerOpen}>
