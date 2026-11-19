@@ -339,13 +339,10 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 w-full bg-background relative overflow-hidden select-none">
-      {/* 1. App Bar Header (100% DRY reusable component matching Friends, Quests, & Shop) */}
+      {/* 1. App Bar Header */}
       <AiCommandCenterHeader
         onOpenSidebar={onOpenSidebar}
-        activeSessionTitle={activeSession?.title}
-        onOpenGroqSettings={() => setIsSettingsOpen(true)}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
-        onCreateNewSession={onCreateNewSession ? () => onCreateNewSession() : undefined}
         hasMessages={messages.length > 0}
       />
 
