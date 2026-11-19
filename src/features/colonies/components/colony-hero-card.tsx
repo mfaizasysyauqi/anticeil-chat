@@ -60,12 +60,12 @@ export function ColonyHeroCard({
             <div className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{colony.onlineCount || 42} Online</span>
+                <span>{typeof colony.onlineCount === 'number' ? colony.onlineCount : (typeof colony.membersCount === 'number' ? Math.max(1, colony.membersCount) : 1)} Online</span>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3 text-muted-foreground" />
-                <span>{colony.membersCount || 148} Anggota</span>
+                <span>{typeof colony.membersCount === 'number' ? colony.membersCount : 1} Anggota</span>
               </span>
             </div>
           </div>

@@ -268,7 +268,14 @@ export function loadStoredColonies(): Colony[] {
     const list = Array.isArray(parsed) && parsed.length > 0
       ? parsed.filter((c) => !DUMMY_COLONY_IDS.has(c.id))
       : DEFAULT_COLONIES;
-    return list.map((c) => (c.id === 'anticeil' ? { ...c, iconType: 'logo', iconUrl: undefined } : c));
+    return list.map((c) => {
+      const sanitized = c.id === 'anticeil' ? { ...c, iconType: 'logo', iconUrl: undefined } : c;
+      return {
+        ...sanitized,
+        membersCount: typeof sanitized.membersCount === 'number' && sanitized.membersCount > 0 ? sanitized.membersCount : 1,
+        onlineCount: typeof sanitized.onlineCount === 'number' && sanitized.onlineCount > 0 ? sanitized.onlineCount : 1,
+      };
+    });
   } catch {
     return DEFAULT_COLONIES;
   }

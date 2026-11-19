@@ -124,6 +124,8 @@ export function useColonyModals({
         iconUrl: newHubIconUrl || undefined,
         isPublic: newHubIsPublic,
         visibility: newHubIsPublic ? 'public' : 'private',
+        membersCount: 1,
+        onlineCount: 1,
       };
 
       const defaultText: ColonyChannel = {

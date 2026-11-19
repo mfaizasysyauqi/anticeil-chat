@@ -86,6 +86,8 @@ export const coloniesApi = {
       const res = await api.post<Colony>('/v1/colony/colonies', {
         ...payload,
         id: newId,
+        membersCount: 1,
+        onlineCount: 1,
         tags: newColony.tags,
         emojis: newColony.emojis,
         isPublic,
@@ -630,7 +632,8 @@ export const coloniesApi = {
             initials: 'CK',
             iconType: 'initials',
             role: 'member' as const,
-            membersCount: 10,
+            membersCount: 1,
+            onlineCount: 1,
           };
     saveStoredColonies([...stored, newJoined]);
     if (typeof window !== 'undefined') {
@@ -664,7 +667,8 @@ export const coloniesApi = {
       initials: 'SK',
       description: 'Bergabung melalui link undangan',
       inviteCode,
-      membersCount: 2,
+      membersCount: 1,
+      onlineCount: 1,
       color: 'bg-emerald-600',
       role: 'member',
     };

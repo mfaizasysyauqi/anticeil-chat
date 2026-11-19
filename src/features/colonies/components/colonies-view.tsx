@@ -100,6 +100,29 @@ export function ColoniesView({
 
   // Fetch real public hubs from database
   useEffect(() => {
+    // Sync latest membersCount and onlineCount from database
+    colonyApi.getColonies().then((serverColonies) => {
+      if (Array.isArray(serverColonies) && serverColonies.length > 0) {
+        const stored = loadStoredColonies();
+        let changed = false;
+        const merged = stored.map((s) => {
+          const match = serverColonies.find((c) => c.id === s.id);
+          if (match && (s.membersCount !== match.membersCount || s.onlineCount !== match.onlineCount)) {
+            changed = true;
+            return {
+              ...s,
+              membersCount: match.membersCount,
+              onlineCount: match.onlineCount,
+            };
+          }
+          return s;
+        });
+        if (changed) {
+          saveStoredColonies(merged);
+        }
+      }
+    }).catch(() => {});
+
     let mounted = true;
     const fetchPublicColonies = async () => {
       setIsLoadingPublic(true);

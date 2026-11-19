@@ -84,12 +84,12 @@ export function ColonyCard({
         <div className="text-[10px] text-muted-foreground flex items-center gap-2 font-medium">
           <span className="flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-emerald-500" />
-            <span>{colony.onlineCount || Math.max(Math.floor((colony.membersCount || 10) * 0.3), 1)}</span>
+            <span>{typeof colony.onlineCount === 'number' ? colony.onlineCount : (typeof colony.membersCount === 'number' ? Math.max(1, colony.membersCount) : 1)}</span>
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
             <Users className="w-3 h-3 text-muted-foreground" />
-            <span>{colony.membersCount || 10}</span>
+            <span>{typeof colony.membersCount === 'number' ? colony.membersCount : 1}</span>
           </span>
         </div>
 
