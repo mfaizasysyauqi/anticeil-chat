@@ -639,9 +639,9 @@ export function QuestsView({
               </div>
             )}
 
-            {/* ── Active Promoted Quests Carousel Row (Discord 1:1) ── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {quests.slice(0, 3).map((q) => (
+            {/* ── Active Promoted Quests Spotlight Row (4 desktop, 3 tablet, 2 mobile) ── */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {quests.slice(0, 4).map((q) => (
                 <div
                   key={q.id}
                   className="rounded-xl border border-border/80 bg-card p-4 flex flex-col justify-between gap-3 shadow-xs relative overflow-hidden group hover:border-primary/50 transition-all"
@@ -796,7 +796,7 @@ export function QuestsView({
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {filteredQuests.map((quest) => {
                     const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
 
@@ -987,7 +987,7 @@ export function QuestsView({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {claimedQuests.map((quest) => (
                     <div
                       key={quest.id}

@@ -1551,8 +1551,8 @@ export function ShopView({
               </p>
             </div>
 
-            {/* Reusable Cards Grid: Matching ActivityCard Layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {/* Reusable Cards Grid: Matching ActivityCard Layout (4 desktop, 3 tablet, 2 mobile) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filteredItems.map((item) => {
                 const isOwned = ownedItemIds.has(item.id);
                 const isWishlisted = wishlistedItemIds.has(item.id);

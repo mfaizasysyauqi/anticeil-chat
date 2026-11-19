@@ -402,7 +402,7 @@ export function ColoniesView({
                 }
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {filteredMyColonies.map((srv) => (
                   <ColonyCard
                     key={srv.id}
@@ -432,7 +432,7 @@ export function ColoniesView({
                 )}
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {filteredPendingInvites.map((inv) => (
                   <div
                     key={inv.id}
