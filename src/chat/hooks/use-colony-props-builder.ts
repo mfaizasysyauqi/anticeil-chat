@@ -331,6 +331,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       isActivityOpen,
       isCallPiP,
       activeChannel,
+      colonies,
     },
     friendsProps: {
       friends,

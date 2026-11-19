@@ -14,7 +14,7 @@ export interface ChatAvatarProps {
   email?: string;
   imageUrl?: string | null;
   size?: number;
-  status?: 'online' | 'idle' | 'offline';
+  status?: 'online' | 'idle' | 'offline' | 'dnd';
   className?: string;
   showStatus?: boolean;
   tooltipText?: string;
@@ -83,6 +83,7 @@ export function ChatAvatar({
         size >= 36 ? 'w-3 h-3' : 'w-2.5 h-2.5',
         status === 'online' && 'bg-emerald-500',
         status === 'idle' && 'bg-amber-500',
+        status === 'dnd' && 'bg-rose-500',
         status === 'offline' && 'bg-zinc-500',
       )}
     />

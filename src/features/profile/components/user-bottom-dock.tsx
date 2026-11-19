@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Mic,
   MicOff,
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { AudioDeviceMenu } from '@/features/voice';
+import { UserProfileDialog, type UserPresenceStatus } from './user-profile-dialog';
 
 interface UserBottomDockProps {
   currentUser: any;
@@ -39,6 +40,7 @@ interface UserBottomDockProps {
   onReturnToCall?: () => void;
   onDisconnectCall?: () => void;
   className?: string;
+  colonies?: any[];
 }
 
 export function UserBottomDock({
@@ -62,8 +64,29 @@ export function UserBottomDock({
   onReturnToCall,
   onDisconnectCall,
   className,
+  colonies = [],
 }: UserBottomDockProps) {
   const { t } = useTranslation();
+
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [presence, setPresence] = useState<UserPresenceStatus>(() => {
+    try {
+      return (localStorage.getItem('anticeil_user_presence') as UserPresenceStatus) || 'online';
+    } catch {
+      return 'online';
+    }
+  });
+
+  useEffect(() => {
+    const handlePresenceChange = (e: Event) => {
+      const detail = (e as CustomEvent<UserPresenceStatus>).detail;
+      if (detail) setPresence(detail);
+    };
+    window.addEventListener('anticeil_presence_change', handlePresenceChange);
+    return () => {
+      window.removeEventListener('anticeil_presence_change', handlePresenceChange);
+    };
+  }, []);
 
   return (
     <div
@@ -202,15 +225,15 @@ export function UserBottomDock({
       ) : (
         <div className="w-full h-[64px] px-2 flex items-center justify-between">
           <div
-            onClick={onOpenEditProfile ? onOpenEditProfile : () => onOpenSettings?.('account')}
+            onClick={() => setIsProfileDialogOpen(true)}
             className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-sidebar-accent/60 cursor-pointer transition-colors group/user"
-            title={t('Ubah profil pengguna')}
+            title={t('Lihat profil pengguna')}
           >
             <CommunityAvatar
               name={currentUserName}
               imageUrl={currentUser?.imageUrl}
               size={34}
-              status="online"
+              status={presence}
               showStatus
               className="shrink-0"
             />
@@ -283,6 +306,19 @@ export function UserBottomDock({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Discord-style User Profile Dialog */}
+      {currentUser && (
+        <UserProfileDialog
+          isOpen={isProfileDialogOpen}
+          onClose={() => setIsProfileDialogOpen(false)}
+          currentUser={currentUser}
+          currentUserName={currentUserName}
+          onOpenEditProfile={onOpenEditProfile}
+          onOpenSettings={onOpenSettings}
+          colonies={colonies}
+        />
       )}
     </div>
   );

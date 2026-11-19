@@ -363,6 +363,7 @@ export interface UserBottomDockWrapperProps {
   isActivityOpen?: boolean;
   isCallPiP?: boolean;
   activeChannel?: ColonyChannel | null;
+  colonies?: Colony[];
 }
 
 export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
@@ -388,6 +389,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
   isActivityOpen,
   isCallPiP,
   activeChannel,
+  colonies = [],
 }) => {
   const activeCallChannel =
     (activeCallChannelId ? channels.find((c) => c.id === activeCallChannelId) : null) ||
@@ -411,6 +413,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
       selectedActivityAppId={selectedActivityAppId}
       isActivityOpen={isActivityOpen}
       isCallPiP={isCallPiP}
+      colonies={colonies}
       onReturnToCall={() => {
         const destId = activeCallChannelId || activeChannel?.id;
         if (destId) {
