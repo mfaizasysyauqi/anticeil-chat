@@ -400,8 +400,8 @@ export function AppsView({
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-8', verticalPadding)}>
         {/* Featured Hero Banner: YouTube Watch Together */}
         {!searchQuery && activeCategory === 'all' && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
-            <div className="space-y-2 max-w-xl z-10">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-5 sm:p-6 lg:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 lg:gap-6 shadow-xl">
+            <div className="space-y-2 flex-1 min-w-0 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
                 <Flame className="w-3 h-3" /> UNGGULAN
               </span>
@@ -413,13 +413,13 @@ export function AppsView({
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 z-10 flex-wrap">
+            <div className="flex items-center gap-2.5 z-10 flex-wrap shrink-0">
               <Button
                 size="lg"
                 variant="custom"
                 onClick={() => handleLaunchStandalone(featuredApp)}
                 className={cn(
-                  'font-bold h-10 px-5 gap-2 cursor-pointer transition-colors shadow-lg',
+                  'font-bold h-10 px-4 sm:px-5 gap-2 cursor-pointer transition-colors shadow-lg text-xs sm:text-sm shrink-0',
                   featuredApp?.buttonClass || 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white'
                 )}
                 title="Tonton video secara mandiri"
@@ -432,11 +432,11 @@ export function AppsView({
                 size="lg"
                 variant="outline"
                 onClick={() => handleOpenSendToChannel(featuredApp)}
-                className="font-semibold h-10 px-3.5 gap-2 cursor-pointer bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-md backdrop-blur-sm"
+                className="font-semibold h-10 px-3.5 gap-2 cursor-pointer bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-md backdrop-blur-sm text-xs sm:text-sm shrink-0"
                 title="Buka atau kirim undangan ke saluran / DM"
               >
                 <Radio className="w-4 h-4 text-red-400" />
-                <span className="hidden sm:inline">Buka di Saluran</span>
+                <span>Buka di Saluran</span>
               </Button>
             </div>
 
