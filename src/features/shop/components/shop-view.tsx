@@ -37,7 +37,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { shopApi, type ShopItem, type ShopCollection, type ShopBalance } from '../api/shop-api';
+import { shopApi, type ShopItem, type ShopCollection, type ShopBalance, FALLBACK_SHOP_ITEMS } from '../api/shop-api';
 
 export interface ShopViewProps {
   currentUser?: any;
@@ -56,14 +56,14 @@ export function ShopView({
   const [selectedCollection, setSelectedCollection] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Backend data states
-  const [items, setItems] = useState<ShopItem[]>([]);
+  // Backend data states with resilient fallbacks
+  const [items, setItems] = useState<ShopItem[]>(FALLBACK_SHOP_ITEMS);
   const [collections, setCollections] = useState<ShopCollection[]>([]);
   const [heroCollection, setHeroCollection] = useState<ShopCollection | null>(null);
   const [balance, setBalance] = useState<ShopBalance>({ orbs: 1500, nectar: 250, currencyCode: 'IDR' });
   const [inventory, setInventory] = useState<ShopItem[]>([]);
   const [wishlist, setWishlist] = useState<ShopItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Selected item modal preview & purchase
   const [activeModalItem, setActiveModalItem] = useState<ShopItem | null>(null);
@@ -82,14 +82,22 @@ export function ShopView({
         shopApi.getInventory(),
         shopApi.getWishlist(),
       ]);
-      setItems(allItems);
-      if (featuredRes) {
-        setHeroCollection(featuredRes.heroCollection);
-        setCollections(featuredRes.collections);
+      if (Array.isArray(allItems) && allItems.length > 0) {
+        setItems(allItems);
       }
-      setBalance(userBal);
-      setInventory(userInv);
-      setWishlist(userWish);
+      if (featuredRes && featuredRes.heroCollection) {
+        setHeroCollection(featuredRes.heroCollection);
+        setCollections(featuredRes.collections || []);
+      }
+      if (userBal && typeof userBal.orbs === 'number') {
+        setBalance(userBal);
+      }
+      if (Array.isArray(userInv)) {
+        setInventory(userInv);
+      }
+      if (Array.isArray(userWish)) {
+        setWishlist(userWish);
+      }
     } catch (err) {
       console.warn('Failed to fetch shop data from API', err);
     } finally {
@@ -391,12 +399,12 @@ export function ShopView({
               >
                 <div className="flex items-center gap-1 text-amber-400">
                   <Coins className="w-3.5 h-3.5" />
-                  <span>{balance.orbs.toLocaleString()}</span>
+                  <span>{(balance?.orbs ?? 0).toLocaleString()}</span>
                 </div>
                 <span className="text-border">|</span>
                 <div className="flex items-center gap-1 text-cyan-400">
                   <Gem className="w-3.5 h-3.5" />
-                  <span>{balance.nectar}</span>
+                  <span>{balance?.nectar ?? 0}</span>
                 </div>
               </button>
             </DropdownMenuTrigger>
@@ -405,11 +413,11 @@ export function ShopView({
               <div className="p-2 rounded-lg bg-[#111214] border border-border/40 text-xs space-y-1">
                 <div className="flex justify-between font-bold">
                   <span className="text-amber-400">🪙 Orbs:</span>
-                  <span>{balance.orbs.toLocaleString()}</span>
+                  <span>{(balance?.orbs ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-cyan-400">💎 Nectar:</span>
-                  <span>{balance.nectar}</span>
+                  <span>{balance?.nectar ?? 0}</span>
                 </div>
               </div>
               <DropdownMenuSeparator className="bg-border/40" />
@@ -610,7 +618,7 @@ export function ShopView({
                     </h3>
                     <div className="flex items-center justify-between pt-1">
                       <div className="flex items-center gap-1.5 font-bold text-xs">
-                        <span>IDR {item.priceIdr.toLocaleString('id-ID')}</span>
+                        <span>IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}</span>
                         {item.discountPercent && (
                           <span className="text-[10px] text-emerald-400 font-extrabold bg-emerald-500/10 px-1 py-0.2 rounded">
                             (-{item.discountPercent}%)
@@ -744,7 +752,7 @@ export function ShopView({
                 <div className="space-y-0.5">
                   <div className="text-[10px] text-muted-foreground font-semibold">Harga Resmi IDR</div>
                   <div className="text-sm font-black text-foreground">
-                    IDR {activeModalItem.priceIdr.toLocaleString('id-ID')}
+                    IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}
                   </div>
                 </div>
                 <div className="space-y-0.5 text-right">
@@ -797,7 +805,7 @@ export function ShopView({
                         className="flex-1 h-10 font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <ShoppingBag className="w-4 h-4" />
-                        <span>Beli IDR {activeModalItem.priceIdr.toLocaleString('id-ID')}</span>
+                        <span>Beli IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}</span>
                       </Button>
 
                       <Button
@@ -885,8 +893,8 @@ export function ShopView({
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
                     <div className="text-right">
-                      <div className="text-xs font-black text-foreground">IDR {item.priceIdr.toLocaleString('id-ID')}</div>
-                      <div className="text-[10px] text-amber-400 font-bold">{item.priceOrbs} Orbs</div>
+                      <div className="text-xs font-black text-foreground">IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}</div>
+                      <div className="text-[10px] text-amber-400 font-bold">{item.priceOrbs ?? 0} Orbs</div>
                     </div>
                     <button
                       type="button"
