@@ -26,6 +26,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -99,6 +107,12 @@ export function ShopView({
   // Filtered browse list
   const filteredItems = useMemo(() => {
     let list = [...items];
+    if (activeTab === 'orbs') {
+      list = list.filter((i) => i.priceOrbs > 0);
+    }
+    if (activeTab === 'games' && selectedCollection === 'all') {
+      list = list.filter((i) => Boolean(i.collection));
+    }
     if (selectedCategory !== 'all') {
       list = list.filter((i) => i.category === selectedCategory);
     }
@@ -115,7 +129,22 @@ export function ShopView({
       );
     }
     return list;
-  }, [items, selectedCategory, selectedCollection, searchQuery]);
+  }, [items, activeTab, selectedCategory, selectedCollection, searchQuery]);
+
+  // Top Up / Klaim Orbs Poin
+  const handleTopupOrbs = async (amount: number = 500) => {
+    try {
+      const res = await shopApi.topupOrbs(amount);
+      if (res.success && res.balance) {
+        setBalance(res.balance);
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
+    } catch {
+      toast.error('Gagal menambahkan Orbs');
+    }
+  };
 
   // Wishlist toggle action
   const handleToggleWishlist = async (e: React.MouseEvent, item: ShopItem) => {
@@ -212,19 +241,56 @@ export function ShopView({
             {t('Featured')}
           </button>
 
-          <button
-            type="button"
-            onClick={() => { setActiveTab('browse'); }}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer',
-              activeTab === 'browse'
-                ? 'bg-secondary text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
-            )}
-          >
-            <span>{t('Browse')}</span>
-            <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-          </button>
+          {/* Browse Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer',
+                  activeTab === 'browse'
+                    ? 'bg-secondary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+                )}
+              >
+                <span>{t('Browse')}</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48 bg-[#1e1f22] border-border/70 text-foreground z-[160]">
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground">Kategori</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('browse'); setSelectedCategory('all'); }}
+                className="text-xs cursor-pointer"
+              >
+                Semua Item
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('browse'); setSelectedCategory('bundle'); }}
+                className="text-xs cursor-pointer"
+              >
+                Bundel Spesial
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('browse'); setSelectedCategory('avatar_decoration'); }}
+                className="text-xs cursor-pointer"
+              >
+                Dekorasi Avatar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('browse'); setSelectedCategory('profile_effect'); }}
+                className="text-xs cursor-pointer"
+              >
+                Efek Profil
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('browse'); setSelectedCategory('nameplate'); }}
+                className="text-xs cursor-pointer"
+              >
+                Nameplates
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <button
             type="button"
@@ -240,19 +306,51 @@ export function ShopView({
             <span>{t('Orbs Shop')}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => { setActiveTab('games'); }}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer hidden sm:flex',
-              activeTab === 'games'
-                ? 'bg-secondary text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
-            )}
-          >
-            <span>{t('Game Shops')}</span>
-            <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-          </button>
+          {/* Game Shops Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer hidden sm:flex',
+                  activeTab === 'games'
+                    ? 'bg-secondary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+                )}
+              >
+                <span>{t('Game Shops')}</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52 bg-[#1e1f22] border-border/70 text-foreground z-[160]">
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground">Koleksi Game</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('games'); setSelectedCollection('all'); }}
+                className="text-xs cursor-pointer"
+              >
+                Semua Game Shops
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border/40" />
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('games'); setSelectedCollection('Zenless Zone Zero'); }}
+                className="text-xs cursor-pointer"
+              >
+                Zenless Zone Zero
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('games'); setSelectedCollection('Deadpool & Wolverine'); }}
+                className="text-xs cursor-pointer"
+              >
+                Deadpool & Wolverine
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { setActiveTab('games'); setSelectedCollection('Dead by Daylight'); }}
+                className="text-xs cursor-pointer"
+              >
+                Dead by Daylight
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Right side: Search, Wishlist, Currency Balance */}
@@ -283,18 +381,52 @@ export function ShopView({
             )}
           </button>
 
-          {/* Currency Pill */}
-          <div className="h-8 px-2.5 rounded-lg bg-[#111214] border border-border/60 flex items-center gap-2 text-xs font-black shadow-xs">
-            <div className="flex items-center gap-1 text-amber-400" title="Orbs Poin Anda">
-              <Coins className="w-3.5 h-3.5" />
-              <span>{balance.orbs.toLocaleString()}</span>
-            </div>
-            <span className="text-border">|</span>
-            <div className="flex items-center gap-1 text-cyan-400" title="Nectar Crystals">
-              <Gem className="w-3.5 h-3.5" />
-              <span>{balance.nectar}</span>
-            </div>
-          </div>
+          {/* Currency Pill with quick Top Up */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="h-8 px-2.5 rounded-lg bg-[#111214] hover:bg-[#18191c] border border-border/60 flex items-center gap-2 text-xs font-black shadow-xs cursor-pointer transition-colors"
+                title="Lihat & Isi Saldo Orbs"
+              >
+                <div className="flex items-center gap-1 text-amber-400">
+                  <Coins className="w-3.5 h-3.5" />
+                  <span>{balance.orbs.toLocaleString()}</span>
+                </div>
+                <span className="text-border">|</span>
+                <div className="flex items-center gap-1 text-cyan-400">
+                  <Gem className="w-3.5 h-3.5" />
+                  <span>{balance.nectar}</span>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-[#1e1f22] border-border/70 text-foreground z-[160] p-2 space-y-1">
+              <DropdownMenuLabel className="text-[11px] font-bold text-muted-foreground">Saldo Dompet Shop</DropdownMenuLabel>
+              <div className="p-2 rounded-lg bg-[#111214] border border-border/40 text-xs space-y-1">
+                <div className="flex justify-between font-bold">
+                  <span className="text-amber-400">🪙 Orbs:</span>
+                  <span>{balance.orbs.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-cyan-400">💎 Nectar:</span>
+                  <span>{balance.nectar}</span>
+                </div>
+              </div>
+              <DropdownMenuSeparator className="bg-border/40" />
+              <DropdownMenuItem
+                onClick={() => handleTopupOrbs(500)}
+                className="text-xs cursor-pointer text-amber-400 font-bold"
+              >
+                + Klaim 500 Orbs Gratis
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleTopupOrbs(1500)}
+                className="text-xs cursor-pointer font-semibold"
+              >
+                + Top Up 1.500 Orbs
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -336,6 +468,44 @@ export function ShopView({
               >
                 <span>Shop the Collection</span>
                 <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Orbs Shop Hero Banner ── */}
+        {activeTab === 'orbs' && (
+          <div className="relative rounded-2xl overflow-hidden border border-amber-500/40 bg-gradient-to-r from-amber-950/60 via-zinc-900 to-black shadow-2xl p-6 sm:p-8 min-h-[190px] flex flex-col justify-between">
+            <div className="relative z-10 space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] font-black uppercase tracking-wider">
+                <Coins className="w-3 h-3" />
+                <span>Orbs Shop & Saldo Poin</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
+                TUKARKAN ORBS DENGAN ITEM EKSKLUSIF
+              </h1>
+              <p className="text-xs sm:text-sm text-zinc-300 font-medium leading-relaxed">
+                Kumpulkan Orbs dari partisipasi komunitas atau klaim kuota harian untuk membeli dekorasi avatar dan tema profil tanpa biaya tambahan.
+              </p>
+            </div>
+
+            <div className="relative z-10 pt-4 flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                variant="teal"
+                onClick={() => handleTopupOrbs(500)}
+                className="font-bold text-xs h-9 px-5 rounded-xl cursor-pointer shadow-lg flex items-center gap-2"
+              >
+                <Coins className="w-3.5 h-3.5" />
+                <span>+ Klaim 500 Orbs Harian</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => handleTopupOrbs(1500)}
+                className="font-bold text-xs h-9 px-5 rounded-xl cursor-pointer shadow-lg flex items-center gap-2"
+              >
+                <span>+ Top Up 1.500 Orbs</span>
               </Button>
             </div>
           </div>
@@ -600,38 +770,64 @@ export function ShopView({
                     <span>{t('Pasang ke Profil')}</span>
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="teal"
-                      disabled={isPurchasing || balance.orbs < activeModalItem.priceOrbs}
-                      onClick={() => handlePurchase(activeModalItem, 'orbs')}
-                      className="flex-1 h-10 font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      {isPurchasing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Coins className="w-4 h-4" />
-                          <span>Beli dengan {activeModalItem.priceOrbs} Orbs</span>
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={(e) => handleToggleWishlist(e, activeModalItem)}
-                      className="h-10 px-3 rounded-xl cursor-pointer"
-                      title="Wishlist"
-                    >
-                      <Heart
-                        className={cn(
-                          'w-4 h-4',
-                          wishlistedItemIds.has(activeModalItem.id) && 'text-pink-500 fill-pink-500'
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="teal"
+                        disabled={isPurchasing || balance.orbs < activeModalItem.priceOrbs}
+                        onClick={() => handlePurchase(activeModalItem, 'orbs')}
+                        className="flex-1 h-10 font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        {isPurchasing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Coins className="w-4 h-4" />
+                            <span>Beli {activeModalItem.priceOrbs} Orbs</span>
+                          </>
                         )}
-                      />
-                    </Button>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isPurchasing}
+                        onClick={() => handlePurchase(activeModalItem, 'idr')}
+                        className="flex-1 h-10 font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>Beli IDR {activeModalItem.priceIdr.toLocaleString('id-ID')}</span>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => handleToggleWishlist(e, activeModalItem)}
+                        className="h-10 px-3 rounded-xl cursor-pointer"
+                        title="Wishlist"
+                      >
+                        <Heart
+                          className={cn(
+                            'w-4 h-4',
+                            wishlistedItemIds.has(activeModalItem.id) && 'text-pink-500 fill-pink-500'
+                          )}
+                        />
+                      </Button>
+                    </div>
+
+                    {balance.orbs < activeModalItem.priceOrbs && (
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground bg-[#111214] p-2.5 rounded-lg border border-border/40">
+                        <span>Orbs Anda kurang ({balance.orbs} / {activeModalItem.priceOrbs})</span>
+                        <button
+                          type="button"
+                          onClick={() => handleTopupOrbs(500)}
+                          className="text-amber-400 hover:underline font-bold cursor-pointer"
+                        >
+                          + Klaim 500 Orbs
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -687,9 +883,19 @@ export function ShopView({
                       <div className="text-[10px] text-muted-foreground truncate">{item.collection}</div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-xs font-black text-foreground">IDR {item.priceIdr.toLocaleString('id-ID')}</div>
-                    <div className="text-[10px] text-amber-400 font-bold">{item.priceOrbs} Orbs</div>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="text-right">
+                      <div className="text-xs font-black text-foreground">IDR {item.priceIdr.toLocaleString('id-ID')}</div>
+                      <div className="text-[10px] text-amber-400 font-bold">{item.priceOrbs} Orbs</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleWishlist(e, item)}
+                      className="p-1 rounded-md text-pink-500 hover:text-muted-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+                      title="Hapus dari Wishlist"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))

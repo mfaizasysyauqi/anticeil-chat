@@ -68,6 +68,14 @@ export const shopApi = {
     }
   },
 
+  async topupOrbs(amount: number = 500): Promise<{ success: boolean; message: string; balance?: ShopBalance }> {
+    try {
+      return await api.post('/v1/community/shop/topup', { amount });
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal menambahkan Orbs' };
+    }
+  },
+
   async purchaseItem(itemId: string, currency: 'orbs' | 'idr' = 'orbs'): Promise<{ success: boolean; message: string; item?: ShopItem; newBalance?: ShopBalance }> {
     try {
       return await api.post('/v1/community/shop/purchase', { itemId, currency });
