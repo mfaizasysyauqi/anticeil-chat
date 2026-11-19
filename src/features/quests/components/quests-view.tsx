@@ -46,6 +46,7 @@ import { Input } from '@/components/ui/input';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
+  LAYOUT_PAGE_SPACING,
   TEXT_STYLES,
   BUTTON_STYLES,
   DIALOG_STYLES,
@@ -395,8 +396,8 @@ export function QuestsView({
   const renderFilterContent = () => {
     return (
       <div className="space-y-6">
-        {/* Header with Active Count & Reset */}
-        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+        {/* Header with Active Count & Reset (Aligns with Center Toolbar pb-2 border-b) */}
+        <div className="flex items-center justify-between min-h-7 pb-2 border-b border-border/50">
           <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
             <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
             <span>{t('Filter')}</span>
@@ -554,7 +555,7 @@ export function QuestsView({
       {/* ── 2. Main Content Row: Center Quests + Discord-style Right Filter Sidebar ── */}
       <div className="flex-1 min-h-0 flex flex-row overflow-hidden">
         {/* Scrollable Center Quests */}
-        <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-8', horizontalPadding, verticalPadding)}>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-8', horizontalPadding, verticalPadding)}>
         {activeTab === 'all' ? (
           <>
             {/* ── Featured Hero Quest Banner (Discord 1:1) ── */}
@@ -647,7 +648,7 @@ export function QuestsView({
             )}
 
             {/* ── Active Promoted Quests Spotlight Row (4 desktop, 3 tablet, 2 mobile) ── */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className={SURFACE_STYLES.CARD_GRID}>
               {quests.slice(0, 4).map((q) => (
                 <div
                   key={q.id}
@@ -803,7 +804,7 @@ export function QuestsView({
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className={SURFACE_STYLES.CARD_GRID}>
                   {filteredQuests.map((quest) => {
                     const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
 
@@ -994,7 +995,7 @@ export function QuestsView({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className={SURFACE_STYLES.CARD_GRID}>
                   {claimedQuests.map((quest) => (
                     <div
                       key={quest.id}

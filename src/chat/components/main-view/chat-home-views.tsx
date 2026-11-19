@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageSquare } from 'lucide-react';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { MessageRequestsView, type MessageRequestItem } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem } from '@/features/notifications';
 import { CalendarView, type CalendarEvent } from '@/features/calendar';
@@ -280,6 +280,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         currentUser={members.find((m) => m.id === 'me')}
         onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        verticalPadding={CHANNEL_VERTICAL_PADDING}
         onNavigateSection={(sec) => setHomeView?.(sec as any)}
       />
     );
@@ -290,6 +291,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
       <QuestsView
         onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        verticalPadding={CHANNEL_VERTICAL_PADDING}
         onNavigateShop={() => setHomeView?.('shop')}
         onLaunchActivity={(appId) => handleLaunchActivity(appId)}
       />

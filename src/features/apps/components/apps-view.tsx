@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/ui/empty';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
+  LAYOUT_PAGE_SPACING,
   TEXT_STYLES,
   BUTTON_STYLES,
   DIALOG_STYLES,
@@ -381,7 +382,7 @@ export function AppsView({
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-8', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-8', horizontalPadding, verticalPadding)}>
         {/* Featured Hero Banner: YouTube Watch Together */}
         {!searchQuery && activeCategory === 'all' && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
@@ -478,7 +479,7 @@ export function AppsView({
                 </div>
 
                 {/* Grid: 4 columns in desktop (lg:grid-cols-4), 3 in tablet (md:grid-cols-3), 2 in mobile (grid-cols-2) */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className={SURFACE_STYLES.CARD_GRID}>
                   {sectionApps.map((app) => (
                     <ActivityCard
                       key={app.id}

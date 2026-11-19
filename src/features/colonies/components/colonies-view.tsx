@@ -28,6 +28,7 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
+  LAYOUT_PAGE_SPACING,
   TEXT_STYLES,
   BUTTON_STYLES,
   DIALOG_STYLES,
@@ -372,7 +373,7 @@ export function ColoniesView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-6', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', horizontalPadding, verticalPadding)}>
         {activeTab === 'joined' ? (
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
@@ -409,7 +410,7 @@ export function ColoniesView({
                 }
               />
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className={SURFACE_STYLES.CARD_GRID}>
                 {filteredMyColonies.map((srv) => (
                   <ColonyCard
                     key={srv.id}
@@ -439,7 +440,7 @@ export function ColoniesView({
                 )}
               />
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className={SURFACE_STYLES.CARD_GRID}>
                 {filteredPendingInvites.map((inv) => (
                   <div
                     key={inv.id}

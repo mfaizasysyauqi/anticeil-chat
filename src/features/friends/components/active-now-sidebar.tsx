@@ -3,24 +3,32 @@ import { Users } from 'lucide-react';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { EmptyState } from '@/components/ui/empty';
 import { useTranslation } from '@/core/i18n';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import { cn } from '@/lib/utils';
 import type { FriendMember } from '../types';
 
 interface ActiveNowSidebarProps {
   onlineFriends: FriendMember[];
   onStartDM: (member: FriendMember) => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function ActiveNowSidebar({
   onlineFriends,
   onStartDM,
-  horizontalPadding = 'px-4',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: ActiveNowSidebarProps) {
   const { t } = useTranslation();
 
   return (
     <div
-      className={`hidden xl:flex flex-col w-80 border-l border-sidebar-border ${horizontalPadding} py-4 bg-background shrink-0`}
+      className={cn(
+        'hidden xl:flex flex-col w-80 border-l border-sidebar-border bg-background shrink-0',
+        horizontalPadding,
+        verticalPadding
+      )}
     >
       <h3 className="text-sm font-bold text-foreground mb-4">{t('Sedang Aktif')}</h3>
       {onlineFriends.length === 0 ? (

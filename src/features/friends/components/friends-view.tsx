@@ -108,6 +108,7 @@ export function FriendsView({
           onlineFriends={onlineFriends}
           onStartDM={onStartDM}
           horizontalPadding={horizontalPadding}
+          verticalPadding={verticalPadding}
         />
       </div>
 
