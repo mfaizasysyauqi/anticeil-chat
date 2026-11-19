@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Globe, UserPlus, Compass, MessageSquare, Sparkles } from 'lucide-react';
+import { Plus, Users, Globe, UserPlus, Compass, LayoutGrid, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { cn } from '@/lib/utils';
@@ -222,7 +222,7 @@ export function ColonyRail({
                   : 'bg-sidebar-accent text-muted-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
               )}
             >
-              <MessageSquare className="w-5 h-5 transition-transform duration-200 group-hover:scale-105" />
+              <LayoutGrid className="w-5 h-5 transition-transform duration-200 group-hover:scale-105" />
 
               {/* Discord-style bottom-right unread badge pill */}
               {mainUnread && (
@@ -233,13 +233,10 @@ export function ColonyRail({
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-            {t('Pesan Langsung & Aktivitas')}
+            {t('Hub Fitur & Pesan Langsung')}
           </TooltipContent>
         </Tooltip>
       </div>
-
-      {/* Rail Separator Divider */}
-      <div className="w-8 h-[2px] bg-sidebar-border/70 rounded-full my-1 shrink-0" />
 
       {/* Scrollable lower rail: Switcher, Add (+), then list */}
       <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-0 pb-16">

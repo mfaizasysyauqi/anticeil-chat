@@ -14,7 +14,10 @@ function AppContent() {
       className="w-screen h-screen overflow-hidden flex flex-col font-sans select-none antialiased bg-background text-foreground"
     >
       <Routes>
-        <Route path="/" element={<Navigate to="/friends" replace />} />
+        <Route path="/" element={<Navigate to="/ai" replace />} />
+        <Route path="/ai" element={<CommunityPage />} />
+        <Route path="/ai-center" element={<Navigate to="/ai" replace />} />
+        <Route path="/command-center" element={<Navigate to="/ai" replace />} />
         <Route path="/applications" element={<CommunityPage />} />
         <Route path="/applications&activities" element={<Navigate to="/applications" replace />} />
         <Route path="/apps" element={<Navigate to="/applications" replace />} />
@@ -33,7 +36,7 @@ function AppContent() {
         <Route path="/messages" element={<CommunityPage />} />
         <Route path="/channels/@me/:channelId?" element={<CommunityPage />} />
         <Route path="/channels/:colonyId?/:channelId?" element={<CommunityPage />} />
-        <Route path="*" element={<Navigate to="/friends" replace />} />
+        <Route path="*" element={<Navigate to="/ai" replace />} />
       </Routes>
       <Toaster richColors position="top-right" theme={theme === 'light' ? 'light' : 'dark'} />
     </div>

@@ -36,6 +36,16 @@ export function useUrlSync({
       const pathname = window.location.pathname.toLowerCase();
 
       if (
+        pathname === '/ai' ||
+        pathname === '/ai-center' ||
+        pathname === '/command-center' ||
+        pathname === '/' ||
+        pathname === ''
+      ) {
+        setHomeView?.('ai');
+        setActiveColonyId?.('anticeil');
+        setActiveChannelId?.('');
+      } else if (
         pathname === '/applications' ||
         pathname === '/applications&activities' ||
         pathname === '/apps' ||
@@ -80,10 +90,6 @@ export function useUrlSync({
         setHomeView?.('friends');
         setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
-      } else if (pathname === '/' || pathname === '') {
-        setHomeView?.('apps');
-        setActiveColonyId?.('anticeil');
-        setActiveChannelId?.('');
       } else if (pathname.startsWith('/channels/@me')) {
         const parts = pathname.split('/').filter(Boolean);
         setActiveColonyId?.('anticeil');
@@ -108,6 +114,16 @@ export function useUrlSync({
       try {
         const pathname = window.location.pathname.toLowerCase();
         if (
+          pathname === '/ai' ||
+          pathname === '/ai-center' ||
+          pathname === '/command-center' ||
+          pathname === '/' ||
+          pathname === ''
+        ) {
+          setHomeView?.('ai');
+          setActiveColonyId?.('anticeil');
+          setActiveChannelId?.('');
+        } else if (
           pathname === '/applications' ||
           pathname === '/applications&activities' ||
           pathname === '/apps' ||
@@ -150,10 +166,6 @@ export function useUrlSync({
           setActiveChannelId?.('');
         } else if (pathname === '/friends') {
           setHomeView?.('friends');
-          setActiveColonyId?.('anticeil');
-          setActiveChannelId?.('');
-        } else if (pathname === '/' || pathname === '') {
-          setHomeView?.('apps');
           setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname.startsWith('/channels/@me')) {
