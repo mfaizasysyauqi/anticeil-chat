@@ -1414,9 +1414,9 @@ export function ShopView({
       </div>
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-4', verticalPadding)}>
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
-          <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
+          <div className="flex items-center justify-between min-h-7 gap-3 pb-1.5 border-b border-border/50">
             <div className="flex items-center gap-2">
               <span className={TEXT_STYLES.SECTION_MUTED}>
                 {t('Katalog')}
@@ -1465,7 +1465,7 @@ export function ShopView({
           </div>
         {/* ── Reusable Hero Banner (Matches AppsView YouTube Watch Together layout) ── */}
         {!searchQuery && (activeTab === 'all' || activeTab === 'featured') && heroCollection && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-card to-background border border-primary/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-card to-background border border-primary/20 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
             <div className="space-y-2 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary border border-primary/30">
                 <Sparkles className="w-3 h-3" /> {heroCollection.tagline || t('KOLEKSI UNGGULAN')}
@@ -1494,7 +1494,7 @@ export function ShopView({
 
         {/* ── Dew Shop Dedicated Hero Banner ── */}
         {!searchQuery && activeTab === 'dew' && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/20 via-card to-background border border-cyan-500/30 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/20 via-card to-background border border-cyan-500/30 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
             <div className="space-y-2 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                 <Droplets className="w-3 h-3" /> {t('DEW & SALDO POIN')}
@@ -1698,7 +1698,7 @@ export function ShopView({
 
         {/* ── Reusable Secondary Collection Banners ── */}
         {!searchQuery && (activeTab === 'all' || activeTab === 'featured') && collections.length > 1 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {collections.slice(1).map((col) => (
               <div
                 key={col.id}

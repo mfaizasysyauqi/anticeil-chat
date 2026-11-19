@@ -526,11 +526,11 @@ export function QuestsView({
       />
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-4', verticalPadding)}>
         {activeTab === 'all' ? (
           <>
             {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest (100% Consistent with ShopView & FriendsView) ── */}
-            <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
+            <div className="flex items-center justify-between min-h-7 gap-3 pb-1.5 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-primary shrink-0" />
                 <span className={TEXT_STYLES.SECTION_MUTED}>
@@ -595,7 +595,7 @@ export function QuestsView({
 
             {/* ── Featured Hero Quest Banner (Discord 1:1) ── */}
             {heroQuest && (
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/25 via-card to-background border border-primary/30 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/25 via-card to-background border border-primary/30 p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
                 <div className="space-y-2.5 max-w-xl z-10">
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary border border-primary/30">
@@ -947,7 +947,7 @@ export function QuestsView({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
                   <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
                     {t('Riwayat Quest yang Telah Selesai')} ({claimedQuests.length})
                   </h3>
