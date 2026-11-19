@@ -354,9 +354,6 @@ export function HomeChannelsSidebar({
               )}
             />
             <span className="flex-1 font-medium">{t('Quests')}</span>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-              F2P
-            </span>
           </button>
         </div>
 

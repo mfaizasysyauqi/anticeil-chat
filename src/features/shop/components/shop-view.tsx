@@ -193,6 +193,15 @@ export function ShopView({
 
   useEffect(() => {
     fetchShopData();
+    const handleBalanceChanged = (e: any) => {
+      if (e.detail) {
+        setBalance(e.detail);
+      } else {
+        shopApi.getBalance().then((b) => b && setBalance(b));
+      }
+    };
+    window.addEventListener('anticeil_balance_changed', handleBalanceChanged);
+    return () => window.removeEventListener('anticeil_balance_changed', handleBalanceChanged);
   }, []);
 
   const ownedItemIds = useMemo(() => new Set(inventory.map((i) => i.id)), [inventory]);
@@ -367,6 +376,7 @@ export function ShopView({
       const res = await shopApi.topupDew(amount);
       if (res.success && res.balance) {
         setBalance(res.balance);
+        window.dispatchEvent(new CustomEvent('anticeil_balance_changed', { detail: res.balance }));
         toast.success(res.message);
       } else {
         toast.error(res.message);
@@ -407,6 +417,7 @@ export function ShopView({
         }
         if (res.newBalance) {
           setBalance(res.newBalance);
+          window.dispatchEvent(new CustomEvent('anticeil_balance_changed', { detail: res.newBalance }));
         }
         setActiveModalItem(null);
       } else {

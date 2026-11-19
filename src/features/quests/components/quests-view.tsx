@@ -82,6 +82,15 @@ export function QuestsView({
 
   useEffect(() => {
     fetchQuestsData();
+    const handleBalanceChanged = (e: any) => {
+      if (e.detail) {
+        setBalance(e.detail);
+      } else {
+        shopApi.getBalance().then((b) => b && setBalance(b));
+      }
+    };
+    window.addEventListener('anticeil_balance_changed', handleBalanceChanged);
+    return () => window.removeEventListener('anticeil_balance_changed', handleBalanceChanged);
   }, []);
 
   // Accept a quest
@@ -138,18 +147,35 @@ export function QuestsView({
         toast.success(res.message || t(`Berhasil mengklaim +${quest.rewardDew} Dew! 💧🎉`));
         if (res.newBalance) {
           setBalance(res.newBalance);
+          window.dispatchEvent(new CustomEvent('anticeil_balance_changed', { detail: res.newBalance }));
         } else {
-          setBalance((prev) => ({ ...prev, dew: prev.dew + quest.rewardDew }));
+          setBalance((prev) => {
+            const next = { ...prev, dew: prev.dew + quest.rewardDew };
+            window.dispatchEvent(new CustomEvent('anticeil_balance_changed', { detail: next }));
+            return next;
+          });
         }
         setQuests((prev) =>
           prev.map((q) =>
             q.id === quest.id ? { ...q, status: 'claimed', progress: q.target } : q
           )
         );
-        setClaimedQuests((prev) => [
-          { ...quest, status: 'claimed', claimedAt: new Date().toISOString() },
-          ...prev.filter((c) => c.id !== quest.id),
-        ]);
+        try {
+          const freshClaimed = await questsApi.getClaimedQuests();
+          if (Array.isArray(freshClaimed) && freshClaimed.length > 0) {
+            setClaimedQuests(freshClaimed);
+          } else {
+            setClaimedQuests((prev) => [
+              { ...quest, status: 'claimed', claimedAt: new Date().toISOString() },
+              ...prev.filter((c) => c.id !== quest.id),
+            ]);
+          }
+        } catch {
+          setClaimedQuests((prev) => [
+            { ...quest, status: 'claimed', claimedAt: new Date().toISOString() },
+            ...prev.filter((c) => c.id !== quest.id),
+          ]);
+        }
       } else {
         toast.error(res.message || t('Gagal mengklaim reward'));
       }

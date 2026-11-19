@@ -55,7 +55,7 @@ export const FALLBACK_QUESTS: QuestItem[] = [
     actionLabel: 'Main Catur',
     appId: 'chess',
     endsAt: '2026-12-31T23:59:59Z',
-    status: 'in_progress',
+    status: 'available',
     progress: 0,
   },
   {
@@ -74,7 +74,7 @@ export const FALLBACK_QUESTS: QuestItem[] = [
     appId: 'chat',
     endsAt: '2026-12-31T23:59:59Z',
     status: 'available',
-    progress: 3,
+    progress: 0,
   },
   {
     id: 'quest_jamspace_board',
@@ -109,8 +109,8 @@ export const FALLBACK_QUESTS: QuestItem[] = [
     actionLabel: 'Buka Profil',
     appId: 'profile',
     endsAt: '2026-12-31T23:59:59Z',
-    status: 'completed',
-    progress: 1,
+    status: 'available',
+    progress: 0,
   },
 ];
 
