@@ -35,6 +35,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { Input } from '@/components/ui/input';
 import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
@@ -67,6 +74,50 @@ export function QuestsView({
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'suggested' | 'reward_desc' | 'alphabetical'>('suggested');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Discord-grade Right Filter Sidebar States
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [showOnlyHighReward, setShowOnlyHighReward] = useState(false);
+  const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
+
+  const QUEST_CATEGORY_OPTIONS = useMemo(
+    () => [
+      { id: 'all', label: t('Semua Kategori') },
+      { id: 'game', label: t('Game & Rekreasi') },
+      { id: 'activity', label: t('Aktivitas Video') },
+      { id: 'social', label: t('Komunitas & Chat') },
+      { id: 'profile', label: t('Profil & Kustomisasi') },
+    ],
+    [t]
+  );
+
+  const QUEST_STATUS_OPTIONS = useMemo(
+    () => [
+      { id: 'all', label: t('Semua Status') },
+      { id: 'not_started', label: t('Tersedia / Belum Diambil') },
+      { id: 'in_progress', label: t('Sedang Berjalan') },
+      { id: 'completed', label: t('Siap Diklaim') },
+    ],
+    [t]
+  );
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filterCategory !== 'all') count++;
+    if (filterStatus !== 'all') count++;
+    if (showOnlyHighReward) count++;
+    if (showOnlyFeatured) count++;
+    return count;
+  }, [filterCategory, filterStatus, showOnlyHighReward, showOnlyFeatured]);
+
+  const handleResetFilters = () => {
+    setFilterCategory('all');
+    setFilterStatus('all');
+    setShowOnlyHighReward(false);
+    setShowOnlyFeatured(false);
+  };
 
   // Quest CRUD State
   const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
@@ -307,6 +358,15 @@ export function QuestsView({
     if (filterCategory !== 'all') {
       list = list.filter((q) => q.category === filterCategory);
     }
+    if (filterStatus !== 'all') {
+      list = list.filter((q) => (q.status || 'not_started') === filterStatus);
+    }
+    if (showOnlyHighReward) {
+      list = list.filter((q) => (q.rewardDew || 0) >= 250);
+    }
+    if (showOnlyFeatured) {
+      list = list.filter((q) => Boolean(q.badge));
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -322,7 +382,151 @@ export function QuestsView({
       list.sort((a, b) => a.title.localeCompare(b.title));
     }
     return list;
-  }, [quests, filterCategory, sortBy, searchQuery]);
+  }, [quests, filterCategory, filterStatus, showOnlyHighReward, showOnlyFeatured, sortBy, searchQuery]);
+
+  // Discord-style 1:1 Right Filter Panel Renderer for Quests
+  const renderFilterContent = () => {
+    return (
+      <div className="space-y-6">
+        {/* Header with Active Count & Reset */}
+        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+            <span>{t('Filter')}</span>
+            {activeFilterCount > 0 && (
+              <span className="text-[10px] font-bold text-primary">({activeFilterCount})</span>
+            )}
+          </div>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>{t('Reset')}</span>
+            </button>
+          )}
+        </div>
+
+        {/* 1. Kategori Quest */}
+        <div className="space-y-2.5">
+          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            {t('Kategori Quest')}
+          </h4>
+          <div className="space-y-1.5">
+            {QUEST_CATEGORY_OPTIONS.map((opt) => {
+              const isSelected = filterCategory === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setFilterCategory(opt.id)}
+                  className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+                >
+                  <div
+                    className={cn(
+                      'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                      isSelected
+                        ? 'bg-primary border-primary text-primary-foreground'
+                        : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                    )}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
+                  <span className="truncate">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. Status Quest */}
+        <div className="space-y-2.5">
+          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            {t('Status Quest')}
+          </h4>
+          <div className="space-y-1.5">
+            {QUEST_STATUS_OPTIONS.map((opt) => {
+              const isSelected = filterStatus === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setFilterStatus(opt.id)}
+                  className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+                >
+                  <div
+                    className={cn(
+                      'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                      isSelected
+                        ? 'bg-primary border-primary text-primary-foreground'
+                        : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                    )}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
+                  <span className="truncate">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. Tampilkan Hanya */}
+        <div className="space-y-2.5">
+          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            {t('Tampilkan Hanya')}
+          </h4>
+          <div className="space-y-1.5">
+            {/* Hadiah Dew Tinggi */}
+            <button
+              type="button"
+              onClick={() => setShowOnlyHighReward(!showOnlyHighReward)}
+              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+            >
+              <div
+                className={cn(
+                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                  showOnlyHighReward
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                )}
+              >
+                {showOnlyHighReward && <Check className="w-3 h-3 stroke-[3]" />}
+              </div>
+              <span className="truncate flex items-center gap-1.5">
+                <span>{t('Hadiah Dew Tinggi (≥ 250)')}</span>
+                <span>💧</span>
+              </span>
+            </button>
+
+            {/* Quest Unggulan */}
+            <button
+              type="button"
+              onClick={() => setShowOnlyFeatured(!showOnlyFeatured)}
+              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+            >
+              <div
+                className={cn(
+                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                  showOnlyFeatured
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                )}
+              >
+                {showOnlyFeatured && <Check className="w-3 h-3 stroke-[3]" />}
+              </div>
+              <span className="truncate flex items-center gap-1.5">
+                <span>{t('Quest Unggulan')}</span>
+                <span>⭐</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const heroQuest = quests[0] || null;
 
@@ -340,8 +544,10 @@ export function QuestsView({
         onSearchChange={setSearchQuery}
       />
 
-      {/* ── 2. Main Content Area ── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-8', horizontalPadding, verticalPadding)}>
+      {/* ── 2. Main Content Row: Center Quests + Discord-style Right Filter Sidebar ── */}
+      <div className="flex-1 min-h-0 flex flex-row overflow-hidden">
+        {/* Scrollable Center Quests */}
+        <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-8', horizontalPadding, verticalPadding)}>
         {activeTab === 'all' ? (
           <>
             {/* ── Featured Hero Quest Banner (Discord 1:1) ── */}
@@ -514,16 +720,6 @@ export function QuestsView({
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-auto">
-                  {/* Create Quest Button (Fullstack CRUD) */}
-                  <Button
-                    size="sm"
-                    onClick={handleOpenCreateQuest}
-                    className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{t('Tambah Quest')}</span>
-                  </Button>
-
                   {/* Sort dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -554,35 +750,33 @@ export function QuestsView({
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Filter category dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="h-7 px-2.5 rounded-md border border-border/70 bg-muted/40 hover:bg-muted text-xs font-medium text-foreground flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <SlidersHorizontal className="w-3 h-3 text-muted-foreground" />
-                        <span>{t('Filters')}</span>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40 bg-card border-border z-[150] text-foreground">
-                      <DropdownMenuItem onClick={() => setFilterCategory('all')} className="text-xs cursor-pointer font-semibold">
-                        {t('Semua Kategori')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setFilterCategory('game')} className="text-xs cursor-pointer">
-                        {t('Game & Rekreasi')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setFilterCategory('activity')} className="text-xs cursor-pointer">
-                        {t('Aktivitas Video')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setFilterCategory('social')} className="text-xs cursor-pointer">
-                        {t('Komunitas & Chat')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setFilterCategory('profile')} className="text-xs cursor-pointer">
-                        {t('Kustomisasi Profil')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* Desktop Filter Toggle Button (Reusable, matching Quests style) */}
+                  <FilterToggleButton
+                    className="hidden lg:flex"
+                    isOpen={isFilterOpen}
+                    activeCount={activeFilterCount}
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  />
+
+                  {/* Mobile Filter Sheet Trigger (Reusable) */}
+                  <FilterToggleButton
+                    className="lg:hidden flex"
+                    isOpen={false}
+                    label={t('Filters')}
+                    activeCount={activeFilterCount}
+                    onClick={() => setIsMobileFilterOpen(true)}
+                  />
+
+                  {/* Create Quest Button (Fullstack CRUD) - Placed at the far right after Filters */}
+                  <Button
+                    size="sm"
+                    onClick={handleOpenCreateQuest}
+                    className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs shrink-0"
+                    title={t('Tambah Quest Baru ke Database')}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{t('Tambah Quest')}</span>
+                  </Button>
                 </div>
               </div>
 
@@ -827,7 +1021,39 @@ export function QuestsView({
             )}
           </div>
         )}
+        </div>
+
+        {/* Desktop Discord-style Right Filter Sidebar */}
+        {isFilterOpen && (
+          <aside className="hidden lg:flex w-64 shrink-0 flex-col border-l border-border/60 bg-card/25 backdrop-blur-xs overflow-y-auto p-4 [scrollbar-width:thin] select-none">
+            {renderFilterContent()}
+          </aside>
+        )}
       </div>
+
+      {/* Mobile / Tablet Filter Sheet Drawer */}
+      <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+        <SheetContent side="right" className="w-[85vw] max-w-xs p-4 overflow-y-auto bg-card border-border z-[170]">
+          <SheetHeader className="pb-3 border-b border-border/50 text-left">
+            <SheetTitle className="text-sm font-bold flex items-center justify-between">
+              <span>{t('Filter Quests')}</span>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>{t('Reset')}</span>
+                </button>
+              )}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="py-4">
+            {renderFilterContent()}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ── 3. Reusable Dialog: Create / Edit Quest (Fullstack CRUD) ── */}
       <Dialog open={isQuestModalOpen} onOpenChange={setIsQuestModalOpen}>

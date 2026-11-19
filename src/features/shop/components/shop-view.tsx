@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
-import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
+import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
 import {
@@ -1365,16 +1365,6 @@ export function ShopView({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Reusable TopBarActionButton for adding custom products */}
-          <TopBarActionButton
-            icon={<Plus className="w-3.5 h-3.5" />}
-            label={t('Tambah Item')}
-            shortLabel={t('Tambah')}
-            iconOnlyMobile
-            onClick={handleOpenCreateProduct}
-            title={t('Tambah Produk Baru ke Database Shop')}
-          />
         </div>
       </div>
 
@@ -1410,38 +1400,32 @@ export function ShopView({
                 </Select>
               </div>
 
-              {/* Desktop toggle filter bar */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
+              {/* Desktop toggle filter button (Reusable, matching Quests style) */}
+              <FilterToggleButton
+                className="hidden lg:flex"
+                isOpen={isFilterOpen}
+                activeCount={activeFilterCount}
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="hidden lg:flex items-center gap-1.5 h-7 px-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 cursor-pointer"
-              >
-                <span>{isFilterOpen ? t('Hide Filters') : t('Show Filters')}</span>
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                {activeFilterCount > 0 && (
-                  <span className="size-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
+              />
 
-              {/* Mobile filter drawer trigger */}
-              <Button
-                type="button"
-                variant="outline"
-                size="xs"
+              {/* Mobile filter drawer trigger (Reusable, matching Quests style) */}
+              <FilterToggleButton
+                className="lg:hidden flex"
+                isOpen={false}
+                label={t('Filters')}
+                activeCount={activeFilterCount}
                 onClick={() => setIsMobileFilterOpen(true)}
-                className="lg:hidden flex items-center gap-1.5 h-7 px-2.5 text-xs font-semibold cursor-pointer"
+              />
+
+              {/* Tambah Item button - to the right of filter button, matching Quests */}
+              <Button
+                size="sm"
+                onClick={handleOpenCreateProduct}
+                className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs shrink-0"
+                title={t('Tambah Produk Baru ke Database Shop')}
               >
-                <span>{t('Filters')}</span>
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                {activeFilterCount > 0 && (
-                  <span className="size-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t('Tambah Item')}</span>
               </Button>
             </div>
           </div>
