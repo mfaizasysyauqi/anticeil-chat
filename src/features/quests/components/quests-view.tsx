@@ -3,7 +3,6 @@ import {
   Compass,
   Check,
   Sparkles,
-  ShoppingBag,
   Menu,
   ChevronDown,
   ArrowRight,
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/empty';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
+import { QuestsHeader } from './quests-header';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -53,6 +53,7 @@ export function QuestsView({
   const [isLoading, setIsLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'suggested' | 'reward_desc' | 'alphabetical'>('suggested');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load Quests & Dew Balance
   const fetchQuestsData = async () => {
@@ -163,95 +164,38 @@ export function QuestsView({
     if (filterCategory !== 'all') {
       list = list.filter((q) => q.category === filterCategory);
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.subtitle.toLowerCase().includes(q) ||
+          item.promoter.toLowerCase().includes(q)
+      );
+    }
     if (sortBy === 'reward_desc') {
       list.sort((a, b) => b.rewardDew - a.rewardDew);
     } else if (sortBy === 'alphabetical') {
       list.sort((a, b) => a.title.localeCompare(b.title));
     }
     return list;
-  }, [quests, filterCategory, sortBy]);
+  }, [quests, filterCategory, sortBy, searchQuery]);
 
   const heroQuest = quests[0] || null;
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── 1. Discord 1:1 App Bar (h-12) ── */}
-      <div
-        className={cn(
-          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2',
-          horizontalPadding
-        )}
-      >
-        <div className="flex items-center gap-2 shrink-0">
-          {onOpenSidebar && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={onOpenSidebar}
-              className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
-              title={t('Buka Menu Sidebar')}
-              aria-label={t('Buka Menu Sidebar')}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-          )}
-
-          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop (100% Consistent with Apps, Colonies & Shop) */}
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <Compass className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{t('Quests')}</span>
-          </div>
-
-          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-        </div>
-
-        {/* Tab Navigation: All Quests | Claimed Quests */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
-          <TopBarTabButton
-            active={activeTab === 'all'}
-            onClick={() => setActiveTab('all')}
-          >
-            {t('All Quests')}
-          </TopBarTabButton>
-
-          <TopBarTabButton
-            active={activeTab === 'claimed'}
-            onClick={() => setActiveTab('claimed')}
-          >
-            <span>{t('Claimed Quests')}</span>
-            {claimedQuests.length > 0 && (
-              <span className="size-4 rounded-full bg-primary/20 text-primary border border-primary/40 text-[9px] font-black flex items-center justify-center">
-                {claimedQuests.length}
-              </span>
-            )}
-          </TopBarTabButton>
-        </div>
-
-        {/* Right side: Dew F2P Balance & Link to Shop */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div
-            className="h-7 px-2.5 rounded-[4px] bg-muted/40 border border-border/60 flex items-center gap-1.5 text-xs font-bold text-cyan-400 select-none"
-            title={t('Dew adalah mata uang F2P eksklusif yang hanya bisa didapatkan dari Quest!')}
-          >
-            <span className="text-xs">💧</span>
-            <span>{(balance?.dew ?? 0).toLocaleString()} Dew</span>
-          </div>
-
-          {onNavigateShop && (
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={onNavigateShop}
-              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('Shop')}</span>
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* ── 1. Reusable App Bar Header (DRY & 100% Consistent, No Shop Button) ── */}
+      <QuestsHeader
+        onOpenSidebar={onOpenSidebar}
+        horizontalPadding={horizontalPadding}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        claimedCount={claimedQuests.length}
+        dewBalance={balance?.dew ?? 0}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       {/* ── 2. Main Content Area ── */}
       <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-8', horizontalPadding)}>
