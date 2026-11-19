@@ -8,13 +8,11 @@ import {
   Minimize2,
   Copy,
   Check,
-  Laptop,
   Sparkles,
   Radio,
   Tv,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { ColonyChannel } from '@/chat/chat-types';
@@ -122,14 +120,6 @@ export function StandaloneAppStage({
             <span className="text-sm font-bold text-foreground truncate max-w-[160px] sm:max-w-[240px]">
               {app.title}
             </span>
-
-            <Badge
-              variant="outline"
-              className="text-[10px] font-semibold py-0.5 px-2 border-primary/30 text-primary bg-primary/5 gap-1 hidden md:inline-flex"
-            >
-              <Laptop className="w-3 h-3 text-primary" />
-              <span>Mode Standalone</span>
-            </Badge>
           </div>
         </div>
 

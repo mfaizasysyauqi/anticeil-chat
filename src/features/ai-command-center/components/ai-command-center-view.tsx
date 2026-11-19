@@ -12,7 +12,6 @@ import {
   Play,
   ArrowRight,
   Loader2,
-  Radio,
   Share2,
   MessageCircle,
 } from 'lucide-react';
@@ -285,15 +284,9 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
           </div>
 
           <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-foreground truncate">
-                AI Command Center
-              </span>
-              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-                <Radio className="w-2.5 h-2.5 text-emerald-500 animate-pulse" />
-                Groq LPU Engine
-              </span>
-            </div>
+            <span className="text-sm font-bold text-foreground truncate">
+              AI Command Center
+            </span>
           </div>
         </div>
 
@@ -532,11 +525,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
             </Button>
           </form>
 
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
-            <span className="flex items-center gap-1">
-              <span>⚡</span>
-              <span>Didukung oleh inferensi Groq LPU Ultra-Fast</span>
-            </span>
+          <div className="flex items-center justify-end text-[11px] text-muted-foreground px-1">
             <span className="hidden sm:inline">Tekan Enter untuk kirim, Shift+Enter untuk baris baru</span>
           </div>
         </div>

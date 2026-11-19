@@ -11,7 +11,6 @@ import {
   Search,
   Phone,
   Video,
-  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -205,24 +204,6 @@ export function ChannelTopHeaderBar({
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
               {t('Mulai Panggilan Video')}
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* E2EE Status Badge */}
-        {isDmMode && (
-          <Tooltip delayDuration={150}>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 text-[11px] font-semibold cursor-pointer select-none hover:bg-emerald-500/20 transition-colors">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">E2EE</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={6} className="max-w-xs text-xs">
-              <p className="font-bold text-emerald-400 mb-0.5">Enkripsi End-to-End Aktif</p>
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
-                Pesan dan panggilan dalam percakapan ini diamankan dengan enkripsi end-to-end (AES-256-GCM). Hanya Anda dan lawan bicara yang dapat membaca atau mendengar percakapan ini.
-              </p>
             </TooltipContent>
           </Tooltip>
         )}
