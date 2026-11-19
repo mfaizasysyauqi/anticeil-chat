@@ -95,9 +95,9 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
   };
 
   return (
-    <div className="space-y-10 pb-16 relative">
+    <div className="space-y-6 pb-24 relative">
       {/* ── 1. HERO BANNER ── */}
-      <div className="rounded-3xl p-6 sm:p-10 bg-linear-to-r from-[#4A32B3] via-[#5865F2] to-[#7946E0] text-white relative overflow-hidden shadow-2xl">
+      <div className="rounded-2xl p-5 sm:p-6 bg-linear-to-r from-[#4A32B3] via-[#5865F2] to-[#7946E0] text-white relative overflow-hidden shadow-xl">
         {/* Starry sparkle accents */}
         <Sparkles className="w-5 h-5 text-amber-300 absolute top-5 left-8 animate-pulse pointer-events-none" />
         <Sparkles className="w-4 h-4 text-purple-200 absolute top-14 left-1/3 opacity-70 pointer-events-none" />
@@ -109,26 +109,26 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         <button
           type="button"
           onClick={() => toast.success(t('Disimpan ke daftar favorit!'))}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-black/20 hover:bg-black/35 backdrop-blur-md transition-colors cursor-pointer text-white/90 hover:text-white"
+          className="absolute top-4 right-4 p-2 rounded-xl bg-black/20 hover:bg-black/35 backdrop-blur-md transition-colors cursor-pointer text-white/90 hover:text-white"
           title={t('Simpan')}
         >
           <Heart className="w-4 h-4" />
         </button>
 
-        <div className="relative z-10 max-w-xl mx-auto text-center space-y-3">
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight uppercase text-white drop-shadow-sm">
+        <div className="relative z-10 max-w-xl mx-auto text-center space-y-2">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight uppercase text-white drop-shadow-sm">
             {t('Unlock a World of Perks with Nectar')}
           </h2>
           <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-medium">
             {t('Plans start at only IDR 29,000.00/month. Cancel anytime')}
           </p>
 
-          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
             <Button
               size="default"
               onClick={() => handleSubscribe('nectar_boost')}
               disabled={subscribing !== null}
-              className="bg-white hover:bg-white/90 text-purple-950 font-black text-xs sm:text-sm h-10 px-6 rounded-xl shadow-xl cursor-pointer flex items-center gap-2"
+              className="bg-white hover:bg-white/90 text-purple-950 font-black text-xs sm:text-sm h-9 px-5 rounded-xl shadow-lg cursor-pointer flex items-center gap-2"
             >
               <Zap className="w-4 h-4 fill-current text-purple-600" />
               <span>{subscribing === 'nectar_boost' ? t('Mengaktifkan...') : t('Subscribe')}</span>
@@ -142,7 +142,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
                   t('Pilih kontak atau colony untuk mengirimkan Gift Nectar.'),
                 )
               }
-              className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-xs sm:text-sm h-10 px-6 rounded-xl backdrop-blur-sm cursor-pointer flex items-center gap-2"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-xs sm:text-sm h-9 px-5 rounded-xl backdrop-blur-sm cursor-pointer flex items-center gap-2"
             >
               <Gift className="w-4 h-4 text-pink-300" />
               <span>{t('Gift Nectar')}</span>
@@ -152,55 +152,55 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
       </div>
 
       {/* ── 2. THREE TIER CARDS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
         {/* TIER 1: POLLEN (BASIC) */}
-        <div className="rounded-2xl p-6 bg-linear-to-b from-[#0066FE] to-[#004ECC] text-white relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[380px]">
-          <div className="absolute top-4 right-4 size-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl shadow-lg select-none">
+        <div className="rounded-2xl p-4.5 sm:p-5 bg-linear-to-b from-[#0066FE] to-[#004ECC] text-white relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[360px]">
+          <div className="absolute top-4 right-4 size-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl shadow-md select-none">
             🌼
           </div>
 
-          <div className="space-y-4 relative z-10">
+          <div className="space-y-3 relative z-10">
             <div>
-              <div className="text-xl font-black uppercase tracking-wider flex items-center gap-2">
+              <div className="text-lg font-black uppercase tracking-wider flex items-center gap-2">
                 <span>POLLEN</span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white/25 border border-white/30">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-white/25 border border-white/30">
                   BASIC
                 </span>
               </div>
-              <p className="text-xs text-white/80 mt-1">
+              <p className="text-[11px] text-white/80 mt-1 leading-snug">
                 {t('Supercharge your chatting and express yourself casually')}
               </p>
             </div>
 
-            <div className="pt-2">
-              <div className="text-2xl sm:text-3xl font-black">
+            <div className="pt-1">
+              <div className="text-xl sm:text-2xl font-black">
                 IDR 29,000.00
               </div>
-              <div className="text-xs text-white/80 font-medium">
+              <div className="text-[11px] text-white/80 font-medium">
                 {t('/ month')}
               </div>
             </div>
 
-            <div className="space-y-2.5 pt-2 border-t border-white/20 text-xs">
+            <div className="space-y-2 pt-2 border-t border-white/20 text-xs">
               {[
                 t('50MB file sharing limit (5x bigger)'),
                 t('Custom emojis & stickers anywhere'),
                 t('Unlimited Super Reactions'),
                 t('Special Pollen badge on your profile'),
               ].map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 text-white/95">
-                  <Check className="w-4 h-4 text-emerald-300 shrink-0" />
+                <div key={i} className="flex items-center gap-2 text-white/95 text-[11px] sm:text-xs">
+                  <Check className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
                   <span>{benefit}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="pt-6 relative z-10 flex flex-col gap-2">
+          <div className="pt-4 relative z-10 flex flex-col gap-1.5">
             <Button
               onClick={() => handleSubscribe('nectar_basic')}
               disabled={subscribing !== null}
-              className="w-full bg-white hover:bg-white/90 text-blue-900 font-extrabold text-xs h-10 rounded-xl shadow-lg cursor-pointer"
+              className="w-full bg-white hover:bg-white/90 text-blue-900 font-extrabold text-xs h-9 rounded-xl shadow-md cursor-pointer"
             >
               {subscribing === 'nectar_basic' ? t('Mengaktifkan...') : t('Get Pollen')}
             </Button>
@@ -209,7 +209,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               onClick={() =>
                 toast.info(t('Pilih penerima untuk Gift Pollen.'))
               }
-              className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-8 rounded-xl cursor-pointer"
+              className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-7.5 rounded-xl cursor-pointer"
             >
               {t('Gift Pollen')}
             </Button>
@@ -217,31 +217,31 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         </div>
 
         {/* TIER 2: NECTAR (POPULAR) */}
-        <div className="rounded-2xl p-6 bg-linear-to-b from-[#5865F2] via-[#7B3FE4] to-[#B028A7] text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[380px] border border-white/20">
-          <div className="absolute top-4 right-4 size-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/30 flex items-center justify-center text-3xl shadow-xl select-none">
+        <div className="rounded-2xl p-4.5 sm:p-5 bg-linear-to-b from-[#5865F2] via-[#7B3FE4] to-[#B028A7] text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[360px] border border-white/20">
+          <div className="absolute top-4 right-4 size-12 rounded-xl bg-white/15 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl shadow-lg select-none">
             🍯
           </div>
 
-          <div className="space-y-4 relative z-10">
+          <div className="space-y-3 relative z-10">
             <div>
-              <div className="text-xl font-black uppercase tracking-wider flex items-center gap-2">
+              <div className="text-lg font-black uppercase tracking-wider flex items-center gap-2">
                 <span>NECTAR</span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-purple-950 shadow-xs">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-purple-950 shadow-xs">
                   {t('POPULAR')}
                 </span>
               </div>
-              <p className="text-xs text-white/90 mt-1">
+              <p className="text-[11px] text-white/90 mt-1 leading-snug">
                 {t(
                   'Unleash the ultimate Anticeil experience with full VIP perks',
                 )}
               </p>
             </div>
 
-            <div className="pt-2">
-              <div className="text-2xl sm:text-3xl font-black">
+            <div className="pt-1">
+              <div className="text-xl sm:text-2xl font-black">
                 IDR 85,000.00
               </div>
-              <div className="text-xs text-white/80 font-medium">
+              <div className="text-[11px] text-white/80 font-medium">
                 {t('/ month')} •{' '}
                 <span className="text-amber-300 font-bold">
                   {t('Hemat 16% per tahun')}
@@ -249,7 +249,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               </div>
             </div>
 
-            <div className="space-y-2.5 pt-2 border-t border-white/20 text-xs">
+            <div className="space-y-2 pt-2 border-t border-white/20 text-xs">
               {[
                 t('500MB upload capacity for clips and documents'),
                 t('HD 4K 60fps streaming & screen sharing'),
@@ -258,19 +258,19 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
                 t('Longer messages up to 4,000 characters & 200 server slots'),
                 t('Custom sounds anywhere & animated emoji avatars'),
               ].map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 text-white">
-                  <Check className="w-4 h-4 text-amber-300 shrink-0" />
+                <div key={i} className="flex items-center gap-2 text-white text-[11px] sm:text-xs">
+                  <Check className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                   <span className="font-medium">{benefit}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="pt-6 relative z-10 flex flex-col gap-2">
+          <div className="pt-4 relative z-10 flex flex-col gap-1.5">
             <Button
               onClick={() => handleSubscribe('nectar_boost')}
               disabled={subscribing !== null}
-              className="w-full bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs h-10 rounded-xl shadow-xl cursor-pointer"
+              className="w-full bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs h-9 rounded-xl shadow-lg cursor-pointer"
             >
               {subscribing === 'nectar_boost' ? t('Mengaktifkan...') : t('Get Nectar')}
             </Button>
@@ -279,7 +279,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               onClick={() =>
                 toast.info(t('Pilih penerima untuk Gift Nectar Full.'))
               }
-              className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-8 rounded-xl cursor-pointer"
+              className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-7.5 rounded-xl cursor-pointer"
             >
               {t('Gift Nectar')}
             </Button>
@@ -287,34 +287,34 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         </div>
 
         {/* TIER 3: ROYAL (ENTERPRISE) */}
-        <div className="rounded-2xl p-6 bg-gradient-to-b from-[#2a1705] via-[#1a0f03] to-[#0d0701] border border-amber-500/40 text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[380px]">
-          <div className="absolute top-4 right-4 size-16 rounded-2xl bg-amber-500/10 backdrop-blur-md border border-amber-500/30 flex items-center justify-center text-3xl shadow-lg select-none">
+        <div className="rounded-2xl p-4.5 sm:p-5 bg-gradient-to-b from-[#2a1705] via-[#1a0f03] to-[#0d0701] border border-amber-500/40 text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[360px]">
+          <div className="absolute top-4 right-4 size-12 rounded-xl bg-amber-500/10 backdrop-blur-md border border-amber-500/30 flex items-center justify-center text-2xl shadow-md select-none">
             👑
           </div>
 
-          <div className="space-y-4 relative z-10">
+          <div className="space-y-3 relative z-10">
             <div>
-              <div className="text-xl font-black uppercase tracking-wider flex items-center gap-2 text-amber-400">
+              <div className="text-lg font-black uppercase tracking-wider flex items-center gap-2 text-amber-400">
                 <span>ROYAL</span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300">
                   ENTERPRISE
                 </span>
               </div>
-              <p className="text-xs text-white/80 mt-1">
+              <p className="text-[11px] text-white/80 mt-1 leading-snug">
                 {t('Sovereign Colony for corporate teams with SSO & Domain Capture')}
               </p>
             </div>
 
-            <div className="pt-2">
-              <div className="text-2xl sm:text-3xl font-black text-amber-300">
+            <div className="pt-1">
+              <div className="text-xl sm:text-2xl font-black text-amber-300">
                 IDR 499,000.00
               </div>
-              <div className="text-xs text-white/80 font-medium">
+              <div className="text-[11px] text-white/80 font-medium">
                 {t('/ colony / month')}
               </div>
             </div>
 
-            <div className="space-y-2.5 pt-2 border-t border-amber-500/20 text-xs">
+            <div className="space-y-2 pt-2 border-t border-amber-500/20 text-xs">
               {[
                 t('Corporate SSO (Google Workspace, Entra, Okta)'),
                 t('Zero-friction JIT Domain Auto-Provisioning'),
@@ -323,19 +323,19 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
                 t('365-day audit log retention & export'),
                 t('Dedicated Enterprise SLA & 99.9% uptime'),
               ].map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 text-white">
-                  <Check className="w-4 h-4 text-amber-400 shrink-0" />
+                <div key={i} className="flex items-center gap-2 text-white text-[11px] sm:text-xs">
+                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span className="font-medium">{benefit}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="pt-6 relative z-10 flex flex-col gap-2">
+          <div className="pt-4 relative z-10 flex flex-col gap-1.5">
             <Button
               onClick={() => handleSubscribe('royal_enterprise')}
               disabled={subscribing !== null}
-              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs h-10 rounded-xl shadow-xl cursor-pointer"
+              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs h-9 rounded-xl shadow-lg cursor-pointer"
             >
               {subscribing === 'royal_enterprise' ? t('Mengaktifkan...') : t('Get Royal Enterprise 👑')}
             </Button>
@@ -344,7 +344,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               onClick={() =>
                 toast.info(t('Hubungi sales kami untuk custom enterprise contract & invoice.'))
               }
-              className="w-full hover:bg-white/10 text-amber-300/90 hover:text-amber-200 font-semibold text-xs h-8 rounded-xl cursor-pointer"
+              className="w-full hover:bg-white/10 text-amber-300/90 hover:text-amber-200 font-semibold text-xs h-7.5 rounded-xl cursor-pointer"
             >
               {t('Contact Sales')}
             </Button>

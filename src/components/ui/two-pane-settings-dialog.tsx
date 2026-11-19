@@ -312,8 +312,8 @@ export function TwoPaneSettingsDialog({
         {/* ── Right Content / Detail Pane ── */}
         <section
           className={cn(
-            'flex-1 min-w-0 bg-background flex-col relative overflow-hidden',
-            mobileView === 'detail' ? 'flex w-full h-full' : 'hidden md:flex',
+            'flex-1 min-w-0 h-full min-h-0 bg-background flex flex-col relative overflow-hidden',
+            mobileView === 'detail' ? 'flex w-full' : 'hidden md:flex',
           )}
         >
           {/* Top App Bar Header (Discord 1:1 Parity) */}

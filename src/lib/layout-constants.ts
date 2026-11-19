@@ -103,7 +103,7 @@ export const LAYOUT_DIALOG_SPACING = {
 
   /** Dialog detail pane scrollable body with symmetrical horizontal and vertical padding matching Sidebar and App Bar */
   BODY_PADDING:
-    'flex-1 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-3.5 sm:py-4 md:py-5 max-md:scrollbar-none lg:[scrollbar-width:thin] w-full min-w-0',
+    'flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-3.5 sm:py-4 md:py-5 max-md:scrollbar-none lg:[scrollbar-width:thin] w-full min-w-0',
 
   /** Sidebar in two-pane settings */
   SIDEBAR_WIDTH: 'w-full md:w-56 lg:w-60',
