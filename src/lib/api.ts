@@ -55,6 +55,24 @@ export const api = {
       return {} as T;
     }
   },
+  patch: async <T = any>(url: string, data?: any, _config?: any): Promise<T> => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('ap_token') || '';
+      const payload = data !== undefined ? data : {};
+      const res = await fetch(`${API_BASE_URL}/api${url}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(res.statusText);
+      return (await res.json()) as T;
+    } catch {
+      return {} as T;
+    }
+  },
   delete: async <T = any>(url: string, _config?: any): Promise<T> => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('ap_token') || '';

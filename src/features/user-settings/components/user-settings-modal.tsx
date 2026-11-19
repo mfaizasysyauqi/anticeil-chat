@@ -397,6 +397,7 @@ export function UserSettingsModal({
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
             onOpenEditProfile={onOpenEditProfile}
             open={open}
+            onLogout={onLogout}
           />
         )}
 

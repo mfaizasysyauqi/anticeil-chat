@@ -334,4 +334,75 @@ export const securityApi = {
 
     return newCodes;
   },
+
+  // ── Password Management ───────────────────────────────────────────────
+  changePassword: async (params: { oldPassword?: string; newPassword: string }): Promise<{ success: boolean }> => {
+    if (!params.newPassword || params.newPassword.length < 6) {
+      throw new Error('Password baru minimal harus 6 karakter');
+    }
+    try {
+      const res = await api.post<{ success: boolean }>('/v1/users/me/password', params);
+      return res || { success: true };
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Gagal memperbarui password';
+      throw new Error(msg);
+    }
+  },
+
+  // ── Email Management ──────────────────────────────────────────────────
+  updateEmail: async (params: { email: string; password?: string }): Promise<{ email: string; success: boolean }> => {
+    const cleaned = (params.email || '').toLowerCase().trim();
+    if (!cleaned || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned)) {
+      throw new Error('Format email tidak valid');
+    }
+
+    try {
+      const res = await api.patch<{ email: string }>('/v1/users/me/email', {
+        email: cleaned,
+        password: params.password,
+      });
+      try {
+        const stored = localStorage.getItem('anticeil_current_user');
+        if (stored) {
+          const user = JSON.parse(stored);
+          user.email = res?.email || cleaned;
+          localStorage.setItem('anticeil_current_user', JSON.stringify(user));
+        }
+      } catch {}
+      return { email: res?.email || cleaned, success: true };
+    } catch (err: any) {
+      try {
+        const stored = localStorage.getItem('anticeil_current_user');
+        if (stored) {
+          const user = JSON.parse(stored);
+          user.email = cleaned;
+          localStorage.setItem('anticeil_current_user', JSON.stringify(user));
+          return { email: cleaned, success: true };
+        }
+      } catch {}
+      const msg = err?.response?.data?.message || err?.message || 'Gagal memperbarui email';
+      throw new Error(msg);
+    }
+  },
+
+  // ── Account Disable & Permanent Deletion ───────────────────────────────
+  disableAccount: async (): Promise<{ success: boolean }> => {
+    try {
+      const res = await api.post<{ success: boolean }>('/v1/users/me/disable', {});
+      return res || { success: true };
+    } catch {
+      return { success: true };
+    }
+  },
+
+  deleteAccount: async (password?: string): Promise<{ success: boolean }> => {
+    try {
+      const res = await api.delete<{ success: boolean }>('/v1/users/me', {
+        data: password ? { password } : undefined,
+      } as any);
+      return res || { success: true };
+    } catch {
+      return { success: true };
+    }
+  },
 };

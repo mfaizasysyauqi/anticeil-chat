@@ -2,11 +2,20 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   User, Check, ChevronLeft, ShieldCheck, ShieldAlert,
   Smartphone, Key, Ban, ExternalLink, Pencil, Search,
-  Lock, Trash2, Globe, Clock, Shield, ChevronRight, Laptop, Info, X, UserCheck, CheckCircle2, Users
+  Lock, Trash2, Globe, Clock, Shield, ChevronRight, Laptop, Info, X, UserCheck, CheckCircle2, Users,
+  Loader2, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -27,6 +36,7 @@ export interface AccountTabProps {
   onNavigateSection?: (section: string) => void;
   onOpenEditProfile?: () => void;
   open?: boolean;
+  onLogout?: () => void;
 }
 
 export function AccountTab({
@@ -39,6 +49,7 @@ export function AccountTab({
   onNavigateSection,
   onOpenEditProfile,
   open = true,
+  onLogout,
 }: AccountTabProps) {
   const { t } = useTranslation();
   const [accountSubView, setAccountSubView] = useState<'main' | 'standing' | 'devices'>('main');
@@ -58,6 +69,17 @@ export function AccountTab({
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [sessionCount, setSessionCount] = useState(1);
+
+  // Email update state
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const [emailPasswordInput, setEmailPasswordInput] = useState('');
+
+  // Account removal & disable state
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [isDisablingAccount, setIsDisablingAccount] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deletePasswordInput, setDeletePasswordInput] = useState('');
 
   const loadSecurityData = React.useCallback(async () => {
     try {
@@ -125,6 +147,60 @@ export function AccountTab({
     if (!editUsernameInput.trim() || editUsernameInput.trim() === currentUser?.username) return;
     await onSaveUsername(editUsernameInput.trim());
     setIsEditingUsername(false);
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = editEmailInput.trim();
+    if (!clean || clean === currentUser?.email) {
+      setIsEditingEmail(false);
+      return;
+    }
+    setIsSavingEmail(true);
+    try {
+      const res = await securityApi.updateEmail({
+        email: clean,
+        password: emailPasswordInput || undefined,
+      });
+      if (currentUser) {
+        currentUser.email = res.email || clean;
+      }
+      toast.success(t('Email akun berhasil diperbarui!'));
+      setIsEditingEmail(false);
+      setEmailPasswordInput('');
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal memperbarui email'));
+    } finally {
+      setIsSavingEmail(false);
+    }
+  };
+
+  const handleDisableAccount = async () => {
+    setIsDisablingAccount(true);
+    try {
+      await securityApi.disableAccount();
+      toast.success(t('Akun Anda telah dinonaktifkan sementara.'));
+      setShowDisableDialog(false);
+      onLogout?.();
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal menonaktifkan akun'));
+    } finally {
+      setIsDisablingAccount(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      await securityApi.deleteAccount(deletePasswordInput || undefined);
+      toast.success(t('Akun Anticeil Anda berhasil dihapus secara permanen.'));
+      setShowDeleteDialog(false);
+      onLogout?.();
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal menghapus akun'));
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   // Masked helpers
@@ -306,7 +382,11 @@ export function AccountTab({
                         type="button"
                         size="sm"
                         variant="secondary"
-                        onClick={() => setIsEditingEmail(!isEditingEmail)}
+                        onClick={() => {
+                          setIsEditingEmail(!isEditingEmail);
+                          setEditEmailInput(currentUser?.email || '');
+                          setEmailPasswordInput('');
+                        }}
                         className="h-8 text-xs font-semibold px-3.5 cursor-pointer"
                       >
                         {isEditingEmail ? t('Batal') : t('Edit')}
@@ -314,26 +394,64 @@ export function AccountTab({
                     </div>
 
                     {isEditingEmail && (
-                      <div className="p-4 bg-muted/20 space-y-2">
-                        <Input
-                          value={editEmailInput}
-                          onChange={(e) => setEditEmailInput(e.target.value)}
-                          placeholder="nama@email.com"
-                          className="text-xs h-9 bg-input border-border text-foreground"
-                        />
-                        <div className="flex justify-end gap-2">
+                      <form onSubmit={handleEmailSubmit} className="p-4 bg-muted/20 space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {t('Email Baru')}
+                          </label>
+                          <Input
+                            type="email"
+                            value={editEmailInput}
+                            onChange={(e) => setEditEmailInput(e.target.value)}
+                            placeholder="nama@email.com"
+                            className="text-xs h-9 bg-input border-border text-foreground"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {t('Password Akun (Konfirmasi)')}
+                          </label>
+                          <Input
+                            type="password"
+                            value={emailPasswordInput}
+                            onChange={(e) => setEmailPasswordInput(e.target.value)}
+                            placeholder={t('Masukkan password akun Anda')}
+                            className="text-xs h-9 bg-input border-border text-foreground"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-1">
                           <Button
+                            type="button"
                             size="sm"
-                            onClick={() => {
-                              toast.success(t('Kode verifikasi telah dikirim ke email baru!'));
-                              setIsEditingEmail(false);
-                            }}
-                            className="h-8 text-xs font-bold"
+                            variant="secondary"
+                            disabled={isSavingEmail}
+                            onClick={() => setIsEditingEmail(false)}
+                            className="h-8 text-xs font-semibold"
                           >
-                            {t('Kirim Verifikasi')}
+                            {t('Batal')}
+                          </Button>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={
+                              isSavingEmail ||
+                              !editEmailInput.trim() ||
+                              editEmailInput.trim() === currentUser?.email
+                            }
+                            className="h-8 text-xs font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white cursor-pointer"
+                          >
+                            {isSavingEmail ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                {t('Menyimpan...')}
+                              </>
+                            ) : (
+                              t('Simpan Email')
+                            )}
                           </Button>
                         </div>
-                      </div>
+                      </form>
                     )}
 
                     {/* Phone Number row */}
@@ -521,8 +639,8 @@ export function AccountTab({
                         type="button"
                         size="sm"
                         variant="secondary"
-                        onClick={() => toast.info(t('Akun dapat dinonaktifkan sementara melalui email konfirmasi.'))}
-                        className="h-8 text-xs font-semibold border border-border/80"
+                        onClick={() => setShowDisableDialog(true)}
+                        className="h-8 text-xs font-semibold border border-border/80 cursor-pointer"
                       >
                         {t('Disable Account')}
                       </Button>
@@ -543,11 +661,10 @@ export function AccountTab({
                         size="sm"
                         variant="destructive"
                         onClick={() => {
-                          if (confirm(t('Apakah Anda yakin ingin menghapus akun Anticeil secara permanen?'))) {
-                            toast.error(t('Permintaan penghapusan akun telah dicatat.'));
-                          }
+                          setDeletePasswordInput('');
+                          setShowDeleteDialog(true);
                         }}
-                        className="h-8 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white shadow-xs"
+                        className="h-8 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white shadow-xs cursor-pointer"
                       >
                         {t('Delete Account')}
                       </Button>
@@ -556,6 +673,115 @@ export function AccountTab({
                 </div>
               </div>
             )}
+
+            {/* Disable Account Confirmation Dialog */}
+            <Dialog open={showDisableDialog} onOpenChange={setShowDisableDialog}>
+              <DialogContent className="max-w-md bg-card border-border text-foreground">
+                <DialogHeader>
+                  <DialogTitle className="text-base font-bold text-foreground">
+                    {t('Nonaktifkan Akun Anda?')}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                    {t(
+                      'Akun Anda akan dinonaktifkan sementara. Teman tidak dapat menghubungi Anda dan Anda akan dikeluarkan dari sesi saat ini. Anda dapat mengaktifkannya kembali sewaktu-waktu dengan login ulang.',
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4 flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={isDisablingAccount}
+                    onClick={() => setShowDisableDialog(false)}
+                    className="h-9 text-xs font-semibold"
+                  >
+                    {t('Batal')}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isDisablingAccount}
+                    onClick={handleDisableAccount}
+                    className="h-9 text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white cursor-pointer"
+                  >
+                    {isDisablingAccount ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        {t('Menonaktifkan...')}
+                      </>
+                    ) : (
+                      t('Nonaktifkan Akun')
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Permanent Delete Account Dialog */}
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <DialogContent className="max-w-md bg-card border-destructive/30 text-foreground">
+                <DialogHeader>
+                  <div className="flex items-center gap-2 text-destructive mb-1">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                    <DialogTitle className="text-base font-bold text-destructive">
+                      {t('Hapus Akun Secara Permanen?')}
+                    </DialogTitle>
+                  </div>
+                  <DialogDescription className="text-xs text-muted-foreground leading-relaxed space-y-2">
+                    <p>
+                      {t(
+                        'Tindakan ini bersifat PERMANEN dan tidak dapat dibatalkan. Seluruh riwayat pesan, servers/colony, profil, dan data terkait akan dihapus secara menyeluruh dari sistem.',
+                      )}
+                    </p>
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-2 my-2">
+                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                    {t('Konfirmasi Password Akun')}
+                  </label>
+                  <Input
+                    type="password"
+                    value={deletePasswordInput}
+                    onChange={(e) => setDeletePasswordInput(e.target.value)}
+                    placeholder={t('Ketik password Anda untuk konfirmasi')}
+                    className="text-xs h-9 bg-input border-border text-foreground"
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <DialogFooter className="mt-4 flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={isDeletingAccount}
+                    onClick={() => setShowDeleteDialog(false)}
+                    className="h-9 text-xs font-semibold"
+                  >
+                    {t('Batal')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    disabled={isDeletingAccount}
+                    onClick={handleDeleteAccount}
+                    className="h-9 text-xs font-bold bg-red-600 hover:bg-red-500 text-white cursor-pointer shadow-xs"
+                  >
+                    {isDeletingAccount ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        {t('Menghapus...')}
+                      </>
+                    ) : (
+                      t('Hapus Akun Permanen')
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* 2FA Authenticator Modal */}
             <AccountTwoFactorModal

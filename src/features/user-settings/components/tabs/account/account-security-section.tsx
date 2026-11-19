@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Key, Laptop, ChevronRight } from 'lucide-react';
+import { Key, Laptop, ChevronRight, Loader2, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { securityApi } from '../../../api/security-api';
 
 export interface AccountSecuritySectionProps {
   onOpenDevices?: () => void;
@@ -20,6 +21,39 @@ export function AccountSecuritySection({
 }: AccountSecuritySectionProps) {
   const { t } = useTranslation();
   const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      toast.error(t('Password baru minimal harus 6 karakter'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t('Konfirmasi password tidak cocok'));
+      return;
+    }
+
+    setIsSavingPassword(true);
+    try {
+      await securityApi.changePassword({
+        oldPassword: currentPassword || undefined,
+        newPassword,
+      });
+      toast.success(t('Password berhasil diperbarui!'));
+      setIsEditingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal memperbarui password'));
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
 
   return (
     <div id="account-security" className="space-y-3 scroll-mt-4">
@@ -42,38 +76,91 @@ export function AccountSecuritySection({
             type="button"
             size="sm"
             variant="secondary"
-            onClick={() => setIsEditingPassword(!isEditingPassword)}
+            onClick={() => {
+              setIsEditingPassword(!isEditingPassword);
+              setCurrentPassword('');
+              setNewPassword('');
+              setConfirmPassword('');
+            }}
             className="h-8 text-xs font-semibold px-3.5 cursor-pointer"
           >
-            {isEditingPassword ? t('Batal') : t('Edit')}
+            {isEditingPassword ? t('Batal') : t('Ganti Password')}
           </Button>
         </div>
 
         {isEditingPassword && (
-          <div className="p-4 bg-muted/20 space-y-3">
-            <Input
-              type="password"
-              placeholder={t('Password Saat Ini')}
-              className="text-xs h-9 bg-input border-border text-foreground"
-            />
-            <Input
-              type="password"
-              placeholder={t('Password Baru')}
-              className="text-xs h-9 bg-input border-border text-foreground"
-            />
-            <div className="flex justify-end gap-2">
+          <form onSubmit={handlePasswordSubmit} className="p-4 bg-muted/20 space-y-3">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                {t('Password Saat Ini')}
+              </label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder={t('Masukkan password lama')}
+                className="text-xs h-9 bg-input border-border text-foreground"
+                autoComplete="current-password"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                {t('Password Baru')}
+              </label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={t('Minimal 6 karakter')}
+                className="text-xs h-9 bg-input border-border text-foreground"
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                {t('Konfirmasi Password Baru')}
+              </label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder={t('Ketik ulang password baru')}
+                className="text-xs h-9 bg-input border-border text-foreground"
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
               <Button
+                type="button"
                 size="sm"
-                onClick={() => {
-                  toast.success(t('Password berhasil diperbarui!'));
-                  setIsEditingPassword(false);
-                }}
-                className="h-8 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+                variant="secondary"
+                disabled={isSavingPassword}
+                onClick={() => setIsEditingPassword(false)}
+                className="h-8 text-xs font-semibold"
               >
-                {t('Simpan Password Baru')}
+                {t('Batal')}
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSavingPassword || !newPassword || newPassword !== confirmPassword}
+                className="h-8 text-xs font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white cursor-pointer"
+              >
+                {isSavingPassword ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    {t('Menyimpan...')}
+                  </>
+                ) : (
+                  t('Simpan Password Baru')
+                )}
               </Button>
             </div>
-          </div>
+          </form>
         )}
 
         {/* Multi-Factor Authentication */}
