@@ -28,6 +28,7 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -1414,7 +1415,8 @@ export function ShopView({
       </div>
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-4', verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-4', verticalPadding)}>
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
           <div className="flex items-center justify-between min-h-7 gap-3 pb-1.5 border-b border-border/50">
             <div className="flex items-center gap-2">
@@ -1728,6 +1730,7 @@ export function ShopView({
           </div>
         )}
         </div>
+      </ScrollArea>
 
       {/* Reusable Filter Sheet Drawer (Tightened width, eliminating empty right gap) */}
       <AppFilterDrawer

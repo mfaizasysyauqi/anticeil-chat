@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { FriendsHeader } from './friends-header';
 import { FriendsList } from './friends-list';
 import { AddFriendTab } from './add-friend-tab';
@@ -74,34 +75,36 @@ export function FriendsView({
       {/* Body Content */}
       <div className="flex flex-1 min-h-0 overflow-hidden bg-background">
         {/* Main Friends Column */}
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
-          {friendsTab === 'add' ? (
-            <AddFriendTab
-              onAddFriend={onAddFriend}
-              isAddingFriend={isAddingFriend}
-              currentUser={currentUser}
-              allFriends={allFriends}
-              friendRequests={friendRequests}
-              members={members}
-            />
-          ) : friendsTab === 'pending' ? (
-            <PendingRequestsTab
-              friendRequests={friendRequests}
-              onAcceptRequest={onAcceptRequest}
-              onRejectRequest={onRejectRequest}
-              onCancelRequest={onCancelRequest}
-            />
-          ) : (
-            <FriendsList
-              friendsTab={friendsTab}
-              friendsSearchQuery={friendsSearchQuery}
-              onSearchChange={onSearchChange}
-              filteredFriends={filteredFriends}
-              onStartDM={onStartDM}
-              onSwitchToAddTab={() => setIsAddDialogOpen(true)}
-            />
-          )}
-        </div>
+        <ScrollArea className="flex-1 min-h-0">
+          <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
+            {friendsTab === 'add' ? (
+              <AddFriendTab
+                onAddFriend={onAddFriend}
+                isAddingFriend={isAddingFriend}
+                currentUser={currentUser}
+                allFriends={allFriends}
+                friendRequests={friendRequests}
+                members={members}
+              />
+            ) : friendsTab === 'pending' ? (
+              <PendingRequestsTab
+                friendRequests={friendRequests}
+                onAcceptRequest={onAcceptRequest}
+                onRejectRequest={onRejectRequest}
+                onCancelRequest={onCancelRequest}
+              />
+            ) : (
+              <FriendsList
+                friendsTab={friendsTab}
+                friendsSearchQuery={friendsSearchQuery}
+                onSearchChange={onSearchChange}
+                filteredFriends={filteredFriends}
+                onStartDM={onStartDM}
+                onSwitchToAddTab={() => setIsAddDialogOpen(true)}
+              />
+            )}
+          </div>
+        </ScrollArea>
 
         {/* Right Column: Discord Desktop "Sedang Aktif" (Active Now) */}
         <ActiveNowSidebar

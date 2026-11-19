@@ -13,6 +13,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
@@ -163,7 +164,8 @@ export function NotificationsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff className="w-8 h-8 stroke-[1.8] text-primary" />}
@@ -262,7 +264,8 @@ export function NotificationsView({
             ))}
           </div>
         )}
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

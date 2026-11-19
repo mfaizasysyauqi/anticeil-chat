@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
@@ -395,7 +396,8 @@ export function AppsView({
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-8', verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-8', verticalPadding)}>
         {/* Featured Hero Banner: YouTube Watch Together */}
         {!searchQuery && activeCategory === 'all' && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
@@ -506,7 +508,8 @@ export function AppsView({
             );
           })
         )}
-      </div>
+        </div>
+      </ScrollArea>
 
       {/* ── Modal Dialog: Pilih Tujuan Luncurkan (DM vs Server) ─────── */}
       <ActivityDestinationDialog

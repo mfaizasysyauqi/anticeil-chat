@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { QuestsHeader } from './quests-header';
 import {
@@ -526,7 +527,8 @@ export function QuestsView({
       />
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-4', verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-4', verticalPadding)}>
         {activeTab === 'all' ? (
           <>
             {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest (100% Consistent with ShopView & FriendsView) ── */}
@@ -991,7 +993,8 @@ export function QuestsView({
             )}
           </div>
         )}
-      </div>
+        </div>
+      </ScrollArea>
 
       {/* Reusable Filter Sheet Drawer (Tightened width, eliminating empty right gap) */}
       <AppFilterDrawer

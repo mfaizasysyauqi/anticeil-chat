@@ -3,6 +3,7 @@ import { Mail, ShieldAlert, Check, X, Menu, ShieldCheck } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
@@ -126,7 +127,8 @@ export function MessageRequestsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
         {/* Section Header Count */}
         <div className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-4">
           {activeTab === 'requests'
@@ -244,7 +246,8 @@ export function MessageRequestsView({
             ))}
           </div>
         )}
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

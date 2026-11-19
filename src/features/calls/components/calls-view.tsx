@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import {
   CHANNEL_HORIZONTAL_PADDING,
@@ -224,7 +225,8 @@ export function CallsView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
         {/* Speed Dial / Kontak Cepat Section */}
         {friends && friends.length > 0 && (
           <div className="space-y-3">
@@ -578,7 +580,8 @@ export function CallsView({
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

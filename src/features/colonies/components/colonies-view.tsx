@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
@@ -373,7 +374,8 @@ export function ColoniesView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
         {activeTab === 'joined' ? (
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
@@ -535,7 +537,8 @@ export function ColoniesView({
             t={t}
           />
         )}
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

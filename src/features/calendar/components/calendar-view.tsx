@@ -20,6 +20,7 @@ import {
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -365,7 +366,8 @@ export function CalendarView({
       </div>
 
       {/* ── Main Content Area: Month Grid vs Agenda List ────────────── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
         {viewMode === 'month' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-[500px]">
             {/* Calendar Month Grid (Left 2 cols) */}
@@ -630,7 +632,8 @@ export function CalendarView({
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </ScrollArea>
 
       {/* ── Dialog Jadwalkan Meeting Baru ─────────────────────────── */}
       <CalendarScheduleDialog

@@ -32,12 +32,11 @@ export const LAYOUT_PAGE_SPACING = {
 
   /**
    * Symmetrical Horizontal Padding for all page scrollable bodies:
-   * On mobile/tablet (<lg), scrollbar is hidden with max-lg:scrollbar-none so padding is px-3.5 sm:px-4 md:px-5.
-   * On desktop (lg:), with a 6px custom scrollbar, right padding is adjusted to lg:pr-[18px] (24px - 6px = 18px)
-   * while left padding is lg:pl-6 (24px).
-   * Result: Content starts at 24px and ends at 24px from container edges, matching the App Bar 100% symmetrically!
+   * 100% matched with App Bar HORIZONTAL (px-3.5 sm:px-4 md:px-5 lg:px-6).
+   * Combined with true overlay scrollbars (0px layout width), this guarantees
+   * 100% pixel-perfect horizontal symmetry between the App Bar header and content body.
    */
-  BODY_HORIZONTAL: 'pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px]',
+  BODY_HORIZONTAL: 'px-3.5 sm:px-4 md:px-5 lg:px-6',
 
   /**
    * Vertical padding for page body scrolling content
@@ -50,13 +49,13 @@ export const LAYOUT_PAGE_SPACING = {
    * guaranteeing 100% horizontal symmetry with the App Bar header above.
    */
   BODY_SCROLL:
-    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px]',
+    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar px-3.5 sm:px-4 md:px-5 lg:px-6',
 
   /**
    * Combined page content scroll container classes
    */
   BODY_PADDING:
-    'pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px] py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar',
+    'px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar',
 
   /**
    * Universal App Bar header height (48px)

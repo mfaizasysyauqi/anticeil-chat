@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -206,7 +207,8 @@ export function AssignmentsView({
       </div>
 
       {/* ── Task Items List ────────────────────────────────────────── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
         <div className="w-full space-y-3">
           {filteredList.length === 0 ? (
             <EmptyState
@@ -351,7 +353,8 @@ export function AssignmentsView({
             })
           )}
         </div>
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

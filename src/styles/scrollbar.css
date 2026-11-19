@@ -94,3 +94,16 @@
   width: 0 !important;
   height: 0 !important;
 }
+
+/* 6. Radix UI True Overlay ScrollArea Viewport */
+[data-radix-scroll-area-viewport] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-radix-scroll-area-viewport]::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}

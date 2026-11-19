@@ -17,5 +17,19 @@ export default defineConfig({
   server: {
     port: 3005,
     host: true,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:3000',
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (_err, _req, res: any) => {
+            if (res && 'writeHead' in res && !res.headersSent) {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify([]));
+            }
+          });
+        },
+      },
+    },
   },
 })
