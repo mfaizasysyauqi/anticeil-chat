@@ -109,7 +109,18 @@ export const SidebarCategoryGroup: React.FC<SidebarCategoryGroupProps> = ({
         </ContextMenuTrigger>
         <ContextMenuContent className="w-56 bg-card border-border text-foreground">
           <ContextMenuItem
-            onClick={() => toast.success(t('Semua channel di kategori ini ditandai telah dibaca'))}
+            onClick={() => {
+              catChannels.forEach((ch) => {
+                try {
+                  localStorage.setItem(`anticeil_channel_unread_${ch.id}`, '0');
+                  localStorage.setItem(`anticeil_channel_last_read_${ch.id}`, Date.now().toString());
+                } catch {}
+              });
+              window.dispatchEvent(
+                new CustomEvent('anticeil_mark_category_read', { detail: { categoryId: cat.id } }),
+              );
+              toast.success(t('Semua channel di kategori ini ditandai telah dibaca'));
+            }}
             className="cursor-pointer"
           >
             <CheckCheck className="w-4 h-4 mr-1 text-muted-foreground" />
@@ -144,7 +155,23 @@ export const SidebarCategoryGroup: React.FC<SidebarCategoryGroupProps> = ({
               {['15 Menit', '1 Jam', '8 Jam', '24 Jam', 'Sampai diaktifkan kembali'].map((duration) => (
                 <ContextMenuItem
                   key={duration}
-                  onClick={() => toast.success(t(`Kategori dibisukan selama ${duration}`))}
+                  onClick={() => {
+                    const muteRecord = {
+                      categoryId: cat.id,
+                      duration,
+                      mutedAt: Date.now(),
+                    };
+                    try {
+                      localStorage.setItem(
+                        `anticeil_category_muted_${cat.id}`,
+                        JSON.stringify(muteRecord),
+                      );
+                    } catch {}
+                    window.dispatchEvent(
+                      new CustomEvent('anticeil_category_muted', { detail: muteRecord }),
+                    );
+                    toast.success(t(`Kategori dibisukan selama ${duration}`));
+                  }}
                   className="cursor-pointer"
                 >
                   {duration}

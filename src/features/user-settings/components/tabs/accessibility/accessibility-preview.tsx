@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
+import { toast } from 'sonner';
 
 export interface AccessibilityPreviewProps {
   enableHighContrast: boolean;
@@ -154,7 +155,8 @@ export function AccessibilityPreview({
             <Button
               type="button"
               size="sm"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-3 py-1.5 h-8 rounded-md shadow-xs cursor-pointer"
+              onClick={() => toast.success(t('Pratinjau tombol aksesibilitas responsif!'))}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-3 py-1.5 h-8 rounded-md shadow-xs cursor-pointer active:scale-95 transition-transform"
             >
               Example Button
             </Button>

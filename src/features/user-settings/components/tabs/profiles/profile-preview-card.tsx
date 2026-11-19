@@ -287,11 +287,12 @@ export function ProfilePreviewCard({
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons (Live Preview) */}
           <div className="flex items-center gap-2 mt-4">
             <Button
               size="sm"
               variant="teal"
+              onClick={() => toast.info(t('Pratinjau profil: Tombol ini memungkinkan pengguna lain mengirim pesan langsung ke akun Anda.'))}
               className="flex-1 text-xs h-8 font-semibold cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
@@ -300,6 +301,7 @@ export function ProfilePreviewCard({
             <Button
               size="sm"
               variant="tealSecondary"
+              onClick={() => toast.info(t('Pratinjau profil: Tombol ini memungkinkan pengguna lain mengirim permintaan pertemanan.'))}
               className="h-8 px-2.5 cursor-pointer"
               title={t('Tambah Teman')}
             >
@@ -308,6 +310,7 @@ export function ProfilePreviewCard({
             <Button
               size="sm"
               variant="tealSecondary"
+              onClick={() => toast.info(t('Pratinjau profil: Opsi tindakan profil seperti blokir, laporkan, atau salin ID.'))}
               className="h-8 px-2.5 cursor-pointer"
               title={t('Opsi Lainnya')}
             >

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
@@ -55,6 +56,31 @@ export function ColonyEventsModal({
 }: ColonyEventsModalProps) {
   const [viewState, setViewState] = useState<'list' | 'create' | 'share'>('list');
   const [createdShareEvent, setCreatedShareEvent] = useState<CalendarEvent | null>(null);
+  const [interestedEventIds, setInterestedEventIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('anticeil_interested_events');
+      return stored ? new Set(JSON.parse(stored)) : new Set<string>();
+    } catch {
+      return new Set<string>();
+    }
+  });
+
+  const toggleInterest = (eventId: string) => {
+    setInterestedEventIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+        toast.info('Kamu membatalkan tanda tertarik pada event ini.');
+      } else {
+        next.add(eventId);
+        toast.success('Kamu ditandai tertarik pada event ini! 🔔');
+      }
+      try {
+        localStorage.setItem('anticeil_interested_events', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
 
 
 
@@ -182,7 +208,7 @@ export function ColonyEventsModal({
                           />
                           <div className="flex items-center gap-1 text-[11px]">
                             <Users className="w-3.5 h-3.5" />
-                            <span>1</span>
+                            <span>{interestedEventIds.has(ev.id) ? 2 : 1}</span>
                           </div>
                         </div>
                       </div>
@@ -227,10 +253,17 @@ export function ColonyEventsModal({
                           )}
                           <Button
                             size="sm"
-                            className="h-7 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1 rounded-md shadow-xs cursor-pointer"
-                            onClick={() => toast.success('Kamu ditandai tertarik pada event ini! 🔔')}
+                            variant={interestedEventIds.has(ev.id) ? "default" : "secondary"}
+                            className={cn(
+                              "h-7 text-xs px-3 font-semibold flex items-center gap-1 rounded-md shadow-xs cursor-pointer transition-colors",
+                              interestedEventIds.has(ev.id)
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                : "hover:bg-accent text-foreground"
+                            )}
+                            onClick={() => toggleInterest(ev.id)}
                           >
-                            <Check className="w-3.5 h-3.5" /> Interested
+                            <Check className="w-3.5 h-3.5" />
+                            {interestedEventIds.has(ev.id) ? 'Interested' : 'Interest'}
                           </Button>
                         </div>
                       </div>

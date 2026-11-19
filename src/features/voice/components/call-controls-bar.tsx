@@ -25,11 +25,109 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';
 import { DiscordAppDefinition } from '../data/voice-activities';
+
+const SOUNDBOARD_EFFECTS = [
+  { id: 'airhorn', name: 'Airhorn', emoji: '📢', desc: 'Hype horn' },
+  { id: 'quack', name: 'Bebek Quack', emoji: '🦆', desc: 'Konyol' },
+  { id: 'tada', name: 'Ta-da!', emoji: '🎉', desc: 'Perayaan' },
+  { id: 'bonk', name: 'Bonk', emoji: '🔨', desc: 'Pukulan kartun' },
+  { id: 'applause', name: 'Tepuk Tangan', emoji: '👏', desc: 'Sorak tepuk' },
+  { id: 'cricket', name: 'Jangkrik', emoji: '🦗', desc: 'Hening' },
+  { id: 'chime', name: 'Chime Ding', emoji: '🔔', desc: 'Notifikasi' },
+];
+
+function playCallSoundEffect(type: string) {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+
+    if (type === 'airhorn') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(466.16, now);
+      osc.frequency.setValueAtTime(466.16, now + 0.15);
+      osc.frequency.setValueAtTime(466.16, now + 0.3);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      osc.start(now);
+      osc.stop(now + 0.5);
+    } else if (type === 'quack') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    } else if (type === 'tada') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.setValueAtTime(659.25, now + 0.1);
+      osc.frequency.setValueAtTime(783.99, now + 0.2);
+      osc.frequency.setValueAtTime(1046.5, now + 0.3);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc.start(now);
+      osc.stop(now + 0.6);
+    } else if (type === 'bonk') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } else if (type === 'applause') {
+      const bufferSize = ctx.sampleRate * 0.8;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1000;
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+      noise.start(now);
+      noise.stop(now + 0.8);
+    } else if (type === 'cricket') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(4500, now);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } else {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, now);
+      osc.frequency.setValueAtTime(880, now + 0.1);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    }
+  } catch (e) {
+    console.error('Audio synthesis failed:', e);
+  }
+}
 
 export interface CallControlsBarProps {
   isTextChannel?: boolean;
@@ -89,6 +187,8 @@ export function CallControlsBar({
   onToggleFullscreen,
   onToggleChat,
 }: CallControlsBarProps) {
+  const [isSoundboardOpen, setIsSoundboardOpen] = React.useState(false);
+  const [activeSoundPlaying, setActiveSoundPlaying] = React.useState<string | null>(null);
   if (isTextChannel) {
     return (
       <div
@@ -393,23 +493,81 @@ export function CallControlsBar({
             </Tooltip>
           </TooltipProvider>
 
-          {/* Soundboard / Sparkles Button (Desktop only: hidden md:flex) */}
-          <TooltipProvider delayDuration={150}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => toast.info('Fitur Soundboard & Efek Suara Anticeil')}
-                  className="h-9 w-10 items-center justify-center rounded-lg text-foreground hover:bg-muted/60 transition-colors cursor-pointer hidden md:flex"
-                >
-                  <Sparkles className="w-5 h-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs font-semibold">
-                Soundboard & Efek Suara
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* Soundboard Popover */}
+          <Popover open={isSoundboardOpen} onOpenChange={setIsSoundboardOpen}>
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-9 w-10 items-center justify-center rounded-lg text-foreground hover:bg-muted/60 transition-colors cursor-pointer hidden md:flex",
+                        isSoundboardOpen && "bg-muted text-primary"
+                      )}
+                      aria-label="Soundboard"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                    </button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  Soundboard & Efek Suara
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <PopoverContent
+              side="top"
+              align="center"
+              sideOffset={14}
+              className="w-80 p-3 bg-card border border-border shadow-2xl rounded-2xl text-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-bold text-foreground">Soundboard Suara</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                    {SOUNDBOARD_EFFECTS.length} Efek
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-0.5">
+                  {SOUNDBOARD_EFFECTS.map((snd) => {
+                    const isPlaying = activeSoundPlaying === snd.id;
+                    return (
+                      <button
+                        key={snd.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveSoundPlaying(snd.id);
+                          playCallSoundEffect(snd.id);
+                          toast.success(`Memainkan efek ${snd.name}!`, { duration: 1500 });
+                          setTimeout(() => setActiveSoundPlaying(null), 700);
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-xl text-left border transition-all cursor-pointer group",
+                          isPlaying
+                            ? "bg-primary/20 border-primary shadow-xs ring-1 ring-primary"
+                            : "bg-muted/40 hover:bg-muted/80 border-border/60 hover:border-primary/40"
+                        )}
+                      >
+                        <span className="text-xl shrink-0 group-hover:scale-110 transition-transform">
+                          {snd.emoji}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">{snd.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{snd.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* More Options (...) Button - Always visible, contains all extra controls on Mobile */}
           <DropdownMenu>
@@ -472,7 +630,7 @@ export function CallControlsBar({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  onClick={() => toast.info('Fitur Soundboard & Efek Suara Anticeil')}
+                  onClick={() => setIsSoundboardOpen(true)}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
                 >
                   <Sparkles className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
