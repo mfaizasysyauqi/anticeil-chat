@@ -353,9 +353,8 @@ export function ProfilePreviewCard({
                   onClick={() => {
                     if (onOpenShop) {
                       onOpenShop();
-                    } else if (onNavigateSection) {
-                      onNavigateSection('nitro');
                     } else {
+                      window.history.pushState({}, '', '/shop');
                       window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
                     }
                     toast.success(t('Membuka Shop & Aksesori Profil! 🏪'));

@@ -646,6 +646,12 @@ export function EditProfileDialog({
     toast.success(t(`Preview "${item.name}" ditampilkan di kartu profil!`));
   };
 
+  const handleOpenShop = () => {
+    onOpenChange(false);
+    window.history.pushState({}, '', '/shop');
+    window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
+  };
+
   // Connect Account Handler
   const handleConnectPlatform = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1007,7 +1013,7 @@ export function EditProfileDialog({
             <div className="w-full max-w-[420px] 2xl:max-w-[460px] my-auto">
               <ProfilePreviewCard
                 userId={currentUser?.id}
-                onOpenShop={() => setProfileSubTab('wishlist')}
+                onOpenShop={handleOpenShop}
                 currentUserName={activeName}
                 profileBannerColor={activeBannerColor}
                 profileBannerUrl={activeBannerUrl}
@@ -2013,10 +2019,7 @@ export function EditProfileDialog({
                     <Button
                       size="sm"
                       variant="teal"
-                      onClick={() => {
-                        onOpenChange(false);
-                        window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
-                      }}
+                      onClick={handleOpenShop}
                       className="text-xs h-8 px-4 font-bold cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1.5" />

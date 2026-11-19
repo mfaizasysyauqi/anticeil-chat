@@ -198,10 +198,9 @@ export function ShareProfileDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="w-[92vw] sm:w-[460px] p-0 gap-0 overflow-hidden rounded-2xl bg-[#111214] border border-border/80 shadow-2xl z-[120]"
-        showCloseButton={false}
       >
         {/* Header */}
-        <div className="p-4 pb-3 flex items-start justify-between border-b border-border/50">
+        <div className="p-4 pb-3 pr-12 flex items-start justify-between border-b border-border/50">
           <div>
             <DialogTitle className="text-base font-bold text-foreground">
               {t('Bagikan Profil')}
@@ -210,13 +209,6 @@ export function ShareProfileDialog({
               {t('Pilih ke mana Anda ingin membagikan pesan ini.')}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-secondary/60 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Search Bar */}

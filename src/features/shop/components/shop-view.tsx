@@ -1654,20 +1654,13 @@ export function ShopView({
       {/* ── 4. Reusable Dialog: Wishlist Modal ── */}
       <Dialog open={isWishlistDrawerOpen} onOpenChange={setIsWishlistDrawerOpen}>
         <DialogContent className="w-[92vw] sm:w-[420px] p-0 overflow-hidden rounded-xl bg-card border border-border shadow-xl z-[150]">
-          <div className="p-4 border-b border-border flex items-center justify-between">
+          <div className="p-4 pr-12 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
               <DialogTitle className="text-sm font-bold text-foreground">
                 {t('Wishlist Shop')} ({wishlist.length})
               </DialogTitle>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsWishlistDrawerOpen(false)}
-              className="text-muted-foreground hover:text-foreground p-1 rounded-lg"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
 
           <div className="max-h-[350px] overflow-y-auto p-3 space-y-2 [scrollbar-width:thin]">

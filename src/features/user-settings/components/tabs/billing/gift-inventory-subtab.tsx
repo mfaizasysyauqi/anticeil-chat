@@ -385,11 +385,10 @@ export function GiftInventorySubtab() {
       {/* Modal: Purchase Gift via Midtrans Snap */}
       <Dialog open={isPurchaseGiftOpen} onOpenChange={setIsPurchaseGiftOpen}>
         <DialogContent
-          showCloseButton={false}
           className="p-0 max-w-lg overflow-hidden bg-card border border-border rounded-2xl shadow-2xl z-[80]"
           overlayClassName="z-[80]"
         >
-          <div className="p-5 border-b border-border/60 flex items-center justify-between">
+          <div className="p-5 pr-12 border-b border-border/60 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="size-8 rounded-lg bg-sidebar-primary/20 border border-sidebar-primary/40 flex items-center justify-center text-sidebar-primary">
                 <Gift className="w-4 h-4" />
@@ -403,13 +402,6 @@ export function GiftInventorySubtab() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsPurchaseGiftOpen(false)}
-              className="text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
 
           <div className="p-5 space-y-3 max-h-[60vh] overflow-y-auto [scrollbar-width:thin]">
