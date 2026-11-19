@@ -819,6 +819,8 @@ export function EditProfileDialog({
           <div className="w-full lg:w-[38%] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 flex items-center justify-center overflow-y-auto [scrollbar-width:thin]">
             <div className="w-full max-w-[420px] 2xl:max-w-[460px] my-auto">
               <ProfilePreviewCard
+                userId={currentUser?.id}
+                onOpenShop={() => setProfileSubTab('wishlist')}
                 currentUserName={activeName}
                 profileBannerColor={activeBannerColor}
                 profileBannerUrl={activeBannerUrl}

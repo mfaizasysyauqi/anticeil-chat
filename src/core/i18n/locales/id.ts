@@ -229,4 +229,9 @@ export const idTranslations: Record<string, string> = {
   'Enter Colony Name': 'Masukkan Nama Colony',
   'Enter Server Name': 'Masukkan Nama Colony',
   'Cancel': 'Batal',
+  'Share Profile': 'Bagikan Profil',
+  'Copy User ID': 'Salin ID Pengguna',
+  'Bagikan Profil': 'Bagikan Profil',
+  'Salin ID Pengguna': 'Salin ID Pengguna',
+  'Shop': 'Shop',
 };

@@ -235,4 +235,9 @@ export const enTranslations: Record<string, string> = {
   "Delete '{{name}}'": "Delete '{{name}}'",
   'Are you sure you want to delete {{name}}? This action cannot be undone.': 'Are you sure you want to delete {{name}}? This action cannot be undone.',
   'Cancel': 'Cancel',
+  'Share Profile': 'Share Profile',
+  'Copy User ID': 'Copy User ID',
+  'Bagikan Profil': 'Share Profile',
+  'Salin ID Pengguna': 'Copy User ID',
+  'Shop': 'Shop',
 };

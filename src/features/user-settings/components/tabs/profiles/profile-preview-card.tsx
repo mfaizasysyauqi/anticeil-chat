@@ -6,12 +6,25 @@ import {
   Smile,
   Heart,
   MessageSquare,
-  UserCheck,
+  Store,
+  Share2,
   MoreHorizontal,
   ChevronRight,
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -20,6 +33,8 @@ import type { UserConnectionItem } from '@/features/user-settings/api/games-apps
 
 export interface ProfilePreviewCardProps {
   currentUserName: string;
+  userId?: string;
+  onOpenShop?: () => void;
   profileBannerColor: string;
   profileBannerUrl?: string | null;
   profileAvatarUrl?: string | null;
@@ -78,9 +93,25 @@ export function ProfilePreviewCard({
   displayNameStyle = 'default',
   connections = [],
   colonyName,
+  userId,
+  onOpenShop,
 }: ProfilePreviewCardProps) {
   const { t } = useTranslation();
   const displayAvatar = profileAvatarUrl || defaultAvatarUrl || null;
+
+  const handleShareProfile = () => {
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/users/${userId || 'me'}`
+      : 'https://dev-chat.anticeil.com';
+    navigator.clipboard?.writeText(url);
+    toast.success(t('Tautan profil berhasil disalin!'));
+  };
+
+  const handleCopyUserId = () => {
+    const idToCopy = userId || 'usr_20261119_anticeil';
+    navigator.clipboard?.writeText(idToCopy);
+    toast.success(t('ID Pengguna berhasil disalin!'));
+  };
 
   const getFrameClassName = (frame?: string) => {
     switch (frame) {
@@ -298,24 +329,74 @@ export function ProfilePreviewCard({
               <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
               {t('Pesan')}
             </Button>
-            <Button
-              size="sm"
-              variant="tealSecondary"
-              onClick={() => toast.info(t('Pratinjau profil: Tombol ini memungkinkan pengguna lain mengirim permintaan pertemanan.'))}
-              className="h-8 px-2.5 cursor-pointer"
-              title={t('Tambah Teman')}
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              size="sm"
-              variant="tealSecondary"
-              onClick={() => toast.info(t('Pratinjau profil: Opsi tindakan profil seperti blokir, laporkan, atau salin ID.'))}
-              className="h-8 px-2.5 cursor-pointer"
-              title={t('Opsi Lainnya')}
-            >
-              <MoreHorizontal className="w-3.5 h-3.5" />
-            </Button>
+
+            {/* Shop Button */}
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="tealSecondary"
+                  onClick={() => {
+                    if (onOpenShop) {
+                      onOpenShop();
+                    } else if (onNavigateSection) {
+                      onNavigateSection('nitro');
+                    }
+                    toast.success(t('Membuka Shop & Aksesori Profil! 🏪'));
+                  }}
+                  className="h-8 px-2.5 cursor-pointer rounded-lg hover:bg-secondary transition-all"
+                  aria-label={t('Shop')}
+                >
+                  <Store className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs font-semibold">
+                {t('Shop')}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Three Dots More Menu Button */}
+            <DropdownMenu>
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="tealSecondary"
+                      className="h-8 px-2.5 cursor-pointer rounded-lg hover:bg-secondary transition-all data-[state=open]:bg-secondary"
+                      aria-label={t('Opsi Lainnya')}
+                    >
+                      <MoreHorizontal className="w-3.5 h-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  {t('Opsi Lainnya')}
+                </TooltipContent>
+              </Tooltip>
+
+              <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-xl border border-border/80 bg-popover shadow-xl">
+                <DropdownMenuItem
+                  onClick={handleShareProfile}
+                  className="flex items-center gap-2 px-2.5 py-2 text-xs font-medium cursor-pointer rounded-lg hover:bg-accent transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span>{t('Bagikan Profil')}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-1 bg-border/60" />
+
+                <DropdownMenuItem
+                  onClick={handleCopyUserId}
+                  className="flex items-center gap-2 px-2.5 py-2 text-xs font-medium cursor-pointer rounded-lg hover:bg-accent transition-colors"
+                >
+                  <span className="size-4 rounded-[4px] bg-muted/80 text-[9px] font-black flex items-center justify-center text-muted-foreground shrink-0 border border-border/50">
+                    ID
+                  </span>
+                  <span>{t('Salin ID Pengguna')}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Amp up your profile Promo banner */}
