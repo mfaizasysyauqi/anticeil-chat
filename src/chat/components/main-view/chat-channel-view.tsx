@@ -255,17 +255,12 @@ export function ChatChannelView({
   const [activitySplitHeight, setActivitySplitHeight] = React.useState(70);
   const splitContainerRef = React.useRef<HTMLDivElement>(null);
 
+  // Keep chat split hidden by default so activities/video grid are never cut off
   React.useEffect(() => {
-    if (activeChannel?.type !== 'voice') {
-      if (activeCallChannelId === activeChannel?.id || isActivityOpen || selectedActivityAppId) {
-        setIsActivityChatSplitOpen(true);
-      } else {
-        setIsActivityChatSplitOpen(false);
-      }
-    } else {
+    if (!isActivityOpen && !selectedActivityAppId && activeCallChannelId !== activeChannel?.id) {
       setIsActivityChatSplitOpen(false);
     }
-  }, [activeChannel?.id, activeChannel?.type, activeCallChannelId, isActivityOpen, selectedActivityAppId]);
+  }, [activeChannel?.id, activeCallChannelId, isActivityOpen, selectedActivityAppId]);
 
   const handleSplitPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
