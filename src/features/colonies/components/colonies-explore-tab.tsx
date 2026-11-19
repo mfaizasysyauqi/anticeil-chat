@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ColonyHeroCard } from './colony-hero-card';
 import { ColonyCard } from './colony-card';
 import type { Colony } from '@/chat/chat-types';
@@ -90,10 +91,10 @@ export function ColoniesExploreTab({
   return (
     <div className="space-y-6 w-full text-foreground">
       {/* ── 1. Quick Invite Code / Link Join Banner ── */}
-      <div className="p-4 rounded-2xl border border-border/80 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="p-4 rounded-xl border border-border/80 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="size-10 rounded-xl bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-primary/30 flex items-center justify-center shrink-0">
-            <LinkIcon className="w-5 h-5" />
+          <div className="size-9 rounded-lg bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-primary/30 flex items-center justify-center shrink-0">
+            <LinkIcon className="w-4 h-4" />
           </div>
           <div>
             <h3 className="text-xs font-bold text-foreground">
@@ -111,14 +112,14 @@ export function ColoniesExploreTab({
             value={inviteCodeInput}
             onChange={(e) => setInviteCodeInput(e.target.value)}
             placeholder="Contoh: hub_xyz atau inv_abc"
-            className="h-8 text-xs bg-muted/40 border-border w-full sm:w-56 rounded-xl"
+            className="h-8 text-xs bg-muted/40 border-border w-full sm:w-56"
           />
           <Button
             type="submit"
             size="sm"
             variant="teal"
             disabled={!inviteCodeInput.trim() || isJoiningByCode}
-            className="h-8 px-4 text-xs font-bold rounded-xl shrink-0 cursor-pointer shadow-xs flex items-center gap-1.5"
+            className="h-8 px-4 text-xs font-semibold shrink-0 cursor-pointer shadow-xs flex items-center gap-1.5"
           >
             {isJoiningByCode ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -141,30 +142,25 @@ export function ColoniesExploreTab({
         />
       )}
 
-      {/* ── 3. Category Filter Tabs ── */}
+      {/* ── 3. Category Filter Tabs (Reusable Tabs System) ── */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
-          {CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer',
-                  isSelected
-                    ? 'bg-sidebar-primary/20 border-sidebar-primary/60 text-sidebar-primary shadow-xs'
-                    : 'bg-card border-border/70 text-muted-foreground hover:border-sidebar-primary/40 hover:text-foreground'
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+          <TabsList className="h-auto p-1 bg-muted/40 border border-border/60 rounded-lg flex items-center gap-1 overflow-x-auto [scrollbar-width:none] justify-start">
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <TabsTrigger
+                  key={cat.id}
+                  value={cat.id}
+                  className="h-7 px-2.5 text-xs font-medium rounded-md gap-1.5 shrink-0 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:shadow-xs"
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{cat.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
 
         <div className="flex items-center justify-between pb-1 border-b border-border/50">
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
@@ -175,7 +171,7 @@ export function ColoniesExploreTab({
 
       {/* ── 4. Grid of Discoverable Colony Cards (Reusable ColonyCard) ── */}
       {isLoadingPublic ? (
-        <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
+        <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-xl w-full">
           <Loader2 className="w-8 h-8 animate-spin text-sidebar-primary mb-2" />
           <p className="text-xs font-medium">{t('Memuat direktori colony komunitas...')}</p>
         </div>
@@ -195,10 +191,11 @@ export function ColoniesExploreTab({
           action={
             <Button
               size="sm"
+              variant="teal"
               onClick={handleOpenCreateColony}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-8 px-4 text-xs cursor-pointer shadow-2xs"
+              className="h-8 px-4 text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
             >
-              <Plus className="w-3.5 h-3.5 mr-1" />
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>{t('Buat Colony Baru')}</span>
             </Button>
           }

@@ -38,13 +38,13 @@ export function ColonyCard({
     <Card
       onClick={handleCardClick}
       className={cn(
-        'p-4 rounded-2xl border border-border/80 bg-card hover:border-sidebar-primary/50 transition-all flex flex-col justify-between gap-3.5 shadow-xs group hover:shadow-md cursor-pointer',
+        'p-4 rounded-xl border border-border/80 bg-card hover:border-sidebar-primary/50 transition-all flex flex-col justify-between gap-3.5 shadow-xs group hover:shadow-md cursor-pointer',
         className
       )}
     >
       <div className="space-y-3">
         <div className="flex items-start gap-3">
-          <div className="size-12 rounded-xl bg-secondary/60 border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
+          <div className="size-12 rounded-lg bg-secondary/60 border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
             <ColonyIcon hub={colony} />
           </div>
 
