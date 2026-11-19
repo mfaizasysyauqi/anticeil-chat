@@ -6,6 +6,7 @@ import {
   ShoppingBag,
   Coins,
   Gem,
+  Droplets,
   Check,
   Flame,
   ArrowRight,
@@ -58,14 +59,14 @@ export function ShopView({
   onNavigateSection,
 }: ShopViewProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'all' | 'featured' | 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle' | 'orbs'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'featured' | 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle' | 'dew'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Backend data states with resilient fallbacks
   const [items, setItems] = useState<ShopItem[]>(FALLBACK_SHOP_ITEMS);
   const [collections, setCollections] = useState<ShopCollection[]>([]);
   const [heroCollection, setHeroCollection] = useState<ShopCollection | null>(null);
-  const [balance, setBalance] = useState<ShopBalance>({ orbs: 1500, nectar: 250, currencyCode: 'IDR' });
+  const [balance, setBalance] = useState<ShopBalance>({ dew: 1500, currencyCode: 'IDR' });
   const [inventory, setInventory] = useState<ShopItem[]>([]);
   const [wishlist, setWishlist] = useState<ShopItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +86,7 @@ export function ShopView({
     category: 'avatar_decoration' as 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle',
     description: '',
     priceIdr: 65000,
-    priceOrbs: 500,
+    priceDew: 500,
     previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
     badge: 'Baru',
     featured: true,
@@ -109,7 +110,7 @@ export function ShopView({
         setHeroCollection(featuredRes.heroCollection);
         setCollections(featuredRes.collections || []);
       }
-      if (userBal && typeof userBal.orbs === 'number') {
+      if (userBal && (typeof userBal.dew === 'number' || typeof userBal.orbs === 'number')) {
         setBalance(userBal);
       }
       if (Array.isArray(userInv)) {
@@ -136,18 +137,18 @@ export function ShopView({
   const CATEGORY_TABS = useMemo(() => [
     { id: 'all', label: t('Semua') },
     { id: 'featured', label: t('Unggulan') },
-    { id: 'avatar_decoration', label: t('Dekorasi Avatar') },
-    { id: 'profile_effect', label: t('Efek Profil') },
-    { id: 'nameplate', label: t('Nameplate') },
-    { id: 'bundle', label: t('Bundel') },
-    { id: 'orbs', label: t('Orbs Shop') },
+    { id: 'avatar_decoration', label: t('Bingkai Profil') },
+    { id: 'profile_effect', label: t('Overlay Profil') },
+    { id: 'nameplate', label: t('Namecard') },
+    { id: 'bundle', label: t('Bundel Animasi') },
+    { id: 'dew', label: t('Dew Shop') },
   ], [t]);
 
   // Filtered browse list
   const filteredItems = useMemo(() => {
     let list = [...items];
-    if (activeTab === 'orbs') {
-      list = list.filter((i) => (i.priceOrbs ?? 0) > 0);
+    if (activeTab === 'dew') {
+      list = list.filter((i) => (i.priceDew ?? i.priceOrbs ?? 0) > 0);
     } else if (activeTab === 'featured') {
       list = list.filter((i) => i.featured);
     } else if (activeTab !== 'all') {
@@ -166,10 +167,10 @@ export function ShopView({
     return list;
   }, [items, activeTab, searchQuery]);
 
-  // Top Up / Klaim Orbs Poin
-  const handleTopupOrbs = async (amount: number = 500) => {
+  // Top Up / Klaim Dew Poin
+  const handleTopupDew = async (amount: number = 500) => {
     try {
-      const res = await shopApi.topupOrbs(amount);
+      const res = await shopApi.topupDew(amount);
       if (res.success && res.balance) {
         setBalance(res.balance);
         toast.success(res.message);
@@ -177,7 +178,7 @@ export function ShopView({
         toast.error(res.message);
       }
     } catch {
-      toast.error('Gagal menambahkan Orbs');
+      toast.error('Gagal menambahkan Dew');
     }
   };
 
@@ -201,7 +202,7 @@ export function ShopView({
   };
 
   // Purchase item action
-  const handlePurchase = async (item: ShopItem, currency: 'orbs' | 'idr') => {
+  const handlePurchase = async (item: ShopItem, currency: 'dew' | 'idr') => {
     setIsPurchasing(true);
     try {
       const res = await shopApi.purchaseItem(item.id, currency);
@@ -270,7 +271,7 @@ export function ShopView({
           category: 'avatar_decoration',
           description: '',
           priceIdr: 65000,
-          priceOrbs: 500,
+          priceDew: 500,
           previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
           badge: 'Baru',
           featured: true,
@@ -297,6 +298,136 @@ export function ShopView({
     } catch {
       toast.error(t('Gagal menghapus produk'));
     }
+  };
+
+  // Render Discord-grade animated cosmetic card preview (Frame, Namecard, Overlay)
+  const renderCardArtwork = (item: ShopItem) => {
+    const gifUrl = item.gifUrl || item.previewIcon;
+
+    if (item.category === 'avatar_decoration') {
+      return (
+        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-[#111214] border-b border-border/40 overflow-hidden">
+          <div className="absolute inset-0 bg-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
+
+          {/* Avatar Base Silhouette */}
+          <div className="relative size-16 sm:size-18 rounded-full bg-[#1e1f22] border-2 border-[#2b2d31] flex items-center justify-center shadow-lg">
+            <div className="size-full rounded-full bg-gradient-to-b from-[#2b2d31] to-[#1e1f22] flex items-center justify-center text-muted-foreground/50 font-black text-xl select-none">
+              ❄
+            </div>
+
+            {/* Layered Animated Frame GIF */}
+            {gifUrl && (
+              <img
+                src={gifUrl}
+                alt={item.name}
+                className="absolute -inset-3.5 size-[calc(100%+28px)] object-contain pointer-events-none select-none z-10 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-transform duration-300"
+                loading="lazy"
+              />
+            )}
+          </div>
+
+          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
+            FRAME .GIF
+          </span>
+        </div>
+      );
+    }
+
+    if (item.category === 'nameplate') {
+      return (
+        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-[#111214] border-b border-border/40 overflow-hidden">
+          <div className="absolute inset-0 bg-radial from-cyan-500/10 via-transparent to-transparent pointer-events-none" />
+
+          {/* Discord/Anticeil Chat Row Preview */}
+          <div className="w-[92%] h-13 rounded-lg bg-[#1e1f22] border border-border/60 p-2 flex items-center gap-2.5 relative overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
+            {gifUrl && (
+              <img
+                src={gifUrl}
+                alt={item.name}
+                className="absolute inset-0 size-full object-cover opacity-80 mix-blend-screen pointer-events-none select-none group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+            )}
+
+            <div className="size-7 rounded-full bg-[#2b2d31] border border-white/10 flex items-center justify-center text-xs text-muted-foreground font-black shrink-0 z-10 shadow-xs">
+              ❄
+            </div>
+
+            <div className="min-w-0 z-10 space-y-0.5">
+              <div className="text-[11px] font-bold text-white drop-shadow-sm flex items-center gap-1.5 leading-none">
+                <span className="truncate">Username</span>
+                <span className="text-[8px] px-1 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">NAMECARD</span>
+              </div>
+              <div className="w-20 h-1.5 rounded-full bg-white/20" />
+            </div>
+          </div>
+
+          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
+            NAMECARD .GIF
+          </span>
+        </div>
+      );
+    }
+
+    if (item.category === 'profile_effect') {
+      return (
+        <div className="h-32 sm:h-36 relative overflow-hidden bg-[#111214] border-b border-border/40">
+          {gifUrl && (
+            <img
+              src={gifUrl}
+              alt={item.name}
+              className="absolute inset-0 size-full object-cover opacity-85 pointer-events-none select-none group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111214] via-[#111214]/30 to-transparent pointer-events-none" />
+
+          <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2 z-10 opacity-75">
+            <div className="size-7 rounded-full bg-white/20 border border-white/30 backdrop-blur-xs shrink-0" />
+            <div className="space-y-1 min-w-0">
+              <div className="w-16 h-2 rounded bg-white/40" />
+              <div className="w-10 h-1.5 rounded bg-white/20" />
+            </div>
+          </div>
+
+          <span className="absolute top-2.5 right-2.5 text-[8px] font-bold text-white/70 bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10">
+            OVERLAY .GIF
+          </span>
+        </div>
+      );
+    }
+
+    // Bundle
+    return (
+      <div className="h-32 sm:h-36 relative overflow-hidden bg-[#111214] border-b border-border/40 flex items-center justify-center p-3">
+        {gifUrl && (
+          <img
+            src={gifUrl}
+            alt={item.name}
+            className="absolute inset-0 size-full object-cover opacity-40 mix-blend-screen pointer-events-none select-none"
+            loading="lazy"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111214] via-transparent to-transparent pointer-events-none" />
+
+        <div className="relative size-14 rounded-full bg-[#1e1f22] border border-white/10 flex items-center justify-center z-10 shadow-lg">
+          <span className="text-muted-foreground/50 text-sm font-bold">❄</span>
+          {gifUrl && (
+            <img
+              src={gifUrl}
+              alt={item.name}
+              className="absolute -inset-3 size-[calc(100%+24px)] object-contain pointer-events-none select-none z-10 drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+              loading="lazy"
+            />
+          )}
+        </div>
+
+        <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
+          3PC BUNDLE .GIF
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -380,51 +511,42 @@ export function ShopView({
             )}
           </Button>
 
-          {/* Currency Pill with quick Top Up */}
+          {/* Currency Pill with quick Top Up (Single Dew Currency) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="h-7 px-2 rounded-[4px] bg-muted/40 hover:bg-muted border border-border/60 flex items-center gap-1.5 text-xs font-bold cursor-pointer transition-colors"
-                title={t('Lihat & Tambah Saldo Orbs')}
+                className="h-7 px-2.5 rounded-[4px] bg-muted/40 hover:bg-muted border border-border/60 flex items-center gap-1.5 text-xs font-bold cursor-pointer transition-colors"
+                title={t('Lihat & Tambah Saldo Dew')}
               >
-                <div className="flex items-center gap-1 text-amber-500">
-                  <Coins className="w-3.5 h-3.5" />
-                  <span>{(balance?.orbs ?? 0).toLocaleString()}</span>
-                </div>
-                <span className="text-border text-[10px]">|</span>
-                <div className="flex items-center gap-1 text-cyan-500">
-                  <Gem className="w-3.5 h-3.5" />
-                  <span>{balance?.nectar ?? 0}</span>
+                <div className="flex items-center gap-1.5 text-cyan-400">
+                  <span className="text-xs">💧</span>
+                  <span>{(balance?.dew ?? balance?.orbs ?? 0).toLocaleString()} Dew</span>
                 </div>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-card border-border text-foreground z-[160] p-2 space-y-1 shadow-xl">
               <DropdownMenuLabel className="text-[11px] font-bold text-muted-foreground">
-                {t('Saldo Dompet Shop')}
+                {t('Saldo Dew Anda')}
               </DropdownMenuLabel>
-              <div className="p-2 rounded-lg bg-muted/40 border border-border text-xs space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span className="text-amber-500">🪙 Orbs:</span>
-                  <span>{(balance?.orbs ?? 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between font-bold">
-                  <span className="text-cyan-500">💎 Nectar:</span>
-                  <span>{balance?.nectar ?? 0}</span>
+              <div className="p-2.5 rounded-lg bg-muted/40 border border-border text-xs">
+                <div className="flex justify-between items-center font-bold">
+                  <span className="text-cyan-400 flex items-center gap-1">💧 Saldo Dew:</span>
+                  <span>{(balance?.dew ?? balance?.orbs ?? 0).toLocaleString()}</span>
                 </div>
               </div>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
-                onClick={() => handleTopupOrbs(500)}
-                className="text-xs cursor-pointer text-amber-500 font-bold"
+                onClick={() => handleTopupDew(500)}
+                className="text-xs cursor-pointer text-cyan-400 font-bold"
               >
-                + Klaim 500 Orbs Gratis
+                + Klaim 500 Dew Gratis
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => handleTopupOrbs(1500)}
+                onClick={() => handleTopupDew(1500)}
                 className="text-xs cursor-pointer font-semibold"
               >
-                + Top Up 1.500 Orbs
+                + Top Up 1.500 Dew
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -472,33 +594,33 @@ export function ShopView({
           </div>
         )}
 
-        {/* ── Orbs Shop Dedicated Hero Banner ── */}
-        {!searchQuery && activeTab === 'orbs' && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/20 via-card to-background border border-amber-500/30 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
+        {/* ── Dew Shop Dedicated Hero Banner ── */}
+        {!searchQuery && activeTab === 'dew' && (
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/20 via-card to-background border border-cyan-500/30 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
             <div className="space-y-2 max-w-xl z-10">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                <Coins className="w-3 h-3" /> {t('ORBS & SALDO POIN')}
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                <Droplets className="w-3 h-3" /> {t('DEW & SALDO POIN')}
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-                {t('Tukarkan Orbs dengan Item Eksklusif')}
+                {t('Tukarkan Dew dengan Item Eksklusif')}
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                {t('Dapatkan item kosmetik profil gratis dengan mengumpulkan Orbs komunitas atau klaim saldo harian.')}
+                {t('Dapatkan item kosmetik profil gratis dengan mengumpulkan Dew komunitas atau klaim saldo harian.')}
               </p>
             </div>
 
             <div className="flex items-center gap-2.5 z-10 shrink-0">
               <Button
                 size="sm"
-                onClick={() => handleTopupOrbs(500)}
-                className="font-bold h-9 px-4 gap-1.5 cursor-pointer shadow-md"
+                onClick={() => handleTopupDew(500)}
+                className="font-bold h-9 px-4 gap-1.5 cursor-pointer shadow-md bg-cyan-600 hover:bg-cyan-500 text-white"
               >
-                <Coins className="w-3.5 h-3.5" />
-                <span>+500 Orbs Gratis</span>
+                <span>💧</span>
+                <span>+500 Dew Gratis</span>
               </Button>
             </div>
 
-            <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-amber-500/10 to-transparent pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-cyan-500/10 to-transparent pointer-events-none" />
           </div>
         )}
 
@@ -536,8 +658,8 @@ export function ShopView({
                     ? t('Semua Item Shop')
                     : activeTab === 'featured'
                     ? t('Item Populer & Unggulan')
-                    : activeTab === 'orbs'
-                    ? t('Item Orbs Shop')
+                    : activeTab === 'dew'
+                    ? t('Item Dew Shop')
                     : CATEGORY_TABS.find((t) => t.id === activeTab)?.label || t('Katalog Shop')}
                 </h3>
                 <span className="text-[11px] font-semibold text-muted-foreground">
@@ -561,11 +683,11 @@ export function ShopView({
                     onClick={() => setActiveModalItem(item)}
                     className="rounded-xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden shadow-xs group cursor-pointer"
                   >
-                    {/* Card Header / Artwork Area */}
-                    <div className="h-28 sm:h-32 p-3 relative flex items-center justify-center bg-gradient-to-br from-muted/50 via-card to-background border-b border-border/40 overflow-hidden">
+                    {/* Card Header / Artwork Area with Real Animated Cosmetic Preview */}
+                    <div className="relative overflow-hidden">
                       {/* Badge on top-left */}
                       {item.badge && (
-                        <span className="absolute top-2.5 left-2.5 z-10 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
+                        <span className="absolute top-2.5 left-2.5 z-20 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
                           {item.badge}
                         </span>
                       )}
@@ -574,7 +696,7 @@ export function ShopView({
                       <button
                         type="button"
                         onClick={(e) => handleToggleWishlist(e, item)}
-                        className="absolute top-2.5 right-2.5 z-10 size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 flex items-center justify-center text-muted-foreground hover:text-pink-500 transition-colors cursor-pointer shadow-xs"
+                        className="absolute top-2.5 right-2.5 z-20 size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 flex items-center justify-center text-muted-foreground hover:text-pink-500 transition-colors cursor-pointer shadow-xs"
                         title={isWishlisted ? t('Hapus dari Wishlist') : t('Tambah ke Wishlist')}
                       >
                         <Heart className={cn('w-3.5 h-3.5', isWishlisted && 'text-pink-500 fill-pink-500')} />
@@ -585,21 +707,15 @@ export function ShopView({
                         <button
                           type="button"
                           onClick={(e) => handleDeleteProduct(e, item.id)}
-                          className="absolute bottom-2.5 right-2.5 z-10 size-6 rounded-md bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors cursor-pointer"
+                          className="absolute bottom-2.5 right-2.5 z-20 size-6 rounded-md bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors cursor-pointer"
                           title={t('Hapus Item ini dari Database Shop')}
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
                       )}
 
-                      {/* Preview Avatar Image */}
-                      <div className="relative size-16 sm:size-18 rounded-full bg-background border-2 border-border/80 flex items-center justify-center overflow-hidden shadow-md group-hover:scale-105 transition-transform duration-300">
-                        <img
-                          src={item.previewIcon || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80'}
-                          alt={item.name}
-                          className="size-full object-cover"
-                        />
-                      </div>
+                      {/* Dedicated Cosmetic Artwork Renderer */}
+                      {renderCardArtwork(item)}
                     </div>
 
                     {/* Card Body */}
@@ -622,9 +738,9 @@ export function ShopView({
                           <div className="text-xs font-bold text-foreground truncate">
                             IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-500">
-                            <Coins className="w-3 h-3" />
-                            <span>{item.priceOrbs ?? 0} Orbs</span>
+                          <div className="flex items-center gap-1 text-[10px] font-semibold text-cyan-400">
+                            <span>💧</span>
+                            <span>{item.priceDew ?? item.priceOrbs ?? 0} Dew</span>
                           </div>
                         </div>
 
@@ -692,24 +808,66 @@ export function ShopView({
       <Dialog open={Boolean(activeModalItem)} onOpenChange={(open) => !open && setActiveModalItem(null)}>
         {activeModalItem && (
           <DialogContent className="w-[92vw] sm:w-[480px] p-0 overflow-hidden rounded-xl bg-card border border-border shadow-xl z-[150]">
-            {/* Header Preview Banner */}
-            <div className="relative h-40 bg-muted/60 flex items-center justify-center p-6 border-b border-border overflow-hidden">
-              <div
-                className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-luminosity"
-                style={{
-                  backgroundImage: `url(${activeModalItem.bannerUrl || activeModalItem.previewIcon})`,
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
-
-              {/* Avatar Preview */}
-              <div className="relative size-22 rounded-full bg-background border-2 border-primary flex items-center justify-center shadow-xl z-10">
-                <img
-                  src={activeModalItem.previewIcon || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80'}
-                  alt={activeModalItem.name}
-                  className="size-full object-cover rounded-full"
-                />
-              </div>
+            {/* Header Preview Banner with Real Animated Cosmetic in Action */}
+            <div className="relative h-44 bg-[#111214] flex items-center justify-center p-6 border-b border-border overflow-hidden">
+              {activeModalItem.category === 'avatar_decoration' ? (
+                <div className="relative size-22 rounded-full bg-[#1e1f22] border-2 border-[#2b2d31] flex items-center justify-center shadow-2xl z-10">
+                  {currentUser?.avatar ? (
+                    <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
+                  ) : (
+                    <div className="size-full rounded-full bg-[#2b2d31] flex items-center justify-center text-muted-foreground/60 font-black text-2xl select-none">
+                      ❄
+                    </div>
+                  )}
+                  {(activeModalItem.gifUrl || activeModalItem.previewIcon) && (
+                    <img
+                      src={activeModalItem.gifUrl || activeModalItem.previewIcon}
+                      alt={activeModalItem.name}
+                      className="absolute -inset-4.5 size-[calc(100%+36px)] object-contain pointer-events-none select-none z-20 drop-shadow-[0_0_16px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-300"
+                    />
+                  )}
+                </div>
+              ) : activeModalItem.category === 'nameplate' ? (
+                <div className="w-[90%] h-14 rounded-xl bg-[#1e1f22] border border-border/80 p-2.5 flex items-center gap-3 relative overflow-hidden shadow-2xl z-10">
+                  {(activeModalItem.gifUrl || activeModalItem.previewIcon) && (
+                    <img
+                      src={activeModalItem.gifUrl || activeModalItem.previewIcon}
+                      alt={activeModalItem.name}
+                      className="absolute inset-0 size-full object-cover opacity-85 mix-blend-screen pointer-events-none select-none"
+                    />
+                  )}
+                  <div className="size-8 rounded-full bg-[#2b2d31] border border-white/20 flex items-center justify-center text-xs font-black text-muted-foreground z-10 shrink-0">
+                    ❄
+                  </div>
+                  <div className="min-w-0 z-10 space-y-0.5">
+                    <div className="text-xs font-bold text-white drop-shadow-md flex items-center gap-2 leading-none">
+                      <span>{currentUser?.name || 'Username Anda'}</span>
+                      <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">NAMECARD</span>
+                    </div>
+                    <p className="text-[10px] text-white/70 leading-none">Pratinjau tampilan strip namecard animasi di chat</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="absolute inset-0 size-full overflow-hidden">
+                  {(activeModalItem.gifUrl || activeModalItem.previewIcon) && (
+                    <img
+                      src={activeModalItem.gifUrl || activeModalItem.previewIcon}
+                      alt={activeModalItem.name}
+                      className="absolute inset-0 size-full object-cover opacity-85 pointer-events-none select-none"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
+                  <div className="absolute bottom-3 left-4 flex items-center gap-2.5 z-10">
+                    <div className="size-9 rounded-full bg-white/20 border border-white/40 backdrop-blur-xs flex items-center justify-center text-white font-bold text-xs shrink-0">
+                      ❄
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold text-white drop-shadow-md">{activeModalItem.name}</div>
+                      <div className="text-[10px] text-white/80">Overlay animasi latar profil</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Content Details */}
@@ -742,10 +900,10 @@ export function ShopView({
                   </div>
                 </div>
                 <div className="space-y-0.5 text-right">
-                  <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Orbs')}</div>
-                  <div className="text-xs sm:text-sm font-bold text-amber-500 flex items-center justify-end gap-1">
-                    <Coins className="w-3.5 h-3.5" />
-                    <span>{activeModalItem.priceOrbs ?? 0} Orbs</span>
+                  <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Dew')}</div>
+                  <div className="text-xs sm:text-sm font-bold text-cyan-400 flex items-center justify-end gap-1">
+                    <span>💧</span>
+                    <span>{activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew</span>
                   </div>
                 </div>
               </div>
@@ -769,16 +927,16 @@ export function ShopView({
                       <Button
                         size="sm"
                         variant="default"
-                        disabled={isPurchasing || balance.orbs < activeModalItem.priceOrbs}
-                        onClick={() => handlePurchase(activeModalItem, 'orbs')}
+                        disabled={isPurchasing || (balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0)}
+                        onClick={() => handlePurchase(activeModalItem, 'dew')}
                         className="flex-1 h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         {isPurchasing ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <>
-                            <Coins className="w-3.5 h-3.5 text-amber-300" />
-                            <span>Beli ({activeModalItem.priceOrbs} Orbs)</span>
+                            <span>💧</span>
+                            <span>Beli ({activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew)</span>
                           </>
                         )}
                       </Button>
@@ -810,15 +968,15 @@ export function ShopView({
                       </Button>
                     </div>
 
-                    {balance.orbs < activeModalItem.priceOrbs && (
+                    {(balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0) && (
                       <div className="flex items-center justify-between text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border">
-                        <span>Orbs belum cukup ({balance.orbs} / {activeModalItem.priceOrbs})</span>
+                        <span>Saldo Dew belum cukup ({balance.dew ?? balance.orbs ?? 0} / {activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0})</span>
                         <button
                           type="button"
-                          onClick={() => handleTopupOrbs(500)}
-                          className="text-amber-500 hover:underline font-bold cursor-pointer"
+                          onClick={() => handleTopupDew(500)}
+                          className="text-cyan-400 hover:underline font-bold cursor-pointer"
                         >
-                          + Klaim 500 Orbs
+                          + Klaim 500 Dew
                         </button>
                       </div>
                     )}
@@ -880,7 +1038,7 @@ export function ShopView({
                   <div className="flex items-center gap-2.5 shrink-0">
                     <div className="text-right">
                       <div className="text-xs font-bold text-foreground">IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}</div>
-                      <div className="text-[10px] text-amber-500 font-bold">{item.priceOrbs ?? 0} Orbs</div>
+                      <div className="text-[10px] text-cyan-400 font-bold">💧 {item.priceDew ?? item.priceOrbs ?? 0} Dew</div>
                     </div>
                     <button
                       type="button"
@@ -928,10 +1086,10 @@ export function ShopView({
                   onChange={(e) => setNewProductForm({ ...newProductForm, category: e.target.value as any })}
                   className="w-full h-8 px-2.5 rounded-md border border-border bg-muted/40 text-foreground text-xs focus:ring-1 focus:ring-primary"
                 >
-                  <option value="avatar_decoration">Dekorasi Avatar</option>
-                  <option value="profile_effect">Efek Profil</option>
-                  <option value="nameplate">Nameplate</option>
-                  <option value="bundle">Bundel Spesial</option>
+                  <option value="avatar_decoration">Bingkai Profil (Animated Frame)</option>
+                  <option value="profile_effect">Overlay Profil (Animated Effect)</option>
+                  <option value="nameplate">Namecard (Animated Nameplate)</option>
+                  <option value="bundle">Bundel Animasi (3pc)</option>
                 </select>
               </div>
 
@@ -958,18 +1116,18 @@ export function ShopView({
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga Orbs')}</label>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga Dew')}</label>
                 <Input
                   type="number"
-                  value={newProductForm.priceOrbs}
-                  onChange={(e) => setNewProductForm({ ...newProductForm, priceOrbs: Number(e.target.value) })}
+                  value={newProductForm.priceDew}
+                  onChange={(e) => setNewProductForm({ ...newProductForm, priceDew: Number(e.target.value) })}
                   className="h-8 text-xs bg-muted/40 border-border"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">{t('URL Ikon / Gambar')}</label>
+              <label className="text-xs font-semibold text-foreground block mb-1">{t('URL File Animasi GIF (Transparan / Loop)')}</label>
               <Input
                 value={newProductForm.previewIcon}
                 onChange={(e) => setNewProductForm({ ...newProductForm, previewIcon: e.target.value })}

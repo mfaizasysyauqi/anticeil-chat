@@ -7,10 +7,12 @@ export interface ShopItem {
   category: 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle' | 'theme';
   description: string;
   priceIdr: number;
-  priceOrbs: number;
+  priceDew: number;
+  priceOrbs?: number;
   discountPercent?: number;
   bannerUrl?: string;
   previewIcon?: string;
+  gifUrl?: string;
   badge?: string;
   itemTypes?: string[];
   featured?: boolean;
@@ -35,124 +37,189 @@ export interface ShopFeaturedResponse {
 }
 
 export interface ShopBalance {
-  orbs: number;
-  nectar: number;
+  dew: number;
+  orbs?: number;
   currencyCode: string;
 }
 
 export const FALLBACK_SHOP_ITEMS: ShopItem[] = [
+  // 1. Anticeil Cyber Core (Animated Frames, Overlays & Namecards)
   {
-    id: 'shop_anticeil_cyber_bundle',
-    name: 'Anticeil Cybernetic Core Bundle (3pc)',
-    collection: 'Anticeil Cyber Core',
-    category: 'bundle',
-    description: 'Paket bundel lengkap: Dekorasi Avatar Cyber Void, Efek Profil Hologram Matrix, dan Nameplate Hex Shield.',
-    priceIdr: 140000,
-    priceOrbs: 1000,
-    discountPercent: 30,
-    previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
-    bannerUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-    badge: 'Bundel Populer',
-    itemTypes: ['avatar_decoration', 'profile_effect', 'nameplate'],
-    featured: true,
-  },
-  {
-    id: 'shop_anticeil_cyber_void',
-    name: 'Cyber Void Frame',
+    id: 'shop_cyber_void_frame',
+    name: 'Cyber Void Frame (Animated)',
     collection: 'Anticeil Cyber Core',
     category: 'avatar_decoration',
-    description: 'Bingkai avatar futuristik dengan aksen neon cybernetic dan partikel hologram berkilau.',
+    description: 'Bingkai avatar animasi GIF dengan cincin sirkuit neon cybernetic berputar dan denyut hologram biru sian.',
     priceIdr: 65000,
+    priceDew: 500,
     priceOrbs: 500,
-    previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
-    badge: 'Baru',
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eHN3YWRjM2I3bm8zdXFpdjB6Ym05OG5hbjN4MnExMmt6dWg3MyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/xT0xeJpnrWC4XWblEk/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eHN3YWRjM2I3bm8zdXFpdjB6Ym05OG5hbjN4MnExMmt6dWg3MyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/xT0xeJpnrWC4XWblEk/giphy.gif',
+    badge: 'Animasi Baru',
     featured: true,
   },
   {
-    id: 'shop_anticeil_hex_badge',
-    name: 'Hex Matrix Nameplate',
+    id: 'shop_hex_matrix_nameplate',
+    name: 'Hex Matrix Namecard (Animated)',
     collection: 'Anticeil Cyber Core',
     category: 'nameplate',
-    description: 'Pelat nama sarang lebah futuristik dengan aksen biru sian khas Anticeil.',
+    description: 'Namecard strip animasi GIF dengan aliran gelombang kode sarang lebah futuristik di samping nama profil.',
     priceIdr: 45000,
+    priceDew: 350,
     priceOrbs: 350,
-    previewIcon: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&auto=format&fit=crop&q=80',
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ29va3Q1OXdtcXV5Ymg2cTdpYTV1eHBjcjdpZGk4N3Uzb3lsZ3NqaiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/26tn33aiTi1jkl6H6/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ29va3Q1OXdtcXV5Ymg2cTdpYTV1eHBjcjdpZGk4N3Uzb3lsZ3NqaiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/26tn33aiTi1jkl6H6/giphy.gif',
     badge: 'Official',
     featured: false,
   },
   {
+    id: 'shop_cyber_stream_overlay',
+    name: 'Cyber Stream Overlay (Animated)',
+    collection: 'Anticeil Cyber Core',
+    category: 'profile_effect',
+    description: 'Overlay efek kartu profil animasi GIF dengan hujan kode biner digital dan partikel glitch hologram berkilau.',
+    priceIdr: 85000,
+    priceDew: 650,
+    priceOrbs: 650,
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ29va3Q1OXdtcXV5Ymg2cTdpYTV1eHBjcjdpZGk4N3Uzb3lsZ3NqaiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/26tn33aiTi1jkl6H6/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ29va3Q1OXdtcXV5Ymg2cTdpYTV1eHBjcjdpZGk4N3Uzb3lsZ3NqaiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/26tn33aiTi1jkl6H6/giphy.gif',
+    badge: 'Hot Effect',
+    featured: true,
+  },
+  {
+    id: 'shop_anticeil_cyber_bundle',
+    name: 'Anticeil Cybernetic Core Bundle (3pc Animated)',
+    collection: 'Anticeil Cyber Core',
+    category: 'bundle',
+    description: 'Paket bundel lengkap: Bingkai Cyber Void, Overlay Matrix Stream, dan Hex Matrix Namecard.',
+    priceIdr: 140000,
+    priceDew: 1000,
+    priceOrbs: 1000,
+    discountPercent: 30,
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eHN3YWRjM2I3bm8zdXFpdjB6Ym05OG5hbjN4MnExMmt6dWg3MyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/xT0xeJpnrWC4XWblEk/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eHN3YWRjM2I3bm8zdXFpdjB6Ym05OG5hbjN4MnExMmt6dWg3MyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/xT0xeJpnrWC4XWblEk/giphy.gif',
+    badge: 'Bundel Populer',
+    itemTypes: ['avatar_decoration', 'profile_effect', 'nameplate'],
+    featured: true,
+  },
+
+  // 2. Starlight Cosmic Collection (Animated Celestial)
+  {
+    id: 'shop_celestial_halo',
+    name: 'Celestial Starlight Halo (Animated)',
+    collection: 'Starlight Cosmic',
+    category: 'avatar_decoration',
+    description: 'Bingkai avatar animasi GIF lingkaran bintang emas berkilau dan partikel debu kosmik berotasi halus.',
+    priceIdr: 65000,
+    priceDew: 500,
+    priceOrbs: 500,
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJqNDd4OWI0dHFtdHhzM2VpdGlnZmdkMmp4cGhyanE4NHo1MHN6YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJqNDd4OWI0dHFtdHhzM2VpdGlnZmdkMmp4cGhyanE4NHo1MHN6YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif',
+    badge: 'Kosmik',
+    featured: true,
+  },
+  {
+    id: 'shop_starlight_namecard',
+    name: 'Starlight Shimmer Namecard (Animated)',
+    collection: 'Starlight Cosmic',
+    category: 'nameplate',
+    description: 'Namecard strip animasi GIF dengan pancaran pendar kilau konstelasi bintang dan pita nebula emas.',
+    priceIdr: 45000,
+    priceDew: 350,
+    priceOrbs: 350,
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJqNDd4OWI0dHFtdHhzM2VpdGlnZmdkMmp4cGhyanE4NHo1MHN6YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJqNDd4OWI0dHFtdHhzM2VpdGlnZmdkMmp4cGhyanE4NHo1MHN6YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif',
+    badge: 'Hot',
+    featured: false,
+  },
+  {
+    id: 'shop_aurora_glow_overlay',
+    name: 'Aurora Borealis Spectrum Overlay (Animated)',
+    collection: 'Starlight Cosmic',
+    category: 'profile_effect',
+    description: 'Overlay animasi GIF tirai cahaya polar aurora hijau zamrud dan violet menari anggun di atas kartu profil.',
+    priceIdr: 85000,
+    priceDew: 650,
+    priceOrbs: 650,
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExazl5MGI5OTU3a2Z2OXV6ZG42NTRhMW1rNmhrNWw3MWk2M29wb2psciZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7bu3XilJ5BOiSGic/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExazl5MGI5OTU3a2Z2OXV6ZG42NTRhMW1rNmhrNWw3MWk2M29wb2psciZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7bu3XilJ5BOiSGic/giphy.gif',
+    badge: 'Unggulan',
+    featured: true,
+  },
+  {
     id: 'shop_anticeil_cosmic_bundle',
-    name: 'Starlight Cosmic Odyssey Bundle (3pc)',
+    name: 'Starlight Cosmic Odyssey Bundle (3pc Animated)',
     collection: 'Starlight Cosmic',
     category: 'bundle',
-    description: 'Aura galaksi kosmik, cincin avatar nebula bersinar, dan lencana konstelasi eksklusif Anticeil.',
+    description: 'Paket bundel kosmik lengkap: Bingkai Celestial Halo, Overlay Aurora Borealis, dan Starlight Namecard.',
     priceIdr: 150000,
+    priceDew: 1100,
     priceOrbs: 1100,
     discountPercent: 25,
-    previewIcon: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80',
-    bannerUrl: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800&auto=format&fit=crop&q=80',
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJqNDd4OWI0dHFtdHhzM2VpdGlnZmdkMmp4cGhyanE4NHo1MHN6YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJqNDd4OWI0dHFtdHhzM2VpdGlnZmdkMmp4cGhyanE4NHo1MHN6YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif',
     badge: 'Unggulan',
     itemTypes: ['avatar_decoration', 'profile_effect', 'nameplate'],
     featured: true,
   },
+
+  // 3. Nature & Zen Collection
   {
-    id: 'shop_anticeil_aurora_glow',
-    name: 'Aurora Borealis Spectrum',
-    collection: 'Aurora Spectrum',
-    category: 'profile_effect',
-    description: 'Pendaran cahaya polar aurora hijau zamrud dan violet elegan pada latar kartu profil.',
-    priceIdr: 85000,
-    priceOrbs: 650,
-    previewIcon: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80',
-    badge: 'Populer',
-    featured: true,
-  },
-  {
-    id: 'shop_anticeil_starlight_crown',
-    name: 'Starlight Celestial Crown',
-    collection: 'Starlight Cosmic',
-    category: 'nameplate',
-    description: 'Lencana mahkota bintang berkilau halus di samping nama pengguna Anda.',
-    priceIdr: 45000,
-    priceOrbs: 350,
-    previewIcon: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=80',
-    badge: 'Hot',
-    featured: true,
-  },
-  {
-    id: 'shop_anticeil_obsidian_frame',
-    name: 'Obsidian Geometric Border',
-    collection: 'Obsidian Minimalist',
-    category: 'avatar_decoration',
-    description: 'Garis tepi geometris monokrom tajam dan minimalis untuk tampilan avatar elegan.',
-    priceIdr: 55000,
-    priceOrbs: 420,
-    previewIcon: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=200&auto=format&fit=crop&q=80',
-    badge: 'Minimalis',
-    featured: true,
-  },
-  {
-    id: 'shop_anticeil_sakura_ring',
-    name: 'Zen Sakura Petals',
+    id: 'shop_zen_sakura_frame',
+    name: 'Zen Sakura Petals Frame (Animated)',
     collection: 'Nature & Zen',
     category: 'avatar_decoration',
-    description: 'Kelopak bunga sakura lembut berputar melingkar di sekeliling avatar profil.',
+    description: 'Bingkai avatar animasi GIF kelopak bunga sakura merah muda berputar melingkar lembut di sekeliling avatar.',
     priceIdr: 65000,
+    priceDew: 500,
     priceOrbs: 500,
-    previewIcon: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=200&auto=format&fit=crop&q=80',
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3N2c2J3YnpsdzJjcXl0OTk5OHZ4NW9wbjl6MWs1bnlsOXpmdG9zOSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/l0MYt5jPR6QX5pnqM/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3N2c2J3YnpsdzJjcXl0OTk5OHZ4NW9wbjl6MWs1bnlsOXpmdG9zOSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/l0MYt5jPR6QX5pnqM/giphy.gif',
     badge: 'Favorit',
     featured: false,
   },
   {
-    id: 'shop_anticeil_fireflies_aura',
-    name: 'Golden Fireflies Field',
+    id: 'shop_fireflies_overlay',
+    name: 'Golden Fireflies Field Overlay (Animated)',
     collection: 'Nature & Zen',
     category: 'profile_effect',
-    description: 'Partikel kunang-kunang keemasan melayang lembut di kartu profil Anda.',
+    description: 'Overlay animasi GIF kawanan kunang-kunang keemasan melayang lembut di malam hari menutupi kartu profil.',
     priceIdr: 85000,
+    priceDew: 650,
     priceOrbs: 650,
-    previewIcon: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=80',
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczU3bDN6OXpxeHN3bzI4eWprOWp6cTFscXFkZTBwbzE0bmk4d3JkOSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/26BRzozg4TCBXv6QU/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczU3bDN6OXpxeHN3bzI4eWprOWp6cTFscXFkZTBwbzE0bmk4d3JkOSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/26BRzozg4TCBXv6QU/giphy.gif',
     badge: 'Estetik',
+    featured: false,
+  },
+
+  // 4. Inferno & Void Collection
+  {
+    id: 'shop_inferno_flame_frame',
+    name: 'Inferno Flame Ring (Animated)',
+    collection: 'Inferno & Void',
+    category: 'avatar_decoration',
+    description: 'Bingkai avatar animasi GIF kobaran api membara melingkari foto profil dengan percikan bara menyala.',
+    priceIdr: 65000,
+    priceDew: 500,
+    priceOrbs: 500,
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjA3YWRmYTVjOGMzMjdhZjhhMmM3ZjcyOGRhZjU2MzExMWJmZWI2MSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKtnuHOHHUjR38Y/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjA3YWRmYTVjOGMzMjdhZjhhMmM3ZjcyOGRhZjU2MzExMWJmZWI2MSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3o7TKtnuHOHHUjR38Y/giphy.gif',
+    badge: 'Intens',
+    featured: true,
+  },
+  {
+    id: 'shop_crimson_scratch_namecard',
+    name: 'Crimson Scratch Glitch Namecard (Animated)',
+    collection: 'Inferno & Void',
+    category: 'nameplate',
+    description: 'Namecard strip animasi GIF garis cakar merah darah dan denyut glitch crimson intens.',
+    priceIdr: 45000,
+    priceDew: 350,
+    priceOrbs: 350,
+    gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGgyaW05bWJqOWt0aXFzZG12dXB2ZHE5YWRqdGF1MnlqNHU1Mms4ZiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3oKIPnAiaMCws8nOsE/giphy.gif',
+    previewIcon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGgyaW05bWJqOWt0aXFzZG12dXB2ZHE5YWRqdGF1MnlqNHU1Mms4ZiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3oKIPnAiaMCws8nOsE/giphy.gif',
+    badge: 'Dark',
     featured: false,
   },
 ];
@@ -184,26 +251,31 @@ export const shopApi = {
   async getBalance(): Promise<ShopBalance> {
     try {
       const res = await api.get<any>('/v1/community/shop/balance');
-      if (res && typeof res.orbs === 'number') {
+      if (res && (typeof res.dew === 'number' || typeof res.orbs === 'number')) {
+        const dew = typeof res.dew === 'number' ? res.dew : res.orbs;
         return {
-          orbs: res.orbs,
-          nectar: typeof res.nectar === 'number' ? res.nectar : 250,
+          dew,
+          orbs: dew,
           currencyCode: res.currencyCode || 'IDR',
         };
       }
     } catch {}
-    return { orbs: 1500, nectar: 250, currencyCode: 'IDR' };
+    return { dew: 1500, orbs: 1500, currencyCode: 'IDR' };
   },
 
-  async topupOrbs(amount: number = 500): Promise<{ success: boolean; message: string; balance?: ShopBalance }> {
+  async topupDew(amount: number = 500): Promise<{ success: boolean; message: string; balance?: ShopBalance }> {
     try {
       return await api.post('/v1/community/shop/topup', { amount });
     } catch (err: any) {
-      return { success: false, message: err?.message || 'Gagal menambahkan Orbs' };
+      return { success: false, message: err?.message || 'Gagal menambahkan Dew' };
     }
   },
 
-  async purchaseItem(itemId: string, currency: 'orbs' | 'idr' = 'orbs'): Promise<{ success: boolean; message: string; item?: ShopItem; newBalance?: ShopBalance }> {
+  topupOrbs(amount: number = 500) {
+    return this.topupDew(amount);
+  },
+
+  async purchaseItem(itemId: string, currency: 'dew' | 'idr' | 'orbs' = 'dew'): Promise<{ success: boolean; message: string; item?: ShopItem; newBalance?: ShopBalance }> {
     try {
       return await api.post('/v1/community/shop/purchase', { itemId, currency });
     } catch (err: any) {

@@ -600,6 +600,7 @@ export function EditProfileDialog({
         category: 'avatar_decoration',
         collection: 'Kustom Anticeil',
         description: `Item kustom wishlist: ${name}`,
+        priceDew: 250,
         priceOrbs: 250,
         priceIdr: 35000,
         previewIcon: '✨',
@@ -1965,8 +1966,8 @@ export function EditProfileDialog({
                               </div>
                               <div className="text-[10px] text-muted-foreground flex items-center gap-2">
                                 <span className="font-medium text-sidebar-primary">{item.collection || item.category}</span>
-                                {item.priceOrbs && (
-                                  <span>• 🍯 {item.priceOrbs.toLocaleString()} Orbs</span>
+                                {(item.priceDew || item.priceOrbs) && (
+                                  <span>• 💧 {(item.priceDew || item.priceOrbs || 0).toLocaleString()} Dew</span>
                                 )}
                               </div>
                             </div>
@@ -2068,7 +2069,7 @@ export function EditProfileDialog({
                               {item.name}
                             </div>
                             <div className="text-[10px] text-muted-foreground truncate font-medium">
-                              🍯 {item.priceOrbs || 500} Orbs
+                              💧 {item.priceDew || item.priceOrbs || 500} Dew
                             </div>
                           </div>
                           <Button

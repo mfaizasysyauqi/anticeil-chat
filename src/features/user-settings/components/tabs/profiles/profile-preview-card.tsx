@@ -176,24 +176,40 @@ export function ProfilePreviewCard({
             backgroundImage: profileBannerUrl ? `url(${profileBannerUrl})` : undefined,
           }}
         >
-          <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] text-white font-semibold border border-white/10 shadow-xs">
+          {/* Animated Profile Effect Overlay */}
+          {profileEffect && profileEffect !== 'none' && profileEffect.startsWith('http') && (
+            <img
+              src={profileEffect}
+              alt="Profile Effect"
+              className="absolute inset-0 size-full object-cover opacity-80 mix-blend-screen pointer-events-none select-none z-10"
+            />
+          )}
+          <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] text-white font-semibold border border-white/10 shadow-xs z-20">
             <Palette className="w-3 h-3 text-sidebar-primary" />
             <span>{t('Tema Profil')}</span>
           </div>
         </div>
 
         {/* Avatar & Status Cloud */}
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 relative">
           <div className="flex items-end justify-between -mt-10 relative">
             <div className="relative">
-              {/* Avatar Decoration Overlay Graphic */}
-              {decoration && (
-                <div
-                  className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 text-2xl filter drop-shadow-lg pointer-events-none select-none animate-pulse"
-                  title={decoration.tooltip}
-                >
-                  {decoration.icon}
-                </div>
+              {/* Avatar Decoration / Animated Frame Overlay */}
+              {avatarDecoration && avatarDecoration !== 'none' && (
+                avatarDecoration.startsWith('http') ? (
+                  <img
+                    src={avatarDecoration}
+                    alt="Frame"
+                    className="absolute -inset-3.5 size-[calc(100%+28px)] object-contain pointer-events-none select-none z-20 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
+                  />
+                ) : decoration ? (
+                  <div
+                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 text-2xl filter drop-shadow-lg pointer-events-none select-none animate-pulse"
+                    title={decoration.tooltip}
+                  >
+                    {decoration.icon}
+                  </div>
+                ) : null
               )}
               <div
                 className={`size-20 rounded-full border-4 border-card overflow-hidden bg-muted flex items-center justify-center text-3xl shadow-md transition-all relative ${getFrameClassName(
