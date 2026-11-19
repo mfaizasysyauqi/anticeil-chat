@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
@@ -90,22 +91,22 @@ function ActivityCard({
       {/* Banner / Header */}
       <div
         className={cn(
-          'h-24 p-3 relative flex items-start justify-between bg-gradient-to-br',
+          'h-20 sm:h-24 p-2.5 sm:p-3 relative flex items-start justify-between bg-gradient-to-br',
           app.bannerGradient || 'from-muted to-card'
         )}
       >
-        <div className="flex items-center gap-2.5 z-10 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 z-10 min-w-0">
           <div
             className={cn(
-              'size-9 rounded-lg flex items-center justify-center shadow-md shrink-0',
+              'size-8 sm:size-9 rounded-lg flex items-center justify-center shadow-md shrink-0',
               app.iconBg || 'bg-primary',
               app.iconColor || 'text-white'
             )}
           >
-            <AppIcon className="w-5 h-5" />
+            <AppIcon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="text-white min-w-0">
-            <span className="text-[10px] font-semibold text-white/80 block uppercase tracking-wider truncate">
+            <span className="text-[9px] sm:text-[10px] font-semibold text-white/80 block uppercase tracking-wider truncate">
               {app.developer}
             </span>
             <span className="text-xs font-bold line-clamp-1">
@@ -115,20 +116,20 @@ function ActivityCard({
         </div>
 
         {app.badge && (
-          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md shrink-0">
+          <span className="text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md shrink-0">
             {app.badge}
           </span>
         )}
       </div>
 
       {/* Body Content */}
-      <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-3">
         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
           {app.description}
         </p>
 
         <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
-          <span className="text-[10px] font-semibold text-muted-foreground capitalize">
+          <span className="text-[10px] font-semibold text-muted-foreground capitalize truncate">
             {categoryLabel}
           </span>
 
@@ -137,11 +138,11 @@ function ActivityCard({
             variant="custom"
             onClick={() => onLaunch(app)}
             className={cn(
-              'h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs transition-colors',
+              'h-7 px-2.5 sm:px-3 text-xs font-semibold gap-1 sm:gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0',
               app.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
             )}
           >
-            <Play className="w-3 h-3 fill-current" />
+            <Play className="w-3 h-3 fill-current shrink-0" />
             <span>Luncurkan</span>
           </Button>
         </div>
@@ -262,25 +263,17 @@ export function AppsView({
           <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
         </div>
 
-        {/* Category Tabs */}
+        {/* Category Tabs: 100% DRY TopBarTabButton */}
         <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
-          {CATEGORY_TABS.map((tab) => {
-            const active = activeCategory === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveCategory(tab.id)}
-                className={cn(
-                  'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors shrink-0',
-                  active
-                    ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+          {CATEGORY_TABS.map((tab) => (
+            <TopBarTabButton
+              key={tab.id}
+              active={activeCategory === tab.id}
+              onClick={() => setActiveCategory(tab.id)}
+            >
+              {tab.label}
+            </TopBarTabButton>
+          ))}
         </div>
 
         {/* Search Input */}
@@ -377,8 +370,8 @@ export function AppsView({
                   </p>
                 </div>
 
-                {/* Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Grid: 4 columns in desktop (lg:grid-cols-4), 3 in tablet (md:grid-cols-3), 2 in mobile (grid-cols-2) */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {sectionApps.map((app) => (
                     <ActivityCard
                       key={app.id}

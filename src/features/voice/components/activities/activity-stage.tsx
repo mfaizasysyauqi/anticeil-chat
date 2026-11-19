@@ -6,8 +6,6 @@ import { YouTubeWatchTogether } from './youtube-watch-together';
 import { WhiteboardCanvas } from './whiteboard-canvas';
 import { ChessGame } from './chess-game';
 import { ScreenShareView } from './screen-share-view';
-import { WordleGame } from './wordle-game';
-import { TriviaGame } from './trivia-game';
 import { ColonyAppStage } from './colony-app-stage';
 
 export interface ActivityStageProps {
@@ -84,33 +82,11 @@ export function ActivityStage({
         />
       )}
 
-      {activeAppId === 'wordle' && (
-        <WordleGame
-          channel={channel}
-          socket={socket}
-          currentUserName={currentUserName}
-          currentUser={currentUser}
-          participants={participants}
-        />
-      )}
-
-      {activeAppId === 'trivia' && (
-        <TriviaGame
-          channel={channel}
-          socket={socket}
-          currentUserName={currentUserName}
-          currentUser={currentUser}
-          participants={participants}
-        />
-      )}
-
       {activeAppId !== 'watch-together' &&
         activeAppId !== 'youtube' &&
         activeAppId !== 'whiteboard' &&
         activeAppId !== 'chess' &&
-        activeAppId !== 'screenshare' &&
-        activeAppId !== 'wordle' &&
-        activeAppId !== 'trivia' && (
+        activeAppId !== 'screenshare' && (
           <ColonyAppStage
             appId={activeAppId}
             channel={channel}
