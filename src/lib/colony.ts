@@ -181,6 +181,7 @@ export type Colony = {
   iconUrl?: string;
   role?: 'owner' | 'admin' | 'moderator' | 'member';
   tags?: string[];
+  category?: string;
   emojis?: ColonyCustomEmoji[];
   boostsCount?: number;
   boostTier?: number;

@@ -598,6 +598,49 @@ export const coloniesApi = {
     return stored.filter((h) => h.id !== 'anticeil');
   },
 
+  async joinColony(colonyOrId: Colony | string): Promise<Colony> {
+    const colonyId = typeof colonyOrId === 'string' ? colonyOrId : colonyOrId.id;
+    const inviteCode = typeof colonyOrId === 'object' ? colonyOrId.inviteCode : undefined;
+
+    try {
+      const res = await api.post<{ success: boolean; colony: Colony }>('/v1/colony/colonies/join', {
+        colonyId,
+        inviteCode,
+      });
+      if (res?.colony && res.colony.id) {
+        const stored = loadStoredColonies();
+        const joinedItem: Colony = { ...res.colony, role: 'member' as const };
+        const next = [...stored.filter((c) => c.id !== res.colony.id), joinedItem];
+        saveStoredColonies(next);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('anticeil_colonies_changed'));
+        }
+        return res.colony;
+      }
+    } catch {}
+
+    const stored = loadStoredColonies();
+    const existing = stored.find((c) => c.id === colonyId);
+    if (existing) return existing;
+
+    const newJoined: Colony =
+      typeof colonyOrId === 'object'
+        ? { ...colonyOrId, role: 'member' as const }
+        : {
+            id: colonyId,
+            name: 'Colony Komunitas',
+            initials: 'CK',
+            iconType: 'initials',
+            role: 'member' as const,
+            membersCount: 10,
+          };
+    saveStoredColonies([...stored, newJoined]);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('anticeil_colonies_changed'));
+    }
+    return newJoined;
+  },
+
   async joinHub(inviteCode: string): Promise<Colony> {
     const cleanId = inviteCode.startsWith('hub_') ? inviteCode : `hub_${inviteCode}`;
     const stored = loadStoredColonies();

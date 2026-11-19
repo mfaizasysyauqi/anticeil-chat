@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Plus,
-  Users,
   Compass,
   Loader2,
   Link as LinkIcon,
@@ -10,18 +9,16 @@ import {
   Music2,
   GraduationCap,
   Sparkles,
-  ShieldCheck,
-  ChevronRight,
-  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
-import { ColonyIcon } from './colony-icon';
+import { ColonyHeroCard } from './colony-hero-card';
+import { ColonyCard } from './colony-card';
 import type { Colony } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 
-interface ColoniesExploreTabProps {
+export interface ColoniesExploreTabProps {
   filteredExplore: Colony[];
   inviteCodeInput: string;
   setInviteCodeInput: (val: string) => void;
@@ -29,8 +26,10 @@ interface ColoniesExploreTabProps {
   isJoiningByCode: boolean;
   isLoadingPublic: boolean;
   handleOpenCreateColony: () => void;
-  handleJoinPublic: (pub: Colony) => void;
-  t: (key: string) => string;
+  handleJoinPublic: (pub: Colony) => Promise<void> | void;
+  joinedColonyIds?: string[];
+  handleSelectColony?: (colonyId: string) => void;
+  t: (key: string, params?: Record<string, any>) => string;
 }
 
 const CATEGORIES = [
@@ -51,9 +50,12 @@ export function ColoniesExploreTab({
   isLoadingPublic,
   handleOpenCreateColony,
   handleJoinPublic,
+  joinedColonyIds = [],
+  handleSelectColony,
   t,
 }: ColoniesExploreTabProps) {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [joiningColonyId, setJoiningColonyId] = useState<string | null>(null);
 
   const categorizedList = useMemo(() => {
     if (selectedCategory === 'all') return filteredExplore;
@@ -62,7 +64,8 @@ export function ColoniesExploreTab({
       const matchTag = c.tags && c.tags.some((tag) => tag.toLowerCase().includes(cat));
       const matchDesc = c.description && c.description.toLowerCase().includes(cat);
       const matchName = c.name && c.name.toLowerCase().includes(cat);
-      return matchTag || matchDesc || matchName;
+      const matchCategory = c.category && c.category.toLowerCase() === cat;
+      return matchTag || matchDesc || matchName || matchCategory;
     });
   }, [filteredExplore, selectedCategory]);
 
@@ -74,6 +77,15 @@ export function ColoniesExploreTab({
       null
     );
   }, [filteredExplore]);
+
+  const onJoin = async (colony: Colony) => {
+    setJoiningColonyId(colony.id);
+    try {
+      await handleJoinPublic(colony);
+    } finally {
+      setJoiningColonyId(null);
+    }
+  };
 
   return (
     <div className="space-y-6 w-full text-foreground">
@@ -118,59 +130,15 @@ export function ColoniesExploreTab({
         </form>
       </div>
 
-      {/* ── 2. Featured Server Spotlight Hero (Discord-style) ── */}
+      {/* ── 2. Featured Server Spotlight Hero (Reusable Card) ── */}
       {featuredColony && (
-        <div className="relative rounded-2xl overflow-hidden border border-border/80 bg-gradient-to-r from-sidebar-primary/25 via-background to-emerald-950/20 p-5 sm:p-6 shadow-xl">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="flex items-start sm:items-center gap-4 min-w-0">
-              <div className="size-16 rounded-2xl bg-card border-2 border-sidebar-primary/40 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
-                <ColonyIcon hub={featuredColony} />
-              </div>
-              <div className="space-y-1.5 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-sidebar-primary/20 text-sidebar-primary border border-sidebar-primary/40 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    {t('Server Pilihan Komunitas')}
-                  </span>
-                  {featuredColony.verified && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      {t('Terverifikasi')}
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-base sm:text-lg font-black text-foreground truncate">
-                  {featuredColony.name}
-                </h3>
-                <p className="text-xs text-muted-foreground line-clamp-2 max-w-xl leading-relaxed">
-                  {featuredColony.description || t('Komunitas resmi Anticeil untuk kolaborasi kreatif dan obrolan.')}
-                </p>
-                <div className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>{featuredColony.onlineCount || 42} Online</span>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3 text-muted-foreground" />
-                    <span>{featuredColony.membersCount || 148} Anggota</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="teal"
-              size="sm"
-              onClick={() => handleJoinPublic(featuredColony)}
-              className="h-9 px-5 text-xs font-bold rounded-xl cursor-pointer shadow-md shrink-0 flex items-center gap-2"
-            >
-              <span>{t('Gabung Sekarang')}</span>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        <ColonyHeroCard
+          colony={featuredColony}
+          isJoined={joinedColonyIds.includes(featuredColony.id)}
+          onJoin={onJoin}
+          onOpen={handleSelectColony}
+          isJoining={joiningColonyId === featuredColony.id}
+        />
       )}
 
       {/* ── 3. Category Filter Tabs ── */}
@@ -205,7 +173,7 @@ export function ColoniesExploreTab({
         </div>
       </div>
 
-      {/* ── 4. Grid of Discoverable Colony Cards ── */}
+      {/* ── 4. Grid of Discoverable Colony Cards (Reusable ColonyCard) ── */}
       {isLoadingPublic ? (
         <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-muted-foreground bg-card border border-border rounded-2xl w-full">
           <Loader2 className="w-8 h-8 animate-spin text-sidebar-primary mb-2" />
@@ -230,72 +198,14 @@ export function ColoniesExploreTab({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {categorizedList.map((pub) => (
-            <div
+            <ColonyCard
               key={pub.id}
-              className="p-4 rounded-2xl border border-border/80 bg-card hover:border-sidebar-primary/50 transition-all flex flex-col justify-between gap-3.5 shadow-sm group hover:shadow-md"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="size-12 rounded-xl bg-secondary/60 border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
-                    <ColonyIcon hub={pub} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-xs font-bold text-foreground truncate group-hover:text-sidebar-primary transition-colors">
-                        {pub.name}
-                      </h3>
-                      {pub.verified && (
-                        <span title={t('Terverifikasi')}>
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-                      {pub.description || t('Komunitas Anticeil untuk kolaborasi dan obrolan.')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Tags row */}
-                {pub.tags && pub.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {pub.tags.slice(0, 3).map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] px-2 py-0.5 rounded-md bg-secondary text-muted-foreground font-mono"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                <div className="text-[10px] text-muted-foreground flex items-center gap-2 font-medium">
-                  <span className="flex items-center gap-1">
-                    <span className="size-1.5 rounded-full bg-emerald-500" />
-                    <span>{pub.onlineCount || Math.max(Math.floor((pub.membersCount || 10) * 0.3), 1)}</span>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3 text-muted-foreground" />
-                    <span>{pub.membersCount || 10}</span>
-                  </span>
-                </div>
-
-                <Button
-                  size="sm"
-                  variant="teal"
-                  onClick={() => handleJoinPublic(pub)}
-                  className="h-7 px-3 text-xs font-bold gap-1 cursor-pointer rounded-lg shadow-xs"
-                >
-                  <Plus className="w-3 h-3 stroke-[2.5]" />
-                  <span>{t('Gabung')}</span>
-                </Button>
-              </div>
-            </div>
+              colony={pub}
+              isJoined={joinedColonyIds.includes(pub.id)}
+              onJoin={onJoin}
+              onOpen={handleSelectColony}
+              isJoining={joiningColonyId === pub.id}
+            />
           ))}
         </div>
       )}

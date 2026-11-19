@@ -39,6 +39,7 @@ import {
 } from '@/lib/colony';
 import { chatApi, colonyApi } from '@/chat/chat-api';
 import { ColonyIcon } from './colony-icon';
+import { ColonyCard } from './colony-card';
 import { ColoniesExploreTab } from './colonies-explore-tab';
 import { toast } from 'sonner';
 
@@ -148,8 +149,7 @@ export function ColoniesView({
 
   const handleJoinPublic = async (community: Colony) => {
     try {
-      const codeOrId = community.inviteCode || community.id;
-      const joined = await chatApi.joinHub(codeOrId);
+      const joined = await colonyApi.joinColony(community);
       toast.success(t('Berhasil bergabung dengan {{name}}! 🎉', { name: community.name }));
       handleSelectColony(joined.id || community.id);
     } catch {
@@ -369,45 +369,12 @@ export function ColoniesView({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredMyColonies.map((srv) => (
-                  <div
+                  <ColonyCard
                     key={srv.id}
-                    onClick={() => handleSelectColony(srv.id)}
-                    className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs group relative overflow-hidden"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="size-12 rounded-[14px] bg-sidebar-accent border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs group-hover:scale-105 transition-transform">
-                        <ColonyIcon hub={srv} />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                          {srv.name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-                          {srv.description || 'Komunitas Anticeil untuk kolaborasi dan obrolan santai.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-                        <Users className="w-3 h-3" />
-                        <span>Komunitas Aktif</span>
-                      </span>
-
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectColony(srv.id);
-                        }}
-                        className="h-7 px-3 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all"
-                      >
-                        <span>Buka Colony</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
+                    colony={srv}
+                    isJoined={true}
+                    onOpen={handleSelectColony}
+                  />
                 ))}
               </div>
             )}
@@ -520,6 +487,8 @@ export function ColoniesView({
             isLoadingPublic={isLoadingPublic}
             handleOpenCreateColony={handleOpenCreateColony}
             handleJoinPublic={handleJoinPublic}
+            joinedColonyIds={colonyList.map((c) => c.id)}
+            handleSelectColony={handleSelectColony}
             t={t}
           />
         )}
