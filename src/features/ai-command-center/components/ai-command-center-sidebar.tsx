@@ -11,10 +11,12 @@ import {
   Pencil,
   Check,
   X,
+  PanelLeftClose,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/core/i18n';
 import type { AiSession } from '../types';
 import { useAiCommandCenterContext } from '../context/ai-command-center-context';
 
@@ -28,6 +30,7 @@ export interface AiCommandCenterSidebarProps {
   onTogglePinSession?: (id: string) => void;
   onSelectPromptPreset?: (prompt: string) => void;
   onOpenGroqSettings?: () => void;
+  onToggleCollapseSidebar?: () => void;
 }
 
 export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
@@ -46,6 +49,9 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
   const onOpenGroqSettings = props.onOpenGroqSettings || (() => contextValue?.setIsGroqSettingsOpen(true));
   const onSelectPromptPreset = props.onSelectPromptPreset;
 
+  const { t } = useTranslation();
+  const onToggleCollapseSidebar = props.onToggleCollapseSidebar;
+
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSessions = sessions.filter((s) =>
@@ -58,44 +64,65 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-sidebar select-none overflow-hidden">
-      {/* Top Header: Title & New Session Button */}
-      <div className="h-12 border-b border-sidebar-border px-3.5 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded-md bg-primary/20 text-primary flex items-center justify-center shrink-0">
-            <Sparkles className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-sm font-bold text-foreground truncate">
-            AI Command Center
-          </span>
-        </div>
-
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onCreateNewSession}
-          className="h-7 px-2 text-xs font-semibold gap-1.5 border-sidebar-border hover:bg-sidebar-accent cursor-pointer shrink-0"
-          title="Percakapan Baru"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Baru</span>
-        </Button>
-      </div>
-
-      {/* Search Input */}
-      <div className="p-2.5 border-b border-sidebar-border/40 shrink-0">
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <Input
+      {/* Header: Search form and Collapse button (Matches Hub Fitur exactly) */}
+      <div className="h-12 border-b border-sidebar-border px-2 flex items-center justify-between gap-1.5 font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
+        <div className="flex-1 min-w-0 h-7 px-2 flex items-center gap-1.5 rounded-[4px] bg-muted/60 focus-within:bg-muted text-foreground text-[11px] transition-colors border border-border">
+          <Search className="w-3 h-3 shrink-0 opacity-60 text-muted-foreground" />
+          <input
+            type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari riwayat perintah..."
-            className="h-8 pl-8 text-xs bg-sidebar-accent/50 border-sidebar-border/60"
+            placeholder={t('Cari riwayat perintah...')}
+            className="w-full bg-transparent border-0 outline-none p-0 text-foreground placeholder:text-muted-foreground text-[11px]"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
+              title={t('Hapus pencarian')}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
+
+        {onToggleCollapseSidebar && (
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleCollapseSidebar}
+                className="hidden md:flex h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent cursor-pointer shrink-0"
+                title={t('Tutup Sidebar (Ctrl+B)')}
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              {t('Tutup Sidebar')} <kbd className="ml-1 text-[10px] text-muted-foreground font-mono">Ctrl+B</kbd>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       {/* Sessions Scrollable List */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-1 scrollbar-thin">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin] space-y-2">
+        {/* Tombol Buat Percakapan Baru di Body */}
+        <div className="mb-2">
+          <button
+            type="button"
+            onClick={onCreateNewSession}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md bg-accent text-accent-foreground hover:bg-accent/80 text-xs font-semibold transition-all cursor-pointer group shadow-2xs"
+          >
+            <div className="w-5 h-5 rounded-md bg-primary/20 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            </div>
+            <span className="flex-1 text-left truncate">{t('Obrolan Baru')}</span>
+            <Sparkles className="w-3.5 h-3.5 text-primary/70 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+          </button>
+        </div>
         {/* Pinned Section */}
         {pinnedSessions.length > 0 && (
           <div className="mb-2">

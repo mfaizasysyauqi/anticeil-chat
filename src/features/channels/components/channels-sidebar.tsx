@@ -70,6 +70,7 @@ export function ChannelsSidebar(props: ChannelsSidebarProps) {
     <div className="flex flex-col h-full bg-sidebar select-none flex-1 min-w-0 overflow-hidden">
       {isAiActive ? (
         <AiCommandCenterSidebar
+          onToggleCollapseSidebar={props.onToggleCollapseSidebar}
           onSelectPromptPreset={(prompt) => {
             window.dispatchEvent(
               new CustomEvent('anticeil_ai_preset_prompt', { detail: prompt }),
