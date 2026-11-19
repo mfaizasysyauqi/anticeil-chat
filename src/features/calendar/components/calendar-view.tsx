@@ -445,15 +445,39 @@ export function CalendarView({
                           </div>
                         </div>
 
-                        {ev.type === 'meeting' && ev.channelId && (
-                          <Button
-                            size="sm"
-                            onClick={() => onJoinChannel?.(ev.channelId!)}
-                            className="h-7 px-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 cursor-pointer shadow-xs"
-                          >
-                            Gabung Call
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {ev.type === 'meeting' && ev.channelId && (
+                            <Button
+                              size="sm"
+                              onClick={() => onJoinChannel?.(ev.channelId!)}
+                              className="h-7 px-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 cursor-pointer shadow-xs"
+                            >
+                              Gabung Call
+                            </Button>
+                          )}
+                          {onUpdateEvent && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenEdit(ev)}
+                              className="h-7 w-7 p-0 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                              title="Edit Agenda"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {onDeleteEvent && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(ev.id, ev.title)}
+                              className="h-7 w-7 p-0 text-xs text-rose-500 hover:text-rose-400 hover:border-rose-500/50 cursor-pointer"
+                              title="Hapus Agenda"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
 
                       {ev.description && (
