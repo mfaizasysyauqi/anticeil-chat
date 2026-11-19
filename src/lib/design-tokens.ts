@@ -3,8 +3,6 @@
  * Enforces DRY typography, button styling, dialog layouts, and surface cards across all features.
  */
 
-import { LAYOUT_PAGE_SPACING, LAYOUT_DIALOG_SPACING, LAYOUT_BODY_CONTAINER } from './layout-constants';
-
 /**
  * Typography & Text Style Tokens
  */
@@ -92,7 +90,8 @@ export const DIALOG_STYLES = {
     'w-[92vw] sm:w-[480px] p-0 overflow-hidden rounded-xl bg-card border border-border shadow-2xl z-[150]',
     
   // Two-Pane Settings Modal Container (Colony/User Settings)
-  MODAL_TWO_PANE: LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER,
+  MODAL_TWO_PANE:
+    'p-0 w-[94vw] md:w-[90vw] max-w-[90vw] h-[94dvh] md:h-[90vh] max-h-[90vh] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0 select-none',
   
   // Modal Header & Titles
   HEADER_TITLE: 'text-sm font-bold flex items-center gap-2 text-foreground',
@@ -126,6 +125,3 @@ export const SURFACE_STYLES = {
   // Responsive Card Grid (4 cols desktop, 3 cols tablet, 2 cols mobile)
   CARD_GRID: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4',
 } as const;
-
-// Re-export layout spacing tokens for unified single-import access
-export { LAYOUT_PAGE_SPACING, LAYOUT_DIALOG_SPACING, LAYOUT_BODY_CONTAINER };
