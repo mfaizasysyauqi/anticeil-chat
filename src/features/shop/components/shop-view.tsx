@@ -16,6 +16,7 @@ import {
   Trash2,
   Menu,
   SlidersHorizontal,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -42,6 +56,40 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { shopApi, type ShopItem, type ShopCollection, type ShopBalance, FALLBACK_SHOP_ITEMS } from '../api/shop-api';
+
+// Discord-style 1:1 Filter Definitions
+export const ITEM_TYPE_OPTIONS = [
+  { id: 'avatar_decoration', label: 'Avatar Decorations' },
+  { id: 'nameplate', label: 'Nameplates' },
+  { id: 'profile_effect', label: 'Profile Effects' },
+  { id: 'bundle', label: 'Bundles' },
+];
+
+export const COLOR_OPTIONS = [
+  { id: 'purple', label: 'Purple', hex: '#8b5cf6', keywords: ['purple', 'violet', 'magenta', 'indigo', 'ungu'] },
+  { id: 'blue', label: 'Blue', hex: '#3b82f6', keywords: ['blue', 'cyan', 'azure', 'biru', 'sian', 'neon', 'aurora'] },
+  { id: 'green', label: 'Green', hex: '#22c55e', keywords: ['green', 'emerald', 'mint', 'hijau', 'zamrud', 'forest'] },
+  { id: 'brown', label: 'Brown', hex: '#92400e', keywords: ['brown', 'amber', 'bronze', 'cokelat', 'wood'] },
+  { id: 'yellow', label: 'Yellow', hex: '#eab308', keywords: ['yellow', 'gold', 'kuning', 'emas', 'sun', 'starlight'] },
+  { id: 'orange', label: 'Orange', hex: '#f97316', keywords: ['orange', 'sunset', 'oranye', 'fire', 'api'] },
+  { id: 'red', label: 'Red', hex: '#ef4444', keywords: ['red', 'crimson', 'ruby', 'merah', 'blood', 'rose'] },
+  { id: 'pink', label: 'Pink', hex: '#ec4899', keywords: ['pink', 'sakura', 'merah muda', 'blush', 'cozy'] },
+  { id: 'white', label: 'White', hex: '#f8fafc', keywords: ['white', 'putih', 'silver', 'pearl', 'clear', 'light'] },
+  { id: 'dark', label: 'Dark / Black', hex: '#18181b', keywords: ['dark', 'black', 'obsidian', 'void', 'gelap', 'hitam', 'shadow', 'matrix', 'cyber'] },
+];
+
+export const THEME_OPTIONS = [
+  { id: 'anime', label: 'Anime', icon: '🌸', keywords: ['anime', 'sakura', 'zen', 'manga', 'miyabi', 'kawaii'] },
+  { id: 'gaming', label: 'Gaming', icon: '🎮', keywords: ['gaming', 'game', 'arcade', 'pixel', 'retro', '8bit'] },
+  { id: 'cute_cozy', label: 'Cute & Cozy', icon: '☕', keywords: ['cute', 'cozy', 'sweet', 'warm', 'pastel'] },
+  { id: 'sci_fi', label: 'Sci-Fi', icon: '🪐', keywords: ['sci-fi', 'cyber', 'void', 'matrix', 'neon', 'core', 'future'] },
+  { id: 'food_drinks', label: 'Food & Drinks', icon: '🍔', keywords: ['food', 'drink', 'tea', 'boba', 'coffee'] },
+  { id: 'fantasy', label: 'Fantasy', icon: '🧙', keywords: ['fantasy', 'magic', 'celestial', 'crown', 'astral', 'myth'] },
+  { id: 'animals_pets', label: 'Animals & Pets', icon: '🐾', keywords: ['animal', 'pet', 'cat', 'dog', 'fox', 'bunny', 'bear'] },
+  { id: 'nature', label: 'Nature', icon: '🍃', keywords: ['nature', 'forest', 'aurora', 'borealis', 'sakura', 'leaf', 'alam'] },
+  { id: 'movies_tv', label: 'Movies & TV', icon: '🎬', keywords: ['movie', 'tv', 'cinema', 'show', 'film'] },
+  { id: 'dark_moody', label: 'Dark & Moody', icon: '🥀', keywords: ['dark', 'moody', 'void', 'obsidian', 'night', 'shadow', 'gothic'] },
+];
 
 export interface ShopViewProps {
   currentUser?: any;
@@ -144,9 +192,58 @@ export function ShopView({
     { id: 'dew', label: t('Dew Shop') },
   ], [t]);
 
-  // Filtered browse list
+  // Discord-grade Right Filter Sidebar States
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'recent' | 'price_asc' | 'price_desc' | 'name_asc'>('recent');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [showOnlyDew, setShowOnlyDew] = useState(false);
+  const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
+  const [showOnlyDiscount, setShowOnlyDiscount] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+
+  const toggleType = (typeId: string) => {
+    setSelectedTypes((prev) =>
+      prev.includes(typeId) ? prev.filter((t) => t !== typeId) : [...prev, typeId]
+    );
+  };
+
+  const toggleTheme = (themeId: string) => {
+    setSelectedThemes((prev) =>
+      prev.includes(themeId) ? prev.filter((t) => t !== themeId) : [...prev, themeId]
+    );
+  };
+
+  const toggleColor = (colorId: string) => {
+    setSelectedColor((prev) => (prev === colorId ? null : colorId));
+  };
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    count += selectedTypes.length;
+    if (showOnlyDew) count += 1;
+    if (showOnlyFeatured) count += 1;
+    if (showOnlyDiscount) count += 1;
+    if (selectedColor) count += 1;
+    count += selectedThemes.length;
+    return count;
+  }, [selectedTypes, showOnlyDew, showOnlyFeatured, showOnlyDiscount, selectedColor, selectedThemes]);
+
+  const handleResetFilters = () => {
+    setSelectedTypes([]);
+    setShowOnlyDew(false);
+    setShowOnlyFeatured(false);
+    setShowOnlyDiscount(false);
+    setSelectedColor(null);
+    setSelectedThemes([]);
+  };
+
+  // Filtered and sorted browse list
   const filteredItems = useMemo(() => {
     let list = [...items];
+
+    // Category Tabs Filter
     if (activeTab === 'dew') {
       list = list.filter((i) => (i.priceDew ?? i.priceOrbs ?? 0) > 0);
     } else if (activeTab === 'featured') {
@@ -155,6 +252,51 @@ export function ShopView({
       list = list.filter((i) => i.category === activeTab);
     }
 
+    // Right Filter: Item Types (Multi-select)
+    if (selectedTypes.length > 0) {
+      list = list.filter((i) => selectedTypes.includes(i.category));
+    }
+
+    // Right Filter: Show Only
+    if (showOnlyDew) {
+      list = list.filter((i) => (i.priceDew ?? i.priceOrbs ?? 0) > 0);
+    }
+    if (showOnlyFeatured) {
+      list = list.filter((i) => Boolean(i.featured));
+    }
+    if (showOnlyDiscount) {
+      list = list.filter((i) =>
+        Boolean(
+          (i.discountPercent && i.discountPercent > 0) ||
+            i.badge?.toLowerCase().includes('diskon') ||
+            i.badge?.toLowerCase().includes('promo')
+        )
+      );
+    }
+
+    // Right Filter: Color
+    if (selectedColor) {
+      const colorOpt = COLOR_OPTIONS.find((c) => c.id === selectedColor);
+      if (colorOpt) {
+        list = list.filter((i) => {
+          const text = `${i.name} ${i.description} ${i.collection} ${i.badge || ''}`.toLowerCase();
+          return colorOpt.keywords.some((kw) => text.includes(kw));
+        });
+      }
+    }
+
+    // Right Filter: Theme (Multi-select)
+    if (selectedThemes.length > 0) {
+      list = list.filter((i) => {
+        const text = `${i.name} ${i.description} ${i.collection} ${i.badge || ''}`.toLowerCase();
+        return selectedThemes.some((themeId) => {
+          const themeOpt = THEME_OPTIONS.find((t) => t.id === themeId);
+          return themeOpt ? themeOpt.keywords.some((kw) => text.includes(kw)) : false;
+        });
+      });
+    }
+
+    // Global Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
@@ -164,8 +306,29 @@ export function ShopView({
           i.collection?.toLowerCase().includes(q)
       );
     }
+
+    // Sorting
+    if (sortBy === 'price_asc') {
+      list.sort((a, b) => (a.priceIdr || 0) - (b.priceIdr || 0));
+    } else if (sortBy === 'price_desc') {
+      list.sort((a, b) => (b.priceIdr || 0) - (a.priceIdr || 0));
+    } else if (sortBy === 'name_asc') {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
     return list;
-  }, [items, activeTab, searchQuery]);
+  }, [
+    items,
+    activeTab,
+    selectedTypes,
+    showOnlyDew,
+    showOnlyFeatured,
+    showOnlyDiscount,
+    selectedColor,
+    selectedThemes,
+    searchQuery,
+    sortBy,
+  ]);
 
   // Top Up / Klaim Dew Poin
   const handleTopupDew = async (amount: number = 500) => {
@@ -298,6 +461,224 @@ export function ShopView({
     } catch {
       toast.error(t('Gagal menghapus produk'));
     }
+  };
+
+  // Discord-style 1:1 Right Filter Panel Renderer
+  const renderFilterContent = () => {
+    return (
+      <div className="space-y-6">
+        {/* Header with Active Count & Reset */}
+        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+            <span>{t('Filter')}</span>
+            {activeFilterCount > 0 && (
+              <span className="text-[10px] font-bold text-primary">({activeFilterCount})</span>
+            )}
+          </div>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>{t('Reset')}</span>
+            </button>
+          )}
+        </div>
+
+        {/* 1. Item Type */}
+        <div className="space-y-2.5">
+          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            {t('Item Type')}
+          </h4>
+          <div className="space-y-1.5">
+            {ITEM_TYPE_OPTIONS.map((opt) => {
+              const isSelected = selectedTypes.includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => toggleType(opt.id)}
+                  className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+                >
+                  <div
+                    className={cn(
+                      'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                      isSelected
+                        ? 'bg-primary border-primary text-primary-foreground'
+                        : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                    )}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
+                  <span className="truncate">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. Show Only */}
+        <div className="space-y-2.5">
+          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            {t('Show Only')}
+          </h4>
+          <div className="space-y-1.5">
+            {/* Dew Eligible */}
+            <button
+              type="button"
+              onClick={() => setShowOnlyDew(!showOnlyDew)}
+              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+            >
+              <div
+                className={cn(
+                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                  showOnlyDew
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                )}
+              >
+                {showOnlyDew && <Check className="w-3 h-3 stroke-[3]" />}
+              </div>
+              <span className="truncate flex items-center gap-1.5">
+                <span>{t('Dew Eligible')}</span>
+                <span className="text-[11px]">💧</span>
+              </span>
+            </button>
+
+            {/* Featured / Collabs */}
+            <button
+              type="button"
+              onClick={() => setShowOnlyFeatured(!showOnlyFeatured)}
+              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+            >
+              <div
+                className={cn(
+                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                  showOnlyFeatured
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                )}
+              >
+                {showOnlyFeatured && <Check className="w-3 h-3 stroke-[3]" />}
+              </div>
+              <span className="truncate">{t('Featured / Unggulan')}</span>
+            </button>
+
+            {/* Discount / Promo */}
+            <button
+              type="button"
+              onClick={() => setShowOnlyDiscount(!showOnlyDiscount)}
+              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
+            >
+              <div
+                className={cn(
+                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
+                  showOnlyDiscount
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
+                )}
+              >
+                {showOnlyDiscount && <Check className="w-3 h-3 stroke-[3]" />}
+              </div>
+              <span className="truncate">{t('Diskon / Promo')}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Color Swatches (2 rows of 5) */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              {t('Color')}
+            </h4>
+            {selectedColor && (
+              <button
+                type="button"
+                onClick={() => setSelectedColor(null)}
+                className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                {t('Clear')}
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-5 gap-2">
+            {COLOR_OPTIONS.map((col) => {
+              const isSelected = selectedColor === col.id;
+              const isLight = col.id === 'white' || col.id === 'yellow';
+              return (
+                <button
+                  key={col.id}
+                  type="button"
+                  onClick={() => toggleColor(col.id)}
+                  title={col.label}
+                  className={cn(
+                    'size-7 rounded-full flex items-center justify-center transition-all cursor-pointer relative',
+                    isSelected
+                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-md'
+                      : 'hover:scale-105 opacity-90 hover:opacity-100'
+                  )}
+                  style={{
+                    backgroundColor: col.hex,
+                    border: col.id === 'dark' || col.id === 'white' ? '1px solid rgba(255,255,255,0.2)' : undefined,
+                  }}
+                >
+                  {isSelected && (
+                    <Check
+                      className={cn(
+                        'w-3.5 h-3.5 stroke-[3]',
+                        isLight ? 'text-black' : 'text-white'
+                      )}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 4. Theme Grid (2 columns) */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              {t('Theme')}
+            </h4>
+            {selectedThemes.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedThemes([])}
+                className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                {t('Clear')}
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {THEME_OPTIONS.map((th) => {
+              const isSelected = selectedThemes.includes(th.id);
+              return (
+                <button
+                  key={th.id}
+                  type="button"
+                  onClick={() => toggleTheme(th.id)}
+                  className={cn(
+                    'h-8 px-2 rounded-md border text-[11px] font-medium flex items-center gap-1.5 truncate transition-all cursor-pointer select-none text-left',
+                    isSelected
+                      ? 'bg-primary/20 border-primary text-primary font-bold shadow-xs'
+                      : 'bg-muted/30 border-border/60 text-foreground/80 hover:bg-muted/70 hover:text-foreground'
+                  )}
+                >
+                  <span className="text-xs shrink-0">{th.icon}</span>
+                  <span className="truncate">{th.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Render Discord-grade animated cosmetic card preview (Frame, Namecard, Overlay)
@@ -563,8 +944,73 @@ export function ShopView({
         </div>
       </div>
 
-      {/* ── 2. Main Scroll Area: 100% Consistent Spacing with Apps & Colonies ── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-8', horizontalPadding)}>
+      {/* ── 2. Main Content Row: Center Catalog + Discord-style Right Filter Sidebar ── */}
+      <div className="flex-1 min-h-0 flex flex-row overflow-hidden">
+        {/* Scrollable Center Catalog */}
+        <div className={cn('flex-1 min-h-0 overflow-y-auto scrollbar-none py-4 sm:py-6 space-y-6', horizontalPadding)}>
+          {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
+          <div className="flex items-center justify-between gap-3 pb-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                {t('Katalog')}
+              </span>
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                ({filteredItems.length} {t('item')})
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Sort by dropdown */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium shrink-0">{t('Sort by')}</span>
+                <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+                  <SelectTrigger size="xs" className="w-38 h-7 text-xs bg-muted/40 border-border/60">
+                    <SelectValue placeholder={t('Sort by')} />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="bg-card border-border z-[160]">
+                    <SelectItem value="recent">{t('Recently Added')}</SelectItem>
+                    <SelectItem value="price_asc">{t('Price: Low to High')}</SelectItem>
+                    <SelectItem value="price_desc">{t('Price: High to Low')}</SelectItem>
+                    <SelectItem value="name_asc">{t('Name (A-Z)')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Desktop toggle filter bar */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className="hidden lg:flex items-center gap-1.5 h-7 px-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 cursor-pointer"
+              >
+                <span>{isFilterOpen ? t('Hide Filters') : t('Show Filters')}</span>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                {activeFilterCount > 0 && (
+                  <span className="size-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* Mobile filter drawer trigger */}
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => setIsMobileFilterOpen(true)}
+                className="lg:hidden flex items-center gap-1.5 h-7 px-2.5 text-xs font-semibold cursor-pointer"
+              >
+                <span>{t('Filters')}</span>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                {activeFilterCount > 0 && (
+                  <span className="size-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            </div>
+          </div>
         {/* ── Reusable Hero Banner (Matches AppsView YouTube Watch Together layout) ── */}
         {!searchQuery && (activeTab === 'all' || activeTab === 'featured') && heroCollection && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-card to-background border border-primary/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
@@ -802,7 +1248,39 @@ export function ShopView({
             ))}
           </div>
         )}
+        </div>
+
+        {/* Desktop Discord-style Right Filter Sidebar */}
+        {isFilterOpen && (
+          <aside className="hidden lg:flex w-64 shrink-0 flex-col border-l border-border/60 bg-card/25 backdrop-blur-xs overflow-y-auto p-4 [scrollbar-width:thin] select-none">
+            {renderFilterContent()}
+          </aside>
+        )}
       </div>
+
+      {/* Mobile / Tablet Filter Sheet Drawer */}
+      <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+        <SheetContent side="right" className="w-[85vw] max-w-xs p-4 overflow-y-auto bg-card border-border z-[170]">
+          <SheetHeader className="pb-3 border-b border-border/50 text-left">
+            <SheetTitle className="text-sm font-bold flex items-center justify-between">
+              <span>{t('Filter Shop')}</span>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>{t('Reset')}</span>
+                </button>
+              )}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="py-4">
+            {renderFilterContent()}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ── 3. Reusable Dialog: Item Detail & Purchase Modal ── */}
       <Dialog open={Boolean(activeModalItem)} onOpenChange={(open) => !open && setActiveModalItem(null)}>
