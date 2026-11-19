@@ -5,12 +5,13 @@ import type { AiSession, AiMessage } from '../types';
 interface AiCommandCenterContextValue {
   sessions: AiSession[];
   activeSessionId: string | null;
-  setActiveSessionId: (id: string) => void;
-  handleCreateNewSession: (title?: string) => AiSession;
-  handleUpdateSessionMessages: (sessionId: string, messages: AiMessage[]) => void;
-  handleClearSessionMessages: (sessionId: string) => void;
-  handleDeleteSession: (sessionId: string) => void;
-  handleTogglePinSession: (sessionId: string) => void;
+  setActiveSessionId: (id: string | null) => void;
+  handleCreateNewSession: (title?: string) => Promise<AiSession>;
+  handleRenameSession: (sessionId: string, newTitle: string) => Promise<void>;
+  handleUpdateSessionMessages: (sessionId: string, messages: AiMessage[]) => Promise<void>;
+  handleClearSessionMessages: (sessionId: string) => Promise<void>;
+  handleDeleteSession: (sessionId: string) => Promise<void>;
+  handleTogglePinSession: (sessionId: string) => Promise<void>;
   isGroqSettingsOpen: boolean;
   setIsGroqSettingsOpen: (open: boolean) => void;
 }

@@ -8,6 +8,9 @@ import {
   Pin,
   Bot,
   ExternalLink,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +23,7 @@ export interface AiCommandCenterSidebarProps {
   activeSessionId?: string | null;
   onSelectSession?: (id: string) => void;
   onCreateNewSession?: () => void;
+  onRenameSession?: (id: string, newTitle: string) => void;
   onDeleteSession?: (id: string) => void;
   onTogglePinSession?: (id: string) => void;
   onSelectPromptPreset?: (prompt: string) => void;
@@ -36,6 +40,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
   const activeSessionId = props.activeSessionId ?? contextValue?.activeSessionId ?? null;
   const onSelectSession = props.onSelectSession || contextValue?.setActiveSessionId || (() => {});
   const onCreateNewSession = props.onCreateNewSession || contextValue?.handleCreateNewSession || (() => {});
+  const onRenameSession = props.onRenameSession || contextValue?.handleRenameSession || (() => {});
   const onDeleteSession = props.onDeleteSession || contextValue?.handleDeleteSession || (() => {});
   const onTogglePinSession = props.onTogglePinSession || contextValue?.handleTogglePinSession || (() => {});
   const onOpenGroqSettings = props.onOpenGroqSettings || (() => contextValue?.setIsGroqSettingsOpen(true));
@@ -104,6 +109,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
                   session={session}
                   isActive={session.id === activeSessionId}
                   onSelect={() => onSelectSession(session.id)}
+                  onRename={(newTitle) => onRenameSession(session.id, newTitle)}
                   onDelete={() => onDeleteSession(session.id)}
                   onTogglePin={() => onTogglePinSession(session.id)}
                 />
@@ -141,6 +147,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
                   session={session}
                   isActive={session.id === activeSessionId}
                   onSelect={() => onSelectSession(session.id)}
+                  onRename={(newTitle) => onRenameSession(session.id, newTitle)}
                   onDelete={() => onDeleteSession(session.id)}
                   onTogglePin={() => onTogglePinSession(session.id)}
                 />
@@ -218,15 +225,68 @@ function SessionItem({
   session,
   isActive,
   onSelect,
+  onRename,
   onDelete,
   onTogglePin,
 }: {
   session: AiSession;
   isActive: boolean;
   onSelect: () => void;
+  onRename: (newTitle: string) => void;
   onDelete: () => void;
   onTogglePin: () => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(session.title);
+
+  const handleSave = () => {
+    if (editTitle.trim()) {
+      onRename(editTitle.trim());
+    }
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-sidebar-accent">
+        <input
+          autoFocus
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSave();
+            } else if (e.key === 'Escape') {
+              setIsEditing(false);
+              setEditTitle(session.title);
+            }
+          }}
+          className="flex-1 bg-transparent text-xs text-foreground outline-hidden border-b border-primary"
+        />
+        <button
+          type="button"
+          onClick={handleSave}
+          className="p-1 text-emerald-400 hover:text-emerald-300 cursor-pointer"
+          title="Simpan"
+        >
+          <Check className="w-3 h-3" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setIsEditing(false);
+            setEditTitle(session.title);
+          }}
+          className="p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+          title="Batal"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onSelect}
@@ -247,10 +307,23 @@ function SessionItem({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
+            setEditTitle(session.title);
+            setIsEditing(true);
+          }}
+          className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          title="Ubah Nama Percakapan"
+        >
+          <Pencil className="w-3 h-3" />
+        </button>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
             onTogglePin();
           }}
           className={cn(
-            'p-1 rounded hover:bg-white/10 transition-colors',
+            'p-1 rounded hover:bg-white/10 transition-colors cursor-pointer',
             session.isPinned ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
           )}
           title={session.isPinned ? 'Lepas Sematan' : 'Sematkan'}
@@ -264,7 +337,7 @@ function SessionItem({
             e.stopPropagation();
             onDelete();
           }}
-          className="p-1 rounded hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition-colors"
+          className="p-1 rounded hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition-colors cursor-pointer"
           title="Hapus Percakapan"
         >
           <Trash2 className="w-3 h-3" />

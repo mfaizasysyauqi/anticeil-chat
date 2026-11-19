@@ -1,4 +1,5 @@
 export * from './types';
+export * from './api/ai-command-center-api';
 export * from './services/ai-storage';
 export * from './services/groq-service';
 export * from './hooks/use-ai-command-center';

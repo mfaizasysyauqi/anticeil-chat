@@ -42,6 +42,7 @@ import { useAiCommandCenterContext } from '../context/ai-command-center-context'
 export interface AiCommandCenterViewProps {
   sessions?: AiSession[];
   activeSessionId?: string | null;
+  onCreateNewSession?: (title?: string) => Promise<AiSession> | AiSession;
   onUpdateSessionMessages?: (sessionId: string, messages: AiMessage[]) => void;
   onClearSessionMessages?: (sessionId: string) => void;
   colonies: any[];
@@ -65,6 +66,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
   const sessions = props.sessions || contextValue?.sessions || [];
   const activeSessionId = props.activeSessionId ?? contextValue?.activeSessionId ?? null;
+  const onCreateNewSession = props.onCreateNewSession || contextValue?.handleCreateNewSession;
   const onUpdateSessionMessages = props.onUpdateSessionMessages || contextValue?.handleUpdateSessionMessages || (() => {});
   const onClearSessionMessages = props.onClearSessionMessages || contextValue?.handleClearSessionMessages || (() => {});
 
@@ -139,7 +141,13 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
   const handleSendMessage = async (promptToSend?: string) => {
     const text = (promptToSend || inputPrompt).trim();
-    if (!text || isLoading || !activeSession) return;
+    if (!text || isLoading) return;
+
+    let targetSession = activeSession;
+    if (!targetSession && onCreateNewSession) {
+      targetSession = await onCreateNewSession(text.slice(0, 36));
+    }
+    if (!targetSession) return;
 
     setInputPrompt('');
     const userMessage: AiMessage = {
@@ -149,8 +157,9 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       createdAt: new Date().toISOString(),
     };
 
-    const updatedMessages = [...messages, userMessage];
-    onUpdateSessionMessages(activeSession.id, updatedMessages);
+    const currentMsgs = targetSession.messages || [];
+    const updatedMessages = [...currentMsgs, userMessage];
+    onUpdateSessionMessages(targetSession.id, updatedMessages);
     setIsLoading(true);
 
     try {
@@ -168,7 +177,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
         toolCalls: response.toolCalls,
       };
 
-      onUpdateSessionMessages(activeSession.id, [...updatedMessages, assistantMessage]);
+      onUpdateSessionMessages(targetSession.id, [...updatedMessages, assistantMessage]);
     } catch (err) {
       console.error('Failed to execute AI Command Center prompt:', err);
       toast.error('Gagal memproses perintah AI.');
@@ -256,7 +265,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background relative overflow-hidden select-none">
+    <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 w-full bg-background relative overflow-hidden select-none">
       {/* 1. App Bar Header */}
       <div className="h-12 border-b border-sidebar-border px-3.5 sm:px-4 md:px-5 lg:px-6 flex items-center justify-between shrink-0 bg-background/95 backdrop-blur-xs z-10">
         <div className="flex items-center gap-2.5 min-w-0">

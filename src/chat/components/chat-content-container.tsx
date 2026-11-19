@@ -31,9 +31,11 @@ export const ChatContentContainer: React.FC<ChatContentContainerProps> = (props)
         {...mainViewProps}
       />
 
-      {/* DESKTOP MEMBERS / USER PROFILE SIDEBAR */}
+      {/* DESKTOP MEMBERS / USER PROFILE SIDEBAR (Only visible when a Colony channel or DM channel is active) */}
       {showMemberList &&
+        Boolean(activeChannel) &&
         !isFriendsView &&
+        !mainViewProps.isAiCommandCenterView &&
         activeChannel?.type !== 'voice' &&
         activeCallChannelId !== activeChannel?.id && (
           <div

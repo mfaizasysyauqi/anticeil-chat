@@ -18,7 +18,16 @@ export function getStoredSessions(): AiSession[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_SESSIONS);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Filter out legacy dummy sessions with no messages
+    const cleaned = parsed.filter(
+      (s: AiSession) =>
+        s &&
+        s.id &&
+        !(s.title === 'Pusat Perintah Utama' && (!s.messages || s.messages.length === 0)),
+    );
+    return cleaned;
   } catch (err) {
     console.warn('Failed to parse AI sessions from localStorage', err);
     return [];
