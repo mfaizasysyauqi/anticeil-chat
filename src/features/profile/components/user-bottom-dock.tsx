@@ -100,7 +100,7 @@ export function UserBottomDock({
         <div className="px-2 pt-2 pb-0">
           <div
             onClick={onReturnToCall}
-            className="w-full px-2.5 py-2 rounded-lg bg-[#1e1f22] hover:bg-[#2b2d31] border border-white/5 transition-all flex items-center justify-between gap-2.5 cursor-pointer group shadow-sm"
+            className="w-full px-2.5 py-2 rounded-lg bg-transparent hover:bg-sidebar-accent/50 border border-sidebar-border transition-all flex items-center justify-between gap-2.5 cursor-pointer group shadow-2xs"
             title="Klik untuk membuka aktivitas"
           >
             {/* Left: App Icon */}
@@ -119,12 +119,12 @@ export function UserBottomDock({
 
               {/* Middle: Title & Location */}
               <div className="flex flex-col min-w-0 text-left">
-                <span className="text-xs sm:text-[13px] font-bold text-white leading-tight truncate group-hover:text-primary transition-colors">
+                <span className="text-xs sm:text-[13px] font-bold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
                   {selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube'
                     ? 'Watch Together'
                     : selectedActivityAppId}
                 </span>
-                <span className="text-[11px] text-[#949ba4] truncate leading-tight mt-0.5">
+                <span className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
                   {activeCallChannelName || 'general'} / {activeColonyName || 'server'}
                 </span>
               </div>
@@ -138,7 +138,7 @@ export function UserBottomDock({
                 e.stopPropagation();
                 onDisconnectCall?.();
               }}
-              className="h-7 w-7 text-[#949ba4] hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-md transition-colors shrink-0"
               title="Tinggalkan Aktivitas"
             >
               <LogOut className="w-4 h-4" />
