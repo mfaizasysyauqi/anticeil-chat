@@ -712,7 +712,7 @@ export function EditProfileDialog({
         {/* Main 3-Column Profile Editor Body (20% Left | 40% Middle | 40% Right) */}
         <div className="flex-1 w-full h-full overflow-hidden flex flex-col lg:flex-row">
             {/* COLUMN 1: LEFT AREA (20%) */}
-          <div className="w-full lg:w-[22%] lg:min-w-[240px] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-background/30 p-4 sm:p-5 overflow-y-auto [scrollbar-width:thin] space-y-4">
+          <div className="w-full lg:w-[22%] lg:min-w-[240px] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-background/30 p-4 sm:p-5 overflow-y-auto custom-scrollbar space-y-4">
 
             <div className="space-y-4">
               {/* 1. Nameplate Selector */}
@@ -810,7 +810,7 @@ export function EditProfileDialog({
                           onClick={() => setIsDecorationPickerOpen(false)}
                         />
                       </div>
-                      <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto [scrollbar-width:thin]">
+                      <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                         {AVATAR_DECORATION_OPTIONS.map((dec) => (
                           <button
                             key={dec.id}
@@ -1009,7 +1009,7 @@ export function EditProfileDialog({
           </div>
 
           {/* COLUMN 2: MIDDLE AREA (40%) LIVE PROFILE CARD PREVIEW */}
-          <div className="w-full lg:w-[38%] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 flex items-center justify-center overflow-y-auto [scrollbar-width:thin]">
+          <div className="w-full lg:w-[38%] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 flex items-center justify-center overflow-y-auto custom-scrollbar">
             <div className="w-full max-w-[420px] 2xl:max-w-[460px] my-auto">
               <ProfilePreviewCard
                 userId={currentUser?.id}
@@ -1053,7 +1053,7 @@ export function EditProfileDialog({
           </div>
 
           {/* COLUMN 3: RIGHT AREA (40%) PROFILE TABS (BOARD | ACTIVITY | WISHLIST) */}
-          <div className="w-full lg:w-[40%] flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto [scrollbar-width:thin] space-y-4">
+          <div className="w-full lg:w-[40%] flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4">
             {/* Top Navigation Tabs */}
             <div className="flex items-center border-b border-border/60 gap-6 text-xs font-bold pb-2">
               <button

@@ -1414,7 +1414,7 @@ export function ShopView({
       </div>
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
           <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
             <div className="flex items-center gap-2">
@@ -1963,7 +1963,7 @@ export function ShopView({
             </div>
           </div>
 
-          <div className="max-h-[350px] overflow-y-auto p-3 space-y-2 [scrollbar-width:thin]">
+          <div className="max-h-[350px] overflow-y-auto p-3 space-y-2 custom-scrollbar">
             {wishlist.length === 0 ? (
               <div className="py-10 text-center text-xs text-muted-foreground space-y-2">
                 <Heart className="w-8 h-8 mx-auto opacity-30 text-pink-500" />

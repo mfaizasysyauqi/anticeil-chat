@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
 import { renderFormattedMessage, DecryptedMessageText } from '../utils/format-message';
@@ -82,7 +83,14 @@ export function MessagesFeed({
   t,
 }: MessagesFeedProps) {
   return (
-    <div className={`flex-1 min-h-0 overflow-y-auto ${channelPaddingClass} py-4 space-y-4 [scrollbar-width:thin]`}>
+    <div
+      className={cn(
+        'flex-1 min-h-0 overflow-y-auto py-4 space-y-4 custom-scrollbar',
+        channelPaddingClass === CHANNEL_HORIZONTAL_PADDING
+          ? 'pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px]'
+          : channelPaddingClass
+      )}
+    >
       {!activeChannel ? (
         <div className="flex-1 flex flex-col items-center justify-center py-24 text-center">
           <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border/60 flex items-center justify-center text-muted-foreground mb-4">

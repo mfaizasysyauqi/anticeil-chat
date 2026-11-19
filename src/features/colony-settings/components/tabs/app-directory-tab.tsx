@@ -452,13 +452,13 @@ export function AppDirectoryTab({
       </div>
 
       {/* ── Main View Area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-[82vh] [scrollbar-width:thin]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-[82vh] custom-scrollbar">
         {activeSidebarNav === 'apps' ? (
           <>
             {/* Top Category Tabs & Search Bar */}
             <div className="sticky top-0 z-10 bg-[#111214]/95 backdrop-blur-md border-b border-border/60 px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
               {/* Category Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto [scrollbar-width:none]">
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none">
                 <Grid className="w-4 h-4 text-muted-foreground mr-1 shrink-0 hidden sm:block" />
                 {CATEGORIES.map((cat) => (
                   <button
@@ -894,7 +894,7 @@ export function AppDirectoryTab({
       {/* ── Manage Bot Permissions & Scope Modal ── */}
       <Dialog open={!!managingApp} onOpenChange={(open) => !open && setManagingApp(null)}>
         {managingApp && (
-          <DialogContent className="sm:max-w-[620px] max-h-[88vh] overflow-y-auto p-0 bg-[#1e1f22] border-border/80 text-foreground [scrollbar-width:thin]">
+          <DialogContent className="sm:max-w-[620px] max-h-[88vh] overflow-y-auto p-0 bg-[#1e1f22] border-border/80 text-foreground custom-scrollbar">
             <DialogHeader className="p-6 pb-4 border-b border-border/60">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -1025,7 +1025,7 @@ export function AppDirectoryTab({
                 </div>
 
                 {!allChannelsAllowed && (
-                  <div className="rounded-xl border border-border/60 bg-card p-3 max-h-40 overflow-y-auto space-y-1.5 [scrollbar-width:thin]">
+                  <div className="rounded-xl border border-border/60 bg-card p-3 max-h-40 overflow-y-auto space-y-1.5 custom-scrollbar">
                     {channels.length === 0 ? (
                       <p className="text-xs text-muted-foreground py-2 text-center">
                         {t('Tidak ada saluran teks yang ditemukan.')}

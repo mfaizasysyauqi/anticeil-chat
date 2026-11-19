@@ -95,7 +95,7 @@ export function ThreadsPopover({
         </div>
 
         {/* Body */}
-        <div className="flex-1 flex flex-col overflow-y-auto [scrollbar-width:thin]">
+        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
           {filteredThreads.length === 0 ? (
             /* Empty State */
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">

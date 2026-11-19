@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { MessageRequestItem, MessageRequestsTab } from '../types';
@@ -77,7 +77,7 @@ export function MessageRequestsView({
         </div>
 
         {/* Tab Filter Pills: Requests & Spam */}
-        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
           <button
             onClick={() => setActiveTab('requests')}
             className={cn(
@@ -126,7 +126,7 @@ export function MessageRequestsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
         {/* Section Header Count */}
         <div className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-4">
           {activeTab === 'requests'

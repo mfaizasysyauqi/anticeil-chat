@@ -105,7 +105,7 @@ export function EventCreateWizard({
       </div>
 
       {/* Wizard Body */}
-      <div className="px-6 py-4 space-y-4 max-h-[480px] overflow-y-auto [scrollbar-width:thin]">
+      <div className="px-6 py-4 space-y-4 max-h-[480px] overflow-y-auto custom-scrollbar">
         {/* ── STEP 1: LOCATION ── */}
         {step === 1 && (
           <div className="space-y-4">

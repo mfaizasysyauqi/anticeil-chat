@@ -526,7 +526,7 @@ export function QuestsView({
       />
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
         {activeTab === 'all' ? (
           <>
             {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest (100% Consistent with ShopView & FriendsView) ── */}

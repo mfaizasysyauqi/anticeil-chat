@@ -74,7 +74,7 @@ export function ActivityFilmstrip({
 
       {/* Video Cards Filmstrip (Horizontally centered or scrollable like Discord) */}
       {!isFilmstripCollapsed && (
-        <div className="w-full max-w-full py-1 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto [scrollbar-width:thin] px-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="w-full max-w-full py-1 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto custom-scrollbar px-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
           {/* Local Participant Tile */}
           <div className="w-24 sm:w-32 md:w-36 h-16 sm:h-20 md:h-24 rounded-xl bg-card border border-border relative overflow-hidden shrink-0 flex items-center justify-center shadow-lg group">
             {!isVideoOff && localStream && localStream.getVideoTracks().some((t) => t.readyState === 'live' && t.enabled) ? (

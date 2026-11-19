@@ -96,7 +96,7 @@ export function DmSearchDialog({
         )}
 
         {/* Results */}
-        <div className="max-h-[320px] overflow-y-auto [scrollbar-width:thin]">
+        <div className="max-h-[320px] overflow-y-auto custom-scrollbar">
           {!hasResults ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
               {t('Tidak ada hasil ditemukan.')}

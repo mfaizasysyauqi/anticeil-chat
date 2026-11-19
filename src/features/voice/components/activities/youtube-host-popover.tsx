@@ -120,7 +120,7 @@ export function YouTubeHostPopover({
             </div>
 
             {/* Participants List */}
-            <div className="space-y-1.5 max-h-48 overflow-y-auto [scrollbar-width:thin]">
+            <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
               {/* Current User Row */}
               <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors">
                 <div className="flex items-center gap-2.5 min-w-0">

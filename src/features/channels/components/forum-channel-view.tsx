@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -127,7 +129,14 @@ export function ForumChannelView({
         </div>
 
         {/* Discussion feed: OP Card + Replies list */}
-        <div className={`flex-1 min-h-0 overflow-y-auto ${channelPaddingClass} py-5 space-y-4 [scrollbar-width:thin]`}>
+        <div
+          className={cn(
+            'flex-1 min-h-0 overflow-y-auto py-5 space-y-4 custom-scrollbar',
+            channelPaddingClass === CHANNEL_HORIZONTAL_PADDING
+              ? 'pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px]'
+              : channelPaddingClass
+          )}
+        >
           {/* OP Card */}
           <div className="p-4 rounded-xl border border-border bg-card space-y-3 shadow-md">
             <div className="flex items-center gap-2.5">
@@ -350,7 +359,14 @@ export function ForumChannelView({
       )}
 
       {/* Posts List Cards */}
-      <div className={`flex-1 min-h-0 overflow-y-auto ${channelPaddingClass} py-4 [scrollbar-width:thin]`}>
+      <div
+        className={cn(
+          'flex-1 min-h-0 overflow-y-auto py-4 custom-scrollbar',
+          channelPaddingClass === CHANNEL_HORIZONTAL_PADDING
+            ? 'pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px]'
+            : channelPaddingClass
+        )}
+      >
         {filteredForumPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-4">

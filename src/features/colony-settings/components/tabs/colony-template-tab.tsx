@@ -268,7 +268,7 @@ export function ColonyTemplateTab({
           <span className="text-[11px] font-semibold text-muted-foreground block">
             {t('Pratinjau Saluran yang Tersemat dalam Templat:')}
           </span>
-          <div className="max-h-40 overflow-y-auto space-y-1 pr-1 [scrollbar-width:thin]">
+          <div className="max-h-40 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {channels.map((ch) => (
               <div
                 key={ch.id}

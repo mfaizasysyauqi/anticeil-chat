@@ -296,7 +296,7 @@ export function ColoniesView({
         </div>
 
         {/* Tab Filter Pills: Server Saya & Jelajahi */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
             <button
               onClick={() => setActiveTab('joined')}
               className={cn(
@@ -373,7 +373,7 @@ export function ColoniesView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
         {activeTab === 'joined' ? (
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">

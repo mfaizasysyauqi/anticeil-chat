@@ -371,7 +371,7 @@ export function AppsView({
         </div>
 
         {/* Category Tabs: 100% DRY TopBarTabButton */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
           {CATEGORY_TABS.map((tab) => (
             <TopBarTabButton
               key={tab.id}
@@ -395,7 +395,7 @@ export function AppsView({
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
-      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-8', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-8', verticalPadding)}>
         {/* Featured Hero Banner: YouTube Watch Together */}
         {!searchQuery && activeCategory === 'all' && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">

@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { NotificationItem, NotificationsTab } from '../types';
@@ -98,7 +98,7 @@ export function NotificationsView({
         </div>
 
         {/* Filter Pills */}
-        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
             <button
               onClick={() => setActiveTab('all')}
               className={cn(
@@ -163,7 +163,7 @@ export function NotificationsView({
       </div>
 
       {/* Main Content Area */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff className="w-8 h-8 stroke-[1.8] text-primary" />}

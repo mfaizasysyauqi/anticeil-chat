@@ -160,7 +160,7 @@ export function ColonyEventsModal({
             </div>
 
             {/* List Body */}
-            <div className="p-4 space-y-3 overflow-y-auto max-h-[500px] max-md:scrollbar-none lg:[scrollbar-width:thin]">
+            <div className="p-4 space-y-3 overflow-y-auto max-h-[500px] max-md:scrollbar-none custom-scrollbar">
               {serverEvents.length === 0 ? (
                 <EmptyState
                   compact

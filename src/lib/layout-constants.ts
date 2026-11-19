@@ -22,7 +22,7 @@ export const LAYOUT_BODY_CONTAINER = {
  */
 export const LAYOUT_PAGE_SPACING = {
   /**
-   * Symmetrical Horizontal Padding for all page App Bars & Body views:
+   * Symmetrical Horizontal Padding for all page App Bars:
    * - Mobile (<640px): px-3.5 (14px)
    * - Small devices / Phablet (640px - 767px): sm:px-4 (16px)
    * - Tablet (768px - 1023px): md:px-5 (20px)
@@ -31,23 +31,32 @@ export const LAYOUT_PAGE_SPACING = {
   HORIZONTAL: 'px-3.5 sm:px-4 md:px-5 lg:px-6',
 
   /**
+   * Symmetrical Horizontal Padding for all page scrollable bodies:
+   * On mobile/tablet (<lg), scrollbar is hidden with max-lg:scrollbar-none so padding is px-3.5 sm:px-4 md:px-5.
+   * On desktop (lg:), with a 6px custom scrollbar, right padding is adjusted to lg:pr-[18px] (24px - 6px = 18px)
+   * while left padding is lg:pl-6 (24px).
+   * Result: Content starts at 24px and ends at 24px from container edges, matching the App Bar 100% symmetrically!
+   */
+  BODY_HORIZONTAL: 'pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px]',
+
+  /**
    * Vertical padding for page body scrolling content
    */
   VERTICAL: 'py-4 sm:py-5 md:py-6',
 
   /**
    * Universal scrollable body classes:
-   * Uses max-lg:scrollbar-none on mobile/tablet so scrollbar does NOT displace right padding,
-   * guaranteeing 100% horizontal symmetry with the App Bar.
+   * Uses max-lg:scrollbar-none on mobile/tablet and custom-scrollbar on desktop,
+   * guaranteeing 100% horizontal symmetry with the App Bar header above.
    */
   BODY_SCROLL:
-    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none',
+    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px]',
 
   /**
    * Combined page content scroll container classes
    */
   BODY_PADDING:
-    'px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none',
+    'pl-3.5 sm:pl-4 md:pl-5 lg:pl-6 pr-3.5 sm:pr-4 md:pr-5 lg:pr-[18px] py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar',
 
   /**
    * Universal App Bar header height (48px)
@@ -62,10 +71,16 @@ export const LAYOUT_PAGE_SPACING = {
 } as const;
 
 /**
+ * Global reusable scrollbar classes
+ */
+export const APP_SCROLLBAR = 'custom-scrollbar';
+
+/**
  * Global horizontal padding for channel views (Text Channel, Voice Channel, Forum Channel, and Sidebar Header)
  * Used across app bar, body/feed, and bottom bar/input dock to ensure perfect horizontal symmetry and consistency.
  */
 export const CHANNEL_HORIZONTAL_PADDING = LAYOUT_PAGE_SPACING.HORIZONTAL;
+export const CHANNEL_HORIZONTAL_BODY = LAYOUT_PAGE_SPACING.BODY_HORIZONTAL;
 export const CHANNEL_VERTICAL_PADDING = LAYOUT_PAGE_SPACING.VERTICAL;
 export const CHANNEL_BODY_PADDING = LAYOUT_PAGE_SPACING.BODY_PADDING;
 

@@ -65,7 +65,7 @@ export function ChatAppsPopover({
           />
         </div>
 
-        <div className="space-y-4 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
+        <div className="space-y-4 flex-1 overflow-y-auto pr-1 custom-scrollbar">
           {/* Quick Launcher Icons */}
           {!appsSearchQuery && (
             <div>

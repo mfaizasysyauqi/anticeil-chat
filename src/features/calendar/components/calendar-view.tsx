@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
@@ -211,7 +211,7 @@ export function CalendarView({
           <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
         </div>
 
-        <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto [scrollbar-width:none] px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none px-1">
 
           {/* Mode Tabs: Bulan & Agenda */}
           <div className="flex items-center gap-1 shrink-0">
@@ -365,7 +365,7 @@ export function CalendarView({
       </div>
 
       {/* ── Main Content Area: Month Grid vs Agenda List ────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
         {viewMode === 'month' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-[500px]">
             {/* Calendar Month Grid (Left 2 cols) */}
@@ -394,7 +394,7 @@ export function CalendarView({
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 mt-3 pr-1 [scrollbar-width:thin]">
+              <div className="flex-1 overflow-y-auto space-y-3 mt-3 pr-1 custom-scrollbar">
                 {selectedDayEvents.length === 0 ? (
                   <EmptyState
                     compact

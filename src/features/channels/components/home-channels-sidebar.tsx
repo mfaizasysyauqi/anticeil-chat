@@ -109,7 +109,7 @@ export function HomeChannelsSidebar({
       </div>
 
       {/* Scroll Area: Home navigation and DMs */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin]">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 custom-scrollbar">
         {/* Navigation buttons */}
         <div className="space-y-0.5 mb-3">
           {/* 1. Aplikasi & Activities (Launcher utama) */}

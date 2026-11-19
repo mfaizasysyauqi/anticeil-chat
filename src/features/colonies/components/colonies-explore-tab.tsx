@@ -145,7 +145,7 @@ export function ColoniesExploreTab({
       {/* ── 3. Category Filter Tabs (Reusable Tabs System) ── */}
       <div className="space-y-3">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="h-auto p-1 bg-muted/40 border border-border/60 rounded-lg flex items-center gap-1 overflow-x-auto [scrollbar-width:none] justify-start">
+          <TabsList className="h-auto p-1 bg-muted/40 border border-border/60 rounded-lg flex items-center gap-1 overflow-x-auto scrollbar-none justify-start">
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               return (

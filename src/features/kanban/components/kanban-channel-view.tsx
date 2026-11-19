@@ -280,7 +280,7 @@ export function KanbanChannelView({
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
           <span className="text-[11px] font-semibold text-muted-foreground mr-1 hidden sm:inline">
             Prioritas:
           </span>
@@ -308,7 +308,7 @@ export function KanbanChannelView({
       </div>
 
       {/* ── Kanban Columns Board ──────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-x-auto overflow-y-hidden py-4 sm:py-6 [scrollbar-width:thin]', horizontalPadding)}>
+      <div className={cn('flex-1 min-h-0 overflow-x-auto overflow-y-hidden py-4 sm:py-6 custom-scrollbar', horizontalPadding)}>
         {isLoading ? (
           <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-2">
             <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
@@ -372,7 +372,7 @@ export function KanbanChannelView({
                 </div>
 
                 {/* Cards List */}
-                <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 [scrollbar-width:thin]">
+                <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 custom-scrollbar">
                   {columnCards.length === 0 ? (
                     <div className="h-28 flex flex-col items-center justify-center text-center p-3 text-muted-foreground/60 border border-dashed border-border/60 rounded-lg">
                       <p className="text-xs">Belum ada kartu di kolom ini</p>

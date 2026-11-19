@@ -123,7 +123,7 @@ export function GroupDmMembersSidebar({
       </div>
 
       {/* Members List */}
-      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-1 [scrollbar-width:thin]">
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-1 custom-scrollbar">
         {groupMembers.map((member) => {
           const isMe = currentUser?.id && member.id === currentUser.id;
           const owner = isOwner(member.id);
@@ -219,7 +219,7 @@ export function GroupDmMembersSidebar({
             </div>
           </div>
 
-          <div className="max-h-[220px] overflow-y-auto px-2 py-1 [scrollbar-width:thin] divide-y divide-border/20">
+          <div className="max-h-[220px] overflow-y-auto px-2 py-1 custom-scrollbar divide-y divide-border/20">
             {availableToAdd.length === 0 ? (
               <div className="py-6 text-center text-xs text-muted-foreground">
                 {t('Semua teman Anda sudah berada di dalam grup ini.')}

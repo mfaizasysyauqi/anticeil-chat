@@ -155,7 +155,7 @@ export function AddFriendDialog({
         </div>
 
         {/* Results / Empty View */}
-        <div className={cn('py-4 max-h-[300px] overflow-y-auto [scrollbar-width:thin]', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
+        <div className={cn('py-4 max-h-[300px] overflow-y-auto custom-scrollbar', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
           {isSearching ? (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />

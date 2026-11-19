@@ -152,7 +152,7 @@ export function DmUserProfileSidebar({
       </div>
 
       {/* Scrollable Profile Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
         {/* Banner */}
         <div className="h-28 w-full bg-gradient-to-r from-teal-900/40 via-sidebar-primary/20 to-emerald-900/30 relative border-b border-sidebar-border shrink-0 flex items-start justify-end p-2.5">
           {role === 'owner' || role === 'admin' ? (

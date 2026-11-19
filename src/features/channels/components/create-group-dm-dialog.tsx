@@ -160,7 +160,7 @@ export function CreateGroupDmDialog({
         </div>
 
         {/* Friends List */}
-        <div className="max-h-[260px] overflow-y-auto [scrollbar-width:thin] divide-y divide-border/20 px-2 py-1">
+        <div className="max-h-[260px] overflow-y-auto custom-scrollbar divide-y divide-border/20 px-2 py-1">
           {filteredFriends.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
               {availableFriends.length === 0

@@ -239,7 +239,7 @@ export function MediaPickerPopover({
         {/* Body: Left Server Rail & Right Media Grid */}
         <div className="flex-1 flex min-h-0 overflow-hidden bg-background">
           {/* Left Server Rail */}
-          <div className="w-12 bg-muted/40 border-r border-border py-2 flex flex-col items-center gap-2 overflow-y-auto shrink-0 [scrollbar-width:none]">
+          <div className="w-12 bg-muted/40 border-r border-border py-2 flex flex-col items-center gap-2 overflow-y-auto shrink-0 scrollbar-none">
             <button
               type="button"
               className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:rounded-2xl transition-all cursor-pointer"
@@ -298,7 +298,7 @@ export function MediaPickerPopover({
           </div>
 
           {/* Right Content Area */}
-          <div className="flex-1 overflow-y-auto p-3 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
             {/* EMOJI TAB CONTENT */}
             {activeMediaTab === 'emojis' && (
               <div className="space-y-4">

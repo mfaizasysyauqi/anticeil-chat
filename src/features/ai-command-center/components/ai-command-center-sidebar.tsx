@@ -107,7 +107,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
       </div>
 
       {/* Sessions Scrollable List */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 [scrollbar-width:thin] space-y-2">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 custom-scrollbar space-y-2">
         {/* Tombol Buat Percakapan Baru di Body */}
         <div className="mb-2">
           <button

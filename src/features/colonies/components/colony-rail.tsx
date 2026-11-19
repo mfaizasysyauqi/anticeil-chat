@@ -256,7 +256,7 @@ export function ColonyRail({
       </div>
 
       {/* Scrollable lower rail: Switcher, Add (+), then list */}
-      <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
         {/* Switcher Button: Servers vs Friends (matches standard server icon aesthetic) */}
         <div className="relative group w-full flex items-center justify-center">
           <Tooltip delayDuration={150}>

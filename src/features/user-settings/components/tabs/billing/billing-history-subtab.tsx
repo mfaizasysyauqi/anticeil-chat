@@ -226,7 +226,7 @@ export function BillingHistorySubtab() {
         </div>
 
         {/* Filter Category Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] pb-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
           {[
             { id: 'all', label: 'Semua Transaksi' },
             { id: 'subscription', label: 'Langganan Nectar' },

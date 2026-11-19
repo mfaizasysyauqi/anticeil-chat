@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
+  LAYOUT_PAGE_SPACING,
   TEXT_STYLES,
   BUTTON_STYLES,
   DIALOG_STYLES,
@@ -144,7 +145,7 @@ export function CallsView({
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
           <button
             onClick={() => {
               setActiveTab('all');
@@ -223,7 +224,7 @@ export function CallsView({
       </div>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin] space-y-6', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', verticalPadding)}>
         {/* Speed Dial / Kontak Cepat Section */}
         {friends && friends.length > 0 && (
           <div className="space-y-3">
@@ -234,7 +235,7 @@ export function CallsView({
               </h2>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
               {friends.slice(0, 8).map((f) => (
                 <div
                   key={f.id}

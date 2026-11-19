@@ -281,7 +281,7 @@ export function ActivityDestinationDialog({
                       </span>
                     </label>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-32 overflow-y-auto [scrollbar-width:thin] p-0.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-32 overflow-y-auto custom-scrollbar p-0.5">
                       {availableServers.map((hub) => {
                         const isSelected = selectedColonyId === hub.id;
                         return (
@@ -321,7 +321,7 @@ export function ActivityDestinationDialog({
                       </span>
                     </label>
 
-                    <div className="space-y-1 max-h-36 overflow-y-auto [scrollbar-width:thin]">
+                    <div className="space-y-1 max-h-36 overflow-y-auto custom-scrollbar">
                       {/* Voice channels first */}
                       {voiceChannels.map((ch) => {
                         const isSelected = selectedChannelId === ch.id;
@@ -400,7 +400,7 @@ export function ActivityDestinationDialog({
                 />
               </div>
 
-              <div className="space-y-1 max-h-48 overflow-y-auto [scrollbar-width:thin]">
+              <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
                 {filteredMembers.length > 0 ? (
                   filteredMembers.map((member) => {
                     const isSelected = selectedMember?.id === member.id || selectedDMId === `dm-${member.id}`;

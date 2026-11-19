@@ -223,7 +223,7 @@ export function UserProfileDialog({
         <DialogTitle className="sr-only">Profil Pengguna Anticeil</DialogTitle>
 
         {/* Scrollable Container */}
-        <div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           {/* 1. Header Banner */}
           <div
             className="h-28 sm:h-32 w-full relative flex items-start justify-end p-2.5 transition-all"

@@ -73,7 +73,7 @@ export function ChessSidebarPanel({
   isBotThinking,
 }: ChessSidebarPanelProps) {
   return (
-    <div className="hidden xl:flex w-76 2xl:w-84 flex-col gap-3 rounded-xl bg-zinc-900/90 border border-zinc-800 p-3.5 shrink-0 max-h-[min(540px,calc(100vh-40px))] overflow-y-auto [scrollbar-width:thin]">
+    <div className="hidden xl:flex w-76 2xl:w-84 flex-col gap-3 rounded-xl bg-zinc-900/90 border border-zinc-800 p-3.5 shrink-0 max-h-[min(540px,calc(100vh-40px))] overflow-y-auto custom-scrollbar">
       {/* Title & Live Status */}
       <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
         <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export function ChessSidebarPanel({
           </span>
           <span className="font-mono">{moveHistory.length} langkah</span>
         </div>
-        <div className="h-28 2xl:h-36 overflow-y-auto bg-zinc-950/70 border border-zinc-800/80 rounded-lg p-2 text-xs font-mono [scrollbar-width:thin]">
+        <div className="h-28 2xl:h-36 overflow-y-auto bg-zinc-950/70 border border-zinc-800/80 rounded-lg p-2 text-xs font-mono custom-scrollbar">
           {moveHistory.length === 0 ? (
             <span className="text-zinc-600 italic">Belum ada langkah...</span>
           ) : (

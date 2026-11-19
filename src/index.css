@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import './styles/scrollbar.css';
 @custom-variant dark (&:is(.dark *));
 
 html,
@@ -637,77 +638,6 @@ body,
 @layer base {
   * {
     @apply border-border;
-  }
-
-  /*
-   * Global sleek scrollbar — 6px pill thumb, hidden at rest, fades in on hover.
-   * Consistent across all overflow containers. scrollbar-none opts out.
-   */
-  *::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  *::-webkit-scrollbar-thumb {
-    background-color: transparent;
-    border-radius: 9999px;
-    transition: background-color 0.2s;
-  }
-
-  *:hover::-webkit-scrollbar-thumb {
-    background-color: var(--border);
-  }
-
-  *::-webkit-scrollbar-thumb:hover {
-    background-color: var(--ring);
-  }
-
-  *::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-
-  /* Firefox only — thin track, hidden at rest, visible on hover without overriding WebKit custom scrollbar */
-  @supports (-moz-appearance: none) {
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: transparent transparent;
-    }
-
-    *:hover {
-      scrollbar-color: var(--border) transparent;
-    }
-  }
-
-  /* Global overlay scrollbar: floats over padding box without consuming clientWidth or displacing content */
-  html,
-  body,
-  .overflow-y-auto,
-  .overflow-y-scroll,
-  .overflow-auto,
-  [class*='overflow-y-auto'],
-  [class*='overflow-auto'] {
-    overflow-y: auto;
-    overflow-y: overlay;
-  }
-
-  .overflow-x-auto,
-  .overflow-x-scroll,
-  [class*='overflow-x-auto'] {
-    overflow-x: auto;
-    overflow-x: overlay;
-  }
-
-  /* Restore scrollbar-none for elements that opt out */
-  .scrollbar-none {
-    scrollbar-width: none;
-  }
-
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
   }
 
   body {

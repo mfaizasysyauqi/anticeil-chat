@@ -568,7 +568,7 @@ export function ChessGame({
 
         {/* Mobile / Tablet Collapsible Move History */}
         {isHistoryExpanded && (
-          <div className="xl:hidden w-full max-h-24 overflow-y-auto bg-zinc-900/90 border border-zinc-800 rounded-lg p-2 mt-1 text-[11px] font-mono [scrollbar-width:thin]">
+          <div className="xl:hidden w-full max-h-24 overflow-y-auto bg-zinc-900/90 border border-zinc-800 rounded-lg p-2 mt-1 text-[11px] font-mono custom-scrollbar">
             <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
               {moveHistory.map((mv, idx) => {
                 if (idx % 2 === 0) {

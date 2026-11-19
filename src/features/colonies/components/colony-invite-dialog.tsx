@@ -257,7 +257,7 @@ export function ColonyInviteDialog({
             {isLoadingUsers && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
           </div>
 
-          <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1 [scrollbar-width:thin]">
+          <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {filteredUsers.length === 0 ? (
               <EmptyState
                 compact

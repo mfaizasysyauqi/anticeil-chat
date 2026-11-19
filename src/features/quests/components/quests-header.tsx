@@ -67,7 +67,7 @@ export function QuestsHeader({
       </div>
 
       {/* Center: Tabs with Reusable TopBarTabButton */}
-      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
         <TopBarTabButton
           active={activeTab === 'all'}
           onClick={() => onTabChange('all')}

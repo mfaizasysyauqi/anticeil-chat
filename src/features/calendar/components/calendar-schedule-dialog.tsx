@@ -86,7 +86,7 @@ export function CalendarScheduleDialog({
             </p>
           </div>
 
-          <div className={cn('py-4 space-y-4 max-h-[70vh] overflow-y-auto [scrollbar-width:thin]', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
+          <div className={cn('py-4 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
                 Judul Acara / Meeting *

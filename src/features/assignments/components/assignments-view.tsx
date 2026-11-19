@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { AssignmentItem, AssignmentTab } from '../types';
 import type { Colony } from '@/chat/chat-types';
@@ -135,7 +135,7 @@ export function AssignmentsView({
         </div>
 
         {/* Tab Pills */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
             {[
               { id: 'assigned_to_me', label: 'Perlu Dikerjakan', count: totalActive },
               { id: 'upcoming', label: 'Mendatang' },
@@ -206,7 +206,7 @@ export function AssignmentsView({
       </div>
 
       {/* ── Task Items List ────────────────────────────────────────── */}
-      <div className={cn('flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none lg:[scrollbar-width:thin]', horizontalPadding, verticalPadding)}>
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, verticalPadding)}>
         <div className="w-full space-y-3">
           {filteredList.length === 0 ? (
             <EmptyState

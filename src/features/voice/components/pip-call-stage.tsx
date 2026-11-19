@@ -218,7 +218,7 @@ export function PiPCallStage({
       </div>
 
       {/* Video & Activity Cards Stack (16:9 Landscape Rectangles like Discord) */}
-      <div className="p-2 flex flex-col gap-2 max-h-[460px] overflow-y-auto [scrollbar-width:none]">
+      <div className="p-2 flex flex-col gap-2 max-h-[460px] overflow-y-auto scrollbar-none">
         {/* Active Activity Card (e.g. Watch Together like in Discord reference) */}
         {activeAppId !== null && currentActiveApp && (
           <div className="relative aspect-video w-full rounded-xl bg-card border border-border overflow-hidden flex flex-col items-center justify-center p-3 text-center shadow-lg group">

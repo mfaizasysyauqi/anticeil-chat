@@ -98,7 +98,7 @@ export const DIALOG_STYLES = {
   HEADER_DESC: 'text-xs text-muted-foreground mt-0.5',
   
   // Modal Body & Footer
-  BODY_SCROLL: 'space-y-4 py-2 overflow-y-auto [scrollbar-width:thin]',
+  BODY_SCROLL: 'space-y-4 py-2 overflow-y-auto custom-scrollbar',
   FOOTER_ACTIONS: 'flex items-center justify-end gap-2 pt-4 border-t border-border/60',
 } as const;
 
@@ -120,7 +120,7 @@ export const SURFACE_STYLES = {
     
   // Discord-style Right Filter Sidebar
   SIDEBAR_RIGHT:
-    'hidden lg:flex w-64 lg:w-72 shrink-0 flex-col border-l border-border/60 bg-card/25 backdrop-blur-xs overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 [scrollbar-width:thin] select-none',
+    'hidden lg:flex w-64 lg:w-72 shrink-0 flex-col border-l border-border/60 bg-card/25 backdrop-blur-xs overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 custom-scrollbar select-none',
     
   // Responsive Card Grid (4 cols desktop, 3 cols tablet, 2 cols mobile)
   CARD_GRID: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4',

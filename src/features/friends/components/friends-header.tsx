@@ -64,7 +64,7 @@ export function FriendsHeader({
       </div>
 
       {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
-      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
           <button
             onClick={() => onTabChange('online')}
             className={cn(

@@ -225,7 +225,7 @@ export function ShareProfileDialog({
         </div>
 
         {/* Scrollable Destination List */}
-        <div className="max-h-[300px] min-h-[180px] overflow-y-auto [scrollbar-width:thin] p-2 space-y-1">
+        <div className="max-h-[300px] min-h-[180px] overflow-y-auto custom-scrollbar p-2 space-y-1">
           {filteredDestinations.length === 0 ? (
             <div className="py-10 text-center text-xs text-muted-foreground">
               <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />

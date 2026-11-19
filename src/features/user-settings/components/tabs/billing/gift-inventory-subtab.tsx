@@ -404,7 +404,7 @@ export function GiftInventorySubtab() {
             </div>
           </div>
 
-          <div className="p-5 space-y-3 max-h-[60vh] overflow-y-auto [scrollbar-width:thin]">
+          <div className="p-5 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
             {GIFT_OPTIONS.map((opt) => (
               <div
                 key={opt.id}

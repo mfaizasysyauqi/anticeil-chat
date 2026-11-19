@@ -195,7 +195,7 @@ export function TwoPaneSettingsDialog({
         {/* ── Left Sidebar / Master Pane ── */}
         <aside
           className={cn(
-            'bg-sidebar border-r border-sidebar-border flex-col overflow-y-auto select-none shrink-0 [scrollbar-width:thin]',
+            'bg-sidebar border-r border-sidebar-border flex-col overflow-y-auto select-none shrink-0 custom-scrollbar',
             mobileView === 'menu' ? 'flex w-full h-full md:w-52 lg:w-60' : 'hidden md:flex md:w-52 lg:w-60',
           )}
         >
@@ -217,7 +217,7 @@ export function TwoPaneSettingsDialog({
             {sidebarHeader && <div className="mb-4">{sidebarHeader}</div>}
 
             {/* Navigation groups */}
-            <div className="space-y-4 flex-1 overflow-y-auto [scrollbar-width:thin]">
+            <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar">
               {groups.map((group, groupIdx) => (
                 <div key={group.key || group.title || groupIdx} className="space-y-0.5">
                   {group.title && (

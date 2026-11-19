@@ -72,7 +72,7 @@ export function PinnedMessagesPopover({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto [scrollbar-width:thin] flex flex-col">
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
           {pinnedMessages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
               <div className="relative w-20 h-20 rounded-2xl bg-secondary/50 border border-border/60 flex items-center justify-center shadow-inner">

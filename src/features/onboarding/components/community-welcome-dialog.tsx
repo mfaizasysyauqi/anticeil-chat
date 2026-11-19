@@ -159,7 +159,7 @@ export function CommunityWelcomeDialog({
         </div>
 
         {/* Scrollable Body Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 [scrollbar-width:thin]">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           {/* Welcome Message Card */}
           <div className="p-4 rounded-xl bg-secondary/40 border border-border/70 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-foreground">

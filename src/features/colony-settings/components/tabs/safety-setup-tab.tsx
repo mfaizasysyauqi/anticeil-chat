@@ -491,7 +491,7 @@ export function SafetySetupTab({
             </p>
           </div>
         ) : (
-          <div className="rounded-xl border border-border/60 bg-muted/20 divide-y divide-border/40 max-h-56 overflow-y-auto [scrollbar-width:thin]">
+          <div className="rounded-xl border border-border/60 bg-muted/20 divide-y divide-border/40 max-h-56 overflow-y-auto custom-scrollbar">
             {incidents.map((inc) => {
               const details = (inc.details as any) || {};
               const isBlock = inc.action === 'AUTOMOD_BLOCK';

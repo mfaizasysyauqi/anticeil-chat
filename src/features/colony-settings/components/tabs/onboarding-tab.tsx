@@ -450,7 +450,7 @@ export function OnboardingTab({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-5 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
             {/* 1. Enable Toggle */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/40 border border-border/70">
               <div className="space-y-0.5">
@@ -493,7 +493,7 @@ export function OnboardingTab({
               <label className="text-xs font-semibold text-muted-foreground block">
                 {t('Saluran Pembuka Default (Centang untuk ditampilkan):')}
               </label>
-              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 [scrollbar-width:thin]">
+              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
                 {channels.map((c) => {
                   const isChecked = startingChannels.includes(c.id);
                   return (

@@ -104,7 +104,7 @@ export function SlashCommandAutocomplete({
       </div>
 
       {/* Commands List */}
-      <div className="max-h-56 overflow-y-auto divide-y divide-border/40 p-1 [scrollbar-width:thin]">
+      <div className="max-h-56 overflow-y-auto divide-y divide-border/40 p-1 custom-scrollbar">
         {filteredCommands.map((item, index) => {
           const isSelected = index === selectedIndex;
           return (

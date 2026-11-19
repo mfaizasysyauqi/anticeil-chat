@@ -186,7 +186,7 @@ export function ActivityLauncherDialog({
           </div>
 
           {/* Modal Scrollable Body */}
-          <div className="flex-1 overflow-y-auto px-3.5 sm:px-4 pb-3.5 space-y-3.5 max-md:scrollbar-none lg:[scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto px-3.5 sm:px-4 pb-3.5 space-y-3.5 max-md:scrollbar-none custom-scrollbar">
             {/* 1. Recents Row (YouTube, Whiteboard, Chess, ScreenShare, Wordle, Trivia) */}
             {!appSearchQuery && selectedCategory === 'all' && (
               <div>
