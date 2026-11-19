@@ -295,9 +295,8 @@ export function ShopView({
     { id: 'dew', label: t('Dew Shop') },
   ], [t]);
 
-  // Discord-grade Right Filter Sidebar States
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  // Filter Drawer State (Sheet Drawer ensures 100% Symmetrical Page Layout)
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'price_asc' | 'price_desc' | 'name_asc'>('recent');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [showOnlyDew, setShowOnlyDew] = useState(false);
@@ -1376,10 +1375,8 @@ export function ShopView({
         </div>
       </div>
 
-      {/* ── 2. Main Content Row: Center Catalog + Discord-style Right Filter Sidebar ── */}
-      <div className="flex-1 min-h-0 flex flex-row overflow-hidden">
-        {/* Scrollable Center Catalog */}
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', horizontalPadding, verticalPadding)}>
+      {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
+      <div className={cn(LAYOUT_PAGE_SPACING.BODY_SCROLL, 'space-y-6', horizontalPadding, verticalPadding)}>
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
           <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
             <div className="flex items-center gap-2">
@@ -1408,21 +1405,12 @@ export function ShopView({
                 </Select>
               </div>
 
-              {/* Desktop toggle filter button (Reusable, matching Quests style) */}
+              {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
               <FilterToggleButton
-                className="hidden lg:flex"
-                isOpen={isFilterOpen}
+                isOpen={isFilterDrawerOpen}
+                label={t('Filter')}
                 activeCount={activeFilterCount}
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-              />
-
-              {/* Mobile filter drawer trigger (Reusable, matching Quests style) */}
-              <FilterToggleButton
-                className="lg:hidden flex"
-                isOpen={false}
-                label={t('Filters')}
-                activeCount={activeFilterCount}
-                onClick={() => setIsMobileFilterOpen(true)}
+                onClick={() => setIsFilterDrawerOpen(true)}
               />
 
               {/* Tambah Item button - to the right of filter button, matching Quests */}
@@ -1703,16 +1691,8 @@ export function ShopView({
         )}
         </div>
 
-        {/* Desktop Discord-style Right Filter Sidebar */}
-        {isFilterOpen && (
-          <aside className={SURFACE_STYLES.SIDEBAR_RIGHT}>
-            {renderFilterContent()}
-          </aside>
-        )}
-      </div>
-
-      {/* Mobile / Tablet Filter Sheet Drawer */}
-      <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+      {/* Reusable Filter Sheet Drawer (Slides in on demand, preserving 100% page symmetry) */}
+      <Sheet open={isFilterDrawerOpen} onOpenChange={setIsFilterDrawerOpen}>
         <SheetContent side="right" className="w-[85vw] max-w-xs p-4 overflow-y-auto bg-card border-border z-[170]">
           <SheetHeader className="pb-3 border-b border-border/50 text-left">
             <SheetTitle className="text-sm font-bold flex items-center justify-between">
