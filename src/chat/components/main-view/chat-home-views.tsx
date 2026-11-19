@@ -205,7 +205,13 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   }
 
   if (isShopView) {
-    return <ShopView currentUser={members.find((m) => m.id === 'me')} />;
+    return (
+      <ShopView
+        currentUser={members.find((m) => m.id === 'me')}
+        onOpenSidebar={() => setIsMobileChannelsOpen(true)}
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+      />
+    );
   }
 
   if (isColoniesView) {
