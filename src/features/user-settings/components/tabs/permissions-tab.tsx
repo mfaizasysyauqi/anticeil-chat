@@ -452,7 +452,7 @@ export function PermissionsTab({ onNavigateSection }: PermissionsTabProps) {
                     {t('Messaging in Connected Games')}
                   </h2>
                   <p className="text-xs text-muted-foreground leading-relaxed mt-1">
-                    {t('These are settings for games like Neverness to Everness that use Anticeil to power their social experiences.')}
+                    {t('These are settings for external apps and games that use Anticeil to power their social experiences.')}
                   </p>
                 </div>
                 {/* Game badge icon */}

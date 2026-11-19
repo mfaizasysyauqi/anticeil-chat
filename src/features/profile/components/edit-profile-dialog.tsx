@@ -20,9 +20,23 @@ import {
   Link as LinkIcon,
   Crown,
   RotateCcw,
+  Tag,
+  BookOpen,
+  Code2,
+  Activity as ActivityIcon,
+  Smile,
+  Compass,
+  MessageSquare,
+  Bookmark,
+  Flame,
+  Globe,
+  Radio,
+  Share2,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
@@ -35,6 +49,11 @@ import {
   type FavoriteGameWidget,
   type WishlistItem,
   type ColonyUserProfile,
+  type CustomNoteWidget,
+  type InterestsWidget,
+  type SocialLinkItem,
+  type SocialLinksWidget,
+  type FeaturedColonyWidget,
 } from '../api/profile-api';
 import {
   gamesAppsApi,
@@ -43,6 +62,7 @@ import {
 } from '@/features/user-settings/api/games-apps-api';
 import { availablePlatforms } from '@/features/user-settings/data/platforms';
 import { coloniesApi } from '@/features/colonies/api/colonies-api';
+import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
 import type { Colony } from '@/chat/chat-types';
 
 export interface EditProfileDialogProps {
@@ -107,45 +127,6 @@ const DISPLAY_NAME_STYLE_OPTIONS = [
   { id: 'mono', label: 'Terminal Mono' },
 ];
 
-const SHOP_SUGGESTED_ITEMS: WishlistItem[] = [
-  {
-    id: 'nectar_vip',
-    title: 'Nectar VIP Pass',
-    category: 'Perks',
-    icon: '🍯',
-  },
-  {
-    id: 'dec_cyber_skull',
-    title: 'Cyber Void Skull',
-    category: 'Avatar Decoration',
-    icon: '💀',
-  },
-  {
-    id: 'frame_sakura',
-    title: 'Sakura Blossom Ring',
-    category: 'Avatar Frame',
-    icon: '🌸',
-  },
-  {
-    id: 'eff_aurora',
-    title: 'Aurora Neon Glow',
-    category: 'Profile Effect',
-    icon: '🌌',
-  },
-  {
-    id: 'eff_fireflies',
-    title: 'Fireflies Aura',
-    category: 'Profile Effect',
-    icon: '🌟',
-  },
-  {
-    id: 'nameplate_pixel',
-    title: 'Pixel Hive Crown',
-    category: 'Nameplate',
-    icon: '👑',
-  },
-];
-
 export function EditProfileDialog({
   open,
   onOpenChange,
@@ -183,31 +164,45 @@ export function EditProfileDialog({
 
   // Widgets State
   const [profileWidgets, setProfileWidgets] = useState<UserProfileWidgets>({
-    favoriteGame: null,
-    gamesILike: [],
-    wishlist: [],
+    customNote: null,
+    interests: null,
+    socialLinks: null,
+    featuredColony: null,
     activity: null,
     showActivity: true,
     showConnections: true,
     dismissedSuggested: false,
   });
 
-  // Favorite Game Editor
-  const [isEditingGame, setIsEditingGame] = useState(false);
-  const [gameTitleInput, setGameTitleInput] = useState('');
-  const [gameAccountInput, setGameAccountInput] = useState('');
-  const [gameRegionInput, setGameRegionInput] = useState('');
-  const [gameStatsInput, setGameStatsInput] = useState<Array<{ label: string; value: string }>>([]);
+  // Active Widget Creator: 'note' | 'interests' | 'links' | 'colony' | null
+  const [activeWidgetCreator, setActiveWidgetCreator] = useState<'note' | 'interests' | 'links' | 'colony' | null>(null);
 
-  // Games I Like & Wishlist Inputs
-  const [newGameInput, setNewGameInput] = useState('');
-  const [newWishlistInput, setNewWishlistInput] = useState('');
+  // Widget Inputs
+  const [noteTitleInput, setNoteTitleInput] = useState('');
+  const [noteContentInput, setNoteContentInput] = useState('');
+  const [noteEmojiInput, setNoteEmojiInput] = useState('📌');
+  const [isEditingNote, setIsEditingNote] = useState(false);
 
-  // Activity Editor & Connect Modal
+  const [interestTitleInput, setInterestTitleInput] = useState('Minat & Keahlian');
+  const [newTagInput, setNewTagInput] = useState('');
+
+  const [linkTitleInput, setLinkTitleInput] = useState('Tautan & Jejaring');
+  const [newLinkLabelInput, setNewLinkLabelInput] = useState('');
+  const [newLinkUrlInput, setNewLinkUrlInput] = useState('');
+
+  const [userColoniesList, setUserColoniesList] = useState<Colony[]>(initialColonies || []);
+
+  // Activity Editor State
   const [isEditingActivity, setIsEditingActivity] = useState(false);
   const [activityTitleInput, setActivityTitleInput] = useState('');
   const [activitySubtitleInput, setActivitySubtitleInput] = useState('');
-  const [activityIconInput, setActivityIconInput] = useState('🎮');
+  const [activityIconInput, setActivityIconInput] = useState('💻');
+
+  // Real Wishlist & Shop Catalog State
+  const [wishlistItems, setWishlistItems] = useState<ShopItem[]>([]);
+  const [catalogItems, setCatalogItems] = useState<ShopItem[]>([]);
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+  const [newCustomWishlistInput, setNewCustomWishlistInput] = useState('');
 
   // Account Connections
   const [userConnections, setUserConnections] = useState<UserConnectionItem[]>([]);
@@ -257,7 +252,25 @@ export function EditProfileDialog({
     reader.readAsDataURL(file);
   };
 
-  // Load Profile, Connections, and Colonies
+  // Helper to persist widgets changes immediately to backend
+  const persistWidgets = async (updatedWidgets: UserProfileWidgets) => {
+    setProfileWidgets(updatedWidgets);
+    try {
+      await profileApi.updateProfile({
+        widgets: {
+          ...updatedWidgets,
+          nameplate: profileNameplate,
+          profileFrame: profileFrame,
+          profileEffect: profileEffect,
+          profileTheme: profileTheme,
+          avatarDecoration: profileAvatarDecoration,
+          displayNameStyle: displayNameStyle,
+        },
+      });
+    } catch {}
+  };
+
+  // Load Profile, Connections, Colonies, Wishlist & Catalog
   useEffect(() => {
     if (!open) return;
 
@@ -286,23 +299,47 @@ export function EditProfileDialog({
 
       if (data.widgets) {
         setProfileWidgets((prev) => ({ ...prev, ...data.widgets }));
-        if (data.widgets.favoriteGame) {
-          setGameTitleInput(data.widgets.favoriteGame.title || '');
-          setGameAccountInput(data.widgets.favoriteGame.accountName || '');
-          setGameRegionInput(data.widgets.favoriteGame.region || '');
-          setGameStatsInput(data.widgets.favoriteGame.stats || []);
+        if (data.widgets.customNote) {
+          setNoteTitleInput(data.widgets.customNote.title || '');
+          setNoteContentInput(data.widgets.customNote.content || '');
+          setNoteEmojiInput(data.widgets.customNote.emoji || '📌');
+        }
+        if (data.widgets.interests) {
+          setInterestTitleInput(data.widgets.interests.title || 'Minat & Keahlian');
+        }
+        if (data.widgets.socialLinks) {
+          setLinkTitleInput(data.widgets.socialLinks.title || 'Tautan & Jejaring');
         }
         if (data.widgets.activity) {
           setActivityTitleInput(data.widgets.activity.title || '');
           setActivitySubtitleInput(data.widgets.activity.subtitle || '');
-          setActivityIconInput(data.widgets.activity.icon || '🎮');
+          setActivityIconInput(data.widgets.activity.icon || '💻');
         }
       }
     });
 
     // Load real user connections
     gamesAppsApi.getUserConnections().then(setUserConnections);
-  }, [open, currentUser, defaultAvatar]);
+
+    // Load real user wishlist and catalog items
+    setIsLoadingWishlist(true);
+    Promise.all([shopApi.getWishlist(), shopApi.getItems()])
+      .then(([wList, cList]) => {
+        setWishlistItems(wList || []);
+        setCatalogItems(cList || []);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingWishlist(false));
+
+    // Load colonies if not passed
+    if (!initialColonies || initialColonies.length === 0) {
+      coloniesApi.getColonies().then((cols) => {
+        if (cols && cols.length > 0) setUserColoniesList(cols);
+      }).catch(() => {});
+    } else {
+      setUserColoniesList(initialColonies);
+    }
+  }, [open, currentUser, defaultAvatar, initialColonies]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -350,89 +387,142 @@ export function EditProfileDialog({
     }
   };
 
-  // Favorite Game Widget Handlers
-  const handleSaveFavoriteGame = () => {
-    if (!gameTitleInput.trim()) {
-      toast.error(t('Nama game tidak boleh kosong'));
+  // Custom Note Widget Handlers
+  const handleSaveCustomNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteTitleInput.trim() && !noteContentInput.trim()) {
+      toast.error(t('Judul atau isi catatan diperlukan'));
       return;
     }
-    const updatedGame: FavoriteGameWidget = {
-      title: gameTitleInput.trim(),
-      accountName: gameAccountInput.trim() || currentUserName,
-      region: gameRegionInput.trim() || 'Global',
-      stats: gameStatsInput.filter((s) => s.label.trim() && s.value.trim()),
+    const updated: UserProfileWidgets = {
+      ...profileWidgets,
+      customNote: {
+        title: noteTitleInput.trim() || 'Catatan Profil',
+        content: noteContentInput.trim() || 'Sedang fokus mengerjakan projek.',
+        emoji: noteEmojiInput || '📌',
+      },
     };
-    setProfileWidgets((prev) => ({ ...prev, favoriteGame: updatedGame }));
-    setIsEditingGame(false);
-    toast.success(t('Widget Favorite Game berhasil disimpan!'));
+    persistWidgets(updated);
+    setIsEditingNote(false);
+    setActiveWidgetCreator(null);
+    toast.success(t('Widget Catatan berhasil disimpan! 🎉'));
   };
 
-  const handleAddStatRow = () => {
-    setGameStatsInput((prev) => [...prev, { label: 'Stat', value: '1' }]);
+  const handleDeleteCustomNote = () => {
+    const updated: UserProfileWidgets = { ...profileWidgets, customNote: null };
+    persistWidgets(updated);
+    toast.info(t('Widget Catatan dihapus'));
   };
 
-  const handleRemoveStatRow = (index: number) => {
-    setGameStatsInput((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Games I Like Handlers
-  const handleAddGameILike = (e: React.FormEvent) => {
+  // Interests / Minat Widget Handlers
+  const handleAddInterestTag = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newGameInput.trim()) return;
-    const current = profileWidgets.gamesILike || [];
-    if (current.includes(newGameInput.trim())) {
-      toast.info(t('Game sudah ada di daftar!'));
+    if (!newTagInput.trim()) return;
+    const tag = newTagInput.trim();
+    const currentTags = profileWidgets.interests?.tags || [];
+    if (currentTags.includes(tag)) {
+      toast.info(t('Tag sudah ada di daftar!'));
       return;
     }
-    const updated = [...current, newGameInput.trim()];
-    setProfileWidgets((prev) => ({ ...prev, gamesILike: updated }));
-    setNewGameInput('');
-    toast.success(t('Game ditambahkan ke daftar!'));
-  };
-
-  const handleRemoveGameILike = (game: string) => {
-    const current = profileWidgets.gamesILike || [];
-    const updated = current.filter((g) => g !== game);
-    setProfileWidgets((prev) => ({ ...prev, gamesILike: updated }));
-  };
-
-  // Wishlist Handlers
-  const handleAddWishlist = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newWishlistInput.trim()) return;
-    const newItem: WishlistItem = {
-      id: `w-${Date.now()}`,
-      title: newWishlistInput.trim(),
-      category: 'Item',
-      icon: '✨',
+    const updated: UserProfileWidgets = {
+      ...profileWidgets,
+      interests: {
+        title: profileWidgets.interests?.title || 'Minat & Keahlian',
+        tags: [...currentTags, tag],
+      },
     };
-    const current = profileWidgets.wishlist || [];
-    setProfileWidgets((prev) => ({ ...prev, wishlist: [...current, newItem] }));
-    setNewWishlistInput('');
-    toast.success(t('Item ditambahkan ke Wishlist!'));
+    setNewTagInput('');
+    persistWidgets(updated);
+    toast.success(t('Tag berhasil ditambahkan!'));
   };
 
-  const handleToggleWishlistItem = (item: WishlistItem) => {
-    const current = profileWidgets.wishlist || [];
-    const exists = current.some((w) => w.id === item.id || w.title === item.title);
-    if (exists) {
-      setProfileWidgets((prev) => ({
-        ...prev,
-        wishlist: current.filter((w) => w.id !== item.id && w.title !== item.title),
-      }));
-      toast.info(t('Item dihapus dari Wishlist'));
-    } else {
-      setProfileWidgets((prev) => ({
-        ...prev,
-        wishlist: [...current, item],
-      }));
-      toast.success(t('Item ditambahkan ke Wishlist! ❤️'));
+  const handleRemoveInterestTag = (tag: string) => {
+    const currentTags = profileWidgets.interests?.tags || [];
+    const updated: UserProfileWidgets = {
+      ...profileWidgets,
+      interests: {
+        title: profileWidgets.interests?.title || 'Minat & Keahlian',
+        tags: currentTags.filter((t) => t !== tag),
+      },
+    };
+    persistWidgets(updated);
+  };
+
+  const handleDeleteInterestsWidget = () => {
+    const updated: UserProfileWidgets = { ...profileWidgets, interests: null };
+    persistWidgets(updated);
+    toast.info(t('Widget Minat & Keahlian dihapus'));
+  };
+
+  // Social Links Widget Handlers
+  const handleAddSocialLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLinkLabelInput.trim() || !newLinkUrlInput.trim()) {
+      toast.error(t('Label dan alamat tautan diperlukan'));
+      return;
     }
+    let cleanUrl = newLinkUrlInput.trim();
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = `https://${cleanUrl}`;
+    }
+    const newLink: SocialLinkItem = {
+      id: `link_${Date.now()}`,
+      label: newLinkLabelInput.trim(),
+      url: cleanUrl,
+    };
+    const currentLinks = profileWidgets.socialLinks?.links || [];
+    const updated: UserProfileWidgets = {
+      ...profileWidgets,
+      socialLinks: {
+        title: profileWidgets.socialLinks?.title || 'Tautan & Jejaring',
+        links: [...currentLinks, newLink],
+      },
+    };
+    setNewLinkLabelInput('');
+    setNewLinkUrlInput('');
+    persistWidgets(updated);
+    setActiveWidgetCreator(null);
+    toast.success(t('Tautan berhasil ditambahkan! 🔗'));
   };
 
-  const handleRemoveWishlist = (id: string) => {
-    const current = profileWidgets.wishlist || [];
-    setProfileWidgets((prev) => ({ ...prev, wishlist: current.filter((w) => w.id !== id) }));
+  const handleRemoveSocialLink = (linkId: string) => {
+    const currentLinks = profileWidgets.socialLinks?.links || [];
+    const updated: UserProfileWidgets = {
+      ...profileWidgets,
+      socialLinks: {
+        title: profileWidgets.socialLinks?.title || 'Tautan & Jejaring',
+        links: currentLinks.filter((l) => l.id !== linkId),
+      },
+    };
+    persistWidgets(updated);
+  };
+
+  const handleDeleteSocialLinksWidget = () => {
+    const updated: UserProfileWidgets = { ...profileWidgets, socialLinks: null };
+    persistWidgets(updated);
+    toast.info(t('Widget Tautan dihapus'));
+  };
+
+  // Featured Colony Widget Handlers
+  const handleSelectFeaturedColony = (colony: Colony) => {
+    const updated: UserProfileWidgets = {
+      ...profileWidgets,
+      featuredColony: {
+        colonyId: colony.id,
+        colonyName: colony.name,
+        icon: colony.iconUrl || undefined,
+        role: 'Anggota',
+      },
+    };
+    persistWidgets(updated);
+    setActiveWidgetCreator(null);
+    toast.success(t(`Komunitas "${colony.name}" dijadikan unggulan! 🏰`));
+  };
+
+  const handleDeleteFeaturedColony = () => {
+    const updated: UserProfileWidgets = { ...profileWidgets, featuredColony: null };
+    persistWidgets(updated);
+    toast.info(t('Widget Komunitas Unggulan dihapus'));
   };
 
   // Activity Handlers
@@ -441,22 +531,118 @@ export function EditProfileDialog({
       toast.error(t('Nama aktivitas diperlukan'));
       return;
     }
-    setProfileWidgets((prev) => ({
-      ...prev,
+    const updated: UserProfileWidgets = {
+      ...profileWidgets,
       activity: {
         title: activityTitleInput.trim(),
         subtitle: activitySubtitleInput.trim() || t('Aktif sekarang'),
-        icon: activityIconInput || '🎮',
+        icon: activityIconInput || '💻',
         timeAgo: t('Baru saja'),
       },
-    }));
+    };
+    persistWidgets(updated);
     setIsEditingActivity(false);
-    toast.success(t('Status aktivitas berhasil diperbarui!'));
+    toast.success(t('Status aktivitas berhasil diperbarui! 🎉'));
   };
 
   const handleClearActivity = () => {
-    setProfileWidgets((prev) => ({ ...prev, activity: null }));
+    const updated: UserProfileWidgets = { ...profileWidgets, activity: null };
+    persistWidgets(updated);
     toast.info(t('Aktivitas dibersihkan'));
+  };
+
+  // Real Wishlist Handlers
+  const handleToggleWishlist = async (itemId: string, itemTitle?: string) => {
+    try {
+      const res = await shopApi.toggleWishlist(itemId);
+      if (res.success) {
+        if (res.wishlist) {
+          setWishlistItems(res.wishlist);
+        } else {
+          const fresh = await shopApi.getWishlist();
+          setWishlistItems(fresh);
+        }
+        if (res.isWishlisted) {
+          toast.success(t(`${itemTitle || 'Item'} ditambahkan ke Wishlist! ❤️`));
+        } else {
+          toast.info(t(`${itemTitle || 'Item'} dihapus dari Wishlist`));
+        }
+      }
+    } catch {
+      toast.error(t('Gagal memperbarui Wishlist'));
+    }
+  };
+
+  const handleRemoveFromWishlist = async (itemId: string) => {
+    try {
+      const res = await shopApi.toggleWishlist(itemId);
+      if (res.success) {
+        if (res.wishlist) {
+          setWishlistItems(res.wishlist);
+        } else {
+          const fresh = await shopApi.getWishlist();
+          setWishlistItems(fresh);
+        }
+        toast.info(t('Item dihapus dari Wishlist'));
+      }
+    } catch {
+      toast.error(t('Gagal menghapus item dari Wishlist'));
+    }
+  };
+
+  const handleAddCustomWishlist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustomWishlistInput.trim()) return;
+    const name = newCustomWishlistInput.trim();
+    try {
+      const res = await shopApi.createItem({
+        name,
+        category: 'avatar_decoration',
+        collection: 'Kustom Anticeil',
+        description: `Item kustom wishlist: ${name}`,
+        priceOrbs: 250,
+        priceIdr: 35000,
+        previewIcon: '✨',
+      });
+      if (res && res.item) {
+        const toggleRes = await shopApi.toggleWishlist(res.item.id);
+        if (toggleRes.wishlist) {
+          setWishlistItems(toggleRes.wishlist);
+        } else {
+          const fresh = await shopApi.getWishlist();
+          setWishlistItems(fresh);
+        }
+        const freshCatalog = await shopApi.getItems();
+        setCatalogItems(freshCatalog);
+        setNewCustomWishlistInput('');
+        toast.success(t(`Item "${name}" berhasil ditambahkan ke Wishlist! 🎁`));
+      }
+    } catch {
+      toast.error(t('Gagal menambahkan item kustom'));
+    }
+  };
+
+  const handlePreviewShopItem = (item: ShopItem) => {
+    if (item.category === 'avatar_decoration' || (item.itemTypes && item.itemTypes.includes('avatar_decoration'))) {
+      setProfileAvatarDecoration('cyber_crown');
+    }
+    if (item.category === 'nameplate' || (item.itemTypes && item.itemTypes.includes('nameplate'))) {
+      setProfileNameplate('Pixel Hive');
+    }
+    if (item.category === 'profile_effect' || (item.itemTypes && item.itemTypes.includes('profile_effect'))) {
+      setProfileEffect('aurora_glow');
+    }
+    if (item.id.includes('sakura')) {
+      setProfileFrame('sakura_blossom');
+      setProfileAvatarDecoration('sakura');
+    } else if (item.id.includes('cyber')) {
+      setProfileNameplate('Cyber Teal');
+      setProfileEffect('teal_sparkles');
+    } else if (item.id.includes('cosmic') || item.id.includes('aurora')) {
+      setProfileEffect('aurora_glow');
+      setProfileNameplate('Midnight Void');
+    }
+    toast.success(t(`Preview "${item.name}" ditampilkan di kartu profil!`));
   };
 
   // Connect Account Handler
@@ -905,22 +1091,33 @@ export function EditProfileDialog({
             {profileSubTab === 'board' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground">{t('Your Widgets')}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-foreground">{t('Your Widgets')}</span>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-semibold">
+                      {[
+                        profileWidgets.customNote ? 1 : 0,
+                        profileWidgets.interests ? 1 : 0,
+                        profileWidgets.socialLinks ? 1 : 0,
+                        profileWidgets.featuredColony ? 1 : 0,
+                      ].reduce((a, b) => a + b, 0)}{' '}
+                      {t('Aktif')}
+                    </Badge>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
                       variant="teal"
                       onClick={() => {
-                        if (!profileWidgets.favoriteGame) {
-                          setIsEditingGame(true);
-                        } else if (!profileWidgets.gamesILike || profileWidgets.gamesILike.length === 0) {
-                          setProfileWidgets((prev) => ({
-                            ...prev,
-                            gamesILike: ['Valorant'],
-                          }));
-                          toast.success(t('Widget Games I Like ditambahkan!'));
+                        if (!profileWidgets.customNote) {
+                          setActiveWidgetCreator('note');
+                        } else if (!profileWidgets.interests) {
+                          setActiveWidgetCreator('interests');
+                        } else if (!profileWidgets.socialLinks) {
+                          setActiveWidgetCreator('links');
+                        } else if (!profileWidgets.featuredColony) {
+                          setActiveWidgetCreator('colony');
                         } else {
-                          setIsEditingGame(true);
+                          setActiveWidgetCreator('note');
                         }
                       }}
                       className="text-xs px-3 h-8 font-semibold cursor-pointer"
@@ -930,7 +1127,7 @@ export function EditProfileDialog({
                   </div>
                 </div>
 
-                {/* Suggested for you (Discord Board Image 3) */}
+                {/* Suggested for you (Clean Anticeil Widgets) */}
                 {!profileWidgets.dismissedSuggested && (
                   <div className="p-3.5 rounded-xl border border-border/80 bg-card space-y-3 relative shadow-xs">
                     <div className="flex items-center justify-between">
@@ -940,284 +1137,374 @@ export function EditProfileDialog({
                       <button
                         type="button"
                         onClick={() =>
-                          setProfileWidgets((prev) => ({ ...prev, dismissedSuggested: true }))
+                          persistWidgets({ ...profileWidgets, dismissedSuggested: true })
                         }
-                        className="text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer"
+                        className="text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer transition-colors"
                         title={t('Tutup')}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* Suggestion 1: Minat & Keahlian */}
                       <div
                         onClick={() => {
-                          setIsEditingGame(true);
-                        }}
-                        className="h-24 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900 to-slate-950 p-3 flex flex-col justify-between hover:border-sidebar-primary/60 cursor-pointer group shadow-sm transition-colors"
-                      >
-                        <div className="size-6 rounded-full bg-white/10 group-hover:bg-sidebar-primary group-hover:text-sidebar-primary-foreground flex items-center justify-center text-xs text-white transition-colors">
-                          <Plus className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-xs font-bold text-white/90">
-                          {t('Favorite Game')}
-                        </span>
-                      </div>
-                      <div
-                        onClick={() => {
-                          const current = profileWidgets.gamesILike || [];
-                          if (current.length === 0) {
-                            setProfileWidgets((prev) => ({
-                              ...prev,
-                              gamesILike: ['Valorant'],
-                            }));
-                            toast.success(t('Widget Games I Like ditambahkan!'));
+                          if (!profileWidgets.interests) {
+                            persistWidgets({
+                              ...profileWidgets,
+                              interests: {
+                                title: 'Minat & Keahlian',
+                                tags: ['UI/UX Design', 'Fullstack Dev'],
+                              },
+                            });
+                            toast.success(t('Widget Minat & Keahlian ditambahkan!'));
                           } else {
-                            toast.info(t('Widget Games I Like sudah aktif di bawah'));
+                            toast.info(t('Widget Minat & Keahlian sudah aktif'));
                           }
                         }}
-                        className="h-24 rounded-xl border border-border/60 bg-gradient-to-br from-teal-950/40 to-slate-950 p-3 flex flex-col justify-between hover:border-sidebar-primary/60 cursor-pointer group shadow-sm transition-colors"
+                        className="h-20 rounded-xl border border-border/70 bg-secondary/30 hover:bg-secondary/60 p-3 flex flex-col justify-between hover:border-sidebar-primary/60 cursor-pointer group shadow-2xs transition-all"
                       >
-                        <div className="size-6 rounded-full bg-white/10 group-hover:bg-sidebar-primary group-hover:text-sidebar-primary-foreground flex items-center justify-center text-xs text-white transition-colors">
-                          <Plus className="w-3.5 h-3.5" />
+                        <div className="flex items-center justify-between">
+                          <div className="size-6 rounded-lg bg-sidebar-primary/10 text-sidebar-primary flex items-center justify-center text-xs group-hover:scale-105 transition-transform">
+                            <Tag className="w-3.5 h-3.5" />
+                          </div>
+                          <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-sidebar-primary" />
                         </div>
-                        <span className="text-xs font-bold text-white/90">
-                          {t('Games I Like')}
+                        <span className="text-xs font-semibold text-foreground">
+                          {t('Minat & Keahlian')}
+                        </span>
+                      </div>
+
+                      {/* Suggestion 2: Catatan Profil */}
+                      <div
+                        onClick={() => {
+                          if (!profileWidgets.customNote) {
+                            setActiveWidgetCreator('note');
+                            setIsEditingNote(true);
+                          } else {
+                            setIsEditingNote(true);
+                          }
+                        }}
+                        className="h-20 rounded-xl border border-border/70 bg-secondary/30 hover:bg-secondary/60 p-3 flex flex-col justify-between hover:border-sidebar-primary/60 cursor-pointer group shadow-2xs transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="size-6 rounded-lg bg-sidebar-primary/10 text-sidebar-primary flex items-center justify-center text-xs group-hover:scale-105 transition-transform">
+                            <Bookmark className="w-3.5 h-3.5" />
+                          </div>
+                          <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-sidebar-primary" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">
+                          {t('Catatan / Highlight')}
+                        </span>
+                      </div>
+
+                      {/* Suggestion 3: Tautan Sosial */}
+                      <div
+                        onClick={() => {
+                          if (!profileWidgets.socialLinks) {
+                            setActiveWidgetCreator('links');
+                          } else {
+                            toast.info(t('Widget Tautan sudah aktif'));
+                          }
+                        }}
+                        className="h-20 rounded-xl border border-border/70 bg-secondary/30 hover:bg-secondary/60 p-3 flex flex-col justify-between hover:border-sidebar-primary/60 cursor-pointer group shadow-2xs transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="size-6 rounded-lg bg-sidebar-primary/10 text-sidebar-primary flex items-center justify-center text-xs group-hover:scale-105 transition-transform">
+                            <LinkIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-sidebar-primary" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">
+                          {t('Tautan & Jejaring')}
+                        </span>
+                      </div>
+
+                      {/* Suggestion 4: Komunitas Unggulan */}
+                      <div
+                        onClick={() => {
+                          if (userColoniesList.length > 0) {
+                            handleSelectFeaturedColony(userColoniesList[0]);
+                          } else {
+                            setActiveWidgetCreator('colony');
+                          }
+                        }}
+                        className="h-20 rounded-xl border border-border/70 bg-secondary/30 hover:bg-secondary/60 p-3 flex flex-col justify-between hover:border-sidebar-primary/60 cursor-pointer group shadow-2xs transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="size-6 rounded-lg bg-sidebar-primary/10 text-sidebar-primary flex items-center justify-center text-xs group-hover:scale-105 transition-transform">
+                            <Shield className="w-3.5 h-3.5" />
+                          </div>
+                          <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-sidebar-primary" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">
+                          {t('Komunitas Unggulan')}
                         </span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Favorite Game Editor Form */}
-                {isEditingGame && (
-                  <div className="p-4 rounded-xl border border-sidebar-primary/40 bg-sidebar-primary/10 space-y-3">
+                {/* Inline Creator: Custom Note */}
+                {(activeWidgetCreator === 'note' || isEditingNote) && (
+                  <form onSubmit={handleSaveCustomNote} className="p-4 rounded-xl border border-sidebar-primary/40 bg-card space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground">
-                        {t('Konfigurasi Favorite Game')}
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Bookmark className="w-3.5 h-3.5 text-sidebar-primary" />
+                        {t('Atur Widget Catatan')}
                       </span>
                       <X
                         className="w-4 h-4 cursor-pointer text-muted-foreground hover:text-foreground"
-                        onClick={() => setIsEditingGame(false)}
+                        onClick={() => {
+                          setActiveWidgetCreator(null);
+                          setIsEditingNote(false);
+                        }}
                       />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">
-                          {t('Nama Game')}
-                        </label>
-                        <input
-                          type="text"
-                          value={gameTitleInput}
-                          onChange={(e) => setGameTitleInput(e.target.value)}
-                          placeholder="e.g. Valorant / Dota 2"
-                          className="w-full text-xs p-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-sidebar-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">
-                          {t('IGN / Akun')}
-                        </label>
-                        <input
-                          type="text"
-                          value={gameAccountInput}
-                          onChange={(e) => setGameAccountInput(e.target.value)}
-                          placeholder="e.g. Faiz#1234"
-                          className="w-full text-xs p-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-sidebar-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">
-                          {t('Server / Region')}
-                        </label>
-                        <input
-                          type="text"
-                          value={gameRegionInput}
-                          onChange={(e) => setGameRegionInput(e.target.value)}
-                          placeholder="e.g. Asia / SEA / Global"
-                          className="w-full text-xs p-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-sidebar-primary"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Dynamic Stats Row Editor */}
-                    <div className="space-y-2 pt-2 border-t border-sidebar-primary/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-foreground">
-                          {t('Statistik Pemain (Opsional)')}
-                        </span>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="tealGhost"
-                          onClick={handleAddStatRow}
-                          className="h-6 text-[10px] px-2 cursor-pointer"
-                        >
-                          + {t('Tambah Stat')}
-                        </Button>
-                      </div>
-
-                      {gameStatsInput.map((st, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <input
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16">
+                          <label className="text-[10px] text-muted-foreground block mb-1">
+                            {t('Emoji')}
+                          </label>
+                          <Input
                             type="text"
-                            value={st.label}
-                            onChange={(e) => {
-                              const updated = [...gameStatsInput];
-                              updated[idx].label = e.target.value;
-                              setGameStatsInput(updated);
-                            }}
-                            placeholder="e.g. Rank / Level"
-                            className="w-1/2 text-xs p-1.5 rounded border border-border bg-card text-foreground"
+                            value={noteEmojiInput}
+                            onChange={(e) => setNoteEmojiInput(e.target.value)}
+                            className="text-center text-sm h-8"
                           />
-                          <input
-                            type="text"
-                            value={st.value}
-                            onChange={(e) => {
-                              const updated = [...gameStatsInput];
-                              updated[idx].value = e.target.value;
-                              setGameStatsInput(updated);
-                            }}
-                            placeholder="e.g. Immortal / 120"
-                            className="w-1/2 text-xs p-1.5 rounded border border-border bg-card text-foreground"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveStatRow(idx)}
-                            className="text-muted-foreground hover:text-destructive p-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
-                      ))}
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground block mb-1">
+                            {t('Judul Catatan')}
+                          </label>
+                          <Input
+                            type="text"
+                            value={noteTitleInput}
+                            onChange={(e) => setNoteTitleInput(e.target.value)}
+                            placeholder={t('e.g. Focus Goal / About Me')}
+                            className="text-xs h-8"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-1">
+                          {t('Isi Catatan')}
+                        </label>
+                        <Input
+                          type="text"
+                          value={noteContentInput}
+                          onChange={(e) => setNoteContentInput(e.target.value)}
+                          placeholder={t('Tulis catatan singkat atau status yang ingin Anda tampilkan...')}
+                          className="text-xs h-8"
+                        />
+                      </div>
                     </div>
-
-                    <div className="flex justify-end gap-2 pt-2">
+                    <div className="flex justify-end gap-2 pt-1">
                       <Button
+                        type="button"
                         size="sm"
                         variant="tealSecondary"
-                        onClick={() => setIsEditingGame(false)}
+                        onClick={() => {
+                          setActiveWidgetCreator(null);
+                          setIsEditingNote(false);
+                        }}
                         className="h-7 text-xs"
                       >
                         {t('Batal')}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="teal"
-                        onClick={handleSaveFavoriteGame}
-                        className="h-7 text-xs font-bold"
-                      >
-                        {t('Simpan Widget')}
+                      <Button type="submit" size="sm" variant="teal" className="h-7 text-xs font-bold">
+                        {t('Simpan Catatan')}
                       </Button>
                     </div>
+                  </form>
+                )}
+
+                {/* Inline Creator: Social Link */}
+                {activeWidgetCreator === 'links' && !profileWidgets.socialLinks && (
+                  <form onSubmit={handleAddSocialLink} className="p-4 rounded-xl border border-sidebar-primary/40 bg-card space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <LinkIcon className="w-3.5 h-3.5 text-sidebar-primary" />
+                        {t('Tambah Tautan Baru')}
+                      </span>
+                      <X
+                        className="w-4 h-4 cursor-pointer text-muted-foreground hover:text-foreground"
+                        onClick={() => setActiveWidgetCreator(null)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-1">
+                          {t('Nama Label')}
+                        </label>
+                        <Input
+                          type="text"
+                          value={newLinkLabelInput}
+                          onChange={(e) => setNewLinkLabelInput(e.target.value)}
+                          placeholder="e.g. GitHub / Portfolio"
+                          className="text-xs h-8"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-1">
+                          {t('URL Tautan')}
+                        </label>
+                        <Input
+                          type="text"
+                          value={newLinkUrlInput}
+                          onChange={(e) => setNewLinkUrlInput(e.target.value)}
+                          placeholder="https://..."
+                          className="text-xs h-8"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="tealSecondary"
+                        onClick={() => setActiveWidgetCreator(null)}
+                        className="h-7 text-xs"
+                      >
+                        {t('Batal')}
+                      </Button>
+                      <Button type="submit" size="sm" variant="teal" className="h-7 text-xs font-bold">
+                        {t('Tambah Tautan')}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Inline Creator: Featured Colony */}
+                {activeWidgetCreator === 'colony' && !profileWidgets.featuredColony && (
+                  <div className="p-4 rounded-xl border border-sidebar-primary/40 bg-card space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-sidebar-primary" />
+                        {t('Pilih Komunitas Unggulan')}
+                      </span>
+                      <X
+                        className="w-4 h-4 cursor-pointer text-muted-foreground hover:text-foreground"
+                        onClick={() => setActiveWidgetCreator(null)}
+                      />
+                    </div>
+                    {userColoniesList.length > 0 ? (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {userColoniesList.map((col) => (
+                          <div
+                            key={col.id}
+                            onClick={() => handleSelectFeaturedColony(col)}
+                            className="p-2.5 rounded-lg border border-border/70 hover:border-sidebar-primary bg-secondary/30 hover:bg-secondary/60 flex items-center justify-between cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className="size-7 rounded-lg bg-sidebar-primary/20 flex items-center justify-center font-bold text-xs text-sidebar-primary overflow-hidden">
+                                {col.iconUrl ? (
+                                  <img src={col.iconUrl} alt={col.name} className="size-full object-cover" />
+                                ) : (
+                                  col.name.slice(0, 2).toUpperCase()
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold text-foreground truncate">
+                                {col.name}
+                              </span>
+                            </div>
+                            <Button size="sm" variant="tealGhost" className="h-6 text-[11px] px-2">
+                              {t('Pilih')}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {t('Anda belum bergabung dengan komunitas apapun.')}
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {/* Favorite Game Card Widget (Active) */}
-                {profileWidgets.favoriteGame && !isEditingGame && (
-                  <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 space-y-4 shadow-sm relative group">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-xl bg-sidebar-primary/20 border border-sidebar-primary/40 flex items-center justify-center text-xl shadow-sm text-sidebar-primary">
-                          🎮
+                {/* WIDGET 1: Custom Note Card (Active) */}
+                {profileWidgets.customNote && (
+                  <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-xs relative group">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="size-9 rounded-xl bg-sidebar-primary/10 border border-sidebar-primary/30 flex items-center justify-center text-lg shrink-0">
+                          {profileWidgets.customNote.emoji || '📌'}
                         </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                            {profileWidgets.favoriteGame.title}
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-bold text-foreground">
+                            {profileWidgets.customNote.title}
                           </div>
-                          <div className="text-sm font-bold text-foreground">
-                            {profileWidgets.favoriteGame.accountName}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {profileWidgets.favoriteGame.region}
-                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {profileWidgets.customNote.content}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 shrink-0">
                         <Button
                           size="sm"
                           variant="tealGhost"
                           onClick={() => {
-                            setGameTitleInput(profileWidgets.favoriteGame?.title || '');
-                            setGameAccountInput(profileWidgets.favoriteGame?.accountName || '');
-                            setGameRegionInput(profileWidgets.favoriteGame?.region || '');
-                            setGameStatsInput(profileWidgets.favoriteGame?.stats || []);
-                            setIsEditingGame(true);
+                            setNoteTitleInput(profileWidgets.customNote?.title || '');
+                            setNoteContentInput(profileWidgets.customNote?.content || '');
+                            setNoteEmojiInput(profileWidgets.customNote?.emoji || '📌');
+                            setIsEditingNote(true);
                           }}
-                          className="h-8 px-2 text-xs cursor-pointer"
-                          title={t('Edit Game')}
+                          className="h-7 px-2 text-xs cursor-pointer"
+                          title={t('Edit Catatan')}
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => {
-                            setProfileWidgets((prev) => ({ ...prev, favoriteGame: null }));
-                            toast.info(t('Widget Favorite Game disembunyikan'));
-                          }}
-                          className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
+                          onClick={handleDeleteCustomNote}
+                          className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
                           title={t('Hapus Widget')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </div>
-
-                    {profileWidgets.favoriteGame.stats &&
-                      profileWidgets.favoriteGame.stats.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-3 border-t border-border/50 text-center">
-                          {profileWidgets.favoriteGame.stats.map((stat, idx) => (
-                            <div key={idx} className="p-2 rounded-lg bg-secondary/60">
-                              <div className="text-base font-extrabold text-foreground truncate">
-                                {stat.value}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground truncate uppercase font-semibold">
-                                {stat.label}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                   </div>
                 )}
 
-                {/* Games I Like Chips Widget */}
-                {profileWidgets.gamesILike && profileWidgets.gamesILike.length > 0 && (
-                  <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-3 shadow-sm">
+                {/* WIDGET 2: Interests / Minat & Keahlian Chips */}
+                {profileWidgets.interests && (
+                  <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground">
-                        🎮 {t('Games I Like')}
-                      </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground font-semibold">
-                          {profileWidgets.gamesILike.length} {t('Game')}
+                        <Tag className="w-3.5 h-3.5 text-sidebar-primary" />
+                        <span className="text-xs font-bold text-foreground">
+                          {profileWidgets.interests.title || t('Minat & Keahlian')}
                         </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            setProfileWidgets((prev) => ({ ...prev, gamesILike: [] }))
-                          }
-                          className="h-6 px-1 text-destructive hover:bg-destructive/10"
-                          title={t('Hapus Widget Games I Like')}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          {profileWidgets.interests.tags.length}
+                        </Badge>
                       </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleDeleteInterestsWidget}
+                        className="h-6 px-1.5 text-destructive hover:bg-destructive/10"
+                        title={t('Hapus Widget')}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {profileWidgets.gamesILike.map((game) => (
+                    <div className="flex flex-wrap gap-1.5">
+                      {profileWidgets.interests.tags.map((tag) => (
                         <span
-                          key={game}
+                          key={tag}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-foreground text-xs font-medium border border-border/70 group"
                         >
-                          <span>{game}</span>
+                          <span>{tag}</span>
                           <button
                             type="button"
-                            onClick={() => handleRemoveGameILike(game)}
-                            className="text-muted-foreground hover:text-destructive transition-colors ml-0.5"
-                            title={t('Hapus game')}
+                            onClick={() => handleRemoveInterestTag(tag)}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            title={t('Hapus tag')}
                           >
                             <X className="size-3" />
                           </button>
@@ -1225,27 +1512,143 @@ export function EditProfileDialog({
                       ))}
                     </div>
 
-                    <form onSubmit={handleAddGameILike} className="flex items-center gap-2 pt-1">
-                      <input
+                    <form onSubmit={handleAddInterestTag} className="flex items-center gap-2 pt-1">
+                      <Input
                         type="text"
-                        value={newGameInput}
-                        onChange={(e) => setNewGameInput(e.target.value)}
-                        placeholder={t('Tambah game favorit (e.g. Valorant, Apex, CS2)...')}
-                        className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-sidebar-primary"
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        placeholder={t('Tambah keahlian (e.g. React, UI/UX, Anticeil)...')}
+                        className="flex-1 text-xs h-8"
                       />
-                      <Button type="submit" size="sm" variant="teal" className="h-7 text-xs font-semibold">
+                      <Button type="submit" size="sm" variant="teal" className="h-8 text-xs font-semibold">
                         + {t('Tambah')}
                       </Button>
                     </form>
                   </div>
                 )}
 
+                {/* WIDGET 3: Social & Web Links */}
+                {profileWidgets.socialLinks && (
+                  <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="w-3.5 h-3.5 text-sidebar-primary" />
+                        <span className="text-xs font-bold text-foreground">
+                          {profileWidgets.socialLinks.title || t('Tautan & Jejaring')}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          {profileWidgets.socialLinks.links.length}
+                        </Badge>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleDeleteSocialLinksWidget}
+                        className="h-6 px-1.5 text-destructive hover:bg-destructive/10"
+                        title={t('Hapus Widget')}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {profileWidgets.socialLinks.links.map((link) => (
+                        <div
+                          key={link.id}
+                          className="flex items-center justify-between p-2 rounded-lg bg-secondary/40 border border-border/60 hover:border-sidebar-primary/40 transition-colors"
+                        >
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-xs font-semibold text-foreground hover:text-sidebar-primary truncate"
+                          >
+                            <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <span className="truncate">{link.label}</span>
+                            <ExternalLink className="w-3 h-3 opacity-60 shrink-0" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSocialLink(link.id)}
+                            className="text-muted-foreground hover:text-destructive p-1 rounded"
+                            title={t('Hapus tautan')}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <form onSubmit={handleAddSocialLink} className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-border/40">
+                      <Input
+                        type="text"
+                        value={newLinkLabelInput}
+                        onChange={(e) => setNewLinkLabelInput(e.target.value)}
+                        placeholder={t('Label (e.g. GitHub)')}
+                        className="text-xs h-8"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="text"
+                          value={newLinkUrlInput}
+                          onChange={(e) => setNewLinkUrlInput(e.target.value)}
+                          placeholder="https://..."
+                          className="flex-1 text-xs h-8"
+                        />
+                        <Button type="submit" size="sm" variant="teal" className="h-8 text-xs font-semibold">
+                          + {t('Tambah')}
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {/* WIDGET 4: Featured Colony Card */}
+                {profileWidgets.featuredColony && (
+                  <div className="rounded-xl border border-border/80 bg-card p-4 space-y-2 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-8 rounded-lg bg-sidebar-primary/20 border border-sidebar-primary/30 flex items-center justify-center font-bold text-xs text-sidebar-primary overflow-hidden">
+                          {profileWidgets.featuredColony.icon ? (
+                            <img
+                              src={profileWidgets.featuredColony.icon}
+                              alt={profileWidgets.featuredColony.colonyName}
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <Shield className="w-4 h-4" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                            {t('Komunitas Unggulan')}
+                          </div>
+                          <div className="text-xs font-bold text-foreground">
+                            {profileWidgets.featuredColony.colonyName}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleDeleteFeaturedColony}
+                        className="h-6 px-1.5 text-destructive hover:bg-destructive/10"
+                        title={t('Hapus Widget')}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Empty State when no widgets on board */}
-                {!profileWidgets.favoriteGame &&
-                  (!profileWidgets.gamesILike || profileWidgets.gamesILike.length === 0) && (
+                {!profileWidgets.customNote &&
+                  !profileWidgets.interests &&
+                  !profileWidgets.socialLinks &&
+                  !profileWidgets.featuredColony && (
                     <div className="p-8 rounded-2xl border border-dashed border-border/80 text-center space-y-3 bg-muted/10">
-                      <div className="size-12 rounded-2xl bg-secondary/80 flex items-center justify-center text-2xl mx-auto">
-                        🎮
+                      <div className="size-12 rounded-2xl bg-secondary/80 flex items-center justify-center text-xl mx-auto text-sidebar-primary">
+                        <Sparkles className="w-6 h-6" />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs font-bold text-foreground">
@@ -1253,18 +1656,26 @@ export function EditProfileDialog({
                         </div>
                         <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
                           {t(
-                            'Pilih "Favorite Game" atau "Games I Like" dari saran di atas atau klik "+ Add Widget" untuk mulai memamerkan aktivitas game favorit Anda.',
+                            'Tambahkan catatan kustom, daftar minat & keahlian, atau tautan profil Anda untuk mempercantik kartu profil Anticeil.',
                           )}
                         </p>
                       </div>
+                      <Button
+                        size="sm"
+                        variant="teal"
+                        onClick={() => setActiveWidgetCreator('note')}
+                        className="text-xs font-bold h-8 px-4"
+                      >
+                        + {t('Tambah Widget Pertama')}
+                      </Button>
                     </div>
                   )}
               </div>
             )}
 
-            {/* TAB 2: ACTIVITY (Discord Image 4) */}
+            {/* TAB 2: ACTIVITY */}
             {profileSubTab === 'activity' && (
-              <div className="space-y-5 animate-in fade-in duration-150">
+              <div className="space-y-4 animate-in fade-in duration-150">
                 {/* Privacy Toggle */}
                 <div className="flex items-center justify-between p-3.5 rounded-xl border border-border/80 bg-card">
                   <div className="space-y-0.5 pr-3">
@@ -1272,24 +1683,24 @@ export function EditProfileDialog({
                       {t('Tampilkan Aktivitas Saat Ini')}
                     </div>
                     <div className="text-[11px] text-muted-foreground leading-snug">
-                      {t('Tampilkan aktivitas game atau software Anda sebagai status pesan secara otomatis.')}
+                      {t('Tampilkan status aktivitas Anda (seperti coding, fokus, atau audio) pada profil secara otomatis.')}
                     </div>
                   </div>
                   <Switch
                     checked={profileWidgets.showActivity !== false}
                     onCheckedChange={(checked) =>
-                      setProfileWidgets((prev) => ({ ...prev, showActivity: checked }))
+                      persistWidgets({ ...profileWidgets, showActivity: checked })
                     }
                   />
                 </div>
 
                 {/* Active Activity Card (if set) */}
                 {profileWidgets.activity ? (
-                  <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3">
+                  <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="size-11 rounded-xl bg-sidebar-primary/20 border border-sidebar-primary/40 flex items-center justify-center text-xl text-sidebar-primary">
-                          {profileWidgets.activity.icon || '🎮'}
+                        <div className="size-10 rounded-xl bg-sidebar-primary/20 border border-sidebar-primary/40 flex items-center justify-center text-xl text-sidebar-primary">
+                          {profileWidgets.activity.icon || '💻'}
                         </div>
                         <div>
                           <div className="text-xs font-bold text-foreground">
@@ -1307,9 +1718,11 @@ export function EditProfileDialog({
                           onClick={() => {
                             setActivityTitleInput(profileWidgets.activity?.title || '');
                             setActivitySubtitleInput(profileWidgets.activity?.subtitle || '');
+                            setActivityIconInput(profileWidgets.activity?.icon || '💻');
                             setIsEditingActivity(true);
                           }}
                           className="text-xs h-7 px-2 cursor-pointer"
+                          title={t('Edit Aktivitas')}
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -1318,6 +1731,7 @@ export function EditProfileDialog({
                           variant="ghost"
                           onClick={handleClearActivity}
                           className="text-xs h-7 px-2 text-destructive hover:bg-destructive/10 cursor-pointer"
+                          title={t('Hapus Aktivitas')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -1325,104 +1739,120 @@ export function EditProfileDialog({
                     </div>
                   </div>
                 ) : (
-                  /* Discord Native Empty State (Image 4) */
-                  <div className="p-6 rounded-2xl border border-border/70 bg-card text-center space-y-5">
-                    <div className="space-y-2">
-                      <h3 className="text-base font-bold text-foreground">
-                        {t('You don’t have any activity here')}
+                  /* Clean Empty State */
+                  <div className="p-6 rounded-2xl border border-border/70 bg-card text-center space-y-4 shadow-xs">
+                    <div className="size-11 rounded-2xl bg-secondary/80 flex items-center justify-center text-xl mx-auto text-sidebar-primary">
+                      <ActivityIcon className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-bold text-foreground">
+                        {t('Belum ada aktivitas aktif')}
                       </h3>
-                      <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
                         {t(
-                          'Connect your accounts to share your in-game status and activity. You’re in control of what you share.',
+                          'Bagikan apa yang sedang Anda kerjakan (seperti coding, riset, atau mendengarkan audio) kepada kawan satu komunitas.',
                         )}
                       </p>
                     </div>
 
-                    {/* Discord Platform Icons Grid */}
-                    <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-sm mx-auto">
-                      {availablePlatforms.slice(0, 12).map((p) => {
-                        const isConnected = userConnections.some((c) => c.platformId === p.id);
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedPlatformToConnect(p);
-                              setIsConnectModalOpen(true);
-                            }}
-                            className={cn(
-                              'size-9 rounded-xl flex items-center justify-center text-base border transition-all cursor-pointer relative group',
-                              isConnected
-                                ? 'border-emerald-500 bg-emerald-500/10'
-                                : 'border-border/80 bg-secondary/80 hover:border-sidebar-primary hover:scale-105',
-                            )}
-                            title={isConnected ? `${p.name} (Terhubung)` : `Hubungkan ${p.name}`}
-                          >
-                            <span>{p.icon}</span>
-                            {isConnected && (
-                              <span className="absolute -top-1 -right-1 size-3 rounded-full bg-emerald-500 border border-card" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Buttons: Connect Accounts & Add Game */}
-                    <div className="flex items-center justify-center gap-3 pt-2">
-                      <Button
-                        size="sm"
-                        variant="tealSecondary"
-                        onClick={() => setIsConnectModalOpen(true)}
-                        className="text-xs h-9 px-4 font-bold cursor-pointer"
-                      >
-                        {t('Connect Accounts')}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="teal"
-                        onClick={() => setIsEditingActivity(true)}
-                        className="text-xs h-9 px-4 font-bold cursor-pointer"
-                      >
-                        {t('Add Game')}
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="teal"
+                      onClick={() => setIsEditingActivity(true)}
+                      className="text-xs h-8 px-4 font-bold cursor-pointer"
+                    >
+                      + {t('Atur Aktivitas Sekarang')}
+                    </Button>
                   </div>
                 )}
 
-                {/* Inline Activity / Game Editor */}
+                {/* Inline Activity Editor Form */}
                 {isEditingActivity && (
-                  <div className="p-4 rounded-xl border border-sidebar-primary/40 bg-sidebar-primary/10 space-y-3">
-                    <span className="text-xs font-bold text-foreground">
-                      {t('Atur Aktivitas Game / Software')}
-                    </span>
+                  <div className="p-4 rounded-xl border border-sidebar-primary/40 bg-card space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <ActivityIcon className="w-3.5 h-3.5 text-sidebar-primary" />
+                        {t('Atur Status Aktivitas')}
+                      </span>
+                      <X
+                        className="w-4 h-4 cursor-pointer text-muted-foreground hover:text-foreground"
+                        onClick={() => setIsEditingActivity(false)}
+                      />
+                    </div>
+
+                    {/* Quick Presets */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                        {t('Preset Cepat')}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: '💻 Coding', title: 'Coding & Dev', subtitle: 'Mengerjakan fitur baru', icon: '💻' },
+                          { label: '🎨 UI Design', title: 'UI/UX Design', subtitle: 'Merapikan komponen antarmuka', icon: '🎨' },
+                          { label: '🎧 Audio', title: 'Mendengarkan Musik', subtitle: 'Lo-Fi Chill Beats', icon: '🎧' },
+                          { label: '🚀 Focus', title: 'Focus Sprint', subtitle: 'Mohon tidak diganggu', icon: '🚀' },
+                          { label: '☕ Rehat', title: 'Rehat Santai', subtitle: 'Menikmati kopi', icon: '☕' },
+                          { label: '📚 Riset', title: 'Riset & Belajar', subtitle: 'Mempelajari dokumentasi', icon: '📚' },
+                        ].map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setActivityTitleInput(preset.title);
+                              setActivitySubtitleInput(preset.subtitle);
+                              setActivityIconInput(preset.icon);
+                            }}
+                            className="px-2 py-1 rounded-lg text-[11px] font-medium bg-secondary hover:bg-secondary/80 border border-border/60 text-foreground transition-colors cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
-                      <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">
-                          {t('Judul Aktivitas / Nama Game')}
-                        </label>
-                        <input
-                          type="text"
-                          value={activityTitleInput}
-                          onChange={(e) => setActivityTitleInput(e.target.value)}
-                          placeholder="e.g. Playing Valorant / Coding"
-                          className="w-full text-xs p-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-sidebar-primary"
-                        />
+                      <div className="flex items-center gap-2">
+                        <div className="w-16">
+                          <label className="text-[10px] text-muted-foreground block mb-1">
+                            {t('Ikon')}
+                          </label>
+                          <Input
+                            type="text"
+                            value={activityIconInput}
+                            onChange={(e) => setActivityIconInput(e.target.value)}
+                            className="text-center text-sm h-8"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground block mb-1">
+                            {t('Judul Aktivitas')}
+                          </label>
+                          <Input
+                            type="text"
+                            value={activityTitleInput}
+                            onChange={(e) => setActivityTitleInput(e.target.value)}
+                            placeholder={t('e.g. Coding / UI Design / Focus Mode')}
+                            className="text-xs h-8"
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="text-[10px] text-muted-foreground block mb-1">
                           {t('Detail / Status')}
                         </label>
-                        <input
+                        <Input
                           type="text"
                           value={activitySubtitleInput}
                           onChange={(e) => setActivitySubtitleInput(e.target.value)}
-                          placeholder="e.g. Competitive Match / Ranked"
-                          className="w-full text-xs p-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-sidebar-primary"
+                          placeholder={t('e.g. Sprint 2 Frontend / Lo-Fi Chill')}
+                          className="text-xs h-8"
                         />
                       </div>
                     </div>
+
                     <div className="flex justify-end gap-2 pt-1">
                       <Button
+                        type="button"
                         size="sm"
                         variant="tealSecondary"
                         onClick={() => setIsEditingActivity(false)}
@@ -1431,6 +1861,7 @@ export function EditProfileDialog({
                         {t('Batal')}
                       </Button>
                       <Button
+                        type="button"
                         size="sm"
                         variant="teal"
                         onClick={handleSaveActivity}
@@ -1441,57 +1872,110 @@ export function EditProfileDialog({
                     </div>
                   </div>
                 )}
+
+                {/* Connected Platforms Section */}
+                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-foreground">
+                        {t('Akun & Layanan Terhubung')}
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t('Hubungkan profil GitHub, Spotify, Discord, atau Twitter Anda.')}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="tealSecondary"
+                      onClick={() => setIsConnectModalOpen(true)}
+                      className="text-xs h-7 px-3 font-semibold cursor-pointer"
+                    >
+                      + {t('Hubungkan')}
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {availablePlatforms.slice(0, 10).map((p) => {
+                      const isConnected = userConnections.some((c) => c.platformId === p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPlatformToConnect(p);
+                            setIsConnectModalOpen(true);
+                          }}
+                          className={cn(
+                            'size-9 rounded-xl flex items-center justify-center text-base border transition-all cursor-pointer relative group',
+                            isConnected
+                              ? 'border-emerald-500 bg-emerald-500/10'
+                              : 'border-border/80 bg-secondary/60 hover:border-sidebar-primary hover:scale-105',
+                          )}
+                          title={isConnected ? `${p.name} (Terhubung)` : `Hubungkan ${p.name}`}
+                        >
+                          <span>{p.icon}</span>
+                          {isConnected && (
+                            <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-emerald-500 border border-card" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* TAB 3: WISHLIST (Discord Image 2) */}
+            {/* TAB 3: WISHLIST (Fullstack Shop Integration) */}
             {profileSubTab === 'wishlist' && (
-              <div className="space-y-5 animate-in fade-in duration-150">
+              <div className="space-y-4 animate-in fade-in duration-150">
                 {/* User's Wishlist Items */}
-                {profileWidgets.wishlist && profileWidgets.wishlist.length > 0 ? (
+                {wishlistItems && wishlistItems.length > 0 ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground">
-                        🎁 {t('Item Favorit Anda')}
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Heart className="w-3.5 h-3.5 text-rose-500 fill-current" />
+                        {t('Item Favorit Anda')}
                       </span>
-                      <span className="text-[10px] text-muted-foreground font-semibold">
-                        {profileWidgets.wishlist.length} {t('Item')}
-                      </span>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-semibold">
+                        {wishlistItems.length} {t('Item')}
+                      </Badge>
                     </div>
 
                     <div className="space-y-2">
-                      {profileWidgets.wishlist.map((item) => (
+                      {wishlistItems.map((item) => (
                         <div
                           key={item.id}
-                          className="p-3 rounded-xl border border-border/70 bg-card flex items-center justify-between hover:border-sidebar-primary/40 transition-colors"
+                          className="p-3 rounded-xl border border-border/70 bg-card flex items-center justify-between hover:border-sidebar-primary/40 transition-colors shadow-2xs"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{item.icon || '🎁'}</span>
-                            <div>
-                              <div className="text-xs font-bold text-foreground">{item.title}</div>
-                              {item.category && (
-                                <div className="text-[10px] text-sidebar-primary font-medium">
-                                  {item.category}
-                                </div>
-                              )}
+                          <div className="flex items-center gap-3 min-w-0">
+                            {item.previewIcon && item.previewIcon.startsWith('http') ? (
+                              <img
+                                src={item.previewIcon}
+                                alt={item.name}
+                                className="size-9 rounded-lg object-cover border border-border/60 shrink-0"
+                              />
+                            ) : (
+                              <div className="size-9 rounded-lg bg-sidebar-primary/10 text-sidebar-primary flex items-center justify-center text-base shrink-0">
+                                {item.previewIcon || '✨'}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-foreground truncate">
+                                {item.name}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground flex items-center gap-2">
+                                <span className="font-medium text-sidebar-primary">{item.collection || item.category}</span>
+                                {item.priceOrbs && (
+                                  <span>• 🍯 {item.priceOrbs.toLocaleString()} Orbs</span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <Button
                               size="sm"
                               variant="tealGhost"
-                              onClick={() => {
-                                if (item.category === 'Avatar Decoration') {
-                                  setProfileAvatarDecoration('sakura');
-                                } else if (item.category === 'Avatar Frame') {
-                                  setProfileFrame('sakura_blossom');
-                                } else if (item.category === 'Profile Effect') {
-                                  setProfileEffect('aurora_glow');
-                                } else if (item.category === 'Nameplate') {
-                                  setProfileNameplate('Pixel Hive');
-                                }
-                                toast.success(t(`Preview ${item.title} aktif di profil!`));
-                              }}
+                              onClick={() => handlePreviewShopItem(item)}
                               className="h-7 px-2.5 text-[11px] font-semibold cursor-pointer"
                             >
                               {t('Preview')}
@@ -1499,7 +1983,7 @@ export function EditProfileDialog({
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleRemoveWishlist(item.id)}
+                              onClick={() => handleRemoveFromWishlist(item.id)}
                               className="h-7 px-2 text-destructive hover:bg-destructive/10 cursor-pointer"
                               title={t('Hapus dari Wishlist')}
                             >
@@ -1511,15 +1995,17 @@ export function EditProfileDialog({
                     </div>
                   </div>
                 ) : (
-                  /* Discord Native Empty Wishlist (Image 2) */
-                  <div className="p-8 rounded-2xl border border-border/70 bg-card text-center space-y-4">
-                    <div className="space-y-1.5">
-                      <h3 className="text-base font-bold text-foreground flex items-center justify-center gap-1.5">
-                        <span>{t('No hearts yet')}</span>
-                        <span>💔</span>
+                  /* Empty Wishlist Card */
+                  <div className="p-8 rounded-2xl border border-border/70 bg-card text-center space-y-4 shadow-xs">
+                    <div className="size-11 rounded-2xl bg-secondary/80 flex items-center justify-center text-xl mx-auto text-rose-500">
+                      <Heart className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-bold text-foreground">
+                        {t('Belum ada item di Wishlist')}
                       </h3>
                       <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                        {t('Browse the Shop and heart the items you love to add them here.')}
+                        {t('Jelajahi katalog Shop dan tandai item favorit dengan ikon hati untuk menyimpannya di sini.')}
                       </p>
                     </div>
 
@@ -1530,34 +2016,40 @@ export function EditProfileDialog({
                         onOpenChange(false);
                         window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
                       }}
-                      className="text-xs h-9 px-5 font-bold cursor-pointer"
+                      className="text-xs h-8 px-4 font-bold cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                      {t('Explore the Shop')}
+                      {t('Jelajahi Shop')}
                     </Button>
                   </div>
                 )}
 
-                {/* Suggested Items for You (Discord Image 2 Shop Grid) */}
+                {/* Suggested Items for You (Loaded from real catalog) */}
                 <div className="space-y-3 pt-2">
                   <span className="text-xs font-bold text-foreground">
-                    {t('Suggested items for you')}
+                    {t('Disarankan untuk Anda')}
                   </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {SHOP_SUGGESTED_ITEMS.map((item) => {
-                      const isHearted = (profileWidgets.wishlist || []).some(
-                        (w) => w.id === item.id || w.title === item.title,
-                      );
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {catalogItems.slice(0, 6).map((item) => {
+                      const isHearted = wishlistItems.some((w) => w.id === item.id);
                       return (
                         <div
                           key={item.id}
-                          className="p-3 rounded-xl border border-border/80 bg-card flex flex-col justify-between hover:border-sidebar-primary/60 transition-colors shadow-xs group"
+                          className="p-3 rounded-xl border border-border/80 bg-card flex flex-col justify-between hover:border-sidebar-primary/60 transition-colors shadow-2xs group"
                         >
                           <div className="flex items-start justify-between">
-                            <span className="text-2xl">{item.icon}</span>
+                            {item.previewIcon && item.previewIcon.startsWith('http') ? (
+                              <img
+                                src={item.previewIcon}
+                                alt={item.name}
+                                className="size-8 rounded-lg object-cover border border-border/60"
+                              />
+                            ) : (
+                              <span className="text-xl">{item.previewIcon || '✨'}</span>
+                            )}
                             <button
                               type="button"
-                              onClick={() => handleToggleWishlistItem(item)}
+                              onClick={() => handleToggleWishlist(item.id, item.name)}
                               className={cn(
                                 'p-1 rounded-full transition-colors cursor-pointer',
                                 isHearted
@@ -1572,29 +2064,18 @@ export function EditProfileDialog({
                             </button>
                           </div>
                           <div className="mt-2 space-y-0.5">
-                            <div className="text-xs font-bold text-foreground truncate">
-                              {item.title}
+                            <div className="text-xs font-bold text-foreground truncate" title={item.name}>
+                              {item.name}
                             </div>
                             <div className="text-[10px] text-muted-foreground truncate font-medium">
-                              {item.category}
+                              🍯 {item.priceOrbs || 500} Orbs
                             </div>
                           </div>
                           <Button
                             size="sm"
                             variant="tealGhost"
-                            onClick={() => {
-                              if (item.category === 'Avatar Decoration') {
-                                setProfileAvatarDecoration('cyber_crown');
-                              } else if (item.category === 'Avatar Frame') {
-                                setProfileFrame('sakura_blossom');
-                              } else if (item.category === 'Profile Effect') {
-                                setProfileEffect(item.id === 'eff_aurora' ? 'aurora_glow' : 'fireflies');
-                              } else if (item.category === 'Nameplate') {
-                                setProfileNameplate('Pixel Hive');
-                              }
-                              toast.success(t(`Preview ${item.title} dicoba di profil!`));
-                            }}
-                            className="mt-2 h-7 text-[10px] w-full font-semibold cursor-pointer"
+                            onClick={() => handlePreviewShopItem(item)}
+                            className="mt-2 h-6 text-[10px] w-full font-semibold cursor-pointer"
                           >
                             {t('Preview')}
                           </Button>
@@ -1605,13 +2086,13 @@ export function EditProfileDialog({
                 </div>
 
                 {/* Add Custom Wishlist Item */}
-                <form onSubmit={handleAddWishlist} className="flex items-center gap-2 pt-2 border-t border-border/50">
-                  <input
+                <form onSubmit={handleAddCustomWishlist} className="flex items-center gap-2 pt-2 border-t border-border/50">
+                  <Input
                     type="text"
-                    value={newWishlistInput}
-                    onChange={(e) => setNewWishlistInput(e.target.value)}
+                    value={newCustomWishlistInput}
+                    onChange={(e) => setNewCustomWishlistInput(e.target.value)}
                     placeholder={t('Tambah item kustom ke Wishlist...')}
-                    className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-sidebar-primary"
+                    className="flex-1 text-xs h-8"
                   />
                   <Button type="submit" size="sm" variant="teal" className="h-8 text-xs font-bold">
                     + {t('Tambah')}

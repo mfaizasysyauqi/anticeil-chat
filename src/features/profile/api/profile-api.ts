@@ -16,14 +16,49 @@ export interface WishlistItem {
   previewUrl?: string;
 }
 
+export interface CustomNoteWidget {
+  title: string;
+  content: string;
+  emoji?: string;
+}
+
+export interface InterestsWidget {
+  title: string;
+  tags: string[];
+}
+
+export interface SocialLinkItem {
+  id: string;
+  label: string;
+  url: string;
+  icon?: string;
+}
+
+export interface SocialLinksWidget {
+  title: string;
+  links: SocialLinkItem[];
+}
+
+export interface FeaturedColonyWidget {
+  colonyId: string;
+  colonyName: string;
+  icon?: string;
+  role?: string;
+}
+
 export interface ActivityData {
   title: string;
   subtitle: string;
   timeAgo?: string;
   icon?: string;
+  type?: string;
 }
 
 export interface UserProfileWidgets {
+  customNote?: CustomNoteWidget | null;
+  interests?: InterestsWidget | null;
+  socialLinks?: SocialLinksWidget | null;
+  featuredColony?: FeaturedColonyWidget | null;
   favoriteGame?: FavoriteGameWidget | null;
   gamesILike?: string[];
   wishlist?: WishlistItem[];
