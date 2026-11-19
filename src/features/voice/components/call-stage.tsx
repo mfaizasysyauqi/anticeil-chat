@@ -4,6 +4,7 @@ import {
   Volume2,
   MessageSquare,
   Menu,
+  Maximize2,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -20,6 +21,7 @@ import { VoiceInviteDialog } from './voice-invite-dialog';
 import { PiPCallStage } from './pip-call-stage';
 import { ActivityFilmstrip } from './activity-filmstrip';
 import { ActivityStage } from './activities/activity-stage';
+import { MagneticFloatingCollapseButton } from '@/components/ui/magnetic-floating-collapse-button';
 
 export function YouTubeBadgeIcon({ className = 'w-5 h-3.5' }: { className?: string }) {
   return (
@@ -81,6 +83,7 @@ export function CallStage({
   // Invite Modal state
   const [isInviteVoiceOpen, setIsInviteVoiceOpen] = useState(false);
   const [copiedVoiceCallLink, setCopiedVoiceCallLink] = useState(false);
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [isAppLauncherOpen, setIsAppLauncherOpen] = useState(false);
   const [isFilmstripCollapsed, setIsFilmstripCollapsed] = useState(false);
 
@@ -273,6 +276,25 @@ export function CallStage({
                   {isChatOpen ? 'Sembunyikan Obrolan' : 'Buka Obrolan Suara'}
                 </TooltipContent>
               </Tooltip>
+
+              {activeAppId !== null && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setIsTheaterMode(true)}
+                      className="p-1.5 rounded-lg text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Mode Sinematik / Layar Penuh"
+                      aria-label="Mode Sinematik"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-semibold">
+                    Mode Sinematik (Layar Penuh)
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </TooltipProvider>
           </div>
         </div>
@@ -280,7 +302,19 @@ export function CallStage({
 
       {/* Main Call Stage Content */}
       {activeAppId !== null && currentActiveApp ? (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-background relative w-full h-full">
+        <div
+          className={cn(
+            'flex-1 min-h-0 flex flex-col overflow-hidden bg-background relative w-full h-full',
+            isTheaterMode && 'fixed inset-0 z-50 w-screen h-screen'
+          )}
+        >
+          {isTheaterMode && (
+            <MagneticFloatingCollapseButton
+              onCollapse={() => setIsTheaterMode(false)}
+              tooltipText="Keluar Mode Sinematik (ESC)"
+            />
+          )}
+
           <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden relative">
             <ActivityStage
               activeAppId={activeAppId}
@@ -299,7 +333,7 @@ export function CallStage({
             />
           </div>
 
-          {channel.type === 'voice' && (
+          {!isTheaterMode && channel.type === 'voice' && (
             <ActivityFilmstrip
               isFilmstripCollapsed={isFilmstripCollapsed}
               onToggleFilmstrip={() => setIsFilmstripCollapsed(!isFilmstripCollapsed)}
