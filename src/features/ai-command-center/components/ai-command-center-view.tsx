@@ -508,17 +508,17 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       {/* 3. Command Input Dock (Full width, Gemini-style prompt form with file upload + model selector) */}
       <div
         className={cn(
-          'p-3 sm:p-4 border-t border-sidebar-border bg-background/95 backdrop-blur-xs shrink-0 w-full',
+          'shrink-0 pb-3 pt-0 bg-transparent z-10 flex flex-col w-full',
           CHANNEL_HORIZONTAL_PADDING,
         )}
       >
-        <div className="w-full space-y-2">
+        <div className="w-full flex flex-col gap-1.5">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="relative flex flex-col rounded-2xl bg-card border border-border/80 focus-within:border-primary/80 focus-within:ring-1 focus-within:ring-primary/80 transition-all shadow-xs p-1.5 sm:p-2 w-full"
+            className="relative flex flex-col justify-center min-h-[52px] max-h-[50vh] rounded-[12px] bg-muted/70 dark:bg-card border border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-3 py-1.5 transition-all shadow-xs w-full"
           >
             {/* Hidden native file input */}
             <input
