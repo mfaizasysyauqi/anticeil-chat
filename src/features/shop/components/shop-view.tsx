@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
+import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
 import {
   Dialog,
@@ -865,60 +866,41 @@ export function ShopView({
             </Button>
           )}
 
-          {/* Discord-style Storefront Icon */}
-          <div className="flex items-center gap-1.5 px-1 shrink-0 text-foreground">
-            <Store className="w-5 h-5" />
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop (100% Consistent with Apps & Colonies) */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            <Store className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">{t('Shop')}</span>
           </div>
 
           <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
         </div>
 
-        {/* Discord 1:1 App Bar Tabs: Featured | Browse ˅ | Dew Shop | App Shops ˅ */}
-        <div className="flex-1 min-w-0 flex items-center h-12 overflow-x-auto [scrollbar-width:none]">
+        {/* Tab Filter Pills: 100% DRY & Reusable, matching Apps & Colonies pattern */}
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
           {/* 1. Featured Tab */}
-          <button
-            type="button"
+          <TopBarTabButton
+            active={activeTab === 'featured'}
             onClick={() => {
               setActiveTab('featured');
               setBrowseCategory(null);
               setSelectedApp(null);
             }}
-            className={cn(
-              'relative h-12 px-3 sm:px-4 flex items-center text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none',
-              activeTab === 'featured'
-                ? 'text-foreground font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
           >
-            <span>{t('Featured')}</span>
-            {activeTab === 'featured' && (
-              <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-foreground rounded-t-full shadow-xs" />
-            )}
-          </button>
+            {t('Featured')}
+          </TopBarTabButton>
 
           {/* 2. Browse Tab with Dropdown */}
           <DropdownMenu open={isBrowseOpen} onOpenChange={setIsBrowseOpen}>
             <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  'relative h-12 px-3 sm:px-4 flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none outline-none',
-                  activeTab === 'browse' || activeTab === 'all'
-                    ? 'text-foreground font-bold'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
+              <TopBarTabButton active={activeTab === 'browse' || activeTab === 'all'}>
                 <span>{t('Browse')}</span>
                 <ChevronDown
                   className={cn(
-                    'w-3.5 h-3.5 transition-transform duration-200 opacity-75',
+                    'w-3 h-3 transition-transform duration-200 opacity-70',
                     isBrowseOpen && 'rotate-180'
                   )}
                 />
-                {(activeTab === 'browse' || activeTab === 'all') && (
-                  <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-primary rounded-t-full shadow-xs" />
-                )}
-              </button>
+              </TopBarTabButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-52 bg-card/95 backdrop-blur-md border-border text-foreground z-[160] p-1.5 space-y-0.5 shadow-2xl">
               <DropdownMenuItem
@@ -996,49 +978,29 @@ export function ShopView({
           </DropdownMenu>
 
           {/* 3. Dew Shop Tab */}
-          <button
-            type="button"
+          <TopBarTabButton
+            active={activeTab === 'dew'}
             onClick={() => {
               setActiveTab('dew');
               setBrowseCategory(null);
               setSelectedApp(null);
             }}
-            className={cn(
-              'relative h-12 px-3 sm:px-4 flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none',
-              activeTab === 'dew'
-                ? 'text-cyan-400 font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
           >
-            <span>{t('Dew Shop')}</span>
-            {activeTab === 'dew' && (
-              <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-cyan-400 rounded-t-full shadow-xs" />
-            )}
-          </button>
+            <span className={cn(activeTab === 'dew' && 'text-cyan-400')}>{t('Dew Shop')}</span>
+          </TopBarTabButton>
 
-          {/* 4. App Shops Tab with Dropdown (replacing Game Shops) */}
+          {/* 4. App Shops Tab with Dropdown */}
           <DropdownMenu open={isAppShopsOpen} onOpenChange={setIsAppShopsOpen}>
             <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  'relative h-12 px-3 sm:px-4 flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none outline-none',
-                  activeTab === 'app_shops'
-                    ? 'text-foreground font-bold'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <span>{t('App Shops')}</span>
+              <TopBarTabButton active={activeTab === 'app_shops'}>
+                <span>{selectedApp ? `${selectedApp}` : t('App Shops')}</span>
                 <ChevronDown
                   className={cn(
-                    'w-3.5 h-3.5 transition-transform duration-200 opacity-75',
+                    'w-3 h-3 transition-transform duration-200 opacity-70',
                     isAppShopsOpen && 'rotate-180'
                   )}
                 />
-                {activeTab === 'app_shops' && (
-                  <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-primary rounded-t-full shadow-xs" />
-                )}
-              </button>
+              </TopBarTabButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border text-foreground z-[160] p-1.5 space-y-1 shadow-2xl">
               <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">

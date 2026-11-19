@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/empty';
+import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -196,41 +197,27 @@ export function QuestsView({
             </Button>
           )}
 
-          {/* Compass / Target Icon matching Discord Quests */}
-          <div className="flex items-center gap-1.5 px-1 shrink-0 text-foreground">
-            <Compass className="w-5 h-5 text-primary" />
+          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop (100% Consistent with Apps, Colonies & Shop) */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            <Compass className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">{t('Quests')}</span>
           </div>
 
           <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
         </div>
 
         {/* Tab Navigation: All Quests | Claimed Quests */}
-        <div className="flex-1 min-w-0 flex items-center h-12 overflow-x-auto [scrollbar-width:none]">
-          <button
-            type="button"
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
+          <TopBarTabButton
+            active={activeTab === 'all'}
             onClick={() => setActiveTab('all')}
-            className={cn(
-              'relative h-12 px-3 sm:px-4 flex items-center text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none',
-              activeTab === 'all'
-                ? 'text-foreground font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
           >
-            <span>{t('All Quests')}</span>
-            {activeTab === 'all' && (
-              <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-foreground rounded-t-full shadow-xs" />
-            )}
-          </button>
+            {t('All Quests')}
+          </TopBarTabButton>
 
-          <button
-            type="button"
+          <TopBarTabButton
+            active={activeTab === 'claimed'}
             onClick={() => setActiveTab('claimed')}
-            className={cn(
-              'relative h-12 px-3 sm:px-4 flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none',
-              activeTab === 'claimed'
-                ? 'text-foreground font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
           >
             <span>{t('Claimed Quests')}</span>
             {claimedQuests.length > 0 && (
@@ -238,10 +225,7 @@ export function QuestsView({
                 {claimedQuests.length}
               </span>
             )}
-            {activeTab === 'claimed' && (
-              <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-foreground rounded-t-full shadow-xs" />
-            )}
-          </button>
+          </TopBarTabButton>
         </div>
 
         {/* Right side: Dew F2P Balance & Link to Shop */}
