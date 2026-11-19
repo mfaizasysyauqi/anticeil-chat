@@ -31,6 +31,7 @@ import {
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
 import type { CalendarEvent } from '@/features/calendar/types';
+import { calendarApi } from '@/features/calendar/api/calendar-api';
 import { EventCreateWizard } from './event-create-wizard';
 
 export interface ColonyEventsModalProps {
@@ -68,6 +69,7 @@ export function ColonyEventsModal({
   const toggleInterest = (eventId: string) => {
     setInterestedEventIds((prev) => {
       const next = new Set(prev);
+      const isInterested = !next.has(eventId);
       if (next.has(eventId)) {
         next.delete(eventId);
         toast.info('Kamu membatalkan tanda tertarik pada event ini.');
@@ -78,6 +80,7 @@ export function ColonyEventsModal({
       try {
         localStorage.setItem('anticeil_interested_events', JSON.stringify(Array.from(next)));
       } catch {}
+      calendarApi.updateCalendarEvent(eventId, { isInterested }).catch(() => {});
       return next;
     });
   };

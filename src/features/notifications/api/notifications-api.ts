@@ -22,4 +22,12 @@ export const notificationsApi = {
   createNotification: async (data: Partial<NotificationItem>): Promise<{ success: boolean; id: string }> => {
     return api.post('/v1/community/notifications', data);
   },
+
+  deleteNotification: async (id: string): Promise<{ success: boolean; id: string }> => {
+    return api.delete(`/v1/community/notifications/${id}`);
+  },
+
+  clearAllNotifications: async (): Promise<{ success: boolean }> => {
+    return api.delete('/v1/community/notifications');
+  },
 };

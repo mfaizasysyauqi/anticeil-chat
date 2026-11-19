@@ -118,5 +118,41 @@ export const threadsApi = {
     localStorage.setItem(`anticeil_thread_msgs_${threadId}`, JSON.stringify([...current, fallbackMsg]));
     return fallbackMsg;
   },
+
+  async updateThread(
+    channelId: string,
+    threadId: string,
+    payload: { name?: string },
+  ): Promise<{ success: boolean; id: string }> {
+    try {
+      await api.put(`/v1/colony/channels/${channelId}/threads/${threadId}`, payload);
+    } catch {}
+
+    const saved = localStorage.getItem(`anticeil_threads_${channelId}`);
+    if (saved) {
+      try {
+        const list: ColonyThread[] = JSON.parse(saved);
+        const updated = list.map((t) => (t.id === threadId ? { ...t, ...payload } : t));
+        localStorage.setItem(`anticeil_threads_${channelId}`, JSON.stringify(updated));
+      } catch {}
+    }
+    return { success: true, id: threadId };
+  },
+
+  async deleteThread(channelId: string, threadId: string): Promise<{ success: boolean; id: string }> {
+    try {
+      await api.delete(`/v1/colony/channels/${channelId}/threads/${threadId}`);
+    } catch {}
+
+    const saved = localStorage.getItem(`anticeil_threads_${channelId}`);
+    if (saved) {
+      try {
+        const list: ColonyThread[] = JSON.parse(saved);
+        const updated = list.filter((t) => t.id !== threadId);
+        localStorage.setItem(`anticeil_threads_${channelId}`, JSON.stringify(updated));
+      } catch {}
+    }
+    return { success: true, id: threadId };
+  },
 };
 

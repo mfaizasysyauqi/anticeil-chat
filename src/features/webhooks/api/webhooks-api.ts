@@ -33,6 +33,18 @@ export const webhooksApi = {
     }
   },
 
+  updateColonyWebhook: async (
+    colonyId: string,
+    webhookId: string,
+    payload: Partial<ColonyWebhook>,
+  ): Promise<ColonyWebhook | null> => {
+    try {
+      return await api.put<ColonyWebhook>(`/v1/colonies/${colonyId}/webhooks/${webhookId}`, payload);
+    } catch {
+      return null;
+    }
+  },
+
   deleteColonyWebhook: async (colonyId: string, webhookId: string): Promise<boolean> => {
     try {
       await api.delete(`/v1/colonies/${colonyId}/webhooks/${webhookId}`);

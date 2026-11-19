@@ -76,4 +76,15 @@ export const messageRequestsApi = {
     saveStoredRequests(updated);
     return { success: true, id };
   },
+
+  deleteMessageRequest: async (id: string): Promise<{ success: boolean; id: string }> => {
+    try {
+      await api.delete(`/v1/community/message-requests/${id}`);
+    } catch {}
+
+    const current = loadStoredRequests();
+    const updated = current.filter((r) => r.id !== id);
+    saveStoredRequests(updated);
+    return { success: true, id };
+  },
 };

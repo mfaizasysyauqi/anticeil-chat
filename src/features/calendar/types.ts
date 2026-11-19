@@ -11,6 +11,8 @@ export interface CalendarEvent {
   channelName?: string;
   isAllDay?: boolean;
   status?: 'scheduled' | 'live' | 'completed' | 'cancelled';
+  isInterested?: boolean;
+  interestedCount?: number;
   attendees?: Array<{
     id: string;
     name: string;

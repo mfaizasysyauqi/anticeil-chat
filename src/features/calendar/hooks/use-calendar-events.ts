@@ -39,6 +39,18 @@ export function useCalendarEvents(initialData: CalendarEvent[] = []) {
     return null;
   };
 
+  const handleUpdateEvent = async (id: string, updates: Partial<CalendarEvent>) => {
+    try {
+      const updated = await calendarApi.updateCalendarEvent(id, updates);
+      setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updated } : e)));
+      toast.success('Jadwal berhasil diperbarui!');
+      return updated;
+    } catch {
+      toast.error('Gagal memperbarui jadwal.');
+      return null;
+    }
+  };
+
   const handleDeleteEvent = async (id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
     try {
@@ -54,6 +66,7 @@ export function useCalendarEvents(initialData: CalendarEvent[] = []) {
     setEvents,
     isLoading,
     handleCreateEvent,
+    handleUpdateEvent,
     handleDeleteEvent,
     refetch: fetchEvents,
   };

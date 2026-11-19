@@ -15,6 +15,10 @@ export const calendarApi = {
     return api.post('/v1/community/calendar/events', event);
   },
 
+  updateCalendarEvent: async (id: string, event: Partial<CalendarEvent>): Promise<CalendarEvent> => {
+    return api.put(`/v1/community/calendar/events/${id}`, event);
+  },
+
   deleteCalendarEvent: async (id: string): Promise<{ success: boolean; id: string }> => {
     return api.delete(`/v1/community/calendar/events/${id}`);
   },

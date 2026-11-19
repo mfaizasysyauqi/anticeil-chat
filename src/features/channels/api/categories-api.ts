@@ -1,3 +1,5 @@
+import { api } from '@/lib/api';
+
 export interface ColonyCategory {
   id: string;
   colonyId: string;
@@ -99,8 +101,46 @@ export function deleteStoredColonyCategory(categoryId: string, colonyId: string)
   }
 }
 
+// Background sync with fullstack backend
+const syncedColonies = new Set<string>();
+
 export const categoriesApi = {
-  getCategories: loadStoredColonyCategories,
+  getCategories: (colonyId?: string): ColonyCategory[] => {
+    if (colonyId && !syncedColonies.has(colonyId)) {
+      syncedColonies.add(colonyId);
+      api
+        .get<ColonyCategory[]>('/v1/colony/categories', { params: { colonyId } })
+        .then((remoteCats) => {
+          if (Array.isArray(remoteCats) && remoteCats.length > 0) {
+            const raw = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+            const currentList: ColonyCategory[] = raw ? JSON.parse(raw) : [];
+            const otherColonies = currentList.filter((c) => c.colonyId !== colonyId);
+            const merged = [...otherColonies, ...remoteCats];
+            localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(merged));
+            window.dispatchEvent(new CustomEvent('anticeil_categories_changed', { detail: colonyId }));
+          }
+        })
+        .catch(() => {});
+    }
+    return loadStoredColonyCategories(colonyId);
+  },
+
+  async fetchCategoriesRemote(colonyId: string): Promise<ColonyCategory[]> {
+    try {
+      const res = await api.get<ColonyCategory[]>('/v1/colony/categories', { params: { colonyId } });
+      if (Array.isArray(res)) {
+        const raw = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+        const currentList: ColonyCategory[] = raw ? JSON.parse(raw) : [];
+        const otherColonies = currentList.filter((c) => c.colonyId !== colonyId);
+        const merged = [...otherColonies, ...res];
+        localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent('anticeil_categories_changed', { detail: colonyId }));
+        return res;
+      }
+    } catch {}
+    return loadStoredColonyCategories(colonyId);
+  },
+
   createCategory(colonyId: string, name: string): ColonyCategory {
     const newCat: ColonyCategory = {
       id: `cat_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -108,10 +148,20 @@ export const categoriesApi = {
       name: name.trim().toUpperCase(),
     };
     saveStoredColonyCategory(newCat);
+    // Fire-and-forget sync to fullstack backend
+    api.post('/v1/colony/categories', newCat).catch((err) => console.warn('Failed to sync category to backend', err));
     return newCat;
   },
+
   updateCategory(category: ColonyCategory): void {
     saveStoredColonyCategory(category);
+    // Fire-and-forget sync to fullstack backend
+    api.put(`/v1/colony/categories/${category.id}`, category).catch((err) => console.warn('Failed to sync updated category to backend', err));
   },
-  deleteCategory: deleteStoredColonyCategory,
+
+  deleteCategory(categoryId: string, colonyId: string): void {
+    deleteStoredColonyCategory(categoryId, colonyId);
+    // Fire-and-forget sync to fullstack backend
+    api.delete(`/v1/colony/categories/${categoryId}`).catch((err) => console.warn('Failed to sync deleted category to backend', err));
+  },
 };
