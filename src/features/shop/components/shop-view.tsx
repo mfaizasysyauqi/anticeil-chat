@@ -3,7 +3,9 @@ import {
   Heart,
   Sparkles,
   ChevronRight,
+  ChevronDown,
   ShoppingBag,
+  Store,
   Coins,
   Gem,
   Droplets,
@@ -91,6 +93,16 @@ export const THEME_OPTIONS = [
   { id: 'dark_moody', label: 'Dark & Moody', icon: '🥀', keywords: ['dark', 'moody', 'void', 'obsidian', 'night', 'shadow', 'gothic'] },
 ];
 
+// Discord-style App Shops dropdown items (Anticeil Native Ecosystem)
+export const APP_SHOPS_ITEMS = [
+  { id: 'app_watch_together', name: 'YouTube Watch Together', icon: '🎬', tag: 'Video', query: 'watch together' },
+  { id: 'app_jamspace', name: 'Jamspace Whiteboard', icon: '🎨', tag: 'Board', query: 'whiteboard' },
+  { id: 'app_chess', name: 'Anticeil Chess', icon: '♟️', tag: 'Game', query: 'chess' },
+  { id: 'app_wordle', name: 'Wordle Daily Party', icon: '🔤', tag: 'Game', query: 'wordle' },
+  { id: 'app_trivia', name: 'Cyber Trivia Battle', icon: '🧠', tag: 'Game', query: 'trivia' },
+  { id: 'app_cyber_core', name: 'Anticeil Cyber Core', icon: '🪐', tag: 'Official', query: 'cyber' },
+];
+
 export interface ShopViewProps {
   currentUser?: any;
   onOpenSidebar?: () => void;
@@ -107,7 +119,11 @@ export function ShopView({
   onNavigateSection,
 }: ShopViewProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'all' | 'featured' | 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle' | 'dew'>('all');
+  const [activeTab, setActiveTab] = useState<'featured' | 'browse' | 'dew' | 'app_shops' | 'all'>('featured');
+  const [isBrowseOpen, setIsBrowseOpen] = useState(false);
+  const [isAppShopsOpen, setIsAppShopsOpen] = useState(false);
+  const [browseCategory, setBrowseCategory] = useState<string | null>(null);
+  const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Backend data states with resilient fallbacks
@@ -243,13 +259,25 @@ export function ShopView({
   const filteredItems = useMemo(() => {
     let list = [...items];
 
-    // Category Tabs Filter
+    // Discord Top App Bar Navigation Filtering
     if (activeTab === 'dew') {
       list = list.filter((i) => (i.priceDew ?? i.priceOrbs ?? 0) > 0);
     } else if (activeTab === 'featured') {
       list = list.filter((i) => i.featured);
-    } else if (activeTab !== 'all') {
-      list = list.filter((i) => i.category === activeTab);
+    } else if (activeTab === 'app_shops' && selectedApp) {
+      const q = selectedApp.toLowerCase();
+      list = list.filter(
+        (i) =>
+          i.collection?.toLowerCase().includes(q) ||
+          i.name?.toLowerCase().includes(q) ||
+          i.description?.toLowerCase().includes(q)
+      );
+    } else if (activeTab === 'browse' && browseCategory && browseCategory !== 'all') {
+      if (browseCategory === 'collabs') {
+        list = list.filter((i) => i.featured || i.collection?.toLowerCase().includes('anticeil'));
+      } else {
+        list = list.filter((i) => i.category === browseCategory);
+      }
     }
 
     // Right Filter: Item Types (Multi-select)
@@ -320,6 +348,8 @@ export function ShopView({
   }, [
     items,
     activeTab,
+    browseCategory,
+    selectedApp,
     selectedTypes,
     showOnlyDew,
     showOnlyFeatured,
@@ -835,35 +865,208 @@ export function ShopView({
             </Button>
           )}
 
-          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <ShoppingBag className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{t('Shop')}</span>
+          {/* Discord-style Storefront Icon */}
+          <div className="flex items-center gap-1.5 px-1 shrink-0 text-foreground">
+            <Store className="w-5 h-5" />
           </div>
 
           <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
         </div>
 
-        {/* Tab Filter Pills: Matching exact pattern in AppsView & ColoniesView */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto [scrollbar-width:none] px-1">
-          {CATEGORY_TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
+        {/* Discord 1:1 App Bar Tabs: Featured | Browse ˅ | Dew Shop | App Shops ˅ */}
+        <div className="flex-1 min-w-0 flex items-center h-12 overflow-x-auto [scrollbar-width:none]">
+          {/* 1. Featured Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('featured');
+              setBrowseCategory(null);
+              setSelectedApp(null);
+            }}
+            className={cn(
+              'relative h-12 px-3 sm:px-4 flex items-center text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none',
+              activeTab === 'featured'
+                ? 'text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>{t('Featured')}</span>
+            {activeTab === 'featured' && (
+              <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-foreground rounded-t-full shadow-xs" />
+            )}
+          </button>
+
+          {/* 2. Browse Tab with Dropdown */}
+          <DropdownMenu open={isBrowseOpen} onOpenChange={setIsBrowseOpen}>
+            <DropdownMenuTrigger asChild>
               <button
-                key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  'px-2.5 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors shrink-0',
-                  active
-                    ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  'relative h-12 px-3 sm:px-4 flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none outline-none',
+                  activeTab === 'browse' || activeTab === 'all'
+                    ? 'text-foreground font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                {tab.label}
+                <span>{t('Browse')}</span>
+                <ChevronDown
+                  className={cn(
+                    'w-3.5 h-3.5 transition-transform duration-200 opacity-75',
+                    isBrowseOpen && 'rotate-180'
+                  )}
+                />
+                {(activeTab === 'browse' || activeTab === 'all') && (
+                  <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-primary rounded-t-full shadow-xs" />
+                )}
               </button>
-            );
-          })}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52 bg-card/95 backdrop-blur-md border-border text-foreground z-[160] p-1.5 space-y-0.5 shadow-2xl">
+              <DropdownMenuItem
+                onClick={() => {
+                  setActiveTab('browse');
+                  setBrowseCategory('avatar_decoration');
+                  setSelectedTypes(['avatar_decoration']);
+                }}
+                className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+              >
+                {t('Avatar Decorations')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setActiveTab('browse');
+                  setBrowseCategory('nameplate');
+                  setSelectedTypes(['nameplate']);
+                }}
+                className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+              >
+                {t('Nameplates')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setActiveTab('browse');
+                  setBrowseCategory('profile_effect');
+                  setSelectedTypes(['profile_effect']);
+                }}
+                className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+              >
+                {t('Profile Effects')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setActiveTab('browse');
+                  setBrowseCategory('avatar_decoration');
+                  setSelectedTypes(['avatar_decoration']);
+                }}
+                className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+              >
+                {t('Profile Frames')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setActiveTab('browse');
+                  setBrowseCategory('bundle');
+                  setSelectedTypes(['bundle']);
+                }}
+                className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+              >
+                {t('Bundles')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border/60 my-1" />
+              <DropdownMenuItem
+                onClick={() => {
+                  setActiveTab('browse');
+                  setBrowseCategory('collabs');
+                  setShowOnlyFeatured(true);
+                }}
+                className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+              >
+                {t('Collabs')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setActiveTab('all');
+                  setBrowseCategory(null);
+                  setSelectedTypes([]);
+                }}
+                className="text-xs cursor-pointer py-1.5 px-2.5 font-semibold text-primary rounded-md hover:bg-primary/10"
+              >
+                {t('Shop All')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* 3. Dew Shop Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('dew');
+              setBrowseCategory(null);
+              setSelectedApp(null);
+            }}
+            className={cn(
+              'relative h-12 px-3 sm:px-4 flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none',
+              activeTab === 'dew'
+                ? 'text-cyan-400 font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>{t('Dew Shop')}</span>
+            {activeTab === 'dew' && (
+              <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-cyan-400 rounded-t-full shadow-xs" />
+            )}
+          </button>
+
+          {/* 4. App Shops Tab with Dropdown (replacing Game Shops) */}
+          <DropdownMenu open={isAppShopsOpen} onOpenChange={setIsAppShopsOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'relative h-12 px-3 sm:px-4 flex items-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0 select-none outline-none',
+                  activeTab === 'app_shops'
+                    ? 'text-foreground font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <span>{t('App Shops')}</span>
+                <ChevronDown
+                  className={cn(
+                    'w-3.5 h-3.5 transition-transform duration-200 opacity-75',
+                    isAppShopsOpen && 'rotate-180'
+                  )}
+                />
+                {activeTab === 'app_shops' && (
+                  <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-primary rounded-t-full shadow-xs" />
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border text-foreground z-[160] p-1.5 space-y-1 shadow-2xl">
+              <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">
+                {t('Aplikasi & Aktivitas Anticeil')}
+              </DropdownMenuLabel>
+              {APP_SHOPS_ITEMS.map((app) => (
+                <DropdownMenuItem
+                  key={app.id}
+                  onClick={() => {
+                    setActiveTab('app_shops');
+                    setSelectedApp(app.name);
+                    setSearchQuery(app.query);
+                  }}
+                  className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer hover:bg-muted font-medium transition-colors"
+                >
+                  <div className="size-6 rounded-md bg-muted/60 border border-border/80 flex items-center justify-center text-xs shrink-0 shadow-xs">
+                    {app.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-xs font-semibold text-foreground">{app.name}</div>
+                  </div>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
+                    {app.tag}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Right side: Search, Wishlist, Currency Balance, TopBarActionButton */}
@@ -1100,13 +1303,23 @@ export function ShopView({
               <div className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-primary shrink-0" />
                 <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  {activeTab === 'all'
-                    ? t('Semua Item Shop')
-                    : activeTab === 'featured'
+                  {activeTab === 'featured'
                     ? t('Item Populer & Unggulan')
                     : activeTab === 'dew'
                     ? t('Item Dew Shop')
-                    : CATEGORY_TABS.find((t) => t.id === activeTab)?.label || t('Katalog Shop')}
+                    : activeTab === 'app_shops' && selectedApp
+                    ? `${selectedApp} Shop`
+                    : activeTab === 'browse' && browseCategory
+                    ? browseCategory === 'avatar_decoration'
+                      ? t('Avatar Decorations')
+                      : browseCategory === 'nameplate'
+                      ? t('Nameplates')
+                      : browseCategory === 'profile_effect'
+                      ? t('Profile Effects')
+                      : browseCategory === 'bundle'
+                      ? t('Bundles')
+                      : t('Browse Katalog')
+                    : t('Semua Item Shop')}
                 </h3>
                 <span className="text-[11px] font-semibold text-muted-foreground">
                   ({filteredItems.length})
