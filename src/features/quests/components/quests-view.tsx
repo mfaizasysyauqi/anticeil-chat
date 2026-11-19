@@ -43,7 +43,14 @@ import {
 } from '@/components/ui/sheet';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { Input } from '@/components/ui/input';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import {
+  CHANNEL_HORIZONTAL_PADDING,
+  CHANNEL_VERTICAL_PADDING,
+  TEXT_STYLES,
+  BUTTON_STYLES,
+  DIALOG_STYLES,
+  SURFACE_STYLES,
+} from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -711,10 +718,10 @@ export function QuestsView({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/50">
                 <div className="flex items-center gap-2">
                   <Flame className="w-4 h-4 text-primary shrink-0" />
-                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  <h3 className={TEXT_STYLES.SECTION_TITLE}>
                     {t('Available Quests')}
                   </h3>
-                  <span className="text-[11px] font-semibold text-muted-foreground">
+                  <span className={TEXT_STYLES.COUNTER_LABEL}>
                     ({filteredQuests.length})
                   </span>
                 </div>
@@ -725,7 +732,7 @@ export function QuestsView({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="h-7 px-2.5 rounded-md border border-border/70 bg-muted/40 hover:bg-muted text-xs font-medium text-foreground flex items-center gap-1.5 cursor-pointer"
+                        className={BUTTON_STYLES.TOOLBAR_BORDERED}
                       >
                         <span>
                           {sortBy === 'suggested'
@@ -771,7 +778,7 @@ export function QuestsView({
                   <Button
                     size="sm"
                     onClick={handleOpenCreateQuest}
-                    className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs shrink-0"
+                    className={BUTTON_STYLES.TOOLBAR_ACTION}
                     title={t('Tambah Quest Baru ke Database')}
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -1025,7 +1032,7 @@ export function QuestsView({
 
         {/* Desktop Discord-style Right Filter Sidebar */}
         {isFilterOpen && (
-          <aside className="hidden lg:flex w-64 shrink-0 flex-col border-l border-border/60 bg-card/25 backdrop-blur-xs overflow-y-auto p-4 [scrollbar-width:thin] select-none">
+          <aside className={SURFACE_STYLES.SIDEBAR_RIGHT}>
             {renderFilterContent()}
           </aside>
         )}
@@ -1057,9 +1064,9 @@ export function QuestsView({
 
       {/* ── 3. Reusable Dialog: Create / Edit Quest (Fullstack CRUD) ── */}
       <Dialog open={isQuestModalOpen} onOpenChange={setIsQuestModalOpen}>
-        <DialogContent className="w-[92vw] sm:w-[500px] p-5 rounded-xl bg-card border border-border shadow-xl z-[160] max-h-[85vh] overflow-y-auto">
+        <DialogContent className={DIALOG_STYLES.MODAL_STANDARD}>
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+            <DialogTitle className={DIALOG_STYLES.HEADER_TITLE}>
               {editingQuest ? <Pencil className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
               <span>{editingQuest ? t('Edit Quest Database') : t('Tambah Quest Baru ke Database')}</span>
             </DialogTitle>

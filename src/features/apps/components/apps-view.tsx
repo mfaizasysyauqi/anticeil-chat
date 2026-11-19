@@ -13,7 +13,14 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import {
+  CHANNEL_HORIZONTAL_PADDING,
+  CHANNEL_VERTICAL_PADDING,
+  TEXT_STYLES,
+  BUTTON_STYLES,
+  DIALOG_STYLES,
+  SURFACE_STYLES,
+} from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import { appsApi } from '../api/apps-api';
@@ -374,10 +381,10 @@ export function AppsView({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-border/50">
                   <div className="flex items-center gap-2">
                     <SectionIcon className="w-4 h-4 text-primary shrink-0" />
-                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                    <h3 className={TEXT_STYLES.SECTION_TITLE}>
                       {section.title}
                     </h3>
-                    <span className="text-[11px] font-semibold text-muted-foreground">
+                    <span className={TEXT_STYLES.COUNTER_LABEL}>
                       ({sectionApps.length})
                     </span>
                   </div>

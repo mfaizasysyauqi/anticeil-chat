@@ -24,7 +24,14 @@ import { EmptyState } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import {
+  CHANNEL_HORIZONTAL_PADDING,
+  CHANNEL_VERTICAL_PADDING,
+  TEXT_STYLES,
+  BUTTON_STYLES,
+  DIALOG_STYLES,
+  SURFACE_STYLES,
+} from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ColonyIcon } from '@/features/colonies/components/colony-icon';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
@@ -221,7 +228,7 @@ export function CallsView({
         {friends && friends.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <h2 className={cn(TEXT_STYLES.SECTION_MUTED, 'flex items-center gap-1.5')}>
                 <Users className="w-3.5 h-3.5 text-primary" />
                 <span>Panggilan Cepat (Speed Dial)</span>
               </h2>
@@ -299,7 +306,7 @@ export function CallsView({
         {/* Call Logs Section */}
         <div className="space-y-4 w-full">
           <div className="flex items-center justify-between pb-2 border-b border-border">
-            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <h2 className={cn(TEXT_STYLES.SECTION_MUTED, 'flex items-center gap-2')}>
               <span>Riwayat Panggilan Terakhir ({filteredCalls.length})</span>
               {filterDate && (
                 <span className="text-[10px] normal-case font-normal text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">

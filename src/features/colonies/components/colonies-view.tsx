@@ -25,7 +25,14 @@ import { EmptyState } from '@/components/ui/empty';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import {
+  CHANNEL_HORIZONTAL_PADDING,
+  CHANNEL_VERTICAL_PADDING,
+  TEXT_STYLES,
+  BUTTON_STYLES,
+  DIALOG_STYLES,
+  SURFACE_STYLES,
+} from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -369,7 +376,7 @@ export function ColoniesView({
         {activeTab === 'joined' ? (
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
-              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <h2 className={TEXT_STYLES.SECTION_MUTED}>
                 Daftar Komunitas yang Anda Ikuti ({filteredMyColonies.length})
               </h2>
             </div>
@@ -418,7 +425,7 @@ export function ColoniesView({
           /* Pending Server Invitations Tab */
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
-              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <h2 className={TEXT_STYLES.SECTION_MUTED}>
                 {t('Undangan Colony Tertunda')} ({filteredPendingInvites.length})
               </h2>
             </div>

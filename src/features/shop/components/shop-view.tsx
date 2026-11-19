@@ -58,7 +58,14 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import {
+  CHANNEL_HORIZONTAL_PADDING,
+  CHANNEL_VERTICAL_PADDING,
+  TEXT_STYLES,
+  BUTTON_STYLES,
+  DIALOG_STYLES,
+  SURFACE_STYLES,
+} from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -1375,10 +1382,10 @@ export function ShopView({
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
           <div className="flex items-center justify-between gap-3 pb-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <span className={TEXT_STYLES.SECTION_MUTED}>
                 {t('Katalog')}
               </span>
-              <span className="text-[11px] font-semibold text-muted-foreground">
+              <span className={TEXT_STYLES.COUNTER_LABEL}>
                 ({filteredItems.length} {t('item')})
               </span>
             </div>
@@ -1421,7 +1428,7 @@ export function ShopView({
               <Button
                 size="sm"
                 onClick={handleOpenCreateProduct}
-                className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs shrink-0"
+                className={BUTTON_STYLES.TOOLBAR_ACTION}
                 title={t('Tambah Produk Baru ke Database Shop')}
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -1697,7 +1704,7 @@ export function ShopView({
 
         {/* Desktop Discord-style Right Filter Sidebar */}
         {isFilterOpen && (
-          <aside className="hidden lg:flex w-64 shrink-0 flex-col border-l border-border/60 bg-card/25 backdrop-blur-xs overflow-y-auto p-4 [scrollbar-width:thin] select-none">
+          <aside className={SURFACE_STYLES.SIDEBAR_RIGHT}>
             {renderFilterContent()}
           </aside>
         )}
@@ -1730,7 +1737,7 @@ export function ShopView({
       {/* ── 3. Reusable Dialog: Item Detail & Purchase Modal ── */}
       <Dialog open={Boolean(activeModalItem)} onOpenChange={(open) => !open && setActiveModalItem(null)}>
         {activeModalItem && (
-          <DialogContent className="w-[92vw] sm:w-[480px] p-0 overflow-hidden rounded-xl bg-card border border-border shadow-xl z-[150]">
+          <DialogContent className={DIALOG_STYLES.MODAL_PREVIEW}>
             {/* Header Preview Banner with Real Animated Cosmetic in Action */}
             <div className="relative h-44 bg-[#111214] flex items-center justify-center p-6 border-b border-border overflow-hidden">
               {activeModalItem.category === 'avatar_decoration' ? (
@@ -2001,9 +2008,9 @@ export function ShopView({
 
       {/* ── 5. Reusable Dialog: Add or Edit Product (Fullstack CRUD) ── */}
       <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
-        <DialogContent className="w-[92vw] sm:w-[460px] p-5 rounded-xl bg-card border border-border shadow-xl z-[160]">
+        <DialogContent className={DIALOG_STYLES.MODAL_STANDARD}>
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+            <DialogTitle className={DIALOG_STYLES.HEADER_TITLE}>
               {editingProduct ? <Pencil className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
               <span>{editingProduct ? t('Edit Item Katalog Shop') : t('Tambah Produk ke Database Shop')}</span>
             </DialogTitle>
