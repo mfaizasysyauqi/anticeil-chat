@@ -14,11 +14,25 @@ import {
   Loader2,
   Share2,
   MessageCircle,
+  Plus,
+  Paperclip,
+  X,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommunityAvatar } from '@/chat/chat-avatar';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
 import type {
   AiMessage,
@@ -33,6 +47,9 @@ import {
   getStoredGroqConfig,
   saveStoredSessions,
   getStoredSessions,
+  saveStoredGroqConfig,
+  GROQ_MODELS,
+  DEFAULT_GROQ_MODEL,
 } from '../services/ai-storage';
 import { executeGroqCommand } from '../services/groq-service';
 import { GroqSettingsDialog } from './groq-settings-dialog';
@@ -56,6 +73,12 @@ export interface AiCommandCenterViewProps {
   onSendDirectMessage?: (recipientIdOrName: string, content: string) => Promise<any> | any;
   onNavigateToChannel?: (colonyId: string, channelId: string) => void;
   onNavigateToDM?: (memberId: string) => void;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function AiCommandCenterView(props: AiCommandCenterViewProps) {
@@ -87,11 +110,34 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const messages = activeSession?.messages || [];
 
   const groqConfig = getStoredGroqConfig();
+  const [selectedModel, setSelectedModel] = useState<string>(() => groqConfig.model || DEFAULT_GROQ_MODEL);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+
+  const handleSelectModel = (modelId: string) => {
+    setSelectedModel(modelId);
+    saveStoredGroqConfig(groqConfig.apiKey, modelId);
+    const found = GROQ_MODELS.find((m) => m.id === modelId);
+    toast.success(`Model aktif diubah ke ${found?.name || modelId}`);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newFiles = Array.from(files);
+    setAttachedFiles((prev) => [...prev, ...newFiles]);
+    toast.success(`${newFiles.length} berkas ditambahkan`);
+    e.target.value = '';
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -140,20 +186,42 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   };
 
   const handleSendMessage = async (promptToSend?: string) => {
-    const text = (promptToSend || inputPrompt).trim();
-    if (!text || isLoading) return;
+    const rawText = (promptToSend || inputPrompt).trim();
+    if ((!rawText && attachedFiles.length === 0) || isLoading) return;
 
     let targetSession = activeSession;
     if (!targetSession && onCreateNewSession) {
-      targetSession = await onCreateNewSession(text.slice(0, 36));
+      targetSession = await onCreateNewSession(rawText.slice(0, 36) || 'Berkas Lampiran');
     }
     if (!targetSession) return;
 
+    let textToSend = rawText;
+    const filesToProcess = [...attachedFiles];
     setInputPrompt('');
+    setAttachedFiles([]);
+
+    if (filesToProcess.length > 0) {
+      const fileSummaries = await Promise.all(
+        filesToProcess.map(async (file) => {
+          if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|json|js|ts|tsx|jsx|css|html|csv)$/i)) {
+            try {
+              const content = await file.text();
+              const truncated = content.length > 2500 ? content.slice(0, 2500) + '... (terpotong)' : content;
+              return `\n[File: ${file.name}]\n\`\`\`\n${truncated}\n\`\`\``;
+            } catch {
+              return `\n[File: ${file.name} (${formatFileSize(file.size)})]`;
+            }
+          }
+          return `\n[File: ${file.name} (${file.type || 'berkas'}, ${formatFileSize(file.size)})]`;
+        })
+      );
+      textToSend = `${textToSend ? textToSend + '\n' : ''}${fileSummaries.join('\n')}`;
+    }
+
     const userMessage: AiMessage = {
       id: `msg_${Date.now()}_u`,
       role: 'user',
-      content: text,
+      content: textToSend,
       createdAt: new Date().toISOString(),
     };
 
@@ -163,10 +231,15 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
     setIsLoading(true);
 
     try {
+      const currentConfig = {
+        ...groqConfig,
+        model: selectedModel,
+      };
+
       const response = await executeGroqCommand({
         messages: updatedMessages,
         context: systemContext,
-        config: groqConfig,
+        config: currentConfig,
       });
 
       const assistantMessage: AiMessage = {
@@ -270,7 +343,6 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       <AiCommandCenterHeader
         onOpenSidebar={onOpenSidebar}
         activeSessionTitle={activeSession?.title}
-        modelName={groqConfig.model}
         onOpenGroqSettings={() => setIsSettingsOpen(true)}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
         onCreateNewSession={onCreateNewSession ? () => onCreateNewSession() : undefined}
@@ -436,46 +508,159 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
         )}
       </div>
 
-      {/* 3. Command Input Dock */}
-      <div className="p-3 sm:p-4 border-t border-sidebar-border bg-background/95 backdrop-blur-xs shrink-0">
-        <div className="max-w-3xl mx-auto space-y-2">
+      {/* 3. Command Input Dock (Full width, Gemini-style prompt form with file upload + model selector) */}
+      <div
+        className={cn(
+          'p-3 sm:p-4 border-t border-sidebar-border bg-background/95 backdrop-blur-xs shrink-0 w-full',
+          CHANNEL_HORIZONTAL_PADDING,
+        )}
+      >
+        <div className="w-full space-y-2">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="relative flex items-center rounded-xl bg-card border border-border/80 focus-within:border-primary/80 focus-within:ring-1 focus-within:ring-primary/80 transition-all shadow-xs"
+            className="relative flex flex-col rounded-2xl bg-card border border-border/80 focus-within:border-primary/80 focus-within:ring-1 focus-within:ring-primary/80 transition-all shadow-xs p-1.5 sm:p-2 w-full"
           >
-            <textarea
-              value={inputPrompt}
-              onChange={(e) => setInputPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="Ketik perintah (contoh: 'buka whiteboard', 'kirim pesan ke #general colony as: halo')..."
-              className="min-h-[44px] max-h-32 w-full resize-none border-0 bg-transparent py-3 pl-3.5 pr-12 text-xs focus:outline-hidden placeholder:text-muted-foreground/60"
-              rows={1}
+            {/* Hidden native file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileSelect}
             />
 
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!inputPrompt.trim() || isLoading}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 bg-primary text-primary-foreground hover:opacity-90 rounded-lg cursor-pointer shrink-0 disabled:opacity-40"
-              title="Kirim Perintah"
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+            {/* Attached file chips */}
+            {attachedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 px-1.5 pb-2">
+                {attachedFiles.map((file, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/80 border border-border/80 rounded-lg text-xs text-foreground animate-in fade-in duration-150"
+                  >
+                    <Paperclip className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="max-w-[140px] truncate font-medium">{file.name}</span>
+                    <span className="text-[10px] text-muted-foreground">({formatFileSize(file.size)})</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(idx)}
+                      className="text-muted-foreground hover:text-foreground ml-1 p-0.5 rounded-full hover:bg-background cursor-pointer"
+                      title="Hapus file"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Input Row: [+] Prefix -> Textarea -> [Model Selector Dropdown] -> [Send Button] */}
+            <div className="flex items-center gap-1.5 w-full">
+              {/* + Prefix button for file upload */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 rounded-full cursor-pointer shrink-0"
+                title="Unggah berkas / file"
+                aria-label="Unggah berkas"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+
+              {/* Textarea */}
+              <textarea
+                value={inputPrompt}
+                onChange={(e) => setInputPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="Ketik perintah (contoh: 'buka whiteboard', 'kirim pesan ke #general colony as: halo')..."
+                className="min-h-[36px] max-h-32 flex-1 resize-none border-0 bg-transparent py-2 px-2 text-xs focus:outline-hidden placeholder:text-muted-foreground/60 leading-relaxed"
+                rows={1}
+              />
+
+              {/* Right Controls: Model Selector + Send Button */}
+              <div className="flex items-center gap-1.5 shrink-0 pr-0.5">
+                {/* Gemini-style Model Selector Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/60 rounded-full border border-border/60 transition-colors cursor-pointer select-none"
+                      title="Ganti Model AI"
+                    >
+                      <span className="max-w-[100px] sm:max-w-[150px] truncate">
+                        {GROQ_MODELS.find((m) => m.id === selectedModel)?.name.replace(' Versatile', '').replace(' Instant', '') || selectedModel}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" side="top" sideOffset={8} className="w-64 p-1.5">
+                    <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">
+                      Pilih Mesin AI (Groq LPU)
+                    </DropdownMenuLabel>
+                    {GROQ_MODELS.map((model) => {
+                      const isSelected = model.id === selectedModel;
+                      return (
+                        <DropdownMenuItem
+                          key={model.id}
+                          onClick={() => handleSelectModel(model.id)}
+                          className="flex items-start gap-2 p-2 rounded-lg cursor-pointer"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn('text-xs font-semibold', isSelected ? 'text-primary' : 'text-foreground')}>
+                                {model.name}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
+                              {model.desc}
+                            </p>
+                          </div>
+                          {isSelected && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                    <DropdownMenuSeparator className="my-1" />
+                    <DropdownMenuItem
+                      onClick={() => setIsSettingsOpen(true)}
+                      className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <Settings2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>Pengaturan Kunci API...</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Send Button */}
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={(!inputPrompt.trim() && attachedFiles.length === 0) || isLoading}
+                  className="h-8 w-8 bg-primary text-primary-foreground hover:opacity-90 rounded-full cursor-pointer shrink-0 disabled:opacity-40 shadow-xs"
+                  title="Kirim Perintah"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
           </form>
 
-          <div className="flex items-center justify-end text-[11px] text-muted-foreground px-1">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+            <span className="text-[10px] sm:text-[11px]">
+              {attachedFiles.length > 0 ? `${attachedFiles.length} berkas terlampir` : 'Didukung oleh Groq LPU Ultra-fast'}
+            </span>
             <span className="hidden sm:inline">Tekan Enter untuk kirim, Shift+Enter untuk baris baru</span>
           </div>
         </div>

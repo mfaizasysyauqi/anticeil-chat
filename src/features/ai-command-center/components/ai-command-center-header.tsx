@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Menu, Settings2, Trash2, Plus, Cpu } from 'lucide-react';
+import { Sparkles, Menu, Settings2, Trash2, Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
@@ -13,7 +13,7 @@ export interface AiCommandCenterHeaderProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
   activeSessionTitle?: string;
-  modelName: string;
+  modelName?: string;
   onOpenGroqSettings: () => void;
   onClearSessionMessages?: () => void;
   onCreateNewSession?: () => void;
@@ -28,7 +28,7 @@ export function AiCommandCenterHeader({
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   activeSessionTitle,
-  modelName,
+  modelName: _modelName,
   onOpenGroqSettings,
   onClearSessionMessages,
   onCreateNewSession,
@@ -83,23 +83,6 @@ export function AiCommandCenterHeader({
             <span className="truncate">{activeSessionTitle}</span>
           </TopBarTabButton>
         )}
-
-        {/* Quick Model Badge Pill */}
-        <Tooltip delayDuration={200}>
-          <TooltipTrigger asChild>
-            <TopBarTabButton
-              active={false}
-              onClick={onOpenGroqSettings}
-              className="font-mono text-[11px] text-muted-foreground hover:text-foreground"
-            >
-              <Cpu className="w-3 h-3 text-emerald-400 shrink-0" />
-              <span className="max-w-[110px] sm:max-w-[140px] truncate">{modelName}</span>
-            </TopBarTabButton>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-            {t('Klik untuk ganti model atau konfigurasi API Key Groq')}
-          </TooltipContent>
-        </Tooltip>
       </div>
 
       {/* Right: Actions & Primary Button placed at FAR RIGHT (100% DRY like Friends & Quests) */}
