@@ -104,35 +104,6 @@ export function AuditLogTab({
     };
   }, [activeColony.id, setServerAuditLogs]);
 
-  // Default Discord entries matching Anticeil Parity
-  const defaultEntries: EnrichedAuditItem[] = useMemo(() => [
-    {
-      id: 'log-init',
-      actorName: activeColony.role === 'owner' ? '_zmsta_' : 'Anticeil System',
-      actionType: 'server_update',
-      summary: `${activeColony.role === 'owner' ? '_zmsta_' : 'Anticeil System'} configured ${activeColony.name}`,
-      targetName: activeColony.name,
-      timestamp: 'Today at 2:49 PM',
-      details: {
-        server_name: activeColony.name,
-        verification_level: 'Medium (Registered on Anticeil)',
-        default_notifications: 'Only @mentions',
-        audit_engine: 'PostgreSQL Realtime v2',
-      },
-    },
-    {
-      id: 'log-role-init',
-      actorName: activeColony.role === 'owner' ? '_zmsta_' : 'Anticeil System',
-      actionType: 'role_update',
-      summary: `${activeColony.role === 'owner' ? '_zmsta_' : 'Anticeil System'} updated the role @everyone`,
-      targetName: '@everyone',
-      timestamp: 'Today at 2:50 PM',
-      details: {
-        permissions: '+SEND_MESSAGES, +READ_MESSAGE_HISTORY, +USE_SOUNDBOARD, +ADD_REACTIONS',
-      },
-    },
-  ], [activeColony]);
-
   // Map action string to EnrichedAuditItem actionType
   const mapActionType = (action: string): EnrichedAuditItem['actionType'] => {
     const act = (action || '').toUpperCase();
@@ -156,35 +127,35 @@ export function AuditLogTab({
     return 'server_update';
   };
 
-  // Combine dynamic logs with default fallback entries
+  // Map dynamic logs from backend/localStorage without fake dummy fallbacks
   const allLogs: EnrichedAuditItem[] = useMemo(() => {
-    if (serverAuditLogs.length > 0) {
-      return serverAuditLogs.map((log) => {
-        const actionType = mapActionType(log.action);
-        const actionFriendly = log.action
-          ? log.action.toLowerCase().replace(/_/g, ' ')
-          : 'action';
-        return {
-          id: log.id,
-          actorName: log.actorName || 'Admin',
-          actionType,
-          summary: `${log.actorName || 'Admin'} ${actionFriendly} ${log.targetName || ''}`,
-          targetName: log.targetName,
-          timestamp: log.createdAt
-            ? new Date(log.createdAt).toLocaleString('id-ID', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-            : 'Baru saja',
-          details: typeof log.details === 'object' && log.details !== null ? log.details : { info: log.details || '' },
-        };
-      });
+    if (!serverAuditLogs || serverAuditLogs.length === 0) {
+      return [];
     }
 
-    return defaultEntries;
-  }, [serverAuditLogs, defaultEntries]);
+    return serverAuditLogs.map((log) => {
+      const actionType = mapActionType(log.action);
+      const actionFriendly = log.action
+        ? log.action.toLowerCase().replace(/_/g, ' ')
+        : 'action';
+      return {
+        id: log.id,
+        actorName: log.actorName || 'Admin',
+        actionType,
+        summary: `${log.actorName || 'Admin'} ${actionFriendly} ${log.targetName || ''}`,
+        targetName: log.targetName,
+        timestamp: log.createdAt
+          ? new Date(log.createdAt).toLocaleString('id-ID', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : 'Baru saja',
+        details: typeof log.details === 'object' && log.details !== null ? log.details : { info: log.details || '' },
+      };
+    });
+  }, [serverAuditLogs]);
 
   // Filter logs
   const filteredLogs = useMemo(() => {
@@ -320,7 +291,21 @@ export function AuditLogTab({
 
       {/* ── Entry Rows ── */}
       <div className="space-y-2">
-        {filteredLogs.length === 0 ? (
+        {allLogs.length === 0 ? (
+          <div className="rounded-2xl border border-border/70 bg-card p-12 text-center flex flex-col items-center justify-center space-y-3 shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground border border-border/50">
+              <ScrollText className="w-6 h-6" />
+            </div>
+            <div className="space-y-1 max-w-sm">
+              <h4 className="text-sm font-bold text-foreground">
+                {t('Belum ada log aktivitas')}
+              </h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {t('Setiap perubahan penting seperti pembaruan colony, peran anggota, saluran, dan tindakan moderasi akan dicatat di sini.')}
+              </p>
+            </div>
+          </div>
+        ) : filteredLogs.length === 0 ? (
           <div className="rounded-xl border border-border/70 bg-card p-12 text-center text-xs text-muted-foreground">
             {t('Tidak ada riwayat tindakan yang cocok dengan filter.')}
           </div>

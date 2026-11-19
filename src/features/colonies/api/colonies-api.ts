@@ -495,55 +495,26 @@ export const coloniesApi = {
       } catch {}
     }
 
-    const now = new Date();
-    const dailyActivity: ColonyInsights['dailyActivity'] = [];
-    const baseSamples = [14, 22, 18, 30, 36, 28, 34, 42, 50, 44, 58, 65, 60, 74];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 86400000);
-      const sample = baseSamples[i % baseSamples.length];
-      dailyActivity.push({
-        date: d.toISOString().split('T')[0],
-        messages: sample,
-        activeMembers: Math.max(1, Math.round(sample / 3.5)),
-        voiceMinutes: sample * 4,
-      });
-    }
-
-    const hourlyCounts = [2, 1, 0, 0, 1, 4, 8, 15, 22, 28, 36, 32, 26, 30, 42, 54, 66, 75, 70, 58, 44, 30, 18, 10];
-    const hourlyDistribution = hourlyCounts.map((count, hour) => ({
-      hour,
-      hourLabel: `${hour}:00`,
-      count,
-    }));
-
-    const storedChannels = loadStoredChannels().filter((c) => (c.colonyId || 'anticeil') === colonyId);
-    const channelBreakdown = storedChannels.slice(0, 8).map((ch, idx) => ({
-      channelId: ch.id,
-      channelName: ch.name,
-      channelType: ch.type || 'text',
-      messageCount: Math.max(12, 120 - idx * 14),
-      percent: Math.max(5, 35 - idx * 4),
-    }));
-
+    // Return empty insights when no data is available (no fake dummy metrics)
     return {
       hubId: colonyId,
       timeRangeDays: days,
       overview: {
-        totalMembers: 12,
-        communicators: 8,
-        communicatorsTrend: '+18%',
-        memberRetention: '84%',
-        memberRetentionTrend: '+6%',
-        welcomeCompletion: '88%',
-        welcomeCompletionTrend: '+12%',
-        announcementViews: 165,
-        announcementViewsTrend: '+24%',
-        engagementScore: 82,
+        totalMembers: 0,
+        communicators: 0,
+        communicatorsTrend: '0%',
+        memberRetention: '0%',
+        memberRetentionTrend: '0%',
+        welcomeCompletion: '0%',
+        welcomeCompletionTrend: '0%',
+        announcementViews: 0,
+        announcementViewsTrend: '0%',
+        engagementScore: 0,
       },
-      dailyActivity,
-      hourlyDistribution,
-      channelBreakdown,
-      peakHoursSummary: '19:00 - 22:00 WIB',
+      dailyActivity: [],
+      hourlyDistribution: [],
+      channelBreakdown: [],
+      peakHoursSummary: '-',
     };
   },
 

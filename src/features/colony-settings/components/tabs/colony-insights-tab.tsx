@@ -115,18 +115,37 @@ export function ColonyInsightsTab({
     }
   };
 
-  const overview = insights?.overview || {
-    totalMembers: activeColony.membersCount || 1,
-    communicators: 8,
-    communicatorsTrend: '+18%',
-    memberRetention: '84%',
-    memberRetentionTrend: '+6%',
-    welcomeCompletion: '88%',
-    welcomeCompletionTrend: '+12%',
-    announcementViews: 165,
-    announcementViewsTrend: '+24%',
-    engagementScore: 82,
-  };
+  const overview = useMemo(() => {
+    return insights?.overview || {
+      totalMembers: activeColony.membersCount || 0,
+      communicators: 0,
+      communicatorsTrend: '0%',
+      memberRetention: '0%',
+      memberRetentionTrend: '0%',
+      welcomeCompletion: '0%',
+      welcomeCompletionTrend: '0%',
+      announcementViews: 0,
+      announcementViewsTrend: '0%',
+      engagementScore: 0,
+    };
+  }, [insights, activeColony.membersCount]);
+
+  const hasAnalyticsData = useMemo(() => {
+    if (!insights) return false;
+    const hasDaily = Boolean(
+      insights.dailyActivity &&
+      insights.dailyActivity.length > 0 &&
+      insights.dailyActivity.some((d) => d.messages > 0),
+    );
+    const hasCommunicators = Number(insights.overview?.communicators || 0) > 0;
+    const hasAnnouncementViews = Number(insights.overview?.announcementViews || 0) > 0;
+    const hasChannelBreakdown = Boolean(
+      insights.channelBreakdown &&
+      insights.channelBreakdown.length > 0 &&
+      insights.channelBreakdown.some((c) => c.messageCount > 0),
+    );
+    return Boolean(hasDaily || hasCommunicators || hasAnnouncementViews || hasChannelBreakdown);
+  }, [insights]);
 
   const dailyActivity = insights?.dailyActivity || [];
   const maxDailyMsgs = Math.max(...dailyActivity.map((d) => d.messages), 1);
@@ -194,7 +213,8 @@ export function ColonyInsightsTab({
             variant="outline"
             size="sm"
             onClick={handleExportCsv}
-            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground hidden sm:flex items-center gap-1.5"
+            disabled={!hasAnalyticsData}
+            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground hidden sm:flex items-center gap-1.5 disabled:opacity-50"
             title={t('Ekspor CSV')}
           >
             <Download className="w-3.5 h-3.5" />
@@ -203,7 +223,43 @@ export function ColonyInsightsTab({
         </div>
       </div>
 
-      {/* ── Top Metric Cards (Bento Grid) ── */}
+      {loading ? (
+        <div className="rounded-2xl border border-border/70 bg-card p-16 text-center flex flex-col items-center justify-center space-y-3 shadow-xs animate-in fade-in-50">
+          <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground font-medium">
+            {t('Memuat data analitik komunitas...')}
+          </p>
+        </div>
+      ) : !hasAnalyticsData ? (
+        <div className="rounded-2xl border border-border/70 bg-card p-16 text-center flex flex-col items-center justify-center space-y-3 shadow-xs animate-in fade-in-50">
+          <div className="w-14 h-14 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground border border-border/50">
+            <BarChart2 className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <div className="space-y-1.5 max-w-md">
+            <h4 className="text-base font-bold text-foreground">
+              {t('Belum ada data analitik')}
+            </h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {t(
+                'Aktivitas percakapan, retensi anggota, dan statistik saluran akan muncul secara otomatis setelah anggota mulai berinteraksi di colony ini.',
+              )}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fetchInsights(days, true)}
+            disabled={refreshing}
+            className="mt-2 text-xs h-8 gap-2 cursor-pointer"
+          >
+            <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin text-primary')} />
+            {t('Segarkan Analitik')}
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* ── Top Metric Cards (Bento Grid) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* 1. Communicators */}
         <div className="p-4 rounded-xl bg-card border border-border/70 hover:border-primary/40 transition-all shadow-sm space-y-2 group">
@@ -503,6 +559,8 @@ export function ColonyInsightsTab({
           </div>
         </div>
       </div>
+        </>
+      )}
 
       {/* ── Interactive Deep-Dive Dashboard Dialog ── */}
       <Dialog open={showDashboardModal} onOpenChange={setShowDashboardModal}>
