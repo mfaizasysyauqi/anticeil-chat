@@ -13,6 +13,7 @@ export function ChatMainView(props: ChatMainViewProps) {
     props.isAssignmentsView ||
     props.isCallsView ||
     props.isAppsView ||
+    props.isShopView ||
     props.isColoniesView;
 
   if (isHomeView) {

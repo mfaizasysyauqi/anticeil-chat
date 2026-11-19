@@ -30,11 +30,12 @@ export function useChatViewModes({
   }));
 
   const [homeView, setHomeView] = useState<
-    'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps'
+    'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop'
   >(() => {
     try {
       if (typeof window !== 'undefined') {
         const p = window.location.pathname.toLowerCase();
+        if (p === '/shop') return 'shop';
         if (p === '/applications&activities' || p === '/apps' || p === '/applications' || p === '/app-directory') return 'apps';
         if (p === '/friends') return 'friends';
         if (p === '/calendar') return 'calendar';
@@ -112,6 +113,7 @@ export function useChatViewModes({
   const isAssignmentsView = isHome && !activeChannel && homeView === 'assignments';
   const isCallsView = isHome && !activeChannel && homeView === 'calls';
   const isAppsView = isHome && !activeChannel && homeView === 'apps';
+  const isShopView = isHome && !activeChannel && homeView === 'shop';
   const isColoniesView = isHome && !activeChannel && (homeView === 'colonies' || homeView === 'servers');
 
   return {
@@ -139,6 +141,7 @@ export function useChatViewModes({
     isAssignmentsView,
     isCallsView,
     isAppsView,
+    isShopView,
     isColoniesView,
   };
 }

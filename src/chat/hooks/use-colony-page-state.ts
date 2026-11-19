@@ -272,6 +272,7 @@ export function useColonyPageState(): ChatPageContentProps {
     isAssignmentsView,
     isCallsView,
     isAppsView,
+    isShopView,
     isColoniesView,
   } = useChatViewModes({
     isHome,
@@ -294,6 +295,21 @@ export function useColonyPageState(): ChatPageContentProps {
     setActiveColonyId,
     setActiveChannelId,
   });
+
+  // Global Home Navigation Event Listener (e.g. Shop, Friends, Colonies from dialogs/modals)
+  useEffect(() => {
+    const handleNavigateHome = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      const targetView = customEvent.detail as any;
+      if (targetView) {
+        setActiveColonyId('anticeil');
+        setActiveChannelId('');
+        setHomeView(targetView);
+      }
+    };
+    window.addEventListener('anticeil:navigate-home', handleNavigateHome);
+    return () => window.removeEventListener('anticeil:navigate-home', handleNavigateHome);
+  }, [setActiveColonyId, setActiveChannelId, setHomeView]);
 
   // Channel Pins & Notifications Hook
   const {
@@ -596,6 +612,7 @@ export function useColonyPageState(): ChatPageContentProps {
     isCallsView,
     callLogs,
     isAppsView,
+    isShopView,
     handleLaunchActivity,
     isColoniesView,
     activeChannel,

@@ -8,6 +8,7 @@ import {
   Calendar,
   Backpack,
   Phone,
+  Store,
   Rocket,
   Plus,
   MessageSquare,
@@ -23,8 +24,8 @@ export interface HomeChannelsSidebarProps {
   currentUser?: any;
   activeChannelId: string;
   setActiveChannelId: (id: string) => void;
-  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps';
-  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps') => void;
+  homeView?: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop';
+  setHomeView?: (view: 'friends' | 'colonies' | 'servers' | 'message-requests' | 'notifications' | 'calendar' | 'assignments' | 'calls' | 'apps' | 'shop') => void;
   messageRequestsCount?: number | string;
   unreadNotificationsCount?: number | string;
   setFriendsTab: (tab: any) => void;
@@ -303,6 +304,31 @@ export function HomeChannelsSidebar({
               )}
             />
             <span className="flex-1 font-medium">{t('Panggilan')}</span>
+          </button>
+
+          {/* 8. Shop */}
+          <button
+            onClick={() => {
+              setActiveChannelId('');
+              setHomeView?.('shop');
+              onItemClick?.();
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
+              !activeChannelId && homeView === 'shop'
+                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Store
+              className={cn(
+                'w-4 h-4 shrink-0 transition-colors',
+                !activeChannelId && homeView === 'shop'
+                  ? 'text-primary'
+                  : 'text-muted-foreground group-hover:text-foreground',
+              )}
+            />
+            <span className="flex-1 font-medium">{t('Shop')}</span>
           </button>
         </div>
 

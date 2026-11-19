@@ -1526,7 +1526,10 @@ export function EditProfileDialog({
                     <Button
                       size="sm"
                       variant="teal"
-                      onClick={handleNectarCta}
+                      onClick={() => {
+                        onOpenChange(false);
+                        window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
+                      }}
                       className="text-xs h-9 px-5 font-bold cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1.5" />

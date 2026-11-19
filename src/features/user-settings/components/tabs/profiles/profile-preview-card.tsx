@@ -339,6 +339,8 @@ export function ProfilePreviewCard({
                       onOpenShop();
                     } else if (onNavigateSection) {
                       onNavigateSection('nitro');
+                    } else {
+                      window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
                     }
                     toast.success(t('Membuka Shop & Aksesori Profil! 🏪'));
                   }}

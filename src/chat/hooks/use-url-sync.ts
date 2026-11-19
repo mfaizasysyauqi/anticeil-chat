@@ -68,6 +68,10 @@ export function useUrlSync({
         setHomeView?.('colonies');
         setActiveColonyId?.('anticeil');
         setActiveChannelId?.('');
+      } else if (pathname === '/shop' || pathname === '/store') {
+        setHomeView?.('shop');
+        setActiveColonyId?.('anticeil');
+        setActiveChannelId?.('');
       } else if (pathname === '/friends') {
         setHomeView?.('friends');
         setActiveColonyId?.('anticeil');
@@ -130,6 +134,10 @@ export function useUrlSync({
           setActiveChannelId?.('');
         } else if (pathname === '/colonies') {
           setHomeView?.('colonies');
+          setActiveColonyId?.('anticeil');
+          setActiveChannelId?.('');
+        } else if (pathname === '/shop' || pathname === '/store') {
+          setHomeView?.('shop');
           setActiveColonyId?.('anticeil');
           setActiveChannelId?.('');
         } else if (pathname === '/friends') {
@@ -197,6 +205,9 @@ export function useUrlSync({
             break;
           case 'friends':
             targetPath = '/friends';
+            break;
+          case 'shop':
+            targetPath = '/shop';
             break;
           default:
             targetPath = '/applications&activities';

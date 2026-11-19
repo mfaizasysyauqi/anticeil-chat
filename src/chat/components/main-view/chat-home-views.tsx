@@ -8,6 +8,7 @@ import { AssignmentsView, type AssignmentItem } from '@/features/assignments';
 import { CallsView, type CallLogItem } from '@/features/calls';
 import { AppsView } from '@/features/apps';
 import { ColoniesView } from '@/features/colonies';
+import { ShopView } from '@/features/shop';
 import type { ColonyChannel, Colony, ColonyMember } from '../../chat-types';
 
 export interface ChatHomeViewsProps {
@@ -48,6 +49,7 @@ export interface ChatHomeViewsProps {
   activeCallChannelId: string | null;
   handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string, colonyId?: string) => void;
   handleStartDM: (member: ColonyMember) => void;
+  isShopView?: boolean;
   isColoniesView: boolean;
   requireAuth: (action: () => void, title?: string, desc?: string) => void;
   setIsCreateHubOpen: (open: boolean) => void;
@@ -85,6 +87,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   handleCreateCallLog,
   handleStartDirectMessage,
   isAppsView,
+  isShopView,
   members,
   activeCallChannelId,
   handleLaunchActivity,
@@ -199,6 +202,10 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         setActiveChannelId={setActiveChannelId}
       />
     );
+  }
+
+  if (isShopView) {
+    return <ShopView currentUser={members.find((m) => m.id === 'me')} />;
   }
 
   if (isColoniesView) {
