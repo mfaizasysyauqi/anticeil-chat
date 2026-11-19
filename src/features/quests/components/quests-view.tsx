@@ -35,12 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { AppFilterDrawer } from '@/components/ui/app-filter-drawer';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { Input } from '@/components/ui/input';
 import {
@@ -395,27 +390,6 @@ export function QuestsView({
   const renderFilterContent = () => {
     return (
       <div className="space-y-6">
-        {/* Header with Active Count & Reset (Aligns with Center Toolbar pb-2 border-b) */}
-        <div className="flex items-center justify-between min-h-7 pb-2 border-b border-border/50">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
-            <span>{t('Filter')}</span>
-            {activeFilterCount > 0 && (
-              <span className="text-[10px] font-bold text-primary">({activeFilterCount})</span>
-            )}
-          </div>
-          {activeFilterCount > 0 && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>{t('Reset')}</span>
-            </button>
-          )}
-        </div>
-
         {/* 1. Kategori Quest */}
         <div className="space-y-2.5">
           <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
@@ -1019,29 +993,16 @@ export function QuestsView({
         )}
       </div>
 
-      {/* Reusable Filter Sheet Drawer (Slides in on demand, preserving 100% page symmetry) */}
-      <Sheet open={isFilterDrawerOpen} onOpenChange={setIsFilterDrawerOpen}>
-        <SheetContent side="right" className="w-[85vw] max-w-xs p-4 overflow-y-auto bg-card border-border z-[170]">
-          <SheetHeader className="pb-3 border-b border-border/50 text-left">
-            <SheetTitle className="text-sm font-bold flex items-center justify-between">
-              <span>{t('Filter Quests')}</span>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>{t('Reset')}</span>
-                </button>
-              )}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="py-4">
-            {renderFilterContent()}
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Reusable Filter Sheet Drawer (Tightened width, eliminating empty right gap) */}
+      <AppFilterDrawer
+        open={isFilterDrawerOpen}
+        onOpenChange={setIsFilterDrawerOpen}
+        title={t('Filter Quests')}
+        activeFilterCount={activeFilterCount}
+        onReset={handleResetFilters}
+      >
+        {renderFilterContent()}
+      </AppFilterDrawer>
 
       {/* ── 3. Reusable Dialog: Create / Edit Quest (Fullstack CRUD) ── */}
       <Dialog open={isQuestModalOpen} onOpenChange={setIsQuestModalOpen}>
