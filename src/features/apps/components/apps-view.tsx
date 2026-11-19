@@ -246,6 +246,13 @@ export function AppsView({
       ? appList.find((a) => a.id === appOrId) || ANTICEIL_APPS.find((a) => a.id === appOrId) || null
       : appOrId;
     if (app) {
+      if (activeCallChannelId && socket) {
+        socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+          channelId: activeCallChannelId,
+          action: 'ACTIVITY_STOP',
+          payload: {},
+        });
+      }
       setStandaloneApp(app);
       const url = new URL(window.location.href);
       url.searchParams.set('activity', app.id);
@@ -266,6 +273,12 @@ export function AppsView({
     appId: string;
     member?: ColonyMember;
   }) => {
+    // Auto-close standalone session when sending/launching into channel
+    setStandaloneApp(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('activity');
+    window.history.replaceState(null, '', url.toString());
+
     if (options.targetType === 'server') {
       if (options.colonyId && setActiveColonyId) {
         setActiveColonyId(options.colonyId);

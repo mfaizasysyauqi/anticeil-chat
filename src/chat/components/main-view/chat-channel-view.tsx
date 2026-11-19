@@ -264,6 +264,13 @@ export function ChatChannelView({
     }
   }, [activeChannel?.id, activeCallChannelId, isActivityOpen, selectedActivityAppId]);
 
+  // Bind activeCallChannelId to activeChannel if an activity is opened without an explicit channel ID
+  React.useEffect(() => {
+    if (selectedActivityAppId && isActivityOpen && !activeCallChannelId && activeChannel?.id) {
+      setActiveCallChannelId(activeChannel.id);
+    }
+  }, [selectedActivityAppId, isActivityOpen, activeCallChannelId, activeChannel?.id, setActiveCallChannelId]);
+
   const handleSplitPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     const handleEl = e.currentTarget;
@@ -452,7 +459,12 @@ export function ChatChannelView({
         />
       )}
 
-      {(activeCallChannelId === activeChannel?.id || activeChannel?.type === 'voice' || (isActivityOpen && Boolean(selectedActivityAppId))) && !isCallPiP ? (
+      {Boolean(
+        activeChannel &&
+        (activeCallChannelId === activeChannel.id || (!activeCallChannelId && isActivityOpen && selectedActivityAppId)) &&
+        (isActivityOpen || activeChannel.type === 'voice') &&
+        !isCallPiP
+      ) ? (
         <div ref={splitContainerRef} className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full relative">
           <div
             style={{

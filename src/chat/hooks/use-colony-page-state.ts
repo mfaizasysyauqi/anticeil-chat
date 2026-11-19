@@ -382,6 +382,7 @@ export function useColonyPageState(): ChatPageContentProps {
     members,
     socket,
     t,
+    selectedActivityAppId,
     setSelectedActivityAppId,
     setIsTemplatePopoverOpen,
     setActiveColonyId,

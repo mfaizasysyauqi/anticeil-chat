@@ -10,6 +10,7 @@ import {
 } from '@/chat/chat-types';
 import { EXTENDED_DISCORD_APPS } from '../anticeil-media-data';
 import { colonyApi } from '../chat-api';
+import { channelWatchStateCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 
 export interface UseActivityLauncherOptions {
   channels: ColonyChannel[];
@@ -23,6 +24,7 @@ export interface UseActivityLauncherOptions {
   members: ColonyMember[];
   socket?: Socket | null;
   t: (key: string) => string;
+  selectedActivityAppId?: string | null;
   setSelectedActivityAppId: (appId: string) => void;
   setIsTemplatePopoverOpen: (open: boolean) => void;
   setActiveColonyId: (id: string) => void;
@@ -46,6 +48,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
     members,
     socket,
     t,
+    selectedActivityAppId,
     setSelectedActivityAppId,
     setIsTemplatePopoverOpen,
     setActiveColonyId,
@@ -121,13 +124,16 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       }
 
       // Enforce strictly 1 active activity: auto-close / leave any previous activity
-      if (activeCallChannelId && (!voiceDest || activeCallChannelId !== voiceDest.id)) {
+      if (activeCallChannelId) {
         socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
           channelId: activeCallChannelId,
           action: 'ACTIVITY_STOP',
-          payload: {},
+          payload: { previousAppId: selectedActivityAppId },
         });
-        socket?.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: activeCallChannelId });
+        if (voiceDest && activeCallChannelId !== voiceDest.id) {
+          socket?.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: activeCallChannelId });
+        }
+        channelWatchStateCache.delete(activeCallChannelId);
       }
 
       const app = EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {
