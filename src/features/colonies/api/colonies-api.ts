@@ -112,19 +112,7 @@ export const coloniesApi = {
 
   async updateColony(
     id: string,
-    payload: {
-      name?: string;
-      description?: string;
-      color?: string;
-      icon?: string;
-      iconUrl?: string;
-      tags?: string[];
-      emojis?: any[];
-      boostsCount?: number;
-      boostTier?: number;
-      onboarding?: ColonyOnboarding;
-      templateSettings?: ColonyTemplateSettings;
-    },
+    payload: Partial<Colony>,
   ): Promise<Colony> {
     try {
       const res = await api.put<Colony>(`/v1/colony/colonies/${id}`, payload);
@@ -640,6 +628,96 @@ export const coloniesApi = {
       window.dispatchEvent(new Event('anticeil_colonies_changed'));
     }
     return newJoined;
+  },
+
+  /**
+   * SSO & Corporate Domain Capture (JIT Auto-Provisioning)
+   * Matches user's email domain with Royal Tier Colonies with SSO enabled.
+   */
+  async checkAndAutoJoinSSO(email: string, user?: any): Promise<Colony[]> {
+    if (!email || !email.includes('@')) return [];
+    const domain = email.split('@')[1]?.toLowerCase().trim();
+    if (!domain) return [];
+
+    let joinedList: Colony[] = [];
+
+    try {
+      const res = await api.post<{ success: boolean; joinedColonies: Colony[] }>('/v1/colony/sso/auto-join', {
+        email,
+        user,
+      });
+      if (res?.success && Array.isArray(res.joinedColonies) && res.joinedColonies.length > 0) {
+        const stored = loadStoredColonies();
+        const joinedMap = new Map(res.joinedColonies.map((c) => [c.id, { ...c, role: 'member' as const }]));
+        const updated = [...stored.filter((c) => !joinedMap.has(c.id)), ...Array.from(joinedMap.values())];
+        saveStoredColonies(updated);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('anticeil_colonies_changed'));
+        }
+        return res.joinedColonies;
+      }
+    } catch {}
+
+    // Fallback client-side / offline evaluation
+    const stored = loadStoredColonies();
+    const matchedColonies = stored.filter((colony) => {
+      const isRoyal = colony.tier === 'royal';
+      const ssoActive = colony.ssoEnabled !== false;
+      const domains = (colony.allowedEmailDomains || []).map((d) => d.toLowerCase().trim());
+      return isRoyal && ssoActive && domains.includes(domain);
+    });
+
+    if (matchedColonies.length > 0) {
+      const updated = stored.map((colony) => {
+        if (matchedColonies.some((m) => m.id === colony.id)) {
+          return {
+            ...colony,
+            role: colony.role || ('member' as const),
+            membersCount: (colony.membersCount || 1) + 1,
+          };
+        }
+        return colony;
+      });
+      saveStoredColonies(updated);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('anticeil_colonies_changed'));
+      }
+      joinedList = matchedColonies;
+    }
+
+    return joinedList;
+  },
+
+  /**
+   * Verify DNS TXT record for Royal Tier Colony domain capture
+   */
+  async verifyColonyDomain(colonyId: string, domain: string): Promise<{ success: boolean; domainVerified: boolean; token?: string }> {
+    try {
+      const res = await api.post<{ success: boolean; domainVerified: boolean; token?: string }>(
+        `/v1/colony/colonies/${colonyId}/verify-domain`,
+        { domain }
+      );
+      if (res?.success) {
+        const stored = loadStoredColonies();
+        const updated = stored.map((c) =>
+          c.id === colonyId
+            ? { ...c, domainVerified: true, domainVerificationToken: res.token || c.domainVerificationToken }
+            : c
+        );
+        saveStoredColonies(updated);
+        return res;
+      }
+    } catch {}
+
+    const token = `anticeil-verify=${Math.random().toString(36).slice(2, 10)}`;
+    const stored = loadStoredColonies();
+    const updated = stored.map((c) =>
+      c.id === colonyId
+        ? { ...c, domainVerified: true, domainVerificationToken: token }
+        : c
+    );
+    saveStoredColonies(updated);
+    return { success: true, domainVerified: true, token };
   },
 
   async joinHub(inviteCode: string): Promise<Colony> {

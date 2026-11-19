@@ -19,6 +19,7 @@ export { OnboardingTab } from './onboarding-tab';
 export { ColonyInsightsTab, ServerInsightsTab } from './colony-insights-tab';
 export { ColonyTemplateTab, ServerTemplateTab } from './colony-template-tab';
 export { DeleteColonyTab } from './delete-colony-tab';
+export { EnterpriseSsoTab } from './enterprise-sso-tab';
 
 // Backward compatibility alias
 export { ColonyTagsTab as ServerTagsTab } from './colony-tags-tab';

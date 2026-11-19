@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/core/i18n';
-import { Sparkles, Bot, Shield, UserPlus } from 'lucide-react';
+import { Sparkles, Bot, Shield, UserPlus, Building2, Crown } from 'lucide-react';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { isDevLoginEnabled, MOCK_DEV_USERS } from '../hooks/use-auth-session';
 
@@ -20,6 +20,7 @@ interface AuthRequiredDialogProps {
   onGoogleSignIn: () => void;
   onGuestLogin?: (nickname: string) => void;
   onDevMockLogin?: (userIndex: number) => void;
+  onSsoLogin?: (email: string) => void;
   featureTitle?: string;
   featureDescription?: string;
 }
@@ -30,11 +31,13 @@ export function AuthRequiredDialog({
   onGoogleSignIn,
   onGuestLogin,
   onDevMockLogin,
+  onSsoLogin,
   featureTitle,
   featureDescription,
 }: AuthRequiredDialogProps) {
   const { t } = useTranslation();
   const [guestName, setGuestName] = useState('');
+  const [ssoEmail, setSsoEmail] = useState('');
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -128,6 +131,54 @@ export function AuthRequiredDialog({
                   className="h-9 px-3.5 text-xs font-semibold shrink-0 rounded-xl hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
                 >
                   {t('Masuk Tamu 👤')}
+                </Button>
+              </div>
+            </div>
+
+            {/* Corporate SSO Login (Tier Royal Enterprise) */}
+            <div className="w-full pt-2.5 pb-1 text-left space-y-2 border-t border-amber-500/30">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{t('Masuk SSO Akun Perusahaan')}</span>
+                </span>
+                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40 text-[9px] py-0 h-4 gap-1">
+                  <Crown className="w-2.5 h-2.5 fill-amber-400" />
+                  {t('ROYAL')}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                {t('Login dengan email kantor (@perusahaan.com). Tanpa register, langsung auto-join Colony kantor Anda.')}
+              </p>
+              <div className="flex items-center gap-2 pt-0.5">
+                <Input
+                  type="email"
+                  placeholder={t('nama@perusahaan.com...')}
+                  value={ssoEmail}
+                  onChange={(e) => setSsoEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (ssoEmail.trim()) {
+                        onClose();
+                        onSsoLogin?.(ssoEmail.trim());
+                      }
+                    }
+                  }}
+                  className="h-9 text-xs rounded-xl bg-muted/40 border-border"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (ssoEmail.trim()) {
+                      onClose();
+                      onSsoLogin?.(ssoEmail.trim());
+                    }
+                  }}
+                  className="h-9 px-3.5 text-xs font-semibold shrink-0 rounded-xl border-amber-500/40 hover:bg-amber-500/15 text-amber-400 hover:text-amber-300 transition-all cursor-pointer"
+                >
+                  {t('Masuk SSO 🏢')}
                 </Button>
               </div>
             </div>

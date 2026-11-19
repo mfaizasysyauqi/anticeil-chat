@@ -106,6 +106,7 @@ export interface ChatDialogsPortalProps {
   authFeatureInfo: { title?: string; desc?: string };
   onGuestLogin?: (nickname: string) => void;
   onDevMockLogin?: (userIndex: number) => void;
+  onSsoLogin?: (email: string) => void;
   onNavigateToApps?: () => void;
 
   t: (key: string, params?: Record<string, any>) => string;
@@ -177,6 +178,7 @@ export function ChatDialogsPortal({
   authFeatureInfo,
   onGuestLogin,
   onDevMockLogin,
+  onSsoLogin,
   onNavigateToApps,
   t,
 }: CommunityDialogsPortalProps) {
@@ -528,6 +530,7 @@ export function ChatDialogsPortal({
         onGoogleSignIn={handleGoogleSignIn}
         onGuestLogin={onGuestLogin}
         onDevMockLogin={onDevMockLogin}
+        onSsoLogin={onSsoLogin}
         featureTitle={authFeatureInfo.title}
         featureDescription={authFeatureInfo.desc}
       />

@@ -81,6 +81,7 @@ export interface ChatModalsCoordinatorProps {
   authFeatureInfo: any;
   handleGuestLogin?: any;
   handleDevMockLogin: any;
+  handleSsoLogin?: any;
 
   isAddFriendDialogOpen: boolean;
   setIsAddFriendDialogOpen: (open: boolean) => void;
@@ -165,6 +166,7 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
   authFeatureInfo,
   handleGuestLogin,
   handleDevMockLogin,
+  handleSsoLogin,
 
   isAddFriendDialogOpen,
   setIsAddFriendDialogOpen,
@@ -264,6 +266,7 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
         authFeatureInfo={authFeatureInfo}
         onGuestLogin={handleGuestLogin}
         onDevMockLogin={handleDevMockLogin}
+        onSsoLogin={handleSsoLogin}
         onNavigateToApps={onNavigateToApps}
         t={t}
       />

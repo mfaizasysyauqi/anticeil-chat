@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { parseJwt } from '@/lib/utils';
+import { colonyApi } from '@/features/colonies/api/colonies-api';
 
 export const isDevLoginEnabled =
   import.meta.env.VITE_ENABLE_DEV_LOGIN === 'true' ||
@@ -160,6 +161,60 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     window.dispatchEvent(new Event('storage'));
     toast.success(t('Masuk sebagai tamu: {{name}} 👤', { name: cleanName }));
     return guestUser;
+  };
+
+  const handleSsoLogin = async (corporateEmail: string, displayName?: string) => {
+    const cleanEmail = (corporateEmail || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      toast.error(t('Format email perusahaan tidak valid. Contoh: user@perusahaan.com'));
+      return;
+    }
+
+    const username = cleanEmail.split('@')[0];
+    const domain = cleanEmail.split('@')[1];
+    const defaultName = displayName || (username.charAt(0).toUpperCase() + username.slice(1));
+
+    const ssoUser = {
+      id: `usr_sso_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      email: cleanEmail,
+      name: defaultName,
+      firstName: defaultName,
+      lastName: `(${domain})`,
+      username,
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(defaultName)}`,
+      imageUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(defaultName)}`,
+      role: 'EMPLOYEE',
+      isSsoUser: true,
+      corporateDomain: domain,
+    };
+
+    const ssoToken = `sso_jwt_${ssoUser.id}`;
+    localStorage.setItem('token', ssoToken);
+    localStorage.setItem('ap_token', ssoToken);
+    localStorage.setItem('anticeil_current_user', JSON.stringify(ssoUser));
+    setCurrentUser(ssoUser);
+    setIsAuthRequiredOpen(false);
+    window.dispatchEvent(new Event('storage'));
+
+    // Trigger JIT Domain Capture Auto-Join
+    try {
+      const joinedColonies = await colonyApi.checkAndAutoJoinSSO(cleanEmail, ssoUser);
+      if (joinedColonies.length > 0) {
+        const names = joinedColonies.map((c) => c.name).join(', ');
+        toast.success(
+          t('Login SSO Berhasil! Anda otomatis tergabung ke Colony: {{colonies}} 👑', {
+            colonies: names,
+          }),
+          { duration: 5000 }
+        );
+      } else {
+        toast.success(t('Masuk berhasil sebagai {{email}} via SSO Perusahaan 🏢', { email: cleanEmail }));
+      }
+    } catch {
+      toast.success(t('Masuk berhasil sebagai {{email}} via SSO Perusahaan 🏢', { email: cleanEmail }));
+    }
+
+    return ssoUser;
   };
 
   const handleGoogleSignIn = async () => {
@@ -351,6 +406,7 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     handleGoogleSignIn,
     handleDevMockLogin,
     handleGuestLogin,
+    handleSsoLogin,
     isDevLoginEnabled,
     mockDevUsers: MOCK_DEV_USERS,
   };

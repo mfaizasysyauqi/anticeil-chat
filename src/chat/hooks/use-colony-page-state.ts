@@ -686,6 +686,7 @@ export function useColonyPageState(): ChatPageContentProps {
     authFeatureInfo: authSession.authFeatureInfo,
     handleGuestLogin: authSession.handleGuestLogin,
     handleDevMockLogin: authSession.handleDevMockLogin,
+    handleSsoLogin: authSession.handleSsoLogin,
     ...messageActions,
   });
 }

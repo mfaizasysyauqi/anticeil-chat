@@ -50,6 +50,7 @@ import {
   ServerInsightsTab,
   ServerTemplateTab,
   DeleteColonyTab,
+  EnterpriseSsoTab,
 } from './tabs';
 
 export type ColonySettingsSection =
@@ -57,6 +58,7 @@ export type ColonySettingsSection =
   | 'colony-tag'
   | 'engagement'
   | 'boost'
+  | 'enterprise-sso'
   | 'emoji'
   | 'stickers'
   | 'soundboard'
@@ -295,6 +297,16 @@ export function ColonySettingsDialog({
                   activeColony={activeColony}
                   onUpdateColony={onUpdateColony}
                   onClose={onClose}
+                  t={t}
+                />
+              )}
+
+              {/* 4b. ENTERPRISE & SSO */}
+              {serverSettingsSection === 'enterprise-sso' && (
+                <EnterpriseSsoTab
+                  activeColony={activeColony}
+                  channels={channels}
+                  onUpdateColony={onUpdateColony}
                   t={t}
                 />
               )}

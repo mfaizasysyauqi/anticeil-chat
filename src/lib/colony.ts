@@ -217,6 +217,14 @@ export type Colony = {
   communitySettings?: ColonyCommunitySettings;
   onboarding?: ColonyOnboarding;
   templateSettings?: ColonyTemplateSettings;
+  tier?: 'free' | 'nectar' | 'royal';
+  ssoEnabled?: boolean;
+  ssoProvider?: 'google_workspace' | 'microsoft_azure' | 'okta' | 'generic_oidc';
+  allowedEmailDomains?: string[];
+  defaultChannelId?: string;
+  domainVerificationToken?: string;
+  domainVerified?: boolean;
+  ssoEnforced?: boolean;
 };
 
 export const DEFAULT_COLONIES: Colony[] = [

@@ -21,6 +21,8 @@ import {
   LineChart,
   Layers,
   Sparkles,
+  Building2,
+  Crown,
 } from 'lucide-react';
 import type { SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 
@@ -42,6 +44,18 @@ export function buildColonyNavGroups({
         { id: 'colony-tag', label: t('Colony Tag'), icon: <Tag className="h-4 w-4 shrink-0" /> },
         { id: 'engagement', label: t('Engagement'), icon: <BarChart3 className="h-4 w-4 shrink-0" /> },
         { id: 'boost', label: t('Boost Perks'), icon: <Zap className="h-4 w-4 shrink-0" /> },
+      ],
+    },
+    {
+      key: 'ENTERPRISE',
+      title: t('Enterprise'),
+      items: [
+        {
+          id: 'enterprise-sso',
+          label: t('SSO & Domain Capture'),
+          icon: <Building2 className="h-4 w-4 shrink-0 text-amber-500" />,
+          badge: <Crown className="h-3.5 w-3.5 shrink-0 ml-auto text-amber-400 fill-amber-400/20" />,
+        },
       ],
     },
     {

@@ -222,6 +222,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     authFeatureInfo,
     handleGuestLogin,
     handleDevMockLogin,
+    handleSsoLogin,
   } = state;
 
   const handleOpenSidebar = () => {
@@ -594,6 +595,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       authFeatureInfo,
       handleGuestLogin,
       handleDevMockLogin,
+      handleSsoLogin,
       isAddFriendDialogOpen,
       setIsAddFriendDialogOpen,
       friends,

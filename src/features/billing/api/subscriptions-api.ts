@@ -2,7 +2,7 @@ import { api } from '@/lib/api';
 import { billingApi } from './billing-api';
 
 export interface UserSubscription {
-  planId: 'free' | 'nectar_basic' | 'nectar_boost';
+  planId: 'free' | 'nectar_basic' | 'nectar_boost' | 'royal_enterprise';
   planName: string;
   status: 'active' | 'canceled' | 'past_due' | 'none';
   renewsAt?: string;
@@ -58,7 +58,7 @@ export const loadMidtransSnap = (clientKey: string, isProduction = false): Promi
 
 export const subscriptionsApi = {
   createMidtransToken: async (
-    planId: 'nectar_basic' | 'nectar_boost'
+    planId: 'nectar_basic' | 'nectar_boost' | 'royal_enterprise'
   ): Promise<MidtransTokenResponse> => {
     return api.post<MidtransTokenResponse>('/v1/billing/midtrans-token', {
       plan: planId,
@@ -129,22 +129,33 @@ export const subscriptionsApi = {
     return DEFAULT_SUBSCRIPTION;
   },
 
-  subscribe: async (planId: 'nectar_basic' | 'nectar_boost'): Promise<UserSubscription> => {
+  subscribe: async (planId: 'nectar_basic' | 'nectar_boost' | 'royal_enterprise'): Promise<UserSubscription> => {
     const renewDate = new Date();
     renewDate.setMonth(renewDate.getMonth() + 1);
 
+    const isRoyal = planId === 'royal_enterprise';
+    const isNectar = planId === 'nectar_boost';
+
     const newSub: UserSubscription = {
       planId,
-      planName: planId === 'nectar_boost' ? 'Nectar Tier' : 'Pollen Tier',
+      planName: isRoyal ? 'Royal Enterprise Tier' : isNectar ? 'Nectar Tier' : 'Pollen Tier',
       status: 'active',
       renewsAt: renewDate.toISOString(),
-      boostSlots: planId === 'nectar_boost' ? 2 : 0,
-      perks: [
-        'Custom Emojis di semua colony',
-        'Upload file hingga 500MB',
-        'Streaming HD 1080p 60fps',
-        planId === 'nectar_boost' ? '2x Colony Boost gratis tiap bulan' : 'Akses lencana Pollen eksklusif',
-      ],
+      boostSlots: isRoyal ? 10 : isNectar ? 2 : 0,
+      perks: isRoyal
+        ? [
+            'SSO SAML / Google Workspace & OIDC Login',
+            'Corporate Domain Capture (JIT Auto-Provisioning)',
+            'Unlimited Cloud Storage & File Upload',
+            '10x Colony Boosts gratis tiap bulan',
+            'Dedicated Enterprise SLA & Audit Log 365 Hari',
+          ]
+        : [
+            'Custom Emojis di semua colony',
+            'Upload file hingga 500MB',
+            'Streaming HD 1080p 60fps',
+            isNectar ? '2x Colony Boost gratis tiap bulan' : 'Akses lencana Pollen eksklusif',
+          ],
     };
 
     try {
@@ -152,8 +163,12 @@ export const subscriptionsApi = {
     } catch {}
 
     billingApi.createTransaction({
-      description: planId === 'nectar_boost' ? 'Langganan Nectar Tier (Bulanan)' : 'Langganan Pollen Tier (Bulanan)',
-      amount: planId === 'nectar_boost' ? 149000 : 49000,
+      description: isRoyal
+        ? 'Langganan Royal Enterprise Tier (Bulanan)'
+        : isNectar
+        ? 'Langganan Nectar Tier (Bulanan)'
+        : 'Langganan Pollen Tier (Bulanan)',
+      amount: isRoyal ? 499000 : isNectar ? 149000 : 49000,
       currency: 'IDR',
       status: 'settlement',
       paymentMethod: 'Midtrans QRIS / GoPay',

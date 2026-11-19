@@ -12,6 +12,9 @@ import {
   User,
   MonitorPlay,
   Video,
+  Crown,
+  Building2,
+  ShieldCheck,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
@@ -29,7 +32,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
   const { t } = useTranslation();
   const [subscribing, setSubscribing] = useState<string | null>(null);
 
-  const handleSubscribe = async (plan: 'nectar_basic' | 'nectar_boost') => {
+  const handleSubscribe = async (plan: 'nectar_basic' | 'nectar_boost' | 'royal_enterprise') => {
     setSubscribing(plan);
     try {
       const res = await subscriptionsApi.createMidtransToken(plan);
@@ -49,7 +52,9 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               toast.dismiss('midtrans-verify');
               confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
               toast.success(
-                plan === 'nectar_boost'
+                plan === 'royal_enterprise'
+                  ? t('Selamat! Anda sekarang berlangganan Royal Enterprise! 👑')
+                  : plan === 'nectar_boost'
                   ? t('Selamat! Anda sekarang berlangganan Nectar VIP! 🎉')
                   : t('Selamat! Anda sekarang berlangganan Pollen! 🎉')
               );
@@ -75,7 +80,9 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         await subscriptionsApi.subscribe(plan);
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         toast.success(
-          plan === 'nectar_boost'
+          plan === 'royal_enterprise'
+            ? t('Selamat! Anda sekarang berlangganan Royal Enterprise! 👑')
+            : plan === 'nectar_boost'
             ? t('Selamat! Anda sekarang berlangganan Nectar VIP! 🎉')
             : t('Selamat! Anda sekarang berlangganan Pollen! 🎉')
         );
@@ -144,8 +151,8 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         </div>
       </div>
 
-      {/* ── 2. TWO TIER CARDS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+      {/* ── 2. THREE TIER CARDS ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {/* TIER 1: POLLEN (BASIC) */}
         <div className="rounded-2xl p-6 bg-linear-to-b from-[#0066FE] to-[#004ECC] text-white relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[380px]">
           <div className="absolute top-4 right-4 size-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl shadow-lg select-none">
@@ -275,6 +282,71 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-8 rounded-xl cursor-pointer"
             >
               {t('Gift Nectar')}
+            </Button>
+          </div>
+        </div>
+
+        {/* TIER 3: ROYAL (ENTERPRISE) */}
+        <div className="rounded-2xl p-6 bg-gradient-to-b from-[#2a1705] via-[#1a0f03] to-[#0d0701] border border-amber-500/40 text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[380px]">
+          <div className="absolute top-4 right-4 size-16 rounded-2xl bg-amber-500/10 backdrop-blur-md border border-amber-500/30 flex items-center justify-center text-3xl shadow-lg select-none">
+            👑
+          </div>
+
+          <div className="space-y-4 relative z-10">
+            <div>
+              <div className="text-xl font-black uppercase tracking-wider flex items-center gap-2 text-amber-400">
+                <span>ROYAL</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300">
+                  ENTERPRISE
+                </span>
+              </div>
+              <p className="text-xs text-white/80 mt-1">
+                {t('Sovereign Colony for corporate teams with SSO & Domain Capture')}
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <div className="text-2xl sm:text-3xl font-black text-amber-300">
+                IDR 499,000.00
+              </div>
+              <div className="text-xs text-white/80 font-medium">
+                {t('/ colony / month')}
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-2 border-t border-amber-500/20 text-xs">
+              {[
+                t('Corporate SSO (Google Workspace, Entra, Okta)'),
+                t('Zero-friction JIT Domain Auto-Provisioning'),
+                t('DNS TXT domain verification & capture'),
+                t('10 Free Colony Boosts & unlimited file upload'),
+                t('365-day audit log retention & export'),
+                t('Dedicated Enterprise SLA & 99.9% uptime'),
+              ].map((benefit, i) => (
+                <div key={i} className="flex items-center gap-2 text-white">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="font-medium">{benefit}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-6 relative z-10 flex flex-col gap-2">
+            <Button
+              onClick={() => handleSubscribe('royal_enterprise')}
+              disabled={subscribing !== null}
+              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs h-10 rounded-xl shadow-xl cursor-pointer"
+            >
+              {subscribing === 'royal_enterprise' ? t('Mengaktifkan...') : t('Get Royal Enterprise 👑')}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() =>
+                toast.info(t('Hubungi sales kami untuk custom enterprise contract & invoice.'))
+              }
+              className="w-full hover:bg-white/10 text-amber-300/90 hover:text-amber-200 font-semibold text-xs h-8 rounded-xl cursor-pointer"
+            >
+              {t('Contact Sales')}
             </Button>
           </div>
         </div>
