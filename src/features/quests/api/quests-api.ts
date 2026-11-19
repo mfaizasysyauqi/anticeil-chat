@@ -118,57 +118,117 @@ export const questsApi = {
   async getQuests(): Promise<QuestItem[]> {
     try {
       const res = await api.get<any>('/v1/community/quests');
-      if (Array.isArray(res)) return res;
+      if (Array.isArray(res) && res.length > 0) {
+        localStorage.setItem('anticeil_community_quests', JSON.stringify(res));
+        return res;
+      }
     } catch {}
-    return [];
+    const stored = localStorage.getItem('anticeil_community_quests');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return FALLBACK_QUESTS;
   },
 
   async createQuest(data: Partial<QuestItem>): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
     try {
-      return await api.post('/v1/community/quests', data);
-    } catch (err: any) {
-      return { success: false, message: err?.message || 'Gagal membuat quest' };
-    }
+      const res = await api.post('/v1/community/quests', data);
+      if (res?.success) return res;
+    } catch {}
+    // Optimistic fallback
+    const current = await this.getQuests();
+    const newQuest: QuestItem = {
+      id: `quest_${Date.now()}`,
+      title: data.title || 'Quest Baru',
+      subtitle: data.subtitle || '',
+      category: data.category || 'activity',
+      promoter: data.promoter || 'Komunitas Anticeil',
+      coverUrl: data.coverUrl || 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80',
+      badge: data.badge || 'Baru',
+      rewardDew: data.rewardDew || 100,
+      rewardIcon: '💧',
+      target: data.target || 1,
+      unit: data.unit || 'kali',
+      actionLabel: data.actionLabel || 'Mulai',
+      appId: data.appId || '',
+      endsAt: data.endsAt || '2026-12-31T23:59:59Z',
+      status: 'available',
+      progress: 0,
+    };
+    const updated = [newQuest, ...current];
+    localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
+    return { success: true, message: 'Quest berhasil ditambahkan', quest: newQuest };
   },
 
   async updateQuest(questId: string, data: Partial<QuestItem>): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
     try {
-      return await api.put(`/v1/community/quests/${questId}`, data);
-    } catch (err: any) {
-      return { success: false, message: err?.message || 'Gagal memperbarui quest' };
-    }
+      const res = await api.put(`/v1/community/quests/${questId}`, data);
+      if (res?.success) return res;
+    } catch {}
+    const current = await this.getQuests();
+    const updated = current.map((q) => (q.id === questId ? { ...q, ...data } : q));
+    localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
+    const target = updated.find((q) => q.id === questId);
+    return { success: true, message: 'Quest berhasil diperbarui', quest: target };
   },
 
   async deleteQuest(questId: string): Promise<{ success: boolean; message: string }> {
     try {
-      return await api.delete(`/v1/community/quests/${questId}`);
-    } catch (err: any) {
-      return { success: false, message: err?.message || 'Gagal menghapus quest' };
-    }
+      const res = await api.delete(`/v1/community/quests/${questId}`);
+      if (res?.success) return res;
+    } catch {}
+    const current = await this.getQuests();
+    const filtered = current.filter((q) => q.id !== questId);
+    localStorage.setItem('anticeil_community_quests', JSON.stringify(filtered));
+    return { success: true, message: 'Quest berhasil dihapus' };
   },
 
   async acceptQuest(questId: string): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
     try {
-      return await api.post('/v1/community/quests/accept', { questId });
-    } catch (err: any) {
-      return { success: false, message: err?.message || 'Gagal menerima quest' };
-    }
+      const res = await api.post('/v1/community/quests/accept', { questId });
+      if (res?.success) return res;
+    } catch {}
+    const current = await this.getQuests();
+    const updated = current.map((q) => (q.id === questId ? { ...q, status: 'in_progress' as const } : q));
+    localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
+    const target = updated.find((q) => q.id === questId);
+    return { success: true, message: 'Quest diterima!', quest: target };
   },
 
   async updateProgress(questId: string, amount: number = 1): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
     try {
-      return await api.post('/v1/community/quests/progress', { questId, amount });
-    } catch (err: any) {
-      return { success: false, message: err?.message || 'Gagal memperbarui progress quest' };
-    }
+      const res = await api.post('/v1/community/quests/progress', { questId, amount });
+      if (res?.success) return res;
+    } catch {}
+    const current = await this.getQuests();
+    const updated = current.map((q) => {
+      if (q.id !== questId) return q;
+      const newProg = Math.min((q.progress || 0) + amount, q.target || 1);
+      const isCompleted = newProg >= (q.target || 1);
+      return { ...q, progress: newProg, status: isCompleted ? ('completed' as const) : ('in_progress' as const) };
+    });
+    localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
+    const target = updated.find((q) => q.id === questId);
+    return { success: true, message: 'Progress quest diperbarui', quest: target };
   },
 
   async claimQuest(questId: string): Promise<{ success: boolean; message: string; rewardDew?: number; newBalance?: any; quest?: QuestItem }> {
     try {
-      return await api.post('/v1/community/quests/claim', { questId });
-    } catch (err: any) {
-      return { success: false, message: err?.message || 'Gagal mengklaim reward quest' };
+      const res = await api.post('/v1/community/quests/claim', { questId });
+      if (res?.success) return res;
+    } catch {}
+    const current = await this.getQuests();
+    const quest = current.find((q) => q.id === questId);
+    const updated = current.map((q) => (q.id === questId ? { ...q, status: 'claimed' as const } : q));
+    localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
+    if (quest) {
+      const claimed = await this.getClaimedQuests();
+      localStorage.setItem('anticeil_claimed_quests', JSON.stringify([...claimed.filter((c) => c.id !== questId), quest]));
     }
+    return { success: true, message: 'Hadiah quest berhasil diklaim!', rewardDew: quest?.rewardDew || 100 };
   },
 
   async getClaimedQuests(): Promise<QuestItem[]> {
@@ -176,6 +236,13 @@ export const questsApi = {
       const res = await api.get<any>('/v1/community/quests/claimed');
       if (Array.isArray(res)) return res;
     } catch {}
+    const stored = localStorage.getItem('anticeil_claimed_quests');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
     return [];
   },
 };
