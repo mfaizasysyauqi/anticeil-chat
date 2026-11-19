@@ -74,13 +74,18 @@ export function YouTubePlayerStage({
         className={cn(
           'relative mx-auto w-full overflow-hidden bg-black group shrink-0 transition-all duration-200',
           isExpandedVideo
-            ? 'w-full h-full rounded-none flex items-center justify-center border-0'
-            : 'aspect-video max-h-[220px] sm:max-h-[260px] md:max-h-none rounded-2xl border border-border shadow-2xl',
+            ? 'w-full h-full rounded-none flex items-center justify-center border-0 aspect-auto'
+            : 'w-full aspect-video rounded-2xl border border-border shadow-2xl',
         )}
       >
         <div
           id="yt-watch-together-player-frame"
-          className="w-full h-full [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
+          className={cn(
+            'w-full aspect-video [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:aspect-video [&>iframe]:border-0',
+            isExpandedVideo
+              ? 'max-h-full max-w-[calc(100vh*16/9)] mx-auto'
+              : 'h-full',
+          )}
         />
 
         {needsUserGesture && (
