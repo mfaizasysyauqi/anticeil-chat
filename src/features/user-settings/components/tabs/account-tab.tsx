@@ -663,7 +663,7 @@ export function AccountTab({
                   </h3>
 
                   <div
-                    onClick={() => setShowFamilyCenterDialog(true)}
+                    onClick={() => onNavigateSection?.('account-family')}
                     className="rounded-xl border border-border bg-card p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer group shadow-xs"
                   >
                     <div className="flex items-center gap-3">

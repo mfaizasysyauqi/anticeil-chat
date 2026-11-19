@@ -33,6 +33,7 @@ import { useTranslation } from '@/core/i18n';
 import type { SettingsSection, UserSettingsModalProps } from '../types';
 import {
   AccountTab,
+  FamilyCenterTab,
   PrivacyTab,
   PermissionsTab,
   NotificationsTab,
@@ -386,6 +387,10 @@ export function UserSettingsModal({
       }
     >
       <div className="space-y-6 w-full">
+        {(activeSection === 'account-family' || activeSection === 'family') && (
+          <FamilyCenterTab onBack={() => setActiveSection('account')} />
+        )}
+
         {activeSection === 'account' && (
           <AccountTab
             currentUser={currentUser}

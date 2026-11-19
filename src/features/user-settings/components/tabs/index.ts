@@ -1,4 +1,5 @@
 export * from './account-tab';
+export * from './family-center-tab';
 export * from './privacy-tab';
 export * from './permissions-tab';
 export * from './notifications-tab';

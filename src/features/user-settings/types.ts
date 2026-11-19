@@ -1,5 +1,7 @@
 export type SettingsSection =
   | 'account'
+  | 'account-family'
+  | 'family'
   | 'profiles'
   | 'privacy'
   | 'permissions'
