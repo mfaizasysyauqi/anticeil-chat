@@ -50,6 +50,8 @@ export interface ChatHomeViewsProps {
   handleStartDirectMessage: (friend: any) => void;
   isAppsView: boolean;
   members: ColonyMember[];
+  currentUser?: any;
+  socket?: any;
   activeCallChannelId: string | null;
   handleLaunchActivity: (appId: string, autoJoin?: boolean, channelId?: string, colonyId?: string) => void;
   handleStartDM: (member: ColonyMember) => void;
@@ -100,6 +102,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   isQuestsView,
   setHomeView,
   members,
+  currentUser,
+  socket,
   activeCallChannelId,
   handleLaunchActivity,
   handleStartDM,
@@ -208,6 +212,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         channels={channels}
         colonies={colonies}
         members={members}
+        currentUser={currentUser}
+        socket={socket}
         activeCallChannelId={activeCallChannelId}
         onLaunchActivity={handleLaunchActivity}
         onOpenSidebar={handleOpenNav}

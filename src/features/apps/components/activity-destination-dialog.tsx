@@ -10,6 +10,7 @@ import {
   Users,
   Compass,
   Sparkles,
+  Laptop,
 } from 'lucide-react';
 import {
   Dialog,
@@ -34,6 +35,7 @@ export interface ActivityDestinationDialogProps {
   colonies: Colony[];
   channels: ColonyChannel[];
   members?: ColonyMember[];
+  onLaunchStandalone?: (app: VoiceAppDefinition) => void;
   onConfirmLaunch: (options: {
     targetType: 'dm' | 'server';
     colonyId?: string;
@@ -51,6 +53,7 @@ export function ActivityDestinationDialog({
   colonies,
   channels,
   members = [],
+  onLaunchStandalone,
   onConfirmLaunch,
 }: ActivityDestinationDialogProps) {
   const [targetType, setTargetType] = useState<'server' | 'dm'>('server');
@@ -445,30 +448,49 @@ export function ActivityDestinationDialog({
           )}
 
           {/* ── Action Buttons ──────────────────────────────────────── */}
-          <div className="pt-2 border-t border-border/60 flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="text-xs h-8 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              Batal
-            </Button>
+          <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
+            {onLaunchStandalone ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  onLaunchStandalone(app);
+                }}
+                className="text-xs h-8 font-medium gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                title="Buka mandiri tanpa masuk ke saluran"
+              >
+                <Laptop className="w-3.5 h-3.5 text-primary" />
+                <span>Buka Standalone</span>
+              </Button>
+            ) : <div />}
 
-            <Button
-              type="button"
-              size="sm"
-              variant="custom"
-              onClick={handleLaunch}
-              className={cn(
-                'text-xs h-8 px-4 font-bold gap-1.5 cursor-pointer shadow-md transition-colors',
-                app?.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
-              )}
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Luncurkan Aktivitas</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="text-xs h-8 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Batal
+              </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                variant="custom"
+                onClick={handleLaunch}
+                className={cn(
+                  'text-xs h-8 px-4 font-bold gap-1.5 cursor-pointer shadow-md transition-colors',
+                  app?.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
+                )}
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Luncurkan ke Saluran</span>
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

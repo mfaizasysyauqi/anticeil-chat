@@ -7,6 +7,7 @@ import {
   Sparkles,
   Menu,
   Flame,
+  Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -26,11 +27,14 @@ import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/vo
 import { appsApi } from '../api/apps-api';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
+import { StandaloneAppStage } from './standalone-app-stage';
 
 export interface AppsViewProps {
   channels: ColonyChannel[];
   colonies?: Colony[];
   members?: ColonyMember[];
+  currentUser?: any;
+  socket?: any;
   activeCallChannelId?: string | null;
   onLaunchActivity: (appId: string, fromChat?: boolean, targetChannelId?: string, targetColonyId?: string) => void;
   onOpenSidebar: () => void;
@@ -78,10 +82,12 @@ const CATEGORY_TABS = [
 
 function ActivityCard({
   app,
-  onLaunch,
+  onLaunchStandalone,
+  onOpenSendToChannel,
 }: {
   app: VoiceAppDefinition;
-  onLaunch: (app: VoiceAppDefinition) => void;
+  onLaunchStandalone: (app: VoiceAppDefinition) => void;
+  onOpenSendToChannel: (app: VoiceAppDefinition) => void;
 }) {
   const AppIcon = app.icon || Gamepad2;
 
@@ -142,18 +148,31 @@ function ActivityCard({
             {categoryLabel}
           </span>
 
-          <Button
-            size="sm"
-            variant="custom"
-            onClick={() => onLaunch(app)}
-            className={cn(
-              'h-7 px-2.5 sm:px-3 text-xs font-semibold gap-1 sm:gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0',
-              app.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
-            )}
-          >
-            <Play className="w-3 h-3 fill-current shrink-0" />
-            <span>Luncurkan</span>
-          </Button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onOpenSendToChannel(app)}
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground border-border hover:bg-muted cursor-pointer"
+              title="Kirim atau buka di saluran / DM"
+            >
+              <Radio className="w-3 h-3 text-primary" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="custom"
+              onClick={() => onLaunchStandalone(app)}
+              className={cn(
+                'h-7 px-2.5 sm:px-3 text-xs font-semibold gap-1 sm:gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0',
+                app.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
+              )}
+              title="Buka langsung secara Standalone"
+            >
+              <Play className="w-3 h-3 fill-current shrink-0" />
+              <span>Luncurkan</span>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -164,6 +183,8 @@ export function AppsView({
   channels,
   colonies = [],
   members = [],
+  currentUser,
+  socket,
   activeCallChannelId,
   onLaunchActivity,
   onOpenSidebar,
@@ -176,6 +197,17 @@ export function AppsView({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'entertainment' | 'game' | 'productivity'>('all');
   const [appList, setAppList] = useState<VoiceAppDefinition[]>(ANTICEIL_APPS);
+
+  // Standalone App State: When opened directly from the main AppsView
+  const [standaloneApp, setStandaloneApp] = useState<VoiceAppDefinition | null>(() => {
+    if (typeof window !== 'undefined') {
+      const param = new URLSearchParams(window.location.search).get('activity');
+      if (param) {
+        return ANTICEIL_APPS.find((a) => a.id === param) || null;
+      }
+    }
+    return null;
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -208,17 +240,21 @@ export function AppsView({
     });
   }, [appList, searchQuery, activeCategory]);
 
-  const handleLaunchClick = (appOrId: VoiceAppDefinition | string) => {
+  const handleLaunchStandalone = (appOrId: VoiceAppDefinition | string) => {
     const app = typeof appOrId === 'string'
-      ? appList.find((a) => a.id === appOrId) || null
+      ? appList.find((a) => a.id === appOrId) || ANTICEIL_APPS.find((a) => a.id === appOrId) || null
       : appOrId;
     if (app) {
-      setSelectedAppForLaunch(app);
-      setIsLaunchDialogOpen(true);
-    } else {
-      const targetChannel = activeCallChannelId || undefined;
-      onLaunchActivity(typeof appOrId === 'string' ? appOrId : 'watch-together', false, targetChannel);
+      setStandaloneApp(app);
+      const url = new URL(window.location.href);
+      url.searchParams.set('activity', app.id);
+      window.history.replaceState(null, '', url.toString());
     }
+  };
+
+  const handleOpenSendToChannel = (app: VoiceAppDefinition) => {
+    setSelectedAppForLaunch(app);
+    setIsLaunchDialogOpen(true);
   };
 
   const handleConfirmLaunch = (options: {
@@ -258,6 +294,40 @@ export function AppsView({
       return true;
     });
   }, [activeCategory]);
+
+  // If user launched an activity standalone from this main AppsView page:
+  if (standaloneApp) {
+    return (
+      <>
+        <StandaloneAppStage
+          app={standaloneApp}
+          onClose={() => {
+            setStandaloneApp(null);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('activity');
+            window.history.replaceState(null, '', url.toString());
+          }}
+          onOpenSendToChannel={() => handleOpenSendToChannel(standaloneApp)}
+          currentUser={currentUser}
+          socket={socket}
+          onOpenSidebar={onOpenSidebar}
+          horizontalPadding={horizontalPadding}
+        />
+
+        {/* Modal Dialog: Kirim ke Channel / DM dari dalam sesi Standalone */}
+        <ActivityDestinationDialog
+          open={isLaunchDialogOpen}
+          onOpenChange={setIsLaunchDialogOpen}
+          app={selectedAppForLaunch}
+          colonies={colonies}
+          channels={channels}
+          members={members}
+          onConfirmLaunch={handleConfirmLaunch}
+          onLaunchStandalone={handleLaunchStandalone}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
@@ -327,18 +397,32 @@ export function AppsView({
               </p>
             </div>
 
-            <Button
-              size="lg"
-              variant="custom"
-              onClick={() => handleLaunchClick('watch-together')}
-              className={cn(
-                'font-bold h-10 px-6 gap-2 cursor-pointer z-10 transition-colors shadow-lg',
-                featuredApp?.buttonClass || 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white'
-              )}
-            >
-              <Play className="w-4 h-4 fill-white" />
-              <span>Mulai Menonton</span>
-            </Button>
+            <div className="flex items-center gap-2.5 z-10 flex-wrap">
+              <Button
+                size="lg"
+                variant="custom"
+                onClick={() => handleLaunchStandalone(featuredApp)}
+                className={cn(
+                  'font-bold h-10 px-5 gap-2 cursor-pointer transition-colors shadow-lg',
+                  featuredApp?.buttonClass || 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white'
+                )}
+                title="Tonton video secara mandiri"
+              >
+                <Play className="w-4 h-4 fill-white" />
+                <span>Mulai Menonton</span>
+              </Button>
+
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => handleOpenSendToChannel(featuredApp)}
+                className="font-semibold h-10 px-3.5 gap-2 cursor-pointer bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-md backdrop-blur-sm"
+                title="Buka atau kirim undangan ke saluran / DM"
+              >
+                <Radio className="w-4 h-4 text-red-400" />
+                <span className="hidden sm:inline">Buka di Saluran</span>
+              </Button>
+            </div>
 
             {/* Background decoration */}
             <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-red-600/10 to-transparent pointer-events-none" />
@@ -399,7 +483,8 @@ export function AppsView({
                     <ActivityCard
                       key={app.id}
                       app={app}
-                      onLaunch={handleLaunchClick}
+                      onLaunchStandalone={handleLaunchStandalone}
+                      onOpenSendToChannel={handleOpenSendToChannel}
                     />
                   ))}
                 </div>
@@ -418,6 +503,7 @@ export function AppsView({
         channels={channels}
         members={members}
         onConfirmLaunch={handleConfirmLaunch}
+        onLaunchStandalone={handleLaunchStandalone}
       />
     </div>
   );
