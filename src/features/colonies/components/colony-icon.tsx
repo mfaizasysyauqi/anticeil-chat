@@ -6,6 +6,7 @@ import type { Colony } from '@/chat/chat-types';
 export interface ColonyIconProps {
   hub: Colony;
   className?: string;
+  isActive?: boolean;
 }
 
 /**
@@ -36,7 +37,7 @@ export function getColonyInitials(name?: string): string {
   return clean.length <= 2 ? clean : clean[0];
 }
 
-export function ColonyIcon({ hub, className }: ColonyIconProps) {
+export function ColonyIcon({ hub, className, isActive }: ColonyIconProps) {
   // Direct Messages / Anticeil system colony uses the adaptive Anticeil logo
   if (
     hub.id === 'anticeil' ||
@@ -46,7 +47,11 @@ export function ColonyIcon({ hub, className }: ColonyIconProps) {
   ) {
     return (
       <AnticeilLogo
-        className={cn('size-6 text-foreground transition-colors duration-150', className)}
+        className={cn(
+          'size-6 transition-colors duration-150',
+          isActive ? 'text-primary' : 'text-foreground',
+          className
+        )}
       />
     );
   }
@@ -69,7 +74,8 @@ export function ColonyIcon({ hub, className }: ColonyIconProps) {
   return (
     <span
       className={cn(
-        'font-medium text-foreground select-none leading-none tracking-normal flex items-center justify-center',
+        'font-medium select-none leading-none tracking-normal flex items-center justify-center transition-colors duration-200',
+        isActive ? 'text-primary' : 'text-foreground',
         initials.length >= 3 ? 'text-xs' : 'text-sm font-semibold',
         className,
       )}

@@ -19,6 +19,7 @@ export interface ChatAvatarProps {
   showStatus?: boolean;
   tooltipText?: string;
   variant?: 'circle' | 'squircle';
+  isActive?: boolean;
 }
 
 // Generate consistent modern gradient background for names
@@ -59,6 +60,7 @@ export function ChatAvatar({
   showStatus = false,
   tooltipText,
   variant,
+  isActive = false,
 }: ChatAvatarProps) {
   const [imageError, setImageError] = useState(false);
   const initials = getInitials(name);
@@ -74,6 +76,14 @@ export function ChatAvatar({
     );
 
   const roundedClass = isSquircle ? 'rounded-[14px]' : 'rounded-full';
+
+  const hasImage = Boolean(
+    imageUrl &&
+      !imageError &&
+      !imageUrl.includes('logo.png') &&
+      !imageUrl.includes('logo.svg') &&
+      name?.toLowerCase() !== 'anticeil'
+  );
 
   const statusIndicator = showStatus && status && (
     <span
@@ -100,13 +110,14 @@ export function ChatAvatar({
     >
       <div
         className={cn(
-          'w-full h-full aspect-square overflow-hidden flex items-center justify-center bg-sidebar-accent',
+          'w-full h-full aspect-square overflow-hidden flex items-center justify-center',
+          hasImage ? 'bg-sidebar-accent' : isActive ? 'bg-transparent' : 'bg-sidebar-accent',
           roundedClass,
         )}
         style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
       >
         {imageUrl && (imageUrl.includes('logo.png') || imageUrl.includes('logo.svg') || name?.toLowerCase() === 'anticeil') ? (
-          <AnticeilLogo className="w-3/5 h-3/5 text-foreground transition-colors duration-150" />
+          <AnticeilLogo className={cn('w-3/5 h-3/5 transition-colors duration-150', isActive ? 'text-primary' : 'text-foreground')} />
         ) : imageUrl && !imageError ? (
           <img
             src={imageUrl}
@@ -118,7 +129,10 @@ export function ChatAvatar({
         ) : isSquircle ? (
           <div
             className={cn(
-              'w-full h-full flex items-center justify-center font-semibold text-foreground bg-sidebar-accent border border-sidebar-border select-none leading-none',
+              'w-full h-full flex items-center justify-center font-semibold select-none leading-none transition-colors duration-200',
+              isActive
+                ? 'bg-transparent text-primary'
+                : 'text-foreground bg-sidebar-accent border border-sidebar-border',
               roundedClass,
             )}
             style={{ fontSize: `${Math.max(11, Math.floor(size * 0.38))}px` }}
@@ -128,9 +142,10 @@ export function ChatAvatar({
         ) : (
           <div
             className={cn(
-              'w-full h-full flex items-center justify-center rounded-full bg-gradient-to-br font-bold tracking-tight',
-              gradient.bg,
-              gradient.text,
+              'w-full h-full flex items-center justify-center rounded-full font-bold tracking-tight transition-colors duration-200',
+              isActive
+                ? 'bg-transparent text-primary'
+                : cn('bg-gradient-to-br', gradient.bg, gradient.text),
             )}
             style={{ fontSize: `${Math.max(10, Math.floor(size * 0.38))}px` }}
           >

@@ -139,7 +139,11 @@ export function ColonyRail({
   const currentActiveId = activeServerId || activeColonyId || '';
   const handleSelect = onSelectServer || onSelectHub || (() => {});
   const handleCreate = onOpenCreateServer || onOpenCreateHub || (() => {});
-  const renderIcon = renderServerIcon || renderHubIcon || ((srv) => <ServerIcon hub={srv} />);
+  const renderIcon = (srv: Colony, active?: boolean) => {
+    if (renderServerIcon) return renderServerIcon(srv);
+    if (renderHubIcon) return renderHubIcon(srv);
+    return <ServerIcon hub={srv} isActive={active} />;
+  };
 
   const mainServer = serverList[0];
   const otherServers = serverList.slice(1);
@@ -156,8 +160,18 @@ export function ColonyRail({
     Boolean(isAiActive) ||
     (currentActiveId === 'anticeil' && (homeView === 'ai' || !homeView) && !activeChannelId);
 
+  const activeFriendSelected =
+    isFriendsMode &&
+    friendList.some(
+      (f) =>
+        activeChannelId === `dm-${f.id}` ||
+        (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id))),
+    );
+
   const isDirectMessagesActive =
-    currentActiveId === 'anticeil' && (homeView !== 'ai' || Boolean(activeChannelId));
+    currentActiveId === 'anticeil' &&
+    (homeView !== 'ai' || Boolean(activeChannelId)) &&
+    !activeFriendSelected;
 
   return (
     <div id="anticeil-mini-rail" className="w-14 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
@@ -220,7 +234,7 @@ export function ColonyRail({
                 className={cn(
                   'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                   isDirectMessagesActive
-                    ? 'bg-sidebar-accent text-foreground shadow-xs'
+                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
                     : 'bg-sidebar-accent text-muted-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
                 )}
               >
@@ -319,6 +333,7 @@ export function ColonyRail({
             const friendUnread = formatUnreadBadge(
               unreadCounts?.[f.id] ?? unreadCounts?.[`dm-${f.id}`] ?? f.unreadCount,
             );
+            const hasProfileImage = Boolean(f.imageUrl || f.avatar);
 
             return (
               <div key={f.id} className="relative group w-full flex items-center justify-center">
@@ -341,14 +356,17 @@ export function ColonyRail({
                       className={cn(
                         'relative size-10 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isDmActive
-                          ? 'shadow-xs'
-                          : 'hover:opacity-90',
+                          ? hasProfileImage
+                            ? 'ring-2 ring-primary ring-offset-1 ring-offset-sidebar shadow-xs'
+                            : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                          : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
                       )}
                     >
                       <CommunityAvatar
                         name={f.name}
                         imageUrl={f.imageUrl || f.avatar}
                         size={40}
+                        isActive={isDmActive}
                         className="rounded-[14px]"
                       />
 
@@ -390,6 +408,7 @@ export function ColonyRail({
           otherServers.map((srv) => {
             const isActive = currentActiveId === srv.id;
             const serverUnread = formatUnreadBadge(unreadCounts?.[srv.id] ?? srv.unreadCount);
+            const hasCustomIcon = Boolean(srv.iconUrl);
 
             return (
               <div key={srv.id} className="relative group w-full flex items-center justify-center">
@@ -411,11 +430,13 @@ export function ColonyRail({
                       className={cn(
                         'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isActive
-                          ? 'bg-sidebar-accent text-foreground shadow-xs'
-                          : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80',
+                          ? hasCustomIcon
+                            ? 'ring-2 ring-primary ring-offset-1 ring-offset-sidebar shadow-xs'
+                            : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                          : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
                       )}
                     >
-                      {renderIcon(srv)}
+                      {renderIcon(srv, isActive)}
 
                       {/* Discord-style bottom-right unread badge pill for server */}
                       {serverUnread && (
