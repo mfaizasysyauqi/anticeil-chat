@@ -163,7 +163,7 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     return guestUser;
   };
 
-  const handleSsoLogin = async (corporateEmail: string, displayName?: string) => {
+  const handleSsoLogin = async (corporateEmail: string, displayName?: string, idpProvider?: string) => {
     const cleanEmail = (corporateEmail || '').trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
       toast.error(t('Format email perusahaan tidak valid. Contoh: user@perusahaan.com'));
@@ -186,6 +186,7 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
       role: 'EMPLOYEE',
       isSsoUser: true,
       corporateDomain: domain,
+      ssoProvider: idpProvider || 'Corporate SSO',
     };
 
     const ssoToken = `sso_jwt_${ssoUser.id}`;
@@ -240,6 +241,35 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     } catch (err: any) {
       console.error('Google OAuth initiation failed:', err);
       toast.error(t('Google OAuth belum aktif di server atau gagal terhubung.'), { id: 'google-oauth' });
+    }
+  };
+
+  const handleMicrosoftSignIn = async () => {
+    try {
+      toast.loading(t('Menghubungkan ke Microsoft 365...'), { id: 'ms-oauth' });
+      const res: any = await api.get('/v1/authn/federated/login?providerName=microsoft').catch(() => null);
+      if (res && res.loginUrl) {
+        toast.success(t('Membuka Microsoft Sign-In...'), { id: 'ms-oauth' });
+        const state = {
+          providerName: 'microsoft',
+          from: window.location.href,
+          activepiecesLogin: 'true',
+          login: 'true',
+        };
+        const loginUrl = new URL(res.loginUrl);
+        loginUrl.searchParams.set('state', JSON.stringify(state));
+        window.location.href = loginUrl.toString();
+        return;
+      }
+      toast.dismiss('ms-oauth');
+      // If server does not have live MS OAuth credentials configured, prompt for work email to complete via Entra SSO
+      const promptEmail = window.prompt(t('Masukkan email Microsoft 365 / Entra ID kantor Anda (contoh: user@company.com):'));
+      if (promptEmail && promptEmail.includes('@')) {
+        await handleSsoLogin(promptEmail, undefined, 'Microsoft Entra ID');
+      }
+    } catch (err: any) {
+      console.error('Microsoft OAuth initiation failed:', err);
+      toast.error(t('Microsoft OAuth belum aktif di server atau gagal terhubung.'), { id: 'ms-oauth' });
     }
   };
 
@@ -404,6 +434,7 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     requireAuth,
     handleLogout,
     handleGoogleSignIn,
+    handleMicrosoftSignIn,
     handleDevMockLogin,
     handleGuestLogin,
     handleSsoLogin,

@@ -54,6 +54,7 @@ export interface ChatModalsCoordinatorProps {
   theme: any;
   setTheme: any;
   handleGoogleSignIn: () => void;
+  handleMicrosoftSignIn?: () => void;
   handleLogout: () => void;
 
   isCreateThreadModalOpen: boolean;
@@ -139,6 +140,7 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
   theme,
   setTheme,
   handleGoogleSignIn,
+  handleMicrosoftSignIn,
   handleLogout,
 
   isCreateThreadModalOpen,
@@ -241,6 +243,7 @@ export const ChatModalsCoordinator: React.FC<ChatModalsCoordinatorProps> = ({
         theme={theme}
         setTheme={setTheme}
         handleGoogleSignIn={handleGoogleSignIn}
+        handleMicrosoftSignIn={handleMicrosoftSignIn}
         handleLogout={handleLogout}
         isCreateThreadModalOpen={isCreateThreadModalOpen}
         setIsCreateThreadModalOpen={setIsCreateThreadModalOpen}

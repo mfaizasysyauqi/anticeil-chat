@@ -75,6 +75,7 @@ export interface ChatDialogsPortalProps {
   theme: any;
   setTheme: any;
   handleGoogleSignIn: () => void;
+  handleMicrosoftSignIn?: () => void;
   handleLogout: () => void;
 
   // Threads
@@ -153,6 +154,7 @@ export function ChatDialogsPortal({
   theme,
   setTheme,
   handleGoogleSignIn,
+  handleMicrosoftSignIn,
   handleLogout,
   isCreateThreadModalOpen,
   setIsCreateThreadModalOpen,
@@ -528,6 +530,7 @@ export function ChatDialogsPortal({
         isOpen={isAuthRequiredOpen}
         onClose={() => setIsAuthRequiredOpen(false)}
         onGoogleSignIn={handleGoogleSignIn}
+        onMicrosoftSignIn={handleMicrosoftSignIn}
         onGuestLogin={onGuestLogin}
         onDevMockLogin={onDevMockLogin}
         onSsoLogin={onSsoLogin}
