@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, ExternalLink } from 'lucide-react';
+import { Shield, Lock, ExternalLink, Download, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,9 @@ import { useTranslation } from '@/core/i18n';
 import { isE2eeEnabled, setE2eeEnabled } from '@/lib/e2ee';
 import { toast } from 'sonner';
 import { userSettingsApi, PrivacySettings, DEFAULT_USER_SETTINGS } from '../../api/user-settings-api';
+import { profileApi } from '@/features/profile/api/profile-api';
+import { securityApi } from '../../api/security-api';
+import { api } from '@/lib/api';
 
 export interface PrivacyTabProps {}
 
@@ -14,6 +17,7 @@ export function PrivacyTab(_props: PrivacyTabProps) {
   const { t } = useTranslation();
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>(DEFAULT_USER_SETTINGS.privacy);
   const [e2eeActive, setE2eeActive] = useState(() => isE2eeEnabled());
+  const [isExportingData, setIsExportingData] = useState(false);
 
   useEffect(() => {
     userSettingsApi.getSettings().then((settings) => {
@@ -22,6 +26,58 @@ export function PrivacyTab(_props: PrivacyTabProps) {
       }
     });
   }, []);
+
+  const handleExportData = async () => {
+    setIsExportingData(true);
+    try {
+      const [profile, settings, sessions] = await Promise.all([
+        profileApi.getProfile().catch(() => null),
+        userSettingsApi.getSettings().catch(() => null),
+        securityApi.getSessions().catch(() => []),
+      ]);
+
+      let userMe = null;
+      try {
+        userMe = await api.get('/v1/users/me');
+      } catch {
+        const stored = localStorage.getItem('anticeil_current_user');
+        if (stored) {
+          try { userMe = JSON.parse(stored); } catch {}
+        }
+      }
+
+      let colonies: any[] = [];
+      try {
+        colonies = await api.get<any[]>('/v1/colony/colonies');
+      } catch {}
+
+      const exportPayload = {
+        exportedAt: new Date().toISOString(),
+        application: 'Anticeil Communication Suite',
+        version: '1.0.0',
+        account: userMe,
+        profile,
+        userSettings: settings,
+        activeSessions: sessions,
+        joinedColonies: colonies,
+      };
+
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      const username = (userMe as any)?.username || (userMe as any)?.email?.split('@')[0] || 'user';
+      downloadAnchor.setAttribute('download', `anticeil-account-data-${username}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      toast.success(t('Data pribadi akun Anda berhasil diekspor dan diunduh!'));
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal mengekspor data akun'));
+    } finally {
+      setIsExportingData(false);
+    }
+  };
 
   const updatePrivacy = (partial: Partial<PrivacySettings>) => {
     setPrivacySettings((prev) => {
@@ -146,10 +202,21 @@ export function PrivacyTab(_props: PrivacyTabProps) {
             <Button
               size="sm"
               variant="tealSecondary"
-              className="h-8 text-xs font-semibold cursor-pointer"
-              onClick={() => toast.success(t('Permintaan data dikirim! Anda akan menerima email konfirmasi.'))}
+              disabled={isExportingData}
+              className="h-8 text-xs font-semibold cursor-pointer gap-2"
+              onClick={handleExportData}
             >
-              {t('Minta Data')}
+              {isExportingData ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  {t('Menyiapkan Data...')}
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  {t('Minta Data')}
+                </>
+              )}
             </Button>
           </div>
         </div>

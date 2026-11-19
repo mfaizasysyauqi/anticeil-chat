@@ -47,6 +47,7 @@ export interface UserProfileData {
   avatarUrl?: string | null;
   avatarDecoration?: string | null;
   statusThought: string;
+  phoneNumber?: string;
   theme?: string;
   nameplate?: string;
   profileEffect?: string;

@@ -3,7 +3,7 @@ import {
   User, Check, ChevronLeft, ShieldCheck, ShieldAlert,
   Smartphone, Key, Ban, ExternalLink, Pencil, Search,
   Lock, Trash2, Globe, Clock, Shield, ChevronRight, Laptop, Info, X, UserCheck, CheckCircle2, Users,
-  Loader2, AlertTriangle
+  Loader2, AlertTriangle, QrCode, Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ import { AccountSecuritySection } from './account/account-security-section';
 import { AccountDevicesView } from './account/account-devices-view';
 import { AccountTwoFactorModal } from './account/account-two-factor-modal';
 import { securityApi } from '../../api/security-api';
+import { profileApi } from '@/features/profile/api/profile-api';
 
 export interface AccountTabProps {
   currentUser: any;
@@ -116,7 +117,22 @@ export function AccountTab({
   const [editDisplayNameInput, setEditDisplayNameInput] = useState(currentUserName);
   const [editUsernameInput, setEditUsernameInput] = useState(suggestedUsername);
   const [editEmailInput, setEditEmailInput] = useState(currentUser?.email || '');
-  const [editPhoneInput, setEditPhoneInput] = useState('+62 812-3456-1551');
+  const [editPhoneInput, setEditPhoneInput] = useState('');
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
+
+  // Family Center state
+  const [showFamilyCenterDialog, setShowFamilyCenterDialog] = useState(false);
+  const [familyRole, setFamilyRole] = useState<'parent' | 'teen'>('parent');
+  const [familyPairCodeInput, setFamilyPairCodeInput] = useState('');
+  const [familyInviteUsername, setFamilyInviteUsername] = useState('');
+  const [familyConnections, setFamilyConnections] = useState<Array<{ name: string; role: string; pairedAt: string }>>(() => {
+    try {
+      const stored = localStorage.getItem('anticeil_family_connections');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     if (open) {
@@ -124,8 +140,19 @@ export function AccountTab({
       setEditUsernameInput(suggestedUsername);
       setEditEmailInput(currentUser?.email || '');
       loadSecurityData();
+
+      // Load phone from user profile
+      profileApi.getProfile().then((prof) => {
+        if (prof?.phoneNumber) {
+          setEditPhoneInput(prof.phoneNumber);
+        } else if (currentUser?.phoneNumber) {
+          setEditPhoneInput(currentUser.phoneNumber);
+        } else {
+          setEditPhoneInput('');
+        }
+      }).catch(() => {});
     }
-  }, [open, currentUserName, suggestedUsername, currentUser?.email, loadSecurityData]);
+  }, [open, currentUserName, suggestedUsername, currentUser?.email, currentUser?.phoneNumber, loadSecurityData]);
 
   const usernameLastChangedAt = currentUser?.usernameLastChangedAt;
   const usernameCooldownEnd = usernameLastChangedAt
@@ -214,8 +241,27 @@ export function AccountTab({
   }, [currentUser?.email]);
 
   const maskedPhone = useMemo(() => {
-    return '••••••••••••1551';
-  }, []);
+    if (!editPhoneInput) return '';
+    const clean = editPhoneInput.trim();
+    if (clean.length <= 4) return clean;
+    return `••••••••••••${clean.slice(-4)}`;
+  }, [editPhoneInput]);
+
+  const handleSavePhone = async () => {
+    setIsSavingPhone(true);
+    try {
+      const clean = editPhoneInput.trim();
+      await profileApi.updateProfile({ phoneNumber: clean });
+      toast.success(
+        clean ? t('Nomor telepon berhasil diperbarui!') : t('Nomor telepon berhasil dihapus!'),
+      );
+      setIsEditingPhone(false);
+    } catch (err: any) {
+      toast.error(err?.message || t('Gagal memperbarui nomor telepon'));
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
 
 
 
@@ -461,14 +507,22 @@ export function AccountTab({
                           {t('Phone Number')}
                         </div>
                         <div className="text-xs font-mono text-foreground mt-0.5 flex items-center gap-2">
-                          <span>{isPhoneRevealed ? editPhoneInput : maskedPhone}</span>
-                          <button
-                            type="button"
-                            onClick={() => setIsPhoneRevealed(!isPhoneRevealed)}
-                            className="text-primary hover:underline text-[11px] font-semibold cursor-pointer"
-                          >
-                            {isPhoneRevealed ? t('Hide') : t('Reveal')}
-                          </button>
+                          <span>
+                            {editPhoneInput
+                              ? isPhoneRevealed
+                                ? editPhoneInput
+                                : maskedPhone
+                              : t('Belum ditambahkan')}
+                          </span>
+                          {editPhoneInput && (
+                            <button
+                              type="button"
+                              onClick={() => setIsPhoneRevealed(!isPhoneRevealed)}
+                              className="text-primary hover:underline text-[11px] font-semibold cursor-pointer"
+                            >
+                              {isPhoneRevealed ? t('Hide') : t('Reveal')}
+                            </button>
+                          )}
                         </div>
                       </div>
                       <Button
@@ -478,7 +532,7 @@ export function AccountTab({
                         onClick={() => setIsEditingPhone(!isEditingPhone)}
                         className="h-8 text-xs font-semibold px-3.5 cursor-pointer"
                       >
-                        {isEditingPhone ? t('Batal') : t('Edit')}
+                        {isEditingPhone ? t('Batal') : editPhoneInput ? t('Edit') : t('Tambah')}
                       </Button>
                     </div>
 
@@ -488,19 +542,23 @@ export function AccountTab({
                           value={editPhoneInput}
                           onChange={(e) => setEditPhoneInput(e.target.value)}
                           placeholder="+62 812-xxxx-xxxx"
-                          className="text-xs h-9 bg-input border-border text-foreground"
+                          className="text-xs h-9 bg-input border-border text-foreground font-mono"
                         />
                         <div className="flex justify-end gap-2">
                           <Button
                             size="sm"
-                            onClick={() => {
-                              toast.success(t('Nomor telepon berhasil diperbarui!'));
-                              setIsEditingPhone(false);
-                            }}
-                            variant="teal"
-                            className="h-8 text-xs font-bold"
+                            disabled={isSavingPhone}
+                            onClick={handleSavePhone}
+                            className="h-8 text-xs font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white cursor-pointer"
                           >
-                            {t('Simpan Nomor')}
+                            {isSavingPhone ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                {t('Menyimpan...')}
+                              </>
+                            ) : (
+                              t('Simpan Nomor')
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -604,12 +662,20 @@ export function AccountTab({
                     {t('Family Center')}
                   </h3>
 
-                  <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer group shadow-xs">
+                  <div
+                    onClick={() => setShowFamilyCenterDialog(true)}
+                    className="rounded-xl border border-border bg-card p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer group shadow-xs"
+                  >
                     <div className="flex items-center gap-3">
                       <Users className="w-4 h-4 text-primary" />
                       <div>
-                        <div className="text-xs font-semibold text-foreground">
-                          {t('Set up Family Center')}
+                        <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                          <span>{t('Set up Family Center')}</span>
+                          {familyConnections.length > 0 && (
+                            <span className="px-1.5 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-400 font-semibold rounded-full">
+                              {familyConnections.length} {t('Terhubung')}
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-muted-foreground leading-relaxed max-w-lg">
                           {t(
@@ -778,6 +844,202 @@ export function AccountTab({
                     ) : (
                       t('Hapus Akun Permanen')
                     )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Family Center Setup Dialog */}
+            <Dialog open={showFamilyCenterDialog} onOpenChange={setShowFamilyCenterDialog}>
+              <DialogContent className="max-w-md bg-card border-border text-foreground shadow-2xl p-6">
+                <DialogHeader className="space-y-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-base font-bold text-foreground">
+                        {t('Family Center')}
+                      </DialogTitle>
+                      <DialogDescription className="text-xs text-muted-foreground">
+                        {t('Pusat kontrol & keamanan keluarga untuk menghubungkan orang tua dan remaja.')}
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </DialogHeader>
+
+                {/* Role Switcher */}
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-muted/40 rounded-lg text-xs font-semibold mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setFamilyRole('parent')}
+                    className={cn(
+                      'py-1.5 rounded-md transition-colors cursor-pointer text-center',
+                      familyRole === 'parent'
+                        ? 'bg-card text-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {t('Saya Orang Tua')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFamilyRole('teen')}
+                    className={cn(
+                      'py-1.5 rounded-md transition-colors cursor-pointer text-center',
+                      familyRole === 'teen'
+                        ? 'bg-card text-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {t('Saya Remaja')}
+                  </button>
+                </div>
+
+                {familyRole === 'parent' ? (
+                  <div className="space-y-4 pt-2">
+                    <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-foreground">
+                          {t('Kode Pairing Keluarga')}
+                        </span>
+                        <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">
+                          ATC-884920
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        {t('Minta anak remaja Anda untuk memasukkan kode ini di akun Anticeil mereka, atau bagikan tautan cepat.')}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://anticeil.com/family-pair?code=ATC-884920');
+                          toast.success(t('Tautan pairing keluarga disalin ke clipboard!'));
+                        }}
+                        className="w-full text-xs h-8 gap-2 font-semibold"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        {t('Salin Tautan Pairing')}
+                      </Button>
+                    </div>
+
+                    {/* Invite by Username */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">
+                        {t('Undang via Username Remaja')}
+                      </label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={familyInviteUsername}
+                          onChange={(e) => setFamilyInviteUsername(e.target.value)}
+                          placeholder="@username_anak"
+                          className="h-8 text-xs bg-input border-border"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const clean = familyInviteUsername.trim();
+                            if (!clean) {
+                              toast.error(t('Masukkan username terlebih dahulu'));
+                              return;
+                            }
+                            const next = [...familyConnections, { name: clean, role: 'teen', pairedAt: new Date().toLocaleDateString() }];
+                            setFamilyConnections(next);
+                            localStorage.setItem('anticeil_family_connections', JSON.stringify(next));
+                            setFamilyInviteUsername('');
+                            toast.success(t(`Undangan Family Center dikirim ke ${clean}!`));
+                          }}
+                          className="h-8 text-xs font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white shrink-0"
+                        >
+                          {t('Kirim')}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Connected accounts list */}
+                    {familyConnections.length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        <span className="text-xs font-semibold text-foreground">
+                          {t('Anggota Keluarga Terhubung')}
+                        </span>
+                        <div className="divide-y divide-border/50 border border-border/80 rounded-xl bg-card overflow-hidden">
+                          {familyConnections.map((conn, idx) => (
+                            <div key={idx} className="p-2.5 flex items-center justify-between text-xs">
+                              <div>
+                                <span className="font-semibold text-foreground">{conn.name}</span>
+                                <span className="text-[10px] text-muted-foreground ml-2">
+                                  {conn.role === 'teen' ? t('Remaja') : t('Orang Tua')} • {conn.pairedAt}
+                                </span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  const filtered = familyConnections.filter((_, i) => i !== idx);
+                                  setFamilyConnections(filtered);
+                                  localStorage.setItem('anticeil_family_connections', JSON.stringify(filtered));
+                                  toast.info(t(`Hubungan keluarga dengan ${conn.name} telah diputus.`));
+                                }}
+                                className="h-6 text-[10px] text-destructive hover:bg-destructive/10 px-2 font-semibold"
+                              >
+                                {t('Putus')}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4 pt-2">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t('Menghubungkan akun ke orang tua Anda memungkinkan mereka melihat ringkasan aktivitas dan colony yang Anda ikuti. Orang tua Anda tidak dapat membaca pesan pribadi atau mendengarkan panggilan suara Anda.')}
+                    </p>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">
+                        {t('Masukkan Kode Pairing dari Orang Tua')}
+                      </label>
+                      <Input
+                        value={familyPairCodeInput}
+                        onChange={(e) => setFamilyPairCodeInput(e.target.value.toUpperCase())}
+                        placeholder="e.g. ATC-884920"
+                        className="h-9 text-xs font-mono tracking-wider bg-input border-border"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      disabled={!familyPairCodeInput.trim()}
+                      onClick={() => {
+                        const code = familyPairCodeInput.trim();
+                        if (code.length < 5) {
+                          toast.error(t('Kode pairing tidak valid'));
+                          return;
+                        }
+                        const next = [...familyConnections, { name: 'Parent (' + code + ')', role: 'parent', pairedAt: new Date().toLocaleDateString() }];
+                        setFamilyConnections(next);
+                        localStorage.setItem('anticeil_family_connections', JSON.stringify(next));
+                        setFamilyPairCodeInput('');
+                        toast.success(t('Akun berhasil dihubungkan ke Family Center Orang Tua!'));
+                        setShowFamilyCenterDialog(false);
+                      }}
+                      className="w-full h-9 text-xs font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white cursor-pointer"
+                    >
+                      {t('Hubungkan Sekarang')}
+                    </Button>
+                  </div>
+                )}
+
+                <DialogFooter className="mt-4 pt-2 border-t border-border/50">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowFamilyCenterDialog(false)}
+                    className="h-8 text-xs font-semibold w-full"
+                  >
+                    {t('Tutup')}
                   </Button>
                 </DialogFooter>
               </DialogContent>

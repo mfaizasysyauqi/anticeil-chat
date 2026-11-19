@@ -54,7 +54,7 @@ export function AccountDevicesView({
 
   const handleRevokeSingle = async (session: SessionDevice) => {
     if (session.isCurrent) {
-      toast.info(t('Untuk keluar dari perangkat ini, gunakan menu Log Out di pojok kiri bawah.'));
+      toast.info(t('Untuk keluar dari sesi ini, gunakan tombol Log Out di bagian bawah dialog Pengaturan.'));
       return;
     }
 

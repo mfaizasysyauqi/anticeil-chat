@@ -47,6 +47,8 @@ export interface UserSettings {
   language: string;
   developer: {
     developerMode: boolean;
+    applicationTestMode?: boolean;
+    applicationTestId?: string;
   };
 }
 
@@ -91,6 +93,8 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   language: 'id',
   developer: {
     developerMode: false,
+    applicationTestMode: false,
+    applicationTestId: '',
   },
 };
 
