@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ArrowLeft,
   Share2,
   Send,
   X,
@@ -87,39 +86,23 @@ export function StandaloneAppStage({
           horizontalPadding
         )}
       >
-        {/* Left: Back button & App info */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground gap-1.5 rounded-lg -ml-1 cursor-pointer"
-            title="Kembali ke Katalog Aplikasi"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Katalog</span>
-          </Button>
-
-          <div className="h-4 w-px bg-border/80 hidden sm:block" />
-
-          <div className="flex items-center gap-2 min-w-0">
-            {app.id === 'watch-together' || app.id === 'youtube' ? (
-              <YouTubeBadgeIcon className="w-5 h-3.5 shrink-0" />
-            ) : (
-              <div
-                className={cn(
-                  'w-6 h-6 rounded-md flex items-center justify-center text-white shrink-0 shadow-xs',
-                  app.iconBg || 'bg-primary'
-                )}
-              >
-                <AppIcon className="w-3.5 h-3.5" />
-              </div>
-            )}
-            <span className="text-sm font-bold text-foreground truncate max-w-[160px] sm:max-w-[240px]">
-              {app.title}
-            </span>
-          </div>
+        {/* Left: App info */}
+        <div className="flex items-center gap-2 min-w-0">
+          {app.id === 'watch-together' || app.id === 'youtube' ? (
+            <YouTubeBadgeIcon className="w-5 h-3.5 shrink-0" />
+          ) : (
+            <div
+              className={cn(
+                'w-6 h-6 rounded-md flex items-center justify-center text-white shrink-0 shadow-xs',
+                app.iconBg || 'bg-primary'
+              )}
+            >
+              <AppIcon className="w-3.5 h-3.5" />
+            </div>
+          )}
+          <span className="text-sm font-bold text-foreground truncate max-w-[180px] sm:max-w-[280px]">
+            {app.title}
+          </span>
         </div>
 
         {/* Right: Actions */}
