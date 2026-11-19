@@ -237,4 +237,20 @@ export const shopApi = {
       return { success: false };
     }
   },
+
+  async createItem(item: Partial<ShopItem>): Promise<{ success: boolean; message: string; item?: ShopItem }> {
+    try {
+      return await api.post('/v1/community/shop/items', item);
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal menambahkan item ke database' };
+    }
+  },
+
+  async deleteItem(itemId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      return await api.delete(`/v1/community/shop/items/${itemId}`);
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal menghapus item' };
+    }
+  },
 };
