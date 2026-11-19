@@ -33,6 +33,9 @@ export interface YouTubePlayerStageProps {
   ytVideos: YouTubeVideoItem[];
   canEdit: boolean;
   onPlayPlaylistItem: (item: YouTubeVideoItem) => void;
+  onReorderPlaylist?: (newPlaylist: YouTubeVideoItem[]) => void;
+  onRemovePlaylistItem?: (index: number, video: YouTubeVideoItem) => void;
+  onPlayNext?: (index: number, video: YouTubeVideoItem) => void;
   renderHostPopover: (align?: 'left' | 'right') => React.ReactNode;
 }
 
@@ -54,6 +57,9 @@ export function YouTubePlayerStage({
   ytVideos,
   canEdit,
   onPlayPlaylistItem,
+  onReorderPlaylist,
+  onRemovePlaylistItem,
+  onPlayNext,
   renderHostPopover,
 }: YouTubePlayerStageProps) {
   return (
@@ -204,6 +210,9 @@ export function YouTubePlayerStage({
                   ytVideos={ytVideos}
                   canEdit={canEdit}
                   onPlayVideo={onPlayPlaylistItem}
+                  onReorderPlaylist={onReorderPlaylist}
+                  onRemoveItem={onRemovePlaylistItem}
+                  onPlayNext={onPlayNext}
                 />
               </div>
             </div>
@@ -271,6 +280,9 @@ export function YouTubePlayerStage({
               ytVideos={ytVideos}
               canEdit={canEdit}
               onPlayVideo={onPlayPlaylistItem}
+              onReorderPlaylist={onReorderPlaylist}
+              onRemoveItem={onRemovePlaylistItem}
+              onPlayNext={onPlayNext}
             />
           </div>
         </div>

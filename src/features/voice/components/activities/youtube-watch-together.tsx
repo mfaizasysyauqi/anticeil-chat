@@ -296,6 +296,66 @@ export function YouTubeWatchTogether({
     }
   };
 
+  const handleReorderPlaylist = (newPlaylist: YouTubeVideoItem[]) => {
+    if (!canEdit) {
+      toast.info('Hanya host yang dapat mengatur urutan playlist saat ini.');
+      return;
+    }
+    setYtPlaylist(newPlaylist);
+    socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+      channelId: channel.id,
+      action: 'YOUTUBE_UPDATE_PLAYLIST',
+      payload: { playlist: newPlaylist },
+    });
+  };
+
+  const handleRemovePlaylistItem = (index: number, item: YouTubeVideoItem) => {
+    const isMyItem = item.addedBy === currentUserName;
+    if (!canEdit && !isMyItem) {
+      toast.info('Hanya host yang dapat menghapus video ini dari playlist.');
+      return;
+    }
+
+    const nextPlaylist = ytPlaylist.filter((_, i) => i !== index);
+    setYtPlaylist(nextPlaylist);
+    socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+      channelId: channel.id,
+      action: 'YOUTUBE_UPDATE_PLAYLIST',
+      payload: { playlist: nextPlaylist },
+    });
+    toast.success(`Dihapus dari playlist: ${item.title}`);
+
+    // If the removed item was currently active:
+    if (activeVideoId === item.id) {
+      if (nextPlaylist.length > 0) {
+        const nextIndex = Math.min(index, nextPlaylist.length - 1);
+        handleSelectVideo(nextPlaylist[nextIndex]);
+      }
+    }
+  };
+
+  const handlePlayNext = (index: number, item: YouTubeVideoItem) => {
+    if (!canEdit) {
+      toast.info('Hanya host yang dapat mengatur urutan playlist saat ini.');
+      return;
+    }
+    const currentIndex = ytPlaylist.findIndex((v) => v.id === activeVideoId);
+    const targetIndex = currentIndex !== -1 ? currentIndex + 1 : 1;
+    if (index === targetIndex || index === currentIndex) return;
+
+    const nextPlaylist = [...ytPlaylist];
+    const [removed] = nextPlaylist.splice(index, 1);
+    nextPlaylist.splice(targetIndex, 0, removed);
+
+    setYtPlaylist(nextPlaylist);
+    socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+      channelId: channel.id,
+      action: 'YOUTUBE_UPDATE_PLAYLIST',
+      payload: { playlist: nextPlaylist },
+    });
+    toast.success(`Akan diputar berikutnya: ${item.title}`);
+  };
+
   const handlePlayYouTubeUrl = (urlOrQuery: string) => {
     if (!urlOrQuery.trim()) return;
     if (!canEdit) {
@@ -475,6 +535,9 @@ export function YouTubeWatchTogether({
             participants={participants}
             ytVideos={ytVideos}
             canEdit={canEdit}
+            onReorderPlaylist={handleReorderPlaylist}
+            onRemovePlaylistItem={handleRemovePlaylistItem}
+            onPlayNext={handlePlayNext}
             onPlayPlaylistItem={(item) => {
               if (!canEdit) {
                 toast.info('Hanya host yang dapat mengganti video.');
