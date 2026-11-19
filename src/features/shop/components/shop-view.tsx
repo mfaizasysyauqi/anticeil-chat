@@ -1127,7 +1127,7 @@ export function ShopView({
               >
                 <div className="flex items-center gap-1.5 text-cyan-400">
                   <span className="text-xs">💧</span>
-                  <span>{(balance?.dew ?? balance?.orbs ?? 0).toLocaleString()} Dew</span>
+                  <span>{(balance?.dew ?? balance?.orbs ?? 0).toLocaleString()}</span>
                 </div>
               </button>
             </DropdownMenuTrigger>

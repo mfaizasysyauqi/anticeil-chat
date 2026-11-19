@@ -104,7 +104,7 @@ export function QuestsHeader({
           title={t('Dew adalah mata uang F2P eksklusif yang hanya bisa didapatkan dari Quest!')}
         >
           <span className="text-xs">💧</span>
-          <span>{dewBalance.toLocaleString()} Dew</span>
+          <span>{dewBalance.toLocaleString()}</span>
         </div>
       </div>
     </div>
