@@ -9,7 +9,6 @@ import {
   Copy,
   Check,
   Sparkles,
-  Radio,
   Tv,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -125,20 +124,6 @@ export function StandaloneAppStage({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {onOpenSendToChannel && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onOpenSendToChannel}
-              className="h-8 text-xs font-medium gap-1.5 rounded-lg border-border hover:bg-muted text-foreground cursor-pointer"
-              title="Bagikan atau buka bersama di channel / DM"
-            >
-              <Radio className="w-3.5 h-3.5 text-primary" />
-              <span className="hidden sm:inline">Kirim ke Saluran</span>
-            </Button>
-          )}
-
           <Button
             type="button"
             variant="ghost"

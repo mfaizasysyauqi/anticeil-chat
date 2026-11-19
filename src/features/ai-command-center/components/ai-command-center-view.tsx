@@ -656,13 +656,6 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
               </div>
             </div>
           </form>
-
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
-            <span className="text-[10px] sm:text-[11px]">
-              {attachedFiles.length > 0 ? `${attachedFiles.length} berkas terlampir` : 'Didukung oleh Groq LPU Ultra-fast'}
-            </span>
-            <span className="hidden sm:inline">Tekan Enter untuk kirim, Shift+Enter untuk baris baru</span>
-          </div>
         </div>
       </div>
 

@@ -13,7 +13,6 @@ import {
   Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import {
   Tooltip,
@@ -149,15 +148,6 @@ export function ChannelTopHeaderBar({
             </span>
           )}
         </span>
-
-        {activeChannel?.description && (
-          <>
-            <Separator orientation="vertical" className="h-4 hidden sm:block mx-1 shrink-0" />
-            <span className="text-xs text-muted-foreground truncate hidden sm:block max-w-[180px] md:max-w-[320px] lg:max-w-[420px]">
-              {activeChannel.description}
-            </span>
-          </>
-        )}
       </div>
 
       {/* Top Bar Actions: Exactly Discord Signature (Calls, E2EE, Threads, Bell, Pin, Member List / User Profile, Search) */}
