@@ -112,6 +112,38 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize prompt textarea: strictly 1-line when empty/hint text, multi-line up to 7 lines (156px) for actual text with vertical scrollbar beyond 7 lines
+  useEffect(() => {
+    const adjustTextareaHeight = () => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      if (!inputPrompt) {
+        textarea.style.height = '36px';
+        textarea.style.overflowY = 'hidden';
+        return;
+      }
+
+      // Reset height to auto first to accurately measure scrollHeight
+      textarea.style.height = 'auto';
+      const scrollHeight = textarea.scrollHeight;
+
+      // 7 lines at 20px (leading-5) + 16px (py-2) = 156px
+      if (scrollHeight > 156) {
+        textarea.style.height = '156px';
+        textarea.style.overflowY = 'auto';
+      } else {
+        textarea.style.height = `${Math.max(36, scrollHeight)}px`;
+        textarea.style.overflowY = 'hidden';
+      }
+    };
+
+    adjustTextareaHeight();
+    window.addEventListener('resize', adjustTextareaHeight);
+    return () => window.removeEventListener('resize', adjustTextareaHeight);
+  }, [inputPrompt]);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const messages = activeSession?.messages || [];
@@ -555,14 +587,14 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
             )}
 
             {/* Input Row: [+] Prefix -> Textarea -> [Model Selector Dropdown] -> [Send Button] */}
-            <div className="flex items-center gap-1.5 w-full">
+            <div className="flex items-end gap-1.5 w-full">
               {/* + Prefix button for file upload */}
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 rounded-full cursor-pointer shrink-0"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 rounded-full cursor-pointer shrink-0 mb-0.5"
                 title="Unggah berkas / file"
                 aria-label="Unggah berkas"
               >
@@ -571,6 +603,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
               {/* Textarea */}
               <textarea
+                ref={textareaRef}
                 value={inputPrompt}
                 onChange={(e) => setInputPrompt(e.target.value)}
                 onKeyDown={(e) => {
@@ -581,14 +614,16 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                 }}
                 placeholder="Ketik perintah (contoh: 'buka whiteboard', 'kirim pesan ke #general colony as: halo')..."
                 className={cn(
-                  "min-h-[36px] max-h-32 flex-1 resize-none border-0 bg-transparent py-2 px-2 text-xs focus:outline-hidden placeholder:text-muted-foreground/60 leading-relaxed placeholder:truncate placeholder:whitespace-nowrap placeholder:overflow-hidden placeholder:text-ellipsis",
-                  !inputPrompt && "truncate whitespace-nowrap overflow-hidden text-ellipsis"
+                  "flex-1 resize-none border-0 bg-transparent py-2 px-2 text-xs leading-5 focus:outline-hidden placeholder:text-muted-foreground/60 transition-colors custom-scrollbar",
+                  !inputPrompt
+                    ? "h-[36px] min-h-[36px] max-h-[36px] overflow-hidden whitespace-nowrap text-ellipsis placeholder:truncate placeholder:whitespace-nowrap placeholder:overflow-hidden placeholder:text-ellipsis"
+                    : "min-h-[36px] max-h-[156px] whitespace-pre-wrap break-words"
                 )}
                 rows={1}
               />
 
               {/* Right Controls: Model Selector + Send Button */}
-              <div className="flex items-center gap-1.5 shrink-0 pr-0.5">
+              <div className="flex items-center gap-1.5 shrink-0 pr-0.5 mb-0.5">
                 {/* Gemini-style Model Selector Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
