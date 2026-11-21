@@ -243,7 +243,7 @@ export function TwoPaneSettingsDialog({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer shrink-0"
               aria-label={t('Tutup')}
             >
               <X className="w-5 h-5" />
@@ -286,7 +286,7 @@ export function TwoPaneSettingsDialog({
                             <span className="truncate flex-1">{item.label}</span>
                             {item.badge && <span className="ml-auto mr-1">{item.badge}</span>}
                             {!hasSubItems && (
-                              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground/50 md:hidden shrink-0" />
+                              <ChevronRight className={cn("w-4 h-4 text-muted-foreground/50 md:hidden shrink-0", !item.badge && "ml-auto")} />
                             )}
                           </button>
 
@@ -412,7 +412,7 @@ export function TwoPaneSettingsDialog({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group shrink-0"
               title={t('Tutup (ESC)')}
               aria-label={t('Tutup')}
             >
