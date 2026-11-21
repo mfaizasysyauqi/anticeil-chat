@@ -122,6 +122,6 @@ export const SURFACE_STYLES = {
   SIDEBAR_RIGHT:
     'hidden lg:flex w-64 lg:w-72 shrink-0 flex-col border-l border-border/60 bg-card/25 backdrop-blur-xs overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 custom-scrollbar select-none',
     
-  // Responsive Card Grid (4 cols desktop, 3 cols tablet, 2 cols mobile)
-  CARD_GRID: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4',
+  // Responsive Card Grid (4 cols desktop, 3 cols tablet, 2 cols small screens, 1 col mobile)
+  CARD_GRID: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4',
 } as const;

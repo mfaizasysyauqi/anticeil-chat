@@ -10,7 +10,7 @@ export const LAYOUT_BODY_CONTAINER = {
   OUTER_PADDING: 'p-0 m-0 lg:m-1',
   /** Base classes for dashboard-content-container (consistent 1px border matching border-sidebar-border) */
   CONTENT_CONTAINER:
-    'relative flex flex-col h-full flex-1 min-h-0 bg-background overflow-clip rounded-none border-0 lg:rounded-xl lg:border lg:border-sidebar-border shadow-xs',
+    'relative flex flex-col h-full flex-1 min-h-0 w-full max-w-full min-w-0 bg-background overflow-hidden rounded-none border-0 lg:rounded-xl lg:border lg:border-sidebar-border shadow-xs',
 } as const;
 
 /**

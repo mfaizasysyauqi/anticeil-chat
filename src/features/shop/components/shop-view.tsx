@@ -1416,9 +1416,9 @@ export function ShopView({
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-4', verticalPadding)}>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
-          <div className="flex items-center justify-between min-h-7 gap-3 pb-1.5 border-b border-border/50">
+          <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
             <div className="flex items-center gap-2">
               <span className={TEXT_STYLES.SECTION_MUTED}>
                 {t('Katalog')}
@@ -1554,9 +1554,9 @@ export function ShopView({
             }
           />
         ) : (
-          <div className="space-y-3.5">
+          <div className="space-y-4">
             {/* Section Header: Matching AppsView Section Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-border/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-primary shrink-0" />
                 <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">

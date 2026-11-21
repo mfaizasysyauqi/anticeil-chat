@@ -52,6 +52,7 @@
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground, 240 5% 65%) / 0.28) transparent;
+  overflow-y: overlay;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -106,4 +107,11 @@
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+}
+
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  min-width: 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
