@@ -275,6 +275,15 @@ export function BillingHistorySubtab() {
                 tx.description.toLowerCase().includes('hadiah') ||
                 tx.description.toLowerCase().includes('gift');
 
+              let badgeColorClass = 'bg-primary/10 text-primary border border-primary/20';
+              if (isNectar) {
+                badgeColorClass = 'bg-purple-500/10 text-purple-400 border border-purple-500/20';
+              } else if (isBoost) {
+                badgeColorClass = 'bg-sky-500/10 text-sky-400 border border-sky-500/20';
+              } else if (isGift) {
+                badgeColorClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+              }
+
               return (
                 <div
                   key={tx.id}
@@ -285,13 +294,7 @@ export function BillingHistorySubtab() {
                     <div
                       className={cn(
                         'size-10 rounded-xl flex items-center justify-center text-base shrink-0 shadow-2xs',
-                        isNectar
-                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                          : isBoost
-                          ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
-                          : isGift
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-primary/10 text-primary border border-primary/20',
+                        badgeColorClass,
                       )}
                     >
                       {isNectar ? (
