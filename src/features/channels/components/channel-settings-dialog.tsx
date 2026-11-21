@@ -210,7 +210,7 @@ export function ChannelSettingsDialog({
         items: [
           {
             id: 'overview',
-            label: t('Ringkasan'),
+            label: t('Overview'),
             icon:
               channel?.type === 'voice' ? (
                 <Volume2 className="w-4 h-4 shrink-0" />
@@ -228,17 +228,17 @@ export function ChannelSettingsDialog({
           },
           {
             id: 'permissions',
-            label: t('Izin Keamanan'),
+            label: t('Permissions'),
             icon: <Shield className="w-4 h-4 shrink-0" />,
           },
           {
             id: 'invites',
-            label: t('Tautan Undangan'),
+            label: t('Invites'),
             icon: <UserPlus className="w-4 h-4 shrink-0" />,
           },
           {
             id: 'integrations',
-            label: t('Integrasi Webhook'),
+            label: t('Integrations'),
             icon: <Webhook className="w-4 h-4 shrink-0" />,
           },
         ],
