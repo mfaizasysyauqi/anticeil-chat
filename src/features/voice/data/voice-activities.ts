@@ -22,6 +22,7 @@ import {
   ScreenShare,
   Gamepad2,
   Sparkles,
+  TrendingUp,
 } from 'lucide-react';
 
 export interface VoiceAppDefinition {
@@ -124,6 +125,25 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     badge: 'OFFICIAL',
     accentColor: '#8b5cf6',
     buttonClass: 'bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white shadow-md shadow-violet-600/25 border-0',
+  },
+  {
+    id: 'tradingview',
+    title: 'TradingView Charts',
+    bannerTitle: 'TRADINGVIEW',
+    developer: 'TradingView (Open Source)',
+    category: 'productivity',
+    bannerGradient: 'from-blue-600 via-indigo-700 to-zinc-950',
+    bannerImage: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80',
+    iconBg: 'bg-[#1e222d]',
+    iconColor: 'text-white',
+    icon: TrendingUp,
+    tagline: 'Grafik pasar finansial & kripto realtime...',
+    description: 'Analisis teknikal, candlestick chart, indikator MA & volume realtime untuk Crypto, Saham, dan Forex menggunakan TradingView Lightweight Charts resmi (Lisensi Open-Source Apache 2.0).',
+    isRecent: true,
+    isPromoted: true,
+    badge: 'OPEN SOURCE',
+    accentColor: '#2962ff',
+    buttonClass: 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-md shadow-blue-600/25 border-0',
   },
 ];
 

@@ -6,6 +6,7 @@ import { YouTubeWatchTogether } from './youtube-watch-together';
 import { WhiteboardCanvas } from './whiteboard-canvas';
 import { ChessGame } from './chess-game';
 import { ScreenShareView } from './screen-share-view';
+import { TradingViewChart } from './tradingview-chart';
 import { ColonyAppStage } from './colony-app-stage';
 
 export interface ActivityStageProps {
@@ -82,12 +83,24 @@ export function ActivityStage({
         />
       )}
 
+      {(activeAppId === 'tradingview' || activeAppId === 'charting') && (
+        <TradingViewChart
+          channel={channel}
+          socket={socket}
+          currentUserName={currentUserName}
+          currentUser={currentUser}
+          participants={participants}
+        />
+      )}
+
       {activeAppId !== 'watch-together' &&
         activeAppId !== 'youtube' &&
         activeAppId !== 'whiteboard' &&
         activeAppId !== 'chess' &&
         activeAppId !== 'anticeil-chess' &&
-        activeAppId !== 'screenshare' && (
+        activeAppId !== 'screenshare' &&
+        activeAppId !== 'tradingview' &&
+        activeAppId !== 'charting' && (
           <ColonyAppStage
             appId={activeAppId}
             channel={channel}
