@@ -398,7 +398,8 @@ export function UserSettingsModal({
           <FamilyCenterTab onBack={() => setActiveSection('account')} />
         )}
 
-        {activeSection === 'account' && (
+        {(activeSection === 'account' ||
+          (activeSection.startsWith('account-') && activeSection !== 'account-family')) && (
           <AccountTab
             currentUser={currentUser}
             currentUserName={currentUserName}
@@ -413,38 +414,49 @@ export function UserSettingsModal({
           />
         )}
 
-        {activeSection === 'privacy' && <PrivacyTab />}
+        {(activeSection === 'privacy' || activeSection.startsWith('privacy-')) && <PrivacyTab />}
 
-        {activeSection === 'permissions' && <PermissionsTab />}
+        {(activeSection === 'permissions' || activeSection.startsWith('permissions-')) && <PermissionsTab />}
 
-        {activeSection === 'notifications' && <NotificationsTab />}
+        {(activeSection === 'notifications' || activeSection.startsWith('notifications-')) && <NotificationsTab />}
 
         {(activeSection === 'nitro' ||
           activeSection === 'boost' ||
           activeSection === 'subscriptions' ||
           activeSection === 'gifts' ||
-          activeSection === 'billing') && (
-          <BillingTab activeSection={activeSection} theme={theme} />
+          activeSection === 'billing' ||
+          activeSection.startsWith('gift-') ||
+          activeSection.startsWith('billing-')) && (
+          <BillingTab
+            activeSection={
+              activeSection.startsWith('gift-')
+                ? 'gifts'
+                : activeSection.startsWith('billing-')
+                ? 'billing'
+                : (activeSection as 'nitro' | 'boost' | 'subscriptions' | 'gifts' | 'billing')
+            }
+            theme={theme}
+          />
         )}
 
-        {activeSection === 'voice' && (
+        {(activeSection === 'voice' || activeSection.startsWith('voice-')) && (
           <VoiceVideoTab
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
           />
         )}
 
-        {activeSection === 'appearance' && (
+        {(activeSection === 'appearance' || activeSection.startsWith('appearance-')) && (
           <AppearanceTab theme={theme} setTheme={setTheme} />
         )}
 
-        {activeSection === 'accessibility' && (
+        {(activeSection === 'accessibility' || activeSection.startsWith('accessibility-')) && (
           <AccessibilityTab
             theme={theme}
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
           />
         )}
 
-        {(activeSection === 'system' || activeSection === 'keybinds') && (
+        {(activeSection === 'system' || activeSection === 'keybinds' || activeSection.startsWith('system-')) && (
           <SystemTab activeSection={activeSection} />
         )}
 

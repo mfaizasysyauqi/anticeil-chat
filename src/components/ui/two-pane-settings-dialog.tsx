@@ -58,6 +58,7 @@ export function TwoPaneSettingsDialog({
   const { t } = useTranslation();
   const [mobileView, setMobileView] = useState<'menu' | 'detail'>(initialMobileView);
   const [activeSubIds, setActiveSubIds] = useState<string[]>([]);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef ?? internalScrollRef;
 
@@ -79,9 +80,28 @@ export function TwoPaneSettingsDialog({
     for (const group of groups) {
       const found = group.items.find((i) => i.id === activeSection);
       if (found) return found;
+      for (const item of group.items) {
+        if (item.subItems?.some((sub) => sub.id === activeSection)) {
+          return item;
+        }
+      }
     }
     return null;
   }, [groups, activeSection]);
+
+  const activeSubItem = useMemo(() => {
+    if (!activeItem?.subItems) return null;
+    return activeItem.subItems.find((sub) => sub.id === activeSection) || null;
+  }, [activeItem, activeSection]);
+
+  // Keep active section expanded
+  useEffect(() => {
+    if (activeItem?.id) {
+      setExpandedSections((prev) =>
+        prev.includes(activeItem.id) ? prev : [...prev, activeItem.id]
+      );
+    }
+  }, [activeItem?.id]);
 
   // Dynamic Multi-Heading Scroll Spy (matching Anticeil docs TOC)
   useEffect(() => {
@@ -153,20 +173,37 @@ export function TwoPaneSettingsDialog({
   }, [activeSection, activeItem?.subItems, scrollRef]);
 
   const scrollToSubItem = useCallback(
-    (subId: string) => {
-      const container = scrollRef.current;
-      if (!container) return;
-      const el = container.querySelector(`#${CSS.escape(subId)}`);
-      if (el) {
-        const containerTop = container.getBoundingClientRect().top;
-        const elTop = el.getBoundingClientRect().top;
-        const offset = elTop - containerTop + container.scrollTop - 20;
-        container.scrollTo({ top: offset, behavior: 'smooth' });
+    (subId: string, parentItemId?: string) => {
+      if (parentItemId && parentItemId !== activeSection && activeItem?.id !== parentItemId) {
+        onSectionChange(parentItemId);
       }
-      setActiveSubIds([subId]);
+      setMobileView('detail');
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const container = scrollRef.current;
+          if (!container) return;
+          const el = container.querySelector(`#${CSS.escape(subId)}`);
+          if (el) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elTop = el.getBoundingClientRect().top;
+            const offset = elTop - containerTop + container.scrollTop - 20;
+            container.scrollTo({ top: offset, behavior: 'smooth' });
+          }
+          setActiveSubIds([subId]);
+        }, 80);
+      });
     },
-    [scrollRef],
+    [scrollRef, activeSection, activeItem?.id, onSectionChange],
   );
+
+  const handleSelectSubItem = (parentItem: SettingsNavItem, sub: { id: string; label: string }) => {
+    if (sub.id === 'account-family' || sub.id === 'family') {
+      onSectionChange(sub.id);
+    } else if (activeSection !== parentItem.id && activeItem?.id !== parentItem.id) {
+      onSectionChange(parentItem.id);
+    }
+    scrollToSubItem(sub.id, parentItem.id);
+  };
 
   const handleSelectSection = (item: SettingsNavItem) => {
     if (item.onClick) {
@@ -226,40 +263,72 @@ export function TwoPaneSettingsDialog({
                     </div>
                   )}
                   {group.items.map((item) => {
-                    const isActive = activeSection === item.id;
+                    const isItemActive = activeSection === item.id || activeItem?.id === item.id;
+                    const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
+                    const isExpanded = isItemActive || expandedSections.includes(item.id);
+
                     return (
                       <div key={item.id}>
-                        <button
-                          type="button"
-                          onClick={() => handleSelectSection(item)}
-                          className={cn(
-                            'w-full flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left',
-                            isActive
-                              ? 'bg-sidebar-accent text-foreground font-bold shadow-2xs'
-                              : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground',
-                            item.isDanger && 'text-destructive hover:bg-destructive/10 hover:text-destructive',
+                        <div className="flex items-center w-full">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectSection(item)}
+                            className={cn(
+                              'flex-1 min-w-0 flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left',
+                              isItemActive
+                                ? 'bg-sidebar-accent text-foreground font-bold shadow-2xs'
+                                : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground',
+                              item.isDanger && 'text-destructive hover:bg-destructive/10 hover:text-destructive',
+                            )}
+                          >
+                            {item.icon && <span className="shrink-0">{item.icon}</span>}
+                            <span className="truncate flex-1">{item.label}</span>
+                            {item.badge && <span className="ml-auto mr-1">{item.badge}</span>}
+                            {!hasSubItems && (
+                              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground/50 md:hidden shrink-0" />
+                            )}
+                          </button>
+
+                          {hasSubItems && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedSections((prev) =>
+                                  prev.includes(item.id)
+                                    ? prev.filter((id) => id !== item.id)
+                                    : [...prev, item.id]
+                                );
+                              }}
+                              className="p-2 mr-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 md:hidden shrink-0 transition-colors cursor-pointer"
+                              title={isExpanded ? t('Tutup submenu') : t('Buka submenu')}
+                              aria-label={isExpanded ? t('Tutup submenu') : t('Buka submenu')}
+                            >
+                              <ChevronRight
+                                className={cn(
+                                  'w-4 h-4 transition-transform duration-200',
+                                  isExpanded ? 'rotate-90 text-foreground' : 'text-muted-foreground/60'
+                                )}
+                              />
+                            </button>
                           )}
-                        >
-                          {item.icon && <span className="shrink-0">{item.icon}</span>}
-                          <span className="truncate flex-1">{item.label}</span>
-                          {item.badge && <span className="ml-auto mr-1">{item.badge}</span>}
-                          <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground/50 md:hidden shrink-0" />
-                        </button>
+                        </div>
 
                         {/* Discord / Anticeil docs style multi-heading sub-items with scroll-spy */}
-                        {isActive && item.subItems && item.subItems.length > 0 && (
+                        {isExpanded && hasSubItems && (
                           <div className="ml-3 mt-0.5 mb-1 relative">
                             {/* Inactive base vertical guide rail */}
                             <div className="absolute left-2 top-0 bottom-0 w-px bg-sidebar-border" />
                             <div className="space-y-0.5">
-                              {item.subItems.map((sub, idx) => {
+                              {item.subItems!.map((sub, idx) => {
                                 const isSubActive =
                                   activeSubIds.includes(sub.id) ||
-                                  (activeSubIds.length === 0 && idx === 0);
+                                  activeSection === sub.id ||
+                                  (activeSubIds.length === 0 && idx === 0 && isItemActive);
                                 const isPrevActive =
                                   idx > 0 &&
                                   (activeSubIds.includes(item.subItems![idx - 1].id) ||
-                                    (activeSubIds.length === 0 && idx === 1));
+                                    (activeSubIds.length === 0 && idx === 1 && isItemActive));
                                 const isNextActive =
                                   idx < item.subItems!.length - 1 &&
                                   activeSubIds.includes(item.subItems![idx + 1].id);
@@ -268,12 +337,12 @@ export function TwoPaneSettingsDialog({
                                   <button
                                     key={sub.id}
                                     type="button"
-                                    onClick={() => scrollToSubItem(sub.id)}
+                                    onClick={() => handleSelectSubItem(item, sub)}
                                     className={cn(
-                                      'w-full text-left pl-5 pr-2 py-1 text-[11px] rounded-md transition-colors cursor-pointer relative',
+                                      'w-full text-left pl-5 pr-2 py-1.5 md:py-1 text-xs md:text-[11px] rounded-md transition-colors cursor-pointer relative',
                                       isSubActive
                                         ? 'text-foreground font-bold'
-                                        : 'text-muted-foreground/60 hover:text-foreground font-medium',
+                                        : 'text-muted-foreground/70 hover:text-foreground font-medium',
                                     )}
                                   >
                                     {/* Connected active indicator rail */}
@@ -286,7 +355,7 @@ export function TwoPaneSettingsDialog({
                                         )}
                                       />
                                     )}
-                                    {sub.label}
+                                    <span className="truncate">{sub.label}</span>
                                   </button>
                                 );
                               })}
@@ -333,7 +402,7 @@ export function TwoPaneSettingsDialog({
               <div className="flex items-center gap-2 min-w-0">
                 {activeItem?.icon && <span className="shrink-0 text-muted-foreground">{activeItem.icon}</span>}
                 <h1 className="text-base font-bold text-foreground truncate tracking-tight">
-                  {activeItem?.label || title}
+                  {activeSubItem?.label || activeItem?.label || title}
                 </h1>
               </div>
             </div>
