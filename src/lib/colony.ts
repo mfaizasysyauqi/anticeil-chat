@@ -180,6 +180,7 @@ export type Colony = {
   color?: string;
   iconUrl?: string;
   role?: 'owner' | 'admin' | 'moderator' | 'member';
+  ownerId?: string;
   isPublic?: boolean;
   visibility?: 'public' | 'private';
   tags?: string[];

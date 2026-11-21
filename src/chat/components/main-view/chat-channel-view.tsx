@@ -478,6 +478,8 @@ export function ChatChannelView({
               channel={activeChannel}
               activeColony={activeColony}
               currentUser={currentUser}
+              socket={socket}
+              isPlusOrAbove={isPlusOrAbove}
               onDisconnect={() => {
                 setActiveCallChannelId(null);
               }}

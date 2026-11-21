@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Podcast,
   Mic,
@@ -17,14 +17,8 @@ import {
   ChevronRight,
   ChevronDown,
   X,
-  Volume2,
-  VolumeX,
   Check,
-  Radio,
   Settings,
-  Sparkles,
-  Smile,
-  AlertTriangle,
   UserPlus,
   Maximize,
 } from 'lucide-react';
@@ -59,6 +53,8 @@ import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useTranslation } from '@/core/i18n';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
+import { useCallWebRTC } from '../../hooks/use-call-webrtc';
+import { LocalVideoView, RemoteVideoView, ScreenVideoView } from '../video-views';
 
 export interface StageViewProps {
   channel: ColonyChannel;
@@ -70,6 +66,8 @@ export interface StageViewProps {
     email?: string;
     imageUrl?: string | null;
   } | null;
+  socket?: any;
+  isPlusOrAbove?: boolean;
   onDisconnect?: () => void;
   onToggleChat?: () => void;
   isChatOpen?: boolean;
@@ -84,6 +82,8 @@ interface StageParticipant {
   isCameraOn?: boolean;
   isModerator?: boolean;
   isHandRaised?: boolean;
+  isLocal?: boolean;
+  stream?: MediaStream | null;
 }
 
 // Ambient stage synthesizer for background music
@@ -154,6 +154,8 @@ export function StageView({
   channel,
   activeColony,
   currentUser,
+  socket,
+  isPlusOrAbove = false,
   onDisconnect,
   onToggleChat,
   isChatOpen = false,
@@ -165,85 +167,211 @@ export function StageView({
     activeColony?.name ||
     'zmsta';
 
-  // State: Stage Status ('waiting' | 'live')
+  // Check if current user is owner or moderator
+  const isColonyAdminOrOwner = useMemo(() => {
+    if (!currentUser?.id) return false;
+    if (activeColony?.ownerId && activeColony.ownerId === currentUser.id) return true;
+    const role = (currentUser as any)?.role;
+    return role === 'owner' || role === 'admin' || role === 'moderator';
+  }, [activeColony?.ownerId, currentUser]);
+
+  // Stage Status ('waiting' | 'live') & Topic
+  const initialTopic = channel.topic || channel.description || `Diskusi #${channel.name}`;
   const [stageStatus, setStageStatus] = useState<'waiting' | 'live'>('waiting');
-  const [stageTopic, setStageTopic] = useState<string>('The debate is over: diet is better than regular');
-  const [isMicMuted, setIsMicMuted] = useState(false);
-  const [isCameraOn, setIsCameraOn] = useState(false);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
+  const [stageTopic, setStageTopic] = useState<string>(initialTopic);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
-  const [userRole, setUserRole] = useState<'moderator' | 'speaker' | 'audience'>('moderator');
+  const [userRole, setUserRole] = useState<'moderator' | 'speaker' | 'audience'>(
+    isColonyAdminOrOwner ? 'moderator' : 'audience',
+  );
+
+  // Raised hands & speaker promote lists tracked via socket / backend
+  const [raisedHandUserIds, setRaisedHandUserIds] = useState<Set<string>>(new Set());
+  const [speakerUserIds, setSpeakerUserIds] = useState<Set<string>>(new Set());
 
   // Modals State
   const [isStartStageModalOpen, setIsStartStageModalOpen] = useState(false);
   const [isEndStageModalOpen, setIsEndStageModalOpen] = useState(false);
   const [isChangeTopicModalOpen, setIsChangeTopicModalOpen] = useState(false);
-  const [newTopicInput, setNewTopicInput] = useState(stageTopic);
+  const [newTopicInput, setNewTopicInput] = useState(initialTopic);
   const [notifyEveryone, setNotifyEveryone] = useState(true);
 
-  // Participants
-  const [speakers, setSpeakers] = useState<StageParticipant[]>([
-    {
-      id: currentUser?.id || 'usr_me',
-      name: userName,
-      avatar: currentUser?.imageUrl,
-      isSpeaking: false,
-      isMuted: isMicMuted,
-      isCameraOn,
-      isModerator: true,
-    },
-  ]);
+  // 1. Fullstack WebRTC Call & Audio Hook
+  const {
+    localStream,
+    isMuted,
+    isVideoOff,
+    isScreenSharing,
+    isSpeakingLocal,
+    participants,
+    isAnyoneScreenSharing,
+    activeScreenStream,
+    handleToggleMute,
+    handleToggleVideo,
+    handleToggleScreenShare,
+  } = useCallWebRTC({
+    channel,
+    activeColony,
+    currentUser,
+    isPlusOrAbove: !!isPlusOrAbove,
+    socket: socket ?? null,
+    isCallActive: stageStatus === 'live',
+  });
 
-  const [audience, setAudience] = useState<StageParticipant[]>([
-    {
-      id: 'usr_aud_1',
-      name: 'Alex',
-      avatar: null,
-      isHandRaised: false,
-    },
-    {
-      id: 'usr_aud_2',
-      name: 'Sarah',
-      avatar: null,
-      isHandRaised: false,
-    },
-  ]);
-
-  // Load Stage State from PostgreSQL Database
+  // 2. Load Stage State from PostgreSQL Database
   useEffect(() => {
     let isMounted = true;
-    api.get(`/v1/colony/channels/${channel.id}/stage`).then((res: any) => {
-      if (isMounted && res) {
-        if (res.status === 'live' || res.status === 'waiting') {
-          setStageStatus(res.status);
+    api
+      .get(`/v1/colony/channels/${channel.id}/stage`)
+      .then((res: any) => {
+        if (isMounted && res) {
+          if (res.status === 'live' || res.status === 'waiting') {
+            setStageStatus(res.status);
+          }
+          if (res.topic) {
+            setStageTopic(res.topic);
+            setNewTopicInput(res.topic);
+          }
         }
-        if (res.topic) {
-          setStageTopic(res.topic);
-          setNewTopicInput(res.topic);
-        }
-        if (Array.isArray(res.speakers) && res.speakers.length > 0) {
-          setSpeakers(res.speakers);
-        }
-        if (Array.isArray(res.audience) && res.audience.length > 0) {
-          setAudience(res.audience);
-        }
-      }
-    }).catch(() => {});
+      })
+      .catch(() => {});
     return () => {
       isMounted = false;
     };
   }, [channel.id]);
 
-  // Speaking indicator simulation
+  // 3. Realtime Socket Stage Events Listener
   useEffect(() => {
-    if (stageStatus !== 'live' || isMicMuted) return;
-    const interval = setInterval(() => {
-      setSpeakers((prev) =>
-        prev.map((s, idx) => (idx === 0 ? { ...s, isSpeaking: Math.random() > 0.4 } : s)),
-      );
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [stageStatus, isMicMuted]);
+    if (!socket) return;
+    const handleStageEvent = (event: any) => {
+      if (!event || event.channelId !== channel.id) return;
+      if (event.action === 'STAGE_START') {
+        setStageStatus('live');
+        if (event.topic) {
+          setStageTopic(event.topic);
+          setNewTopicInput(event.topic);
+        }
+        toast.info(t('Stage telah dimulai: {{topic}}', { topic: event.topic || channel.name }));
+      } else if (event.action === 'STAGE_END') {
+        setStageStatus('waiting');
+        toast.info(t('Stage telah diakhiri oleh moderator'));
+      } else if (event.action === 'STAGE_TOPIC_CHANGE') {
+        if (event.topic) {
+          setStageTopic(event.topic);
+          setNewTopicInput(event.topic);
+        }
+      } else if (event.action === 'STAGE_HAND_RAISE') {
+        setRaisedHandUserIds((prev) => {
+          const next = new Set(prev);
+          if (event.isHandRaised) {
+            next.add(event.userId);
+          } else {
+            next.delete(event.userId);
+          }
+          return next;
+        });
+      } else if (event.action === 'STAGE_SPEAKER_PROMOTE') {
+        if (event.userId === currentUser?.id) {
+          setUserRole('speaker');
+          toast.success(t('Anda telah dipromosikan menjadi pembicara!'));
+        }
+        setSpeakerUserIds((prev) => new Set([...prev, event.userId]));
+      } else if (event.action === 'STAGE_SPEAKER_DEMOTE') {
+        if (event.userId === currentUser?.id) {
+          setUserRole('audience');
+          toast.info(t('Anda kembali menjadi audiens'));
+        }
+        setSpeakerUserIds((prev) => {
+          const next = new Set(prev);
+          next.delete(event.userId);
+          return next;
+        });
+      }
+    };
+
+    socket.on('COMMUNITY_STAGE_EVENT', handleStageEvent);
+    return () => {
+      socket.off('COMMUNITY_STAGE_EVENT', handleStageEvent);
+    };
+  }, [socket, channel.id, currentUser?.id, t]);
+
+  // 4. Partition Real Speakers & Audience
+  const { speakers, audience } = useMemo(() => {
+    const spkList: StageParticipant[] = [];
+    const audList: StageParticipant[] = [];
+
+    // Local user
+    if (userRole === 'moderator' || userRole === 'speaker') {
+      spkList.push({
+        id: currentUser?.id || 'usr_me',
+        name: userName,
+        avatar: currentUser?.imageUrl,
+        isSpeaking: Boolean(isSpeakingLocal && !isMuted),
+        isMuted,
+        isCameraOn: !isVideoOff,
+        isModerator: isColonyAdminOrOwner,
+        isLocal: true,
+        stream: localStream,
+      });
+    } else {
+      audList.push({
+        id: currentUser?.id || 'usr_me',
+        name: userName,
+        avatar: currentUser?.imageUrl,
+        isHandRaised,
+        isLocal: true,
+      });
+    }
+
+    // Remote participants from WebRTC
+    participants.forEach((p) => {
+      const isPeerSpeaker =
+        speakerUserIds.has(p.userId || p.socketId) ||
+        (userRole === 'moderator' && participants.length <= 4); // Small stages treat connected users as speakers by default
+
+      if (isPeerSpeaker) {
+        spkList.push({
+          id: p.socketId,
+          name: p.userName,
+          avatar: p.userAvatar,
+          isSpeaking: Boolean(p.isSpeaking),
+          isMuted: !p.hasAudio,
+          isCameraOn: p.hasVideo,
+          isModerator: false,
+          isLocal: false,
+          stream: p.stream,
+        });
+      } else {
+        audList.push({
+          id: p.socketId,
+          name: p.userName,
+          avatar: p.userAvatar,
+          isHandRaised: raisedHandUserIds.has(p.userId || p.socketId),
+          isLocal: false,
+        });
+      }
+    });
+
+    return { speakers: spkList, audience: audList };
+  }, [
+    userRole,
+    currentUser?.id,
+    currentUser?.imageUrl,
+    userName,
+    isSpeakingLocal,
+    isMuted,
+    isVideoOff,
+    isColonyAdminOrOwner,
+    localStream,
+    isHandRaised,
+    participants,
+    speakerUserIds,
+    raisedHandUserIds,
+  ]);
+
+  const activeSpeakingCount = useMemo(() => {
+    return speakers.filter((s) => s.isSpeaking).length;
+  }, [speakers]);
 
   // Ambient Music Lifecycle
   useEffect(() => {
@@ -257,13 +385,12 @@ export function StageView({
     };
   }, [isMusicPlaying]);
 
-  // Toggle ambient music
   const toggleMusic = () => {
     setIsMusicPlaying((prev) => !prev);
     toast.success(isMusicPlaying ? t('Musik latar dihentikan') : t('Musik latar dimainkan 🎵'));
   };
 
-  // Start Stage Action (Persisted to Database)
+  // Start Stage Action (Persisted to Database & Emitted via Socket)
   const handleStartStage = async () => {
     if (!newTopicInput.trim()) {
       toast.error(t('Topik Stage tidak boleh kosong'));
@@ -272,39 +399,85 @@ export function StageView({
     const finalTopic = newTopicInput.trim();
     setStageTopic(finalTopic);
     setStageStatus('live');
+    setUserRole(isColonyAdminOrOwner ? 'moderator' : 'speaker');
     setIsStartStageModalOpen(false);
+
     try {
       await api.post(`/v1/colony/channels/${channel.id}/stage/start`, {
         topic: finalTopic,
-        speakers,
-        audience,
       });
     } catch {}
+
+    socket?.emit('COMMUNITY_STAGE_EVENT', {
+      channelId: channel.id,
+      action: 'STAGE_START',
+      topic: finalTopic,
+      startedBy: currentUser?.id,
+    });
+
     toast.success(t('Stage berhasil dimulai! 🎙️'));
   };
 
-  // End Stage Action (Persisted to Database)
+  // End Stage Action (Persisted to Database & Emitted via Socket)
   const handleEndStage = async () => {
     setStageStatus('waiting');
     setIsEndStageModalOpen(false);
+
     try {
       await api.post(`/v1/colony/channels/${channel.id}/stage/end`);
     } catch {}
+
+    socket?.emit('COMMUNITY_STAGE_EVENT', {
+      channelId: channel.id,
+      action: 'STAGE_END',
+    });
+
     toast.info(t('Stage telah diakhiri untuk semua orang'));
     onDisconnect?.();
   };
 
-  // Request to speak toggle (Persisted to Database)
+  // Request to speak toggle (Persisted to Database & Emitted via Socket)
   const handleToggleHandRaise = async () => {
     const next = !isHandRaised;
     setIsHandRaised(next);
+
     try {
       await api.post(`/v1/colony/channels/${channel.id}/stage/hand-raise`, {
         userId: currentUser?.id || 'usr_me',
         isHandRaised: next,
       });
     } catch {}
+
+    socket?.emit('COMMUNITY_STAGE_EVENT', {
+      channelId: channel.id,
+      action: 'STAGE_HAND_RAISE',
+      userId: currentUser?.id,
+      isHandRaised: next,
+    });
+
     toast.success(next ? t('Tangan diangkat! Moderator telah diberitahu ✋') : t('Batal mengangkat tangan'));
+  };
+
+  // Handle changing topic
+  const handleSaveTopic = async () => {
+    if (!newTopicInput.trim()) return;
+    const finalTopic = newTopicInput.trim();
+    setStageTopic(finalTopic);
+    setIsChangeTopicModalOpen(false);
+
+    try {
+      await api.put(`/v1/colony/channels/${channel.id}/stage/topic`, {
+        topic: finalTopic,
+      });
+    } catch {}
+
+    socket?.emit('COMMUNITY_STAGE_EVENT', {
+      channelId: channel.id,
+      action: 'STAGE_TOPIC_CHANGE',
+      topic: finalTopic,
+    });
+
+    toast.success(t('Topik Stage diperbarui!'));
   };
 
   return (
@@ -326,7 +499,11 @@ export function StageView({
             <div className="hidden sm:flex items-center gap-3 text-xs text-white/60">
               <div className="flex items-center gap-1">
                 <Mic className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{stageStatus === 'live' ? '1 is speaking' : '0 is speaking'}</span>
+                <span>
+                  {activeSpeakingCount > 0
+                    ? `${activeSpeakingCount} is speaking`
+                    : '0 is speaking'}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5 text-white/50" />
@@ -380,7 +557,7 @@ export function StageView({
         {/* MAIN BODY                                                     */}
         {/* ───────────────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 flex flex-col justify-center items-center">
-          {/* 1. WAITING STATE (Screenshot 3) */}
+          {/* 1. WAITING STATE */}
           {stageStatus === 'waiting' && (
             <div className="w-full max-w-md mx-auto flex flex-col items-center text-center space-y-6 my-auto animate-in fade-in-50 duration-200">
               <div>
@@ -392,7 +569,7 @@ export function StageView({
                 </p>
               </div>
 
-              {/* 3 Discord Action Cards */}
+              {/* Action Cards */}
               <div className="w-full space-y-2.5">
                 {/* Card 1: Start the Stage */}
                 <div
@@ -442,6 +619,7 @@ export function StageView({
                 <div
                   onClick={() => {
                     setStageStatus('live');
+                    setUserRole(isColonyAdminOrOwner ? 'moderator' : 'speaker');
                     toast.success(t('Bergabung dalam mode mic check'));
                   }}
                   className="w-full p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-lg"
@@ -475,9 +653,16 @@ export function StageView({
             </div>
           )}
 
-          {/* 2. LIVE STAGE STATE (Screenshots 5, 7, 8, 9) */}
+          {/* 2. LIVE STAGE STATE */}
           {stageStatus === 'live' && (
             <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col justify-start space-y-8 animate-in fade-in-50 duration-200">
+              {/* Screen Share on Stage if active */}
+              {isAnyoneScreenSharing && activeScreenStream && (
+                <div className="w-full aspect-video max-h-[380px] rounded-2xl overflow-hidden bg-black/90 border border-white/10 shadow-2xl relative mb-4">
+                  <ScreenVideoView stream={activeScreenStream} className="w-full h-full" />
+                </div>
+              )}
+
               {/* Speakers Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60">
@@ -490,28 +675,38 @@ export function StageView({
                     <div
                       key={speaker.id}
                       className={cn(
-                        'aspect-[4/3] rounded-2xl bg-[#2b2d31]/80 hover:bg-[#313338] border transition-all p-4 flex flex-col items-center justify-center relative shadow-lg group',
+                        'aspect-[4/3] rounded-2xl bg-[#2b2d31]/80 hover:bg-[#313338] border transition-all p-4 flex flex-col items-center justify-center relative shadow-lg group overflow-hidden',
                         speaker.isSpeaking ? 'border-emerald-500 shadow-emerald-500/20' : 'border-white/[0.08]',
                       )}
                     >
-                      {/* Avatar with speaking ring */}
-                      <div className="relative">
-                        <div
-                          className={cn(
-                            'p-1 rounded-full transition-all',
-                            speaker.isSpeaking && 'ring-2 ring-emerald-400 animate-pulse',
+                      {/* Video Stream or Avatar */}
+                      {speaker.isCameraOn && speaker.stream ? (
+                        <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                          {speaker.isLocal ? (
+                            <LocalVideoView stream={speaker.stream} />
+                          ) : (
+                            <RemoteVideoView stream={speaker.stream} isMuted={speaker.isMuted} />
                           )}
-                        >
-                          <CommunityAvatar
-                            name={speaker.name}
-                            imageUrl={speaker.avatar}
-                            size={64}
-                          />
                         </div>
-                      </div>
+                      ) : (
+                        <div className="relative">
+                          <div
+                            className={cn(
+                              'p-1 rounded-full transition-all',
+                              speaker.isSpeaking && 'ring-2 ring-emerald-400 animate-pulse',
+                            )}
+                          >
+                            <CommunityAvatar
+                              name={speaker.name}
+                              imageUrl={speaker.avatar}
+                              size={64}
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Name Tag */}
-                      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-xs font-semibold text-white max-w-[80%] truncate">
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-xs font-semibold text-white max-w-[80%] truncate z-10">
                         <span className="truncate">{speaker.name}</span>
                         {speaker.isMuted && <MicOff className="w-3 h-3 text-rose-400 shrink-0" />}
                       </div>
@@ -519,7 +714,7 @@ export function StageView({
                       {/* Moderator Shield Badge */}
                       {speaker.isModerator && (
                         <div
-                          className="absolute top-3 right-3 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center shadow"
+                          className="absolute top-3 right-3 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center shadow z-10"
                           title={t('Stage Moderator')}
                         >
                           <Shield className="w-3.5 h-3.5 text-primary" />
@@ -537,30 +732,37 @@ export function StageView({
                   <span>{t('Audience — {{count}}', { count: audience.length })}</span>
                 </div>
 
-                <div className="flex flex-wrap gap-4 items-center">
-                  {audience.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex flex-col items-center space-y-1.5 group cursor-pointer"
-                    >
-                      <div className="relative">
-                        <CommunityAvatar
-                          name={member.name}
-                          imageUrl={member.avatar}
-                          size={44}
-                        />
-                        {member.isHandRaised && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-black flex items-center justify-center shadow text-xs">
-                            ✋
-                          </div>
-                        )}
+                {audience.length > 0 ? (
+                  <div className="flex flex-wrap gap-4 items-center">
+                    {audience.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex flex-col items-center space-y-1.5 group cursor-pointer"
+                      >
+                        <div className="relative">
+                          <CommunityAvatar
+                            name={member.name}
+                            imageUrl={member.avatar}
+                            size={44}
+                          />
+                          {member.isHandRaised && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-black flex items-center justify-center shadow text-xs">
+                              ✋
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-xs text-white/70 group-hover:text-white transition-colors truncate max-w-[70px]">
+                          {member.name}
+                        </span>
                       </div>
-                      <span className="text-xs text-white/70 group-hover:text-white transition-colors truncate max-w-[70px]">
-                        {member.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2.5 py-3 px-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-xs text-white/40">
+                    <Users className="w-4 h-4 text-white/30 shrink-0" />
+                    <span>{t('Belum ada audiens yang bergabung di panggung ini.')}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -577,7 +779,10 @@ export function StageView({
                 <button
                   type="button"
                   onClick={() => {
-                    toast.info(t('Link panggung disalin ke clipboard'));
+                    if (navigator.clipboard) {
+                      navigator.clipboard.writeText(window.location.href);
+                    }
+                    toast.success(t('Link panggung disalin ke clipboard!'));
                   }}
                   className={VOICE_BOTTOM_BAR_STYLES.SIDE_BUTTON}
                   title={t('Undang Teman ke Stage')}
@@ -600,18 +805,18 @@ export function StageView({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={() => setIsMicMuted((prev) => !prev)}
+                    onClick={handleToggleMute}
                     className={cn(
                       VOICE_BOTTOM_BAR_STYLES.BUTTON_TOGGLE,
-                      isMicMuted ? 'text-red-500 hover:bg-red-500/10' : 'text-foreground hover:bg-muted/60',
+                      isMuted ? 'text-red-500 hover:bg-red-500/10' : 'text-foreground hover:bg-muted/60',
                     )}
                   >
-                    {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                     <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-semibold">
-                  {isMicMuted ? t('Nyalakan Mikrofon') : t('Bisukan Mikrofon')}
+                  {isMuted ? t('Nyalakan Mikrofon') : t('Bisukan Mikrofon')}
                 </TooltipContent>
               </Tooltip>
 
@@ -620,18 +825,18 @@ export function StageView({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={() => setIsCameraOn((prev) => !prev)}
+                    onClick={handleToggleVideo}
                     className={cn(
                       VOICE_BOTTOM_BAR_STYLES.BUTTON_TOGGLE,
-                      !isCameraOn ? 'text-red-500 hover:bg-red-500/10' : 'text-foreground hover:bg-muted/60',
+                      isVideoOff ? 'text-red-500 hover:bg-red-500/10' : 'text-foreground hover:bg-muted/60',
                     )}
                   >
-                    {!isCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                    {isVideoOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
                     <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-semibold">
-                  {isCameraOn ? t('Matikan Kamera') : t('Nyalakan Kamera')}
+                  {!isVideoOff ? t('Matikan Kamera') : t('Nyalakan Kamera')}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -643,10 +848,11 @@ export function StageView({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={() => {
-                      toast.info(t('Berbagi layar siap digunakan'));
-                    }}
-                    className={VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON}
+                    onClick={handleToggleScreenShare}
+                    className={cn(
+                      VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON,
+                      isScreenSharing && 'text-primary bg-primary/20',
+                    )}
                   >
                     <Share2 className="w-5 h-5" />
                   </button>
@@ -686,6 +892,11 @@ export function StageView({
                       if (userRole === 'speaker' || userRole === 'moderator') {
                         toast.info(t('Anda turun dari panggung ke audiens'));
                         setUserRole('audience');
+                        socket?.emit('COMMUNITY_STAGE_EVENT', {
+                          channelId: channel.id,
+                          action: 'STAGE_SPEAKER_DEMOTE',
+                          userId: currentUser?.id,
+                        });
                       } else {
                         handleToggleHandRaise();
                       }
@@ -695,7 +906,7 @@ export function StageView({
                     {userRole === 'moderator' || userRole === 'speaker' ? (
                       <Users className="w-5 h-5" />
                     ) : (
-                      <Hand className="w-5 h-5" />
+                      <Hand className={cn('w-5 h-5', isHandRaised && 'text-amber-400')} />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -848,12 +1059,12 @@ export function StageView({
         </div>
 
         {/* ───────────────────────────────────────────────────────────── */}
-        {/* MODAL 1: START THE STAGE (Screenshot 4)                      */}
+        {/* MODAL 1: START THE STAGE                                      */}
         {/* ───────────────────────────────────────────────────────────── */}
         <Dialog open={isStartStageModalOpen} onOpenChange={setIsStartStageModalOpen}>
           <DialogContent size="md" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
             <DialogHeader className="space-y-3 text-center">
-              {/* 3D Neon Studio Mic Illustration */}
+              {/* Studio Mic Illustration */}
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30">
                 <Mic className="w-8 h-8 text-white" />
               </div>
@@ -873,7 +1084,7 @@ export function StageView({
                 <Input
                   value={newTopicInput}
                   onChange={(e) => setNewTopicInput(e.target.value)}
-                  placeholder="The debate is over: diet is better than regular"
+                  placeholder={channel.topic || channel.description || `Topik #${channel.name}`}
                   className="bg-[#1e1f22] border-white/10 text-white text-xs h-10 rounded-lg focus-visible:ring-primary"
                   autoFocus
                 />
@@ -916,7 +1127,7 @@ export function StageView({
         </Dialog>
 
         {/* ───────────────────────────────────────────────────────────── */}
-        {/* MODAL 2: END STAGE CONFIRMATION (Screenshot 12)              */}
+        {/* MODAL 2: END STAGE CONFIRMATION                               */}
         {/* ───────────────────────────────────────────────────────────── */}
         <Dialog open={isEndStageModalOpen} onOpenChange={setIsEndStageModalOpen}>
           <DialogContent size="sm" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
@@ -936,14 +1147,14 @@ export function StageView({
                   setIsEndStageModalOpen(false);
                   onDisconnect?.();
                 }}
-                className="w-full bg-[#4e5058]/40 hover:bg-[#4e5058]/60 text-white text-xs font-semibold h-10 rounded-lg"
+                className="w-full bg-[#4e5058]/40 hover:bg-[#4e5058]/60 text-white text-xs font-semibold h-10 rounded-lg cursor-pointer"
               >
                 {t('No, just disconnect quietly')}
               </Button>
               <Button
                 variant="destructive"
                 onClick={handleEndStage}
-                className="w-full bg-[#da373c] hover:bg-[#c03135] text-white text-xs font-semibold h-10 rounded-lg"
+                className="w-full bg-[#da373c] hover:bg-[#c03135] text-white text-xs font-semibold h-10 rounded-lg cursor-pointer"
               >
                 {t('Disconnect and End')}
               </Button>
@@ -952,7 +1163,7 @@ export function StageView({
         </Dialog>
 
         {/* ───────────────────────────────────────────────────────────── */}
-        {/* MODAL 3: CHANGE THE TOPIC                                    */}
+        {/* MODAL 3: CHANGE THE TOPIC                                     */}
         {/* ───────────────────────────────────────────────────────────── */}
         <Dialog open={isChangeTopicModalOpen} onOpenChange={setIsChangeTopicModalOpen}>
           <DialogContent size="md" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
@@ -969,7 +1180,7 @@ export function StageView({
               <Input
                 value={newTopicInput}
                 onChange={(e) => setNewTopicInput(e.target.value)}
-                placeholder="Topik diskusi panggung"
+                placeholder={channel.topic || channel.description || `Topik #${channel.name}`}
                 className="bg-[#1e1f22] border-white/10 text-white text-xs h-10 rounded-lg focus-visible:ring-primary"
               />
             </div>
@@ -986,11 +1197,7 @@ export function StageView({
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => {
-                  setStageTopic(newTopicInput);
-                  setIsChangeTopicModalOpen(false);
-                  toast.success(t('Topik Stage diperbarui!'));
-                }}
+                onClick={handleSaveTopic}
                 className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
               >
                 {t('Simpan Topik')}

@@ -168,7 +168,7 @@ export function useCallWebRTC({
 
   // 1. Initialize Local Media (only acquire audio for voice channels, never force mic on text channels)
   const startLocalMedia = useCallback(async () => {
-    if (channel.type !== 'voice') {
+    if (channel.type !== 'voice' && channel.type !== 'stage') {
       return null;
     }
     try {

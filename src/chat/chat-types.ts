@@ -56,6 +56,7 @@ export type ColonyChannel = {
   permissionOverwrites?: ChannelPermissionOverwrite[];
   isAnnouncement?: boolean;
   defaultAutoArchiveDuration?: number;
+  topic?: string;
 };
 
 export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {
