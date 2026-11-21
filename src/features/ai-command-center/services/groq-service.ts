@@ -17,9 +17,9 @@ export const GROQ_TOOLS = [
         properties: {
           appId: {
             type: 'string',
-            enum: ['watch-together', 'jamspace-whiteboard', 'anticeil-chess', 'share-screen', 'tradingview', 'apps-view'],
+            enum: ['watch-together', 'jamspace-whiteboard', 'whiteboard', 'anticeil-chess', 'chess', 'share-screen', 'screenshare', 'tradingview', 'anticeil-platform', 'apps-view'],
             description:
-              'ID aplikasi: "watch-together" untuk YouTube Watch Together, "jamspace-whiteboard" untuk Jamspace Whiteboard, "anticeil-chess" untuk Anticeil Chess, "share-screen" untuk Berbagi Layar, "tradingview" untuk TradingView, "apps-view" untuk membuka halaman daftar Aplikasi & Aktivitas.',
+              'ID aplikasi: "watch-together" untuk YouTube Watch Together, "whiteboard" atau "jamspace-whiteboard" untuk Jamspace Whiteboard, "chess" atau "anticeil-chess" untuk Anticeil Chess, "screenshare" atau "share-screen" untuk Berbagi Layar, "tradingview" untuk TradingView, "anticeil-platform" untuk Anticeil Platform, "apps-view" untuk membuka halaman daftar Aplikasi & Aktivitas.',
           },
           appName: {
             type: 'string',
@@ -558,6 +558,66 @@ Artifacts mendukung preview interaktif, inspeksi kode, serta unduh langsung.`,
     });
     return {
       replyText: 'Menyiapkan modul **Share Screen** untuk berbagi layar.',
+      toolCalls,
+    };
+  }
+
+  if (
+    prompt.includes('tradingview') ||
+    prompt.includes('trading') ||
+    prompt.includes('chart') ||
+    prompt.includes('crypto')
+  ) {
+    toolCalls.push({
+      id: `call_${Date.now()}_app`,
+      type: 'function',
+      function: {
+        name: 'launch_application',
+        arguments: JSON.stringify({
+          appId: 'tradingview',
+          appName: 'TradingView Charts',
+          mode: 'standalone',
+        }),
+      },
+      parsedArgs: {
+        appId: 'tradingview',
+        appName: 'TradingView Charts',
+        mode: 'standalone',
+      },
+      status: 'pending',
+    });
+    return {
+      replyText: 'Siap! Meluncurkan **TradingView Charts** dalam mode standalone.',
+      toolCalls,
+    };
+  }
+
+  if (
+    prompt.includes('anticeil platform') ||
+    prompt.includes('platform') ||
+    prompt.includes('otomasi') ||
+    prompt.includes('dashboard')
+  ) {
+    toolCalls.push({
+      id: `call_${Date.now()}_app`,
+      type: 'function',
+      function: {
+        name: 'launch_application',
+        arguments: JSON.stringify({
+          appId: 'anticeil-platform',
+          appName: 'Anticeil Platform',
+          mode: 'standalone',
+        }),
+      },
+      parsedArgs: {
+        appId: 'anticeil-platform',
+        appName: 'Anticeil Platform',
+        mode: 'standalone',
+      },
+      status: 'pending',
+    });
+    return {
+      replyText: 'Siap! Membuka **Anticeil Platform** dengan autentikasi SSO dalam mode standalone.',
       toolCalls,
     };
   }

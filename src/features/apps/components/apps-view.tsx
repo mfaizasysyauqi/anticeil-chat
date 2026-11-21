@@ -235,9 +235,23 @@ export function AppsView({
     const handleClose = () => {
       setStandaloneApp(null);
     };
+    const handleLaunch = (e: any) => {
+      const targetId = e?.detail?.appId;
+      if (targetId) {
+        const app =
+          appList.find((a) => a.id === targetId) ||
+          ANTICEIL_APPS.find((a) => a.id === targetId) ||
+          null;
+        if (app) setStandaloneApp(app);
+      }
+    };
     window.addEventListener('anticeil_activity_close', handleClose);
-    return () => window.removeEventListener('anticeil_activity_close', handleClose);
-  }, []);
+    window.addEventListener('anticeil_launch_standalone', handleLaunch);
+    return () => {
+      window.removeEventListener('anticeil_activity_close', handleClose);
+      window.removeEventListener('anticeil_launch_standalone', handleLaunch);
+    };
+  }, [appList]);
 
   // Discord-style App Detail View State: Clean catalog -> detail page -> launch
   const [selectedDetailApp, setSelectedDetailApp] = useState<VoiceAppDefinition | null>(() => {

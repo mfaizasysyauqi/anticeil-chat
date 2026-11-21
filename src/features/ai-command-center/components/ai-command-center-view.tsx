@@ -75,6 +75,7 @@ export interface AiCommandCenterViewProps {
   currentUser?: any;
   onOpenSidebar?: () => void;
   onLaunchActivity?: (appId: string, fromChat?: boolean, channelId?: string, colonyId?: string) => void;
+  onLaunchStandalone?: (appId: string) => void;
   onOpenApps?: () => void;
   onSendMessageToChannel?: (channelId: string, content: string) => Promise<any> | any;
   onSendDirectMessage?: (recipientIdOrName: string, content: string) => Promise<any> | any;
@@ -345,12 +346,34 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
         return;
       }
 
-      if (onLaunchActivity) {
-        onLaunchActivity(args.appId, false);
-        toast.success(`Aplikasi ${args.appName || args.appId} diluncurkan! 🚀`);
+      const normalizedAppId =
+        args.appId === 'jamspace-whiteboard'
+          ? 'whiteboard'
+          : args.appId === 'anticeil-chess'
+            ? 'chess'
+            : args.appId === 'share-screen'
+              ? 'screenshare'
+              : args.appId === 'charting'
+                ? 'tradingview'
+                : args.appId === 'platform'
+                  ? 'anticeil-platform'
+                  : args.appId === 'youtube'
+                    ? 'watch-together'
+                    : args.appId;
+
+      if (props.onLaunchStandalone) {
+        props.onLaunchStandalone(normalizedAppId);
+        toast.success(`Aplikasi ${args.appName || normalizedAppId} dibuka dalam mode standalone! 🚀`);
         updateToolCallStatus(messageId, toolCall.id, 'executed', {
           success: true,
-          message: `Aplikasi ${args.appName || args.appId} berhasil dibuka di workspace.`,
+          message: `Aplikasi ${args.appName || normalizedAppId} berhasil dibuka dalam mode standalone.`,
+        });
+      } else if (onLaunchActivity) {
+        onLaunchActivity(normalizedAppId, false);
+        toast.success(`Aplikasi ${args.appName || normalizedAppId} diluncurkan! 🚀`);
+        updateToolCallStatus(messageId, toolCall.id, 'executed', {
+          success: true,
+          message: `Aplikasi ${args.appName || normalizedAppId} berhasil dibuka di workspace.`,
         });
       }
     } else if (toolCall.function.name === 'send_colony_channel_message') {

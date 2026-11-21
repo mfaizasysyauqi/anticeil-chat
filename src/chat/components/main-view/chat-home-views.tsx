@@ -126,6 +126,49 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
 }) => {
   const handleOpenNav = onOpenSidebar || (() => setIsMobileChannelsOpen(true));
 
+  const handleLaunchStandalone = (rawAppId: string) => {
+    const appId =
+      rawAppId === 'jamspace-whiteboard'
+        ? 'whiteboard'
+        : rawAppId === 'anticeil-chess'
+          ? 'chess'
+          : rawAppId === 'share-screen'
+            ? 'screenshare'
+            : rawAppId === 'charting'
+              ? 'tradingview'
+              : rawAppId === 'platform'
+                ? 'anticeil-platform'
+                : rawAppId === 'youtube'
+                  ? 'watch-together'
+                  : rawAppId;
+
+    if (activeCallChannelId && socket) {
+      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId: activeCallChannelId,
+        action: 'ACTIVITY_STOP',
+        payload: {},
+      });
+    }
+    setActiveCallChannelId?.(null);
+
+    // Clear active channel to guarantee isAppsView evaluates to true (!activeChannel)
+    setActiveColonyId('anticeil');
+    setActiveChannelId('');
+    setHomeView?.('apps');
+
+    setSelectedActivityAppId?.(appId);
+    setIsActivityOpen?.(true);
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('activity', appId);
+      window.history.replaceState(null, '', url.toString());
+      window.dispatchEvent(
+        new CustomEvent('anticeil_launch_standalone', { detail: { appId } }),
+      );
+    }
+  };
+
   if (isAiCommandCenterView) {
     return (
       <AiCommandCenterView
@@ -135,8 +178,12 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         friends={friends}
         currentUser={currentUser}
         onOpenSidebar={handleOpenNav}
-        onLaunchActivity={(appId) => handleLaunchActivity(appId, false)}
-        onOpenApps={() => setHomeView?.('apps')}
+        onLaunchStandalone={handleLaunchStandalone}
+        onLaunchActivity={handleLaunchStandalone}
+        onOpenApps={() => {
+          setActiveChannelId('');
+          setHomeView?.('apps');
+        }}
         onSendMessageToChannel={async (channelId, content) => {
           return messagesApi.sendMessage(channelId, {
             content,
