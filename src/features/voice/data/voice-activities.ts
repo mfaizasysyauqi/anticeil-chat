@@ -15,6 +15,16 @@ export function YouTubeIcon({ className = 'w-4 h-4' }: { className?: string }) {
   );
 }
 
+export function TradingViewIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return React.createElement(
+    'svg',
+    { className, viewBox: '0 0 24 24', fill: 'currentColor' },
+    React.createElement('path', {
+      d: 'M15.865 8.279a2.452 2.452 0 1 1-4.904 0a2.452 2.452 0 0 1 4.904 0M9.75 6H0v4.904h4.846v7.269H9.75Zm8.596 0H24l-5.106 12.173H13.24z',
+    })
+  );
+}
+
 import {
   Tv,
   Palette,
@@ -22,7 +32,6 @@ import {
   ScreenShare,
   Gamepad2,
   Sparkles,
-  TrendingUp,
 } from 'lucide-react';
 
 export interface VoiceAppDefinition {
@@ -93,7 +102,7 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     bannerImage: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
     iconBg: 'bg-[#1e222d]',
     iconColor: 'text-white',
-    icon: TrendingUp,
+    icon: TradingViewIcon,
     tagline: 'Grafik pasar finansial & kripto realtime...',
     description: 'Analisis teknikal, candlestick chart, indikator MA & volume realtime untuk Crypto, Saham, dan Forex menggunakan TradingView Lightweight Charts resmi (Lisensi Open-Source Apache 2.0).',
     isRecent: true,
