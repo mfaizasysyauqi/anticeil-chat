@@ -172,6 +172,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   if (isAiCommandCenterView) {
     return (
       <AiCommandCenterView
+        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
         colonies={colonies}
         channels={channels}
         members={members}

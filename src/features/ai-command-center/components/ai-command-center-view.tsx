@@ -74,6 +74,7 @@ export interface AiCommandCenterViewProps {
   friends: any;
   currentUser?: any;
   onOpenSidebar?: () => void;
+  horizontalPadding?: string;
   onLaunchActivity?: (appId: string, fromChat?: boolean, channelId?: string, colonyId?: string) => void;
   onLaunchStandalone?: (appId: string) => void;
   onOpenApps?: () => void;
@@ -109,6 +110,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
     friends,
     currentUser,
     onOpenSidebar,
+    horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
     onLaunchActivity,
     onOpenApps,
     onSendMessageToChannel,
@@ -445,6 +447,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       {/* 1. App Bar Header */}
       <AiCommandCenterHeader
         onOpenSidebar={onOpenSidebar}
+        horizontalPadding={horizontalPadding}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
         hasMessages={messages.length > 0}
         hasActiveArtifact={Boolean(activeArtifact || latestArtifact)}
@@ -461,7 +464,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
           )}
         >
           {/* 2. Messages & Capability Hero Feed */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 space-y-4">
+          <div className={cn('flex-1 min-h-0 overflow-y-auto custom-scrollbar py-4 space-y-4', horizontalPadding)}>
             {messages.length === 0 ? (
               <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
                 <div className="flex justify-center">
@@ -540,7 +543,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                 </div>
               </div>
             ) : (
-              <div className="max-w-3xl mx-auto space-y-4">
+              <div className="w-full space-y-4">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -632,7 +635,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       <div
         className={cn(
           'sticky bottom-0 z-20 shrink-0 pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-1 bg-background flex flex-col w-full',
-          CHANNEL_HORIZONTAL_PADDING,
+          horizontalPadding,
         )}
       >
         <div className="w-full flex flex-col gap-1.5">
