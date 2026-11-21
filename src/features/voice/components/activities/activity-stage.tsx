@@ -61,7 +61,7 @@ export function ActivityStage({
         />
       )}
 
-      {activeAppId === 'chess' && (
+      {(activeAppId === 'chess' || activeAppId === 'anticeil-chess') && (
         <ChessGame
           channel={channel}
           socket={socket}
@@ -86,6 +86,7 @@ export function ActivityStage({
         activeAppId !== 'youtube' &&
         activeAppId !== 'whiteboard' &&
         activeAppId !== 'chess' &&
+        activeAppId !== 'anticeil-chess' &&
         activeAppId !== 'screenshare' && (
           <ColonyAppStage
             appId={activeAppId}

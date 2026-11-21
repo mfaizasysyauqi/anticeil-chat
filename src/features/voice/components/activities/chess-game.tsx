@@ -9,12 +9,8 @@ import {
   RotateCcw,
   Bot,
   Users,
-  Trophy,
   RefreshCw,
   Flag,
-  UserCheck,
-  ListOrdered,
-  Sparkles,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -41,10 +37,13 @@ export function ChessGame({
   const [game, setGame] = useState(() => new Chess());
   const [gameFen, setGameFen] = useState(game.fen());
   const [orientation, setOrientation] = useState<'white' | 'black'>('white');
-  const [gameMode, setGameMode] = useState<'pvp' | 'vs-bot'>('pvp');
+  const [gameMode, setGameMode] = useState<'pvp' | 'vs-bot'>('vs-bot');
   const [botDifficulty, setBotDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+
+  // Click-to-Move Selection State
+  const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 
   // Kursi Pemain Multiplayer
   const [whitePlayer, setWhitePlayer] = useState<PlayerSeat | null>(null);
@@ -68,7 +67,6 @@ export function ChessGame({
 
     const updateDimension = () => {
       const rect = el.getBoundingClientRect();
-      // Leave safety padding so borders and shadows never cause overflow
       const availableSize = Math.floor(Math.min(rect.width, rect.height) - 4);
       if (availableSize > 100) {
         setBoardDimension(availableSize);
@@ -94,7 +92,6 @@ export function ChessGame({
   useEffect(() => {
     if (!socket) return;
 
-    // 1. Query state terbaru saat bergabung ke aktivitas
     socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
       channelId: channel.id,
       action: 'CHESS_QUERY_STATE',
@@ -110,6 +107,7 @@ export function ChessGame({
           setGame(newGame);
           setGameFen(data.payload.fen);
           setMoveHistory(Array.isArray(data.payload.history) ? data.payload.history : newGame.history());
+          setSelectedSquare(null);
 
           if (data.payload.playerName && data.payload.playerName !== currentUserName) {
             toast.info(`${data.payload.playerName} telah melangkah.`);
@@ -127,6 +125,7 @@ export function ChessGame({
           const syncGame = new Chess(data.payload.fen);
           setGame(syncGame);
           setGameFen(data.payload.fen);
+          setSelectedSquare(null);
           if (Array.isArray(data.payload.history)) {
             setMoveHistory(data.payload.history);
           }
@@ -140,6 +139,7 @@ export function ChessGame({
         setGame(resetGame);
         setGameFen(resetGame.fen());
         setMoveHistory([]);
+        setSelectedSquare(null);
         toast.info('Papan catur telah direset.');
       } else if (data.action === 'CHESS_UNDO' && data.payload?.fen) {
         try {
@@ -147,6 +147,7 @@ export function ChessGame({
           setGame(undoGame);
           setGameFen(data.payload.fen);
           setMoveHistory(Array.isArray(data.payload.history) ? data.payload.history : undoGame.history());
+          setSelectedSquare(null);
           toast.info('Langkah terakhir dibatalkan.');
         } catch (err) {
           console.error('Failed to undo remote chess move', err);
@@ -166,7 +167,6 @@ export function ChessGame({
       } else if (data.action === 'CHESS_MODE_CHANGE' && data.payload?.mode) {
         setGameMode(data.payload.mode);
       } else if (data.action === 'CHESS_QUERY_STATE') {
-        // Peer request current state: if we already have moves, answer back with current state
         if (game.history().length > 0) {
           socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
             channelId: channel.id,
@@ -196,39 +196,54 @@ export function ChessGame({
   const isGameOver = game.isGameOver();
   const turn = game.turn() === 'w' ? 'Putih' : 'Hitam';
 
+  // Bot color determination: bot plays the opposite color of user's orientation in vs-bot mode
+  const botColor = orientation === 'white' ? 'b' : 'w';
+  const playerColor = orientation === 'white' ? 'w' : 'b';
+
   // Bot move generator
   const makeBotMove = useCallback(() => {
-    if (game.isGameOver() || game.turn() !== 'b') return;
+    if (game.isGameOver() || game.turn() !== botColor) return;
 
     setIsBotThinking(true);
-    setTimeout(() => {
-      const selectedMove = chooseBotMove(game, botDifficulty);
-      if (!selectedMove) {
-        setIsBotThinking(false);
-        return;
-      }
-
-      const gameCopy = new Chess(game.fen());
-      const res = gameCopy.move(selectedMove);
-      if (res) {
-        setGame(gameCopy);
-        setGameFen(gameCopy.fen());
-        setMoveHistory(gameCopy.history());
-
-        if (gameCopy.isCheckmate()) {
-          toast.error('Skakmat! Bot memenangkan permainan.');
+    const timer = setTimeout(() => {
+      try {
+        const selectedMove = chooseBotMove(game, botDifficulty);
+        if (!selectedMove) {
+          setIsBotThinking(false);
+          return;
         }
-      }
-      setIsBotThinking(false);
-    }, 400);
-  }, [game, botDifficulty]);
 
-  // Trigger bot move jika gilirannya
+        const gameCopy = new Chess(game.fen());
+        const res = gameCopy.move(selectedMove);
+        if (res) {
+          setGame(gameCopy);
+          setGameFen(gameCopy.fen());
+          setMoveHistory(gameCopy.history());
+          setSelectedSquare(null);
+
+          if (gameCopy.isCheckmate()) {
+            toast.error('Skakmat! Bot memenangkan permainan.');
+          } else if (gameCopy.isDraw()) {
+            toast.info('Permainan berakhir remis.');
+          }
+        }
+      } catch (err) {
+        console.error('Error during bot move calculation:', err);
+      } finally {
+        setIsBotThinking(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [game, botDifficulty, botColor]);
+
+  // Trigger bot move saat giliran bot
   useEffect(() => {
-    if (gameMode === 'vs-bot' && game.turn() === 'b' && !game.isGameOver()) {
-      makeBotMove();
+    if (gameMode === 'vs-bot' && game.turn() === botColor && !game.isGameOver()) {
+      const cleanup = makeBotMove();
+      return cleanup;
     }
-  }, [game, gameMode, makeBotMove]);
+  }, [game, gameMode, botColor, makeBotMove]);
 
   // Melangkah
   const makeAMove = useCallback(
@@ -243,6 +258,7 @@ export function ChessGame({
         setGameFen(gameCopy.fen());
         const newHistory = gameCopy.history();
         setMoveHistory(newHistory);
+        setSelectedSquare(null);
 
         if (gameCopy.isCheckmate()) {
           confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
@@ -271,18 +287,113 @@ export function ChessGame({
     [game, gameMode, socket, channel.id, myName],
   );
 
+  // Click-to-Move Handler
+  const onSelectOrMoveSquare = useCallback(
+    (square: Square) => {
+      if (isBotThinking || game.isGameOver()) return;
+
+      // Di mode vs-bot, user hanya boleh melangkah saat gilirannya
+      if (gameMode === 'vs-bot' && game.turn() === botColor) return;
+
+      // Di mode PvP dengan kursi terkunci
+      if (gameMode === 'pvp' && !isFreePlay) {
+        if (game.turn() === 'w' && whitePlayer && whitePlayer.id !== myId) return;
+        if (game.turn() === 'b' && blackPlayer && blackPlayer.id !== myId) return;
+      }
+
+      const pieceOnSquare = game.get(square);
+
+      // Jika belum ada bidak yang dipilih
+      if (!selectedSquare) {
+        if (pieceOnSquare && pieceOnSquare.color === game.turn()) {
+          // Di vs-bot, pastikan hanya memilih bidak milik pemain
+          if (gameMode === 'vs-bot' && pieceOnSquare.color !== playerColor) return;
+          setSelectedSquare(square);
+        }
+        return;
+      }
+
+      // Jika mengklik square yang sama -> batalkan pilihan
+      if (selectedSquare === square) {
+        setSelectedSquare(null);
+        return;
+      }
+
+      // Jika mengklik bidak lain dengan warna yang sama -> ganti pilihan
+      if (pieceOnSquare && pieceOnSquare.color === game.turn()) {
+        setSelectedSquare(square);
+        return;
+      }
+
+      // Cek apakah square yang diklik merupakan langkah valid
+      const validMoves = game.moves({ square: selectedSquare, verbose: true });
+      const isValid = validMoves.some((m) => m.to === square);
+
+      if (isValid) {
+        makeAMove({
+          from: selectedSquare,
+          to: square,
+          promotion: 'q',
+        });
+      }
+
+      setSelectedSquare(null);
+    },
+    [
+      isBotThinking,
+      game,
+      gameMode,
+      botColor,
+      playerColor,
+      isFreePlay,
+      whitePlayer,
+      blackPlayer,
+      myId,
+      selectedSquare,
+      makeAMove,
+    ],
+  );
+
+  // Square and Piece Click events from react-chessboard
+  const handleSquareClick = useCallback(
+    (args: any) => {
+      const sq = (typeof args === 'string' ? args : args?.square) as Square;
+      if (sq) onSelectOrMoveSquare(sq);
+    },
+    [onSelectOrMoveSquare],
+  );
+
+  const handlePieceClick = useCallback(
+    (args: any) => {
+      const sq = (typeof args === 'string' ? args : args?.square) as Square;
+      if (sq) onSelectOrMoveSquare(sq);
+    },
+    [onSelectOrMoveSquare],
+  );
+
+  // Drag-and-drop piece permission
   const canDragPiece = useCallback(
-    ({ piece }: { piece: { pieceType: string } }) => {
-      if (isBotThinking) return false;
-      const pieceColor = piece.pieceType?.[0] === 'w' ? 'w' : 'b';
+    (args: any) => {
+      if (isBotThinking || game.isGameOver()) return false;
+
+      let pieceCode = '';
+      if (typeof args === 'string') {
+        pieceCode = args;
+      } else if (args?.piece) {
+        pieceCode = typeof args.piece === 'string' ? args.piece : args.piece.pieceType || '';
+      } else if (args?.pieceType) {
+        pieceCode = args.pieceType;
+      }
+
+      const pieceColor = pieceCode[0]?.toLowerCase() === 'w' ? 'w' : 'b';
 
       // Giliran harus sesuai
       if (pieceColor !== game.turn()) return false;
 
-      // Di mode vs-bot, user hanya boleh gerakkan putih
-      if (gameMode === 'vs-bot' && pieceColor === 'b') return false;
+      // Di mode vs-bot, user hanya boleh menggerakkan bidaknya sendiri
+      if (gameMode === 'vs-bot' && pieceColor !== playerColor) return false;
 
-      // Di mode PvP, jika kursi terkunci dan bukan free play
+      // Di mode PvP, jika kursi terkunci
       if (gameMode === 'pvp' && !isFreePlay) {
         if (pieceColor === 'w' && whitePlayer && whitePlayer.id !== myId) return false;
         if (pieceColor === 'b' && blackPlayer && blackPlayer.id !== myId) return false;
@@ -290,28 +401,64 @@ export function ChessGame({
 
       return true;
     },
-    [game, isBotThinking, gameMode, isFreePlay, whitePlayer, blackPlayer, myId],
+    [game, isBotThinking, gameMode, playerColor, isFreePlay, whitePlayer, blackPlayer, myId],
   );
 
-  const onDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
-    if (!targetSquare) return false;
+  // Drop Handler (resilient to both positional and object arguments)
+  const onDrop = (arg1: any, arg2?: any) => {
     if (isBotThinking) return false;
-    if (gameMode === 'vs-bot' && game.turn() === 'b') return false;
 
-    const move = makeAMove({
-      from: sourceSquare as Square,
-      to: targetSquare as Square,
+    const sourceSquare = (typeof arg1 === 'string' ? arg1 : arg1?.sourceSquare) as Square;
+    const targetSquare = (typeof arg2 === 'string' ? arg2 : arg1?.targetSquare) as Square;
+
+    if (!sourceSquare || !targetSquare) return false;
+    if (gameMode === 'vs-bot' && game.turn() === botColor) return false;
+
+    const success = makeAMove({
+      from: sourceSquare,
+      to: targetSquare,
       promotion: 'q',
     });
 
-    return !!move;
+    if (success) {
+      setSelectedSquare(null);
+      return true;
+    }
+    return false;
   };
+
+  // Highlighting selected square & legal move dots
+  const squareStyles = useMemo(() => {
+    const styles: Record<string, React.CSSProperties> = {};
+
+    if (selectedSquare) {
+      styles[selectedSquare] = {
+        backgroundColor: 'rgba(245, 158, 11, 0.45)',
+        boxShadow: 'inset 0 0 0 2px #f59e0b',
+      };
+
+      const validMoves = game.moves({ square: selectedSquare, verbose: true });
+      for (const m of validMoves) {
+        const isTargetOccupied = !!game.get(m.to as Square);
+        styles[m.to] = {
+          background: isTargetOccupied
+            ? 'radial-gradient(circle, rgba(239, 68, 68, 0.65) 80%, transparent 80%)'
+            : 'radial-gradient(circle, rgba(255, 255, 255, 0.5) 24%, transparent 24%)',
+          borderRadius: '50%',
+          cursor: 'pointer',
+        };
+      }
+    }
+
+    return styles;
+  }, [selectedSquare, game]);
 
   const resetGame = () => {
     const newGame = new Chess();
     setGame(newGame);
     setGameFen(newGame.fen());
     setMoveHistory([]);
+    setSelectedSquare(null);
     if (gameMode === 'pvp') {
       socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
         channelId: channel.id,
@@ -332,6 +479,7 @@ export function ChessGame({
     }
     setGame(gameCopy);
     setGameFen(gameCopy.fen());
+    setSelectedSquare(null);
     const updatedHistory = gameCopy.history();
     setMoveHistory(updatedHistory);
 
@@ -408,7 +556,7 @@ export function ChessGame({
       if (gameMode === 'vs-bot') return `Bot AI (${botDifficulty.toUpperCase()})`;
       return blackPlayer?.name ? `${blackPlayer.name} (Hitam)` : 'Hitam (Menunggu)';
     } else {
-      if (gameMode === 'vs-bot') return 'Anda (Hitam)';
+      if (gameMode === 'vs-bot') return `Bot AI (${botDifficulty.toUpperCase()})`;
       return whitePlayer?.name ? `${whitePlayer.name} (Putih)` : 'Putih (Menunggu)';
     }
   }, [orientation, gameMode, botDifficulty, blackPlayer, whitePlayer]);
@@ -424,7 +572,7 @@ export function ChessGame({
   return (
     <div className="h-full w-full flex flex-col xl:flex-row items-center justify-center p-2 sm:p-4 gap-2 sm:gap-4 lg:gap-6 bg-zinc-950 text-foreground overflow-hidden select-none">
       {/* ── BOARD COLUMN (Scales responsively on Mobile, Tablet & Desktop) ── */}
-      <div className="flex flex-col items-center justify-center h-full max-h-full flex-1 min-h-0 min-w-0 max-w-full xl:max-w-[min(560px,calc(100vh-80px))] py-1">
+      <div className="flex flex-col items-center justify-center h-full max-h-full flex-1 min-h-0 min-w-0 max-w-full xl:max-w-[min(580px,calc(100vh-80px))] py-1">
         {/* Top Player Info Bar */}
         <div
           style={{ width: boardDimension, maxWidth: '100%' }}
@@ -463,7 +611,10 @@ export function ChessGame({
               options={{
                 position: gameFen,
                 onPieceDrop: onDrop,
+                onSquareClick: handleSquareClick,
+                onPieceClick: handlePieceClick,
                 canDragPiece,
+                squareStyles,
                 boardOrientation: orientation,
                 darkSquareStyle: { backgroundColor: '#2e3846' },
                 lightSquareStyle: { backgroundColor: '#475569' },
@@ -471,6 +622,7 @@ export function ChessGame({
                   borderRadius: '8px',
                   width: `${boardDimension}px`,
                   height: `${boardDimension}px`,
+                  touchAction: 'none',
                 },
               }}
             />
@@ -505,64 +657,130 @@ export function ChessGame({
         {/* Mobile / Tablet Quick Control Ribbon */}
         <div
           style={{ width: boardDimension, maxWidth: '100%' }}
-          className="xl:hidden flex items-center justify-between gap-1 mt-1.5 pt-1 border-t border-zinc-800/60 shrink-0 transition-all"
+          className="xl:hidden flex flex-col gap-1.5 mt-2 pt-1.5 border-t border-zinc-800/80 shrink-0 transition-all"
         >
-          <div className="flex items-center gap-1">
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-[10px] px-1.5 py-0 font-bold',
-                isCheckmate
-                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                  : isCheck
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse'
-                  : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-              )}
-            >
-              {isCheckmate ? 'Skakmat' : isCheck ? `Skak! (${turn})` : `Giliran: ${turn}`}
-            </Badge>
-            <span className="text-[10px] text-zinc-400 font-mono">
-              {moveHistory.length} langkah
-            </span>
+          {/* Row 1: Mode Switcher & Bot Difficulty on Mobile/Tablet */}
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1 bg-zinc-950/80 p-0.5 rounded-lg border border-zinc-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setGameMode('vs-bot');
+                  toast.info('Mode Lawan Bot AI aktif');
+                }}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                  gameMode === 'vs-bot'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : 'text-zinc-400 hover:text-white',
+                )}
+              >
+                <Bot className="size-3" />
+                <span>Lawan Bot</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setGameMode('pvp');
+                  toast.info('Mode PvP Online aktif');
+                  socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+                    channelId: channel.id,
+                    action: 'CHESS_MODE_CHANGE',
+                    payload: { mode: 'pvp' },
+                  });
+                }}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                  gameMode === 'pvp'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-zinc-400 hover:text-white',
+                )}
+              >
+                <Users className="size-3" />
+                <span>PvP</span>
+              </button>
+            </div>
+
+            {gameMode === 'vs-bot' && (
+              <div className="flex items-center gap-0.5 bg-zinc-950/80 p-0.5 rounded-lg border border-zinc-800">
+                {(['easy', 'medium', 'hard'] as const).map((diff) => (
+                  <button
+                    key={diff}
+                    type="button"
+                    onClick={() => setBotDifficulty(diff)}
+                    className={cn(
+                      'px-1.5 py-0.5 text-[10px] font-medium rounded transition-all cursor-pointer',
+                      botDifficulty === diff
+                        ? 'bg-zinc-800 text-white font-bold'
+                        : 'text-zinc-500 hover:text-zinc-300',
+                    )}
+                  >
+                    {diff === 'easy' ? 'Mudah' : diff === 'medium' ? 'Sedang' : 'Sulit'}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setOrientation((prev) => (prev === 'white' ? 'black' : 'white'))}
-              className="h-7 px-2 text-[11px] bg-zinc-900 border-zinc-700 hover:bg-zinc-800"
-            >
-              <RefreshCw className="size-3 mr-1" />
-              Putar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={undoMove}
-              disabled={isGameOver || moveHistory.length === 0 || isBotThinking}
-              className="h-7 px-2 text-[11px] bg-zinc-900 border-zinc-700 hover:bg-zinc-800"
-            >
-              <Flag className="size-3 mr-1" />
-              Undo
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetGame}
-              className="h-7 px-2 text-[11px] bg-zinc-900 border-zinc-700 hover:bg-zinc-800"
-            >
-              <RotateCcw className="size-3 mr-1" />
-              Reset
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsHistoryExpanded((prev) => !prev)}
-              className="h-7 px-1.5 text-zinc-400 hover:text-white"
-            >
-              {isHistoryExpanded ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
-            </Button>
+          {/* Row 2: Status & Quick Control Buttons */}
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1">
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-[10px] px-1.5 py-0 font-bold',
+                  isCheckmate
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                    : isCheck
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse'
+                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+                )}
+              >
+                {isCheckmate ? 'Skakmat' : isCheck ? `Skak! (${turn})` : `Giliran: ${turn}`}
+              </Badge>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                {moveHistory.length} langkah
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOrientation((prev) => (prev === 'white' ? 'black' : 'white'))}
+                className="h-7 px-2 text-[11px] bg-zinc-900 border-zinc-700 hover:bg-zinc-800 cursor-pointer"
+              >
+                <RefreshCw className="size-3 mr-1" />
+                Putar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={undoMove}
+                disabled={isGameOver || moveHistory.length === 0 || isBotThinking}
+                className="h-7 px-2 text-[11px] bg-zinc-900 border-zinc-700 hover:bg-zinc-800 cursor-pointer"
+              >
+                <Flag className="size-3 mr-1" />
+                Undo
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetGame}
+                className="h-7 px-2 text-[11px] bg-zinc-900 border-zinc-700 hover:bg-zinc-800 cursor-pointer"
+              >
+                <RotateCcw className="size-3 mr-1" />
+                Reset
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsHistoryExpanded((prev) => !prev)}
+                className="h-7 px-1.5 text-zinc-400 hover:text-white cursor-pointer"
+              >
+                {isHistoryExpanded ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+              </Button>
+            </div>
           </div>
         </div>
 
