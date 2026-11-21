@@ -139,6 +139,7 @@ export function EditProfileDialog({
   const { t } = useTranslation();
   const defaultAvatar = currentUser?.imageUrl || currentUser?.avatar || null;
   const [profileSubTab, setProfileSubTab] = useState<'board' | 'activity' | 'wishlist'>('board');
+  const [activeViewMode, setActiveViewMode] = useState<'edit' | 'preview' | 'widgets'>('edit');
 
   // Main Profile Core Fields
   const [profileBannerColor, setProfileBannerColor] = useState('#5c4d44');
@@ -693,8 +694,66 @@ export function EditProfileDialog({
       >
         <DialogTitle className="sr-only">{t('Edit Profiles')}</DialogTitle>
 
-        {/* Discord-style Close Button Top-Right (with ESC hint) */}
-        <div className="absolute top-3.5 right-4 z-50 flex flex-col items-center">
+        {/* Mobile Header (< md) */}
+        <div className="flex md:hidden items-center justify-between px-4 py-2.5 border-b border-border/60 bg-card shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-foreground">{t('Edit Profil')}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="size-7 rounded-lg border border-border/80 bg-muted/60 text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer"
+            aria-label={t('Tutup')}
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Mobile 3-Way Navigation Tab Switcher (< md) */}
+        <div className="flex md:hidden items-center px-3 py-2 bg-muted/40 border-b border-border/60 gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveViewMode('edit')}
+            className={cn(
+              'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+              activeViewMode === 'edit'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            )}
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>{t('Edit')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveViewMode('preview')}
+            className={cn(
+              'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+              activeViewMode === 'preview'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            )}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>{t('Pratinjau')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveViewMode('widgets')}
+            className={cn(
+              'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+              activeViewMode === 'widgets'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            )}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{t('Widget')}</span>
+          </button>
+        </div>
+
+        {/* Discord-style Close Button Top-Right (with ESC hint, >= md) */}
+        <div className="hidden md:flex absolute top-3.5 right-4 z-50 flex-col items-center">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
@@ -709,10 +768,48 @@ export function EditProfileDialog({
           </span>
         </div>
 
-        {/* Main 3-Column Profile Editor Body (20% Left | 40% Middle | 40% Right) */}
-        <div className="flex-1 w-full h-full overflow-hidden flex flex-col lg:flex-row">
-            {/* COLUMN 1: LEFT AREA (20%) */}
-          <div className="w-full lg:w-[22%] lg:min-w-[240px] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-background/30 p-4 sm:p-5 overflow-y-auto custom-scrollbar space-y-4">
+        {/* Main Profile Editor Body (Responsive: Mobile 1-Col | Tablet 2-Col | Desktop 3-Col) */}
+        <div className="flex-1 w-full h-full min-h-0 overflow-hidden flex flex-col md:flex-row">
+          {/* COLUMN 1: LEFT AREA (Edit Form) */}
+          <div
+            className={cn(
+              'shrink-0 bg-background/30 p-4 sm:p-5 overflow-y-auto custom-scrollbar space-y-4 flex-col',
+              activeViewMode === 'edit' || (activeViewMode !== 'widgets' && activeViewMode !== 'preview') ? 'flex' : 'hidden',
+              activeViewMode !== 'widgets' ? 'md:flex' : 'md:hidden',
+              'xl:flex',
+              'w-full md:w-[50%] lg:w-[52%] xl:w-[22%] xl:min-w-[240px]',
+              'border-b-0 md:border-r border-border/60'
+            )}
+          >
+            {/* Tablet 2-Way Tab Switcher (md to < xl) */}
+            <div className="hidden md:flex xl:hidden items-center p-1 bg-muted/60 rounded-xl gap-1 border border-border/50 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveViewMode('edit')}
+                className={cn(
+                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+                  activeViewMode !== 'widgets'
+                    ? 'bg-card text-foreground shadow-xs border border-border/80'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>{t('Edit Profil')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveViewMode('widgets')}
+                className={cn(
+                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+                  activeViewMode === 'widgets'
+                    ? 'bg-card text-foreground shadow-xs border border-border/80'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>{t('Widget & Tab')}</span>
+              </button>
+            </div>
 
             <div className="space-y-4">
               {/* 1. Nameplate Selector */}
@@ -1008,8 +1105,16 @@ export function EditProfileDialog({
             </div>
           </div>
 
-          {/* COLUMN 2: MIDDLE AREA (40%) LIVE PROFILE CARD PREVIEW */}
-          <div className="w-full lg:w-[38%] shrink-0 border-b lg:border-b-0 lg:border-r border-border/60 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 flex items-center justify-center overflow-y-auto custom-scrollbar">
+          {/* COLUMN 2: MIDDLE AREA LIVE PROFILE CARD PREVIEW */}
+          <div
+            className={cn(
+              'shrink-0 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 items-center justify-center overflow-y-auto custom-scrollbar flex-col',
+              activeViewMode === 'preview' ? 'flex' : 'hidden',
+              'md:flex',
+              'w-full md:w-[50%] lg:w-[48%] xl:w-[38%]',
+              'border-b-0 xl:border-r border-border/60'
+            )}
+          >
             <div className="w-full max-w-[420px] 2xl:max-w-[460px] my-auto">
               <ProfilePreviewCard
                 userId={currentUser?.id}
@@ -1052,8 +1157,47 @@ export function EditProfileDialog({
             </div>
           </div>
 
-          {/* COLUMN 3: RIGHT AREA (40%) PROFILE TABS (BOARD | ACTIVITY | WISHLIST) */}
-          <div className="w-full lg:w-[40%] flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4">
+          {/* COLUMN 3: RIGHT AREA PROFILE TABS (BOARD | ACTIVITY | WISHLIST) */}
+          <div
+            className={cn(
+              'flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4 flex-col',
+              activeViewMode === 'widgets' ? 'flex' : 'hidden',
+              activeViewMode === 'widgets' ? 'md:flex' : 'md:hidden',
+              'xl:flex',
+              'w-full md:w-[50%] lg:w-[52%] xl:w-[40%]',
+              'border-b-0 md:border-r xl:border-r-0 border-border/60'
+            )}
+          >
+            {/* Tablet 2-Way Tab Switcher (md to < xl) */}
+            <div className="hidden md:flex xl:hidden items-center p-1 bg-muted/60 rounded-xl gap-1 border border-border/50 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveViewMode('edit')}
+                className={cn(
+                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+                  activeViewMode !== 'widgets'
+                    ? 'bg-card text-foreground shadow-xs border border-border/80'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>{t('Edit Profil')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveViewMode('widgets')}
+                className={cn(
+                  'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+                  activeViewMode === 'widgets'
+                    ? 'bg-card text-foreground shadow-xs border border-border/80'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>{t('Widget & Tab')}</span>
+              </button>
+            </div>
+
             {/* Top Navigation Tabs */}
             <div className="flex items-center border-b border-border/60 gap-6 text-xs font-bold pb-2">
               <button
@@ -2104,6 +2248,37 @@ export function EditProfileDialog({
                 </form>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Sticky Mobile & Tablet Bottom Action Bar (< xl) */}
+        <div className="xl:hidden p-3 border-t border-border/60 bg-card/95 backdrop-blur-md flex items-center justify-between gap-3 shrink-0 z-30">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[11px] text-muted-foreground truncate hidden sm:inline">
+              {t('Perubahan akan langsung disimpan ke profil publik Anda.')}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="text-xs h-8 px-3 cursor-pointer"
+            >
+              {t('Batal')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="teal"
+              onClick={handleSaveProfile}
+              disabled={isSaving}
+              className="text-xs font-bold h-8 px-4 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>{isSaving ? t('Menyimpan...') : t('Simpan Perubahan')}</span>
+            </Button>
           </div>
         </div>
 
