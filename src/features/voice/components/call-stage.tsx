@@ -22,6 +22,7 @@ import { PiPCallStage } from './pip-call-stage';
 import { ActivityFilmstrip } from './activity-filmstrip';
 import { ActivityStage } from './activities/activity-stage';
 import { MagneticFloatingCollapseButton } from '@/components/ui/magnetic-floating-collapse-button';
+import { ActivityAppBar } from '@/features/apps/components/activity-app-bar';
 
 export function YouTubeBadgeIcon({ className = 'w-5 h-3.5' }: { className?: string }) {
   return (
@@ -180,7 +181,23 @@ export function CallStage({
   return (
     <div className="w-full h-full flex-1 min-h-0 flex flex-col bg-background text-foreground select-none relative overflow-hidden group/stage">
       {/* Discord Top Stage App Bar */}
-      {channel.type === 'voice' && (
+      {!isTheaterMode && activeAppId !== null && currentActiveApp ? (
+        <ActivityAppBar
+          app={currentActiveApp}
+          onClose={() => {
+            handleStopActivity();
+            if (channel.type !== 'voice') {
+              onEndCall();
+            }
+          }}
+          onToggleTheaterMode={() => setIsTheaterMode(true)}
+          onCopyLink={handleExecuteCopyCallLink}
+          isChatOpen={isChatOpen}
+          onToggleChat={onToggleChat}
+          onOpenMobileChannels={onOpenMobileChannels}
+          horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        />
+      ) : !isTheaterMode && channel.type === 'voice' ? (
         <div className={cn('h-12 w-full flex items-center justify-between bg-background select-none shrink-0 z-20', CHANNEL_HORIZONTAL_PADDING)}>
           <div className="flex items-center gap-2 min-w-0">
             {onOpenMobileChannels && (
@@ -198,23 +215,6 @@ export function CallStage({
             <span className="text-sm font-bold text-foreground truncate max-w-[140px] sm:max-w-[200px]">
               {channel.name}
             </span>
-            {activeAppId !== null && currentActiveApp && (
-              <>
-                <span className="text-muted-foreground text-xs select-none">·</span>
-                <div className="flex items-center gap-1.5 min-w-0">
-                  {activeAppId === 'watch-together' ? (
-                    <YouTubeBadgeIcon className="w-5 h-3.5 shrink-0" />
-                  ) : (
-                    <div className={cn('w-4 h-4 rounded flex items-center justify-center text-white shrink-0', currentActiveApp.iconBg)}>
-                      <currentActiveApp.icon className="w-2.5 h-2.5" />
-                    </div>
-                  )}
-                  <span className="text-sm font-bold text-foreground truncate max-w-[180px]">
-                    {currentActiveApp.title}
-                  </span>
-                </div>
-              </>
-            )}
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
@@ -276,29 +276,10 @@ export function CallStage({
                   {isChatOpen ? 'Sembunyikan Obrolan' : 'Buka Obrolan Suara'}
                 </TooltipContent>
               </Tooltip>
-
-              {activeAppId !== null && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => setIsTheaterMode(true)}
-                      className="p-1.5 rounded-lg text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                      title="Mode Sinematik / Layar Penuh"
-                      aria-label="Mode Sinematik"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs font-semibold">
-                    Mode Sinematik (Layar Penuh)
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </TooltipProvider>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Main Call Stage Content */}
       {activeAppId !== null && currentActiveApp ? (

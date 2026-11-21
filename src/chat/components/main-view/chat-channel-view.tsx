@@ -418,9 +418,17 @@ export function ChatChannelView({
     </>
   );
 
+  const isCallOrActivityActive = Boolean(
+    activeChannel &&
+      (activeCallChannelId === activeChannel.id ||
+        (!activeCallChannelId && isActivityOpen && selectedActivityAppId)) &&
+      (isActivityOpen || activeChannel.type === 'voice') &&
+      !isCallPiP
+  );
+
   return (
     <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
-      {!(activeChannel?.type === 'voice' && !isCallPiP) && (
+      {!isCallOrActivityActive && (
         <ChannelTopHeaderBar
           activeChannel={activeChannel}
           channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
@@ -462,12 +470,7 @@ export function ChatChannelView({
         />
       )}
 
-      {Boolean(
-        activeChannel &&
-        (activeCallChannelId === activeChannel.id || (!activeCallChannelId && isActivityOpen && selectedActivityAppId)) &&
-        (isActivityOpen || activeChannel.type === 'voice') &&
-        !isCallPiP
-      ) ? (
+      {isCallOrActivityActive ? (
         <div ref={splitContainerRef} className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full relative">
           <div
             style={{
