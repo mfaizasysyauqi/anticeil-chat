@@ -108,8 +108,8 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
       'https://images.unsplash.com/photo-1642543492481-44e81e3914a7?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?auto=format&fit=crop&w=1200&q=80',
     ],
-    overviewLong: 'Platform charting finansial interaktif yang ditenagai oleh TradingView Lightweight Charts. Analisis pergerakan pasar Kripto, Saham, dan Forex dengan candlestick multi-timeframe, indikator teknikal (SMA, EMA, Volume), dan simulasi paper trading.',
-    howToPlay: 'Pilih pasangan aset pasar (BTC/USDT, ETH, Saham), ubah timeframe grafik, aktifkan indikator teknikal, dan uji coba strategi trading dengan simulasi paper trading terintegrasi.',
+    overviewLong: 'Platform charting finansial interaktif yang ditenagai oleh TradingView Lightweight Charts. Analisis pergerakan pasar Kripto, Saham, dan Forex dengan candlestick multi-timeframe serta indikator teknikal (SMA, EMA, Volume).',
+    howToPlay: 'Pilih pasangan aset pasar (BTC/USDT, ETH, Saham), ubah timeframe grafik, dan aktifkan indikator teknikal untuk analisis pergerakan harga.',
   },
   {
     id: 'chess',
