@@ -5,12 +5,14 @@ const STORAGE_KEY_ACTIVE_SESSION = 'anticeil_active_ai_session_id';
 const STORAGE_KEY_GROQ_KEY = 'anticeil_groq_api_key';
 const STORAGE_KEY_GROQ_MODEL = 'anticeil_groq_model';
 
-export const DEFAULT_GROQ_MODEL = 'llama-3.3-70b-versatile';
+export const DEFAULT_GROQ_API_KEY = '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';
+export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
 
 export const GROQ_MODELS = [
-  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', desc: 'Paling cerdas & akurat untuk instruksi kompleks' },
-  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', desc: 'Kecepatan inferensi super cepat (< 300ms)' },
-  { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B (32k context)', desc: 'Konteks besar untuk riwayat panjang' },
+  { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B (Groq)', desc: 'Paling cerdas, akurat, dan mendukung pemanggilan fungsi kompleks' },
+  { id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B (Groq)', desc: 'Kecepatan inferensi super cepat (< 200ms)' },
+  { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B', desc: 'Model multilingual tangguh untuk instruksi percakapan' },
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (BYOK)', desc: 'Gunakan kunci Groq pribadi Anda yang memiliki akses Llama' },
 ];
 
 export function getStoredSessions(): AiSession[] {
@@ -61,10 +63,16 @@ export function getStoredGroqConfig(): GroqConfig {
   if (typeof window !== 'undefined') {
     storedKey = localStorage.getItem(STORAGE_KEY_GROQ_KEY) || '';
     storedModel = localStorage.getItem(STORAGE_KEY_GROQ_MODEL) || DEFAULT_GROQ_MODEL;
+
+    // Auto-migrate legacy/inaccessible model name if using default system key
+    if (!storedKey && storedModel === 'llama-3.3-70b-versatile') {
+      storedModel = DEFAULT_GROQ_MODEL;
+      localStorage.setItem(STORAGE_KEY_GROQ_MODEL, DEFAULT_GROQ_MODEL);
+    }
   }
 
   return {
-    apiKey: storedKey || envKey,
+    apiKey: storedKey || envKey || DEFAULT_GROQ_API_KEY,
     model: storedModel,
     temperature: 0.2, // Low temperature for deterministic tool calling
   };

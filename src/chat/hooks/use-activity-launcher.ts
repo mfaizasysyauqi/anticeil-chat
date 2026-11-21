@@ -120,7 +120,17 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         } else if (activeCallChannelId) {
           voiceDest = channels.find((c) => c.id === activeCallChannelId) || null;
         } else {
-          voiceDest = targetChannel || activeChannel || null;
+          voiceDest =
+            targetChannel ||
+            activeChannel ||
+            channels.find(
+              (c) =>
+                (c.colonyId || 'anticeil') === (activeColonyId || 'anticeil') &&
+                c.type !== 'voice',
+            ) ||
+            channels.find((c) => c.type !== 'voice') ||
+            channels[0] ||
+            null;
         }
       }
 

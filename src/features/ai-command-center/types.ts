@@ -6,7 +6,7 @@ export type AiToolName =
 export interface LaunchAppArgs {
   appId: string;
   appName?: string;
-  mode?: 'standalone' | 'channel';
+  mode?: 'standalone' | 'channel' | 'navigation';
   colonyName?: string;
   channelName?: string;
 }

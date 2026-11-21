@@ -128,6 +128,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         currentUser={currentUser}
         onOpenSidebar={handleOpenNav}
         onLaunchActivity={(appId) => handleLaunchActivity(appId, false)}
+        onOpenApps={() => setHomeView?.('apps')}
         onSendMessageToChannel={async (channelId, content) => {
           return messagesApi.sendMessage(channelId, {
             content,

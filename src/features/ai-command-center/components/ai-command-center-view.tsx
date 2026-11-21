@@ -52,9 +52,11 @@ import {
   GROQ_MODELS,
   DEFAULT_GROQ_MODEL,
 } from '../services/ai-storage';
+import { useTranslation } from '@/core/i18n';
 import { executeGroqCommand } from '../services/groq-service';
 import { GroqSettingsDialog } from './groq-settings-dialog';
 import { AiCommandCenterHeader } from './ai-command-center-header';
+import { AiMarkdown } from './ai-markdown';
 import { useAiCommandCenterContext } from '../context/ai-command-center-context';
 
 export interface AiCommandCenterViewProps {
@@ -70,6 +72,7 @@ export interface AiCommandCenterViewProps {
   currentUser?: any;
   onOpenSidebar?: () => void;
   onLaunchActivity?: (appId: string, fromChat?: boolean, channelId?: string, colonyId?: string) => void;
+  onOpenApps?: () => void;
   onSendMessageToChannel?: (channelId: string, content: string) => Promise<any> | any;
   onSendDirectMessage?: (recipientIdOrName: string, content: string) => Promise<any> | any;
   onNavigateToChannel?: (colonyId: string, channelId: string) => void;
@@ -83,6 +86,7 @@ function formatFileSize(bytes: number): string {
 }
 
 export function AiCommandCenterView(props: AiCommandCenterViewProps) {
+  const { t } = useTranslation();
   let contextValue: any = null;
   try {
     contextValue = useAiCommandCenterContext();
@@ -102,6 +106,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
     currentUser,
     onOpenSidebar,
     onLaunchActivity,
+    onOpenApps,
     onSendMessageToChannel,
     onSendDirectMessage,
     onNavigateToChannel,
@@ -298,9 +303,24 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
     if (toolCall.function.name === 'launch_application') {
       const args = toolCall.parsedArgs as LaunchAppArgs;
+      if (args.appId === 'apps-view' || args.appId === 'apps') {
+        if (onOpenApps) {
+          onOpenApps();
+        } else if (typeof window !== 'undefined') {
+          window.location.hash = '#apps';
+          window.dispatchEvent(new CustomEvent('anticeil_navigate_view', { detail: 'apps' }));
+        }
+        toast.success(t('Halaman Aplikasi & Aktivitas dibuka! 🚀'));
+        updateToolCallStatus(messageId, toolCall.id, 'executed', {
+          success: true,
+          message: 'Halaman Aplikasi & Aktivitas berhasil dibuka.',
+        });
+        return;
+      }
+
       if (onLaunchActivity) {
         onLaunchActivity(args.appId, false);
-        toast.success(`Aplikasi ${args.appName || args.appId} diluncurkan!`);
+        toast.success(`Aplikasi ${args.appName || args.appId} diluncurkan! 🚀`);
         updateToolCallStatus(messageId, toolCall.id, 'executed', {
           success: true,
           message: `Aplikasi ${args.appName || args.appId} berhasil dibuka di workspace.`,
@@ -482,11 +502,15 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                     className={cn(
                       'px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed',
                       msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground font-medium rounded-tr-xs shadow-xs'
-                        : 'bg-card border border-border/60 text-foreground rounded-tl-xs shadow-xs whitespace-pre-wrap',
+                        ? 'bg-primary text-primary-foreground font-medium rounded-tr-xs shadow-xs whitespace-pre-wrap'
+                        : 'bg-card border border-border/60 text-foreground rounded-tl-xs shadow-xs',
                     )}
                   >
-                    {msg.content}
+                    {msg.role === 'user' ? (
+                      msg.content
+                    ) : (
+                      <AiMarkdown content={msg.content} />
+                    )}
                   </div>
 
                   {/* Interactive Tool Calling Execution Cards */}
@@ -730,10 +754,14 @@ function ToolExecutionCard({
             </div>
             <div>
               <span className="text-xs font-bold text-foreground">
-                Luncurkan Aplikasi: {args.appName || args.appId}
+                {args.appId === 'apps-view' || args.appId === 'apps'
+                  ? 'Buka: Aplikasi & Aktivitas'
+                  : `Luncurkan Aplikasi: ${args.appName || args.appId}`}
               </span>
               <span className="block text-[10px] text-muted-foreground">
-                Mode: Standalone Workspace (Layar Penuh Mandiri)
+                {args.appId === 'apps-view' || args.appId === 'apps'
+                  ? 'Katalog & eksplorasi aplikasi resmi Anticeil'
+                  : 'Mode: Standalone Workspace (Layar Penuh Mandiri)'}
               </span>
             </div>
           </div>

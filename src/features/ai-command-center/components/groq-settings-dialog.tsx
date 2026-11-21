@@ -12,6 +12,7 @@ import { Sparkles, Key, Cpu, ExternalLink, CheckCircle2, AlertCircle } from 'luc
 import { toast } from 'sonner';
 import {
   GROQ_MODELS,
+  DEFAULT_GROQ_API_KEY,
   getStoredGroqConfig,
   saveStoredGroqConfig,
 } from '../services/ai-storage';
@@ -121,9 +122,23 @@ export function GroqSettingsDialog({
               onChange={(e) => setApiKey(e.target.value)}
               className="font-mono text-xs h-9 bg-card"
             />
-            <p className="text-[10px] text-muted-foreground">
-              Kunci Anda disimpan secara lokal di browser Anda dan tidak pernah dikirim ke server Anticeil.
-            </p>
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <p className="text-[10px] text-muted-foreground truncate">
+                Sistem menyediakan kunci gratis, atau gunakan kunci sendiri (BYOK).
+              </p>
+              {apiKey !== DEFAULT_GROQ_API_KEY && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiKey(DEFAULT_GROQ_API_KEY);
+                    toast.info('Kunci bawaan sistem dipilih');
+                  }}
+                  className="text-[10px] text-primary hover:underline font-semibold cursor-pointer shrink-0"
+                >
+                  Pakai Default
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Model Selection */}

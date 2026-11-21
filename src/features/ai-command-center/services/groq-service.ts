@@ -11,15 +11,15 @@ export const GROQ_TOOLS = [
     function: {
       name: 'launch_application',
       description:
-        'Buka atau luncurkan aplikasi aktivitas Anticeil seperti papan tulis Jamspace Whiteboard, YouTube Watch Together, catur Anticeil Chess, atau berbagi layar Share Screen.',
+        'Buka atau luncurkan aplikasi aktivitas Anticeil (YouTube Watch Together, Jamspace Whiteboard, Anticeil Chess, Share Screen, TradingView) atau buka halaman daftar Applications & Activities.',
       parameters: {
         type: 'object',
         properties: {
           appId: {
             type: 'string',
-            enum: ['watch-together', 'jamspace-whiteboard', 'anticeil-chess', 'share-screen'],
+            enum: ['watch-together', 'jamspace-whiteboard', 'anticeil-chess', 'share-screen', 'tradingview', 'apps-view'],
             description:
-              'ID aplikasi: "watch-together" untuk YouTube Watch Together, "jamspace-whiteboard" untuk Jamspace Whiteboard, "anticeil-chess" untuk Anticeil Chess, "share-screen" untuk Berbagi Layar.',
+              'ID aplikasi: "watch-together" untuk YouTube Watch Together, "jamspace-whiteboard" untuk Jamspace Whiteboard, "anticeil-chess" untuk Anticeil Chess, "share-screen" untuk Berbagi Layar, "tradingview" untuk TradingView, "apps-view" untuk membuka halaman daftar Aplikasi & Aktivitas.',
           },
           appName: {
             type: 'string',
@@ -27,8 +27,8 @@ export const GROQ_TOOLS = [
           },
           mode: {
             type: 'string',
-            enum: ['standalone', 'channel'],
-            description: 'Mode buka: "standalone" (layar penuh tanpa channel) atau "channel" (di dalam saluran).',
+            enum: ['standalone', 'channel', 'navigation'],
+            description: 'Mode buka: "standalone" (layar penuh tanpa channel), "channel" (di dalam saluran), atau "navigation" (pindah ke halaman aplikasi).',
           },
         },
         required: ['appId'],
@@ -111,14 +111,15 @@ ${friendsList || 'Tidak ada teman'}
 ${appsList || 'Tidak ada aplikasi'}
 
 PEDOMAN:
-- Jika pengguna meminta membuka aplikasi, panggil tool launch_application.
+- Jika pengguna meminta membuka daftar atau halaman Aplikasi & Aktivitas (Applications & Activities / Apps), panggil tool launch_application dengan appId "apps-view" dan appName "Aplikasi & Aktivitas".
+- Jika pengguna meminta membuka aplikasi tertentu (YouTube, Whiteboard, Chess, Share Screen, TradingView), panggil tool launch_application dengan appId yang sesuai.
 - Jika pengguna meminta mengirim/membalas DM ke teman, panggil tool send_direct_message.
 - Jika pengguna meminta mengirim pesan ke saluran di suatu colony, panggil tool send_colony_channel_message.
-- Berikan respons singkat, ramah, dan solutif dalam bahasa Indonesia.`;
+- Jawab secara cerdas, ramah, dan solutif dalam bahasa Indonesia menggunakan format Markdown yang rapi.`;
 }
 
 /**
- * Intelligent local intent parser for offline or when GROQ_API_KEY is not yet supplied.
+ * Intelligent local intent parser for offline fallback.
  * This guarantees 100% reliability and immediate demo/functionality.
  */
 function parseIntentLocally(
@@ -127,6 +128,40 @@ function parseIntentLocally(
 ): { replyText: string; toolCalls: AiToolCall[] } {
   const prompt = userPrompt.toLowerCase().trim();
   const toolCalls: AiToolCall[] = [];
+
+  // 0. Check Applications & Activities view navigation
+  if (
+    prompt.includes('applications') ||
+    prompt.includes('activities') ||
+    prompt.includes('aktivitas') ||
+    prompt.includes('buka apps') ||
+    prompt.includes('buka aplikasi') ||
+    prompt === 'apps' ||
+    prompt === 'aplikasi'
+  ) {
+    toolCalls.push({
+      id: `call_${Date.now()}_apps`,
+      type: 'function',
+      function: {
+        name: 'launch_application',
+        arguments: JSON.stringify({
+          appId: 'apps-view',
+          appName: 'Aplikasi & Aktivitas',
+          mode: 'navigation',
+        }),
+      },
+      parsedArgs: {
+        appId: 'apps-view',
+        appName: 'Aplikasi & Aktivitas',
+        mode: 'navigation',
+      },
+      status: 'pending',
+    });
+    return {
+      replyText: 'Siap! Membuka halaman **Aplikasi & Aktivitas** untuk Anda.',
+      toolCalls,
+    };
+  }
 
   // 1. Check Launch Application intent
   if (
@@ -368,20 +403,43 @@ export async function executeGroqCommand({
       })),
     ];
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    let activeModel = config.model || 'openai/gpt-oss-120b';
+    if (activeModel === 'llama-3.3-70b-versatile') {
+      activeModel = 'openai/gpt-oss-120b';
+    }
+
+    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${config.apiKey.trim()}`,
       },
       body: JSON.stringify({
-        model: config.model || 'llama-3.3-70b-versatile',
+        model: activeModel,
         messages: apiMessages,
         tools: GROQ_TOOLS,
         tool_choice: 'auto',
         temperature: config.temperature ?? 0.2,
       }),
     });
+
+    // If model returned 404, retry with default reliable model
+    if (response.status === 404 && activeModel !== 'openai/gpt-oss-120b') {
+      response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.apiKey.trim()}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-oss-120b',
+          messages: apiMessages,
+          tools: GROQ_TOOLS,
+          tool_choice: 'auto',
+          temperature: config.temperature ?? 0.2,
+        }),
+      });
+    }
 
     if (!response.ok) {
       const errJson = await response.json().catch(() => ({}));
