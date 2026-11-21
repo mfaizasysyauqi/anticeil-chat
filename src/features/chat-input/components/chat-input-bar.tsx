@@ -61,7 +61,12 @@ export interface ChatInputBarProps {
   onOpenSubscriptionModal?: () => void;
   onOpenCreateThreadModal?: () => void;
   onScheduleMessage?: (scheduledDate: Date, customText?: string) => Promise<void> | void;
-  onSubmitPoll?: (question: string, options: string[]) => void;
+  onSubmitPoll?: (
+    question: string,
+    options: Array<{ text: string; emoji?: string }> | string[],
+    allowMultiple?: boolean,
+    durationHours?: number,
+  ) => void;
   // Media Picker props
   isMediaPickerOpen: boolean;
   setIsMediaPickerOpen: (open: boolean) => void;
@@ -751,12 +756,16 @@ export function ChatInputBar({
         </div>
       )}
 
-      {/* Create Poll Dialog */}
+      {/* Create Poll Dialog (Discord Style) */}
       <CreatePollModal
         open={isPollModalOpen}
         onOpenChange={setIsPollModalOpen}
-        onSubmitPoll={(question, options) => {
-          onSubmitPoll?.(question, options);
+        onSubmitPoll={(question, options, allowMultiple, durationHours) => {
+          onSubmitPoll?.(question, options, allowMultiple, durationHours);
+        }}
+        onSchedulePoll={() => {
+          setIsPollModalOpen(false);
+          setIsCustomScheduleOpen(true);
         }}
       />
 

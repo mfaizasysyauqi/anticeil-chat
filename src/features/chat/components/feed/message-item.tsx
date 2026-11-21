@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Pin,
   MessageSquare,
@@ -24,8 +24,9 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { RoleBadge } from '@/features/members';
 import { renderFormattedMessage, DecryptedMessageText } from '../../utils/format-message';
 import { VoiceNotePlayer } from './voice-note-player';
+import { DiscordPollCard } from './discord-poll-card';
 import { colonyApi } from '@/chat/chat-api';
-import type { ColonyChannel, ColonyMessage, ColonyRole } from '@/chat/chat-types';
+import type { ColonyChannel, ColonyMessage, ColonyRole, DiscordPollData } from '@/chat/chat-types';
 
 export interface MessageItemProps {
   msg: ColonyMessage;
@@ -64,6 +65,43 @@ export function MessageItem({
 }: MessageItemProps) {
   const activityAtt = msg.attachments?.find((a) => a.type === 'activity');
   const act = activityAtt?.activityData;
+
+  // Detect Discord poll data or parse legacy poll text
+  const pollData = useMemo<DiscordPollData | null>(() => {
+    if (msg.poll) return msg.poll;
+    const pollAtt = msg.attachments?.find((a) => a.type === 'poll' && a.pollData);
+    if (pollAtt?.pollData) return pollAtt.pollData;
+
+    // Backward-compatibility: parse legacy text polls (📊 **POLL: Question**)
+    if (msg.content && msg.content.includes('POLL:')) {
+      const lines = msg.content.split('\n').map((l) => l.trim()).filter(Boolean);
+      const qLine = lines.find((l) => l.includes('POLL:'));
+      if (qLine) {
+        const qMatch = qLine.match(/📊?\s*\*\*?POLL:\s*(.*?)\*\*?/i);
+        const question = qMatch ? qMatch[1].trim() : 'Jajak Pendapat';
+        const answerLines = lines.filter((l) => /^[0-9️⃣🔟▫️]+\s+/.test(l));
+        if (answerLines.length >= 2) {
+          const answers = answerLines.map((l, i) => {
+            const clean = l.replace(/^[0-9️⃣🔟▫️]+\s+/, '').trim();
+            return { id: i + 1, text: clean, votes: [] };
+          });
+          return {
+            question,
+            answers,
+            allowMultiselect: false,
+            durationHours: 24,
+          };
+        }
+      }
+    }
+    return null;
+  }, [msg.poll, msg.attachments, msg.content]);
+
+  const [currentPoll, setCurrentPoll] = useState<DiscordPollData | null>(pollData);
+
+  useEffect(() => {
+    setCurrentPoll(pollData);
+  }, [pollData]);
 
   return (
     <div className="flex flex-col">
@@ -190,16 +228,29 @@ export function MessageItem({
                         </span>
                       </div>
 
-                      {msg.content ? (
+                      {msg.content && (!currentPoll || !msg.content.includes('POLL:')) ? (
                         <div className="text-xs leading-relaxed text-foreground/90 break-words">
                           <DecryptedMessageText content={msg.content} channelId={msg.channelId} />
                         </div>
                       ) : null}
 
+                      {/* Discord Interactive Poll Card */}
+                      {currentPoll && (
+                        <DiscordPollCard
+                          messageId={msg.id}
+                          channelId={msg.channelId}
+                          poll={currentPoll}
+                          currentUser={currentUser}
+                          onUpdatePoll={(updated) => setCurrentPoll(updated)}
+                          t={t}
+                        />
+                      )}
+
                       {/* Attachments rendering */}
                       {msg.attachments && msg.attachments.length > 0 && (
                         <div className="mt-2 space-y-2">
                           {msg.attachments.map((att, attIdx) => {
+                            if (att.type === 'poll') return null;
                             if (att.type === 'activity' && att.activityData) {
                               const itemAct = att.activityData;
                               const isYoutube = itemAct.appId === 'watch-together' || itemAct.appId === 'youtube';

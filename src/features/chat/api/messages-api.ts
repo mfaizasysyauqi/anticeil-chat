@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { loadStoredMessages, saveStoredMessages } from '@/chat/chat-defaults';
-import type { ColonyMessage } from '@/chat/chat-types';
+import type { ColonyMessage, DiscordPollData } from '@/chat/chat-types';
 import type { DiscordGifItem } from '@/chat/anticeil-media-data';
 import { ANTICEIL_GIF_ITEMS } from '@/chat/anticeil-media-data';
 
@@ -62,6 +62,7 @@ export const messagesApi = {
       senderRole: (payload.senderRole as any) || 'member',
       content: payload.content || '',
       attachments: payload.attachments,
+      poll: payload.poll,
       reactions: {},
       createdAt: new Date().toISOString(),
     };
@@ -136,6 +137,58 @@ export const messagesApi = {
       id: messageId,
       channelId: targetMsg?.channelId,
       reactions: targetMsg?.reactions || {},
+    };
+  },
+
+  async votePoll(
+    messageId: string,
+    answerIds: (string | number)[],
+    userId: string,
+    channelId?: string,
+  ): Promise<{ id: string; channelId?: string; poll?: DiscordPollData }> {
+    try {
+      await api.post(`/v1/colony/messages/${messageId}/poll-vote`, {
+        answerIds,
+        userId,
+        channelId,
+      });
+    } catch {}
+
+    const stored = loadStoredMessages();
+    let targetMsg: ColonyMessage | null = null;
+    const strAnswerIds = answerIds.map(String);
+
+    for (const chId in stored) {
+      const msg = stored[chId].find((m) => m.id === messageId);
+      if (msg) {
+        targetMsg = msg;
+        const poll = msg.poll || msg.attachments?.find((a) => a.type === 'poll')?.pollData;
+        if (poll) {
+          const updatedAnswers = poll.answers.map((ans) => {
+            const isSelected = strAnswerIds.includes(String(ans.id));
+            const existingVotes = (ans.votes || []).filter((u) => u !== userId);
+            return {
+              ...ans,
+              votes: isSelected ? [...existingVotes, userId] : existingVotes,
+            };
+          });
+          const updatedPoll = { ...poll, answers: updatedAnswers };
+          msg.poll = updatedPoll;
+          if (msg.attachments) {
+            msg.attachments = msg.attachments.map((att) =>
+              att.type === 'poll' ? { ...att, pollData: updatedPoll } : att
+            );
+          }
+        }
+        break;
+      }
+    }
+
+    saveStoredMessages(stored);
+    return {
+      id: messageId,
+      channelId: targetMsg?.channelId || channelId,
+      poll: targetMsg?.poll,
     };
   },
 

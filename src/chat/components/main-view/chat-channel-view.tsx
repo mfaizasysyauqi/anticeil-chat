@@ -130,7 +130,7 @@ export interface ChatChannelViewProps {
   appsSearchQuery: string;
   setAppsSearchQuery: (q: string) => void;
   handleScheduleMessage: (scheduledDate: Date, customText?: string) => void | Promise<void>;
-  handleCreatePoll: (question: string, options: string[]) => void;
+  handleCreatePoll: (question: string, options: any[], allowMultiple?: boolean, durationHours?: number) => void;
   handleSendVoiceNote?: (blob: Blob, durationSeconds: number) => void;
   messageRequests?: any[];
   handleAcceptMessageRequest?: (item: any) => void;

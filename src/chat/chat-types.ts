@@ -91,8 +91,24 @@ export function resolveChannelType(channel?: Partial<ColonyChannel> | null): Col
   return 'text';
 }
 
+export type DiscordPollAnswer = {
+  id: number | string;
+  text: string;
+  emoji?: string;
+  votes?: string[]; // userIds who voted for this option
+};
+
+export type DiscordPollData = {
+  question: string;
+  answers: DiscordPollAnswer[];
+  allowMultiselect?: boolean;
+  durationHours?: number;
+  expiresAt?: string; // ISO string
+  closed?: boolean;
+};
+
 export type ColonyAttachment = {
-  type: 'image' | 'video' | 'audio' | 'voice-note' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity';
+  type: 'image' | 'video' | 'audio' | 'voice-note' | 'file' | 'template' | 'sticker' | 'gif' | 'gift' | 'activity' | 'poll';
   url: string;
   name: string;
   size?: string;
@@ -123,6 +139,7 @@ export type ColonyAttachment = {
     channelId?: string;
     channelName?: string;
   };
+  pollData?: DiscordPollData;
 };
 
 export type ColonyMessageReply = {
@@ -145,6 +162,7 @@ export type ColonyMessage = {
   content: string;
   createdAt: string;
   attachments?: ColonyAttachment[];
+  poll?: DiscordPollData;
   reactions?: Record<string, string[]>; // emoji: [userId, ...]
   isPinned?: boolean;
   pinnedAt?: string | null;

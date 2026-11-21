@@ -14,6 +14,8 @@ import type {
   ColonyMember,
   ColonyMessage,
   ColonyRole,
+  DiscordPollAnswer,
+  DiscordPollData,
 } from '@/chat/chat-types';
 import type {
   DiscordEmoji,
@@ -317,16 +319,59 @@ export function useMessageActions({
   };
 
   // Discord-style Poll Creator
-  const handleCreatePoll = async (question: string, options: string[]) => {
+  const handleCreatePoll = async (
+    question: string,
+    options: any[],
+    allowMultiple: boolean = false,
+    durationHours: number = 24,
+  ) => {
     if (!activeChannel) return;
-    const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
-    const optionsText = options
-      .map((opt, i) => `${numberEmojis[i] || '▫️'} ${opt}`)
-      .join('\n');
-    const pollMessage = `📊 **POLL: ${question}**\n\n${optionsText}\n\n*${t('Bereaksi dengan emoji nomor di bawah untuk memilih!')}*`;
+    const cleanQuestion = question.trim();
+    if (!cleanQuestion) return;
+
+    const answers: DiscordPollAnswer[] = options.map((opt, i) => {
+      const isObj = typeof opt === 'object' && opt !== null;
+      return {
+        id: i + 1,
+        text: isObj ? (opt.text || `Option ${i + 1}`) : String(opt),
+        emoji: isObj ? opt.emoji : undefined,
+        votes: [],
+      };
+    });
+
+    const pollData: DiscordPollData = {
+      question: cleanQuestion,
+      answers,
+      allowMultiselect: Boolean(allowMultiple),
+      durationHours,
+      expiresAt: new Date(Date.now() + durationHours * 3600 * 1000).toISOString(),
+    };
+
+    const newMsg: Partial<ColonyMessage> = {
+      content: '',
+      attachments: [
+        {
+          type: 'poll',
+          url: '',
+          name: cleanQuestion,
+          pollData,
+        },
+      ],
+      poll: pollData,
+    };
 
     try {
-      await handleSendMessage(pollMessage);
+      const sent = await colonyApi.sendMessage(activeChannel.id, newMsg);
+      if (sent) {
+        setMessagesMap((prev) => {
+          const list = prev[activeChannel.id] || [];
+          if (list.some((m) => m.id === sent.id)) return prev;
+          return {
+            ...prev,
+            [activeChannel.id]: [...list, sent],
+          };
+        });
+      }
       toast.success(t('Poll berhasil dibuat!'));
     } catch {
       toast.error(t('Gagal membuat poll'));
