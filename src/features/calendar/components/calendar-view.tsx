@@ -183,7 +183,7 @@ export function CalendarView({
       {/* ── Top Header Bar: Discord Style (100% Match to Teman & Permintaan Pesan) ── */}
       <div
         className={cn(
-          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2 overflow-hidden',
+          'sticky top-0 z-20 h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background gap-2 overflow-hidden',
           horizontalPadding
         )}
       >

@@ -94,7 +94,7 @@ export function UserBottomDock({
   return (
     <div
       className={cn(
-        'w-full flex flex-col shrink-0 select-none bg-sidebar border-t border-sidebar-border z-10 pb-[env(safe-area-inset-bottom,0px)]',
+        'sticky bottom-0 z-20 w-full flex flex-col shrink-0 select-none bg-sidebar border-t border-sidebar-border pb-[env(safe-area-inset-bottom,0px)]',
         className,
       )}
     >

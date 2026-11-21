@@ -267,7 +267,7 @@ export function ColoniesView({
       {/* ── Top Header Bar: Discord Style (100% Match to Teman & Permintaan Pesan) ── */}
       <div
         className={cn(
-          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 overflow-hidden',
+          'sticky top-0 z-20 h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background overflow-hidden',
           horizontalPadding
         )}
       >

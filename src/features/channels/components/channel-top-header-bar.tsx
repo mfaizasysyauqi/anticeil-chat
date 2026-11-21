@@ -109,7 +109,7 @@ export function ChannelTopHeaderBar({
   );
 
   return (
-    <div className={`h-12 border-b border-sidebar-border ${channelPaddingClass} flex items-center justify-between shrink-0 bg-background z-10 overflow-hidden`}>
+    <div className={`sticky top-0 z-20 h-12 border-b border-sidebar-border ${channelPaddingClass} flex items-center justify-between shrink-0 bg-background overflow-hidden`}>
       <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
         {/* Burger Menu Button (Visible only on Mobile: md:hidden) */}
         <button

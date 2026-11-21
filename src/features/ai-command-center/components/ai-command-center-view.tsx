@@ -508,7 +508,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       {/* 3. Command Input Dock (Full width, Gemini-style prompt form with file upload + model selector) */}
       <div
         className={cn(
-          'shrink-0 pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-0 bg-transparent z-10 flex flex-col w-full',
+          'sticky bottom-0 z-20 shrink-0 pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-1 bg-background flex flex-col w-full',
           CHANNEL_HORIZONTAL_PADDING,
         )}
       >
