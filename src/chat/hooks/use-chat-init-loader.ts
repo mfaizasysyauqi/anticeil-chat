@@ -315,11 +315,20 @@ export function useChatInitLoader({
       try {
         const res = await colonyApi.getChannels(activeColonyId);
         if (mounted && Array.isArray(res)) {
+          const validColonyChannels = res
+            .map((c) => ({
+              ...c,
+              colonyId: c.colonyId || (c as any).hubId || activeColonyId,
+            }))
+            .filter((c) => (c.colonyId || 'anticeil') === activeColonyId);
+
           setChannels((prev) => {
             const others = prev.filter(
               (c) => (c.colonyId || 'anticeil') !== activeColonyId,
             );
-            return [...others, ...res];
+            const seenIds = new Set(others.map((c) => c.id));
+            const fresh = validColonyChannels.filter((c) => !seenIds.has(c.id));
+            return [...others, ...fresh];
           });
           const pathParts = window.location.pathname.split('/').filter(Boolean);
           const pathChannel =

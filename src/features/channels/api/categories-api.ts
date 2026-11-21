@@ -112,10 +112,11 @@ export const categoriesApi = {
         .get<ColonyCategory[]>('/v1/colony/categories', { params: { colonyId } })
         .then((remoteCats) => {
           if (Array.isArray(remoteCats) && remoteCats.length > 0) {
+            const colonyRemote = remoteCats.map((c) => ({ ...c, colonyId: c.colonyId || colonyId })).filter((c) => c.colonyId === colonyId);
             const raw = localStorage.getItem(STORAGE_KEY_CATEGORIES);
             const currentList: ColonyCategory[] = raw ? JSON.parse(raw) : [];
             const otherColonies = currentList.filter((c) => c.colonyId !== colonyId);
-            const merged = [...otherColonies, ...remoteCats];
+            const merged = [...otherColonies, ...colonyRemote];
             localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(merged));
             window.dispatchEvent(new CustomEvent('anticeil_categories_changed', { detail: colonyId }));
           }

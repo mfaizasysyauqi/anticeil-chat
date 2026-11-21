@@ -17,18 +17,21 @@ export const channelsApi = {
       if (Array.isArray(res)) {
         const normalized = res.map((c) => ({
           ...c,
+          colonyId: c.colonyId || (c as any).hubId || colonyId || 'anticeil',
           name: (c.type === 'text' || !c.type) && c.name === 'General' ? 'general' : c.name,
           type: resolveChannelType(c),
         }));
         const stored = loadStoredChannels();
         if (colonyId) {
+          const filtered = normalized.filter((c) => (c.colonyId || 'anticeil') === colonyId);
           const others = stored.filter((c) => (c.colonyId || 'anticeil') !== colonyId);
-          saveStoredChannels([...others, ...normalized]);
+          saveStoredChannels([...others, ...filtered]);
+          return filtered;
         } else {
           const existingDms = stored.filter((c) => c.category === 'DIRECT MESSAGES' || c.isDirectMessage);
           saveStoredChannels([...existingDms, ...normalized]);
+          return normalized;
         }
-        return normalized;
       }
     } catch {}
     const stored = loadStoredChannels().map((c) => ({

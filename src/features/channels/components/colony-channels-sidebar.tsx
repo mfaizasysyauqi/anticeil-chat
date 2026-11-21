@@ -131,13 +131,23 @@ export function ColonyChannelsSidebar({
     }
   };
 
-  const colonyChannels = channels
-    .filter((c) => (c.colonyId || 'anticeil') === (activeColony?.id || 'anticeil') && !c.isDirectMessage)
-    .filter((c) => !hideMutedChannels || !c.isMuted)
-    .map((c) => ({
-      ...c,
-      type: resolveChannelType(c),
-    }));
+  const colonyChannels = React.useMemo(() => {
+    const targetId = activeColony?.id || 'anticeil';
+    const seen = new Set<string>();
+    return channels
+      .filter((c) => {
+        const matches = (c.colonyId || 'anticeil') === targetId && !c.isDirectMessage;
+        if (!matches) return false;
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      })
+      .filter((c) => !hideMutedChannels || !c.isMuted)
+      .map((c) => ({
+        ...c,
+        type: resolveChannelType(c),
+      }));
+  }, [channels, activeColony?.id, hideMutedChannels]);
 
   const colonyCategories = (categories || []).filter(
     (cat) => cat.colonyId === (activeColony?.id || 'anticeil'),

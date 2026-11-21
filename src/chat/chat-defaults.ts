@@ -41,7 +41,15 @@ export function loadStoredChannels(): ColonyChannel[] {
     const raw = localStorage.getItem(STORAGE_KEY_CHANNELS);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.map((c) => ((c.type === 'text' || !c.type) && c.name === 'General' ? { ...c, name: 'general' } : c)) : [];
+    if (!Array.isArray(parsed)) return [];
+    const seen = new Set<string>();
+    return parsed
+      .filter((c) => {
+        if (!c || !c.id || seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      })
+      .map((c) => ((c.type === 'text' || !c.type) && c.name === 'General' ? { ...c, name: 'general' } : c));
   } catch {
     return [];
   }
@@ -49,7 +57,13 @@ export function loadStoredChannels(): ColonyChannel[] {
 
 export function saveStoredChannels(channels: ColonyChannel[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY_CHANNELS, JSON.stringify(channels));
+    const seen = new Set<string>();
+    const unique = channels.filter((c) => {
+      if (!c || !c.id || seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+    localStorage.setItem(STORAGE_KEY_CHANNELS, JSON.stringify(unique));
   } catch (err) {
     console.error('Failed to save community channels', err);
   }
