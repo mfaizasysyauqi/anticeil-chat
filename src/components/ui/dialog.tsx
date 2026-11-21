@@ -70,10 +70,7 @@ function DialogContent({
     size === 'two-pane' ||
     (typeof className === 'string' &&
       (className.includes('TWO_PANE_CONTAINER') ||
-        className.includes('w-[9') ||
-        className.includes('max-w-[9') ||
-        className.includes('max-w-6xl') ||
-        className.includes('max-w-7xl')));
+        className.includes('MODAL_TWO_PANE')));
   const resolvedSize: DialogSize = size ?? (isTwoPane ? 'two-pane' : 'lg');
 
   return (
