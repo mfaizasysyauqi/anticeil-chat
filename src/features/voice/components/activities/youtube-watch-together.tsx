@@ -49,7 +49,12 @@ export function YouTubeWatchTogether({
   socket,
 }: YouTubeWatchTogetherProps) {
   const cachedState = channelWatchStateCache.get(channel.id);
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(() => cachedState?.videoId || null);
+  const initialUrlVideoId = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('v') || new URLSearchParams(window.location.search).get('videoId')
+    : null;
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(
+    () => cachedState?.videoId || initialUrlVideoId || null,
+  );
   const [ytSearchQuery, setYtSearchQuery] = useState('');
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
   const [searchTriggerCount, setSearchTriggerCount] = useState(0);
@@ -198,6 +203,37 @@ export function YouTubeWatchTogether({
     setHostUserAvatar,
     setAllowEveryoneEdit,
   });
+
+  // Keep browser address bar updated with active video ID for accurate guest link sharing
+  useEffect(() => {
+    if (typeof window === 'undefined' || !activeVideoId) return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('v') !== activeVideoId) {
+        url.searchParams.set('v', activeVideoId);
+        window.history.replaceState(null, '', url.toString());
+      }
+    } catch {}
+  }, [activeVideoId]);
+
+  // Broadcast current watch state to peers whenever a new participant enters the call
+  useEffect(() => {
+    if (!socket || !activeVideoId || participants.length <= 1) return;
+    socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+      channelId: channel.id,
+      action: 'YOUTUBE_SYNC_STATE',
+      payload: {
+        videoId: activeVideoIdRef.current,
+        playlist: ytPlaylistRef.current,
+        hostUserId: hostUserIdRef.current,
+        hostUserName: hostUserNameRef.current,
+        hostUserAvatar: hostUserAvatarRef.current,
+        allowEveryoneEdit: allowEveryoneEditRef.current,
+        currentTime: playerRef.current?.getCurrentTime?.() || 0,
+        isPlaying: isPlayingRef.current,
+      },
+    });
+  }, [participants.length, socket, channel.id, activeVideoId]);
 
   // Keyboard Navigation: Skip backward (-5s) and forward (+5s) via ArrowLeft / ArrowRight
   useEffect(() => {

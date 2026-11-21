@@ -240,6 +240,18 @@ export function useYouTubePlayer({
                   setNeedsUserGesture(true);
                 } catch (e2) {}
               }
+              // Autoplay guard: check if browser policy silently blocked unmuted playback
+              setTimeout(() => {
+                if (!isMounted) return;
+                try {
+                  const state = playerRef.current?.getPlayerState?.();
+                  if (state === -1 || state === 2 || state === 5) {
+                    playerRef.current?.mute?.();
+                    playerRef.current?.playVideo?.();
+                    setNeedsUserGesture(true);
+                  }
+                } catch (e3) {}
+              }, 600);
             }, 300);
           }
         } catch (err) {
@@ -285,11 +297,22 @@ export function useYouTubePlayer({
                 }
               } catch (e) {
                 try {
-                  event.target.mute?.();
                   event.target.playVideo?.();
-                  setNeedsUserGesture(true);
-                } catch (e2) {}
+                } catch (e) {}
               }
+
+              // Autoplay guard: check if browser policy silently blocked unmuted playback on initial load
+              setTimeout(() => {
+                if (!isMounted) return;
+                try {
+                  const state = event.target.getPlayerState?.();
+                  if (state === -1 || state === 2 || state === 5) {
+                    event.target.mute?.();
+                    event.target.playVideo?.();
+                    setNeedsUserGesture(true);
+                  }
+                } catch (e3) {}
+              }, 600);
             },
             onStateChange: (event: any) => {
               if (!isMounted) return;

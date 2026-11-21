@@ -720,17 +720,29 @@ export const coloniesApi = {
     return { success: true, domainVerified: true, token };
   },
 
-  async joinHub(inviteCode: string): Promise<Colony> {
+  async joinHub(inviteCode: string, targetColonyId?: string): Promise<Colony> {
     const cleanId = inviteCode.startsWith('hub_') ? inviteCode : `hub_${inviteCode}`;
     const stored = loadStoredColonies();
-    const existing = stored.find((h) => h.inviteCode === inviteCode || h.id === inviteCode || h.id === cleanId);
+    const existing = stored.find(
+      (h) =>
+        (targetColonyId && h.id === targetColonyId) ||
+        h.inviteCode === inviteCode ||
+        h.id === inviteCode ||
+        h.id === cleanId,
+    );
     if (existing) {
       return existing;
     }
     try {
       const allHubs = await api.get<Colony[]>('/v1/colony/colonies');
       if (Array.isArray(allHubs)) {
-        const foundInDb = allHubs.find((h) => h.inviteCode === inviteCode || h.id === inviteCode || h.id === cleanId);
+        const foundInDb = allHubs.find(
+          (h) =>
+            (targetColonyId && h.id === targetColonyId) ||
+            h.inviteCode === inviteCode ||
+            h.id === inviteCode ||
+            h.id === cleanId,
+        );
         if (foundInDb) {
           const next = [...stored.filter((h) => h.id !== foundInDb.id), foundInDb];
           saveStoredColonies(next);
@@ -739,7 +751,7 @@ export const coloniesApi = {
       }
     } catch {}
     const newColony: Colony = {
-      id: cleanId,
+      id: targetColonyId || cleanId,
       name: `Server Komunitas`,
       iconType: 'initials',
       initials: 'SK',

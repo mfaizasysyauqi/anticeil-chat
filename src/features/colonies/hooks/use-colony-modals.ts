@@ -201,7 +201,10 @@ export function useColonyModals({
         toast.success(t('Berhasil membuat server baru dari blueprint template!'));
         return;
       }
-      const joinedHub = await colonyApi.joinHub(code);
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const pathColonyId = pathParts[0] === 'channels' && pathParts[1] && pathParts[1] !== '@me' ? pathParts[1] : null;
+      const targetColonyId = pathColonyId || new URLSearchParams(window.location.search).get('hub') || new URLSearchParams(window.location.search).get('colony');
+      const joinedHub = await colonyApi.joinHub(code, targetColonyId || undefined);
       setColonies((prev) => {
         const next = [...prev.filter((h) => h.id !== joinedHub.id), joinedHub];
         saveStoredColonies(next);

@@ -245,6 +245,7 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
           if (videoId !== activeVideoIdRef.current) {
             initialSeekTimeRef.current = typeof syncTime === 'number' ? syncTime : 0;
             ignoreLocalStateChangeUntilRef.current = Date.now() + 1500;
+            setIsPlaying(syncPlaying ?? true);
             setActiveVideoId(videoId);
           } else if (typeof syncTime === 'number' && playerRef.current) {
             const curr = playerRef.current.getCurrentTime?.() || 0;
@@ -286,8 +287,8 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
         if (syncHostAvatar !== undefined) setHostUserAvatar(syncHostAvatar);
         if (typeof syncAllow === 'boolean') setAllowEveryoneEdit(syncAllow);
       } else if (data.action === 'YOUTUBE_QUERY_STATE') {
-        // If I am host, reply to newly joined participant
-        if (isMeHostRef.current) {
+        // If we have an active video (whether host or peer), reply with full sync state to newly joined peer
+        if (activeVideoIdRef.current) {
           socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
             channelId,
             action: 'YOUTUBE_SYNC_STATE',
@@ -310,13 +311,30 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
 
     socket.on('COMMUNITY_CALL_ACTIVITY_EVENT', handleYouTubeSocketEvent);
 
-    // Ask peers for current watch state upon entering
-    socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
-      channelId,
-      action: 'YOUTUBE_QUERY_STATE',
-    });
+    // Ask peers for current watch state upon entering, with retries until video is loaded
+    const queryWatchState = () => {
+      socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
+        channelId,
+        action: 'YOUTUBE_QUERY_STATE',
+      });
+    };
+
+    queryWatchState();
+    socket.on('connect', queryWatchState);
+
+    let retryCount = 0;
+    const queryInterval = setInterval(() => {
+      if (activeVideoIdRef.current || retryCount >= 5) {
+        clearInterval(queryInterval);
+        return;
+      }
+      retryCount++;
+      queryWatchState();
+    }, 1500);
 
     return () => {
+      clearInterval(queryInterval);
+      socket.off('connect', queryWatchState);
       socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleYouTubeSocketEvent);
     };
   }, [socket, channelId, currentUser?.id]);

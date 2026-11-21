@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { ColonyChannel, Colony } from '@/chat/chat-types';
 import { DiscordAppDefinition } from '../data/voice-activities';
+import { channelWatchStateCache } from './activities/hooks/use-youtube-player';
 import { toast } from 'sonner';
 
 export interface VoiceInviteDialogProps {
@@ -39,8 +40,30 @@ export function VoiceInviteDialog({
   const [guestCopied, setGuestCopied] = useState(false);
   const copied = externalCopied ?? localCopied;
 
-  const guestInviteUrl = callInviteUrl
-    ? `${callInviteUrl}${callInviteUrl.includes('?') ? '&' : '?'}guest=1`
+  // Enrich invite link with active video ID if Watch Together is running
+  const activeVideoId =
+    channelWatchStateCache.get(channel?.id || '')?.videoId ||
+    (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('v') || new URLSearchParams(window.location.search).get('videoId')
+      : null);
+
+  const finalCallInviteUrl = React.useMemo(() => {
+    if (!callInviteUrl) return '';
+    if (
+      activeVideoId &&
+      (currentActiveApp?.id === 'watch-together' ||
+        currentActiveApp?.id === 'youtube' ||
+        callInviteUrl.includes('activity=watch-together') ||
+        callInviteUrl.includes('activity=youtube')) &&
+      !callInviteUrl.includes('&v=')
+    ) {
+      return `${callInviteUrl}&v=${encodeURIComponent(activeVideoId)}`;
+    }
+    return callInviteUrl;
+  }, [callInviteUrl, activeVideoId, currentActiveApp?.id]);
+
+  const guestInviteUrl = finalCallInviteUrl
+    ? `${finalCallInviteUrl}${finalCallInviteUrl.includes('?') ? '&' : '?'}guest=1`
     : '';
 
   const handleCopyGuestLink = () => {
@@ -54,8 +77,8 @@ export function VoiceInviteDialog({
   const handleCopy = () => {
     if (onCopyCallLink) {
       onCopyCallLink();
-    } else if (callInviteUrl) {
-      navigator.clipboard.writeText(callInviteUrl);
+    } else if (finalCallInviteUrl) {
+      navigator.clipboard.writeText(finalCallInviteUrl);
       setLocalCopied(true);
       toast.success(
         currentActiveApp
@@ -68,15 +91,15 @@ export function VoiceInviteDialog({
 
   const handleShareWhatsApp = () => {
     const activityText = currentActiveApp ? ` untuk ${currentActiveApp.title}` : '';
-    const msg = `Halo! Ayo bergabung ke panggilan suara/video saya${activityText} di Anticeil: ${callInviteUrl}`;
+    const msg = `Halo! Ayo bergabung ke panggilan suara/video saya${activityText} di Anticeil: ${finalCallInviteUrl}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleShareTelegram = () => {
     const activityText = currentActiveApp ? ` & main ${currentActiveApp.title}` : '';
-    const msg = `Ayo gabung ke panggilan suara & video Anticeil${activityText}! ${callInviteUrl}`;
+    const msg = `Ayo gabung ke panggilan suara & video Anticeil${activityText}! ${finalCallInviteUrl}`;
     window.open(
-      `https://t.me/share/url?url=${encodeURIComponent(callInviteUrl)}&text=${encodeURIComponent(msg)}`,
+      `https://t.me/share/url?url=${encodeURIComponent(finalCallInviteUrl)}&text=${encodeURIComponent(msg)}`,
       '_blank'
     );
   };
@@ -132,7 +155,7 @@ export function VoiceInviteDialog({
             <div className="flex items-center gap-2">
               <Input
                 readOnly
-                value={callInviteUrl}
+                value={finalCallInviteUrl}
                 onClick={(e) => (e.target as HTMLInputElement).select()}
                 className="h-9 text-xs font-mono select-all bg-muted/50 border-input focus-visible:ring-1"
               />
