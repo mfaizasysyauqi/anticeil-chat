@@ -366,44 +366,75 @@ export function AppDetailView({
                 </div>
               </div>
 
-              {/* Section: You Might Also Like (Responsive 1/2/3 cols) */}
+              {/* Section: You Might Also Like (Responsive 1/2/3 cols matching Discord card style) */}
               {relatedApps.length > 0 && (
                 <div className="space-y-3 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Aktivitas Serupa Lainnya
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                     {relatedApps.map((rel) => {
                       const RelIcon = rel.icon || Gamepad2;
+                      const relCategoryLabel =
+                        rel.category === 'productivity'
+                          ? 'Utilitas'
+                          : rel.category === 'game'
+                          ? 'Game'
+                          : 'Hiburan';
+
                       return (
                         <div
                           key={rel.id}
                           onClick={() => onSelectOtherApp(rel)}
-                          className="rounded-xl border border-border bg-card p-3 hover:border-primary/50 transition-all cursor-pointer group flex flex-col justify-between gap-3 shadow-xs"
+                          className="rounded-2xl border border-border/70 bg-card hover:border-primary/50 hover:shadow-xl transition-all duration-200 flex flex-col overflow-hidden shadow-xs group cursor-pointer"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          {/* Banner Cover */}
+                          <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-900 shrink-0">
+                            {rel.bannerImage ? (
+                              <img
+                                src={rel.bannerImage}
+                                alt={rel.title}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div
+                                className={cn(
+                                  'w-full h-full flex items-center justify-center bg-gradient-to-br',
+                                  rel.bannerGradient || 'from-zinc-800 to-zinc-950'
+                                )}
+                              >
+                                <RelIcon className="w-8 h-8 text-white/30" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                          </div>
+
+                          {/* Overlapping Icon */}
+                          <div className="relative z-10 -mt-5 ml-3 flex items-center justify-between pr-3 pointer-events-none">
                             <div
                               className={cn(
-                                'size-9 rounded-lg flex items-center justify-center shrink-0 shadow-xs',
+                                'size-10 rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-card group-hover:scale-105 transition-transform',
                                 rel.iconBg || 'bg-primary',
                                 rel.iconColor || 'text-white'
                               )}
                             >
-                              <RelIcon className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-xs font-bold text-foreground block truncate group-hover:text-primary transition-colors">
-                                {rel.title}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground block truncate">
-                                {rel.developer}
-                              </span>
+                              <RelIcon className="w-5 h-5" />
                             </div>
                           </div>
 
-                          <p className="text-[11px] text-muted-foreground line-clamp-2">
-                            {rel.description}
-                          </p>
+                          {/* Body Content */}
+                          <div className="px-3 pt-1 pb-3 flex-1 flex flex-col justify-start">
+                            <h4 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                              {rel.title}
+                            </h4>
+                            <span className="text-[10px] text-muted-foreground/80 font-medium capitalize mt-0.5">
+                              {relCategoryLabel}
+                            </span>
+                            <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed mt-1">
+                              {rel.description}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}

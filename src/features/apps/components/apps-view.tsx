@@ -103,57 +103,64 @@ function ActivityCard({
     <div
       key={app.id}
       onClick={() => onOpenDetail(app)}
-      className="rounded-xl border border-border bg-card hover:border-primary/60 hover:shadow-lg transition-all flex flex-col justify-between overflow-hidden shadow-xs group cursor-pointer"
+      className="rounded-2xl border border-border/70 bg-card hover:border-primary/50 hover:shadow-xl transition-all duration-200 flex flex-col overflow-hidden shadow-xs group cursor-pointer"
     >
-      {/* Banner / Header */}
-      <div
-        className={cn(
-          'h-20 sm:h-24 p-2.5 sm:p-3 relative flex items-start justify-between bg-gradient-to-br transition-all group-hover:brightness-105',
-          app.bannerGradient || 'from-muted to-card'
-        )}
-      >
-        <div className="flex items-center gap-2 sm:gap-2.5 z-10 min-w-0">
+      {/* Banner / Cover Artwork (Aspect 16:9 like Discord) */}
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-900 shrink-0">
+        {app.bannerImage ? (
+          <img
+            src={app.bannerImage}
+            alt={app.title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
           <div
             className={cn(
-              'size-8 sm:size-9 rounded-lg flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform',
-              app.iconBg || 'bg-primary',
-              app.iconColor || 'text-white'
+              'w-full h-full flex items-center justify-center bg-gradient-to-br transition-all group-hover:scale-105',
+              app.bannerGradient || 'from-zinc-800 to-zinc-950'
             )}
           >
-            <AppIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <AppIcon className="w-10 h-10 text-white/30" />
           </div>
-          <div className="text-white min-w-0">
-            <span className="text-[9px] sm:text-[10px] font-semibold text-white/80 block uppercase tracking-wider truncate">
-              {app.developer}
-            </span>
-            <span className="text-xs font-bold line-clamp-1">
-              {app.title}
-            </span>
-          </div>
-        </div>
+        )}
+
+        {/* Ambient Gradient Overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
         {app.badge && (
-          <span className="text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md shrink-0">
+          <span className="absolute top-2.5 right-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 shadow-xs">
             {app.badge}
           </span>
         )}
       </div>
 
-      {/* Body Content */}
-      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-3">
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+      {/* Overlapping App Icon (Positioned at seam between banner and body, exact Discord pattern) */}
+      <div className="relative z-10 -mt-6 sm:-mt-7 ml-3.5 sm:ml-4 flex items-center justify-between pr-3.5 pointer-events-none">
+        <div
+          className={cn(
+            'size-12 sm:size-14 rounded-2xl flex items-center justify-center shadow-lg shrink-0 border-[3px] border-card group-hover:scale-105 transition-transform',
+            app.iconBg || 'bg-primary',
+            app.iconColor || 'text-white'
+          )}
+        >
+          <AppIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+        </div>
+      </div>
+
+      {/* Body Content (Title, Category, Description) */}
+      <div className="px-3.5 sm:px-4 pt-1.5 pb-4 flex-1 flex flex-col justify-start">
+        <h4 className="text-sm sm:text-base font-bold text-foreground group-hover:text-primary transition-colors truncate tracking-tight">
+          {app.title}
+        </h4>
+
+        <span className="text-[11px] sm:text-xs text-muted-foreground/80 font-medium capitalize mt-0.5">
+          {categoryLabel}
+        </span>
+
+        <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed mt-1.5">
           {app.description}
         </p>
-
-        <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
-          <span className="text-[10px] font-semibold text-muted-foreground capitalize truncate">
-            {categoryLabel}
-          </span>
-
-          <span className="text-[11px] font-medium text-primary group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5">
-            Lihat Detail →
-          </span>
-        </div>
       </div>
     </div>
   );
@@ -433,32 +440,35 @@ export function AppsView({
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
       <ScrollArea className="flex-1 min-h-0">
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-8', verticalPadding)}>
-        {/* Featured Hero Banner: YouTube Watch Together (Clean Discord style - click opens Detail View) */}
+        {/* Featured Hero Banner: Discord style with landscape artwork backdrop */}
         {!searchQuery && activeCategory === 'all' && (
           <div
             onClick={() => handleOpenDetail(featuredApp)}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-5 sm:p-6 lg:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 lg:gap-6 shadow-xl cursor-pointer group hover:border-red-500/40 transition-all"
+            className="relative overflow-hidden rounded-2xl border border-border/80 shadow-2xl cursor-pointer group bg-zinc-950 min-h-[180px] sm:min-h-[220px] flex flex-col justify-end p-5 sm:p-7 transition-all hover:border-primary/50"
           >
-            <div className="space-y-2 flex-1 min-w-0 max-w-xl z-10">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
-                <Flame className="w-3 h-3" /> UNGGULAN
+            {/* Background Artwork Image */}
+            {featuredApp.bannerImage && (
+              <img
+                src={featuredApp.bannerImage}
+                alt={featuredApp.title}
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              />
+            )}
+            {/* Dark Gradient Overlay for high readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/25" />
+
+            {/* Content on top */}
+            <div className="relative z-10 space-y-2 max-w-2xl">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shadow-sm">
+                <Flame className="w-3 h-3 fill-current" /> UNGGULAN
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight group-hover:text-red-400 transition-colors">
-                YouTube Watch Together
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-md group-hover:text-primary transition-colors">
+                {featuredApp.title}
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                Tonton video YouTube bersama teman secara real-time dengan sinkronisasi kontrol pause, play, dan loncat timestamp tanpa jeda.
+              <p className="text-xs sm:text-sm text-zinc-200/90 leading-relaxed font-medium line-clamp-2 drop-shadow-xs max-w-xl">
+                {featuredApp.description}
               </p>
             </div>
-
-            <div className="flex items-center gap-2 z-10 shrink-0">
-              <span className="text-xs sm:text-sm font-semibold text-white/90 group-hover:text-white bg-white/10 group-hover:bg-white/20 px-4 py-2.5 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-sm backdrop-blur-sm border border-white/10">
-                Lihat Detail Aktivitas →
-              </span>
-            </div>
-
-            {/* Background decoration */}
-            <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-red-600/10 to-transparent pointer-events-none" />
           </div>
         )}
 
