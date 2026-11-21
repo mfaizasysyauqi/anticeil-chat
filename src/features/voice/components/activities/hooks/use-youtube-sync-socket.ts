@@ -174,6 +174,14 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
             }
           } catch (e) {}
         }
+      } else if (data.action === 'YOUTUBE_RATE_CHANGE') {
+        const { rate, senderId } = data.payload || {};
+        if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;
+        if (typeof rate === 'number' && playerRef.current) {
+          try {
+            playerRef.current.setPlaybackRate?.(rate);
+          } catch (e) {}
+        }
       } else if (data.action === 'YOUTUBE_TIME_SYNC') {
         const { currentTime: targetTime, senderId } = data.payload || {};
         if (senderId && (senderId === currentUser?.id || senderId === socket.id)) return;

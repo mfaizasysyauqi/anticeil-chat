@@ -556,6 +556,8 @@ export function YouTubeWatchTogether({
             onReorderPlaylist={handleReorderPlaylist}
             onRemovePlaylistItem={handleRemovePlaylistItem}
             onPlayNext={handlePlayNext}
+            playerRef={playerRef}
+            socket={socket}
             onPlayPlaylistItem={(item) => {
               if (!canEdit) {
                 toast.info('Hanya host yang dapat mengganti video.');
