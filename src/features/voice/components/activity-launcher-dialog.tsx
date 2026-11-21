@@ -337,16 +337,8 @@ export function ActivityLauncherDialog({
                       </div>
                     </div>
 
-                    {/* Card Bottom Meta */}
-                    <div className="p-2.5 bg-card group-hover:bg-muted/70 transition-colors flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={cn(
-                          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform',
-                          app.iconBg,
-                        )}
-                      >
-                        <IconComp className={cn("w-4 h-4", app.iconColor || "text-white")} />
-                      </div>
+                    {/* Card Bottom Meta: Logo on Right */}
+                    <div className="p-2.5 bg-card group-hover:bg-muted/70 transition-colors flex items-center justify-between gap-2.5 min-w-0">
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="text-xs font-bold text-foreground group-hover:text-foreground truncate leading-snug">
                           {app.title}
@@ -354,6 +346,14 @@ export function ActivityLauncherDialog({
                         <span className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
                           {app.tagline || app.description}
                         </span>
+                      </div>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform',
+                          app.iconBg,
+                        )}
+                      >
+                        <IconComp className={cn("w-4 h-4", app.iconColor || "text-white")} />
                       </div>
                     </div>
                   </div>
