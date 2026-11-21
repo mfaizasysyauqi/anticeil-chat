@@ -20,6 +20,8 @@ import {
   Menu,
   SlidersHorizontal,
   RotateCcw,
+  UploadCloud,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +69,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { uploadMediaToR2 } from '@/lib/upload';
 import { shopApi, type ShopItem, type ShopCollection, type ShopBalance, FALLBACK_SHOP_ITEMS } from '../api/shop-api';
 
 // Discord-style 1:1 Filter Definitions
@@ -250,6 +253,10 @@ export function ShopView({
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ShopItem | null>(null);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string>('');
+  const productFileInputRef = useRef<HTMLInputElement>(null);
+
   const [newProductForm, setNewProductForm] = useState({
     name: '',
     collection: 'Anticeil Cyber Core',
@@ -257,13 +264,15 @@ export function ShopView({
     description: '',
     priceIdr: 65000,
     priceDew: 500,
-    previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
+    previewIcon: '',
     badge: 'Baru',
     featured: true,
   });
 
   const handleOpenCreateProduct = () => {
     setEditingProduct(null);
+    setProductImageFile(null);
+    setProductImagePreview('');
     setNewProductForm({
       name: '',
       collection: 'Anticeil Cyber Core',
@@ -271,7 +280,7 @@ export function ShopView({
       description: '',
       priceIdr: 65000,
       priceDew: 500,
-      previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
+      previewIcon: '',
       badge: 'Baru',
       featured: true,
     });
@@ -280,6 +289,9 @@ export function ShopView({
 
   const handleOpenEditProduct = (item: ShopItem) => {
     setEditingProduct(item);
+    setProductImageFile(null);
+    const existingMedia = item.previewIcon || item.gifUrl || '';
+    setProductImagePreview(existingMedia);
     setNewProductForm({
       name: item.name,
       collection: item.collection,
@@ -287,11 +299,32 @@ export function ShopView({
       description: item.description,
       priceIdr: item.priceIdr || 65000,
       priceDew: item.priceDew || item.priceOrbs || 500,
-      previewIcon: item.previewIcon || item.gifUrl || '',
+      previewIcon: existingMedia,
       badge: item.badge || 'Baru',
       featured: Boolean(item.featured),
     });
     setIsAddProductOpen(true);
+  };
+
+  const handleProductFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('Hanya file animasi GIF atau gambar (GIF, PNG, WebP) yang diperbolehkan'));
+      return;
+    }
+    setProductImageFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setProductImagePreview(objectUrl);
+  };
+
+  const handleRemoveProductImage = () => {
+    setProductImageFile(null);
+    setProductImagePreview('');
+    setNewProductForm((f) => ({ ...f, previewIcon: '' }));
+    if (productFileInputRef.current) {
+      productFileInputRef.current.value = '';
+    }
   };
 
   // Load Shop data from fullstack backend
@@ -599,15 +632,38 @@ export function ShopView({
       toast.error(t('Nama produk tidak boleh kosong'));
       return;
     }
+    if (!productImageFile && !productImagePreview.trim()) {
+      toast.error(t('Silakan unggah file animasi GIF atau gambar produk'));
+      return;
+    }
+
     setIsCreatingProduct(true);
     try {
+      let finalPreviewUrl = newProductForm.previewIcon || productImagePreview;
+
+      // Jika ada file lokal baru, upload ke Cloudflare R2 sekarang saat tombol simpan diklik
+      if (productImageFile) {
+        const uploadRes = await uploadMediaToR2(productImageFile, `shop_${Date.now()}`);
+        if (uploadRes.url) {
+          finalPreviewUrl = uploadRes.url;
+        }
+      }
+
+      const payload = {
+        ...newProductForm,
+        previewIcon: finalPreviewUrl,
+        gifUrl: finalPreviewUrl,
+      };
+
       if (editingProduct) {
-        const res = await shopApi.updateItem(editingProduct.id, newProductForm);
+        const res = await shopApi.updateItem(editingProduct.id, payload);
         if (res.success && res.item) {
           setItems((prev) => prev.map((i) => (i.id === editingProduct.id ? res.item! : i)));
           toast.success(res.message || t('Produk berhasil diperbarui! ✨'));
           setIsAddProductOpen(false);
           setEditingProduct(null);
+          setProductImageFile(null);
+          setProductImagePreview('');
           if (activeModalItem?.id === editingProduct.id) {
             setActiveModalItem(res.item);
           }
@@ -615,11 +671,14 @@ export function ShopView({
           toast.error(res.message || t('Gagal memperbarui produk'));
         }
       } else {
-        const res = await shopApi.createItem(newProductForm);
+        const res = await shopApi.createItem(payload);
         if (res.success && res.item) {
           setItems((prev) => [res.item!, ...prev]);
           toast.success(res.message || t('Produk baru berhasil ditambahkan! 🎉'));
           setIsAddProductOpen(false);
+          setEditingProduct(null);
+          setProductImageFile(null);
+          setProductImagePreview('');
           setNewProductForm({
             name: '',
             collection: 'Anticeil Cyber Core',
@@ -627,7 +686,7 @@ export function ShopView({
             description: '',
             priceIdr: 65000,
             priceDew: 500,
-            previewIcon: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80',
+            previewIcon: '',
             badge: 'Baru',
             featured: true,
           });
@@ -2123,13 +2182,76 @@ export function ShopView({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">{t('URL File Animasi GIF (Transparan / Loop)')}</label>
-              <Input
-                value={newProductForm.previewIcon}
-                onChange={(e) => setNewProductForm({ ...newProductForm, previewIcon: e.target.value })}
-                placeholder="https://..."
-                className="h-8 text-xs bg-muted/40 border-border"
+              <label className="text-xs font-semibold text-foreground block mb-1.5">
+                {t('File Animasi GIF / Gambar (Upload ke Cloudflare R2)')}
+              </label>
+              <input
+                ref={productFileInputRef}
+                type="file"
+                accept="image/gif,image/png,image/webp,image/*"
+                onChange={handleProductFileChange}
+                className="hidden"
               />
+
+              {productImagePreview ? (
+                <div className="relative group rounded-xl border border-border/80 bg-muted/20 overflow-hidden p-2">
+                  <div className="relative w-full h-28 rounded-lg overflow-hidden bg-black/50 flex items-center justify-center p-2">
+                    <img
+                      src={productImagePreview}
+                      alt="Product Preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => productFileInputRef.current?.click()}
+                        className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>{t('Ganti File')}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleRemoveProductImage}
+                        className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{t('Hapus')}</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground px-1">
+                    <span className="truncate max-w-[240px]">
+                      {productImageFile ? productImageFile.name : t('File animasi tersimpan')}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-medium shrink-0">
+                      {productImageFile ? t('Pratinjau lokal • disimpan ke R2') : t('Tersimpan di Cloudflare R2')}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => productFileInputRef.current?.click()}
+                  className="w-full h-24 border-2 border-dashed border-border/70 hover:border-primary/60 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer p-3 group"
+                >
+                  <div className="p-1.5 rounded-full bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                    <UploadCloud className="w-4 h-4" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-foreground">
+                      {t('Klik untuk upload file animasi GIF atau gambar')}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {t('Format GIF (transparan / loop), PNG, WebP. Pratinjau lokal sebelum disimpan ke Cloudflare R2.')}
+                    </p>
+                  </div>
+                </button>
+              )}
             </div>
 
             <div>

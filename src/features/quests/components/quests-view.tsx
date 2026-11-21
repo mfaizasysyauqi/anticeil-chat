@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Compass,
   Check,
@@ -17,7 +17,10 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  UploadCloud,
+  Image as ImageIcon,
 } from 'lucide-react';
+import { uploadMediaToR2 } from '@/lib/upload';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/empty';
@@ -126,12 +129,16 @@ export function QuestsView({
   const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
   const [editingQuest, setEditingQuest] = useState<QuestItem | null>(null);
   const [isSubmittingQuest, setIsSubmittingQuest] = useState(false);
+  const [questCoverFile, setQuestCoverFile] = useState<File | null>(null);
+  const [questCoverPreview, setQuestCoverPreview] = useState<string>('');
+  const questFileInputRef = useRef<HTMLInputElement>(null);
+
   const [questForm, setQuestForm] = useState({
     title: '',
     subtitle: '',
     category: 'activity' as 'activity' | 'game' | 'social' | 'profile',
     promoter: 'Anticeil Activities',
-    coverUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80',
+    coverUrl: '',
     badge: 'Baru',
     rewardDew: 300,
     target: 5,
@@ -142,12 +149,14 @@ export function QuestsView({
 
   const handleOpenCreateQuest = () => {
     setEditingQuest(null);
+    setQuestCoverFile(null);
+    setQuestCoverPreview('');
     setQuestForm({
       title: '',
       subtitle: '',
       category: 'activity',
       promoter: 'Anticeil Community',
-      coverUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80',
+      coverUrl: '',
       badge: 'Baru',
       rewardDew: 300,
       target: 5,
@@ -160,12 +169,14 @@ export function QuestsView({
 
   const handleOpenEditQuest = (quest: QuestItem) => {
     setEditingQuest(quest);
+    setQuestCoverFile(null);
+    setQuestCoverPreview(quest.coverUrl || '');
     setQuestForm({
       title: quest.title,
       subtitle: quest.subtitle,
       category: quest.category || 'activity',
       promoter: quest.promoter,
-      coverUrl: quest.coverUrl,
+      coverUrl: quest.coverUrl || '',
       badge: quest.badge || '',
       rewardDew: quest.rewardDew || 100,
       target: quest.target || 1,
@@ -176,29 +187,76 @@ export function QuestsView({
     setIsQuestModalOpen(true);
   };
 
+  const handleQuestFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('Hanya file gambar (JPG, PNG, WebP, GIF) yang diperbolehkan'));
+      return;
+    }
+    setQuestCoverFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setQuestCoverPreview(objectUrl);
+  };
+
+  const handleRemoveQuestCover = () => {
+    setQuestCoverFile(null);
+    setQuestCoverPreview('');
+    setQuestForm((f) => ({ ...f, coverUrl: '' }));
+    if (questFileInputRef.current) {
+      questFileInputRef.current.value = '';
+    }
+  };
+
   const handleSaveQuest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!questForm.title.trim()) {
       toast.error(t('Judul quest tidak boleh kosong'));
       return;
     }
+    if (!questCoverFile && !questCoverPreview.trim()) {
+      toast.error(t('Silakan pilih file gambar cover'));
+      return;
+    }
+
     setIsSubmittingQuest(true);
     try {
+      let finalCoverUrl = questForm.coverUrl || questCoverPreview;
+
+      // Jika ada file lokal baru, upload ke Cloudflare R2 sekarang saat tombol simpan diklik
+      if (questCoverFile) {
+        const uploadRes = await uploadMediaToR2(questCoverFile, `quest_${Date.now()}`);
+        if (uploadRes.url) {
+          finalCoverUrl = uploadRes.url;
+        }
+      }
+
+      const payload = {
+        ...questForm,
+        coverUrl: finalCoverUrl,
+      };
+
       if (editingQuest) {
-        const res = await questsApi.updateQuest(editingQuest.id, questForm);
+        const res = await questsApi.updateQuest(editingQuest.id, payload);
         if (res.success && res.quest) {
           setQuests((prev) => prev.map((q) => (q.id === editingQuest.id ? res.quest! : q)));
           toast.success(res.message || t('Quest berhasil diperbarui'));
           setIsQuestModalOpen(false);
+          setEditingQuest(null);
+          setQuestCoverFile(null);
+          setQuestCoverPreview('');
         } else {
           toast.error(res.message || t('Gagal memperbarui quest'));
         }
       } else {
-        const res = await questsApi.createQuest(questForm);
+        const res = await questsApi.createQuest(payload);
         if (res.success && res.quest) {
           setQuests((prev) => [res.quest!, ...prev]);
           toast.success(res.message || t('Quest baru berhasil ditambahkan'));
           setIsQuestModalOpen(false);
+          setEditingQuest(null);
+          setQuestCoverFile(null);
+          setQuestCoverPreview('');
         } else {
           toast.error(res.message || t('Gagal membuat quest'));
         }
@@ -1208,14 +1266,76 @@ export function QuestsView({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">{t('Cover Image URL')}</label>
-              <Input
-                value={questForm.coverUrl}
-                onChange={(e) => setQuestForm((f) => ({ ...f, coverUrl: e.target.value }))}
-                placeholder="https://images.unsplash.com/..."
-                className="h-8 text-xs bg-muted/40 border-border"
-                required
+              <label className="text-xs font-semibold text-foreground block mb-1.5">
+                {t('Cover Image (Upload ke Cloudflare R2)')}
+              </label>
+              <input
+                ref={questFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleQuestFileChange}
+                className="hidden"
               />
+
+              {questCoverPreview ? (
+                <div className="relative group rounded-xl border border-border/80 bg-muted/20 overflow-hidden p-2">
+                  <div className="relative w-full h-28 rounded-lg overflow-hidden bg-black/40 flex items-center justify-center">
+                    <img
+                      src={questCoverPreview}
+                      alt="Cover Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => questFileInputRef.current?.click()}
+                        className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>{t('Ganti Gambar')}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleRemoveQuestCover}
+                        className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{t('Hapus')}</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground px-1">
+                    <span className="truncate max-w-[240px]">
+                      {questCoverFile ? questCoverFile.name : t('Gambar tersimpan')}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-medium shrink-0">
+                      {questCoverFile ? t('Pratinjau lokal • disimpan ke R2') : t('Tersimpan di Cloudflare R2')}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => questFileInputRef.current?.click()}
+                  className="w-full h-24 border-2 border-dashed border-border/70 hover:border-primary/60 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer p-3 group"
+                >
+                  <div className="p-1.5 rounded-full bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                    <UploadCloud className="w-4 h-4" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-foreground">
+                      {t('Klik untuk upload file gambar cover')}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {t('Format JPG, PNG, WebP, GIF. Pratinjau lokal sebelum disimpan ke Cloudflare R2.')}
+                    </p>
+                  </div>
+                </button>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
