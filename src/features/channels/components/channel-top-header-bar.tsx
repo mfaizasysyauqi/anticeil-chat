@@ -110,7 +110,7 @@ export function ChannelTopHeaderBar({
 
   return (
     <div className={`sticky top-0 z-20 h-12 border-b border-sidebar-border ${channelPaddingClass} flex items-center justify-between shrink-0 bg-background overflow-hidden`}>
-      <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+      <div className="flex items-center gap-2 min-w-0 flex-1 mr-2 overflow-hidden">
         {/* Burger Menu Button (Visible only on Mobile: md:hidden) */}
         <button
           type="button"
@@ -135,19 +135,24 @@ export function ChannelTopHeaderBar({
         ) : (
           <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
         )}
-        <span className="text-sm font-semibold truncate text-foreground flex items-center gap-1.5 min-w-0">
-          <span className="truncate">{activeChannel ? activeChannel.name : t('Belum ada channel')}</span>
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+          <span
+            className="text-sm font-semibold text-foreground truncate min-w-0 block"
+            title={activeChannel ? activeChannel.name : t('Belum ada channel')}
+          >
+            {activeChannel ? activeChannel.name : t('Belum ada channel')}
+          </span>
           {activeChannel?.isGroupDm && activeChannel?.dmUserIds && activeChannel.dmUserIds.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold shrink-0">
+            <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold shrink-0 whitespace-nowrap">
               {activeChannel.dmUserIds.length} {t('Anggota')}
             </span>
           )}
           {activeChannel?.isPrivate && (
-            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold flex items-center gap-1 shrink-0">
+            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold flex items-center gap-1 shrink-0 whitespace-nowrap">
               <Lock className="w-2.5 h-2.5" /> Private
             </span>
           )}
-        </span>
+        </div>
       </div>
 
       {/* Top Bar Actions: Exactly Discord Signature (Calls, E2EE, Threads, Bell, Pin, Member List / User Profile, Search) */}

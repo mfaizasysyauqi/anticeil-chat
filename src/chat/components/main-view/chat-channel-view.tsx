@@ -556,12 +556,15 @@ export function ChatChannelView({
                 className="w-full min-h-[30%] max-h-[50%] overflow-hidden flex flex-col bg-background border-t border-border/70 shadow-lg shrink-0"
               >
                 <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-card/60 backdrop-blur-xs shrink-0">
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1 mr-2 overflow-hidden">
                     <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-xs font-semibold text-foreground truncate">
+                    <span
+                      className="text-xs font-semibold text-foreground truncate min-w-0 block"
+                      title={activeChannel?.name ? `Obrolan #${activeChannel.name}` : 'Obrolan'}
+                    >
                       Obrolan #{activeChannel?.name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-medium hidden sm:inline">
+                    <span className="text-[10px] text-muted-foreground font-medium hidden sm:inline shrink-0">
                       (Tarik pembatas untuk ubah ukuran • min 50% • max 70%)
                     </span>
                   </div>
