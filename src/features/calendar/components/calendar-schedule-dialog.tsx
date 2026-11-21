@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,8 +20,6 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from '@/core/i18n';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
-import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
-import { cn } from '@/lib/utils';
 import type { CalendarEvent } from '../types';
 
 export interface CalendarScheduleDialogProps {
@@ -75,20 +80,19 @@ export function CalendarScheduleDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent size="md" className="p-0 overflow-hidden bg-card border-border">
-        <DialogTitle className="sr-only">{t('Jadwalkan Acara Baru')}</DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <div className={cn('py-4 border-b border-border bg-muted/20', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4 text-primary" />
-              {t('Jadwalkan Acara / Meeting')}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('Rencanakan panggilan suara atau pertemuan komunitas dengan rekan tim')}
-            </p>
-          </div>
+      <DialogContent size="md">
+        <DialogHeader className="pb-1 text-left">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <CalendarIcon className="w-5 h-5 text-primary" />
+            <span>{t('Jadwalkan Acara / Meeting')}</span>
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {t('Rencanakan panggilan suara atau pertemuan komunitas dengan rekan tim')}
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className={cn('py-4 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
+        <form onSubmit={handleSubmit}>
+          <div className="py-2 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
                 {t('Judul Acara / Meeting *')}
@@ -194,7 +198,7 @@ export function CalendarScheduleDialog({
             </div>
           </div>
 
-          <div className={cn('py-3 bg-muted/40 border-t border-border flex items-center justify-end gap-2', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
+          <DialogFooter className="pt-3 mt-2 border-t border-border/40 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -211,7 +215,7 @@ export function CalendarScheduleDialog({
             >
               {t('Simpan Jadwal')}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

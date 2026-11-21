@@ -103,7 +103,7 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="absolute top-3.5 right-3.5 z-20 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-muted/80 transition-all focus:outline-none cursor-pointer disabled:pointer-events-none [&_svg]:size-4"
+            className="absolute top-5 right-5 sm:top-6 sm:right-6 z-20 flex size-6 items-center justify-center rounded-md text-muted-foreground/80 hover:text-foreground hover:bg-muted/80 transition-all focus:outline-none cursor-pointer disabled:pointer-events-none [&_svg]:size-4"
           >
             <XIcon />
             <span className="sr-only">Close</span>
@@ -119,7 +119,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-header"
       className={cn(
-        'flex flex-col gap-1 text-left pr-7 mb-2 shrink-0',
+        'flex flex-col gap-1 text-left pr-8 mb-2 shrink-0',
         className,
       )}
       {...props}

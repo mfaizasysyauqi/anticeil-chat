@@ -206,52 +206,50 @@ export function ColonyInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="md" className="p-0 overflow-hidden bg-background border-border">
+      <DialogContent size="md">
         {/* Header */}
-        <div className="p-5 pb-3 border-b border-border/50">
-          <DialogHeader className="pb-1 text-left">
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <UserPlus className="w-5 h-5 text-primary" />
-              <span>
-                {t('Undang Teman ke Colony')} {currentServer?.name || 'Colony'}
-              </span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {t('Pilih pengguna di bawah atau cari username untuk mengirimkan undangan colony tertunda.')}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogHeader className="pb-1 text-left">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <UserPlus className="w-5 h-5 text-primary" />
+            <span>
+              {t('Undang Teman ke Colony')} {currentServer?.name || 'Colony'}
+            </span>
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {t('Pilih pengguna di bawah atau cari username untuk mengirimkan undangan colony tertunda.')}
+          </DialogDescription>
+        </DialogHeader>
 
-          {/* Search bar */}
-          <form onSubmit={handleDirectInviteSubmit} className="mt-3">
-            <div className="relative flex items-center rounded-lg bg-background border border-border focus-within:border-primary/80 transition-colors p-1.5 shadow-2xs">
-              <Search className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  if (userNotFound) setUserNotFound(null);
-                }}
-                placeholder={t('Ketik username atau nama pengguna...')}
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2.5 h-8 placeholder:text-muted-foreground/60 flex-1 text-foreground"
-                autoFocus
-              />
-              <Button
-                type="submit"
-                disabled={!searchQuery.trim() || invitingId !== null}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-8 px-3.5 shrink-0 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {invitingId === 'manual' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  t('Undang')
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
+        {/* Search bar */}
+        <form onSubmit={handleDirectInviteSubmit} className="mt-2">
+          <div className="relative flex items-center rounded-lg bg-background border border-border focus-within:border-primary/80 transition-colors p-1.5 shadow-2xs">
+            <Search className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (userNotFound) setUserNotFound(null);
+              }}
+              placeholder={t('Ketik username atau nama pengguna...')}
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2.5 h-8 placeholder:text-muted-foreground/60 flex-1 text-foreground"
+              autoFocus
+            />
+            <Button
+              type="submit"
+              disabled={!searchQuery.trim() || invitingId !== null}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-8 px-3.5 shrink-0 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {invitingId === 'manual' ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                t('Undang')
+              )}
+            </Button>
+          </div>
+        </form>
 
         {/* User Selection List */}
-        <div className="px-5 py-3">
+        <div className="pt-2">
           <div className="text-[11px] font-bold text-muted-foreground/80 tracking-wider uppercase mb-2 flex items-center justify-between">
             <span>{t('PILIH PENGGUNA')} ({filteredUsers.length})</span>
             {isLoadingUsers && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
@@ -395,7 +393,7 @@ export function ColonyInviteDialog({
           </div>
         </div>
 
-        <DialogFooter className="p-3 bg-muted/20 border-t border-border flex justify-end">
+        <DialogFooter className="pt-3 mt-2 border-t border-border/40 flex justify-end">
           <Button
             type="button"
             variant="outline"

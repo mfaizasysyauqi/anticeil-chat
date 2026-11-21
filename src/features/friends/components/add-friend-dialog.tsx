@@ -14,8 +14,6 @@ import { friendsApi } from '../api/friends-api';
 import type { FriendMember, FriendRequest } from '../types';
 import type { ColonyMember } from '@/chat/chat-types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
-import { cn } from '@/lib/utils';
 
 export interface AddFriendDialogProps {
   open: boolean;
@@ -121,41 +119,39 @@ export function AddFriendDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="md" className="p-0 overflow-hidden bg-background border-border">
-        <div className={cn('py-4 pb-3 border-b border-border/50', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
-          <DialogHeader className="pb-1 text-left">
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <UserPlus className="w-5 h-5 text-primary" />
-              <span>{t('Tambah Teman')}</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {t('Cari nama pengguna atau nama lengkap teman untuk mengirim permintaan.')}
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent size="md">
+        <DialogHeader className="pb-1 text-left">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <UserPlus className="w-5 h-5 text-primary" />
+            <span>{t('Tambah Teman')}</span>
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {t('Cari nama pengguna atau nama lengkap teman untuk mengirim permintaan.')}
+          </DialogDescription>
+        </DialogHeader>
 
-          <form onSubmit={handleSearch} className="mt-3">
-            <div className="relative flex items-center rounded-lg bg-background border border-border focus-within:border-primary/80 transition-colors p-1.5 shadow-2xs">
-              <Search className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('Ketik username atau nama, lalu tekan Enter...')}
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2.5 h-8 placeholder:text-muted-foreground/60 flex-1 text-foreground"
-                autoFocus
-              />
-              <Button
-                type="submit"
-                disabled={!query.trim() || isSearching}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-3.5 shrink-0 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('Cari')}
-              </Button>
-            </div>
-          </form>
-        </div>
+        <form onSubmit={handleSearch} className="mt-2">
+          <div className="relative flex items-center rounded-lg bg-background border border-border focus-within:border-primary/80 transition-colors p-1.5 shadow-2xs">
+            <Search className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('Ketik username atau nama, lalu tekan Enter...')}
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs px-2.5 h-8 placeholder:text-muted-foreground/60 flex-1 text-foreground"
+              autoFocus
+            />
+            <Button
+              type="submit"
+              disabled={!query.trim() || isSearching}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-3.5 shrink-0 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('Cari')}
+            </Button>
+          </div>
+        </form>
 
         {/* Results / Empty View */}
-        <div className={cn('py-4 max-h-[300px] overflow-y-auto custom-scrollbar', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
+        <div className="mt-3 min-h-[140px] max-h-[280px] overflow-y-auto custom-scrollbar">
           {isSearching ? (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -240,11 +236,11 @@ export function AddFriendDialog({
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-2.5">
-                <Sparkles className="w-6 h-6" />
+            <div className="flex flex-col items-center justify-center py-5 text-center text-muted-foreground">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-2">
+                <Sparkles className="w-5 h-5" />
               </div>
-              <p className="text-xs font-semibold text-foreground mb-1">{t('Mulai Mencari Teman')}</p>
+              <p className="text-xs font-semibold text-foreground mb-0.5">{t('Mulai Mencari Teman')}</p>
               <p className="text-[11px] max-w-xs leading-relaxed text-muted-foreground/80">
                 {t('Ketik nama pengguna atau nama lengkap teman di kolom pencarian di atas, lalu tekan Enter atau klik Cari.')}
               </p>
