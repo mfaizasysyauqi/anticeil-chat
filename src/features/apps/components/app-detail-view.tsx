@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { YouTubeBadgeIcon } from '@/features/voice/components/call-stage';
+import { YouTubeBadgeIcon } from './activity-app-bar';
 import {
   LAYOUT_PAGE_SPACING,
   CHANNEL_HORIZONTAL_PADDING,
