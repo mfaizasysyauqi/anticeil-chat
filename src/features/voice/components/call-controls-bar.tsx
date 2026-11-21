@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';
 import { DiscordAppDefinition } from '../data/voice-activities';
+import { VOICE_BOTTOM_BAR_STYLES } from '../constants';
 
 const SOUNDBOARD_EFFECTS = [
   { id: 'airhorn', name: 'Airhorn', emoji: '📢', desc: 'Hype horn' },
@@ -357,12 +358,7 @@ export function CallControlsBar({
     );
   }
   return (
-    <div
-      className={cn(
-        'h-16 shrink-0 w-full grid grid-cols-[auto_1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center bg-background select-none z-20',
-        CHANNEL_HORIZONTAL_PADDING,
-      )}
-    >
+    <div className={VOICE_BOTTOM_BAR_STYLES.CONTAINER}>
       {/* Left: Invite Friends / Add to Call */}
       <div className="flex items-center justify-start">
         <TooltipProvider delayDuration={150}>
@@ -371,7 +367,7 @@ export function CallControlsBar({
               <button
                 type="button"
                 onClick={onOpenInvite}
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                className={VOICE_BOTTOM_BAR_STYLES.SIDE_BUTTON}
               >
                 <UserPlus className="w-5 h-5" />
               </button>
@@ -386,7 +382,7 @@ export function CallControlsBar({
       {/* Center: Controls Pill Group with Strict Consistent h-11 Height */}
       <div className="flex items-center justify-center gap-1.5 sm:gap-3">
         {/* Pill 1: Audio & Video Controls */}
-        <div className="h-11 bg-card rounded-xl flex items-center px-1 border border-border/60 shadow-md shrink-0">
+        <div className={VOICE_BOTTOM_BAR_STYLES.PILL}>
           {/* Mic Toggle Button */}
           <TooltipProvider delayDuration={150}>
             <Tooltip>
@@ -441,7 +437,7 @@ export function CallControlsBar({
         </div>
 
         {/* Pill 2: Media, Activities & Extra Actions */}
-        <div className="h-11 bg-card rounded-xl flex items-center px-1 gap-1 border border-border/60 shadow-md shrink-0">
+        <div className={VOICE_BOTTOM_BAR_STYLES.PILL_GAP}>
           {/* Screen Share Button (Desktop only: hidden md:flex) */}
           <TooltipProvider delayDuration={150}>
             <Tooltip>
@@ -659,7 +655,7 @@ export function CallControlsBar({
               <button
                 type="button"
                 onClick={onEndCall}
-                className="h-11 px-4 sm:px-5 rounded-xl bg-destructive hover:bg-destructive/90 text-white flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95 shrink-0"
+                className={VOICE_BOTTOM_BAR_STYLES.DISCONNECT_BUTTON}
               >
                 <PhoneOff className="w-5 h-5" />
               </button>
@@ -680,7 +676,7 @@ export function CallControlsBar({
               <button
                 type="button"
                 onClick={onTogglePiP}
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                className={VOICE_BOTTOM_BAR_STYLES.SIDE_BUTTON}
                 title="Popout (Picture-in-Picture)"
               >
                 <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -699,7 +695,7 @@ export function CallControlsBar({
               <button
                 type="button"
                 onClick={onToggleFullscreen}
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                className={VOICE_BOTTOM_BAR_STYLES.SIDE_BUTTON}
                 title="Layar Penuh"
               >
                 <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />

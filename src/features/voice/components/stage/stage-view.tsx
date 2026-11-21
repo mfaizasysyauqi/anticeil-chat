@@ -25,7 +25,10 @@ import {
   Sparkles,
   Smile,
   AlertTriangle,
+  UserPlus,
+  Maximize,
 } from 'lucide-react';
+import { VOICE_BOTTOM_BAR_STYLES } from '../../constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -564,227 +567,283 @@ export function StageView({
         </div>
 
         {/* ───────────────────────────────────────────────────────────── */}
-        {/* BOTTOM CONTROL DOCK (Screenshots 5, 6, 7, 10, 11, 13, 14, 15) */}
+        {/* BOTTOM CONTROL DOCK - Unified with Voice Channel (DRY)         */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <div className="p-3 sm:p-4 border-t border-white/[0.08] bg-black/40 backdrop-blur-md flex items-center justify-center gap-3 shrink-0 z-10">
-          {/* Pill 1: Audio & Video controls */}
-          <div className="flex items-center rounded-xl bg-[#2b2d31]/90 border border-white/5 p-1 shadow-md">
+        <div className={VOICE_BOTTOM_BAR_STYLES.CONTAINER}>
+          {/* Left: Invite to Stage */}
+          <div className="flex items-center justify-start">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={() => setIsMicMuted((prev) => !prev)}
-                  className={cn(
-                    'h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                    isMicMuted ? 'text-rose-400 hover:bg-rose-500/10' : 'text-white hover:bg-white/10',
-                  )}
+                  onClick={() => {
+                    toast.info(t('Link panggung disalin ke clipboard'));
+                  }}
+                  className={VOICE_BOTTOM_BAR_STYLES.SIDE_BUTTON}
+                  title={t('Undang Teman ke Stage')}
                 >
-                  {isMicMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                  <ChevronDown className="w-3 h-3 text-white/40" />
+                  <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {isMicMuted ? t('Nyalakan Mikrofon') : t('Bisukan Mikrofon')}
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setIsCameraOn((prev) => !prev)}
-                  className={cn(
-                    'h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                    isCameraOn ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-white/80 hover:bg-white/10',
-                  )}
-                >
-                  {isCameraOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-                  <ChevronDown className="w-3 h-3 text-white/40" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {isCameraOn ? t('Matikan Kamera') : t('Nyalakan Kamera')}
+              <TooltipContent side="top" className="text-xs font-semibold">
+                {t('Undang Teman ke Stage')}
               </TooltipContent>
             </Tooltip>
           </div>
 
-          {/* Pill 2: Tools (Screen, Music, Hands, More) */}
-          <div className="flex items-center rounded-xl bg-[#2b2d31]/90 border border-white/5 p-1 shadow-md gap-1">
-            {/* Share Screen */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => {
-                    toast.info(t('Berbagi layar siap digunakan'));
-                  }}
-                  className="h-9 w-9 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-                >
-                  <Share2 className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {t('Bagikan Layar')}
-              </TooltipContent>
-            </Tooltip>
+          {/* Center: Controls Pill Group */}
+          <div className="flex items-center justify-center gap-1.5 sm:gap-3">
+            {/* Pill 1: Audio & Video controls */}
+            <div className={VOICE_BOTTOM_BAR_STYLES.PILL}>
+              {/* Mic Toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setIsMicMuted((prev) => !prev)}
+                    className={cn(
+                      VOICE_BOTTOM_BAR_STYLES.BUTTON_TOGGLE,
+                      isMicMuted ? 'text-red-500 hover:bg-red-500/10' : 'text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  {isMicMuted ? t('Nyalakan Mikrofon') : t('Bisukan Mikrofon')}
+                </TooltipContent>
+              </Tooltip>
 
-            {/* Ambient Music Button (Green when active) */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={toggleMusic}
-                  className={cn(
-                    'h-9 w-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer',
-                    isMusicPlaying
-                      ? 'bg-[#23a55a] text-white hover:bg-[#1f9350]'
-                      : 'text-white/60 hover:bg-white/10 hover:text-white',
-                  )}
-                >
-                  <Music className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {isMusicPlaying ? t('Mute Music') : t('Unmute Music')}
-              </TooltipContent>
-            </Tooltip>
+              {/* Video Toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOn((prev) => !prev)}
+                    className={cn(
+                      VOICE_BOTTOM_BAR_STYLES.BUTTON_TOGGLE,
+                      !isCameraOn ? 'text-red-500 hover:bg-red-500/10' : 'text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    {!isCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  {isCameraOn ? t('Matikan Kamera') : t('Nyalakan Kamera')}
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
-            {/* Leave the Stage / Raise Hand */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (userRole === 'speaker' || userRole === 'moderator') {
-                      toast.info(t('Anda turun dari panggung ke audiens'));
-                      setUserRole('audience');
-                    } else {
-                      handleToggleHandRaise();
-                    }
-                  }}
-                  className="h-9 w-9 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-                >
-                  {userRole === 'moderator' || userRole === 'speaker' ? (
-                    <Users className="w-4 h-4" />
-                  ) : (
-                    <Hand className="w-4 h-4" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {userRole === 'moderator' || userRole === 'speaker'
-                  ? t('Leave the Stage')
-                  : t('Request to Speak')}
-              </TooltipContent>
-            </Tooltip>
+            {/* Pill 2: Tools (Screen, Music, Hands, More) */}
+            <div className={VOICE_BOTTOM_BAR_STYLES.PILL_GAP}>
+              {/* Share Screen */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.info(t('Berbagi layar siap digunakan'));
+                    }}
+                    className={VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON}
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  {t('Bagikan Layar')}
+                </TooltipContent>
+              </Tooltip>
 
-            {/* More Options `...` */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="h-9 w-9 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 bg-[#2b2d31] border-white/10 text-white rounded-xl shadow-xl p-1.5"
-              >
-                <DropdownMenuItem
-                  onClick={() => {
-                    setNewTopicInput(stageTopic);
-                    setIsChangeTopicModalOpen(true);
-                  }}
-                  className="text-xs font-semibold hover:bg-white/10 cursor-pointer rounded-lg py-2"
-                >
-                  {t('Change the topic')}
-                </DropdownMenuItem>
+              {/* Ambient Music Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={toggleMusic}
+                    className={cn(
+                      'h-9 w-10 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
+                      isMusicPlaying
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        : 'text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    <Music className="w-5 h-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  {isMusicPlaying ? t('Mute Music') : t('Unmute Music')}
+                </TooltipContent>
+              </Tooltip>
 
-                <DropdownMenuItem
-                  onClick={() => toast.info(t('Pengaturan notifikasi: Only @mentions'))}
-                  className="text-xs font-semibold hover:bg-white/10 cursor-pointer rounded-lg py-2 flex items-center justify-between"
-                >
-                  <span>{t('Notification Settings')}</span>
-                  <span className="text-[10px] text-white/50">{t('Only @mentions')}</span>
-                </DropdownMenuItem>
+              {/* Leave the Stage / Raise Hand */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (userRole === 'speaker' || userRole === 'moderator') {
+                        toast.info(t('Anda turun dari panggung ke audiens'));
+                        setUserRole('audience');
+                      } else {
+                        handleToggleHandRaise();
+                      }
+                    }}
+                    className={VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON}
+                  >
+                    {userRole === 'moderator' || userRole === 'speaker' ? (
+                      <Users className="w-5 h-5" />
+                    ) : (
+                      <Hand className="w-5 h-5" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  {userRole === 'moderator' || userRole === 'speaker'
+                    ? t('Leave the Stage')
+                    : t('Request to Speak')}
+                </TooltipContent>
+              </Tooltip>
 
-                <DropdownMenuItem
-                  onClick={() => toast.success(t('Pilihan kamera diperbarui'))}
-                  className="text-xs font-semibold hover:bg-white/10 cursor-pointer rounded-lg py-2 flex items-center justify-between"
+              {/* More Options `...` */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON}
+                    aria-label="Opsi Lainnya"
+                  >
+                    <MoreHorizontal className="w-5 h-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="center"
+                  side="top"
+                  sideOffset={12}
+                  className="w-56 p-1.5 rounded-xl bg-background border border-border shadow-2xl text-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
                 >
-                  <span>{t('Show My Own Camera')}</span>
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setNewTopicInput(stageTopic);
+                      setIsChangeTopicModalOpen(true);
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    {t('Change the topic')}
+                  </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() => toast.success(t('Pratinjau pesan diaktifkan'))}
-                  className="text-xs font-semibold hover:bg-white/10 cursor-pointer rounded-lg py-2 flex items-center justify-between"
+                  <DropdownMenuItem
+                    onClick={() => toast.info(t('Pengaturan notifikasi: Only @mentions'))}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <span>{t('Notification Settings')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('Only @mentions')}</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => toast.success(t('Pilihan kamera diperbarui'))}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <span>{t('Show My Own Camera')}</span>
+                    <Check className="w-3.5 h-3.5 text-primary" />
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => toast.success(t('Pratinjau pesan diaktifkan'))}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <span>{t('Show New Message Previews')}</span>
+                    <Check className="w-3.5 h-3.5 text-primary" />
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator className="bg-border my-1" />
+
+                  <DropdownMenuItem
+                    onClick={() => toast.info(t('Membuka pengaturan audio & video'))}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{t('Voice & Video Settings')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Pill 3: Red Disconnect Button with Chevron */}
+            <div className="h-11 rounded-xl bg-destructive hover:bg-destructive/90 text-white shadow-md flex items-center overflow-hidden shrink-0 active:scale-95">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (stageStatus === 'live' && (userRole === 'moderator' || userRole === 'speaker')) {
+                        setIsEndStageModalOpen(true);
+                      } else {
+                        onDisconnect?.();
+                      }
+                    }}
+                    className="h-11 px-3.5 sm:px-4 flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <PhoneOff className="w-5 h-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-bold text-destructive">
+                  {t('Disconnect Quietly')}
+                </TooltipContent>
+              </Tooltip>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="h-11 px-2.5 hover:bg-black/20 flex items-center justify-center transition-colors cursor-pointer border-l border-white/20"
+                    aria-label="Opsi Putus"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  side="top"
+                  sideOffset={12}
+                  className="w-56 p-1.5 rounded-xl bg-background border border-border shadow-2xl text-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
                 >
-                  <span>{t('Show New Message Previews')}</span>
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="bg-white/10 my-1" />
-
-                <DropdownMenuItem
-                  onClick={() => toast.info(t('Membuka pengaturan audio & video'))}
-                  className="text-xs font-semibold hover:bg-white/10 cursor-pointer rounded-lg py-2 flex items-center gap-2"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>{t('Voice & Video Settings')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem
+                    onClick={() => setIsEndStageModalOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
+                  >
+                    <X className="w-4 h-4 text-destructive" />
+                    <span>{t('End Stage for Everyone')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          {/* Pill 3: Red Disconnect Button with Chevron */}
-          <div className="flex items-center rounded-xl bg-[#da373c] hover:bg-[#c03135] text-white shadow-md overflow-hidden">
+          {/* Right: Fullscreen Utility */}
+          <div className="flex items-center justify-end gap-1 sm:gap-1.5">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   onClick={() => {
-                    if (stageStatus === 'live' && (userRole === 'moderator' || userRole === 'speaker')) {
-                      setIsEndStageModalOpen(true);
+                    if (document.fullscreenElement) {
+                      document.exitFullscreen().catch(() => {});
                     } else {
-                      onDisconnect?.();
+                      document.documentElement.requestFullscreen().catch(() => {});
                     }
                   }}
-                  className="h-9 px-3.5 flex items-center justify-center transition-colors cursor-pointer"
+                  className={VOICE_BOTTOM_BAR_STYLES.SIDE_BUTTON}
+                  title={t('Layar Penuh')}
                 >
-                  <PhoneOff className="w-4 h-4" />
+                  <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {t('Disconnect Quietly')}
+              <TooltipContent side="top" className="text-xs font-semibold">
+                {t('Layar Penuh')}
               </TooltipContent>
             </Tooltip>
-
-            {/* Disconnect Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="h-9 px-2 hover:bg-black/20 flex items-center justify-center transition-colors cursor-pointer border-l border-white/20"
-                >
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 bg-[#2b2d31] border-white/10 text-white rounded-xl shadow-xl p-1.5"
-              >
-                <DropdownMenuItem
-                  onClick={() => setIsEndStageModalOpen(true)}
-                  className="text-xs font-semibold text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer rounded-lg py-2 flex items-center gap-2"
-                >
-                  <X className="w-4 h-4 text-rose-400" />
-                  <span>{t('End Stage for Everyone')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
