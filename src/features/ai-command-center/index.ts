@@ -6,4 +6,7 @@ export * from './hooks/use-ai-command-center';
 export * from './context/ai-command-center-context';
 export * from './components/ai-command-center-sidebar';
 export * from './components/ai-command-center-view';
+export * from './components/artifact-viewer';
+export * from './components/artifact-card';
 export * from './components/groq-settings-dialog';
+export * from './utils/artifact-parser';

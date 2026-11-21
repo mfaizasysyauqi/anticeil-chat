@@ -49,6 +49,25 @@ export interface AiMessage {
   content: string;
   createdAt: string;
   toolCalls?: AiToolCall[];
+  artifacts?: AiArtifact[];
+}
+
+export type AiArtifactType =
+  | 'text/html'
+  | 'image/svg+xml'
+  | 'application/vnd.ant.markdown'
+  | 'application/vnd.ant.code'
+  | 'application/vnd.ant.mermaid'
+  | 'application/vnd.ant.react';
+
+export interface AiArtifact {
+  id: string;
+  identifier: string;
+  type: AiArtifactType | string;
+  title: string;
+  language?: string;
+  content: string;
+  createdAt?: string;
 }
 
 export interface AiSession {

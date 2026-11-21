@@ -40,6 +40,7 @@ import type {
   AiSession,
   AiToolCall,
   AiSystemContext,
+  AiArtifact,
   LaunchAppArgs,
   SendDirectMessageArgs,
   SendColonyChannelMessageArgs,
@@ -57,6 +58,8 @@ import { executeGroqCommand } from '../services/groq-service';
 import { GroqSettingsDialog } from './groq-settings-dialog';
 import { AiCommandCenterHeader } from './ai-command-center-header';
 import { AiMarkdown } from './ai-markdown';
+import { ArtifactViewer } from './artifact-viewer';
+import { parseArtifactsFromMessage } from '../utils/artifact-parser';
 import { useAiCommandCenterContext } from '../context/ai-command-center-context';
 
 export interface AiCommandCenterViewProps {
@@ -152,6 +155,23 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const messages = activeSession?.messages || [];
+
+  const [activeArtifact, setActiveArtifact] = useState<AiArtifact | null>(null);
+
+  // Find latest artifact in current session for quick header toggle
+  const latestArtifact = React.useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.artifacts && msg.artifacts.length > 0) {
+        return msg.artifacts[msg.artifacts.length - 1];
+      }
+      const { artifacts } = parseArtifactsFromMessage(msg.content);
+      if (artifacts.length > 0) {
+        return artifacts[artifacts.length - 1];
+      }
+    }
+    return null;
+  }, [messages]);
 
   const groqConfig = getStoredGroqConfig();
   const [selectedModel, setSelectedModel] = useState<string>(() => groqConfig.model || DEFAULT_GROQ_MODEL);
@@ -280,13 +300,20 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
         config: currentConfig,
       });
 
+      const { artifacts } = parseArtifactsFromMessage(response.replyText);
+
       const assistantMessage: AiMessage = {
         id: `msg_${Date.now()}_a`,
         role: 'assistant',
         content: response.replyText,
         createdAt: new Date().toISOString(),
         toolCalls: response.toolCalls,
+        artifacts,
       };
+
+      if (artifacts.length > 0) {
+        setActiveArtifact(artifacts[0]);
+      }
 
       onUpdateSessionMessages(targetSession.id, [...updatedMessages, assistantMessage]);
     } catch (err) {
@@ -397,121 +424,137 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
         onOpenSidebar={onOpenSidebar}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
         hasMessages={messages.length > 0}
+        hasActiveArtifact={Boolean(activeArtifact || latestArtifact)}
+        onToggleArtifactPanel={() => setActiveArtifact((prev) => (prev ? null : latestArtifact))}
       />
 
-      {/* 2. Messages & Capability Hero Feed */}
-      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
-            <div className="flex justify-center">
-              <EmptyIconBadge size="default">
-                <Sparkles className="stroke-[1.8]" />
-              </EmptyIconBadge>
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-                Pusat Komando Cerdas Anticeil
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                Kendalikan seluruh ekosistem Anticeil dalam hitungan milidetik dengan bahasa alami.
-                Luncurkan aplikasi mandiri, kirim pengumuman ke saluran colony, atau balas pesan langsung tanpa repot.
-              </p>
-            </div>
-
-            {/* Quick Action Suggestion Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left pt-2">
-              <button
-                type="button"
-                onClick={() => handleSendMessage('Buka Jamspace Whiteboard')}
-                className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-              >
-                <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                  <span>🎨</span>
-                  <span>Buka Jamspace Whiteboard</span>
+      {/* Main Workspace Area (Split view when activeArtifact is open) */}
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+        {/* Left: Chat Feed & Command Input */}
+        <div
+          className={cn(
+            'flex flex-col flex-1 min-h-0 bg-background overflow-hidden transition-all',
+            activeArtifact && 'hidden md:flex md:w-5/12 lg:w-4/12 xl:w-5/12 border-r border-border/80'
+          )}
+        >
+          {/* 2. Messages & Capability Hero Feed */}
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 space-y-4">
+            {messages.length === 0 ? (
+              <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
+                <div className="flex justify-center">
+                  <EmptyIconBadge size="default">
+                    <Sparkles className="stroke-[1.8]" />
+                  </EmptyIconBadge>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                  Membuka canvas kolaboratif standalone untuk diagram & sketsa.
-                </p>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => handleSendMessage('Buka YouTube Watch Together')}
-                className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-              >
-                <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                  <span>🎬</span>
-                  <span>YouTube Watch Together</span>
+                <div className="space-y-2">
+                  <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+                    Pusat Komando Cerdas Anticeil
+                  </h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                    Kendalikan seluruh ekosistem Anticeil dalam hitungan milidetik dengan bahasa alami.
+                    Luncurkan aplikasi mandiri, buat Artifact interaktif (game, kalkulator, UI), atau kirim pesan langsung.
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                  Nonton video bersama dengan kontrol sinkronisasi realtime.
-                </p>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => handleSendMessage('Kirim pesan ke channel general: Halo rekan-rekan semuanya!')}
-                className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-              >
-                <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                  <span>📢</span>
-                  <span>Kirim Pesan ke Channel</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                  Kirim update cepat ke saluran colony tanpa berpindah halaman.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSendMessage('Kirim DM ke teman: Aku lagi online nih!')}
-                className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-              >
-                <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                  <span>✉️</span>
-                  <span>Balas / Kirim Pesan Langsung</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                  Kirim pesan personal ke teman dengan konfirmasi interaktif.
-                </p>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl mx-auto space-y-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${
-                  msg.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {msg.role !== 'user' && (
-                  <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                )}
-
-                <div
-                  className={`flex flex-col space-y-2 max-w-[85%] sm:max-w-[75%] ${
-                    msg.role === 'user' ? 'items-end' : 'items-start'
-                  }`}
-                >
-                  <div
-                    className={cn(
-                      'px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed',
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground font-medium rounded-tr-xs shadow-xs whitespace-pre-wrap'
-                        : 'bg-card border border-border/60 text-foreground rounded-tl-xs shadow-xs',
-                    )}
+                {/* Quick Action Suggestion Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Buatkan kalkulator modern')}
+                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
                   >
-                    {msg.role === 'user' ? (
-                      msg.content
-                    ) : (
-                      <AiMarkdown content={msg.content} />
+                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
+                      <span>🧮</span>
+                      <span>Buat Kalkulator (Artifact)</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
+                      Menghasilkan aplikasi kalkulator web interaktif di panel Artifacts.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Buatkan mini game retro')}
+                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
+                  >
+                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
+                      <span>🕹️</span>
+                      <span>Buat Mini Game (Artifact)</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
+                      Membuat game arcade canvas yang bisa langsung dimainkan.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Buka Jamspace Whiteboard')}
+                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
+                  >
+                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
+                      <span>🎨</span>
+                      <span>Buka Jamspace Whiteboard</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
+                      Membuka canvas kolaboratif standalone untuk diagram & sketsa.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Buka YouTube Watch Together')}
+                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
+                  >
+                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
+                      <span>🎬</span>
+                      <span>YouTube Watch Together</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
+                      Nonton video bersama dengan kontrol sinkronisasi realtime.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="max-w-3xl mx-auto space-y-4">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex gap-3 ${
+                      msg.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    {msg.role !== 'user' && (
+                      <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
                     )}
-                  </div>
+
+                    <div
+                      className={`flex flex-col space-y-2 max-w-[85%] sm:max-w-[75%] ${
+                        msg.role === 'user' ? 'items-end' : 'items-start'
+                      }`}
+                    >
+                      <div
+                        className={cn(
+                          'px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed',
+                          msg.role === 'user'
+                            ? 'bg-primary text-primary-foreground font-medium rounded-tr-xs shadow-xs whitespace-pre-wrap'
+                            : 'bg-card border border-border/60 text-foreground rounded-tl-xs shadow-xs',
+                        )}
+                      >
+                        {msg.role === 'user' ? (
+                          msg.content
+                        ) : (
+                          <AiMarkdown
+                            content={msg.content}
+                            artifacts={msg.artifacts}
+                            onOpenArtifact={(art) => setActiveArtifact(art)}
+                            activeArtifactId={activeArtifact?.id}
+                          />
+                        )}
+                      </div>
 
                   {/* Interactive Tool Calling Execution Cards */}
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
@@ -718,13 +761,25 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
           </form>
         </div>
       </div>
-
-      {/* Groq Settings Dialog */}
-      <GroqSettingsDialog
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </div>
+
+    {/* Right: LibreChat-style Artifact Viewer Panel */}
+    {activeArtifact && (
+      <div className="flex-1 md:w-7/12 lg:w-8/12 xl:w-7/12 flex flex-col min-h-0 overflow-hidden bg-[#111214] border-l border-border/80 animate-in slide-in-from-right-4 duration-200">
+        <ArtifactViewer
+          artifact={activeArtifact}
+          onClose={() => setActiveArtifact(null)}
+        />
+      </div>
+    )}
+  </div>
+
+  {/* Groq Settings Dialog */}
+  <GroqSettingsDialog
+    isOpen={isSettingsOpen}
+    onClose={() => setIsSettingsOpen(false)}
+  />
+</div>
   );
 }
 

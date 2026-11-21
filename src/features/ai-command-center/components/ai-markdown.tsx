@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Copy, Check, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { AiArtifact } from '../types';
+import { parseArtifactsFromMessage } from '../utils/artifact-parser';
+import { ArtifactCard } from './artifact-card';
 
-function CodeBlock({ language, code }: { language: string; code: string }) {
+interface CodeBlockProps {
+  language: string;
+  code: string;
+  onOpenAsArtifact?: (artifact: AiArtifact) => void;
+}
+
+function CodeBlock({ language, code, onOpenAsArtifact }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -11,18 +20,65 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleOpenArtifact = () => {
+    const lang = (language || 'code').toLowerCase();
+    const isHtml = lang === 'html';
+    const isSvg = lang === 'svg';
+    const isReact = lang === 'jsx' || lang === 'tsx' || lang === 'react';
+
+    const art: AiArtifact = {
+      id: `code_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      identifier: `code_${Date.now()}`,
+      type: isHtml
+        ? 'text/html'
+        : isSvg
+        ? 'image/svg+xml'
+        : isReact
+        ? 'application/vnd.ant.react'
+        : 'application/vnd.ant.code',
+      title: isHtml
+        ? 'HTML Web App'
+        : isSvg
+        ? 'SVG Vector Graphic'
+        : `${(language || 'code').toUpperCase()} Code Snippet`,
+      language: lang,
+      content: code,
+      createdAt: new Date().toISOString(),
+    };
+    onOpenAsArtifact?.(art);
+  };
+
+  const canBeArtifact =
+    code.trim().length > 30 ||
+    ['html', 'svg', 'react', 'jsx', 'tsx', 'mermaid', 'python', 'javascript'].includes(
+      (language || '').toLowerCase()
+    );
+
   return (
     <div className="my-2.5 rounded-xl border border-border/80 bg-zinc-950/90 overflow-hidden shadow-md text-xs">
       <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/50 text-muted-foreground text-[11px] font-mono select-none">
         <span className="uppercase font-semibold tracking-wider text-primary">{language || 'code'}</span>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
-        >
-          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-          <span>{copied ? 'Tersalin' : 'Salin'}</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {canBeArtifact && onOpenAsArtifact && (
+            <button
+              type="button"
+              onClick={handleOpenArtifact}
+              className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors cursor-pointer"
+              title="Buka dan Pratinjau sebagai Artifact"
+            >
+              <Eye className="w-3 h-3" />
+              <span>Artifact</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
+          >
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            <span>{copied ? 'Tersalin' : 'Salin'}</span>
+          </button>
+        </div>
       </div>
       <pre className="p-3 overflow-x-auto custom-scrollbar font-mono text-[11px] leading-relaxed text-zinc-200">
         <code>{code}</code>
@@ -105,17 +161,64 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
   return parts;
 }
 
-export function AiMarkdown({ content, className }: { content: string; className?: string }) {
+export interface AiMarkdownProps {
+  content: string;
+  className?: string;
+  artifacts?: AiArtifact[];
+  onOpenArtifact?: (artifact: AiArtifact) => void;
+  activeArtifactId?: string;
+}
+
+export function AiMarkdown({
+  content,
+  className,
+  artifacts: providedArtifacts,
+  onOpenArtifact,
+  activeArtifactId,
+}: AiMarkdownProps) {
   if (!content) return null;
 
+  // Automatically parse artifacts if embedded in content
+  const { cleanContent, artifacts: parsedArtifacts } = useMemo(() => {
+    return parseArtifactsFromMessage(content);
+  }, [content]);
+
+  const allArtifacts = useMemo(() => {
+    const list = [...(providedArtifacts || [])];
+    parsedArtifacts.forEach((pa) => {
+      if (!list.some((a) => a.id === pa.id)) list.push(pa);
+    });
+    return list;
+  }, [providedArtifacts, parsedArtifacts]);
+
   const blocks: React.ReactNode[] = [];
-  const lines = content.split('\n');
+  const lines = cleanContent.split('\n');
   let inCodeBlock = false;
   let codeBlockLang = '';
   let codeBlockLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // Check for artifact token placeholder
+    if (line.trim().startsWith(':::artifact{') || line.trim() === ':::') {
+      if (line.trim().startsWith(':::artifact{')) {
+        const idMatch = line.match(/id="([^"]*)"/);
+        const artId = idMatch ? idMatch[1] : '';
+        const targetArt = allArtifacts.find((a) => a.id === artId || a.identifier === artId);
+        if (targetArt) {
+          blocks.push(
+            <ArtifactCard
+              key={`artifact-${artId}-${i}`}
+              artifact={targetArt}
+              onClick={() => onOpenArtifact?.(targetArt)}
+              isActive={activeArtifactId === targetArt.id || activeArtifactId === targetArt.identifier}
+            />
+          );
+        }
+      }
+      continue;
+    }
 
     if (line.trim().startsWith('```')) {
       if (inCodeBlock) {
@@ -124,6 +227,7 @@ export function AiMarkdown({ content, className }: { content: string; className?
             key={`code-${i}`}
             language={codeBlockLang}
             code={codeBlockLines.join('\n')}
+            onOpenAsArtifact={onOpenArtifact}
           />
         );
         inCodeBlock = false;
@@ -231,6 +335,7 @@ export function AiMarkdown({ content, className }: { content: string; className?
         key="unclosed-code"
         language={codeBlockLang}
         code={codeBlockLines.join('\n')}
+        onOpenAsArtifact={onOpenArtifact}
       />
     );
   }

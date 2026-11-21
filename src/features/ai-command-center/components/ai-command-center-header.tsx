@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Menu, Trash2 } from 'lucide-react';
+import { Sparkles, Menu, Trash2, Code2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -16,6 +16,8 @@ export interface AiCommandCenterHeaderProps {
   onClearSessionMessages?: () => void;
   onCreateNewSession?: () => void;
   hasMessages?: boolean;
+  hasActiveArtifact?: boolean;
+  onToggleArtifactPanel?: () => void;
 }
 
 /**
@@ -27,6 +29,8 @@ export function AiCommandCenterHeader({
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   onClearSessionMessages,
   hasMessages = false,
+  hasActiveArtifact = false,
+  onToggleArtifactPanel,
 }: AiCommandCenterHeaderProps) {
   const { t } = useTranslation();
 
@@ -49,6 +53,27 @@ export function AiCommandCenterHeader({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
+        {/* Toggle Artifact Panel Button */}
+        {hasActiveArtifact && onToggleArtifactPanel && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleArtifactPanel}
+                className="h-8 px-2.5 text-xs text-primary font-semibold hover:bg-primary/10 gap-1.5 cursor-pointer rounded-lg border border-primary/20"
+                title={t('Tampilkan / Sembunyikan Panel Artifact')}
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t('Artifact')}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
+              {t('Toggle Panel Artifact')}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {/* Clear Conversation Button */}
         {hasMessages && onClearSessionMessages && (
           <Tooltip delayDuration={150}>
