@@ -63,10 +63,18 @@ function DialogContent({
   showCloseButton = true,
   showOverlay = true,
   overlayClassName,
-  size = 'lg',
+  size,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & DialogContentProps) {
-  const isTwoPane = size === 'two-pane';
+  const isTwoPane =
+    size === 'two-pane' ||
+    (typeof className === 'string' &&
+      (className.includes('TWO_PANE_CONTAINER') ||
+        className.includes('w-[9') ||
+        className.includes('max-w-[9') ||
+        className.includes('max-w-6xl') ||
+        className.includes('max-w-7xl')));
+  const resolvedSize: DialogSize = size ?? (isTwoPane ? 'two-pane' : 'lg');
 
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -77,7 +85,7 @@ function DialogContent({
           isTwoPane
             ? 'fixed top-[50%] left-[50%] z-50 flex flex-col translate-x-[-50%] translate-y-[-50%] duration-200 outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]'
             : 'fixed top-[50%] left-[50%] z-50 flex flex-col w-[calc(100vw-1.5rem)] sm:w-full max-h-[calc(100svh-2.5rem)] translate-x-[-50%] translate-y-[-50%] rounded-[16px] border border-border bg-background px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 text-foreground shadow-2xl duration-200 outline-hidden overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
-          dialogSizeClasses[size],
+          dialogSizeClasses[resolvedSize],
           className,
         )}
         {...props}

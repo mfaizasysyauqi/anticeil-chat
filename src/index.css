@@ -5,6 +5,7 @@
 
 html,
 body {
+  color-scheme: dark;
   position: fixed;
   inset: 0;
   height: 100%;

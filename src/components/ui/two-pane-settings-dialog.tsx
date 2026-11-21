@@ -220,6 +220,7 @@ export function TwoPaneSettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        size="two-pane"
         showCloseButton={false}
         onCloseAutoFocus={(e) => e.preventDefault()}
         className={cn(
@@ -232,8 +233,8 @@ export function TwoPaneSettingsDialog({
         {/* ── Left Sidebar / Master Pane ── */}
         <aside
           className={cn(
-            'bg-sidebar border-r border-sidebar-border flex-col overflow-y-auto select-none shrink-0 custom-scrollbar',
-            mobileView === 'menu' ? 'flex w-full h-full md:w-52 lg:w-60' : 'hidden md:flex md:w-52 lg:w-60',
+            'bg-sidebar border-r border-sidebar-border flex-col overflow-hidden select-none shrink-0',
+            mobileView === 'menu' ? 'flex w-full h-full md:w-56 lg:w-64' : 'hidden md:flex md:w-56 lg:w-64',
           )}
         >
           {/* Mobile Menu Header */}
@@ -427,10 +428,13 @@ export function TwoPaneSettingsDialog({
             ref={scrollRef as React.RefObject<HTMLDivElement>}
             className={cn(
               LAYOUT_DIALOG_SPACING.BODY_PADDING,
+              'overflow-x-hidden',
               contentClassName,
             )}
           >
-            {children}
+            <div className="max-w-3xl w-full mx-auto md:mx-0 min-w-0">
+              {children}
+            </div>
           </div>
         </section>
       </DialogContent>

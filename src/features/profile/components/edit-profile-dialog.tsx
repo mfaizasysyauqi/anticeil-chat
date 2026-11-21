@@ -696,6 +696,7 @@ export function EditProfileDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        size="two-pane"
         showCloseButton={false}
         className={cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, 'bg-card z-[70]')}
         overlayClassName="z-[70]"
@@ -781,11 +782,11 @@ export function EditProfileDialog({
           {/* COLUMN 1: LEFT AREA (Edit Form) */}
           <div
             className={cn(
-              'shrink-0 bg-background/30 p-4 sm:p-5 overflow-y-auto custom-scrollbar space-y-4 flex-col',
+              'shrink-0 bg-background/30 p-4 sm:p-5 overflow-y-auto custom-scrollbar overflow-x-hidden space-y-4 flex-col',
               activeViewMode === 'edit' || (activeViewMode !== 'widgets' && activeViewMode !== 'preview') ? 'flex' : 'hidden',
               activeViewMode !== 'widgets' ? 'md:flex' : 'md:hidden',
               'xl:flex',
-              'w-full md:w-[50%] lg:w-[52%] xl:w-[22%] xl:min-w-[240px]',
+              'w-full md:w-1/2 xl:w-[320px] 2xl:w-[360px]',
               'border-b-0 md:border-r border-border/60'
             )}
           >
@@ -1116,14 +1117,14 @@ export function EditProfileDialog({
           {/* COLUMN 2: MIDDLE AREA LIVE PROFILE CARD PREVIEW */}
           <div
             className={cn(
-              'shrink-0 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 items-center justify-center overflow-y-auto custom-scrollbar flex-col',
+              'shrink-0 bg-muted/20 px-3 sm:px-4 py-4 sm:py-5 items-center justify-center overflow-y-auto custom-scrollbar overflow-x-hidden flex-col',
               activeViewMode === 'preview' ? 'flex' : 'hidden',
-              'md:flex',
-              'w-full md:w-[50%] lg:w-[48%] xl:w-[38%]',
+              'md:flex md:order-2 xl:order-none',
+              'w-full md:w-1/2 xl:w-[380px] 2xl:w-[420px]',
               'border-b-0 xl:border-r border-border/60'
             )}
           >
-            <div className="w-full max-w-[420px] 2xl:max-w-[460px] my-auto">
+            <div className="w-full max-w-[340px] sm:max-w-[360px] 2xl:max-w-[380px] my-auto">
               <ProfilePreviewCard
                 userId={currentUser?.id}
                 onOpenShop={handleOpenShop}
@@ -1168,11 +1169,11 @@ export function EditProfileDialog({
           {/* COLUMN 3: RIGHT AREA PROFILE TABS (BOARD | ACTIVITY | WISHLIST) */}
           <div
             className={cn(
-              'flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4 flex-col',
+              'flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar overflow-x-hidden space-y-4 flex-col',
               activeViewMode === 'widgets' ? 'flex' : 'hidden',
-              activeViewMode === 'widgets' ? 'md:flex' : 'md:hidden',
+              activeViewMode === 'widgets' ? 'md:flex md:order-1 xl:order-none' : 'md:hidden',
               'xl:flex',
-              'w-full md:w-[50%] lg:w-[52%] xl:w-[40%]',
+              'w-full md:w-1/2 xl:flex-1',
               'border-b-0 md:border-r xl:border-r-0 border-border/60'
             )}
           >

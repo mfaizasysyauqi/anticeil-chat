@@ -166,7 +166,7 @@ export function ProfilePreviewCard({
   const decoration = getDecorationBadge(avatarDecoration);
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-[340px] sm:max-w-[360px] 2xl:max-w-[380px] mx-auto overflow-hidden">
       <div className="rounded-2xl bg-card border border-border/80 shadow-2xl overflow-hidden">
         {/* Banner Area */}
         <div

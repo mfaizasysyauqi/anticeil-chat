@@ -95,7 +95,7 @@ export const LAYOUT_DIALOG_SPACING = {
    * - Tablet & Desktop (>=768px): w-[90vw] max-w-[90vw] h-[90vh] max-h-[90vh] rounded-2xl
    */
   TWO_PANE_CONTAINER:
-    'p-0 w-[94vw] md:w-[90vw] max-w-[90vw] h-[94dvh] md:h-[90vh] max-h-[90vh] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0 select-none',
+    'p-0 w-full h-full max-w-full max-h-full sm:w-[96vw] sm:h-[94dvh] sm:max-w-[96vw] sm:max-h-[94dvh] md:w-[94vw] md:max-w-[94vw] md:h-[92vh] md:max-h-[860px] lg:w-[92vw] lg:max-w-6xl xl:w-[90vw] xl:max-w-7xl xl:h-[90vh] xl:max-h-[900px] overflow-hidden bg-background border-0 sm:border border-border flex flex-col md:flex-row rounded-none sm:rounded-2xl shadow-2xl gap-0 select-none',
 
   /**
    * Single-pane dialog standard container (e.g. Create Channel, Add Friend, Schedule, etc.)

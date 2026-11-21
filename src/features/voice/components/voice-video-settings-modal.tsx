@@ -44,7 +44,7 @@ export function VoiceVideoSettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn('overflow-hidden text-foreground flex flex-col md:flex-row', LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER)}>
+      <DialogContent size="two-pane" showCloseButton={false} className={cn('overflow-hidden text-foreground flex flex-col md:flex-row', LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER)}>
         {/* Left Navigation Sidebar */}
         <div className={cn('w-full md:w-56 bg-muted/40 border-b md:border-b-0 md:border-r border-border flex flex-col justify-between shrink-0', LAYOUT_DIALOG_SPACING.SIDEBAR_PADDING)}>
           <div className="space-y-4">

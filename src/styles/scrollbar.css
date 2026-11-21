@@ -5,6 +5,13 @@
    - Pure DRY & reusable across all views, dialogs, feeds, and popovers
    ========================================================================== */
 
+:root,
+html,
+body,
+* {
+  color-scheme: dark !important;
+}
+
 /* 1. Global Base Scrollbars for standard CSS scrollbars (Firefox, Chrome 121+, Edge 121+, Safari 17.4+) */
 * {
   scrollbar-width: thin;
