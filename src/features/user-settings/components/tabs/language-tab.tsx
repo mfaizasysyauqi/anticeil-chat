@@ -190,15 +190,17 @@ export function LanguageTab({
                     >
                       <div
                         className={cn(
-                          'size-4 rounded-full border-2 flex items-center justify-center transition-all',
+                          'size-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0',
                           isSelected ? 'border-primary' : 'border-muted-foreground/50',
                         )}
                       >
                         {isSelected && <div className="size-2 rounded-full bg-primary" />}
                       </div>
-                      <div className="flex-1 flex items-center justify-between">
-                        <span className="text-xs font-semibold text-foreground">{tf.title}</span>
-                        <span className="text-[11px] text-muted-foreground font-mono">{tf.desc}</span>
+                      <div className="flex-1 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-4 min-w-0">
+                        <span className="text-xs font-semibold text-foreground shrink-0">{tf.title}</span>
+                        <span className="text-[11px] text-muted-foreground font-mono sm:text-right pl-3">
+                          {tf.desc}
+                        </span>
                       </div>
                     </div>
                   );
