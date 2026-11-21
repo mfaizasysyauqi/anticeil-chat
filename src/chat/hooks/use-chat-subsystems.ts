@@ -70,6 +70,17 @@ export function useChatSubsystems({
     setUserSettingsInitialSection(section);
     setIsUserSettingsOpen(true);
   };
+
+  useEffect(() => {
+    const handleOpenSettingsEvent = (e: any) => {
+      const section = e?.detail?.section || 'nitro';
+      handleOpenUserSettings(section);
+    };
+    window.addEventListener('anticeil_open_user_settings', handleOpenSettingsEvent);
+    return () => {
+      window.removeEventListener('anticeil_open_user_settings', handleOpenSettingsEvent);
+    };
+  }, []);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const handleOpenEditProfile = () => {
     setIsEditProfileOpen(true);

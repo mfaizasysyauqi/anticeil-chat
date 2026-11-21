@@ -11,6 +11,7 @@ import {
   LayoutGrid,
   CalendarPlus,
   Mic,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceNoteRecorder } from './voice-note-recorder';
@@ -30,6 +31,7 @@ import { SlashCommandAutocomplete } from './slash-command-autocomplete';
 import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { MAX_MESSAGE_CHARS, getCurrentMaxMessageChars } from '../utils/text-limit';
 import { getCurrentUserPlan } from '../utils/attachment';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
@@ -46,6 +48,7 @@ export interface ChatInputBarProps {
   onSendMessage: () => void;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onOpenGiftModal: () => void;
+  onOpenSubscriptionModal?: () => void;
   onOpenCreateThreadModal?: () => void;
   onScheduleMessage?: (scheduledDate: Date, customText?: string) => Promise<void> | void;
   onSubmitPoll?: (question: string, options: string[]) => void;
@@ -89,6 +92,7 @@ export function ChatInputBar({
   onSendVoiceNote,
   onFileSelect,
   onOpenGiftModal,
+  onOpenSubscriptionModal,
   onOpenCreateThreadModal,
   onScheduleMessage,
   onSubmitPoll,
@@ -127,6 +131,17 @@ export function ChatInputBar({
   const userPlan = getCurrentUserPlan();
   const maxMessageChars = getCurrentMaxMessageChars();
   const isNectar = userPlan === 'nectar_boost';
+
+  const handleOpenSubscription = () => {
+    if (onOpenSubscriptionModal) {
+      onOpenSubscriptionModal();
+    } else if (onOpenGiftModal) {
+      onOpenGiftModal();
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('anticeil_open_user_settings', { detail: { section: 'nitro' } }));
+    }
+  };
 
   // Auto-resize textarea to fit content dynamically up to 50vh max
   useEffect(() => {
@@ -356,7 +371,7 @@ export function ChatInputBar({
           ref={textareaRef}
           rows={1}
           value={inputText}
-          maxLength={maxMessageChars}
+          maxLength={maxMessageChars + 4000}
           onChange={(e) => {
             setInputText(e.target.value);
             if (!isSlashOpen && e.target.value.startsWith('/')) {
@@ -383,6 +398,10 @@ export function ChatInputBar({
             if (e.key === 'Enter' && !e.shiftKey) {
               if ((e.nativeEvent as any).isComposing) return;
               e.preventDefault();
+              if (inputText.length > maxMessageChars) {
+                toast.error(t('Pesan melebihi batas karakter! Upgrade ke Anticeil Pollen / Nectar / Royal untuk mengirim hingga 4.000 karakter.'));
+                return;
+              }
               onSendMessage();
             }
           }}
@@ -397,26 +416,15 @@ export function ChatInputBar({
           className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 py-1.5 bg-transparent flex-1 placeholder:text-muted-foreground/90 text-foreground font-medium disabled:opacity-50 resize-none min-h-[32px] max-h-[calc(50vh-2rem)] overflow-y-auto custom-scrollbar leading-relaxed"
         />
 
-        {/* Right Action Icons: Counter, Gift, GIF, Sticker, Emoji, Apps & Send (Discord style) */}
+        {/* Right Action Icons: Negative Counter (Discord style on overlimit), Gift, GIF, Sticker, Emoji, Apps & Send */}
         <div className="flex items-center gap-2 shrink-0 mb-1">
-          {/* Character counter (shows remaining / total when text is present) */}
-          {inputText.length > 0 && (
+          {/* Discord-style negative counter ONLY when exceeding character limit */}
+          {inputText.length > maxMessageChars && (
             <span
-              className={`text-[10px] font-mono px-1 select-none transition-colors flex items-center gap-1 ${
-                inputText.length >= maxMessageChars
-                  ? 'text-destructive font-bold'
-                  : inputText.length >= maxMessageChars - 200
-                  ? 'text-amber-500 font-semibold'
-                  : 'text-muted-foreground/60'
-              }`}
-              title={`${inputText.length} / ${maxMessageChars} karakter${isNectar ? ' (Nectar VIP 🍯)' : ''}`}
+              className="text-xs font-mono font-bold text-destructive px-1 select-none transition-colors animate-pulse"
+              title={`${inputText.length} / ${maxMessageChars} ${t('karakter')}`}
             >
-              {isNectar && <span className="text-[10px]" title="Nectar VIP Perk: 4,000 karakter">🍯</span>}
-              <span>
-                {maxMessageChars - inputText.length <= 200
-                  ? `${maxMessageChars - inputText.length}`
-                  : `${inputText.length}/${maxMessageChars}`}
-              </span>
+              -{inputText.length - maxMessageChars}
             </span>
           )}
 
@@ -465,16 +473,50 @@ export function ChatInputBar({
           {(inputText.trim() || stagedAttachment) && (
             <button
               type="button"
-              onClick={onSendMessage}
-              disabled={!activeChannel}
-              className="w-6 h-6 ml-1 text-primary hover:text-[#4752c4] flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 animate-in zoom-in-75 duration-150"
-              title="Kirim Pesan (Enter)"
+              onClick={() => {
+                if (inputText.length > maxMessageChars) {
+                  toast.error(t('Pesan melebihi batas karakter! Upgrade ke Anticeil Pollen / Nectar / Royal untuk mengirim hingga 4.000 karakter.'));
+                  return;
+                }
+                onSendMessage();
+              }}
+              disabled={!activeChannel || inputText.length > maxMessageChars}
+              className={cn(
+                "w-6 h-6 ml-1 flex items-center justify-center transition-colors cursor-pointer animate-in zoom-in-75 duration-150",
+                inputText.length > maxMessageChars
+                  ? "text-muted-foreground/30 cursor-not-allowed"
+                  : "text-primary hover:text-primary/80 disabled:opacity-40"
+              )}
+              title={inputText.length > maxMessageChars ? t('Pesan melebihi batas karakter') : t('Kirim Pesan (Enter)')}
             >
               <Send className="w-4 h-4 fill-current" />
             </button>
           )}
         </div>
       </div>
+      )}
+
+      {/* Discord-style Nitro / Pollen / Nectar / Royal Overlimit Banner (Image 2) */}
+      {inputText.length > maxMessageChars && (
+        <div className="mt-1.5 flex items-center justify-between px-3 py-2 rounded-lg bg-card/95 border border-destructive/40 shadow-sm text-xs animate-in fade-in slide-in-from-top-1 select-none">
+          <div className="flex items-center gap-2 min-w-0">
+            <Sparkles className="w-4 h-4 text-primary shrink-0 animate-pulse" />
+            <span className="text-muted-foreground font-medium truncate">
+              {t('Kirim pesan lebih panjang dengan')}{' '}
+              <button
+                type="button"
+                onClick={handleOpenSubscription}
+                className="text-primary font-bold hover:underline cursor-pointer inline-flex items-center gap-1"
+              >
+                Anticeil Pollen / Nectar / Royal
+              </button>
+              !
+            </span>
+          </div>
+          <span className="font-mono font-bold text-destructive text-xs shrink-0 ml-2">
+            -{inputText.length - maxMessageChars}
+          </span>
+        </div>
       )}
 
       {/* Create Poll Dialog */}
