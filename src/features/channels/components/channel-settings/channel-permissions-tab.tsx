@@ -574,7 +574,7 @@ export function ChannelPermissionsTab({
         <Switch
           checked={isPrivate}
           onCheckedChange={handleTogglePrivate}
-          className="data-[state=checked]:bg-[#5865F2]"
+          className="data-[state=checked]:bg-primary"
         />
       </div>
 
@@ -786,7 +786,7 @@ export function ChannelPermissionsTab({
               size="sm"
               onClick={handleSavePermissions}
               disabled={isSaving}
-              className="bg-[#5865F2] hover:bg-[#4752c4] text-white font-bold text-xs h-8 px-4 rounded-lg shadow-md cursor-pointer transition-all"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 rounded-lg shadow-xs cursor-pointer transition-all"
             >
               {isSaving ? t('Menyimpan...') : t('Simpan Perubahan')}
             </Button>
@@ -823,7 +823,7 @@ export function ChannelPermissionsTab({
                     <div className="flex items-center gap-2">
                       <span
                         className="size-3 rounded-full shrink-0"
-                        style={{ backgroundColor: role.color || '#5865F2' }}
+                        style={{ backgroundColor: role.color || '#3b82f6' }}
                       />
                       <span>{role.name}</span>
                     </div>
@@ -870,7 +870,7 @@ export function ChannelPermissionsTab({
         <DialogContent size="md" className="bg-card border border-border/80 text-foreground">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
-              <HelpCircle className="w-5 h-5 text-[#5865F2]" />
+              <HelpCircle className="w-5 h-5 text-primary" />
               <span>{t('Bagaimana Cara Kerja Izin Channel?')}</span>
             </DialogTitle>
           </DialogHeader>

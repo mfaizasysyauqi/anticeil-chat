@@ -464,7 +464,7 @@ export function ChannelInvitesTab({
             <Button
               type="button"
               onClick={handleSaveSecurityActions}
-              className="text-xs font-bold bg-[#5865f2] hover:bg-[#4752c4] text-white px-5 rounded-lg shadow-sm cursor-pointer"
+              className="text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground px-5 rounded-lg shadow-xs cursor-pointer"
             >
               {t('Save')}
             </Button>
@@ -572,7 +572,7 @@ export function ChannelInvitesTab({
               <Button
                 size="sm"
                 onClick={handleCopyActiveInviteUrl}
-                className="h-8 px-4 text-xs font-bold bg-[#5865f2] hover:bg-[#4752c4] text-white rounded-lg shadow-sm cursor-pointer shrink-0"
+                className="h-8 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-xs cursor-pointer shrink-0"
               >
                 {isCopiedActiveInvite ? t('Copied') : t('Copy')}
               </Button>

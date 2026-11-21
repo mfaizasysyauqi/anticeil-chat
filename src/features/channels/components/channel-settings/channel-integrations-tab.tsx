@@ -390,7 +390,7 @@ export function ChannelIntegrationsTab({
                     }
                   }
                 }}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs px-4 h-8 rounded-md shrink-0 cursor-pointer shadow-sm transition-all"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs px-4 h-8 rounded-lg shrink-0 cursor-pointer shadow-xs transition-all"
               >
                 {t('Create Webhook')}
               </Button>
@@ -429,7 +429,7 @@ export function ChannelIntegrationsTab({
               <Button
                 size="sm"
                 onClick={() => setIsLearnMoreFollowedOpen(true)}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs px-4 h-8 rounded-md shrink-0 cursor-pointer shadow-sm transition-all"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs px-4 h-8 rounded-lg shrink-0 cursor-pointer shadow-xs transition-all"
               >
                 {t('Learn More')}
               </Button>
@@ -487,7 +487,7 @@ export function ChannelIntegrationsTab({
             <Button
               size="sm"
               onClick={handleCreateWebhook}
-              className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium text-xs px-4 h-8 rounded-md cursor-pointer shadow-sm"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs px-4 h-8 rounded-lg cursor-pointer shadow-xs"
             >
               {t('New Webhook')}
             </Button>
@@ -703,7 +703,7 @@ export function ChannelIntegrationsTab({
               size="sm"
               onClick={() => handleSaveWebhook(expandedWebhookId)}
               disabled={isSaving}
-              className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-8 px-4 cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 rounded-lg cursor-pointer shadow-xs"
             >
               {isSaving ? t('Menyimpan...') : t('Simpan Perubahan')}
             </Button>
@@ -745,7 +745,7 @@ export function ChannelIntegrationsTab({
 
           <DialogFooter className="pt-2">
             <Button
-              className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-9 rounded-md cursor-pointer"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 rounded-lg cursor-pointer shadow-xs"
               onClick={() => setIsLearnMoreFollowedOpen(false)}
             >
               {t('Mengerti')}
@@ -760,7 +760,7 @@ export function ChannelIntegrationsTab({
       <Dialog open={isLearnMoreIntegrationsOpen} onOpenChange={setIsLearnMoreIntegrationsOpen}>
         <DialogContent size="md" className="bg-card border-border text-foreground p-6 rounded-2xl">
           <DialogHeader className="space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#5865F2]/10 text-[#5865F2] flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
               <WebhookIcon className="w-6 h-6" />
             </div>
             <DialogTitle className="text-center text-lg font-bold">
@@ -794,7 +794,7 @@ export function ChannelIntegrationsTab({
 
           <DialogFooter className="pt-2">
             <Button
-              className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold h-9 rounded-md cursor-pointer"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 rounded-lg cursor-pointer shadow-xs"
               onClick={() => setIsLearnMoreIntegrationsOpen(false)}
             >
               {t('Tutup')}

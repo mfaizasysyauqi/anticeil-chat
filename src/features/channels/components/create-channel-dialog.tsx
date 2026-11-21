@@ -128,7 +128,7 @@ export function CreateChannelDialog({
   };
 
   const displayRoles = roles.length > 0 ? roles : [
-    { id: 'role_mod', name: 'Moderator', color: '#5865F2', colonyId: activeColony?.id || 'col', permissions: [] },
+    { id: 'role_mod', name: 'Moderator', color: '#3b82f6', colonyId: activeColony?.id || 'col', permissions: [] },
     { id: 'role_admin', name: 'Admin', color: '#f23f43', colonyId: activeColony?.id || 'col', permissions: [] },
     { id: 'role_new', name: 'new role', color: '#23a55a', colonyId: activeColony?.id || 'col', permissions: [] },
   ];
@@ -344,8 +344,11 @@ export function CreateChannelDialog({
                         <div className="flex items-center gap-2.5">
                           <Checkbox
                             checked={isChecked}
-                            onCheckedChange={() => {}}
-                            className="data-[state=checked]:bg-primary"
+                            onCheckedChange={() => {
+                              setSelectedModRoles((prev) =>
+                                isChecked ? prev.filter((id) => id !== role.id) : [...prev, role.id],
+                              );
+                            }}
                           />
                           <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
                           <span className="text-xs font-semibold text-foreground">
@@ -364,22 +367,23 @@ export function CreateChannelDialog({
           )}
 
           {/* Footer */}
-          <DialogFooter className="pt-3 mt-2 border-t border-border/40">
+          <DialogFooter className="pt-3 mt-2 border-t border-border/40 flex items-center justify-end gap-2 shrink-0">
             {stageStep === 2 ? (
               <>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setStageStep(1)}
-                  className="text-xs font-semibold h-8 px-3 cursor-pointer"
+                  className="h-9 px-4 text-xs font-semibold cursor-pointer"
                 >
                   {t('Back')}
                 </Button>
                 <Button
                   type="submit"
+                  variant="default"
                   size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-5 rounded-lg shadow-xs transition-all cursor-pointer"
+                  className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
                 >
                   {selectedModRoles.length > 0 ? t('Create Channel') : t('Skip')}
                 </Button>
@@ -388,18 +392,19 @@ export function CreateChannelDialog({
               <>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   onClick={() => onOpenChange(false)}
-                  className="text-xs font-semibold h-8 px-3 cursor-pointer"
+                  className="h-9 px-4 text-xs font-semibold cursor-pointer"
                 >
                   {t('Cancel')}
                 </Button>
                 <Button
                   type="submit"
+                  variant="default"
                   size="sm"
                   disabled={!newChannelName.trim()}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 rounded-lg shadow-xs transition-all cursor-pointer"
+                  className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
                 >
                   {newChannelType === 'stage' ? t('Next') : t('Create Channel')}
                 </Button>

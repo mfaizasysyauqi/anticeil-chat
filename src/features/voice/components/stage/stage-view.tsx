@@ -884,7 +884,6 @@ export function StageView({
                   id="notify-everyone"
                   checked={notifyEveryone}
                   onCheckedChange={(c) => setNotifyEveryone(!!c)}
-                  className="data-[state=checked]:bg-[#5865F2] data-[state=checked]:border-[#5865F2]"
                 />
                 <label
                   htmlFor="notify-everyone"
@@ -897,15 +896,18 @@ export function StageView({
 
             <DialogFooter className="pt-3 gap-2">
               <Button
-                variant="ghost"
+                variant="secondary"
+                size="sm"
                 onClick={() => setIsStartStageModalOpen(false)}
-                className="text-xs text-white/70 hover:text-white h-9 px-4"
+                className="h-9 px-4 text-xs font-semibold cursor-pointer"
               >
                 {t('Cancel')}
               </Button>
               <Button
+                variant="default"
+                size="sm"
                 onClick={handleStartStage}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-xs h-9 px-5 rounded-lg shadow-sm"
+                className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
               >
                 {t('Start Stage')}
               </Button>
@@ -974,19 +976,22 @@ export function StageView({
 
             <DialogFooter className="pt-2 gap-2">
               <Button
-                variant="ghost"
+                variant="secondary"
+                size="sm"
                 onClick={() => setIsChangeTopicModalOpen(false)}
-                className="text-xs text-white/70 hover:text-white h-9 px-4"
+                className="h-9 px-4 text-xs font-semibold cursor-pointer"
               >
                 {t('Batal')}
               </Button>
               <Button
+                variant="default"
+                size="sm"
                 onClick={() => {
                   setStageTopic(newTopicInput);
                   setIsChangeTopicModalOpen(false);
                   toast.success(t('Topik Stage diperbarui!'));
                 }}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-xs h-9 px-5 rounded-lg shadow-sm"
+                className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
               >
                 {t('Simpan Topik')}
               </Button>
