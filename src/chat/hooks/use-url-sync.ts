@@ -105,6 +105,16 @@ export function useUrlSync({
           setActiveChannelId?.(parts[2]);
         }
       }
+
+      const params = new URLSearchParams(window.location.search);
+      const hubParam = params.get('hub') || params.get('colony');
+      const channelParam = params.get('channel');
+      if (hubParam) {
+        setActiveColonyId?.(hubParam);
+      }
+      if (channelParam) {
+        setActiveChannelId?.(channelParam);
+      }
     } catch {}
   }, []);
 
@@ -183,6 +193,16 @@ export function useUrlSync({
             setActiveChannelId?.(parts[2]);
           }
         }
+
+        const params = new URLSearchParams(window.location.search);
+        const hubParam = params.get('hub') || params.get('colony');
+        const channelParam = params.get('channel');
+        if (hubParam) {
+          setActiveColonyId?.(hubParam);
+        }
+        if (channelParam) {
+          setActiveChannelId?.(channelParam);
+        }
       } catch {}
     };
 
@@ -250,10 +270,12 @@ export function useUrlSync({
         url.searchParams.delete('activity');
       }
 
-      // Remove obsolete query params
-      url.searchParams.delete('colony');
-      url.searchParams.delete('hub');
-      url.searchParams.delete('channel');
+      // Remove obsolete query params only when activeChannelId and activeColonyId are populated and path matches
+      if (activeColonyId && activeColonyId !== 'anticeil' && activeChannelId) {
+        url.searchParams.delete('colony');
+        url.searchParams.delete('hub');
+        url.searchParams.delete('channel');
+      }
 
       const newSearch = url.search ? url.search : '';
       const currentSearch = window.location.search;

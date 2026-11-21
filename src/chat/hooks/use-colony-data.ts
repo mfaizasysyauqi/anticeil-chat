@@ -40,7 +40,16 @@ export function useColonyData(options?: UseColonyDataOptions) {
   const [activeChannelId, setActiveChannelId] = useState<string>(() => {
     const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
     if (!token) return '';
-    return new URLSearchParams(window.location.search).get('channel') || '';
+    if (typeof window !== 'undefined') {
+      const fromQuery = new URLSearchParams(window.location.search).get('channel');
+      if (fromQuery) return fromQuery;
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      if (pathParts[0] === 'channels') {
+        if (pathParts[1] === '@me' && pathParts[2]) return pathParts[2];
+        if (pathParts[2]) return pathParts[2];
+      }
+    }
+    return '';
   });
 
   const [members, setMembers] = useState<ColonyMember[]>([]);

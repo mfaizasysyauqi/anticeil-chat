@@ -212,14 +212,16 @@ export function useColonyModals({
       const colonyChannels = await colonyApi.getChannels(joinedHub.id);
       if (colonyChannels && colonyChannels.length > 0) {
         setChannels((prev) => [...prev.filter((c) => c.colonyId !== joinedHub.id), ...colonyChannels]);
-        const targetChannelParam = new URLSearchParams(window.location.search).get('channel');
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const pathChannel = pathParts[0] === 'channels' && pathParts[2] && pathParts[2] !== '@me' ? pathParts[2] : null;
+        const targetChannelParam = new URLSearchParams(window.location.search).get('channel') || pathChannel;
         const targetActivityParam = new URLSearchParams(window.location.search).get('activity');
         if (targetActivityParam) {
           const normalizedAct = targetActivityParam === 'youtube' ? 'watch-together' : targetActivityParam;
           setSelectedActivityAppId?.(normalizedAct);
           setIsActivityOpen?.(true);
         }
-        let matchedChannel = colonyChannels.find((c) => c.id === targetChannelParam);
+        let matchedChannel = targetChannelParam ? colonyChannels.find((c) => c.id === targetChannelParam) : null;
         if (!matchedChannel && targetActivityParam) {
           matchedChannel = colonyChannels.find((c) => c.type === 'voice');
         }

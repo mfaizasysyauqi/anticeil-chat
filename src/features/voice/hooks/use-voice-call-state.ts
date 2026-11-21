@@ -9,7 +9,19 @@ export function useVoiceCallState({ socket }: UseVoiceCallStateOptions = {}) {
   const [activeCallChannelId, setActiveCallChannelId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search);
-      return p.get('activity') && p.get('channel') ? p.get('channel') : null;
+      const chParam = p.get('channel');
+      if (chParam && (chParam.includes('voice') || p.get('activity'))) {
+        return chParam;
+      }
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const pathChannel =
+        pathParts[0] === 'channels' && pathParts[2] && pathParts[2] !== '@me'
+          ? pathParts[2]
+          : null;
+      if (pathChannel && (pathChannel.includes('voice') || p.get('activity'))) {
+        return pathChannel;
+      }
+      return p.get('activity') && chParam ? chParam : null;
     }
     return null;
   });

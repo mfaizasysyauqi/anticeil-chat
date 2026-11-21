@@ -70,10 +70,10 @@ export function useCallWebRTC({
   const activeAppIdRef = useRef<string | null>(activeAppId);
   activeAppIdRef.current = activeAppId;
 
-  // Dynamically generate invite URL
+  // Dynamically generate invite URL (specific canonical channel route)
   const callInviteUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const base = `${window.location.origin}/messages?hub=${encodeURIComponent(colonyId)}&channel=${encodeURIComponent(channel.id)}&invite=${encodeURIComponent(inviteCode)}`;
+    const base = `${window.location.origin}/channels/${encodeURIComponent(colonyId)}/${encodeURIComponent(channel.id)}?invite=${encodeURIComponent(inviteCode)}`;
     return activeAppId ? `${base}&activity=${encodeURIComponent(activeAppId)}` : base;
   }, [colonyId, channel.id, inviteCode, activeAppId]);
 

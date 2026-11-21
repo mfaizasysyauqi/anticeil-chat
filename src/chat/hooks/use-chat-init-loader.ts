@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { colonyApi } from '../chat-api';
 import { friendsApi } from '@/features/friends';
 import {
@@ -86,6 +86,19 @@ export function useChatInitLoader({
   setThreadsMap,
   handleJoinColony,
 }: UseChatInitLoaderProps) {
+  const initialTargetChannelRef = useRef<string | null>(null);
+  if (initialTargetChannelRef.current === null && typeof window !== 'undefined') {
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const pathChannel =
+      pathParts[0] === 'channels'
+        ? pathParts[1] === '@me'
+          ? pathParts[2]
+          : pathParts[2]
+        : null;
+    initialTargetChannelRef.current =
+      new URLSearchParams(window.location.search).get('channel') || pathChannel || null;
+  }
+
   // 1. Initial Load from Backend API
   useEffect(() => {
     let mounted = true;
@@ -336,7 +349,10 @@ export function useChatInitLoader({
               ? pathParts[2]
               : null;
           const targetChannelParam =
-            new URLSearchParams(window.location.search).get('channel') || pathChannel;
+            initialTargetChannelRef.current ||
+            new URLSearchParams(window.location.search).get('channel') ||
+            pathChannel ||
+            activeChannelId;
           const targetActivityParam = new URLSearchParams(
             window.location.search,
           ).get('activity');
@@ -357,10 +373,17 @@ export function useChatInitLoader({
               setActiveCallChannelId(matchedTarget.id);
               setIsCallPiP(false);
             }
+            initialTargetChannelRef.current = null;
           } else {
             setActiveChannelId((curr) => {
-              const exists = res.some((c) => c.id === curr);
-              if (exists) return curr;
+              const exists = res.find((c) => c.id === curr);
+              if (exists) {
+                if (exists.type === 'voice') {
+                  setActiveCallChannelId(exists.id);
+                  setIsCallPiP(false);
+                }
+                return curr;
+              }
               const defaultText = res.find(
                 (c) => (c.type === 'text' || !c.type) && !c.isDirectMessage,
               );
