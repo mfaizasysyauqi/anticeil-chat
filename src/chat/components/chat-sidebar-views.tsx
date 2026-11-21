@@ -34,6 +34,8 @@ export interface ColonyRailWrapperProps {
   onToggleRailMode: () => void;
   handleStartDM: (member: any) => void;
   setIsAddFriendDialogOpen: (open: boolean) => void;
+  isSidebarCollapsed?: boolean;
+  onToggleCollapseSidebar?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -61,6 +63,8 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
   handleStartDM,
   setIsAddFriendDialogOpen,
   homeView,
+  isSidebarCollapsed,
+  onToggleCollapseSidebar,
   t,
 }) => {
   return (
@@ -69,6 +73,8 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
       activeServerId={activeColonyId}
       unreadCounts={unreadCounts}
       homeView={homeView}
+      isSidebarCollapsed={isSidebarCollapsed}
+      onToggleCollapseSidebar={onToggleCollapseSidebar}
       isAiActive={activeColonyId === 'anticeil' && (homeView === 'ai' || !homeView) && !activeChannelId}
       onSelectAiCenter={() => {
         setActiveColonyId('anticeil');

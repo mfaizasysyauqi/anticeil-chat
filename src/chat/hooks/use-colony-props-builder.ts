@@ -279,6 +279,8 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       onToggleRailMode: handleToggleRailMode,
       handleStartDM,
       setIsAddFriendDialogOpen,
+      isSidebarCollapsed: isDesktopSidebarCollapsed,
+      onToggleCollapseSidebar: toggleDesktopSidebarCollapsed,
       t,
     },
     channelsSidebarProps: {

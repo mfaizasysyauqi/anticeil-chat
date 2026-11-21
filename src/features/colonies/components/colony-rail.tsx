@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Globe, UserPlus, Compass, LayoutGrid, Sparkles } from 'lucide-react';
+import { Plus, Users, Globe, UserPlus, Compass, LayoutGrid, Sparkles, PanelLeftOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,8 @@ export interface ColonyRailProps {
   isAiActive?: boolean;
   onSelectAiCenter?: () => void;
   homeView?: string;
+  isSidebarCollapsed?: boolean;
+  onToggleCollapseSidebar?: () => void;
 }
 
 function formatUnreadBadge(count: number | string | undefined): string | null {
@@ -108,6 +110,8 @@ export function ColonyRail({
   isAiActive,
   onSelectAiCenter,
   homeView,
+  isSidebarCollapsed,
+  onToggleCollapseSidebar,
 }: ColonyRailProps) {
   const { t } = useTranslation();
 
@@ -213,6 +217,27 @@ export function ColonyRail({
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {/* 1b. Button Expand Sidebar (Ditaruh di sidebar tepat di bawah logo Anticeil) */}
+        {isSidebarCollapsed && onToggleCollapseSidebar && (
+          <div className="relative group w-full flex items-center justify-center animate-in fade-in zoom-in-75 duration-150">
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onToggleCollapseSidebar}
+                  className="relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px] bg-sidebar-accent text-muted-foreground hover:bg-primary/20 hover:text-primary hover:border-primary/40 border border-border/50 hover:scale-105 active:scale-95 shadow-xs"
+                  aria-label={t('Buka Sidebar (Ctrl+B)')}
+                >
+                  <PanelLeftOpen className="w-5 h-5 text-primary transition-transform duration-200 group-hover:scale-110" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+                {t('Buka Sidebar')} <kbd className="ml-1 text-[10px] text-muted-foreground font-mono">Ctrl+B</kbd>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
 
         {/* 2. Dedicated Button: Direct Messages & Home Activities (Pesan Langsung & Aktivitas) */}
         <div className="relative group w-full flex items-center justify-center">
