@@ -328,7 +328,7 @@ export function CreateChannelDialog({
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
                   {t('Roles')}
                 </span>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                   {filteredRoles.map((role) => {
                     const isChecked = selectedModRoles.includes(role.id);
                     return (

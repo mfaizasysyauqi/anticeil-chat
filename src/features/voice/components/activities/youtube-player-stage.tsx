@@ -69,7 +69,7 @@ export function YouTubePlayerStage({
         isExpandedVideo
           ? 'w-full h-full p-0 gap-0 bg-black relative'
           : cn(
-              'w-full md:w-[44%] lg:w-[42%] border-b md:border-b-0 md:border-r border-border pt-2 pb-1.5 md:py-4 gap-2 md:gap-4 shrink-0 md:shrink md:overflow-y-auto',
+              'w-full md:w-[44%] lg:w-[42%] border-b md:border-b-0 md:border-r border-border pt-2 pb-1.5 md:py-4 gap-2 md:gap-4 shrink-0 md:shrink md:overflow-y-auto custom-scrollbar',
               mobileTab === 'browse' ? 'md:flex' : 'flex',
               CHANNEL_HORIZONTAL_PADDING,
             ),
@@ -200,7 +200,7 @@ export function YouTubePlayerStage({
                 </div>
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto pr-1 pt-3">
+              <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-1 pt-3">
                 <YouTubePlaylistView
                   playlist={ytPlaylist}
                   activeVideoId={activeVideoId}
@@ -270,7 +270,7 @@ export function YouTubePlayerStage({
             {renderHostPopover('left')}
           </div>
 
-          <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+          <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-1">
             <YouTubePlaylistView
               playlist={ytPlaylist}
               activeVideoId={activeVideoId}

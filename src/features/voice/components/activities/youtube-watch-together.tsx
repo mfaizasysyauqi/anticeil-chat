@@ -565,7 +565,7 @@ export function YouTubeWatchTogether({
           {/* Right Column (Desktop) or Browse Area (Mobile) */}
           <div
             className={cn(
-              'flex-1 min-h-0 flex flex-col pt-0 pb-3 md:pb-4 gap-2 md:gap-3 overflow-y-auto overflow-x-hidden',
+              'flex-1 min-h-0 flex flex-col pt-0 pb-3 md:pb-4 gap-2 md:gap-3 overflow-y-auto overflow-x-hidden custom-scrollbar',
               isExpandedVideo ? 'hidden' : (mobileTab === 'browse' ? 'flex' : 'hidden md:flex'),
               CHANNEL_HORIZONTAL_PADDING,
             )}
@@ -613,7 +613,7 @@ export function YouTubeWatchTogether({
         /* Empty / Idle State */
         <div
           className={cn(
-            'flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden bg-background pb-4 gap-2',
+            'flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar bg-background pb-4 gap-2',
             CHANNEL_HORIZONTAL_PADDING,
           )}
         >

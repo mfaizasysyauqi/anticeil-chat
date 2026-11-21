@@ -1548,7 +1548,7 @@ export function EditProfileDialog({
                       />
                     </div>
                     {userColoniesList.length > 0 ? (
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
                         {userColoniesList.map((col) => (
                           <div
                             key={col.id}

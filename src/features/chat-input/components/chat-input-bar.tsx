@@ -394,7 +394,7 @@ export function ChatInputBar({
                 : `Message #${activeChannel.name}`
               : t('Pilih atau buat channel terlebih dahulu...')
           }
-          className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 py-1.5 bg-transparent flex-1 placeholder:text-muted-foreground/90 text-foreground font-medium disabled:opacity-50 resize-none min-h-[32px] max-h-[calc(50vh-2rem)] overflow-y-auto leading-relaxed"
+          className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 py-1.5 bg-transparent flex-1 placeholder:text-muted-foreground/90 text-foreground font-medium disabled:opacity-50 resize-none min-h-[32px] max-h-[calc(50vh-2rem)] overflow-y-auto custom-scrollbar leading-relaxed"
         />
 
         {/* Right Action Icons: Counter, Gift, GIF, Sticker, Emoji, Apps & Send (Discord style) */}

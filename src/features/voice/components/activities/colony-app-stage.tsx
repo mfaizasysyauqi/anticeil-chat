@@ -106,7 +106,7 @@ export function ColonyAppStage({
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground select-none overflow-y-auto p-4 sm:p-6 rounded-none border-0">
+    <div className="w-full h-full flex flex-col bg-background text-foreground select-none overflow-y-auto custom-scrollbar p-4 sm:p-6 rounded-none border-0">
       {/* Top Banner */}
       <div className="flex items-center justify-between pb-4 border-b border-border/60 shrink-0">
         <div className="flex items-center gap-3">
@@ -180,7 +180,7 @@ export function ColonyAppStage({
             </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-1.5 font-mono text-[11px] text-muted-foreground p-1">
+          <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 font-mono text-[11px] text-muted-foreground p-1">
             {logs.map((log, i) => (
               <div key={i} className="leading-relaxed break-words">
                 {log}

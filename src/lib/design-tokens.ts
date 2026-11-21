@@ -75,15 +75,15 @@ export const BUTTON_STYLES = {
 export const DIALOG_STYLES = {
   // Standard Single-Pane Modal (Form / CRUD / Schedule)
   MODAL_STANDARD:
-    'w-[92vw] sm:w-[500px] p-5 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto',
+    'w-[92vw] sm:w-[500px] p-5 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
   
   // Compact Modal (Confirmation, Delete, Mini Form)
   MODAL_COMPACT:
-    'w-[92vw] sm:w-[420px] p-5 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto',
+    'w-[92vw] sm:w-[420px] p-5 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
     
   // Wide Modal (Complex multi-field forms, wizard)
   MODAL_WIDE:
-    'w-[94vw] sm:w-[600px] p-6 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto',
+    'w-[94vw] sm:w-[600px] p-6 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
     
   // Product & Cosmetic Preview Modal
   MODAL_PREVIEW:

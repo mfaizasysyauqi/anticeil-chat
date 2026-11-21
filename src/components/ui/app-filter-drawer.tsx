@@ -32,7 +32,7 @@ export function AppFilterDrawer({
       <SheetContent
         side="right"
         className={cn(
-          'p-4 overflow-y-auto bg-card border-border z-[170]',
+          'p-4 overflow-y-auto custom-scrollbar bg-card border-border z-[170]',
           widthClassName,
           className
         )}

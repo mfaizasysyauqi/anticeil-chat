@@ -106,7 +106,7 @@ export function CreatePollModal({
                 </span>
               </label>
 
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
                 {options.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className="text-xs font-bold text-muted-foreground w-4 text-center">

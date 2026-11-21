@@ -534,7 +534,7 @@ export function CallControlsBar({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-0.5">
+                <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-0.5">
                   {SOUNDBOARD_EFFECTS.map((snd) => {
                     const isPlaying = activeSoundPlaying === snd.id;
                     return (

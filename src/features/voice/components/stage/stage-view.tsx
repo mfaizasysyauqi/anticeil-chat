@@ -335,7 +335,7 @@ export function StageView({
         {/* ───────────────────────────────────────────────────────────── */}
         {/* MAIN BODY                                                     */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col justify-center items-center">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 flex flex-col justify-center items-center">
           {/* 1. WAITING STATE (Screenshot 3) */}
           {stageStatus === 'waiting' && (
             <div className="w-full max-w-md mx-auto flex flex-col items-center text-center space-y-6 my-auto animate-in fade-in-50 duration-200">

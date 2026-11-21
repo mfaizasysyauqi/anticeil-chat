@@ -173,7 +173,7 @@ export function RoleMembersSubtab({
             </button>
           </div>
 
-          <div className="max-h-52 overflow-y-auto space-y-1 pr-1">
+          <div className="max-h-52 overflow-y-auto custom-scrollbar space-y-1 pr-1">
             {members.map((m) => {
               const isAlreadyAssigned = roleMembers.some(
                 (rm) => rm.id === m.id,

@@ -76,7 +76,7 @@ export function ThreadDrawer({
         </div>
 
         {/* Thread Drawer Message List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
           {/* Thread starter banner */}
           <div className="p-3.5 rounded-xl bg-card border border-border space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-primary">

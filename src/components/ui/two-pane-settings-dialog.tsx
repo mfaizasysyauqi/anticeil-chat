@@ -256,7 +256,7 @@ export function TwoPaneSettingsDialog({
             {sidebarHeader && <div className="mb-4">{sidebarHeader}</div>}
 
             {/* Navigation groups */}
-            <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="space-y-4 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
               {groups.map((group, groupIdx) => (
                 <div key={group.key || group.title || groupIdx} className="space-y-0.5">
                   {group.title && (
@@ -426,7 +426,7 @@ export function TwoPaneSettingsDialog({
             ref={scrollRef as React.RefObject<HTMLDivElement>}
             className={cn(
               LAYOUT_DIALOG_SPACING.BODY_PADDING,
-              'overflow-x-hidden',
+              'overflow-x-hidden custom-scrollbar',
               contentClassName,
             )}
           >

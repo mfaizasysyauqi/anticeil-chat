@@ -241,7 +241,7 @@ export function KanbanCardDialog({
                       <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-[180px] max-h-56 overflow-y-auto bg-card border-border text-foreground shadow-2xl p-1 z-[100]">
+                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-[180px] max-h-56 overflow-y-auto custom-scrollbar bg-card border-border text-foreground shadow-2xl p-1 z-[100]">
                     <DropdownMenuItem
                       onClick={() => setCardAssigneeId(currentUser?.id || 'current-user')}
                       className={cn(

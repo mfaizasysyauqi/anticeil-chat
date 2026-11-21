@@ -197,7 +197,7 @@ export function SafetyModals({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 divide-y divide-border/50 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="space-y-4 py-2 divide-y divide-border/50 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
             <div className="flex items-center justify-between gap-3 pt-2">
               <div className="space-y-0.5 pr-2">
                 <span className="text-xs font-semibold text-foreground block">
@@ -303,7 +303,7 @@ export function SafetyModals({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 divide-y divide-border/50 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="space-y-4 py-2 divide-y divide-border/50 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
             <div className="flex items-center justify-between gap-3 pt-2">
               <div className="space-y-0.5 pr-2">
                 <span className="text-xs font-semibold text-foreground block">

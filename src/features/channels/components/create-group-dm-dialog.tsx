@@ -103,7 +103,7 @@ export function CreateGroupDmDialog({
 
         {/* Selected Friend Chips */}
         {selectedIds.length > 0 && (
-          <div className="px-5 py-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto border-y border-border/50 bg-muted/20">
+          <div className="px-5 py-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar border-y border-border/50 bg-muted/20">
             {selectedIds.map((id) => {
               const member = friends.find((f) => f.id === id);
               const label = member?.name || member?.username || id;
