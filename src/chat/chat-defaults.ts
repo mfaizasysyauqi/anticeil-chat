@@ -120,6 +120,9 @@ export function loadStoredDmChannels(): ColonyChannel[] {
       seenKeys.add(dedupKey);
       seenKeys.add(`name-${name}`);
       if (dmUserId) seenKeys.add(`user-${dmUserId}`);
+      if (c.description && typeof c.description === 'string') {
+        c.description = c.description.replace(/\s*\((?:Member|member)\)/gi, '').trim();
+      }
       validDms.push(c);
     }
 
@@ -173,6 +176,9 @@ export function saveStoredDmChannels(channels: ColonyChannel[]): void {
       seenKeys.add(dedupKey);
       seenKeys.add(`name-${name}`);
       if (dmUserId) seenKeys.add(`user-${dmUserId}`);
+      if (c.description && typeof c.description === 'string') {
+        c.description = c.description.replace(/\s*\((?:Member|member)\)/gi, '').trim();
+      }
       dmsOnly.push(c);
     }
     localStorage.setItem(STORAGE_KEY_DM_CHANNELS, JSON.stringify(dmsOnly));

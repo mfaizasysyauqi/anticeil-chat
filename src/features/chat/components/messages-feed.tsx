@@ -118,8 +118,9 @@ export function MessagesFeed({
               Selamat datang di #{activeChannel.name}!
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-xl leading-relaxed">
-              {activeChannel.description ||
-                'Ruang obrolan tim Anticeil. Mulai percakapan, bagikan template otomatisasi, atau koordinasikan alur kerja tim.'}
+              {(activeChannel.description ||
+                'Ruang obrolan tim Anticeil. Mulai percakapan, bagikan template otomatisasi, atau koordinasikan alur kerja tim.'
+              ).replace(/\s*\((?:Member|member)\)/gi, '')}
             </p>
           </div>
 

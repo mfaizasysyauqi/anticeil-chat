@@ -97,13 +97,20 @@ export function useChatMembers({
       const existing = prev.find((c) => c.id === dmId);
       const updated = existing
         ? prev.map((c) =>
-            c.id === dmId ? { ...c, dmUserId: member.id, name: dmName } : c,
+            c.id === dmId
+              ? {
+                  ...c,
+                  dmUserId: member.id,
+                  name: dmName,
+                  description: `Percakapan langsung dengan ${dmName}`,
+                }
+              : c,
           )
         : [
             {
               id: dmId,
               name: dmName,
-              description: `Percakapan langsung dengan ${dmName} (${member.customStatus || member.role || 'Member'})`,
+              description: `Percakapan langsung dengan ${dmName}`,
               category: 'DIRECT MESSAGES' as const,
               colonyId: 'anticeil',
               isDirectMessage: true,
