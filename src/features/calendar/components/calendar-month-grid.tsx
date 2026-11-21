@@ -19,9 +19,9 @@ export function CalendarMonthGrid({
   const todayStr = dayjs().format('YYYY-MM-DD');
 
   return (
-    <div className="lg:col-span-2 flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs">
+    <div className="lg:col-span-2 flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs lg:h-full min-h-0">
       {/* Day Headers (Mon - Sun) */}
-      <div className="grid grid-cols-7 mb-2 text-center text-xs font-semibold text-muted-foreground">
+      <div className="grid grid-cols-7 mb-2 text-center text-xs font-semibold text-muted-foreground shrink-0">
         <span>Sen</span>
         <span>Sel</span>
         <span>Rab</span>
@@ -32,7 +32,7 @@ export function CalendarMonthGrid({
       </div>
 
       {/* Day Cells */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 flex-1">
+      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 flex-1 auto-rows-fr [grid-auto-rows:1fr] min-h-0">
         {days.map((item, idx) => {
           const isSelected = item.dateStr === selectedDateStr;
           const isToday = item.dateStr === todayStr;
@@ -45,7 +45,7 @@ export function CalendarMonthGrid({
               key={idx}
               onClick={() => onSelectDate(dayjs(item.dateStr))}
               className={cn(
-                'min-h-[64px] sm:min-h-[82px] p-1.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between group',
+                'min-h-[64px] sm:min-h-[82px] h-full p-1.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between group overflow-hidden',
                 isSelected
                   ? 'border-primary bg-primary/10 shadow-2xs'
                   : item.isCurrentMonth
@@ -54,7 +54,7 @@ export function CalendarMonthGrid({
                 isToday && !isSelected && 'border-primary/40'
               )}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between shrink-0">
                 <span
                   className={cn(
                     'text-xs font-bold size-5 flex items-center justify-center rounded-full',
@@ -75,8 +75,8 @@ export function CalendarMonthGrid({
               </div>
 
               {/* Small Event Pills on desktop */}
-              <div className="space-y-1 mt-1 hidden sm:block">
-                {dayEvents.slice(0, 2).map((ev) => (
+              <div className="space-y-1 mt-1 hidden sm:block flex-1 overflow-hidden">
+                {dayEvents.slice(0, 3).map((ev) => (
                   <div
                     key={ev.id}
                     className={cn(
@@ -91,9 +91,9 @@ export function CalendarMonthGrid({
                     {dayjs(ev.startTime).format('HH:mm')} {ev.title}
                   </div>
                 ))}
-                {dayEvents.length > 2 && (
+                {dayEvents.length > 3 && (
                   <div className="text-[9px] text-muted-foreground font-medium pl-1">
-                    +{dayEvents.length - 2} lainnya
+                    +{dayEvents.length - 3} lainnya
                   </div>
                 )}
               </div>

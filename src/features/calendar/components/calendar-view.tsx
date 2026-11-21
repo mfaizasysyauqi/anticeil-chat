@@ -354,10 +354,13 @@ export function CalendarView({
       </div>
 
       {/* ── Main Content Area: Month Grid vs Agenda List ────────────── */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
+      <ScrollArea
+        className="flex-1 min-h-0"
+        viewportClassName="[&>div]:!min-h-full lg:[&>div]:!h-full [&>div]:!flex [&>div]:!flex-col"
+      >
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding, 'flex-1 flex flex-col min-h-0')}>
         {viewMode === 'month' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-[500px]">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 lg:h-full">
             {/* Calendar Month Grid (Left 2 cols) */}
             <CalendarMonthGrid
               days={days}
@@ -367,8 +370,8 @@ export function CalendarView({
             />
 
             {/* Selected Day Agenda (Right Col) */}
-            <div className="flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-border">
+            <div className="flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs lg:h-full min-h-0">
+              <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
                 <div>
                   <h2 className="text-sm font-bold text-foreground">
                     {selectedDate.format('dddd, D MMMM YYYY')}
@@ -384,7 +387,12 @@ export function CalendarView({
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 mt-3 pr-1 custom-scrollbar">
+              <div
+                className={cn(
+                  'flex-1 overflow-y-auto space-y-3 mt-3 pr-1 custom-scrollbar min-h-0',
+                  selectedDayEvents.length === 0 && 'flex items-center justify-center'
+                )}
+              >
                 {selectedDayEvents.length === 0 ? (
                   <EmptyState
                     compact
