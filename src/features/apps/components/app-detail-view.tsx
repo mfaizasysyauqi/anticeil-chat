@@ -228,19 +228,6 @@ export function AppDetailView({
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full md:w-auto shrink-0 pt-1 md:pt-0">
                 <Button
                   size="default"
-                  onClick={() => onLaunchStandalone(app)}
-                  className={cn(
-                    'h-11 sm:h-10 px-5 sm:px-6 font-bold text-sm gap-2 cursor-pointer shadow-lg transition-transform active:scale-95 justify-center shrink-0 w-full sm:w-auto',
-                    app.buttonClass || 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                  )}
-                  title="Mulai dan jalankan aktivitas ini"
-                >
-                  <Play className="w-4 h-4 fill-current shrink-0" />
-                  <span>Luncurkan</span>
-                </Button>
-
-                <Button
-                  size="default"
                   variant="outline"
                   onClick={() => onOpenSendToChannel(app)}
                   className="h-11 sm:h-10 px-4 font-semibold text-sm gap-2 cursor-pointer bg-card hover:bg-accent border-border text-foreground justify-center shrink-0 shadow-xs w-full sm:w-auto"
@@ -248,6 +235,17 @@ export function AppDetailView({
                 >
                   <Radio className="w-4 h-4 text-primary" />
                   <span>Buka di Saluran</span>
+                </Button>
+
+                <Button
+                  size="default"
+                  variant="default"
+                  onClick={() => onLaunchStandalone(app)}
+                  className="h-11 sm:h-10 px-5 sm:px-6 font-bold text-sm gap-2 cursor-pointer shadow-md transition-transform active:scale-95 justify-center shrink-0 w-full sm:w-auto"
+                  title="Mulai dan jalankan aktivitas ini"
+                >
+                  <Play className="w-4 h-4 fill-current shrink-0" />
+                  <span>Luncurkan</span>
                 </Button>
               </div>
             </div>

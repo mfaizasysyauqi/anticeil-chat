@@ -477,12 +477,9 @@ export function ActivityDestinationDialog({
               <Button
                 type="button"
                 size="sm"
-                variant="custom"
+                variant="default"
                 onClick={handleLaunch}
-                className={cn(
-                  'text-xs h-8 px-4 font-bold gap-1.5 cursor-pointer shadow-md transition-colors',
-                  app?.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
-                )}
+                className="text-xs h-8 px-4 font-bold gap-1.5 cursor-pointer shadow-md transition-colors"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
                 <span>{t('Luncurkan ke Saluran')}</span>
