@@ -195,14 +195,16 @@ export function TradingViewChart({
   };
 
   return (
-    <div className={cn(
-      'relative w-full h-full bg-[#131722] text-[#d1d4dc] border border-[#2a2e39] overflow-hidden select-none',
-      isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full h-full rounded-xl'
-    )}>
+    <div
+      className={cn(
+        'relative w-full h-full bg-[#131722] text-[#d1d4dc] overflow-hidden select-none rounded-none border-0',
+        isFullscreen && 'fixed inset-0 z-50'
+      )}
+    >
       {/* ── Main TradingView Chart Container (Edge-to-Edge) ────────────────── */}
       <div
         ref={containerRef}
-        className="tradingview-widget-container w-full h-full"
+        className="tradingview-widget-container w-full h-full rounded-none border-0"
         style={{ height: '100%', width: '100%' }}
       />
 

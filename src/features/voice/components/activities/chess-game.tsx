@@ -570,7 +570,7 @@ export function ChessGame({
   }, [orientation, whitePlayer, blackPlayer, myName]);
 
   return (
-    <div className="h-full w-full flex flex-col xl:flex-row items-center justify-center p-2 sm:p-4 gap-2 sm:gap-4 lg:gap-6 bg-zinc-950 text-foreground overflow-hidden select-none">
+    <div className="h-full w-full flex flex-col xl:flex-row items-center justify-center p-2 sm:p-4 gap-2 sm:gap-4 lg:gap-6 bg-zinc-950 text-foreground overflow-hidden select-none rounded-none border-0">
       {/* ── BOARD COLUMN (Scales responsively on Mobile, Tablet & Desktop) ── */}
       <div className="flex flex-col items-center justify-center h-full max-h-full flex-1 min-h-0 min-w-0 max-w-full xl:max-w-[min(580px,calc(100vh-80px))] py-1">
         {/* Top Player Info Bar */}

@@ -57,10 +57,10 @@ export function ScreenShareView({
   };
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center p-3 lg:p-6 bg-zinc-950 text-foreground overflow-hidden select-none">
+    <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-foreground overflow-hidden select-none rounded-none border-0">
       {screenStream ? (
         /* Active Screen Share Video Stage */
-        <div className="relative w-full h-full flex flex-col items-center justify-center bg-black rounded-xl overflow-hidden border border-zinc-800 shadow-2xl group">
+        <div className="relative w-full h-full flex flex-col items-center justify-center bg-black rounded-none overflow-hidden border-0 group">
           <video
             ref={videoRef}
             autoPlay

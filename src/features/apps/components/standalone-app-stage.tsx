@@ -68,7 +68,7 @@ export function StandaloneAppStage({
   return (
     <div
       className={cn(
-        'flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none relative',
+        'flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none relative rounded-none border-0',
         isTheaterMode && 'fixed inset-0 z-50 w-screen h-screen'
       )}
     >
@@ -147,7 +147,7 @@ export function StandaloneAppStage({
       )}
 
       {/* ── Main Activity Stage Body ────────────────────────── */}
-      <div className="flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden relative">
+      <div className="flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden relative rounded-none border-0">
         <ActivityStage
           activeAppId={app.id}
           currentActiveApp={app as any}

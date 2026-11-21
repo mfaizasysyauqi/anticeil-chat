@@ -41,7 +41,7 @@ export function ActivityStage({
   onToggleScreenShare,
 }: ActivityStageProps) {
   return (
-    <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col bg-background">
+    <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col bg-background rounded-none border-0">
       {(activeAppId === 'watch-together' || activeAppId === 'youtube') && (
         <YouTubeWatchTogether
           channel={channel}

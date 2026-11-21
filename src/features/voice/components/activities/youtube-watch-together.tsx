@@ -515,9 +515,9 @@ export function YouTubeWatchTogether({
   );
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-background select-none">
+    <div className="h-full flex flex-col overflow-hidden bg-background select-none rounded-none border-0">
       {activeVideoId ? (
-        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden bg-background">
+        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden bg-background rounded-none border-0">
           <YouTubePlayerStage
             channel={channel}
             activeVideoId={activeVideoId}

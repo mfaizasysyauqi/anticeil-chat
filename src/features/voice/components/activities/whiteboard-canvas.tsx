@@ -162,7 +162,7 @@ export function WhiteboardCanvas({
   };
 
   return (
-    <div className="h-full w-full min-h-0 flex flex-col bg-[#121212] select-none relative overflow-hidden">
+    <div className="h-full w-full min-h-0 flex flex-col bg-[#121212] select-none relative overflow-hidden rounded-none border-0">
       {/* ── Discord Style Jamspace Top Header Bar ───────────────────── */}
       <div className="h-11 px-3 sm:px-4 bg-[#1e1f22] border-b border-border/50 flex items-center justify-between shrink-0 z-10 shadow-xs">
         <div className="flex items-center gap-2 min-w-0">
@@ -205,7 +205,7 @@ export function WhiteboardCanvas({
       </div>
 
       {/* ── Excalidraw Full Collaborative Canvas ────────────────────── */}
-      <div className="flex-1 w-full h-full min-h-0 relative excalidraw-container">
+      <div className="flex-1 w-full h-full min-h-0 relative excalidraw-container rounded-none border-0">
         <Excalidraw
           excalidrawAPI={(api) => setExcalidrawAPI(api)}
           onChange={handleChange}
